@@ -37,7 +37,39 @@ const REAL_USER_COMP_ID = '9da44403-44c3-47b0-8254-af08e57adefd';
 const OWNER_CUSTOMER_ID = 'a0d625d6-f1e8-4f8c-985f-8ce96d15b83e';
 const SMOKE_CUSTOMER_ID = '5a6f147c-7430-4f3a-b16d-0b886e996943';
 const REAL_USER_CUSTOMER_ID = 'ba7c082f-09a5-4ebf-902f-6bd8a33ec162';
-const TEST_CUSTOMER_ID = '727d0a5d-6d3e-4f75-ac51-823bb9279a3d';
+
+/**
+ * `superadmin@hospeda.com` — the owner's staff account, and the customer the two
+ * cancelled inventory subscriptions belong to. It is on
+ * `PRESERVED_CUSTOMER_IDS`, so its RECORD survives while its subscriptions and
+ * payments are still swept. That asymmetry is what
+ * `'keeps a listed customer record while still sweeping its subscriptions and payments'`
+ * pins down.
+ */
+const SUPERADMIN_CUSTOMER_ID = '727d0a5d-6d3e-4f75-ac51-823bb9279a3d';
+
+/**
+ * The six real people who registered, never paid, and own ZERO subscriptions.
+ * Verbatim from `PRESERVED_CUSTOMER_IDS` in the migration — duplicated on
+ * purpose, so an edit to the migration's list that drops one of them fails here
+ * instead of silently sweeping a real person's billing record.
+ */
+const PRESERVED_ZERO_SUB_CUSTOMER_IDS = [
+    '054d5c34-e29f-4d1f-bc26-0bf0f50894f4', // asrilevich.joaquin@gmail.com
+    'ac2c775c-a882-48b6-a868-f1dd7876b21b', // jasiolga@yahoo.com.ar
+    '626e7bd4-aab1-41be-a736-90b005bf01d2', // vivianarichard@hotmail.com
+    '52faa6dd-cb8f-4228-b4a4-44e3e1f67e19', // julimogni08@gmail.com
+    'fab75799-a003-459f-86a0-01cdeb7b0940', // peychauxchristian@gmail.com
+    '585a3646-f717-4e6e-bc33-bf18e3c8c3f9' // olgafrontelli@gmail.com
+] as const;
+
+/**
+ * A customer with the SAME shape as the six above — zero subscriptions, created
+ * before the cutoff — that is NOT on the preserve list. This is the positive
+ * control: without it, a test asserting "the listed ones survive" cannot tell
+ * "I preserved the list" from "I preserved everybody".
+ */
+const UNLISTED_ZERO_SUB_CUSTOMER_ID = '2b8e5f41-6c7a-4d19-9e30-11f4a7c8b562';
 
 const BEFORE_CUTOFF = new Date('2026-08-14T00:00:00.000Z');
 const AFTER_CUTOFF = new Date('2026-09-01T00:00:00.000Z');
@@ -75,6 +107,16 @@ interface FakeDbProbe {
     readonly db: SeedMigrationCtx['db'];
     /** Ids passed to `.update(<table>)` per table, in write order. */
     readonly updates: Record<string, string[]>;
+    /**
+     * String params bound into each `.select().from(<table>).where(...)`
+     * predicate, keyed by table name (last call wins).
+     *
+     * The reads are what separate "whose RECORD is deleted" from "whose DATA is
+     * swept", and the two sets are deliberately different. Without this the fake
+     * returns fixture rows regardless of predicate, so a test could not tell a
+     * migration that narrowed the payment sweep from one that did not.
+     */
+    readonly selects: Record<string, string[]>;
     /** Table names in the order they were written. */
     readonly writeOrder: string[];
 }
@@ -104,9 +146,17 @@ function sqlText(query: unknown): string {
  *
  * Only string params are collected — `lt(createdAt, cutoff)` binds a `Date`, and
  * `isNull(...)` binds nothing.
+ *
+ * The depth cap is a recursion stop, not a semantic bound, and it has to clear
+ * the DEEPEST predicate the migration builds. That is the payment sweep's
+ * orphan branch — `and(…, or(inArray(subscription_id, …),
+ * and(isNull(subscription_id), inArray(customer_id, …))))` — whose customer ids
+ * sit two levels below the subscription ids in the same `or`. At 12 the walk
+ * returned the subscription ids and silently dropped the customer ids, which
+ * reads exactly like "the migration never targeted that customer".
  */
 function collectStringParams(node: unknown, out: string[] = [], depth = 0): string[] {
-    if (node === null || typeof node !== 'object' || depth > 12) {
+    if (node === null || typeof node !== 'object' || depth > 24) {
         return out;
     }
     if (Array.isArray(node)) {
@@ -130,6 +180,7 @@ function collectStringParams(node: unknown, out: string[] = [], depth = 0): stri
 
 function buildFakeDb(options: FakeDbOptions = {}): FakeDbProbe {
     const updates: Record<string, string[]> = {};
+    const selects: Record<string, string[]> = {};
     const writeOrder: string[] = [];
 
     const rowsFor = (tableName: string): readonly unknown[] => {
@@ -150,7 +201,11 @@ function buildFakeDb(options: FakeDbOptions = {}): FakeDbProbe {
     const db = {
         select: () => ({
             from: (table: unknown) => ({
-                where: () => Promise.resolve(rowsFor(getTableName(table as never)))
+                where: (predicate: unknown) => {
+                    const name = getTableName(table as never);
+                    selects[name] = collectStringParams(predicate);
+                    return Promise.resolve(rowsFor(name));
+                }
             })
         }),
         update: (table: unknown) => {
@@ -192,7 +247,7 @@ function buildFakeDb(options: FakeDbOptions = {}): FakeDbProbe {
         }
     } as unknown as SeedMigrationCtx['db'];
 
-    return { db, updates, writeOrder };
+    return { db, updates, selects, writeOrder };
 }
 
 /**
@@ -222,13 +277,13 @@ const INVENTORY_SUBSCRIPTIONS: readonly SubscriptionRow[] = [
     },
     {
         id: 'fa6abdd1-c98b-4780-ad3e-53c24888ad97',
-        customerId: TEST_CUSTOMER_ID,
+        customerId: SUPERADMIN_CUSTOMER_ID,
         status: 'cancelled',
         createdAt: BEFORE_CUTOFF
     },
     {
         id: 'b445be3d-3c67-43de-ad1a-2a86fa81d72a',
-        customerId: TEST_CUSTOMER_ID,
+        customerId: SUPERADMIN_CUSTOMER_ID,
         status: 'cancelled',
         createdAt: BEFORE_CUTOFF
     }
@@ -300,22 +355,27 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
                 { id: OWNER_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
                 { id: REAL_USER_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
                 { id: SMOKE_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
-                { id: TEST_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }
+                { id: SUPERADMIN_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }
             ]
         });
 
         await migration.up(buildCtx(probe.db));
 
-        const written = probe.updates[getTableName(billingCustomers)] ?? [];
-        expect(written).not.toContain(OWNER_CUSTOMER_ID);
-        expect(written).not.toContain(REAL_USER_CUSTOMER_ID);
-        expect(written).toEqual(expect.arrayContaining([SMOKE_CUSTOMER_ID, TEST_CUSTOMER_ID]));
+        // Exact form, not `arrayContaining`: the superadmin record is preserved
+        // by PRESERVED_CUSTOMER_IDS, and a containment assertion would not
+        // notice it slipping back into the write set.
+        expect(probe.updates[getTableName(billingCustomers)]).toEqual([SMOKE_CUSTOMER_ID]);
     });
 
     it('writes children before parents (no live row left pointing at a soft-deleted parent)', async () => {
         const probe = buildFakeDb({
             subscriptions: INVENTORY_SUBSCRIPTIONS,
-            customers: [{ id: TEST_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }],
+            // The unlisted customer is what makes billing_customers appear in
+            // the write order at all — the superadmin record is preserved.
+            customers: [
+                { id: SUPERADMIN_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
+                { id: UNLISTED_ZERO_SUB_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }
+            ],
             payments: [{ id: 'pay-1' }],
             addonPurchases: [{ id: 'addon-1' }]
         });
@@ -342,7 +402,9 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
                 }
             ],
             customers: [
-                { id: TEST_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
+                // Unlisted, so the cutoff is the ONLY thing separating these
+                // two verdicts.
+                { id: UNLISTED_ZERO_SUB_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
                 { id: 'new-real-customer', createdAt: AFTER_CUTOFF }
             ]
         });
@@ -371,7 +433,7 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
     it('ABORTS when an unclassified table still references a targeted row', async () => {
         const probe = buildFakeDb({
             subscriptions: INVENTORY_SUBSCRIPTIONS,
-            customers: [{ id: TEST_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }],
+            customers: [{ id: UNLISTED_ZERO_SUB_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }],
             inboundFks: {
                 billing_subscriptions: [
                     {
@@ -441,7 +503,10 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
     it('ABORTS when a pending, unexpired checkout survives for a targeted customer', async () => {
         const probe = buildFakeDb({
             subscriptions: INVENTORY_SUBSCRIPTIONS,
-            customers: [{ id: TEST_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }],
+            // Must be a customer whose RECORD is actually soft-deleted: the
+            // guard only probes those, and a preserved record keeps its
+            // checkout legitimately reusable.
+            customers: [{ id: UNLISTED_ZERO_SUB_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }],
             retainedRows: {
                 [getTableName(billingPendingCheckouts)]: [{ id: 'checkout-reusable' }]
             }
@@ -464,6 +529,103 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
 
         await expect(migration.up(buildCtx(probe.db))).rejects.toThrow(/MAX_TARGET_SUBSCRIPTIONS/);
         expect(probe.writeOrder).toHaveLength(0);
+    });
+
+    // ── The preserved-customer list (HOS-749 owner decision) ────────────────
+    //
+    // A customer that owns NO subscription cannot be reached by the
+    // "survives iff it owns a preserved subscription" rule — it owns none, so
+    // it falls into the sweep by construction. These four tests pin the
+    // explicit list that exempts it, and the asymmetry the owner asked for:
+    // the RECORD stays, the transactional data still goes.
+
+    it('preserves a listed customer that owns no subscription at all', async () => {
+        const probe = buildFakeDb({
+            subscriptions: [],
+            customers: [{ id: PRESERVED_ZERO_SUB_CUSTOMER_IDS[0], createdAt: BEFORE_CUTOFF }]
+        });
+
+        const result = await migration.up(buildCtx(probe.db));
+
+        expect(probe.updates[getTableName(billingCustomers)]).toBeUndefined();
+        expect(probe.writeOrder).toHaveLength(0);
+        expect(result.counts?.customersSoftDeleted).toBe(0);
+        expect(result.counts?.customersPreservedByList).toBe(1);
+    });
+
+    it('sweeps an UNLISTED customer that owns no subscription (positive control)', async () => {
+        const probe = buildFakeDb({
+            subscriptions: [],
+            customers: [{ id: UNLISTED_ZERO_SUB_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }]
+        });
+
+        const result = await migration.up(buildCtx(probe.db));
+
+        expect(probe.updates[getTableName(billingCustomers)]).toEqual([
+            UNLISTED_ZERO_SUB_CUSTOMER_ID
+        ]);
+        expect(result.counts?.customersSoftDeleted).toBe(1);
+        expect(result.counts?.customersPreservedByList).toBe(0);
+    });
+
+    it('preserves every listed customer while sweeping an unlisted neighbour in the same run', async () => {
+        // Same shape for all seven, same run, one bit of difference: membership
+        // of the list. Nothing else can explain a split verdict here.
+        const probe = buildFakeDb({
+            subscriptions: [],
+            customers: [
+                ...PRESERVED_ZERO_SUB_CUSTOMER_IDS.map((id) => ({ id, createdAt: BEFORE_CUTOFF })),
+                { id: SUPERADMIN_CUSTOMER_ID, createdAt: BEFORE_CUTOFF },
+                { id: UNLISTED_ZERO_SUB_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }
+            ]
+        });
+
+        const result = await migration.up(buildCtx(probe.db));
+
+        expect(probe.updates[getTableName(billingCustomers)]).toEqual([
+            UNLISTED_ZERO_SUB_CUSTOMER_ID
+        ]);
+        expect(result.counts?.customersSoftDeleted).toBe(1);
+        expect(result.counts?.customersPreservedByList).toBe(7);
+    });
+
+    it('keeps a listed customer record while still sweeping its subscriptions and payments', async () => {
+        // The superadmin case. Two cancelled subscriptions and three payments
+        // are test data and go; the billing record is the owner's staff account
+        // and stays.
+        const superadminSubscriptions = INVENTORY_SUBSCRIPTIONS.filter(
+            (s) => s.customerId === SUPERADMIN_CUSTOMER_ID
+        );
+        const probe = buildFakeDb({
+            subscriptions: superadminSubscriptions,
+            customers: [{ id: SUPERADMIN_CUSTOMER_ID, createdAt: BEFORE_CUTOFF }],
+            payments: [{ id: 'pay-1' }, { id: 'pay-2' }, { id: 'pay-3' }]
+        });
+
+        const result = await migration.up(buildCtx(probe.db));
+
+        // The record survives — billing_customers is never written at all.
+        expect(probe.updates[getTableName(billingCustomers)]).toBeUndefined();
+        expect(result.counts?.customersSoftDeleted).toBe(0);
+        expect(result.counts?.customersPreservedByList).toBe(1);
+
+        // Its subscriptions and payments do NOT survive.
+        expect(probe.updates[getTableName(billingSubscriptions)]).toEqual(
+            superadminSubscriptions.map((s) => s.id)
+        );
+        expect(result.counts?.subscriptionsSoftDeleted).toBe(2);
+        expect(result.counts?.paymentsSoftDeleted).toBe(3);
+        expect(probe.writeOrder).toEqual([
+            getTableName(billingPayments),
+            getTableName(billingSubscriptions)
+        ]);
+
+        // The orphan-payment branch still reaches the preserved customer, so a
+        // subscription-less test payment of theirs is swept too...
+        expect(probe.selects[getTableName(billingPayments)]).toContain(SUPERADMIN_CUSTOMER_ID);
+        // ...while the guards, which ask "who is about to be soft-deleted?", do
+        // not see it, because its record is not.
+        expect(probe.selects[getTableName(billingPendingCheckouts)]).toBeUndefined();
     });
 
     it('never touches the users table — static guard on the migration source', () => {
