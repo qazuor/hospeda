@@ -31,16 +31,20 @@ import {
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-// Mock i18n — return fallback key verbatim so assertions can use readable English.
-vi.mock('@/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: (key: string, count: number, params?: Record<string, unknown>) =>
-            `${key} ${Object.values({ ...params, count })
-                .map(String)
-                .join(' ')}`
-    })
-}));
+// Mock i18n — resolves against the real `es` catalog — see the helper's file docblock for
+// why a `fallback ?? key` mock stopped working after HOS-616.
+vi.mock('@/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../helpers/i18n-catalog');
+    return {
+        createTranslations: (_locale: string) => ({
+            t: tFromCatalog,
+            tPlural: (key: string, count: number, params?: Record<string, unknown>) =>
+                `${key} ${Object.values({ ...params, count })
+                    .map(String)
+                    .join(' ')}`
+        })
+    };
+});
 
 // Mock CSS module — return class name strings so className assertions work.
 vi.mock('../../src/components/ai-search/SearchChatPanel.module.css', () => ({
@@ -127,6 +131,7 @@ vi.mock('@/lib/auth-cache', () => ({
 // Import after mocks are set up.
 import { useSearchChat } from '../../src/components/ai-search/useSearchChat';
 import { buildAuthSnapshot } from '../helpers/auth-session';
+import { tFromCatalog } from '../helpers/i18n-catalog';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -399,7 +404,11 @@ describe('SearchChatPanel', () => {
         it('renders the type badge overlaid on the photo, not in a separate meta row', () => {
             mockHook({ results: [mockResults[0]] as ReturnType<typeof useSearchChat>['results'] });
             renderPanel();
-            expect(screen.getByTestId('ai-search-result-type-badge')).toHaveTextContent('CABIN');
+            // Compared against the catalog, not a literal: HOS-616 removed the
+            // inline `'CABIN'` fallback this used to render.
+            expect(screen.getByTestId('ai-search-result-type-badge')).toHaveTextContent(
+                tFromCatalog('common.enums.accommodationType.cabin', 'CABIN')
+            );
         });
 
         it('renders a single star + numeric rating badge overlaid on the photo', () => {
@@ -916,7 +925,9 @@ describe('SearchChatPanel', () => {
             renderPanel({ pageType: 'CABIN' });
             const examples = screen.getByTestId('ai-search-examples');
             // The type-specific example key is prepended to the generic pool.
-            expect(within(examples).getAllByRole('button')[0].textContent).toContain('typeCabin');
+            expect(within(examples).getAllByRole('button')[0].textContent).toContain(
+                tFromCatalog('aiSearch.examples.typeCabin')
+            );
         });
     });
 

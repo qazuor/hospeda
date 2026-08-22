@@ -224,10 +224,7 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
                         message: translateApiError({
                             error: result.error,
                             t,
-                            fallback: t(
-                                'account.favorites.collections.assignFailed',
-                                'No se pudo asignar a la colección'
-                            )
+                            fallback: t('account.favorites.collections.assignFailed')
                         })
                     });
                     return;
@@ -235,11 +232,11 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
                 onAssigned?.({ collectionId: collection.id });
                 addToast({
                     type: 'success',
-                    message: t('account.favorites.collections.assignSuccess', 'Movido a {{name}}', {
+                    message: t('account.favorites.collections.assignSuccess', undefined, {
                         name: collection.name
                     }),
                     action: {
-                        label: t('account.favorites.toast.view', 'Ver favoritos'),
+                        label: t('account.favorites.toast.view'),
                         href: `/${locale}/mi-cuenta/favoritos/colecciones/${collection.id}/`
                     }
                 });
@@ -267,7 +264,7 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
             data-placement={position?.placement ?? 'bottom'}
             // biome-ignore lint/a11y/useSemanticElements: inline popover anchored to a button, not a modal dialog — native <dialog> requires showModal()/close() and blocks the page, which is wrong for this UX.
             role="dialog"
-            aria-label={t('account.favorites.collections.assignPrompt', 'Asignar a una colección')}
+            aria-label={t('account.favorites.collections.assignPrompt')}
         >
             <div
                 aria-hidden="true"
@@ -276,7 +273,7 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
             />
             <div className="collection-picker__header">
                 <p className="collection-picker__title">
-                    {t('account.favorites.collections.assignPrompt', 'Asignar a una colección')}
+                    {t('account.favorites.collections.assignPrompt')}
                 </p>
                 <button
                     type="button"

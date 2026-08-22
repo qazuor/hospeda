@@ -56,7 +56,7 @@ export function NearbyDestinationsIndicator({
             aria-live="polite"
         >
             <span className={styles.nearbyIndicatorLabel}>
-                {t('aiSearch.nearbyDestinations.label', 'Incluyendo destinos cercanos:')}
+                {t('aiSearch.nearbyDestinations.label')}
             </span>{' '}
             {names}
         </output>

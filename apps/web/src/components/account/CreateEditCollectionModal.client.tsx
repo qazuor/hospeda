@@ -241,11 +241,9 @@ export function CreateEditCollectionModal({
         ? t('account.favorites.collections.edit', 'Editar colección')
         : t('account.favorites.collections.create', 'Crear colección');
 
-    const submitLabel = isEditMode
-        ? t('common.form.save', 'Guardar')
-        : t('common.form.create', 'Crear');
+    const submitLabel = isEditMode ? t('common.form.save') : t('common.form.create');
 
-    const cancelLabel = t('common.form.cancel', 'Cancelar');
+    const cancelLabel = t('common.form.cancel');
 
     const MODAL_TITLE_ID = 'create-edit-collection-modal-title';
 
@@ -263,7 +261,7 @@ export function CreateEditCollectionModal({
             <DialogHeader
                 titleId={MODAL_TITLE_ID}
                 onClose={handleClose}
-                closeLabel={t('common.modal.close', 'Cerrar')}
+                closeLabel={t('common.modal.close')}
             >
                 {modalTitle}
             </DialogHeader>
@@ -297,7 +295,7 @@ export function CreateEditCollectionModal({
                                 className={styles.label}
                                 htmlFor="collection-name"
                             >
-                                {t('account.favorites.collections.fields.name', 'Nombre')}
+                                {t('account.favorites.collections.fields.name')}
                                 <span
                                     className={styles.required}
                                     aria-hidden="true"
@@ -310,14 +308,10 @@ export function CreateEditCollectionModal({
                                 className={styles.counter}
                                 role="status"
                                 aria-live="polite"
-                                aria-label={t(
-                                    'common.form.charCounter',
-                                    '{{current}} de {{max}} caracteres',
-                                    {
-                                        current: form.name.length,
-                                        max: NAME_MAX_LENGTH
-                                    }
-                                )}
+                                aria-label={t('common.form.charCounter', undefined, {
+                                    current: form.name.length,
+                                    max: NAME_MAX_LENGTH
+                                })}
                             >
                                 {form.name.length}/{NAME_MAX_LENGTH}
                             </span>
@@ -347,10 +341,7 @@ export function CreateEditCollectionModal({
                                 className={styles.label}
                                 htmlFor="collection-description"
                             >
-                                {t(
-                                    'account.favorites.collections.fields.description',
-                                    'Descripción'
-                                )}
+                                {t('account.favorites.collections.fields.description')}
                             </label>
                             <span
                                 className={styles.counter}
@@ -386,10 +377,7 @@ export function CreateEditCollectionModal({
                             id="collection-description-hint"
                             className={styles.hint}
                         >
-                            {t(
-                                'account.favorites.collections.fields.descriptionHint',
-                                'Opcional. Describe para qué usarás esta colección.'
-                            )}
+                            {t('account.favorites.collections.fields.descriptionHint')}
                         </p>
                         <FieldError
                             id={fieldErrorId('description')}
@@ -403,7 +391,7 @@ export function CreateEditCollectionModal({
                             id="color-picker-label"
                             className={styles.label}
                         >
-                            {t('account.favorites.collections.fields.color', 'Color')}
+                            {t('account.favorites.collections.fields.color')}
                         </span>
                         <CollectionColorPicker
                             value={form.color}
@@ -419,7 +407,7 @@ export function CreateEditCollectionModal({
                             id="icon-picker-label"
                             className={styles.label}
                         >
-                            {t('account.favorites.collections.fields.icon', 'Ícono')}
+                            {t('account.favorites.collections.fields.icon')}
                         </span>
                         <CollectionIconPicker
                             value={form.icon}

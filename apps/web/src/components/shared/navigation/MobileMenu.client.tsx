@@ -496,7 +496,7 @@ export function MobileMenu({
             {/* Language + theme controls — shared primitives */}
             <div className={styles.preferencesSection}>
                 <div className={styles.preferencesGroup}>
-                    <span className={styles.preferencesLabel}>{t('nav.language', 'Idioma')}</span>
+                    <span className={styles.preferencesLabel}>{t('nav.language')}</span>
                     <LanguageSwitcher
                         locale={locale}
                         currentPath={currentPath}
@@ -504,7 +504,7 @@ export function MobileMenu({
                     />
                 </div>
                 <div className={styles.preferencesGroup}>
-                    <span className={styles.preferencesLabel}>{t('nav.theme', 'Tema')}</span>
+                    <span className={styles.preferencesLabel}>{t('nav.theme')}</span>
                     <ThemeControl
                         variant="mobile"
                         showLabels

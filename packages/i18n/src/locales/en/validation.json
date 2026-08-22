@@ -4791,5 +4791,6 @@
         "zod": {
             "failed": "La validación del esquema ha fallado"
         }
-    }
+    },
+    "formHasErrors": "Revisá los campos marcados"
 }

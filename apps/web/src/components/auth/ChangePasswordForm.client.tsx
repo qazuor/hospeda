@@ -143,10 +143,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
         if (!fields.currentPassword) {
             setErrors((prev) => ({
                 ...prev,
-                currentPassword: t(
-                    'commerce.changePassword.currentRequired',
-                    'La contraseña actual es requerida.'
-                )
+                currentPassword: t('commerce.changePassword.currentRequired')
             }));
             return;
         }
@@ -244,10 +241,10 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
 
     const strengthLabel =
         strength === 'strong'
-            ? t('commerce.changePassword.strength.strong', 'Segura')
+            ? t('commerce.changePassword.strength.strong')
             : strength === 'medium'
-              ? t('commerce.changePassword.strength.medium', 'Media')
-              : t('commerce.changePassword.strength.weak', 'Débil');
+              ? t('commerce.changePassword.strength.medium')
+              : t('commerce.changePassword.strength.weak');
 
     // ── Success state ─────────────────────────────────────────────────────────
 
@@ -325,14 +322,8 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                 onClick={() => setShowCurrent((v) => !v)}
                                 aria-label={
                                     showCurrent
-                                        ? t(
-                                              'commerce.changePassword.hidePassword',
-                                              'Ocultar contraseña'
-                                          )
-                                        : t(
-                                              'commerce.changePassword.showPassword',
-                                              'Mostrar contraseña'
-                                          )
+                                        ? t('commerce.changePassword.hidePassword')
+                                        : t('commerce.changePassword.showPassword')
                                 }
                                 tabIndex={0}
                             >
@@ -386,14 +377,8 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                 onClick={() => setShowNew((v) => !v)}
                                 aria-label={
                                     showNew
-                                        ? t(
-                                              'commerce.changePassword.hidePassword',
-                                              'Ocultar contraseña'
-                                          )
-                                        : t(
-                                              'commerce.changePassword.showPassword',
-                                              'Mostrar contraseña'
-                                          )
+                                        ? t('commerce.changePassword.hidePassword')
+                                        : t('commerce.changePassword.showPassword')
                                 }
                                 tabIndex={0}
                             >
@@ -406,10 +391,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                             <div
                                 className={styles.strengthMeter}
                                 role="status"
-                                aria-label={t(
-                                    'commerce.changePassword.strengthLabel',
-                                    'Seguridad de la contraseña'
-                                )}
+                                aria-label={t('commerce.changePassword.strengthLabel')}
                             >
                                 <div className={styles.strengthBars}>
                                     <span
@@ -492,14 +474,8 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                 onClick={() => setShowConfirm((v) => !v)}
                                 aria-label={
                                     showConfirm
-                                        ? t(
-                                              'commerce.changePassword.hidePassword',
-                                              'Ocultar contraseña'
-                                          )
-                                        : t(
-                                              'commerce.changePassword.showPassword',
-                                              'Mostrar contraseña'
-                                          )
+                                        ? t('commerce.changePassword.hidePassword')
+                                        : t('commerce.changePassword.showPassword')
                                 }
                                 tabIndex={0}
                             >

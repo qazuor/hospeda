@@ -43,8 +43,8 @@ const { t } = createTranslations(locale);
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
 
-const resolvedTitle = title ?? t('account.title', 'Mi cuenta');
-const resolvedDescription = description ?? t('account.description', 'Gestioná tu cuenta en Hospeda');
+const resolvedTitle = title ?? t('account.title');
+const resolvedDescription = description ?? t('account.description');
 
 // HOS-296: the whole role SET drives the sidebar. A node is visible when ANY
 // held role grants its permission, so a user who is both HOST and
@@ -143,7 +143,7 @@ function resolveActiveLabel(): string {
 			);
 		}
 	}
-	return t('account.menu', 'Menú de cuenta');
+	return t('account.menu');
 }
 
 const activeLabel = resolveActiveLabel();
@@ -174,7 +174,7 @@ const activeLabel = resolveActiveLabel();
 					class="account-page__toggle"
 					aria-expanded="false"
 					aria-controls="account-nav"
-					aria-label={`${t('account.menu', 'Menú de cuenta')}: ${activeLabel}`}
+					aria-label={`${t('account.menu')}: ${activeLabel}`}
 					type="button"
 				>
 					<span class="account-page__toggle-label">{activeLabel}</span>

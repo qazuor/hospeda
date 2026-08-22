@@ -442,12 +442,9 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                     <a
                         href={ctaHref}
                         className={styles.ctaButton}
-                        aria-label={t(
-                            'home.featuredDestinations.viewAll',
-                            'Ver todos los destinos'
-                        )}
+                        aria-label={t('home.featuredDestinations.viewAll')}
                     >
-                        {t('home.featuredDestinations.viewAll', 'Ver todos los destinos')} →
+                        {t('home.featuredDestinations.viewAll')} →
                     </a>
                 </div>
             </div>

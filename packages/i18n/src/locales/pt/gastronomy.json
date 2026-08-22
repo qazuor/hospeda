@@ -36,12 +36,21 @@
             "title": "Horário de funcionamento",
             "closed": "Fechado",
             "open24h": "Aberto 24 horas",
-            "today": "Hoje"
+            "today": "Hoje",
+            "friday": "Viernes",
+            "monday": "Lunes",
+            "saturday": "Sábado",
+            "sunday": "Domingo",
+            "thursday": "Jueves",
+            "tuesday": "Martes",
+            "wednesday": "Miércoles"
         },
         "menu": "Ver cardápio",
         "reviews": {
             "title": "Avaliações",
-            "empty": "Ainda não há avaliações. Seja o primeiro a comentar!"
+            "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",
+            "more_one": "+ {{count}} reseña más",
+            "more_other": "+ {{count}} reseñas más"
         },
         "faqs": {
             "title": "Perguntas frequentes"

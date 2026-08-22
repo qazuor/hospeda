@@ -905,5 +905,13 @@
         "collapse": "Recolher painel",
         "consumerLimitReached": "Você atingiu seu limite mensal de chats com IA. Atualize seu plano para obter mais acesso.",
         "consumerLimitUpgradeCta": "Ver planos"
+    },
+    "byFeature": {
+        "tagline": "Característica"
+    },
+    "features": "Características",
+    "amenities": "Comodidades",
+    "byAmenity": {
+        "tagline": "Comodidad"
     }
 }

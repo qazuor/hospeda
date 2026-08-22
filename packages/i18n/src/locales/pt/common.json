@@ -191,5 +191,18 @@
         "ariaLabel": "Perfil de {{photographer}} no {{provider}}",
         "ariaLabelNoProvider": "Site de {{photographer}}"
     },
-    "breadcrumbs": "Trilha de navegação"
+    "breadcrumbs": "Trilha de navegação",
+    "form": {
+        "cancel": "Cancelar",
+        "charCounter": "{{current}} de {{max}} caracteres",
+        "create": "Crear",
+        "save": "Guardar"
+    },
+    "modal": {
+        "close": "Cerrar"
+    },
+    "back": "Volver",
+    "close": "Cerrar",
+    "deleting": "Eliminando...",
+    "anonymous": "Usuario"
 }

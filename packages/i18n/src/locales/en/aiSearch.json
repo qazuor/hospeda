@@ -25,7 +25,11 @@
         "viewDetail": "View more",
         "featuredLabel": "Featured",
         "newLabel": "New",
-        "noImage": "No image"
+        "noImage": "No image",
+        "maximize": "Maximizar panel",
+        "restore": "Restaurar tamaño",
+        "placeholderHasResults": "Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos",
+        "placeholderNoResults": "No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos."
     },
     "placeholder": "Describe what you're looking for, e.g. cabin for 4 with a pool near the river",
     "submit": "Search",
@@ -85,5 +89,8 @@
         "typeRoom": "Private room with shared bathroom",
         "typeMotel": "Motel with parking and direct access",
         "typeResort": "All-inclusive resort by the river"
+    },
+    "nearbyDestinations": {
+        "label": "Incluyendo destinos cercanos:"
     }
 }

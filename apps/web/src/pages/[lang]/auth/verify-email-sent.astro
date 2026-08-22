@@ -24,18 +24,16 @@ const locale = Astro.locals.locale as SupportedLocale;
 
 const t = createT(locale);
 
-const title = t('auth-ui.pages.verifyEmailSent.title', 'Revisá tu correo');
+const title = t('auth-ui.pages.verifyEmailSent.title');
 const description = t(
-    'auth-ui.pages.verifyEmailSent.description',
-    'Te enviamos un correo para verificar tu cuenta'
+    'auth-ui.pages.verifyEmailSent.description'
 );
 
-const heading = t('auth-ui.pages.verifyEmailSent.heading', 'Casi listo');
+const heading = t('auth-ui.pages.verifyEmailSent.heading');
 const body = t(
-    'auth-ui.pages.verifyEmailSent.body',
-    'Te enviamos un correo con un enlace para verificar tu cuenta. Hacé clic en el enlace para activar tu acceso. Si no lo ves en la bandeja de entrada, revisá la carpeta de spam o promociones.'
+    'auth-ui.pages.verifyEmailSent.body'
 );
-const signInLabel = t('auth-ui.pages.verifyEmailSent.signInLink', 'Ir a iniciar sesión');
+const signInLabel = t('auth-ui.pages.verifyEmailSent.signInLink');
 
 const signInHref = buildUrl({ locale, path: 'auth/signin' });
 ---

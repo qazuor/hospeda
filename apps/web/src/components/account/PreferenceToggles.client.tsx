@@ -230,10 +230,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
             });
 
             if (!res.ok) {
-                let msg = t(
-                    'account.preferences.errors.saveFailed',
-                    'No se pudo guardar la preferencia'
-                );
+                let msg = t('account.preferences.errors.saveFailed');
                 try {
                     const errBody = (await res.json()) as PatchApiResponse;
                     msg = translateApiError({
@@ -251,12 +248,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
             // Revert on failure
             setSettings(previousSettings);
             const msg =
-                err instanceof Error
-                    ? err.message
-                    : t(
-                          'account.preferences.errors.saveFailed',
-                          'No se pudo guardar la preferencia'
-                      );
+                err instanceof Error ? err.message : t('account.preferences.errors.saveFailed');
             addToast({ type: 'error', message: msg });
             return false;
         } finally {
@@ -400,10 +392,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                             {t('account.preferences.language.label', 'Idioma')}
                         </span>
                         <span className={styles.prefDescription}>
-                            {t(
-                                'account.preferences.language.description',
-                                'Idioma de la plataforma web'
-                            )}
+                            {t('account.preferences.language.description')}
                         </span>
                     </div>
                     <div className={styles.toggleWrap}>
@@ -444,10 +433,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 {/* allowEmails */}
                 <ToggleRow
                     label={t('account.preferences.notifications.email.label', 'Correo electrónico')}
-                    description={t(
-                        'account.preferences.notifications.email.description',
-                        'Recibir notificaciones por email'
-                    )}
+                    description={t('account.preferences.notifications.email.description')}
                     checked={settings.notifications.allowEmails}
                     saving={savingField === 'notif.allowEmails'}
                     id="pref-allow-emails"
@@ -458,10 +444,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 {/* allowPush */}
                 <ToggleRow
                     label={t('account.preferences.notifications.push.label', 'Notificaciones push')}
-                    description={t(
-                        'account.preferences.notifications.push.description',
-                        'Recibir notificaciones en el navegador'
-                    )}
+                    description={t('account.preferences.notifications.push.description')}
                     checked={settings.notifications.allowPush}
                     saving={savingField === 'notif.allowPush'}
                     id="pref-allow-push"
@@ -472,10 +455,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 {/* allowSms */}
                 <ToggleRow
                     label={t('account.preferences.notifications.sms.label', 'SMS')}
-                    description={t(
-                        'account.preferences.notifications.sms.description',
-                        'Recibir notificaciones por SMS'
-                    )}
+                    description={t('account.preferences.notifications.sms.description')}
                     checked={settings.notifications.allowSms}
                     saving={savingField === 'notif.allowSms'}
                     id="pref-allow-sms"
@@ -501,10 +481,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                         'account.preferences.newsletter.label',
                         'Recibir el boletín de novedades'
                     )}
-                    description={t(
-                        'account.preferences.newsletter.description',
-                        'Recibir novedades, ofertas y destinos destacados'
-                    )}
+                    description={t('account.preferences.newsletter.description')}
                     checked={settings.newsletter}
                     saving={savingField === 'newsletter'}
                     id="pref-newsletter"

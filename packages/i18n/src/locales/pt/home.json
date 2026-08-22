@@ -35,7 +35,8 @@
         "emptyState": "Nenhuma hospedagem disponivel no momento",
         "emptyAction": "Ver todas as acomodações",
         "noReviews": "Sem avaliacoes",
-        "seeAllAction": "Ver todas as hospedagens"
+        "seeAllAction": "Ver todas as hospedagens",
+        "typesLabel": "Filtrar por tipo"
     },
     "accommodations": {
         "badge": {
@@ -58,7 +59,8 @@
         "description": "Explore os lugares mais atrativos da costa do rio Uruguay em Entre Rios e encontre a hospedagem perfeita para as suas ferias. ",
         "accentSubtitle": "Explore a regiao",
         "ariaLabel": "Destinos em destaque",
-        "emptyState": "Nenhum destino disponivel no momento"
+        "emptyState": "Nenhum destino disponivel no momento",
+        "viewAll": "Ver todos los destinos"
     },
     "upcomingEvents": {
         "title": "Proximos eventos",
@@ -168,7 +170,8 @@
         "description": "Desde 2022, conectamos viajantes com as melhores acomodações de Concepción del Uruguay e da costa de Entre Ríos. Nossa equipe trabalha para que você descubra os recantos mais autênticos da região, com informações atualizadas e experiências verificadas pela nossa comunidade.",
         "experienceBadge": "Descubra o Litoral",
         "primaryPhotoAlt": "Acomodações e paisagens do Litoral argentino",
-        "travelerPhotoAlt": "Viajantes aproveitando a costa de Entre Ríos"
+        "travelerPhotoAlt": "Viajantes aproveitando a costa de Entre Ríos",
+        "cta": "Conocé más sobre nosotros"
     },
     "ownerCta": {
         "accentSubtitle": "Para proprietarios",
@@ -191,7 +194,8 @@
             "title": "Sincronização com o Google Calendar",
             "description": "Conecte seu Google Calendar para sincronizar a disponibilidade da sua acomodação e evitar reservas sobrepostas"
         },
-        "statsLabel": "viajeros satisfechos"
+        "statsLabel": "viajeros satisfechos",
+        "ctaButton": "Publicá tu alojamiento"
     },
     "partners": {
         "title": "Confían en nosotros",
@@ -271,6 +275,14 @@
         "destinationLabel": "Destino",
         "typeLabel": "Tipo",
         "datesLabel": "Datas",
-        "guestsLabel": "Hóspedes"
+        "guestsLabel": "Hóspedes",
+        "closePanel": "Cerrar panel",
+        "destinationSearchLabel": "Buscar entre los destinos",
+        "destinationSearchPlaceholder": "Buscá un destino",
+        "featuredDestinationLabel": "Destino destacado",
+        "noDestinationsMatch": "No hay destinos que coincidan con tu búsqueda",
+        "noTypesMatch": "No hay tipos que coincidan con tu búsqueda",
+        "typeSearchLabel": "Buscar entre los tipos de alojamiento",
+        "typeSearchPlaceholder": "Buscá un tipo"
     }
 }

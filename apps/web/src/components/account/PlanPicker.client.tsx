@@ -146,7 +146,7 @@ export function PlanPicker({
                     type="button"
                     className={styles.closeBtn}
                     onClick={onDismiss}
-                    aria-label={t('common.close', 'Cerrar')}
+                    aria-label={t('common.close')}
                 >
                     ×
                 </button>

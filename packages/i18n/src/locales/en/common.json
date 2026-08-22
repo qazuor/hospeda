@@ -191,5 +191,18 @@
         "ariaLabel": "{{photographer}}'s profile on {{provider}}",
         "ariaLabelNoProvider": "{{photographer}}'s website"
     },
-    "breadcrumbs": "Breadcrumb"
+    "breadcrumbs": "Breadcrumb",
+    "form": {
+        "cancel": "Cancelar",
+        "charCounter": "{{current}} de {{max}} caracteres",
+        "create": "Crear",
+        "save": "Guardar"
+    },
+    "modal": {
+        "close": "Cerrar"
+    },
+    "back": "Volver",
+    "close": "Cerrar",
+    "deleting": "Eliminando...",
+    "anonymous": "Usuario"
 }

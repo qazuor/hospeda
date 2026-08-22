@@ -28,23 +28,13 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    // Interpolates `{{param}}` like the real `t` — a stub that dropped params
-    // would let a size message ship with a raw `{{maxSize}}` in it (HOS-322).
-    const t = (
-        key: string,
-        fallback?: string,
-        params?: Record<string, string | number>
-    ): string => {
-        const raw = fallback ?? key;
-        return params
-            ? Object.entries(params).reduce(
-                  (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
-                  raw
-              )
-            : raw;
-    };
-    const translations = { t } as const;
+// Resolves against the real `es` catalog and still interpolates `{{param}}`,
+// which is what stops a size message shipping with a raw `{{maxSize}}` in it
+// (HOS-322). The previous stub returned the inline fallback that HOS-616
+// removed from these call sites.
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    const translations = { t: tFromCatalog } as const;
     return { createTranslations: () => translations };
 });
 
@@ -113,7 +103,7 @@ describe('ProfileEditForm', () => {
 
     it('renders displayName field pre-populated', () => {
         renderForm();
-        const input = screen.getByLabelText(/nombre visible/i) as HTMLInputElement;
+        const input = screen.getByLabelText(/nombre para mostrar/i) as HTMLInputElement;
         expect(input.value).toBe('María García');
     });
 
@@ -148,7 +138,7 @@ describe('ProfileEditForm', () => {
 
     it('shows inline error when displayName exceeds the 100-char maximum', async () => {
         renderForm();
-        const input = screen.getByLabelText(/nombre visible/i);
+        const input = screen.getByLabelText(/nombre para mostrar/i);
         fireEvent.change(input, { target: { value: 'x'.repeat(101) } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
@@ -158,7 +148,7 @@ describe('ProfileEditForm', () => {
 
     it('clears displayName error when user types a valid value', async () => {
         renderForm();
-        const input = screen.getByLabelText(/nombre visible/i);
+        const input = screen.getByLabelText(/nombre para mostrar/i);
         fireEvent.change(input, { target: { value: 'x'.repeat(101) } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
@@ -179,7 +169,7 @@ describe('ProfileEditForm', () => {
     // even for unrelated field changes (read⊇write).
     it('accepts a single-character displayName without an inline error', async () => {
         renderForm();
-        const input = screen.getByLabelText(/nombre visible/i);
+        const input = screen.getByLabelText(/nombre para mostrar/i);
         fireEvent.change(input, { target: { value: 'x' } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
@@ -316,7 +306,7 @@ describe('ProfileEditForm', () => {
 
     it('blocks the save and announces when a previously-set required name is cleared (P1)', async () => {
         renderForm();
-        fireEvent.change(screen.getByLabelText(/nombre visible/i), { target: { value: '' } });
+        fireEvent.change(screen.getByLabelText(/nombre para mostrar/i), { target: { value: '' } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
             const err = document.getElementById('displayName-error');

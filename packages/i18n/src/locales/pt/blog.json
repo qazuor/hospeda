@@ -111,7 +111,8 @@
             "shares": "{{count}} compartilhamentos",
             "shares_one": "{{count}} compartilhamento",
             "shares_zero": "Sem compartilhamentos"
-        }
+        },
+        "tagsTitle": "Etiquetas de la publicación"
     },
     "tagPage": {
         "title": "Publicações com a etiqueta \"{tag}\"",
@@ -149,5 +150,15 @@
         "noFilters": {
             "title": "Ainda não há publicações disponíveis"
         }
+    },
+    "byAuthor": {
+        "viewAll": "Ver todas las publicaciones"
+    },
+    "byCategory": {
+        "tagline": "Categoría"
+    },
+    "byTag": {
+        "description": "Publicaciones con etiqueta",
+        "tagline": "Etiqueta"
     }
 }
