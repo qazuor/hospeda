@@ -443,7 +443,12 @@ describe('MercadoPago payment status vocabulary (HOS-757)', () => {
                 CUSTOMER_ID,
                 AMOUNT_MAJOR,
                 'ARS',
-                'failed',
+                // HOS-764: the payer-facing sentence, not the qzpay status. This
+                // fixture carries no `status_detail`, so it resolves to the
+                // unknown-reason copy — `'failed'` was never prose a payer could
+                // act on either. The RAW code still reaches PostHog's
+                // `failure_reason`; that half is asserted in payment-logic.test.ts.
+                'Motivo no informado por el banco',
                 mockBilling
             );
             expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
