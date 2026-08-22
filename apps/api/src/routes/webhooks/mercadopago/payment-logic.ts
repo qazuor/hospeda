@@ -1629,13 +1629,8 @@ export async function processPaymentUpdated({
     // refunded events are mutually exclusive with those activation paths in
     // practice, but `applyWebhookRefundLifecycle` is self-contained and safe
     // to run even if other metadata is present (the activation guards below
-<<<<<<< HEAD
-    // short-circuit on non-approved statuses anyway).
-    if (paymentInfo?.status === 'refunded' && providerPaymentId) {
-=======
     // short-circuit on any status that did not clear anyway).
-    if (paymentInfo?.status === REFUNDED_PAYMENT_STATUS && providerPaymentId) {
->>>>>>> 76ff47caa (docs(billing): drop a stale reference to MercadoPago's raw status wording)
+    if (paymentInfo?.status === 'refunded' && providerPaymentId) {
         await applyWebhookRefundLifecycle({ mpPaymentId: providerPaymentId, data, source });
     }
 
@@ -1909,10 +1904,9 @@ export async function processPaymentUpdated({
         customerId: addonCustomerId,
         addonSlug,
         ...(paymentId === null ? {} : { paymentId }),
-        // The charged amount is forwarded ONLY for an approved payment, which is
-        // what makes the ledger row conditional on the money having actually
-        // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
-        // when — it receives an amount.
+        // The charged amount is what makes the ledger row conditional on the
+        // money having actually moved: `confirmAddonPurchase` books a
+        // `succeeded` row when — and only when — it receives an amount.
         //
         // HOS-756: this used to be NARROWER than the branch gate above — it asked
         // `MP_APPROVED_STATUSES`, which knew only MercadoPago's RAW spellings, so
