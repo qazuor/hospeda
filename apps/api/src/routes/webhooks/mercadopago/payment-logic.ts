@@ -1629,8 +1629,13 @@ export async function processPaymentUpdated({
     // refunded events are mutually exclusive with those activation paths in
     // practice, but `applyWebhookRefundLifecycle` is self-contained and safe
     // to run even if other metadata is present (the activation guards below
+<<<<<<< HEAD
     // short-circuit on non-approved statuses anyway).
     if (paymentInfo?.status === 'refunded' && providerPaymentId) {
+=======
+    // short-circuit on any status that did not clear anyway).
+    if (paymentInfo?.status === REFUNDED_PAYMENT_STATUS && providerPaymentId) {
+>>>>>>> 76ff47caa (docs(billing): drop a stale reference to MercadoPago's raw status wording)
         await applyWebhookRefundLifecycle({ mpPaymentId: providerPaymentId, data, source });
     }
 
