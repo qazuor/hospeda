@@ -63,5 +63,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     <ChangePasswordForm
         client:load
         locale={locale}
+        accountEmail={user.email}
     />
 </BaseLayout>

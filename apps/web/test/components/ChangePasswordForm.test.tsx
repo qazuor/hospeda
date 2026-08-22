@@ -39,8 +39,16 @@ vi.mock('../../src/lib/auth-client', () => ({
 /** A password that satisfies StrongPasswordSchema (8+, upper, lower, digit, special @$!%*?&). */
 const VALID_PWD = 'SecureP@ss1';
 
-function renderForm() {
-    return render(<ChangePasswordForm locale="es" />);
+/** Email of the signed-in account under test — see the HOS-752 block below. */
+const ACCOUNT_EMAIL = 'comerciante@ejemplo.test';
+
+function renderForm(accountEmail: string = ACCOUNT_EMAIL) {
+    return render(
+        <ChangePasswordForm
+            locale="es"
+            accountEmail={accountEmail}
+        />
+    );
 }
 
 /**
@@ -394,6 +402,39 @@ describe('ChangePasswordForm', () => {
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /guardando/i })).toBeDisabled();
             });
+        });
+    });
+
+    // ── HOS-752: the form must name the account it operates on ────────────────
+    //
+    // The submit carries no account identifier — it posts with
+    // `credentials: 'include'` and the API resolves the account from the
+    // session cookie. Somebody opening a new user's activation email while
+    // another session is signed in was therefore changing THAT account's
+    // password, with nothing on screen contradicting them.
+    describe('account notice (HOS-752)', () => {
+        it('names the account whose password is about to change', () => {
+            renderForm();
+            const notice = screen.getByTestId('change-password-account-notice');
+            expect(notice).toHaveTextContent(ACCOUNT_EMAIL);
+        });
+
+        it('renders the email it was given, not a hardcoded or cached one', () => {
+            // Guards the wiring: a component that ignored the prop would still
+            // pass the assertion above if the fixture happened to match.
+            renderForm('superadmin@otra-cuenta.test');
+            const notice = screen.getByTestId('change-password-account-notice');
+            expect(notice).toHaveTextContent('superadmin@otra-cuenta.test');
+            expect(notice).not.toHaveTextContent(ACCOUNT_EMAIL);
+        });
+
+        it('states what is about to happen, not just the address on its own', () => {
+            // An email with no sentence around it reads as "your account" and
+            // fails to warn. The copy must come from the catalog, so a missing
+            // key would surface here as the raw dotted key.
+            renderForm();
+            const notice = screen.getByTestId('change-password-account-notice');
+            expect(notice.textContent ?? '').toMatch(/vas a cambiar la contraseña/i);
         });
     });
 });
