@@ -1,7 +1,18 @@
 /**
  * @file resolve-reason.ts
- * @description Maps MercadoPago `status_detail` codes to i18n reason keys
- * for the checkout failure page.
+ * @description Maps MercadoPago `status_detail` codes to i18n reason keys so a
+ * rejected payment can be explained to the payer in plain language instead of
+ * the provider's internal code.
+ *
+ * Lives in `@repo/billing` (HOS-764) because the same mapping is needed on both
+ * sides of the payment flow: the `apps/web` checkout failure page renders it on
+ * the MercadoPago return, and the `apps/api` payment-failed notification needs
+ * it for the email body. It previously lived in `apps/web/src/lib/checkout/`,
+ * which is why the email still shipped the raw code.
+ *
+ * The returned value is an i18n KEY, never a rendered string: the caller owns
+ * the locale. That matters for the email path, which must resolve in the
+ * recipient's language rather than the server's.
  *
  * Reference: https://www.mercadopago.com.ar/developers/es/docs/checkout-api/response-handling/collection-results
  */
