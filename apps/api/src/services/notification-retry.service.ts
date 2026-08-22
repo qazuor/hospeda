@@ -14,7 +14,11 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { billingNotificationLog, getDb } from '@repo/db';
-import { type NotificationPayload, NotificationType } from '@repo/notifications';
+import {
+    type AddonLinkLocale,
+    type NotificationPayload,
+    NotificationType
+} from '@repo/notifications';
 import { and, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
@@ -309,6 +313,42 @@ export async function processDbNotificationRetries(
 }
 
 /**
+ * Recovers the add-on CTA deep-link fields from a logged notification's
+ * metadata (HOS-722).
+ *
+ * A retry rebuilds its payload from `billing_notification_log.metadata` alone,
+ * so any field the original dispatch passed but the log did not persist is
+ * lost. `locale` and `addonSlug` are exactly such fields, and losing them
+ * downgrades a retried add-on email to the pre-HOS-722 link
+ * (`/es/mi-cuenta/addons/`, unfocused) even though the first attempt built it
+ * correctly.
+ *
+ * Values outside the three supported locales are dropped rather than passed
+ * through, so a corrupted row can never inject an arbitrary path segment into
+ * the CTA URL — the template's own fallback then yields `'es'`.
+ *
+ * @param metadata - The raw `metadata` JSONB blob of the failed notification.
+ * @returns `{ addonSlug?, locale? }` — only the fields present and valid.
+ */
+function resolveAddonLinkFields(metadata: Record<string, unknown>): {
+    addonSlug?: string;
+    locale?: AddonLinkLocale;
+} {
+    const fields: { addonSlug?: string; locale?: AddonLinkLocale } = {};
+    const { addonSlug, locale } = metadata;
+
+    if (typeof addonSlug === 'string' && addonSlug.length > 0) {
+        fields.addonSlug = addonSlug;
+    }
+
+    if (locale === 'es' || locale === 'en' || locale === 'pt') {
+        fields.locale = locale;
+    }
+
+    return fields;
+}
+
+/**
  * Reconstruct NotificationPayload from database record
  *
  * @param record - Failed notification record
@@ -347,11 +387,18 @@ function reconstructPayload(record: FailedNotificationRecord): NotificationPaylo
                 failureReason: (metadata.failureReason as string) || 'Unknown'
             } as NotificationPayload;
 
+        // HOS-722: `addonSlug` and `locale` are carried through explicitly.
+        // Without them a RETRIED expiry email silently reverts to a `/es/`
+        // CTA with no `?focus=` — the exact defect the first attempt fixed —
+        // because a retry rebuilds its payload from scratch out of this
+        // `metadata` blob and nothing else. `logNotification` persists both on
+        // the way in (`buildAddonLinkMetadata`); this reads them back out.
         case NotificationType.ADDON_EXPIRED:
             return {
                 ...basePayload,
                 addonName: (metadata.addonName as string) || 'Add-on',
-                expirationDate: (metadata.expirationDate as string) || new Date().toISOString()
+                expirationDate: (metadata.expirationDate as string) || new Date().toISOString(),
+                ...resolveAddonLinkFields(metadata)
             } as NotificationPayload;
 
         case NotificationType.RENEWAL_REMINDER:
