@@ -54,6 +54,10 @@ export type {
 // Single product-wide locale-precedence resolver (HOS-605 / HOS-609 / HOS-617).
 // Depends only on config.shared (no admin dependency) — safe for the web bundle.
 export { matchAcceptLanguage, resolveDisplayLocale } from './locale-resolution';
+// Canonical missing-translation predicate — the ONE place that decides whether a
+// `t()` lookup found its key. Works identically in dev and production builds
+// (no admin dependency, no catalog access — safe for the web bundle).
+export { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
 // Pluralization (no admin dependency — safe to share)
 export { pluralize } from './pluralization';
 // Validation message resolver (no admin dependency)
