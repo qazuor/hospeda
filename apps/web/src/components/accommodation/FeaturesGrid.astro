@@ -9,6 +9,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { SmokingAllowedIcon } from '@repo/icons';
 import { resolveIcon } from '@repo/icons/resolver';
+import { isMissingTranslation } from '@repo/i18n/web';
 
 interface Props {
   readonly features: readonly AccommodationFeatureItem[];
@@ -29,7 +30,7 @@ if (features.length === 0 && !hasSmoking) return;
 function translateFeature(slug: string): string {
   const key = `accommodations.featureNames.${slug}`;
   const translated = t(key);
-  if (translated.startsWith('[MISSING:')) {
+  if (isMissingTranslation({ key, value: translated })) {
     return slug
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
