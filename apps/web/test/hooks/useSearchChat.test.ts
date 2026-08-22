@@ -20,6 +20,18 @@ import type { SearchChatSseEvent } from '@/lib/api/search-chat-stream';
 
 const mockStreamSearchChat = vi.fn();
 const mockAccommodationsList = vi.fn();
+const mockTrackEvent = vi.fn();
+
+/*
+ * PARTIAL mock on purpose. Replacing the whole analytics module would leave
+ * every OTHER export undefined for anything else the hook's import graph pulls
+ * in, and the resulting failure would surface as a passing test that executed
+ * nothing.
+ */
+vi.mock('@/lib/analytics/posthog-client', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/analytics/posthog-client')>()),
+    trackEvent: (...args: unknown[]) => mockTrackEvent(...args)
+}));
 
 vi.mock('@/lib/api/search-chat-stream', () => ({
     streamSearchChat: (...args: unknown[]) => mockStreamSearchChat(...args)
@@ -91,6 +103,7 @@ describe('useSearchChat', () => {
         vi.useFakeTimers();
         mockStreamSearchChat.mockReset();
         mockAccommodationsList.mockReset();
+        mockTrackEvent.mockReset();
         mockAccommodationsList.mockResolvedValue(makeAccommodationsResponse());
     });
 
@@ -969,5 +982,113 @@ describe('useSearchChat', () => {
         // The partial reply is preserved as the assistant turn in the thread.
         const last = result.current.messages[result.current.messages.length - 1];
         expect(last).toEqual({ role: 'assistant', content: 'Buscando opciones' });
+    });
+
+    // ── HOS-668: a failed turn is recorded WITH the status that caused it ─────
+
+    it('records a transport failure with the HTTP status that caused it', async () => {
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'stream_error',
+                status: 503,
+                error: new Error('HTTP 503')
+            });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        // The literal name is asserted rather than the catalog constant: this
+        // has to fail if the event is ever renamed, since the dashboards that
+        // read it key off the wire name, not the TypeScript symbol.
+        expect(mockTrackEvent).toHaveBeenCalledTimes(1);
+        expect(mockTrackEvent).toHaveBeenCalledWith('ai_search_failed', {
+            error_source: 'transport',
+            error_status: 503,
+            error_code: null,
+            locale: 'es'
+        });
+    });
+
+    it('records status 0 for a request that never left the browser', async () => {
+        /*
+         * This is the distinction the whole event exists for. `search-chat-stream`
+         * emits `status: 0` when the fetch THREW — network, DNS, CORS — and a
+         * real HTTP status when somebody answered. Collapsing the two is exactly
+         * what left the 2026-08-18 production failure undiagnosable: the origin
+         * log was empty under both, so an empty log proved nothing either way.
+         */
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'stream_error',
+                status: 0,
+                error: new Error('Failed to fetch')
+            });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        expect(mockTrackEvent).toHaveBeenCalledWith('ai_search_failed', {
+            error_source: 'transport',
+            error_status: 0,
+            error_code: null,
+            locale: 'es'
+        });
+    });
+
+    it('records a provider rejection as an sse failure carrying its code', async () => {
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({
+                type: 'error',
+                code: 'MODERATION_BLOCKED',
+                message: 'Content policy violation — the request was blocked.'
+            });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        expect(mockTrackEvent).toHaveBeenCalledWith('ai_search_failed', {
+            error_source: 'sse',
+            error_status: null,
+            error_code: 'MODERATION_BLOCKED',
+            locale: 'es'
+        });
+    });
+
+    it('records nothing when the turn succeeds', async () => {
+        // Negative control: without it, a trackEvent call fired unconditionally
+        // would satisfy every assertion above.
+        mockStreamSearchChat.mockImplementation(async function (p: {
+            onEvent: (e: SearchChatSseEvent) => void;
+        }) {
+            p.onEvent({ type: 'token', delta: 'Encontré ' });
+            p.onEvent({ type: 'token', delta: 'tres opciones' });
+            p.onEvent({ type: 'done', conversationId: CONV_ID });
+        });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        await act(async () => {
+            result.current.send('cabaña con pileta');
+        });
+
+        expect(mockTrackEvent).not.toHaveBeenCalled();
     });
 });

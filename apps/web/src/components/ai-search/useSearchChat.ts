@@ -20,6 +20,7 @@
  * @module useSearchChat
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import type {
     AccommodationPublic,
     AiSearchChatFiltersEvent,
@@ -28,6 +29,7 @@ import type {
     SearchIntentEntities
 } from '@repo/schemas';
 import { useCallback, useRef, useState } from 'react';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import {
     type SearchChatMessage,
@@ -459,6 +461,15 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                     }
 
                     if (event.type === 'error') {
+                        // The provider refused mid-stream and said why. There IS
+                        // a server-side trace for this one, so the event carries
+                        // the code rather than a status (HOS-668).
+                        trackEvent(AnalyticsEvents.aiSearchFailed, {
+                            error_source: 'sse',
+                            error_status: null,
+                            error_code: event.code,
+                            locale
+                        });
                         setState((prev) => ({
                             ...prev,
                             currentReply: '',
@@ -470,6 +481,26 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                     }
 
                     if (event.type === 'stream_error') {
+                        /*
+                         * The one that had no witness (HOS-668). `event.status`
+                         * is already computed here to choose the error copy and
+                         * was then thrown away, which is why the production
+                         * failure of 2026-08-18 could not be diagnosed: a 5xx
+                         * from the Cloudflare edge never reaches the origin, so
+                         * `api-prod` logged nothing, and a fetch that never left
+                         * the browser leaves no server trace by construction.
+                         *
+                         * Recording the status is what tells those two apart
+                         * afterwards: `0` means the request never went out,
+                         * anything above means somebody answered — and 502 /
+                         * 504 / 520-526 names the edge, not us.
+                         */
+                        trackEvent(AnalyticsEvents.aiSearchFailed, {
+                            error_source: 'transport',
+                            error_status: event.status,
+                            error_code: null,
+                            locale
+                        });
                         setState((prev) => ({
                             ...prev,
                             currentReply: '',
