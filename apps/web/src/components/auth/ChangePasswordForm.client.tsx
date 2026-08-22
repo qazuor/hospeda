@@ -36,6 +36,16 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 export interface ChangePasswordFormProps {
     /** Active locale for i18n and redirect URL. */
     readonly locale: SupportedLocale;
+    /**
+     * Email of the account whose password this form changes — HOS-752.
+     *
+     * The submit carries NO account identifier: it posts with
+     * `credentials: 'include'` and the API resolves the account from the
+     * session cookie. So the account being changed is whoever is signed in on
+     * this browser, which is not necessarily who the person believes they are
+     * acting as. Rendering it is what makes that visible.
+     */
+    readonly accountEmail: string;
 }
 
 interface FormFields {
@@ -91,7 +101,7 @@ function evaluateStrength(password: string): PasswordStrength {
  *
  * @param props - Component props (see {@link ChangePasswordFormProps})
  */
-export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormProps) {
     const { t } = createTranslations(locale);
 
     const [fields, setFields] = useState<FormFields>(INITIAL_FIELDS);
@@ -274,6 +284,19 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                         'commerce.changePassword.subtitle',
                         'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
                     )}
+                </p>
+                {/*
+                 * HOS-752: names the account. Not decoration — this is the only
+                 * thing on screen that distinguishes "activating the account
+                 * from the email I just opened" from "changing the password of
+                 * the session already signed in on this browser".
+                 */}
+                <p
+                    className={styles.accountNotice}
+                    data-testid="change-password-account-notice"
+                >
+                    {t('commerce.changePassword.accountNotice')}{' '}
+                    <span className={styles.accountNoticeEmail}>{accountEmail}</span>
                 </p>
             </div>
 
