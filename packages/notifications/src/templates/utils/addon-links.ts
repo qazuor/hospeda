@@ -50,9 +50,22 @@ function isAddonLinkLocale(value: unknown): value is AddonLinkLocale {
  * Builds the URL to the self-service add-ons management page
  * (`mi-cuenta/addons`), optionally focused on a single add-on.
  *
- * Contract (HOS-729, implemented in parallel — this helper mirrors its
- * shape rather than importing it, since the two specs land concurrently):
- * `/{locale}/mi-cuenta/addons/?focus=<slug>`.
+ * Contract (HOS-729, `apps/web/src/lib/billing/addon-focus.ts` →
+ * `buildAddonFocusUrl`): `/{locale}/mi-cuenta/addons/?focus=<slug>#addon-<slug>`.
+ * This helper mirrors that shape rather than importing it — `@repo/notifications`
+ * cannot depend on `apps/web` — so the two implementations must be kept in step
+ * by hand; the exact-shape tests on both sides are what enforce it. They agree
+ * character-for-character for every slug the catalog can actually emit
+ * (`^[a-z0-9]+(?:-[a-z0-9]+)*$`); this side additionally percent-escapes, so a
+ * hypothetical slug outside that alphabet stays a valid URL instead of a broken one.
+ *
+ * BOTH halves are load-bearing and neither is decorative:
+ * - the `?focus=` query param is what reorders and highlights the card;
+ * - the `#addon-<slug>` fragment is the pre-existing contract that native
+ *   browser scroll uses to land the viewport on that card. Emitting the query
+ *   param alone (as this helper originally did) leaves the deep link relying on
+ *   the highlighted card happening to sort first, which is a rendering
+ *   coincidence, not the contract.
  *
  * The query param is deliberately named `focus`, NOT `addon` — `addon` is
  * already used by the MercadoPago checkout-return banner
@@ -74,5 +87,9 @@ export function buildAddonManagementUrl({
     const resolvedLocale = isAddonLinkLocale(locale) ? locale : DEFAULT_ADDON_LINK_LOCALE;
     const path = `${baseUrl}/${resolvedLocale}/mi-cuenta/addons/`;
 
-    return addonSlug ? `${path}?focus=${encodeURIComponent(addonSlug)}` : path;
+    if (!addonSlug) {
+        return path;
+    }
+
+    return `${path}?focus=${encodeURIComponent(addonSlug)}#addon-${encodeURIComponent(addonSlug)}`;
 }

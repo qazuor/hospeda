@@ -137,9 +137,18 @@ describe('Addon Email Templates', () => {
         });
 
         it.each([
-            ['es', 'https://hospeda.com.ar/es/mi-cuenta/addons/?focus=priority-support'],
-            ['en', 'https://hospeda.com.ar/en/mi-cuenta/addons/?focus=priority-support'],
-            ['pt', 'https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=priority-support']
+            [
+                'es',
+                'https://hospeda.com.ar/es/mi-cuenta/addons/?focus=priority-support#addon-priority-support'
+            ],
+            [
+                'en',
+                'https://hospeda.com.ar/en/mi-cuenta/addons/?focus=priority-support#addon-priority-support'
+            ],
+            [
+                'pt',
+                'https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=priority-support#addon-priority-support'
+            ]
         ] as const)('renders a %s CTA href focused on the expiring add-on (HOS-722)', (locale, expectedHref) => {
             // Arrange
             const props: AddonExpirationWarningProps = {
@@ -257,9 +266,18 @@ describe('Addon Email Templates', () => {
         });
 
         it.each([
-            ['es', 'https://hospeda.com.ar/es/mi-cuenta/addons/?focus=advanced-analytics'],
-            ['en', 'https://hospeda.com.ar/en/mi-cuenta/addons/?focus=advanced-analytics'],
-            ['pt', 'https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=advanced-analytics']
+            [
+                'es',
+                'https://hospeda.com.ar/es/mi-cuenta/addons/?focus=advanced-analytics#addon-advanced-analytics'
+            ],
+            [
+                'en',
+                'https://hospeda.com.ar/en/mi-cuenta/addons/?focus=advanced-analytics#addon-advanced-analytics'
+            ],
+            [
+                'pt',
+                'https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=advanced-analytics#addon-advanced-analytics'
+            ]
         ] as const)('renders a %s CTA href focused on the expired add-on (HOS-722)', (locale, expectedHref) => {
             // Arrange
             const props: AddonExpiredProps = {
@@ -409,7 +427,7 @@ describe('Addon Email Templates', () => {
 
             // Assert
             expect(html).toContain(
-                'href="https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=24-7-support"'
+                'href="https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=24-7-support#addon-24-7-support"'
             );
             expect(html).not.toContain('suscripcion');
         });
@@ -441,7 +459,7 @@ describe('Addon Email Templates', () => {
 
             // Assert
             expect(html).toContain(
-                'href="https://hospeda.com.ar/en/mi-cuenta/addons/?focus=extra-photos"'
+                'href="https://hospeda.com.ar/en/mi-cuenta/addons/?focus=extra-photos#addon-extra-photos"'
             );
             expect(html).not.toContain('suscripcion');
         });
@@ -482,7 +500,7 @@ describe('Addon Email Templates', () => {
 
             // Assert
             expect(html).toContain(
-                'href="https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=priority-support"'
+                'href="https://hospeda.com.ar/pt/mi-cuenta/addons/?focus=priority-support#addon-priority-support"'
             );
             expect(html).not.toContain('suscripcion');
         });
