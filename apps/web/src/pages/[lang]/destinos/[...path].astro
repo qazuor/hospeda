@@ -45,11 +45,12 @@ import { DestinationReviewSidebarCard } from '@/components/destination/Destinati
 import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
 import { getApiUrl } from '@/lib/env';
 import {
-	faqSetInLanguage,
-	toAccommodationCardProps,
-	toDestinationFaqs,
-	toDestinationPointOfInterestListProps,
-	toEventCardProps
+    faqSetInLanguage,
+    faqsInPageLanguage,
+    toAccommodationCardProps,
+    toDestinationFaqs,
+    toDestinationPointOfInterestListProps,
+    toEventCardProps
 } from '@/lib/api/transforms';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import { createTranslations } from '@/lib/i18n';
@@ -214,7 +215,11 @@ const poiFilterCategories =
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
 
 // --- FAQs (SPEC-158): normalize + build FAQPage JSON-LD sections -----------
-const faqs = toDestinationFaqs(dest.faqs, locale);
+// HOS-616: a FAQ with no translation for this locale falls back to its Spanish
+// source, so /en and /pt used to render a Spanish block inside a translated
+// page. Hidden until the translation exists — both here and in the JSON-LD,
+// which is already guarded on the derived `faqSections` being non-empty.
+const faqs = faqsInPageLanguage(toDestinationFaqs(dest.faqs, locale), locale);
 const faqSections = faqs.map((faq) => ({ heading: faq.question, body: faq.answer }));
 
 // --- Previews (accommodations, events, posts) and counts --------------------
