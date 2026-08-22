@@ -5,11 +5,10 @@
  * Works with any translation function that follows the `(key, params?) => string` signature.
  */
 
+import { isMissingTranslation } from './missing-translation';
+
 /** Translation function signature compatible with both @repo/i18n hook and web's t() */
 type TranslationFn = (key: string, params?: Record<string, unknown>) => string;
-
-/** Marker prefix used by translation functions to indicate missing keys */
-const MISSING_PREFIX = '[MISSING:';
 
 /**
  * Resolves the correct plural form of a translation key based on count.
@@ -20,6 +19,8 @@ const MISSING_PREFIX = '[MISSING:';
  *
  * Automatically injects `{{count}}` into the params for interpolation.
  * Falls back to the base key if neither `_one` nor `_other` variants exist.
+ * The fallback triggers identically in development and production builds — see
+ * {@link isMissingTranslation} for why that needed stating.
  *
  * @param params - Object with translation function, base key, count, and optional extra params.
  * @param params.t - The translation function to use for key resolution.
@@ -58,8 +59,11 @@ export function pluralize({
     // Try the plural-specific key first
     const result = t(pluralKey, mergedParams);
 
-    // If the plural key is missing, fall back to the base key
-    if (result.startsWith(MISSING_PREFIX)) {
+    // If the plural key is missing, fall back to the base key. Absence is
+    // decided by the canonical predicate, NOT by the `[MISSING:` marker: that
+    // marker is emitted only by development builds, so a marker-only check let
+    // the raw dotted key reach production users (see missing-translation.ts).
+    if (isMissingTranslation({ key: pluralKey, value: result })) {
         return t(key, mergedParams);
     }
 

@@ -13,6 +13,7 @@ import type { AccommodationAmenityItem } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveIcon } from '@repo/icons/resolver';
+import { isMissingTranslation } from '@repo/i18n/web';
 
 interface Props {
   readonly amenities: readonly AccommodationAmenityItem[];
@@ -30,7 +31,7 @@ const VISIBLE_COUNT = 8;
 function translateAmenity(name: string): string {
   const key = `accommodations.amenityNames.${name}`;
   const translated = t(key);
-  if (translated.startsWith('[MISSING:')) {
+  if (isMissingTranslation({ key, value: translated })) {
     return name
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());

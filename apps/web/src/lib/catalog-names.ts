@@ -15,6 +15,8 @@
  * source of truth — see Linear BETA-90.
  */
 
+import { isMissingTranslation } from '@repo/i18n/web';
+
 /** Translator shape compatible with `createTranslations().t`. */
 type Translate = (key: string, fallback?: string) => string;
 
@@ -38,6 +40,7 @@ export function translateAmenityName({
     readonly t: Translate;
     readonly name: string;
 }): string {
-    const translated = t(`accommodations.amenityNames.${name}`);
-    return translated.startsWith('[MISSING:') ? humanizeKey(name) : translated;
+    const key = `accommodations.amenityNames.${name}`;
+    const translated = t(key);
+    return isMissingTranslation({ key, value: translated }) ? humanizeKey(name) : translated;
 }

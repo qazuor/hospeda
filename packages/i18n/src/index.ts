@@ -39,6 +39,9 @@ export type {
 } from './locale-resolution';
 // Single product-wide locale-precedence resolver (HOS-605 / HOS-609 / HOS-617)
 export { matchAcceptLanguage, resolveDisplayLocale } from './locale-resolution';
+// Canonical missing-translation predicate — the ONE place that decides whether a
+// `t()` lookup found its key. Works identically in dev and production builds.
+export { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
 // Pluralization utilities
 export { pluralize } from './pluralization';
 // TypeScript types for translation keys

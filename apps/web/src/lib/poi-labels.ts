@@ -24,6 +24,7 @@
  * detail page.
  */
 
+import { isMissingTranslation } from '@repo/i18n/web';
 import type { I18nTextLike } from '@/lib/resolve-i18n-text';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 
@@ -97,8 +98,9 @@ export function translatePoiTypeLabel({
     readonly t: Translate;
     readonly type: string;
 }): string {
-    const translated = t(`destinations.poiTypeLabels.${type}`);
-    return translated.startsWith('[MISSING:') ? humanizeKey(type) : translated;
+    const key = `destinations.poiTypeLabels.${type}`;
+    const translated = t(key);
+    return isMissingTranslation({ key, value: translated }) ? humanizeKey(type) : translated;
 }
 
 /**

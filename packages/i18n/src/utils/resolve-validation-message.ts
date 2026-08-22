@@ -1,3 +1,5 @@
+import { isMissingTranslation } from '../missing-translation';
+
 /**
  * Resolves a zodError or validationError key to a translated message.
  *
@@ -6,9 +8,10 @@
  * - `'validationError.field.tooSmall'` maps to `t('validation.field.tooSmall', params)`
  * - Any other key is passed to `t` as-is
  *
- * Fallback: if the translation function returns a string starting with
- * `'[MISSING:'`, the original `key` is returned unchanged so the caller
- * always receives a non-empty, meaningful value.
+ * Fallback: if the translation function reports the key as absent (see
+ * `isMissingTranslation` — the marker in dev, the raw key echo in production),
+ * the original `key` is returned unchanged so the caller always receives a
+ * non-empty, meaningful value.
  *
  * @param input - Options object
  * @param input.key - The error key to resolve (e.g. `'zodError.amenity.name.min'`)
@@ -66,7 +69,9 @@ export function resolveValidationMessage({
 
     const translated = t(i18nKey, params);
 
-    if (translated.startsWith('[MISSING:')) {
+    // Absence is decided by the canonical predicate: a development build reports
+    // it with the `[MISSING:` marker, a production build echoes the raw key back.
+    if (isMissingTranslation({ key: i18nKey, value: translated })) {
         return key;
     }
 
