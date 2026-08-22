@@ -403,7 +403,7 @@ corrupts that environment's checksum and a new migration is required instead.
 
 ---
 
-## OPEN QUESTION — three FK tables that may or may not abort the run
+## RESOLVED — the three unclassified FK tables do NOT abort the run
 
 Three tables hold a foreign key to `billing_subscriptions` and are **not** listed
 in `RETAINED_REFERENCING_TABLES`:
@@ -412,27 +412,78 @@ in `RETAINED_REFERENCING_TABLES`:
 - `billing_plan_price_change_targets.subscription_id`
 - `billing_plan_price_change_notices.subscription_id`
 
-Whether that matters depends on how the guard works, and the answer is
-**row-triggered, not constraint-triggered**. `assertNoUnclassifiedReferrers`
-discovers referrers from `pg_constraint` (via `getInboundForeignKeys`), so it
-*finds* all three whether or not they hold rows — but it then runs a `COUNT(*)`
-per referrer and only throws `when count > 0`
-(`packages/seed/src/data-migrations/helpers/billingCleanupGuards.ts`). An FK with
-zero matching rows is silently fine.
+All three FKs are real (verified in the Drizzle schemas). Two independent facts
+settle what they mean, and both were needed — neither alone is sufficient.
 
-So the migration does **not** abort merely because these tables exist, and they
-were deliberately left off the retained list: adding a table there is a
-*classification decision* ("rows pointing at a soft-deleted parent are safe
-here"), and nobody has made that decision for these three.
+### 1. The guard is ROW-triggered, not constraint-triggered
 
-**What this means operationally.** If production has zero rows in all three
-pointing at a targeted subscription, step 3 runs clean. If any of them does hold
-such a row, step 3 **aborts before writing anything** and names the table — which
-is the guard working. Production row counts were not available when this was
-written (prod access was denied in that session), so the case is unresolved
-rather than ruled out.
+`assertNoUnclassifiedReferrers`
+(`packages/seed/src/data-migrations/helpers/billingCleanupGuards.ts`) *discovers*
+referrers from `pg_constraint`, via `getInboundForeignKeys`, so it finds all
+three **whether or not they hold rows**. But discovery is not the trip wire. For
+each unclassified referrer it then runs a `COUNT(*)` against the targeted parent
+ids and throws **only when that count is greater than zero**:
 
-Cheap pre-flight, read-only — run it before step 3 to know in advance:
+```ts
+const count = Number(result.rows[0]?.count ?? 0);
+if (count > 0) {
+    throw new BillingCleanupAbort(/* … */);
+}
+```
+
+There is also an earlier short-circuit: the outer loop `continue`s on a parent
+whose target list is empty, so a run with no targeted subscriptions never issues
+the catalogue query at all.
+
+**An FK with zero matching rows is therefore silently fine.** The mere existence
+of an unclassified FK cannot abort the migration.
+
+### 2. Production holds zero such rows
+
+Measured on prod over SSH, 2026-08-22, with a sentinel row included in the query
+so an empty result could be distinguished from a query that never ran (`hops
+psql` returns **empty with exit 0** on invalid SQL, and empty is not the same as
+zero rows):
+
+```
+B1_partners_con_sub     | 0
+B2_price_change_targets | 0
+B3_price_change_notices | 0
+```
+
+Also measured, and relevant to whether the batch even reaches `0068`:
+`billing_checkouts` and `billing_invoices` hold zero rows with a
+`subscription_id`, so `0059` does not abort on FK either. HOS-301's 12/08
+repricing run left no target and no notice behind — the scenario that worried us
+most.
+
+### Decision: they are NOT added to `RETAINED_REFERENCING_TABLES`
+
+With the guard row-triggered and the counts at zero, adding them changes nothing
+about this run. It would only change behaviour in the case where a row *appears*
+before step 3 — and in that case adding them now is the **wrong** move, not a
+free defence:
+
+- Listing a table in `RETAINED_REFERENCING_TABLES` is a **classification
+  decision**: an assertion that rows there pointing at a soft-deleted parent are
+  safe to leave live. Nobody has analysed that for these three.
+- `partners` is exactly the shape of thing the guard exists to catch. A partner
+  row pointing at a swept subscription is the same failure mode as
+  `commerce_listing_subscriptions` and `partner_subscriptions`, both of which
+  needed a dedicated `assertRetainedTablesAreInert` probe precisely because a
+  public surface reads them **without** joining `billing_subscriptions`. Note
+  `partner_subscriptions` is already classified and asserted inert;
+  `partners.subscription_id` is a different column on a different table and has
+  had no such analysis.
+- Pre-classifying blind converts a fail-closed abort into a **fail-open pass**
+  for the one case the guard was built to stop.
+
+An abort is cheap: nothing is written, the message names the table, and the run
+is re-runnable after a deliberate decision. A wrong classification is not cheap
+and is invisible.
+
+**Instead, re-run the pre-flight immediately before step 3** — the counts above
+are three days old by the time this runs, and that is the whole risk:
 
 ```sql
 SELECT 'partners' t, count(*) FROM partners
@@ -443,6 +494,6 @@ UNION ALL SELECT 'billing_plan_price_change_notices', count(*)
   FROM billing_plan_price_change_notices WHERE subscription_id IS NOT NULL;
 ```
 
-All zero → nothing to decide. Any non-zero → the owner classifies that table
-(add it to `RETAINED_REFERENCING_TABLES` with the reason it is safe to leave
-pointing at a soft-deleted parent) **before** the migration is ledgered anywhere.
+All zero → proceed. Any non-zero → **stop and classify that table deliberately**
+before the migration is ledgered anywhere; do not reach for the retained list to
+make the abort go away.
