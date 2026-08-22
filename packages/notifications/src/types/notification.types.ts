@@ -251,9 +251,18 @@ export interface BaseNotificationPayload {
     idempotencyKey?: string;
 }
 
-/** Purchase confirmation (subscription or addon) */
+/**
+ * Subscription purchase confirmation.
+ *
+ * HOS-722: this type USED to serve `ADDON_PURCHASE` as well, which is why the
+ * add-on receipt was rendered by the subscription template — a locale-blind
+ * email whose CTA pointed at `/es/mi-cuenta` rather than the add-ons page.
+ * Add-on purchases now have their own payload
+ * ({@link AddonPurchaseConfirmationPayload}) and their own template. Do NOT
+ * re-add `ADDON_PURCHASE` to this union.
+ */
 export interface PurchaseConfirmationPayload extends BaseNotificationPayload {
-    type: NotificationType.SUBSCRIPTION_PURCHASE | NotificationType.ADDON_PURCHASE;
+    type: NotificationType.SUBSCRIPTION_PURCHASE;
     planName: string;
     amount: number;
     currency: string;
@@ -292,6 +301,54 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
  * route prefix in `apps/web`.
  */
 export type AddonLinkLocale = 'es' | 'en' | 'pt';
+
+/**
+ * Add-on purchase confirmation (HOS-722).
+ *
+ * Split out of {@link PurchaseConfirmationPayload} so `ADDON_PURCHASE` can be
+ * rendered by `AddonPurchaseConfirmation` — the add-on-specific template that
+ * already existed, was already tested, and was never reachable because the
+ * service's `switch` fell `'addon_purchase'` through to the shared
+ * subscription template.
+ *
+ * @example
+ * ```ts
+ * const payload: AddonPurchaseConfirmationPayload = {
+ *   type: NotificationType.ADDON_PURCHASE,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   addonName: 'Fotos extra',
+ *   addonDescription: '20 fotos adicionales por alojamiento',
+ *   orderId: 'mp-payment-id',
+ *   amount: 150000,
+ *   currency: 'ARS',
+ *   expiresAt: '2026-09-21T00:00:00.000Z',
+ *   addonSlug: 'extra-photos-20',
+ *   locale: 'es'
+ * };
+ * ```
+ */
+export interface AddonPurchaseConfirmationPayload extends BaseNotificationPayload {
+    type: NotificationType.ADDON_PURCHASE;
+    /** Human-readable add-on name shown in the email body and the subject line. */
+    readonly addonName: string;
+    /** Short description of what the add-on provides. Empty string when the catalog has none. */
+    readonly addonDescription: string;
+    /** Order/payment identifier shown on the receipt. Empty string when unknown. */
+    readonly orderId: string;
+    /** Amount charged, in centavos. */
+    readonly amount: number;
+    /** ISO 4217 currency code. Defaults to `'ARS'` at render time. */
+    readonly currency?: string;
+    /** ISO 8601 expiration timestamp, or `null` for an add-on with no expiry. */
+    readonly expiresAt?: string | null;
+    /** Add-on catalog slug, used to deep-link the CTA to this add-on (HOS-722). */
+    readonly addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link (HOS-722). Falls back to `'es'`. */
+    readonly locale?: AddonLinkLocale;
+}
 
 /** Add-on lifecycle events */
 export interface AddonEventPayload extends BaseNotificationPayload {
@@ -1135,6 +1192,7 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
 export type NotificationPayload =
     | AdminLeadReceivedPayload
     | PurchaseConfirmationPayload
+    | AddonPurchaseConfirmationPayload
     | PaymentNotificationPayload
     | SubscriptionEventPayload
     | SubscriptionLifecyclePayload

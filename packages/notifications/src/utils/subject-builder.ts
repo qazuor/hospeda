@@ -6,12 +6,15 @@ import { NotificationType } from '../types/notification.types.js';
  */
 const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.SUBSCRIPTION_PURCHASE]: 'Confirmación de compra - {planName}',
-    // `{planName}`, not `{addonName}`: this type is served by
-    // `PurchaseConfirmationPayload` (shared with SUBSCRIPTION_PURCHASE), which
-    // has no `addonName` field — the emitter puts the addon's own name in
-    // `planName`. Naming the field that does not exist is what made every
-    // addon receipt arrive titled "Add-on adquirido - {addonName}".
-    [NotificationType.ADDON_PURCHASE]: 'Add-on adquirido - {planName}',
+    // `{addonName}` since HOS-722: this type is served by its own
+    // `AddonPurchaseConfirmationPayload`, which carries `addonName`. It was
+    // `{planName}` before that, because the type shared
+    // `PurchaseConfirmationPayload` with SUBSCRIPTION_PURCHASE and the emitter
+    // had to smuggle the add-on's name through the `planName` field. The
+    // placeholder must always name a field the payload actually has —
+    // naming one that does not is what made every addon receipt arrive titled
+    // "Add-on adquirido - {addonName}".
+    [NotificationType.ADDON_PURCHASE]: 'Add-on adquirido - {addonName}',
     [NotificationType.PAYMENT_SUCCESS]: 'Pago recibido - ${amount}',
     [NotificationType.PAYMENT_FAILURE]: 'Error en tu pago - Acción requerida',
     [NotificationType.RENEWAL_REMINDER]: 'Tu suscripción se renueva pronto - {planName}',

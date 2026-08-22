@@ -29,12 +29,16 @@ describe('Subject Builder', () => {
             });
 
             it('should return addon purchase subject with the addon name', () => {
-                // Arrange — ADDON_PURCHASE is served by PurchaseConfirmationPayload,
-                // whose name field is `planName`; the emitter puts the addon's own
-                // name there. The subject used to declare `{addonName}`, a field no
-                // payload of this type carries, so every addon receipt shipped the
-                // raw placeholder (H-64 / H-75).
-                const data = { planName: 'Soporte Prioritario' };
+                // Arrange — ADDON_PURCHASE is served by its own
+                // `AddonPurchaseConfirmationPayload` since HOS-722, so the
+                // subject declares `{addonName}` and the payload carries it. It
+                // read `{planName}` while the type shared
+                // `PurchaseConfirmationPayload` with SUBSCRIPTION_PURCHASE and
+                // the emitter had to smuggle the add-on's name through that
+                // field. Either way the invariant is the same: the placeholder
+                // must name a field the payload actually has, or every addon
+                // receipt ships the raw token (H-64 / H-75).
+                const data = { addonName: 'Soporte Prioritario' };
 
                 // Act
                 const result = getSubject(NotificationType.ADDON_PURCHASE, data);
@@ -215,7 +219,7 @@ describe('Subject Builder', () => {
                 // was handed nothing. What must never happen is that string
                 // reaching a transport, which NotificationService.generateSubject
                 // now prevents.
-                expect(result).toBe('Add-on adquirido - {planName}');
+                expect(result).toBe('Add-on adquirido - {addonName}');
             });
 
             it('should preserve placeholder when data has unrelated keys', () => {
