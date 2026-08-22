@@ -81,11 +81,11 @@ export function ProfileEditAvatarSection({
                         onClick={onChangeClick}
                         disabled={avatarUploading || submitting}
                     >
-                        {t('account.avatar.changeButton', 'Cambiar foto')}
+                        {t('account.avatar.changeButton')}
                     </button>
                     {avatarUploading && (
                         <span className={styles.avatarUploading}>
-                            {t('account.avatar.uploading', 'Subiendo…')}
+                            {t('account.avatar.uploading')}
                         </span>
                     )}
                     <input
@@ -94,10 +94,7 @@ export function ProfileEditAvatarSection({
                         accept={ACCEPTED_IMAGE_TYPES.join(',')}
                         className={styles.avatarHiddenInput}
                         onChange={onFileChange}
-                        aria-label={t(
-                            'account.avatar.fileInputLabel',
-                            'Seleccionar imagen de perfil'
-                        )}
+                        aria-label={t('account.avatar.fileInputLabel')}
                     />
                 </div>
             </div>

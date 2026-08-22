@@ -17,18 +17,10 @@ import { CreateEditCollectionModal } from '../../../src/components/account/Creat
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../../src/lib/i18n', () => ({
-    createT:
-        (_locale: string) => (key: string, fallback?: string, params?: Record<string, unknown>) => {
-            if (params && fallback) {
-                return Object.entries(params).reduce(
-                    (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
-                    fallback
-                );
-            }
-            return fallback ?? key;
-        }
-}));
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    return { createT: (_locale: string) => tFromCatalog };
+});
 
 vi.mock('../../../src/components/account/CreateEditCollectionModal.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })

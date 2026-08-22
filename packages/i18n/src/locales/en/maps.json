@@ -25,5 +25,8 @@
         "openSheetCount_other": "View {{count}} results",
         "closeSheet": "Close",
         "loading": "Loading results…"
-    }
+    },
+    "ariaLabelEvent": "Mapa del lugar del evento",
+    "loadingTitle": "Cargando mapa de alojamientos",
+    "region": "Concepción del Uruguay, Entre Ríos"
 }

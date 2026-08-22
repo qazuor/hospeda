@@ -11,19 +11,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewsletterResendButton } from '../../../src/components/newsletter/NewsletterResendButton.client';
 
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
-            if (!fallback) return _key;
-            if (!params) return fallback;
-            return Object.entries(params).reduce(
-                (acc, [name, value]) =>
-                    acc.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value)),
-                fallback
-            );
-        }
-    })
-}));
+// Resolves against the real `es` catalog — see the helper's file docblock for
+// why a `fallback ?? key` mock stopped working after HOS-616.
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    return { createTranslations: (_locale: string) => ({ t: tFromCatalog }) };
+});
 
 vi.mock('../../../src/components/newsletter/NewsletterResendButton.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {

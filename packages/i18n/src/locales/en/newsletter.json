@@ -41,5 +41,17 @@
         "title": "Join the Hospeda WhatsApp channel",
         "description": "Receive exclusive deals and Litoral news on your WhatsApp.",
         "ctaButton": "Join the channel"
+    },
+    "confirmYourEmail": {
+        "resendCooldown": "Reintentar en {seconds}s",
+        "resendCta": "Reenviar email",
+        "resendError": "No pudimos reenviar el email. Probá de nuevo en un minuto.",
+        "resendSending": "Enviando...",
+        "resendSentMessage": "Te enviamos un nuevo email. Revisá tu bandeja y la carpeta de spam.",
+        "cancelLink": "Volver al inicio",
+        "descriptionGeneric": "Te enviamos un email con un link para confirmar tu suscripción.",
+        "descriptionWithEmail": "Te enviamos un email a {email} con un link para confirmar.",
+        "spamNote": "Si no lo encontrás en tu bandeja, revisá la carpeta de spam.",
+        "title": "Revisá tu email para confirmar la suscripción."
     }
 }

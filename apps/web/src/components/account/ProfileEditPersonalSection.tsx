@@ -178,7 +178,7 @@ export function ProfileEditPersonalSection({
                         className={styles.label}
                         htmlFor="birthDate"
                     >
-                        {t('account.editProfile.fields.birthDate', 'Fecha de nacimiento')}
+                        {t('account.editProfile.fields.birthDate')}
                     </label>
                     <input
                         id="birthDate"
@@ -207,7 +207,7 @@ export function ProfileEditPersonalSection({
                             id="birthDate-hint"
                             className={styles.hint}
                         >
-                            {t('account.editProfile.fields.birthDateHint', 'Formato: dd/mm/yyyy.')}
+                            {t('account.editProfile.fields.birthDateHint')}
                         </p>
                     )}
                 </div>
@@ -241,10 +241,7 @@ export function ProfileEditPersonalSection({
                             id="phone-hint"
                             className={styles.hint}
                         >
-                            {t(
-                                'account.editProfile.fields.phoneHint',
-                                'Formato E.164: +541134567890'
-                            )}
+                            {t('account.editProfile.fields.phoneHint')}
                         </p>
                     )}
                 </div>

@@ -34,15 +34,15 @@ let resolvedMessage: string;
 if (message) {
 	resolvedMessage = message;
 } else if (entityName) {
-	const template = t('ui.errorBanner.messageWithEntity', 'No pudimos cargar {entity}. Intentá de nuevo en unos instantes.');
+	const template = t('ui.errorBanner.messageWithEntity');
 	resolvedMessage = template.replace('{entity}', entityName);
 } else {
-	resolvedMessage = t('ui.errorBanner.message', 'Ocurrió un error al cargar el contenido.');
+	resolvedMessage = t('ui.errorBanner.message');
 }
 
-const retryLabel = t('ui.errorBanner.retry', 'Recargar página');
-const reportLabel = t('ui.errorBanner.report', 'Reportar problema');
-const subtitle = t('ui.errorBanner.subtitle', 'Puede ser un problema temporal. Si el error persiste, ayudanos reportándolo.');
+const retryLabel = t('ui.errorBanner.retry');
+const reportLabel = t('ui.errorBanner.report');
+const subtitle = t('ui.errorBanner.subtitle');
 
 const showDevDetails = isDevelopment() && error !== undefined;
 const detailsJson = showDevDetails && error?.details !== undefined

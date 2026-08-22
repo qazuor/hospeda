@@ -25,7 +25,11 @@
         "viewDetail": "Ver más",
         "featuredLabel": "Destacado",
         "newLabel": "Nuevo",
-        "noImage": "Sin imagen"
+        "noImage": "Sin imagen",
+        "maximize": "Maximizar panel",
+        "restore": "Restaurar tamaño",
+        "placeholderHasResults": "Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos",
+        "placeholderNoResults": "No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos."
     },
     "placeholder": "Describí lo que buscás, ej: cabaña para 4 con pileta cerca del río",
     "submit": "Buscar",
@@ -85,5 +89,8 @@
         "location": "Ubicación",
         "remove": "Quitar filtro",
         "activeFiltersLabel": "Filtros activos"
+    },
+    "nearbyDestinations": {
+        "label": "Incluyendo destinos cercanos:"
     }
 }

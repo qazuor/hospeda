@@ -36,12 +36,21 @@
             "title": "Horarios de atención",
             "closed": "Cerrado",
             "open24h": "Abierto las 24 horas",
-            "today": "Hoy"
+            "today": "Hoy",
+            "friday": "Viernes",
+            "monday": "Lunes",
+            "saturday": "Sábado",
+            "sunday": "Domingo",
+            "thursday": "Jueves",
+            "tuesday": "Martes",
+            "wednesday": "Miércoles"
         },
         "menu": "Ver menú",
         "reviews": {
             "title": "Reseñas",
-            "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!"
+            "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!",
+            "more_one": "+ {{count}} reseña más",
+            "more_other": "+ {{count}} reseñas más"
         },
         "faqs": {
             "title": "Preguntas frecuentes"

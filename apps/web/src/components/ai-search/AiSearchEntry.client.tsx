@@ -295,8 +295,8 @@ export function AiSearchEntry({
                                     aria-pressed={isMaximized}
                                     aria-label={
                                         isMaximized
-                                            ? t('aiSearch.chat.restore', 'Restaurar tamaño')
-                                            : t('aiSearch.chat.maximize', 'Maximizar panel')
+                                            ? t('aiSearch.chat.restore')
+                                            : t('aiSearch.chat.maximize')
                                     }
                                     data-testid="ai-search-maximize-toggle"
                                 >

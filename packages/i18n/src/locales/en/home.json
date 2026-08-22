@@ -35,7 +35,8 @@
         "emptyState": "No accommodations available at this time",
         "emptyAction": "View all accommodations",
         "noReviews": "No reviews",
-        "seeAllAction": "View all accommodations"
+        "seeAllAction": "View all accommodations",
+        "typesLabel": "Filtrar por tipo"
     },
     "accommodations": {
         "badge": {
@@ -58,7 +59,8 @@
         "description": "Explore the most attractive spots along the Uruguay River in Entre Rios and find the perfect accommodation for your vacation. ",
         "accentSubtitle": "Explore the region",
         "ariaLabel": "Featured destinations",
-        "emptyState": "No destinations available at this time"
+        "emptyState": "No destinations available at this time",
+        "viewAll": "Ver todos los destinos"
     },
     "upcomingEvents": {
         "title": "Upcoming events",
@@ -168,7 +170,8 @@
         "description": "Since 2022, we connect travelers with the best accommodations in Concepción del Uruguay and the Entre Ríos coast. Our team works to help you discover the most authentic corners of the region, with up-to-date information and experiences verified by our community.",
         "experienceBadge": "Discover the Litoral",
         "primaryPhotoAlt": "Accommodations and landscapes of the Argentine Litoral",
-        "travelerPhotoAlt": "Travelers enjoying the Entre Ríos coast"
+        "travelerPhotoAlt": "Travelers enjoying the Entre Ríos coast",
+        "cta": "Conocé más sobre nosotros"
     },
     "ownerCta": {
         "accentSubtitle": "For property owners",
@@ -191,7 +194,8 @@
             "title": "Google Calendar sync",
             "description": "Connect your Google Calendar to sync your property's availability and avoid double bookings"
         },
-        "statsLabel": "viajeros satisfechos"
+        "statsLabel": "viajeros satisfechos",
+        "ctaButton": "Publicá tu alojamiento"
     },
     "partners": {
         "title": "Confían en nosotros",
@@ -271,6 +275,14 @@
         "destinationLabel": "Destination",
         "typeLabel": "Type",
         "datesLabel": "Dates",
-        "guestsLabel": "Guests"
+        "guestsLabel": "Guests",
+        "closePanel": "Cerrar panel",
+        "destinationSearchLabel": "Buscar entre los destinos",
+        "destinationSearchPlaceholder": "Buscá un destino",
+        "featuredDestinationLabel": "Destino destacado",
+        "noDestinationsMatch": "No hay destinos que coincidan con tu búsqueda",
+        "noTypesMatch": "No hay tipos que coincidan con tu búsqueda",
+        "typeSearchLabel": "Buscar entre los tipos de alojamiento",
+        "typeSearchPlaceholder": "Buscá un tipo"
     }
 }

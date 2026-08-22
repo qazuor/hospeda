@@ -267,20 +267,10 @@ export function ExternalReputationSection({
                 // Never fail silently here: a 400 on EVERY toggle went unnoticed
                 // all the way to production precisely because this branch did
                 // nothing and the checkbox just snapped back (HOS-290).
-                setMasterToggleError(
-                    t(
-                        'external-reputation.errors.masterToggleFailed',
-                        'No se pudo cambiar la visibilidad. Intentá de nuevo.'
-                    )
-                );
+                setMasterToggleError(t('external-reputation.errors.masterToggleFailed'));
             }
         } catch {
-            setMasterToggleError(
-                t(
-                    'external-reputation.errors.masterToggleFailed',
-                    'No se pudo cambiar la visibilidad. Intentá de nuevo.'
-                )
-            );
+            setMasterToggleError(t('external-reputation.errors.masterToggleFailed'));
         } finally {
             setIsTogglingMaster(false);
         }
@@ -300,9 +290,7 @@ export function ExternalReputationSection({
         const urlCheck = AccommodationExternalListingSchema.shape.url.safeParse(trimmedUrl);
         if (!urlCheck.success) {
             setAddError(null);
-            setAddUrlError(
-                t('external-reputation.errors.invalidUrl', 'Ingresá una URL válida (https://...).')
-            );
+            setAddUrlError(t('external-reputation.errors.invalidUrl'));
             return;
         }
         setAddUrlError(null);

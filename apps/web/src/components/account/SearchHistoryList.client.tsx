@@ -607,7 +607,7 @@ export function SearchHistoryList({
                             disabled={isClearing}
                         >
                             {isClearing
-                                ? t('common.deleting', 'Eliminando...')
+                                ? t('common.deleting')
                                 : t('account.searchHistory.clearAll', 'Borrar todo')}
                         </button>
                     )}

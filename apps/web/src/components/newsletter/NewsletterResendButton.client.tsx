@@ -67,10 +67,7 @@ export function NewsletterResendButton({ email, locale }: NewsletterResendButton
                 // 429 (rate limit) and 500-class errors share a generic message
                 // since the endpoint is anti-enumeration: surfacing different
                 // copy would leak server state.
-                const message = t(
-                    'newsletter.confirmYourEmail.resendError',
-                    'No pudimos reenviar el email. Probá de nuevo en un minuto.'
-                );
+                const message = t('newsletter.confirmYourEmail.resendError');
                 setErrorMessage(message);
                 setStatus('error');
                 return;
@@ -79,35 +76,24 @@ export function NewsletterResendButton({ email, locale }: NewsletterResendButton
             setStatus('sent');
             setCooldown(COOLDOWN_SECONDS);
         } catch {
-            setErrorMessage(
-                t(
-                    'newsletter.confirmYourEmail.resendError',
-                    'No pudimos reenviar el email. Probá de nuevo en un minuto.'
-                )
-            );
+            setErrorMessage(t('newsletter.confirmYourEmail.resendError'));
             setStatus('error');
         }
     };
 
     const buttonLabel = (() => {
         if (status === 'sending') {
-            return t('newsletter.confirmYourEmail.resendSending', 'Enviando...');
+            return t('newsletter.confirmYourEmail.resendSending');
         }
         if (cooldown > 0) {
-            return t('newsletter.confirmYourEmail.resendCooldown', 'Reintentar en {seconds}s', {
+            return t('newsletter.confirmYourEmail.resendCooldown', undefined, {
                 seconds: cooldown
             });
         }
-        return t('newsletter.confirmYourEmail.resendCta', 'Reenviar email');
+        return t('newsletter.confirmYourEmail.resendCta');
     })();
 
-    const successText =
-        status === 'sent'
-            ? t(
-                  'newsletter.confirmYourEmail.resendSentMessage',
-                  'Te enviamos un nuevo email. Revisá tu bandeja y la carpeta de spam.'
-              )
-            : '';
+    const successText = status === 'sent' ? t('newsletter.confirmYourEmail.resendSentMessage') : '';
 
     return (
         <div className={styles.wrapper}>

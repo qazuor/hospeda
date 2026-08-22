@@ -29,7 +29,10 @@ describe('AccountLayout — mobile sticky nav markup', () => {
     });
 
     it('keeps the generic menu label only as the resolveActiveLabel fallback + aria-label context', () => {
-        expect(source).toContain("return t('account.menu', 'Menú de cuenta');");
+        // HOS-616 moved the literal into the locale catalog, so the generic
+        // label is no longer an inline fallback — the assertion tracks the key,
+        // which is what "only as the resolveActiveLabel fallback" is about.
+        expect(source).toContain("return t('account.menu');");
         expect(source).toContain('aria-label={`${t(');
         expect(source).toContain('${activeLabel}`}');
     });

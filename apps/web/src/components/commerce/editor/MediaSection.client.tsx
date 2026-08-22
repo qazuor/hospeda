@@ -376,11 +376,7 @@ export function MediaSection({
 
                 if (!addResult.ok) {
                     reportError(
-                        addResult.error.message ??
-                            t(
-                                'commerce.owner.editor.media.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
+                        addResult.error.message ?? t('commerce.owner.editor.media.persistFailed')
                     );
                     return;
                 }
@@ -396,10 +392,7 @@ export function MediaSection({
                 if (!featuredResult.ok) {
                     reportError(
                         featuredResult.error.message ??
-                            t(
-                                'commerce.owner.editor.media.featuredFailed',
-                                'No se pudo marcar la imagen como principal'
-                            )
+                            t('commerce.owner.editor.media.featuredFailed')
                     );
                     return;
                 }
@@ -445,10 +438,7 @@ export function MediaSection({
         if (result.ok) {
             setFeaturedItem(null);
         } else {
-            reportError(
-                result.error.message ??
-                    t('commerce.owner.editor.media.removeFailed', 'No se pudo eliminar la imagen')
-            );
+            reportError(result.error.message ?? t('commerce.owner.editor.media.removeFailed'));
         }
         setOpLoading(false);
     }, [featuredItem, vertical, listingId, t, reportError]);
@@ -501,11 +491,7 @@ export function MediaSection({
 
                 if (!addResult.ok) {
                     reportError(
-                        addResult.error.message ??
-                            t(
-                                'commerce.owner.editor.media.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
+                        addResult.error.message ?? t('commerce.owner.editor.media.persistFailed')
                     );
                     return;
                 }
@@ -544,13 +530,7 @@ export function MediaSection({
             if (result.ok) {
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
-                reportError(
-                    result.error.message ??
-                        t(
-                            'commerce.owner.editor.media.removeFailed',
-                            'No se pudo eliminar la imagen'
-                        )
-                );
+                reportError(result.error.message ?? t('commerce.owner.editor.media.removeFailed'));
             }
             setOpLoading(false);
         },

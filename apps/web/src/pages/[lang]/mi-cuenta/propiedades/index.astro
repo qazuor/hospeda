@@ -271,13 +271,13 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
              its own since it is no longer nested in AccountSectionCard. */
         <div class:list={['props-page__error', accountSectionStyles.branded]} role="alert">
             <p class="props-page__error-title">
-                {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
+                {t('host.properties.empty.fetchError')}
             </p>
             <a
                 href={Astro.url.pathname}
                 class:list={['props-page__cta-btn', 'props-page__cta-btn--centered', btn.primary]}
             >
-                {t('host.properties.error.retry', 'Reintentar')}
+                {t('host.properties.error.retry')}
             </a>
         </div>
     ) : !isEmpty ? (

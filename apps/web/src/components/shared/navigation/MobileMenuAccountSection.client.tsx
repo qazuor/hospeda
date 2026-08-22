@@ -263,7 +263,7 @@ export function MobileMenuAccountSection({
                     tabIndex={isOpen ? 0 : -1}
                     className={styles.authButton}
                 >
-                    {t('nav.signIn', 'Iniciar sesión')}
+                    {t('nav.signIn')}
                 </a>
             )}
         </div>

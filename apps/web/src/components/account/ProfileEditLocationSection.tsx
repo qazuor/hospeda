@@ -109,12 +109,12 @@ export function ProfileEditLocationSection({
                 className={styles.sectionTitle}
                 id="location-section-title"
             >
-                {t('account.pages.editProfile.locationSection', 'Ubicación')}
+                {t('account.pages.editProfile.locationSection')}
             </h3>
             <div className={styles.grid}>
                 <AddressField
                     id="country"
-                    label={t('account.editProfile.fields.country', 'País')}
+                    label={t('account.editProfile.fields.country')}
                     value={country}
                     maxLength={100}
                     autoComplete="country-name"
@@ -124,7 +124,7 @@ export function ProfileEditLocationSection({
                 />
                 <AddressField
                     id="province"
-                    label={t('account.editProfile.fields.province', 'Provincia / Región')}
+                    label={t('account.editProfile.fields.province')}
                     value={province}
                     maxLength={100}
                     autoComplete="address-level1"
@@ -134,7 +134,7 @@ export function ProfileEditLocationSection({
                 />
                 <AddressField
                     id="city"
-                    label={t('account.editProfile.fields.city', 'Ciudad')}
+                    label={t('account.editProfile.fields.city')}
                     value={city}
                     maxLength={100}
                     autoComplete="address-level2"
@@ -144,7 +144,7 @@ export function ProfileEditLocationSection({
                 />
                 <AddressField
                     id="postalCode"
-                    label={t('account.editProfile.fields.postalCode', 'Código postal')}
+                    label={t('account.editProfile.fields.postalCode')}
                     value={postalCode}
                     maxLength={20}
                     autoComplete="postal-code"
@@ -154,7 +154,7 @@ export function ProfileEditLocationSection({
                 />
                 <AddressField
                     id="addressLine1"
-                    label={t('account.editProfile.fields.addressLine1', 'Dirección')}
+                    label={t('account.editProfile.fields.addressLine1')}
                     value={addressLine1}
                     maxLength={200}
                     autoComplete="address-line1"

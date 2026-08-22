@@ -108,6 +108,15 @@
                     "mapHint": "Arrastrá el pin para ajustar la ubicación",
                     "mapToggleExpand": "Expandir mapa",
                     "mapToggleCollapse": "Contraer mapa"
+                },
+                "cityPicker": {
+                    "contactMessage": "No encontré mi ciudad en el buscador del formulario de publicación. Me gustaría poder publicar mi alojamiento ahí. ¿Pueden agregarla?",
+                    "contactSubject": "Solicitud de nueva ciudad",
+                    "empty": "No hay coincidencias",
+                    "label": "Ciudad",
+                    "loading": "Buscando ciudades...",
+                    "notFoundLink": "No encuentro mi ciudad",
+                    "placeholder": "Buscá tu ciudad (mín. 2 letras)"
                 }
             },
             "capacidad": {
@@ -644,11 +653,16 @@
                 "bedrooms": "habitaciones",
                 "bathrooms": "baños",
                 "mainImage": "la foto principal"
-            }
+            },
+            "pageDescription": "Editar información de tu propiedad"
         },
         "empty": {
             "title": "Aún no publicaste ninguna propiedad",
-            "cta": "Publicar ahora"
+            "cta": "Publicar ahora",
+            "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+        },
+        "error": {
+            "retry": "Reintentar"
         }
     },
     "landing": {
@@ -883,7 +897,9 @@
             "precheck": {
                 "resumeDeleteOrUpgrade": {
                     "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
-                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan."
+                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
+                    "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
+                    "deleteCta": "Borrar borrador"
                 },
                 "pickDraftDeleteOrUpgrade": {
                     "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",

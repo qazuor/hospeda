@@ -123,7 +123,7 @@ function FlowResult({ response, locale, onDismiss }: FlowResultProps) {
                     className={styles.btnPrimary}
                     onClick={onDismiss}
                 >
-                    {t('common.close', 'Cerrar')}
+                    {t('common.close')}
                 </button>
             </div>
         );
@@ -152,7 +152,7 @@ function FlowResult({ response, locale, onDismiss }: FlowResultProps) {
                     className={styles.btnPrimary}
                     onClick={onDismiss}
                 >
-                    {t('common.close', 'Cerrar')}
+                    {t('common.close')}
                 </button>
             </div>
         );
@@ -405,7 +405,7 @@ export function PlanChangeFlow({
                                 className={styles.retryLink}
                                 onClick={onDismiss}
                             >
-                                {t('common.close', 'Cerrar')}
+                                {t('common.close')}
                             </button>
                         )}
                     </p>

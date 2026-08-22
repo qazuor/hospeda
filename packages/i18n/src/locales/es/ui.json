@@ -234,5 +234,12 @@
     "listing": {
         "resultsFound_one": "{{count}} resultado encontrado",
         "resultsFound_other": "{{count}} resultados encontrados"
+    },
+    "errorBanner": {
+        "message": "Ocurrió un error al cargar el contenido.",
+        "messageWithEntity": "No pudimos cargar {entity}. Intentá de nuevo en unos instantes.",
+        "report": "Reportar problema",
+        "retry": "Recargar página",
+        "subtitle": "Puede ser un problema temporal. Si el error persiste, ayudanos reportándolo."
     }
 }
