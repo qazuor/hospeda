@@ -4,13 +4,14 @@
  * Every add-on lifecycle email carries a CTA that deep-links into `apps/web`,
  * whose routes are locale-prefixed (`/{locale}/mi-cuenta/addons/`). The locale
  * segment therefore has to be resolved per RECIPIENT, not hardcoded — which is
- * exactly what the four add-on dispatch sites used to get wrong, every one of
+ * exactly what all five add-on dispatch sites used to get wrong, every one of
  * them shipping a `/es/` link to English- and Portuguese-speaking hosts.
  *
- * This module exists so those four sites resolve the locale ONE way. The logic
+ * This module exists so those five sites resolve the locale ONE way. The logic
  * originally lived as a private function inside `addon-expiry.job.ts`, which
- * covered the three cron dispatches and left purchase and cancellation to
- * re-derive it (or, in practice, not derive it at all).
+ * covered its own three dispatches (expired, and the 3-day and 1-day warnings)
+ * and left purchase and cancellation with no way to reach it — so in practice
+ * those two did not resolve a locale at all.
  *
  * @module services/notification-recipient-locale
  */
