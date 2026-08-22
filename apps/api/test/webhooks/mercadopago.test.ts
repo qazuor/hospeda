@@ -744,7 +744,15 @@ describe('MercadoPago Webhook Handler', () => {
                             id: '987',
                             amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                             currency: 'ARS',
-                            status: 'approved',
+                            // HOS-757: `'succeeded'`, not MP's raw `'approved'`.
+                            // This stub stands in for `payments.retrieve`, which
+                            // returns a `QZPayProviderPayment` — the adapter has
+                            // ALREADY normalized the status by then. Hand-writing
+                            // the raw word here reproduced the code's mistaken
+                            // assumption instead of the provider's behaviour, and
+                            // is why this suite stayed green while the dispatch
+                            // it exercises was unreachable in production.
+                            status: 'succeeded',
                             metadata: { customerId: 'cust_123' }
                         })
                     }
@@ -801,7 +809,15 @@ describe('MercadoPago Webhook Handler', () => {
                             id: '987',
                             amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                             currency: 'ARS',
-                            status: 'rejected',
+                            // HOS-757: `'succeeded'`, not MP's raw `'approved'`.
+                            // This stub stands in for `payments.retrieve`, which
+                            // returns a `QZPayProviderPayment` — the adapter has
+                            // ALREADY normalized the status by then. Hand-writing
+                            // the raw word here reproduced the code's mistaken
+                            // assumption instead of the provider's behaviour, and
+                            // is why this suite stayed green while the dispatch
+                            // it exercises was unreachable in production.
+                            status: 'failed',
                             statusDetail: 'cc_rejected_insufficient_amount',
                             metadata: { customerId: 'cust_123' }
                         })
@@ -867,7 +883,15 @@ describe('MercadoPago Webhook Handler', () => {
                             // `transaction_amount` the webhook payload carries.
                             amount: 5000,
                             currency: 'ARS',
-                            status: 'approved',
+                            // HOS-757: `'succeeded'`, not MP's raw `'approved'`.
+                            // This stub stands in for `payments.retrieve`, which
+                            // returns a `QZPayProviderPayment` — the adapter has
+                            // ALREADY normalized the status by then. Hand-writing
+                            // the raw word here reproduced the code's mistaken
+                            // assumption instead of the provider's behaviour, and
+                            // is why this suite stayed green while the dispatch
+                            // it exercises was unreachable in production.
+                            status: 'succeeded',
                             metadata: {
                                 addonSlug: 'premium-photos',
                                 customerId: 'cust_123'
