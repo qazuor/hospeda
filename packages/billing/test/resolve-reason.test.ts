@@ -2,6 +2,11 @@
  * @file resolve-reason.test.ts
  * @description Unit tests for the MercadoPago status_detail → reason key mapper.
  * Covers all pattern groups, null/undefined inputs, unknown codes, and empty strings.
+ *
+ * HOS-764 phase 2 re-categorised three codes that were previously mapped to a
+ * message that contradicted MercadoPago's own documentation. The tests below
+ * assert the CORRECTED mapping; the old expectations are gone on purpose, so a
+ * revert of the resolver turns this file red.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -15,7 +20,7 @@ import { resolveReasonI18nKey, resolveReasonKey } from '../src/utils/resolve-rea
 describe('resolveReasonKey', () => {
     // -- reasonInsufficientFunds --
 
-    describe('insufficients funds patterns', () => {
+    describe('insufficient funds patterns', () => {
         it('should return reasonInsufficientFunds for cc_rejected_insufficient_amount', () => {
             // Arrange
             const statusDetail = 'cc_rejected_insufficient_amount';
@@ -27,26 +32,31 @@ describe('resolveReasonKey', () => {
             expect(result).toBe('reasonInsufficientFunds');
         });
 
-        it('should return reasonInsufficientFunds for cc_rejected_high_risk', () => {
-            // Arrange
+        it('should NOT return reasonInsufficientFunds for cc_rejected_high_risk (HOS-764)', () => {
+            // Arrange — MercadoPago classifies this as a fraud-prevention block.
+            // Telling the payer "you do not have enough money" is factually wrong.
             const statusDetail = 'cc_rejected_high_risk';
 
             // Act
             const result = resolveReasonKey(statusDetail);
 
             // Assert
-            expect(result).toBe('reasonInsufficientFunds');
+            expect(result).not.toBe('reasonInsufficientFunds');
         });
+    });
 
-        it('should return reasonInsufficientFunds for rejected_insufficient_data', () => {
+    // -- reasonHighRisk (HOS-764) --
+
+    describe('fraud prevention patterns', () => {
+        it('should return reasonHighRisk for cc_rejected_high_risk', () => {
             // Arrange
-            const statusDetail = 'rejected_insufficient_data';
+            const statusDetail = 'cc_rejected_high_risk';
 
             // Act
-            const result = resolveReasonKey(statusDetail);
+            const result: CheckoutReasonKey = resolveReasonKey(statusDetail);
 
             // Assert
-            expect(result).toBe('reasonInsufficientFunds');
+            expect(result).toBe('reasonHighRisk');
         });
     });
 
@@ -59,17 +69,6 @@ describe('resolveReasonKey', () => {
 
             // Act
             const result: CheckoutReasonKey = resolveReasonKey(statusDetail);
-
-            // Assert
-            expect(result).toBe('reasonCardDeclined');
-        });
-
-        it('should return reasonCardDeclined for cc_rejected_bad_filled_security_code', () => {
-            // Arrange
-            const statusDetail = 'cc_rejected_bad_filled_security_code';
-
-            // Act
-            const result = resolveReasonKey(statusDetail);
 
             // Assert
             expect(result).toBe('reasonCardDeclined');
@@ -97,17 +96,6 @@ describe('resolveReasonKey', () => {
             expect(result).toBe('reasonCardDeclined');
         });
 
-        it('should return reasonCardDeclined for rejected_by_bank', () => {
-            // Arrange
-            const statusDetail = 'rejected_by_bank';
-
-            // Act
-            const result = resolveReasonKey(statusDetail);
-
-            // Assert
-            expect(result).toBe('reasonCardDeclined');
-        });
-
         it('should return reasonCardDeclined for cc_rejected_other_reason', () => {
             // Arrange
             const statusDetail = 'cc_rejected_other_reason';
@@ -118,12 +106,39 @@ describe('resolveReasonKey', () => {
             // Assert
             expect(result).toBe('reasonCardDeclined');
         });
+
+        it('should NOT return reasonCardDeclined for cc_rejected_bad_filled_security_code (HOS-764)', () => {
+            // Arrange — MercadoPago documents this as a typo in the CVV. A bare
+            // "the card was declined" hides the ten-second fix from the payer.
+            const statusDetail = 'cc_rejected_bad_filled_security_code';
+
+            // Act
+            const result = resolveReasonKey(statusDetail);
+
+            // Assert
+            expect(result).not.toBe('reasonCardDeclined');
+        });
     });
 
-    // -- reasonExpired --
+    // -- reasonSecurityCode (HOS-764) --
 
-    describe('expired card patterns', () => {
-        it('should return reasonExpired for cc_rejected_card_disabled', () => {
+    describe('security code patterns', () => {
+        it('should return reasonSecurityCode for cc_rejected_bad_filled_security_code', () => {
+            // Arrange
+            const statusDetail = 'cc_rejected_bad_filled_security_code';
+
+            // Act
+            const result: CheckoutReasonKey = resolveReasonKey(statusDetail);
+
+            // Assert
+            expect(result).toBe('reasonSecurityCode');
+        });
+    });
+
+    // -- reasonCardDisabled (HOS-764) --
+
+    describe('disabled card patterns', () => {
+        it('should return reasonCardDisabled for cc_rejected_card_disabled', () => {
             // Arrange
             const statusDetail = 'cc_rejected_card_disabled';
 
@@ -131,18 +146,45 @@ describe('resolveReasonKey', () => {
             const result: CheckoutReasonKey = resolveReasonKey(statusDetail);
 
             // Assert
-            expect(result).toBe('reasonExpired');
+            expect(result).toBe('reasonCardDisabled');
         });
 
-        it('should return reasonExpired for cc_rejected_card_type_not_allowed', () => {
-            // Arrange
-            const statusDetail = 'cc_rejected_card_type_not_allowed';
+        it('should NOT report cc_rejected_card_disabled as an expired card (HOS-764)', () => {
+            // Arrange — blocked/disabled and expired are different problems with
+            // different fixes; the payer cannot act on the wrong one.
+            const statusDetail = 'cc_rejected_card_disabled';
 
             // Act
             const result = resolveReasonKey(statusDetail);
 
             // Assert
-            expect(result).toBe('reasonExpired');
+            expect(result).not.toBe('reasonExpired');
+        });
+    });
+
+    // -- reasonInvalidInstallments (HOS-764) --
+
+    describe('invalid installments patterns', () => {
+        it('should return reasonInvalidInstallments for cc_rejected_invalid_installments', () => {
+            // Arrange — previously unmapped, so it fell through to genericMessage.
+            const statusDetail = 'cc_rejected_invalid_installments';
+
+            // Act
+            const result: CheckoutReasonKey = resolveReasonKey(statusDetail);
+
+            // Assert
+            expect(result).toBe('reasonInvalidInstallments');
+        });
+
+        it('should not fall through to genericMessage for cc_rejected_invalid_installments', () => {
+            // Arrange
+            const statusDetail = 'cc_rejected_invalid_installments';
+
+            // Act
+            const result = resolveReasonKey(statusDetail);
+
+            // Assert
+            expect(result).not.toBe('genericMessage');
         });
     });
 
@@ -191,6 +233,22 @@ describe('resolveReasonKey', () => {
 
             // Assert
             expect(result).toBe('reasonInvalidData');
+        });
+    });
+
+    // -- retired codes (HOS-764) --
+
+    describe('codes retired for not existing in the MercadoPago vocabulary', () => {
+        it.each([
+            'rejected_insufficient_data',
+            'rejected_by_bank',
+            'cc_rejected_card_type_not_allowed'
+        ])('should return genericMessage for the invented code %s', (statusDetail) => {
+            // Arrange / Act
+            const result = resolveReasonKey(statusDetail);
+
+            // Assert
+            expect(result).toBe('genericMessage');
         });
     });
 
@@ -272,7 +330,7 @@ describe('resolveReasonI18nKey', () => {
         expect(result).toBe('billing.checkout.failure.reasonCardDeclined');
     });
 
-    it('should return billing.checkout.failure.reasonExpired for disabled card', () => {
+    it('should return billing.checkout.failure.reasonCardDisabled for disabled card', () => {
         // Arrange
         const statusDetail = 'cc_rejected_card_disabled';
 
@@ -280,7 +338,40 @@ describe('resolveReasonI18nKey', () => {
         const result = resolveReasonI18nKey(statusDetail);
 
         // Assert
-        expect(result).toBe('billing.checkout.failure.reasonExpired');
+        expect(result).toBe('billing.checkout.failure.reasonCardDisabled');
+    });
+
+    it('should return billing.checkout.failure.reasonHighRisk for a high-risk block', () => {
+        // Arrange
+        const statusDetail = 'cc_rejected_high_risk';
+
+        // Act
+        const result = resolveReasonI18nKey(statusDetail);
+
+        // Assert
+        expect(result).toBe('billing.checkout.failure.reasonHighRisk');
+    });
+
+    it('should return billing.checkout.failure.reasonSecurityCode for a bad CVV', () => {
+        // Arrange
+        const statusDetail = 'cc_rejected_bad_filled_security_code';
+
+        // Act
+        const result = resolveReasonI18nKey(statusDetail);
+
+        // Assert
+        expect(result).toBe('billing.checkout.failure.reasonSecurityCode');
+    });
+
+    it('should return billing.checkout.failure.reasonInvalidInstallments for a bad installment plan', () => {
+        // Arrange
+        const statusDetail = 'cc_rejected_invalid_installments';
+
+        // Act
+        const result = resolveReasonI18nKey(statusDetail);
+
+        // Assert
+        expect(result).toBe('billing.checkout.failure.reasonInvalidInstallments');
     });
 
     it('should return billing.checkout.failure.reasonInvalidData for duplicated payment', () => {

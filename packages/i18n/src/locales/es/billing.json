@@ -219,6 +219,11 @@
             "reasonCardDeclined": "La tarjeta fue rechazada",
             "reasonExpired": "La tarjeta está vencida",
             "reasonInvalidData": "Datos de la tarjeta inválidos",
+            "reasonHighRisk": "La operación no fue autorizada por prevención de fraude",
+            "reasonSecurityCode": "Revisá el código de seguridad de la tarjeta",
+            "reasonCardDisabled": "La tarjeta está bloqueada o deshabilitada",
+            "reasonInvalidInstallments": "El plan de cuotas elegido no es válido para esta tarjeta",
+            "reasonUnknown": "Motivo no informado por el banco",
             "retryCta": "Intentar de nuevo",
             "supportCta": "Contactar soporte",
             "pageTitle": "Pago rechazado"

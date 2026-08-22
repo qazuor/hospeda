@@ -11,8 +11,49 @@
  * which is why the email still shipped the raw code.
  *
  * The returned value is an i18n KEY, never a rendered string: the caller owns
- * the locale. That matters for the email path, which must resolve in the
- * recipient's language rather than the server's.
+ * the locale. The web page resolves it in the visitor's language; the
+ * payment-failed email resolves it in Spanish (see
+ * `apps/api/src/services/payment-failure-reason.ts`) because the rest of that
+ * email body is hardcoded Spanish — a single translated line inside an
+ * otherwise Spanish message reads worse than a coherent one. Full email i18n is
+ * separate, future work.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE CATEGORIES PROMISE (HOS-764 phase 2)
+ * ---------------------------------------------------------------------------
+ *
+ * A category is a claim about WHY the payment failed, and the payer acts on it.
+ * Three of them used to make a claim MercadoPago's own documentation
+ * contradicts, and they were corrected:
+ *
+ * - `cc_rejected_high_risk` said "insufficient funds". MercadoPago classifies
+ *   it as a fraud-prevention block, so the old copy was both false and
+ *   insulting. It now has its own `reasonHighRisk` category.
+ * - `cc_rejected_bad_filled_security_code` said "the card was declined".
+ *   MercadoPago documents it as a CVV typo — a ten-second fix, but only if we
+ *   say so. It now has its own `reasonSecurityCode` category.
+ * - `cc_rejected_card_disabled` said "the card has expired". A blocked or
+ *   disabled card is a different problem with a different fix. It now has its
+ *   own `reasonCardDisabled` category.
+ *
+ * `cc_rejected_invalid_installments` was not mapped at all and fell through to
+ * the generic message; it now has `reasonInvalidInstallments`.
+ *
+ * ---------------------------------------------------------------------------
+ * CODES DELIBERATELY ABSENT — DO NOT "RESTORE" THEM
+ * ---------------------------------------------------------------------------
+ *
+ * `rejected_insufficient_data`, `rejected_by_bank` and
+ * `cc_rejected_card_type_not_allowed` were removed in HOS-764 phase 2: none of
+ * them exists in MercadoPago's documented `status_detail` vocabulary, so no
+ * payment ever carried them and no branch of this mapper ever matched them.
+ * They looked like coverage while providing none. If a future reader misses
+ * them, the reason they are gone is that they were never real — verify against
+ * the reference URL below before adding any code to these lists.
+ *
+ * There is likewise no `reasonExpired` category any more: MercadoPago has no
+ * dedicated "expired card" code. An expiry problem surfaces as
+ * `cc_rejected_bad_filled_date`, which maps to `reasonInvalidData`.
  *
  * Reference: https://www.mercadopago.com.ar/developers/es/docs/checkout-api/response-handling/collection-results
  */
@@ -23,8 +64,11 @@
  */
 export type CheckoutReasonKey =
     | 'reasonInsufficientFunds'
+    | 'reasonHighRisk'
     | 'reasonCardDeclined'
-    | 'reasonExpired'
+    | 'reasonSecurityCode'
+    | 'reasonCardDisabled'
+    | 'reasonInvalidInstallments'
     | 'reasonInvalidData'
     | 'genericMessage';
 
@@ -33,36 +77,55 @@ export type CheckoutReasonKey =
  */
 export type CheckoutReasonI18nKey =
     | 'billing.checkout.failure.reasonInsufficientFunds'
+    | 'billing.checkout.failure.reasonHighRisk'
     | 'billing.checkout.failure.reasonCardDeclined'
-    | 'billing.checkout.failure.reasonExpired'
+    | 'billing.checkout.failure.reasonSecurityCode'
+    | 'billing.checkout.failure.reasonCardDisabled'
+    | 'billing.checkout.failure.reasonInvalidInstallments'
     | 'billing.checkout.failure.reasonInvalidData'
     | 'billing.checkout.failure.genericMessage';
 
-const INSUFFICIENT_FUNDS_PATTERNS = [
-    'cc_rejected_insufficient_amount',
-    'cc_rejected_high_risk',
-    'rejected_insufficient_data'
-] as const;
+const INSUFFICIENT_FUNDS_PATTERNS = ['cc_rejected_insufficient_amount'] as const;
+
+/** Fraud-prevention blocks. Never phrased as a funds problem — see file docs. */
+const HIGH_RISK_PATTERNS = ['cc_rejected_high_risk'] as const;
 
 const CARD_DECLINED_PATTERNS = [
     'cc_rejected_call_for_authorize',
-    'cc_rejected_bad_filled_security_code',
     'cc_rejected_blacklist',
     'cc_rejected_max_attempts',
-    'rejected_by_bank',
     'cc_rejected_other_reason'
 ] as const;
 
-const EXPIRED_PATTERNS = [
-    'cc_rejected_card_disabled',
-    'cc_rejected_card_type_not_allowed'
-] as const;
+/** CVV typo — actionable by the payer in seconds if we name it. */
+const SECURITY_CODE_PATTERNS = ['cc_rejected_bad_filled_security_code'] as const;
+
+/** Card blocked or disabled by the issuer. NOT the same as expired. */
+const CARD_DISABLED_PATTERNS = ['cc_rejected_card_disabled'] as const;
+
+/** Instalment plan the issuer will not accept for this card. */
+const INVALID_INSTALLMENTS_PATTERNS = ['cc_rejected_invalid_installments'] as const;
 
 const INVALID_DATA_PATTERNS = [
     'cc_rejected_bad_filled_card_number',
     'cc_rejected_bad_filled_date',
     'cc_rejected_bad_filled_other',
     'cc_rejected_duplicated_payment'
+] as const;
+
+/**
+ * Ordered lookup table. Each entry is an exact-match pattern list paired with
+ * the reason key it resolves to; the first matching entry wins. Codes are
+ * disjoint across lists, so the order is documentation rather than precedence.
+ */
+const REASON_GROUPS: ReadonlyArray<readonly [ReadonlyArray<string>, CheckoutReasonKey]> = [
+    [INSUFFICIENT_FUNDS_PATTERNS, 'reasonInsufficientFunds'],
+    [HIGH_RISK_PATTERNS, 'reasonHighRisk'],
+    [CARD_DECLINED_PATTERNS, 'reasonCardDeclined'],
+    [SECURITY_CODE_PATTERNS, 'reasonSecurityCode'],
+    [CARD_DISABLED_PATTERNS, 'reasonCardDisabled'],
+    [INVALID_INSTALLMENTS_PATTERNS, 'reasonInvalidInstallments'],
+    [INVALID_DATA_PATTERNS, 'reasonInvalidData']
 ] as const;
 
 /**
@@ -79,19 +142,16 @@ const INVALID_DATA_PATTERNS = [
  * @example
  * ```ts
  * resolveReasonKey('cc_rejected_insufficient_amount'); // 'reasonInsufficientFunds'
+ * resolveReasonKey('cc_rejected_high_risk');           // 'reasonHighRisk'
  * resolveReasonKey(null);                              // 'genericMessage'
  * resolveReasonKey('unknown_code');                    // 'genericMessage'
  * ```
  */
 export const resolveReasonKey = (statusDetail: string | null | undefined): CheckoutReasonKey => {
     if (!statusDetail) return 'genericMessage';
-    if ((INSUFFICIENT_FUNDS_PATTERNS as ReadonlyArray<string>).includes(statusDetail))
-        return 'reasonInsufficientFunds';
-    if ((CARD_DECLINED_PATTERNS as ReadonlyArray<string>).includes(statusDetail))
-        return 'reasonCardDeclined';
-    if ((EXPIRED_PATTERNS as ReadonlyArray<string>).includes(statusDetail)) return 'reasonExpired';
-    if ((INVALID_DATA_PATTERNS as ReadonlyArray<string>).includes(statusDetail))
-        return 'reasonInvalidData';
+    for (const [patterns, reasonKey] of REASON_GROUPS) {
+        if (patterns.includes(statusDetail)) return reasonKey;
+    }
     return 'genericMessage';
 };
 
