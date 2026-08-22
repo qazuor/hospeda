@@ -59,7 +59,8 @@
             "strong": "Segura",
             "weak": "Débil"
         },
-        "strengthLabel": "Seguridad de la contraseña"
+        "strengthLabel": "Seguridad de la contraseña",
+        "accountNotice": "You are about to change the password for this account:"
     },
     "visibility": {
         "active": "Active",
