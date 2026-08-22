@@ -816,7 +816,7 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             500,
             'ARS',
-            'cc_rejected_other_reason',
+            'La tarjeta fue rechazada',
             mockBilling
         );
         expect(result.success).toBe(true);
@@ -840,7 +840,7 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             750,
             'ARS',
-            'canceled',
+            'Motivo no informado por el banco',
             mockBilling
         );
         expect(result.success).toBe(true);
@@ -867,7 +867,7 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             500,
             'ARS',
-            'cc_rejected_other_reason',
+            'La tarjeta fue rechazada',
             mockBilling
         );
         expect(result.success).toBe(true);
@@ -936,7 +936,7 @@ describe('processPaymentUpdated', () => {
                 'cust-1',
                 500,
                 'ARS',
-                'cc_rejected_insufficient_amount',
+                'Fondos insuficientes en la tarjeta',
                 mockBilling
             );
             expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
@@ -964,7 +964,7 @@ describe('processPaymentUpdated', () => {
                 'cust-1',
                 750,
                 'ARS',
-                'canceled',
+                'Motivo no informado por el banco',
                 mockBilling
             );
             expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
@@ -994,7 +994,7 @@ describe('processPaymentUpdated', () => {
                 'cust-1',
                 900,
                 'ARS',
-                'refunded',
+                'Motivo no informado por el banco',
                 mockBilling
             );
             expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
@@ -1029,6 +1029,75 @@ describe('processPaymentUpdated', () => {
                 expect(result.success).toBe(true);
             });
         }
+    });
+
+    // ── HOS-764: the email says it in Spanish, analytics keeps the code ────
+    //
+    // Two consumers read the same `status_detail` and want opposite things.
+    // The payer gets a sentence they can act on; PostHog gets MercadoPago's
+    // raw code, because grouping rejections by cause is the whole point of
+    // `failure_reason` and prose would shatter that grouping into locale
+    // variants. Asserting them in ONE test is deliberate: it is the pairing
+    // that is easy to break, not either half on its own.
+    describe('HOS-764: translated reason to the payer, raw code to analytics', () => {
+        it('sends the Spanish sentence to the email and the raw code to PostHog', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(500),
+                currency: 'ARS',
+                status: 'failed',
+                statusDetail: 'cc_rejected_insufficient_amount',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                500,
+                'ARS',
+                'Fondos insuficientes en la tarjeta',
+                mockBilling
+            );
+
+            const analyticsCall = mockPostHogCapture.mock.calls.find(
+                ([arg]) => (arg as { event?: string }).event === 'subscription_payment_failed'
+            );
+            expect(
+                (analyticsCall?.[0] as { properties: { failure_reason: string } }).properties
+                    .failure_reason
+            ).toBe('cc_rejected_insufficient_amount');
+            expect(result.success).toBe(true);
+        });
+
+        // An unrecognised code must never reach the payer verbatim — that is the
+        // exact failure HOS-764 exists to end, and a code MercadoPago adds
+        // tomorrow lands here rather than in the mapped branch above.
+        it('sends the unknown-reason phrase, never the raw code, for an unmapped status_detail', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(500),
+                currency: 'ARS',
+                status: 'failed',
+                statusDetail: 'cc_rejected_a_code_invented_next_year',
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                500,
+                'ARS',
+                'Motivo no informado por el banco',
+                mockBilling
+            );
+        });
     });
 
     it('should confirm addon purchase when addon metadata present', async () => {
@@ -3456,7 +3525,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
             CUSTOMER_ID,
             1500,
             'ARS',
-            'refunded',
+            'Motivo no informado por el banco',
             mockBilling
         );
         expect(applyRefundLifecycle).toHaveBeenCalledOnce();

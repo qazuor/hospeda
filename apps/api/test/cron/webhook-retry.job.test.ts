@@ -1390,7 +1390,10 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             'cust-3',
             500,
             'ARS',
-            'cc_rejected_insufficient_amount',
+            // HOS-764: the payer-facing sentence, not MercadoPago's code. The
+            // retry cron reaches the same dispatch as the live webhook, so it
+            // inherits the translation rather than needing its own.
+            'Fondos insuficientes en la tarjeta',
             billing
         );
     });
