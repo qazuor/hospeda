@@ -31,13 +31,21 @@ import { sanitizeErrorForNotification } from './utils';
  * @param currency - Payment currency code
  * @param paymentMethod - Payment method used, if available
  * @param billing - QZPay billing instance
+ * @param idempotencyKey - Optional key identifying THIS payment's receipt.
+ *   Stored by the notification service in
+ *   `billing_notification_log.metadata->>'idempotencyKey'`, which is what the
+ *   caller reads back to decide whether the receipt already went out (HOS-757).
+ *   Passing it does NOT itself prevent a second delivery — it only records the
+ *   key; the caller's pre-send lookup is the gate, exactly as in
+ *   `addon-expiry.job.ts`.
  */
 export async function sendPaymentSuccessNotification(
     customerId: string,
     amount: Major,
     currency: string,
     paymentMethod: string | null,
-    billing: ReturnType<typeof getQZPayBilling>
+    billing: ReturnType<typeof getQZPayBilling>,
+    idempotencyKey?: string
 ): Promise<void> {
     if (!billing) return;
 
@@ -71,7 +79,8 @@ export async function sendPaymentSuccessNotification(
                 planName,
                 amount,
                 currency,
-                paymentMethod: paymentMethod || undefined
+                paymentMethod: paymentMethod || undefined,
+                ...(idempotencyKey === undefined ? {} : { idempotencyKey })
             }).catch((error) => {
                 apiLogger.debug(
                     {
