@@ -42,6 +42,7 @@ import { normalizeAddonCheckoutMetadata } from '../../../services/addon-checkout
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
+import { resolvePaymentFailureReason } from '../../../services/payment-failure-reason';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
@@ -1584,7 +1585,12 @@ export async function processPaymentUpdated({
                 customerId,
                 attemptedAmount,
                 attemptedCurrency,
-                failureReason,
+                // HOS-764: the payer reads a sentence, not `cc_rejected_*`.
+                // `failureReason` above stays the RAW code on purpose — it feeds
+                // PostHog's `failure_reason` below, where prose would shatter
+                // rejection grouping into locale variants. Same value, two
+                // consumers, opposite requirements.
+                resolvePaymentFailureReason({ statusDetail }),
                 billing
             );
 
