@@ -997,6 +997,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: { accommodationId: 'accom_target_1' }
         });
     });
@@ -1017,7 +1023,13 @@ describe('processPaymentUpdated', () => {
 
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
-            addonSlug: 'extra-photos-20'
+            addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS'
         });
     });
 
@@ -1151,17 +1163,149 @@ describe('processPaymentUpdated', () => {
         expect(result).toEqual({ success: true, addonConfirmed: false });
     });
 
+    // Fail closed, exactly like the annual and plan-change branches: both read
+    // `paymentInfo &&` before their own status check. `extractPaymentInfo`
+    // returns null when the payload carries no numeric `transaction_amount` or
+    // no string `status` — i.e. when the charge's outcome is UNKNOWABLE. An
+    // unknowable outcome is not an approval.
+    //
+    // Rescued from the closed PR #2967 (the discarded duplicate implementation of
+    // HOS-742). The merged gate already refuses this input, but no test SAID so
+    // by name, which is how a `paymentInfo === null` fall-through comes back
+    // unnoticed.
+    it('does NOT confirm the add-on when the payment status cannot be read (HOS-742)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // ── The other half of HOS-742: the cleared RE-DELIVERY must still work ──
+    //
+    // HOS-595 started forwarding `paymentId` unconditionally, so an ungated
+    // non-cleared delivery wrote `billing_addon_purchases.payment_id = X` with no
+    // amount — no `billing_payments` row, only an error log. When MP then
+    // re-delivered the SAME payment X as cleared, the idempotency SELECT found
+    // that row and returned early, so the ledger entry was never written and
+    // never could be. The gate is what makes the re-delivery reachable: the first
+    // delivery now writes nothing at all.
+    //
+    // Rescued from the closed PR #2967, and widened here. The original ran only
+    // on `'approved'`, the polling job's spelling — testing the re-delivery on
+    // the one path that barely sees add-on payments. `'succeeded'` is what the
+    // live webhook delivers, which is how an add-on purchase actually arrives
+    // (HOS-756).
+    it.each([
+        'approved',
+        'succeeded'
+    ])('lets the %s re-delivery of the same payment book the charge (HOS-742)', async (status) => {
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        const data = {
+            id: '174625958196',
+            metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+        };
+
+        // 1st delivery: MP says in_process. Nothing is written, so no purchase
+        // row can carry this paymentId.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'in_process',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        await processPaymentUpdated({ data, billing: mockBilling });
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+
+        // 2nd delivery: the same payment id, now cleared. The idempotency SELECT
+        // (annualDbState.subRows, empty) finds nothing precisely because the
+        // first delivery confirmed nothing — so the charge is booked.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        const result = await processPaymentUpdated({ data, billing: mockBilling });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledTimes(1);
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            amountInCents: 500_000,
+            currency: 'ARS',
+            paymentId: '174625958196'
+        });
+        expect(result).toEqual({ success: true, addonConfirmed: true });
+    });
+
+    // Why the above matters: once ANY purchase row carries the paymentId, the
+    // idempotency check short-circuits a cleared delivery of that same payment —
+    // permanently. This test pins that trapdoor so it stays visible.
+    //
+    // Rescued from the closed PR #2967, widened to both vocabularies. HOS-756
+    // moved exactly the ordering this exercises: the branch gate now rejects a
+    // charge that did not clear BEFORE the idempotency SELECT runs, so this case
+    // is reachable only for a charge that did — in either spelling.
+    it.each([
+        'approved',
+        'succeeded'
+    ])('an existing purchase row for this paymentId short-circuits even a %s charge (HOS-742)', async (status) => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        // The idempotency SELECT is the first `getDb().select()` of this path.
+        annualDbState.subRows = [{ id: 'existing-purchase-uuid', customerId: 'cust-1' }];
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
     // The positive controls for the cases above. Without these, a gate that
     // refused EVERYTHING would pass every negative case and look correct while
     // taking add-on sales offline.
     //
-    // `'approved'` / `'accredited'` are the raw spellings the subscription-poll
-    // fallback puts in its synthetic payload. They clear the branch gate AND the
-    // narrower `MP_APPROVED_STATUSES` condition on the amount forward, so the
-    // ledger figures travel too.
+    // `'approved'` is the raw spelling the subscription-poll fallback puts in its
+    // synthetic payload; `'succeeded'` is the normalized one the live webhook
+    // delivers. HOS-756: both clear the single canonical predicate, so the ledger
+    // figures travel on either — which is the whole point of collapsing the two
+    // sets into one. (`'accredited'` was dropped from this list: it is a
+    // `status_detail` descriptor and no producer can put it in `status`.)
     it.each([
         'approved',
-        'accredited'
+        'succeeded'
     ])('still confirms the add-on purchase when the payment is %s (HOS-742)', async (status) => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
@@ -1201,12 +1345,17 @@ describe('processPaymentUpdated', () => {
     // outage: gating on `MP_APPROVED_STATUSES` alone would refuse it, which is
     // every real add-on purchase that arrives by webhook rather than by polling.
     //
-    // The absent `amountInCents` / `currency` is not an oversight: the amount
-    // forward still uses the raw-only `MP_APPROVED_STATUSES`, so a webhook-borne
-    // purchase confirms but books no `billing_payments` row. That gap is the
-    // pre-existing HOS-595 defect, pinned here so the divergence between the two
-    // predicates is visible rather than folklore.
-    it('confirms a live-webhook add-on purchase reported as succeeded (HOS-742)', async () => {
+    // HOS-756: this test used to pin the ABSENCE of `amountInCents` / `currency`
+    // here, because the amount forward asked the raw-only `MP_APPROVED_STATUSES`
+    // while the branch gate asked the wider set — so a webhook-borne purchase
+    // confirmed and booked no `billing_payments` row at all. An add-on payment
+    // reaches this function by webhook in practically every real purchase, which
+    // means HOS-595 ("an add-on charge leaves no ledger row") was fixed in code
+    // and dormant in production for its entire life. Both now ask the same
+    // canonical predicate, so the ledger figures travel on the webhook spelling
+    // exactly as they always did on the polling one. This assertion is the
+    // difference between HOS-595 being shipped and HOS-595 being merely written.
+    it('HOS-756: books the ledger figures for a live-webhook add-on purchase (`succeeded`)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
             currency: 'ARS',
@@ -1229,10 +1378,16 @@ describe('processPaymentUpdated', () => {
             billing: mockBilling
         });
 
+        // Exact-shape assertion on purpose: `expect.objectContaining` cannot tell
+        // a forwarded field from a missing one, which is precisely the defect —
+        // the ledger row is written by `confirmAddonPurchase` if and only if it
+        // receives an amount.
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
-            paymentId: '174625958196'
+            paymentId: '174625958196',
+            amountInCents: 500_000,
+            currency: 'ARS'
         });
         expect(result.addonConfirmed).toBe(true);
     });
@@ -1285,6 +1440,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 promoCodeId: 'promo-uuid-1',
                 promoCode: 'SAVE10',
@@ -1322,6 +1483,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 promoCodeId: 'promo-uuid-1',
                 promoCode: 'SAVE10',
@@ -1359,6 +1526,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 accommodationId: 'accom_target_1',
                 promoCodeId: 'promo-uuid-2',
@@ -1399,6 +1572,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: { discountAmount: 0 }
         });
     });
@@ -1557,7 +1736,7 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(true);
         });
 
-        it('does NOT activate when MP status is not approved/accredited', async () => {
+        it('does NOT activate when the MP status is not a cleared one', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(350_000),
                 currency: 'ARS',
@@ -1659,7 +1838,57 @@ describe('processPaymentUpdated', () => {
             expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
-        it('accepts `accredited` MP status (alongside `approved`)', async () => {
+        // ── HOS-756 ───────────────────────────────────────────────────────────
+        //
+        // THE case this dispatch never had. Every other annual test above hands
+        // it `'approved'`, MercadoPago's RAW spelling — which only
+        // `subscription-poll.job.ts` produces, and which does not even reach
+        // this branch, because the polling job calls `confirmAnnualSubscription`
+        // DIRECTLY. So the whole annual section described an input the primary
+        // path cannot build, and the gate was false for every live webhook ever
+        // received: the activation ran only because the fallback silently
+        // carried it.
+        //
+        // `'succeeded'` is that same cleared charge as the MP adapter normalizes
+        // it, and therefore the only spelling a real webhook delivers.
+        it('HOS-756: activates on the qzpay-normalized webhook status (`succeeded`)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(350_000),
+                currency: 'ARS',
+                status: 'succeeded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+            vi.mocked(extractAnnualSubscriptionMetadata).mockReturnValue(ANNUAL_SUB_ID);
+            annualDbState.subRows = [
+                { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+            ];
+            annualDbState.paymentDedupeRows = [];
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                },
+                billing: mockBilling
+            });
+
+            expect(result.annualSubscriptionConfirmed).toBe(true);
+            expect(mockBilling.payments.record).toHaveBeenCalledOnce();
+            // The status flip is the part the customer feels — assert the write,
+            // not just the return value.
+            expect(annualDbState.updateCalls).toHaveLength(1);
+            const updateValues = annualDbState.updateCalls[0]?.values as Record<string, unknown>;
+            expect(updateValues.status).toBe('active');
+        });
+
+        // HOS-756: the inverse of the test this replaces, which asserted that
+        // `'accredited'` ACTIVATES. It never could: `'accredited'` is a
+        // `status_detail` descriptor, and `extractPaymentInfo` reads
+        // `status_detail` into a separate `statusDetail` field, so no producer
+        // can place it in `status`. Keeping it in the predicate cost nothing but
+        // implied a vocabulary that does not exist; this pins the removal.
+        it('HOS-756: `accredited` is a status_detail, never a status — it activates nothing', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(350_000),
                 currency: 'ARS',
@@ -1680,8 +1909,9 @@ describe('processPaymentUpdated', () => {
                 billing: mockBilling
             });
 
-            expect(result.annualSubscriptionConfirmed).toBe(true);
-            expect(mockBilling.payments.record).toHaveBeenCalledOnce();
+            expect(result.annualSubscriptionConfirmed).toBeUndefined();
+            expect(mockBilling.payments.record).not.toHaveBeenCalled();
+            expect(annualDbState.updateCalls).toHaveLength(0);
         });
 
         it('addon and annual branches are mutually exclusive (annual short-circuits dispatch)', async () => {
@@ -2268,7 +2498,66 @@ describe('processPaymentUpdated', () => {
             expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
-        it('does not commit when MP status is not approved/accredited', async () => {
+        // ── HOS-756 ───────────────────────────────────────────────────────────
+        //
+        // The gravest of the three dormant gates, and the one with no safety
+        // net. `confirmPlanUpgrade` has exactly ONE call site — the gate this
+        // exercises — and `subscription-poll.job.ts` deliberately keeps
+        // `planChangeUpgradeId` out of its synthetic payload. So unlike the
+        // annual dispatch, which the polling fallback quietly covered, a paid
+        // plan upgrade confirmed by webhook was committed NOWHERE: the customer
+        // paid the prorated delta and stayed on the old plan.
+        //
+        // Every other test in this describe block uses `approvedUpgradePayment()`
+        // (`status: 'approved'`), the polling vocabulary — a shape that cannot
+        // reach this branch from any producer. This is the one that matches the
+        // only path that exists in production.
+        it('HOS-756: commits the upgrade on the qzpay-normalized webhook status (`succeeded`)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(1_000),
+                currency: 'ARS',
+                status: 'succeeded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+            vi.mocked(extractPlanChangeUpgradeMetadata).mockReturnValue({
+                planChangeUpgradeId: UPGRADE_SUB_ID,
+                oldPlanId: OLD_PLAN_ID,
+                newPlanId: NEW_PLAN_ID,
+                newPriceId: NEW_PRICE_ID,
+                targetTransactionAmountMajor: 2000
+            });
+            annualDbState.subRows = [];
+            annualDbState.paymentDedupeRows = [];
+            const billing = makeUpgradeBilling();
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                },
+                billing
+            });
+
+            expect(result.planUpgradeConfirmed).toBe(true);
+            // The plan actually changes — the whole point of the dispatch.
+            expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
+            const changePlanArg = billing.subscriptions.changePlan.mock.calls[0]?.[1] as Record<
+                string,
+                unknown
+            >;
+            expect(changePlanArg).toMatchObject({
+                newPlanId: NEW_PLAN_ID,
+                newPriceId: NEW_PRICE_ID
+            });
+            // And the prorated delta is booked.
+            expect(billing.payments.record).toHaveBeenCalledOnce();
+            const recordArg = billing.payments.record.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(recordArg.amount).toBe(100_000);
+            expect(recordArg.providerPaymentId).toBe(MP_PAYMENT_ID);
+        });
+
+        it('does not commit when the MP status is not a cleared one', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1_000),
                 currency: 'ARS',
