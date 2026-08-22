@@ -262,3 +262,154 @@ describe('HOS-723 — the at-limit CTA leads with the add-on that raises that li
         );
     });
 });
+
+/**
+ * HOS-754 — the at-limit toast `message` field must resolve the CLDR
+ * `message_one`/`message_other` copy that 8 of the 19 known limits carry,
+ * instead of always rendering the hardcoded generic fallback string.
+ *
+ * ## Root cause this covers
+ *
+ * `buildFromDetails` used to resolve a flat `billing.limit.<key>.message` key.
+ * None of the 19 known limits has a flat `.message` entry — the 8 "complete"
+ * ones only have `message_one`/`message_other` (CLDR plural), and the other
+ * 11 have no message entry at all. So the flat lookup NEVER matched, for any
+ * limit, and `message` always fell through to the hardcoded generic string
+ * regardless of `limitKey`.
+ *
+ * ## Why the expected strings are hand-written, not derived
+ *
+ * Per the repo's i18n-guard trap: asserting "the key resolves to something
+ * non-generic" or spreading a module constant into the expectation is blind
+ * to the actual copy — a broken interpolation or a wrong plural branch would
+ * still pass. The strings below are copied verbatim from
+ * `packages/i18n/src/locales/{es,en,pt}/billing.json` with the interpolation
+ * already applied by hand, so a regression in either the resolution logic or
+ * the JSON content fails this test.
+ */
+describe('HOS-754 — limit toast message uses the CLDR plural entry, not the generic fallback', () => {
+    describe('a complete limit (max_favorites) resolves its own singular/plural message', () => {
+        it('renders the singular (maxAllowed = 1) message in es', () => {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 1,
+                    maxAllowed: 1,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                },
+                locale: 'es'
+            });
+
+            expect(payload.message).toBe(
+                'Ya guardaste 1 de 1 favorito en tu plan. Actualizalo para guardar más.'
+            );
+        });
+
+        it('renders the plural (maxAllowed = 3) message in es', () => {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 3,
+                    maxAllowed: 3,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                },
+                locale: 'es'
+            });
+
+            expect(payload.message).toBe(
+                'Ya guardaste 3 de 3 favoritos en tu plan. Actualizalo para guardar más.'
+            );
+        });
+
+        it('renders the singular (maxAllowed = 1) message in en', () => {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 1,
+                    maxAllowed: 1,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                },
+                locale: 'en'
+            });
+
+            expect(payload.message).toBe(
+                "You've saved 1 of 1 favorite in your plan. Upgrade to save more."
+            );
+        });
+
+        it('renders the plural (maxAllowed = 3) message in en', () => {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 3,
+                    maxAllowed: 3,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                },
+                locale: 'en'
+            });
+
+            expect(payload.message).toBe(
+                "You've saved 3 of 3 favorites in your plan. Upgrade to save more."
+            );
+        });
+
+        it('renders the singular (maxAllowed = 1) message in pt', () => {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 1,
+                    maxAllowed: 1,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                },
+                locale: 'pt'
+            });
+
+            expect(payload.message).toBe(
+                'Você já salvou 1 de 1 favorito no seu plano. Faça um upgrade para salvar mais.'
+            );
+        });
+
+        it('renders the plural (maxAllowed = 3) message in pt', () => {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 3,
+                    maxAllowed: 3,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                },
+                locale: 'pt'
+            });
+
+            expect(payload.message).toBe(
+                'Você já salvou 3 de 3 favoritos no seu plano. Faça um upgrade para salvar mais.'
+            );
+        });
+    });
+
+    it('a partial limit (max_active_alerts, title-only) still falls back to the generic message', () => {
+        // max_active_alerts is one of the 11 KNOWN_LIMIT_KEYS with ONLY a
+        // `.title` entry — no `.message`/`.message_one`/`.message_other` in
+        // any locale. This must keep degrading cleanly to the generic
+        // message, not throw and not render a raw i18n key.
+        const payload = buildLimitReachedPayloadFromDetails({
+            details: {
+                limitKey: 'max_active_alerts',
+                currentCount: 3,
+                maxAllowed: 3,
+                usagePercent: 100,
+                upgradeAudience: 'tourist'
+            },
+            locale: 'es'
+        });
+
+        expect(payload.message).toBe(
+            'Alcanzaste el límite de tu plan. Actualizalo para continuar.'
+        );
+    });
+});
