@@ -133,7 +133,7 @@ describe('Owner fallback plans integrity (vs billing config)', () => {
         {
             slug: 'owner-pro',
             name: 'Professional',
-            description: 'Professional plan with advanced analytics.',
+            description: 'Professional plan with featured listing and more room to grow.',
             category: 'owner',
             monthlyPriceArs: 3_500_000,
             annualPriceArs: 35_000_000,

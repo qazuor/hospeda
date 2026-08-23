@@ -363,7 +363,7 @@ export const ANFITRIONES_TABLE_ROWS: readonly PlanTableRow[] = [
     },
     {
         labelKey: 'features.anfitriones.table.rows.advancedStats.label',
-        cells: [{ kind: 'no' }, { kind: 'yes' }, { kind: 'yes' }]
+        cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'yes' }]
     },
     {
         labelKey: 'features.anfitriones.table.rows.featuredListing.label',
