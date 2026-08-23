@@ -189,11 +189,12 @@ const OWNER_COMP_SUBSCRIPTION_ID = '5cf22a13-e353-4627-825a-e95586771ab7';
  * `9c1a79e3` belongs to `qazuor+smoke2@gmail.com` ("Test Smoke"), a smoke-test
  * account.
  *
- * Deliberately ABSENT, pending an owner decision: `9da44403-44c3-47b0-8254-af08e57adefd`,
+ * Deliberately ABSENT by owner decision (2026-08-22): `9da44403-44c3-47b0-8254-af08e57adefd`,
  * the comp granted to `rominapaolavillaverde@gmail.com` (Romina Villaverde) 20
- * minutes after she signed up on 2026-08-14. She reads as a real person, not a
- * fixture, so this migration preserves her grant. Add the id here only on an
- * explicit decision that it was a test.
+ * minutes after she signed up on 2026-08-14. She is a real person who the
+ * owner deliberately granted courtesy access to, so this migration preserves
+ * her grant. Add the id here only if a later explicit owner decision reverses
+ * that call and classifies it as test data.
  */
 const PURGEABLE_COMP_SUBSCRIPTION_IDS: readonly string[] = [
     '9c1a79e3-0882-4526-9278-6f96faf65465'

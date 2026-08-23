@@ -58,7 +58,7 @@ WHERE s.status = 'comp';
 
 The owner's grant is `5cf22a13-e353-4627-825a-e95586771ab7` (`qazuor@gmail.com`).
 The other two belong to `qazuor+smoke2@gmail.com` (purged) and
-`rominapaolavillaverde@gmail.com` (**preserved** — see the OPEN DECISION below).
+`rominapaolavillaverde@gmail.com` (**preserved** — owner decision resolved on 2026-08-22; see the RESOLVED note below).
 
 ---
 
@@ -196,9 +196,9 @@ WHERE s.deleted_at IS NULL
 ```
 
 **Expect exactly the preserved rows** — the owner's comp
-(`5cf22a13-…` / `qazuor@gmail.com`) and Romina's comp (`9da44403-…`) unless the
-open decision below says otherwise. Any other row here is a live entitlement
-that should not exist.
+(`5cf22a13-…` / `qazuor@gmail.com`) and Romina's comp (`9da44403-…`), which the
+owner explicitly decided to preserve on 2026-08-22. Any other row here is a
+live entitlement that should not exist.
 
 > **FU-1 (account dashboard shows a plan for a purged account) is FIXED — do not
 > expect it.** `apps/api/src/routes/user/protected/stats.ts` used to read
@@ -387,19 +387,23 @@ those needs the step-0 backup.
 
 ---
 
-## OPEN DECISION — the third `comp`
+## RESOLVED — the third `comp`
 
 `9da44403-44c3-47b0-8254-af08e57adefd` is a complimentary subscription granted to
 `rominapaolavillaverde@gmail.com` (Romina Villaverde) on 2026-08-14, twenty
 minutes after she signed up. She does not read as a test account.
 
-The migration **preserves it**, because the failure modes are asymmetric: a
-stale grant left in place is visible and reversible, while a stripped grant is
-invisible until the person complains. If the owner decides it was a test, add
-the id to `PURGEABLE_COMP_SUBSCRIPTION_IDS` in
-`packages/seed/src/data-migrations/0068-hos-749-prod-billing-cleanup.ts` **before**
-the migration is applied anywhere — once it is ledgered, editing the file
-corrupts that environment's checksum and a new migration is required instead.
+The owner resolved this on **2026-08-22**: **preserve the subscription**. It
+belongs to a real person who deliberately received the courtesy grant, so
+`9da44403-44c3-47b0-8254-af08e57adefd` stays out of
+`PURGEABLE_COMP_SUBSCRIPTION_IDS` and the migration keeps it.
+
+The preserve-by-default `comp` rule remains intentional because the failure
+modes are asymmetric: a stale grant left in place is visible and reversible,
+while a stripped grant is invisible until the person complains. If that
+decision ever changes after `0068` is ledgered anywhere, do **not** edit the
+existing migration file — add a new migration instead, because rewriting a
+ledgered file corrupts that environment's checksum.
 
 ---
 
