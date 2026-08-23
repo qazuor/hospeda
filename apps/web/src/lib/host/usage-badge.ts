@@ -52,6 +52,18 @@ export interface UsageBadgeData {
     readonly threshold: string;
 }
 
+/** SSR load result for the host properties usage badge. */
+export interface HostUsageBadgeLoadResult {
+    /** Parsed usage badge data, or `null` when the usage read failed. */
+    readonly usageData: UsageBadgeData | null;
+    /** Whether `/users/me/entitlements` resolved a real owner plan. */
+    readonly hasOwnerPlan: boolean;
+    /** Whether the entitlements read itself succeeded. */
+    readonly entitlementsReadOk: boolean;
+    /** HTTP status from the entitlements read, for caller-side logging. */
+    readonly entitlementsStatus: number;
+}
+
 // ---------------------------------------------------------------------------
 // Internal guard
 // ---------------------------------------------------------------------------
@@ -117,4 +129,77 @@ export function parseUsageResponse({ json }: { readonly json: unknown }): UsageB
     const threshold = typeof thresholdRaw === 'string' ? thresholdRaw : 'ok';
 
     return { currentUsage, maxAllowed, threshold };
+}
+
+/**
+ * Reads the host-plan signal and, only when it exists, the accommodation-cap
+ * badge for the properties page.
+ *
+ * The `usage` endpoint answers `404` when the caller has no active host
+ * subscription in the requested domain. That is correct API behaviour, but the
+ * properties page must not provoke it for an owner who is still in the
+ * "drafts, no real host plan yet" state: there is no applicable cap to read.
+ * Entitlements tell us that first; only a real plan justifies the follow-up
+ * usage fetch.
+ *
+ * @param params.apiUrl - Base API URL.
+ * @param params.headers - Forwarded request headers.
+ * @param params.fetchImpl - Fetch implementation override for tests.
+ * @returns Owner-plan state plus parsed usage badge data.
+ */
+export async function fetchHostUsageBadge({
+    apiUrl,
+    headers,
+    fetchImpl = fetch
+}: {
+    readonly apiUrl: string;
+    readonly headers: Readonly<Record<string, string>>;
+    readonly fetchImpl?: typeof fetch;
+}): Promise<HostUsageBadgeLoadResult> {
+    const entitlementsResponse = await fetchImpl(
+        `${apiUrl}/api/v1/protected/users/me/entitlements`,
+        {
+            headers
+        }
+    );
+
+    if (!entitlementsResponse.ok) {
+        return {
+            usageData: null,
+            hasOwnerPlan: true,
+            entitlementsReadOk: false,
+            entitlementsStatus: entitlementsResponse.status
+        };
+    }
+
+    const entitlementsJson = (await entitlementsResponse.json()) as {
+        data?: { plan?: unknown };
+    };
+
+    const hasOwnerPlan = entitlementsJson.data?.plan != null;
+
+    if (!hasOwnerPlan) {
+        return {
+            usageData: null,
+            hasOwnerPlan: false,
+            entitlementsReadOk: true,
+            entitlementsStatus: entitlementsResponse.status
+        };
+    }
+
+    const usageResponse = await fetchImpl(
+        `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
+        {
+            headers
+        }
+    );
+
+    return {
+        usageData: usageResponse.ok
+            ? parseUsageResponse({ json: await usageResponse.json() })
+            : null,
+        hasOwnerPlan: true,
+        entitlementsReadOk: true,
+        entitlementsStatus: entitlementsResponse.status
+    };
 }
