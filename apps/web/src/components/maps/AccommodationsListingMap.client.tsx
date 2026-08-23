@@ -19,6 +19,7 @@ import type { AccommodationCardData } from '@/data/types';
 import { useViewportSearch } from '@/hooks/useViewportSearch';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildImageEndpointUrl, isCloudinaryDeliveryUrl } from '@/lib/media';
 
 import layoutStyles from './AccommodationsListingMap.module.css';
 import { ListingMap } from './ListingMap.client';
@@ -213,7 +214,13 @@ export function AccommodationsListingMap({
                         id: card.id,
                         slug: card.slug,
                         name: card.name,
-                        thumbnailUrl: card.featuredImage.url,
+                        thumbnailUrl: isCloudinaryDeliveryUrl(card.featuredImage.url)
+                            ? buildImageEndpointUrl({
+                                  src: card.featuredImage.url,
+                                  width: 300,
+                                  format: 'webp'
+                              })
+                            : card.featuredImage.url,
                         priceLabel:
                             priceLabelById?.[card.id] ??
                             (card.price?.amount != null && card.price?.currency
