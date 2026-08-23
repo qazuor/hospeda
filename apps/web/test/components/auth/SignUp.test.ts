@@ -30,12 +30,27 @@ describe('SignUp.client.tsx', () => {
     });
 
     describe('i18n', () => {
-        it('should use t() for loading aria-label', () => {
-            expect(src).toContain("t('auth-ui.loading'");
+        it('should use t() for the form aria-label', () => {
+            expect(src).toContain("aria-label={t('auth.signUp.submit', 'Crear cuenta')}");
         });
 
         it('should not have hardcoded Spanish in aria-labels', () => {
             expect(src).not.toContain('aria-label="Cargando');
+        });
+
+        it('should not keep the legacy loading skeleton i18n key', () => {
+            expect(src).not.toContain("t('auth-ui.loading'");
+        });
+    });
+
+    describe('first paint accessibility', () => {
+        it('should render a named form for first-paint sign-up', () => {
+            expect(src).toContain('<form');
+            expect(src).toContain("aria-label={t('auth.signUp.submit', 'Crear cuenta')}");
+        });
+
+        it('should not gate the form behind isClientReady', () => {
+            expect(src).not.toContain('isClientReady');
         });
     });
 
