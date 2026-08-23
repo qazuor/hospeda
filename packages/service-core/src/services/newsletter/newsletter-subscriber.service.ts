@@ -1362,6 +1362,25 @@ export class NewsletterSubscriberService extends BaseService {
                 const now = new Date();
                 const ids = anonRows.map((r) => r.id);
 
+                // `sql.param(ids)` below is load-bearing. Interpolating a bare
+                // JS array into a Drizzle `sql` template expands it to a
+                // COMMA-SEPARATED PLACEHOLDER LIST, which Postgres never reads
+                // as an array — `${ids}::uuid[]` fails for every non-empty
+                // input, and the two failures look unrelated:
+                //
+                //   2+ ids -> ($1, $2)::uuid[] is a ROW CONSTRUCTOR:
+                //             cannot cast type record to uuid[]
+                //   1 id   -> ($1)::uuid[] is a parenthesised SCALAR cast:
+                //             malformed array literal: "<uuid>"
+                //
+                // The early return above means this only ever runs when there
+                // IS work to do, so the broken form failed 100% of the time it
+                // mattered and 0% on an empty fixture. The caller in
+                // `apps/api/src/lib/auth.ts` logs and swallows the error so
+                // registration still succeeds, which is why it stayed silent:
+                // the subscription simply never got linked and no welcome mail
+                // went out. Same defect as HOS-749's billing guard.
+
                 // Build the UPDATE — when the account email is verified we
                 // also flip `pending_verification` → `active` and stamp
                 // `verified_at`. Otherwise we just link `user_id` and leave
@@ -1382,14 +1401,14 @@ export class NewsletterSubscriberService extends BaseService {
                                 ELSE verified_at
                             END,
                             updated_at = ${now.toISOString()}
-                        WHERE id = ANY(${ids}::uuid[])
+                        WHERE id = ANY(${sql.param(ids)}::uuid[])
                     `);
                 } else {
                     await db.execute(sql`
                         UPDATE newsletter_subscribers
                         SET user_id = ${validated.userId},
                             updated_at = ${now.toISOString()}
-                        WHERE id = ANY(${ids}::uuid[])
+                        WHERE id = ANY(${sql.param(ids)}::uuid[])
                     `);
                 }
 
