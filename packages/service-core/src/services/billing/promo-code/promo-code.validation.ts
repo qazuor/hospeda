@@ -24,7 +24,8 @@ import {
     count,
     eq,
     getDb,
-    inArray
+    inArray,
+    isNull
 } from '@repo/db';
 import type { EffectPreview } from '@repo/schemas';
 import { PromoEffectKindEnum } from '@repo/schemas';
@@ -364,7 +365,9 @@ async function checkUserHasExistingPlanSubscription({
             db
                 .select({ id: billingCustomers.id })
                 .from(billingCustomers)
-                .where(eq(billingCustomers.externalId, userId))
+                .where(
+                    and(eq(billingCustomers.externalId, userId), isNull(billingCustomers.deletedAt))
+                )
         );
 
         const conditions = planId
@@ -446,7 +449,12 @@ async function checkUserRedemptionLimitExceeded({
                         db
                             .select({ id: billingCustomers.id })
                             .from(billingCustomers)
-                            .where(eq(billingCustomers.externalId, userId))
+                            .where(
+                                and(
+                                    eq(billingCustomers.externalId, userId),
+                                    isNull(billingCustomers.deletedAt)
+                                )
+                            )
                     )
                 )
             );
