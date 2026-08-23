@@ -190,6 +190,12 @@ describe('author page — empty profile stays empty (§8)', () => {
         expect(src).not.toContain("author.avatar?.trim() ?? ''");
     });
 
+    it('routes only real Cloudinary avatars through Astro image optimization', () => {
+        expect(src).toContain('isCloudinaryDeliveryUrl(avatar)');
+        expect(template).toContain('shouldProxyAvatar ? (');
+        expect(template).toContain('<Image');
+    });
+
     it('feeds the indexability gate the RAW avatar, so it agrees with the sitemap', () => {
         // §6.6 is ONE-WAY: the sitemap may never advertise a URL the page then
         // serves `noindex`. The sitemap's predicate is non-EMPTY

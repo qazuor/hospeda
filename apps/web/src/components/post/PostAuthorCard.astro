@@ -5,9 +5,10 @@
  * and links to their author profile and post listing.
  */
 
+import { Image } from 'astro:assets';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { toRenderableImageUrl } from '@/lib/media';
+import { isCloudinaryDeliveryUrl, toRenderableImageUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
 
 /**
@@ -48,6 +49,7 @@ const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', '
 // actually emits the `<img>`: an unvetted future caller must fall back to the
 // initial placeholder, not to a broken-image icon.
 const avatarSrc = toRenderableImageUrl(author.profilePicture);
+const shouldProxyAvatar = avatarSrc ? isCloudinaryDeliveryUrl(avatarSrc) : false;
 
 // The author profile page lists exactly this author's posts, so it is also the
 // target of the "more from this author" CTA. The CTA used to point at
@@ -68,15 +70,28 @@ const profileUrl = author.slug ? buildUrl({ locale, path: `autores/${author.slug
 	<div class="post-author-card__body">
 		<div class="post-author-card__identity">
 			{avatarSrc ? (
-				<img
-					src={avatarSrc}
-					alt={authorImageAlt}
-					class="post-author-card__avatar"
-					width={56}
-					height={56}
-					loading="lazy"
-					decoding="async"
-				/>
+				shouldProxyAvatar ? (
+					<Image
+						src={avatarSrc}
+						alt={authorImageAlt}
+						class="post-author-card__avatar"
+						width={56}
+						height={56}
+						format="webp"
+						loading="lazy"
+						decoding="async"
+					/>
+				) : (
+					<img
+						src={avatarSrc}
+						alt={authorImageAlt}
+						class="post-author-card__avatar"
+						width={56}
+						height={56}
+						loading="lazy"
+						decoding="async"
+					/>
+				)
 			) : (
 				<div class="post-author-card__avatar-placeholder" aria-hidden="true">
 					{name.charAt(0).toUpperCase()}

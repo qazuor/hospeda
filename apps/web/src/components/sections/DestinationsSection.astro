@@ -13,7 +13,6 @@
  * layout on desktop, carousel-only on mobile.
  */
 
-import { getImage } from 'astro:assets';
 import { DestinationsIsland } from '@/components/sections/DestinationsIsland.client';
 import type { DestinationsIslandData } from '@/components/sections/DestinationsIsland.client';
 import { createTranslations } from '@/lib/i18n';
@@ -21,7 +20,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS, toDestinationCardProps } from '@/lib/api';
 import type { DestinationCardData } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
-import { isAllowedRemoteHost } from '@/lib/media';
+import { buildImageEndpointUrl, isCloudinaryDeliveryUrl } from '@/lib/media';
 
 interface Props {
     /** Active locale used to resolve translations and build internal URLs. */
@@ -53,28 +52,23 @@ try {
     webLogger.error('API fetch failed', { endpoint: 'destinations', error: err instanceof Error ? err.message : err });
 }
 
-// Pre-optimize destination images before passing to the React island.
-// Skip SVG placeholders and fall back to the original URL on any failure.
-// SSRF guard (SPEC-099 S-1): only call getImage() when the hostname is in
-// the allowlist. Untrusted URLs pass through unchanged so the build/SSR
-// runtime never fetches arbitrary hosts on behalf of user content.
-const optimizedDestinations = await Promise.all(
-    destinations.map(async (dest) => {
-        const img = dest.featuredImage.url;
-        if (!img || img.includes('placeholder') || img.endsWith('.svg')) {
-            return dest;
+// Public destination images inside the React island cannot use Astro `<Image>`
+// directly, so point only the exact Cloudinary delivery URLs at the same
+// `/_image` endpoint the cache rule now accelerates. Everything else keeps its
+// original URL unchanged.
+const optimizedDestinations = destinations.map((dest) => {
+    const img = dest.featuredImage.url;
+    if (!isCloudinaryDeliveryUrl(img)) {
+        return dest;
+    }
+    return {
+        ...dest,
+        featuredImage: {
+            url: buildImageEndpointUrl({ src: img, width: 300, format: 'webp' }),
+            caption: dest.featuredImage.caption
         }
-        if (!isAllowedRemoteHost(img)) {
-            return dest;
-        }
-        try {
-            const optimized = await getImage({ src: img, width: 300, format: 'webp' });
-            return { ...dest, featuredImage: { url: optimized.src, caption: dest.featuredImage.caption } };
-        } catch {
-            return dest;
-        }
-    })
-);
+    };
+});
 
 // Narrow to the fields the island renders before handing them over (HOS-369
 // W3-3). Astro serializes an island's props into the HTML for hydration, so

@@ -10,10 +10,59 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    buildImageEndpointUrl,
     extractFeaturedImage,
     extractGalleryItems,
-    type FeaturedImageResult
+    type FeaturedImageResult,
+    isCloudinaryDeliveryUrl
 } from '../../src/lib/media';
+
+describe('isCloudinaryDeliveryUrl', () => {
+    it('returns true for a real Cloudinary delivery URL', () => {
+        expect(
+            isCloudinaryDeliveryUrl('https://res.cloudinary.com/demo/image/upload/v1/sample.jpg')
+        ).toBe(true);
+    });
+
+    it('returns false for lookalike or non-Cloudinary hosts', () => {
+        expect(
+            isCloudinaryDeliveryUrl(
+                'https://res.cloudinary.com.evil.example/image/upload/v1/sample.jpg'
+            )
+        ).toBe(false);
+        expect(isCloudinaryDeliveryUrl('https://images.unsplash.com/photo-abc')).toBe(false);
+    });
+
+    it('returns false for malformed URLs', () => {
+        expect(isCloudinaryDeliveryUrl('/assets/images/placeholder.svg')).toBe(false);
+        expect(isCloudinaryDeliveryUrl('not-a-url')).toBe(false);
+    });
+});
+
+describe('buildImageEndpointUrl', () => {
+    it('builds an Astro image endpoint URL with width and format params', () => {
+        expect(
+            buildImageEndpointUrl({
+                src: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
+                width: 300,
+                format: 'webp'
+            })
+        ).toBe(
+            '/_image/?href=https%3A%2F%2Fres.cloudinary.com%2Fdemo%2Fimage%2Fupload%2Fv1%2Fsample.jpg&w=300&f=webp'
+        );
+    });
+
+    it('adds height when provided', () => {
+        expect(
+            buildImageEndpointUrl({
+                src: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
+                width: 300,
+                height: 200,
+                format: 'webp'
+            })
+        ).toContain('&h=200');
+    });
+});
 
 describe('extractFeaturedImage with attribution (SPEC-274)', () => {
     describe('Attribution extraction', () => {

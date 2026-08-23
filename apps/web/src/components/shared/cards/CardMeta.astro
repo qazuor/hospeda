@@ -7,6 +7,8 @@
  * attribution line.
  */
 
+import { Image } from 'astro:assets';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { CalendarIcon, ClockIcon, UserIcon } from '@repo/icons';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -53,6 +55,8 @@ const hasAuthorAvatar = Boolean(
         && !authorAvatarUrl.includes('placeholder')
         && !authorAvatarUrl.endsWith('.svg')
 );
+const shouldProxyAuthorAvatar = Boolean(authorAvatarUrl && isCloudinaryDeliveryUrl(authorAvatarUrl));
+const resolvedAuthorAvatarUrl = hasAuthorAvatar ? authorAvatarUrl : undefined;
 
 const formattedDate = hasDate
     ? formatDate({
@@ -71,15 +75,28 @@ const formattedDate = hasDate
                     <a href={author!.href} class="card-meta__item card-meta__author--link">
                         <span class="card-meta__avatar-badge" aria-hidden="true">
                             {hasAuthorAvatar ? (
-                                <img
-                                    src={authorAvatarUrl}
-                                    alt=""
-                                    class="card-meta__avatar-img"
-                                    loading="lazy"
-                                    width={24}
-                                    height={24}
-                                    data-hide-on-error
-                                />
+                                shouldProxyAuthorAvatar && resolvedAuthorAvatarUrl ? (
+                                    <Image
+                                        src={resolvedAuthorAvatarUrl}
+                                        alt=""
+                                        class="card-meta__avatar-img"
+                                        loading="lazy"
+                                        width={24}
+                                        height={24}
+                                        format="webp"
+                                        data-hide-on-error
+                                    />
+                                ) : (
+                                    <img
+                                        src={resolvedAuthorAvatarUrl}
+                                        alt=""
+                                        class="card-meta__avatar-img"
+                                        loading="lazy"
+                                        width={24}
+                                        height={24}
+                                        data-hide-on-error
+                                    />
+                                )
                             ) : (
                                 <UserIcon size={14} weight="fill" />
                             )}
@@ -91,15 +108,28 @@ const formattedDate = hasDate
                     <span class="card-meta__item card-meta__author">
                         <span class="card-meta__avatar-badge" aria-hidden="true">
                             {hasAuthorAvatar ? (
-                                <img
-                                    src={authorAvatarUrl}
-                                    alt=""
-                                    class="card-meta__avatar-img"
-                                    loading="lazy"
-                                    width={24}
-                                    height={24}
-                                    data-hide-on-error
-                                />
+                                shouldProxyAuthorAvatar && resolvedAuthorAvatarUrl ? (
+                                    <Image
+                                        src={resolvedAuthorAvatarUrl}
+                                        alt=""
+                                        class="card-meta__avatar-img"
+                                        loading="lazy"
+                                        width={24}
+                                        height={24}
+                                        format="webp"
+                                        data-hide-on-error
+                                    />
+                                ) : (
+                                    <img
+                                        src={resolvedAuthorAvatarUrl}
+                                        alt=""
+                                        class="card-meta__avatar-img"
+                                        loading="lazy"
+                                        width={24}
+                                        height={24}
+                                        data-hide-on-error
+                                    />
+                                )
                             ) : (
                                 <UserIcon size={14} weight="fill" />
                             )}

@@ -6,6 +6,8 @@
  * summary, and a link to the entity detail page.
  */
 
+import { Image } from 'astro:assets';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
@@ -41,20 +43,34 @@ const labelByType: Record<EntityType, string> = {
 
 const href = buildUrl({ locale, path: pathByType[entity.type] });
 const typeLabel = labelByType[entity.type];
+const shouldProxyImage = entity.image ? isCloudinaryDeliveryUrl(entity.image) : false;
 ---
 
 <a href={href} class="post-related-entity" aria-label={`${typeLabel}: ${entity.name}`}>
 	{entity.image && (
 		<div class="post-related-entity__image-wrapper">
-			<img
-				src={entity.image}
-				alt={entity.name}
-				class="post-related-entity__img"
-				width={80}
-				height={56}
-				loading="lazy"
-				decoding="async"
-			/>
+			{shouldProxyImage ? (
+				<Image
+					src={entity.image}
+					alt={entity.name}
+					class="post-related-entity__img"
+					width={80}
+					height={56}
+					format="webp"
+					loading="lazy"
+					decoding="async"
+				/>
+			) : (
+				<img
+					src={entity.image}
+					alt={entity.name}
+					class="post-related-entity__img"
+					width={80}
+					height={56}
+					loading="lazy"
+					decoding="async"
+				/>
+			)}
 		</div>
 	)}
 

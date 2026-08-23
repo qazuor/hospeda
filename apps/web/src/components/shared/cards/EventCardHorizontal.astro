@@ -28,7 +28,9 @@ import {
     BooksAndMagazinesIcon,
     EventIcon,
 } from "@repo/icons";
+import { Image } from 'astro:assets';
 import { FavoriteButton } from "@/components/shared/favorite/FavoriteButton.client";
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from "@/lib/urls";
 import { getEventCategoryColor } from "@/lib/colors";
 import { formatEventDate } from "./utils/formatEventDate";
@@ -78,6 +80,7 @@ const categoryIconName = getEventCategoryIconName(normalizedCategory);
 
 /** Whether the URL is a known placeholder or invalid for direct rendering. */
 const showImage = Boolean(data.featuredImage.url) && !data.featuredImage.url.includes("placeholder");
+const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 
 /** Location label: "Venue Name, City" or just "City" (SPEC-095: prefer flat cityName). */
 const cityLabel = data.cityName ?? data.location?.city ?? '';
@@ -140,15 +143,28 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
             <!-- Image renders on top; if it fails to load the placeholder shows through -->
             {
                 showImage && (
-                    <img
-                        src={data.featuredImage.url}
-                        alt={data.name}
-                        loading="lazy"
-                        class="event-card-h__photo"
-                        width="150"
-                        height="160"
-                        data-hide-on-error
-                    />
+                    shouldProxyFeaturedImage ? (
+                        <Image
+                            src={data.featuredImage.url}
+                            alt={data.name}
+                            width={150}
+                            height={160}
+                            format="webp"
+                            loading="lazy"
+                            class="event-card-h__photo"
+                            data-hide-on-error
+                        />
+                    ) : (
+                        <img
+                            src={data.featuredImage.url}
+                            alt={data.name}
+                            loading="lazy"
+                            class="event-card-h__photo"
+                            width="150"
+                            height="160"
+                            data-hide-on-error
+                        />
+                    )
                 )
             }
         </div>
