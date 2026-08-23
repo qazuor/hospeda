@@ -106,6 +106,38 @@ export function isCloudinaryDeliveryUrl(url: string): boolean {
     }
 }
 
+interface BuildImageEndpointUrlOptions {
+    readonly src: string;
+    readonly width?: number;
+    readonly height?: number;
+    readonly format?: 'webp' | 'avif' | 'png' | 'jpg' | 'jpeg';
+}
+
+/**
+ * Builds an Astro `/_image` endpoint URL for an already-authorized image source.
+ *
+ * This is used for client islands that cannot render Astro `<Image>` directly
+ * but still benefit from routing repeatable public images through Hospeda's own
+ * Cloudflare-cached image endpoint. The helper is intentionally dumb string
+ * assembly: callers remain responsible for deciding WHICH sources are worth
+ * proxying (for this mitigation pass, exact Cloudinary delivery URLs only).
+ *
+ * @param options - Endpoint source plus optional transform query params.
+ * @returns Root-relative Astro image endpoint URL.
+ */
+export function buildImageEndpointUrl({
+    src,
+    width,
+    height,
+    format
+}: BuildImageEndpointUrlOptions): string {
+    const params = new URLSearchParams({ href: src });
+    if (width !== undefined) params.set('w', String(width));
+    if (height !== undefined) params.set('h', String(height));
+    if (format !== undefined) params.set('f', format);
+    return `/_image/?${params.toString()}`;
+}
+
 /**
  * Returns `true` when `value` can be used directly as an `<img src>`.
  *
