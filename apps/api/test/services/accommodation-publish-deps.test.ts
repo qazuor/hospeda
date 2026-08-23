@@ -13,10 +13,12 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@repo/db', () => ({
+    and: vi.fn((...conditions: unknown[]) => ({ _type: 'and', conditions })),
     billingCustomers: {},
     billingSubscriptions: {},
     desc: vi.fn(),
     eq: vi.fn(),
+    isNull: vi.fn((column: unknown) => ({ _type: 'isNull', column })),
     getDb: mocks.getDb
 }));
 

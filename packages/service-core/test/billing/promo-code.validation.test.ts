@@ -18,6 +18,7 @@ vi.mock('@repo/db', () => ({
     and: vi.fn((...conditions: unknown[]) => ({ _type: 'and', conditions })),
     eq: vi.fn((_col: unknown, _val: unknown) => ({ _type: 'eq', _col, _val })),
     inArray: vi.fn((_col: unknown, _values: unknown) => ({ _type: 'inArray', _col, _values })),
+    isNull: vi.fn((_col: unknown) => ({ _type: 'isNull', _col })),
     count: vi.fn(() => ({ _type: 'count' })),
     sql: Object.assign(
         vi.fn((_strings: unknown, ..._values: unknown[]) => ({ _type: 'sql' })),
