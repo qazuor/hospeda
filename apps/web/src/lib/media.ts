@@ -87,6 +87,26 @@ export function isAllowedRemoteHost(url: string): boolean {
 }
 
 /**
+ * Returns `true` only for first-party Cloudinary delivery URLs.
+ *
+ * This is stricter than a substring check: it rejects lookalike hosts such as
+ * `res.cloudinary.com.evil.tld` and malformed values, and it says nothing about
+ * whether Astro is allowed to fetch the URL in general. The caller uses it only
+ * to decide whether a public image is worth routing through Astro's `/_image`
+ * endpoint so it can benefit from the Hospeda-zone Cloudflare cache.
+ *
+ * @param url - Candidate absolute URL.
+ * @returns `true` when the hostname is exactly `res.cloudinary.com`.
+ */
+export function isCloudinaryDeliveryUrl(url: string): boolean {
+    try {
+        return new URL(url).hostname === 'res.cloudinary.com';
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Returns `true` when `value` can be used directly as an `<img src>`.
  *
  * Accepts an absolute `http(s)` URL or a root-relative path (`/…`, including

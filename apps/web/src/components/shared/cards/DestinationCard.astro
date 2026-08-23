@@ -14,6 +14,7 @@
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { StarIcon } from '@repo/icons';
 import DestinationRating from '@/components/shared/cards/DestinationRating.astro';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
 import { Image } from 'astro:assets';
@@ -50,6 +51,7 @@ const accommodationsLabel = tPlural('destinations.card.accommodation', destinati
 const eventsLabel = tPlural('destinations.card.event', destination.eventsCount);
 
 const isExternalImage = destination.featuredImage.url.startsWith('http');
+const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(destination.featuredImage.url);
 
 // Top attractions for the card chip row (already sorted desc by displayWeight in transforms).
 const MAX_ATTRACTIONS_ON_CARD = 3;
@@ -61,7 +63,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 	<a href={detailUrl} class="dest-card__link" aria-label={destination.name}>
 		<!-- IMAGE AREA -->
 		<div class="dest-card__image-area">
-			{isExternalImage ? (
+			{isExternalImage && !shouldProxyFeaturedImage ? (
 				<img
 					src={destination.featuredImage.url || '/assets/images/placeholder-destination.svg'}
 					alt={destination.featuredImage.caption ?? destination.name}

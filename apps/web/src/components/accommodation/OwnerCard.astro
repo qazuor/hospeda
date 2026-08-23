@@ -3,10 +3,12 @@
  * @file OwnerCard.astro
  * @description Owner card with avatar, name, member since, and contact island.
  */
+import { Image } from 'astro:assets';
 import type { AccommodationOwnerData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getInitialsFromName } from '@/lib/avatar-utils';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { getMediaUrl } from '@repo/media';
 
 interface Props {
@@ -26,22 +28,37 @@ const memberDate = new Date(owner.createdAt).toLocaleDateString(
 const ownerAvatarUrl = owner.image
   ? getMediaUrl(owner.image, { preset: 'avatar' })
   : null;
+const shouldProxyOwnerAvatar = ownerAvatarUrl ? isCloudinaryDeliveryUrl(ownerAvatarUrl) : false;
 ---
 
 <div class="owner-card">
   <div class="owner-card__header">
     <div class="owner-card__avatar-wrapper">
       {ownerAvatarUrl && (
-        <img
-          src={ownerAvatarUrl}
-          alt={owner.name}
-          class="owner-card__avatar"
-          width="56"
-          height="56"
-          loading="lazy"
-          decoding="async"
-          data-hide-on-error
-        />
+        shouldProxyOwnerAvatar ? (
+          <Image
+            src={ownerAvatarUrl}
+            alt={owner.name}
+            class="owner-card__avatar"
+            width={56}
+            height={56}
+            format="webp"
+            loading="lazy"
+            decoding="async"
+            data-hide-on-error
+          />
+        ) : (
+          <img
+            src={ownerAvatarUrl}
+            alt={owner.name}
+            class="owner-card__avatar"
+            width="56"
+            height="56"
+            loading="lazy"
+            decoding="async"
+            data-hide-on-error
+          />
+        )
       )}
       <div class="owner-card__avatar-fallback" aria-hidden={ownerAvatarUrl ? 'true' : undefined}>
         {initials}

@@ -12,8 +12,31 @@ import { describe, expect, it } from 'vitest';
 import {
     extractFeaturedImage,
     extractGalleryItems,
-    type FeaturedImageResult
+    type FeaturedImageResult,
+    isCloudinaryDeliveryUrl
 } from '../../src/lib/media';
+
+describe('isCloudinaryDeliveryUrl', () => {
+    it('returns true for a real Cloudinary delivery URL', () => {
+        expect(
+            isCloudinaryDeliveryUrl('https://res.cloudinary.com/demo/image/upload/v1/sample.jpg')
+        ).toBe(true);
+    });
+
+    it('returns false for lookalike or non-Cloudinary hosts', () => {
+        expect(
+            isCloudinaryDeliveryUrl(
+                'https://res.cloudinary.com.evil.example/image/upload/v1/sample.jpg'
+            )
+        ).toBe(false);
+        expect(isCloudinaryDeliveryUrl('https://images.unsplash.com/photo-abc')).toBe(false);
+    });
+
+    it('returns false for malformed URLs', () => {
+        expect(isCloudinaryDeliveryUrl('/assets/images/placeholder.svg')).toBe(false);
+        expect(isCloudinaryDeliveryUrl('not-a-url')).toBe(false);
+    });
+});
 
 describe('extractFeaturedImage with attribution (SPEC-274)', () => {
     describe('Attribution extraction', () => {
