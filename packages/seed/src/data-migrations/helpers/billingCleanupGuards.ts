@@ -159,16 +159,23 @@ export async function assertNoUnclassifiedReferrers(args: {
             //
             // `sql.param()` is load-bearing, not decoration. Interpolating a bare
             // JS array into a Drizzle `sql` template expands it to a
-            // COMMA-SEPARATED PLACEHOLDER LIST, so `${[a, b, c]}::text[]` renders
-            // as `($1, $2, $3)::text[]` — a row constructor, which Postgres
-            // rejects outright with `cannot cast type record to text[]`.
+            // COMMA-SEPARATED PLACEHOLDER LIST, which Postgres never reads as an
+            // array. Verified against a real server (HOS-749):
             //
-            // The trap is that it only misfires with TWO OR MORE ids: with
-            // exactly one, `($1)::text[]` is just a parenthesised scalar cast and
-            // the query runs fine. Every fixture had at most one target, so this
-            // guard passed everywhere and then aborted the whole production run
-            // on 0068's seven real subscriptions (HOS-749). `sql.param()` binds
-            // the array as ONE parameter, which is what `= ANY(...)` needs.
+            //   - 2+ ids -> `($1, $2)::text[]` is a ROW CONSTRUCTOR:
+            //     `cannot cast type record to text[]`
+            //   - 1 id   -> `($1)::text[]` is a parenthesised SCALAR cast:
+            //     `malformed array literal: "<uuid>"`
+            //
+            // So the bare-array form failed for EVERY non-empty input. Since the
+            // loop `continue`s on an empty target list, this guard could never
+            // have executed successfully against a real database — its only
+            // coverage was a mocked unit test, and a mocked `db.execute()` cannot
+            // produce a Postgres parse error. It was decoration that would abort
+            // any real run, which is what it did to production on 0068.
+            //
+            // `sql.param()` binds the array as ONE parameter, which is what
+            // `= ANY(...)` actually needs.
             const result = await db.execute<{ count: string }>(sql`
                 SELECT COUNT(*) AS count
                 FROM ${sql.identifier(fk.referencingTable)}

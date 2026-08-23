@@ -8,18 +8,20 @@
  * = ANY(${[...targetIds]}::text[])
  * ```
  *
- * Drizzle expands a bare array into a COMMA-SEPARATED PLACEHOLDER LIST, so that
- * renders as `($1, $2, $3)::text[]` — a row constructor, which Postgres rejects
- * outright:
+ * Drizzle expands a bare array into a COMMA-SEPARATED PLACEHOLDER LIST, which
+ * Postgres never reads as an array. Verified against a real server:
  *
- *     ERROR:  cannot cast type record to text[]
+ *   - 2+ ids -> `($1, $2)::text[]` is a ROW CONSTRUCTOR:
+ *     `ERROR: cannot cast type record to text[]`
+ *   - 1 id   -> `($1)::text[]` is a parenthesised SCALAR cast:
+ *     `ERROR: malformed array literal: "<uuid>"`
  *
- * The trap is that it only misfires with **two or more** ids: with exactly one,
- * `($1)::text[]` is a parenthesised scalar cast and the query runs fine. Every
- * fixture had at most one target, so this guard passed everywhere — and then
- * aborted the entire production seed-migration run on `0068`'s seven real
- * subscriptions, taking the whole batch down with it (the runner stops at the
- * first failure, HOS-25 G-5).
+ * So it failed for EVERY non-empty input. The caller `continue`s on an empty
+ * target list, which means this guard could never have executed successfully
+ * against a real database — it was decoration that would abort any real run,
+ * and that is exactly what it did to the production seed-migration run on
+ * `0068`'s seven real subscriptions, taking the whole batch down with it (the
+ * runner stops at the first failure, HOS-25 G-5).
  *
  * Two things must hold, and the second matters as much as the first:
  *
@@ -257,7 +259,7 @@ describe('HOS-749: assertNoUnclassifiedReferrers binds its id list as one array 
         });
     });
 
-    it('keeps working with exactly ONE id — the case that always passed and hid the bug', async () => {
+    it('works with exactly ONE id too — the bare-array form failed here as well, just with a different Postgres error', async () => {
         await withRollback(async (tx) => {
             const customerId = await insertCustomer(tx, 'hos749-guard-d');
             const subscriptionOne = await insertSubscription(tx, customerId);
