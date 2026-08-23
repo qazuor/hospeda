@@ -156,11 +156,24 @@ export async function assertNoUnclassifiedReferrers(args: {
             // still quoted via `sql.identifier()`. Both sides are cast to text so
             // the comparison holds whether the column is `uuid` or `varchar` —
             // `billing_subscriptions.plan_id` proves the billing schema mixes both.
+            //
+            // `sql.param()` is load-bearing, not decoration. Interpolating a bare
+            // JS array into a Drizzle `sql` template expands it to a
+            // COMMA-SEPARATED PLACEHOLDER LIST, so `${[a, b, c]}::text[]` renders
+            // as `($1, $2, $3)::text[]` — a row constructor, which Postgres
+            // rejects outright with `cannot cast type record to text[]`.
+            //
+            // The trap is that it only misfires with TWO OR MORE ids: with
+            // exactly one, `($1)::text[]` is just a parenthesised scalar cast and
+            // the query runs fine. Every fixture had at most one target, so this
+            // guard passed everywhere and then aborted the whole production run
+            // on 0068's seven real subscriptions (HOS-749). `sql.param()` binds
+            // the array as ONE parameter, which is what `= ANY(...)` needs.
             const result = await db.execute<{ count: string }>(sql`
                 SELECT COUNT(*) AS count
                 FROM ${sql.identifier(fk.referencingTable)}
                 WHERE CAST(${sql.identifier(fk.referencingColumn)} AS text)
-                      = ANY(${[...targetIds]}::text[])
+                      = ANY(${sql.param([...targetIds])}::text[])
             `);
             const count = Number(result.rows[0]?.count ?? 0);
             if (count > 0) {
