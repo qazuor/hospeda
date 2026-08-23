@@ -147,7 +147,7 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
 export const OWNER_PRO_PLAN: PlanDefinition = {
     slug: 'owner-pro',
     name: 'Professional',
-    description: 'Professional plan with advanced analytics and priority support.',
+    description: 'Professional plan with featured listing and more room to grow.',
     category: 'owner',
     monthlyPriceArs: 3500000, // ARS $35,000
     annualPriceArs: 35000000, // ARS $350,000/year
@@ -163,7 +163,6 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
-        EntitlementKey.VIEW_ADVANCED_STATS,
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.PRIORITY_SUPPORT,
         EntitlementKey.FEATURED_LISTING,

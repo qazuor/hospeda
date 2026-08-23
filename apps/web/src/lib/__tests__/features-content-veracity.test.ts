@@ -9,9 +9,13 @@
  * honesty of the catalog.
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKey, PLANS_BY_CATEGORY } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
-import { OWNER_ROWS } from '../../components/billing/plan-comparison-rows';
+import {
+    OWNER_ROWS,
+    type PlanCellSource,
+    resolveRowCells
+} from '../../components/billing/plan-comparison-rows';
 import { ANFITRIONES_TABLE_ROWS } from '../features-content';
 
 function anfitrionesRow(labelKey: string) {
@@ -26,6 +30,14 @@ function ownerRow(id: string) {
     return row;
 }
 
+const REAL_OWNER_PLANS: readonly PlanCellSource[] = PLANS_BY_CATEGORY.owner
+    .filter((plan) => plan.isActive)
+    .map((plan) => ({
+        slug: plan.slug,
+        limits: {},
+        entitlements: plan.entitlements
+    }));
+
 describe('features-content catalog veracity — /funcionalidades (HOS-213)', () => {
     it('CUSTOM_BRANDING is announced as upcoming, never a plain yes', () => {
         const row = anfitrionesRow('features.anfitriones.table.rows.customBranding.label');
@@ -36,6 +48,11 @@ describe('features-content catalog veracity — /funcionalidades (HOS-213)', () 
     it('PRIORITY_SUPPORT is announced as upcoming, never a plain yes', () => {
         const row = anfitrionesRow('features.anfitriones.table.rows.prioritySupport.label');
         expect(row.cells.map((c) => c.kind)).toEqual(['no', 'upcoming', 'upcoming']);
+    });
+
+    it('VIEW_ADVANCED_STATS is announced as Premium-only', () => {
+        const row = anfitrionesRow('features.anfitriones.table.rows.advancedStats.label');
+        expect(row.cells.map((c) => c.kind)).toEqual(['no', 'no', 'yes']);
     });
 
     it('never marks a phantom entitlement as a shipped yes', () => {
@@ -73,6 +90,17 @@ describe('plan-comparison-rows catalog veracity — comparison table (HOS-213)',
         const row = ownerRow('featured');
         expect(row.status).toBe('available');
         expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.FEATURED_LISTING });
+    });
+
+    it('advanced stats resolve from VIEW_ADVANCED_STATS and stay Premium-only in the real catalog', () => {
+        const row = ownerRow('advancedStats');
+        expect(row.status).toBe('available');
+        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.VIEW_ADVANCED_STATS });
+        expect(resolveRowCells({ cell: row.cell, plans: REAL_OWNER_PLANS })).toEqual([
+            'no',
+            'no',
+            'yes'
+        ]);
     });
 
     it('flags the featured row as also purchasable as an addon', () => {
