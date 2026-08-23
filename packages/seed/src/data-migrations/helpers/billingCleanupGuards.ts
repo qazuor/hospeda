@@ -156,11 +156,31 @@ export async function assertNoUnclassifiedReferrers(args: {
             // still quoted via `sql.identifier()`. Both sides are cast to text so
             // the comparison holds whether the column is `uuid` or `varchar` —
             // `billing_subscriptions.plan_id` proves the billing schema mixes both.
+            //
+            // `sql.param()` is load-bearing, not decoration. Interpolating a bare
+            // JS array into a Drizzle `sql` template expands it to a
+            // COMMA-SEPARATED PLACEHOLDER LIST, which Postgres never reads as an
+            // array. Verified against a real server (HOS-749):
+            //
+            //   - 2+ ids -> `($1, $2)::text[]` is a ROW CONSTRUCTOR:
+            //     `cannot cast type record to text[]`
+            //   - 1 id   -> `($1)::text[]` is a parenthesised SCALAR cast:
+            //     `malformed array literal: "<uuid>"`
+            //
+            // So the bare-array form failed for EVERY non-empty input. Since the
+            // loop `continue`s on an empty target list, this guard could never
+            // have executed successfully against a real database — its only
+            // coverage was a mocked unit test, and a mocked `db.execute()` cannot
+            // produce a Postgres parse error. It was decoration that would abort
+            // any real run, which is what it did to production on 0068.
+            //
+            // `sql.param()` binds the array as ONE parameter, which is what
+            // `= ANY(...)` actually needs.
             const result = await db.execute<{ count: string }>(sql`
                 SELECT COUNT(*) AS count
                 FROM ${sql.identifier(fk.referencingTable)}
                 WHERE CAST(${sql.identifier(fk.referencingColumn)} AS text)
-                      = ANY(${[...targetIds]}::text[])
+                      = ANY(${sql.param([...targetIds])}::text[])
             `);
             const count = Number(result.rows[0]?.count ?? 0);
             if (count > 0) {
