@@ -35,7 +35,9 @@ import {
   BooksAndMagazinesIcon,
   EventIcon,
 } from '@repo/icons';
+import { Image } from 'astro:assets';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
 import { formatEventDate } from './utils/formatEventDate';
 import { getEventCategoryIconName, getEventCategoryLabel } from './utils/eventCategoryIcon';
@@ -81,6 +83,7 @@ const categoryIconName = getEventCategoryIconName(data.category);
 const hasRealImage =
   Boolean(data.featuredImage.url) &&
   !data.featuredImage.url.includes('placeholder');
+const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 
 ---
 
@@ -128,15 +131,28 @@ const hasRealImage =
 
       <!-- Real image on top; when it loads it covers the fallback -->
       {hasRealImage && (
-        <img
-          src={data.featuredImage.url}
-          alt={data.name}
-          width="600"
-          height="260"
-          loading="lazy"
-          class="event-card-featured__image"
-          data-hide-on-error
-        />
+        shouldProxyFeaturedImage ? (
+          <Image
+            src={data.featuredImage.url}
+            alt={data.name}
+            width={600}
+            height={260}
+            format="webp"
+            loading="lazy"
+            class="event-card-featured__image"
+            data-hide-on-error
+          />
+        ) : (
+          <img
+            src={data.featuredImage.url}
+            alt={data.name}
+            width="600"
+            height="260"
+            loading="lazy"
+            class="event-card-featured__image"
+            data-hide-on-error
+          />
+        )
       )}
 
       <!-- Dark gradient overlay at the bottom of the image for readability -->

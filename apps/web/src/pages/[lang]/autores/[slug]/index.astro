@@ -45,6 +45,7 @@
  */
 
 import EmptyState from '@/components/EmptyState.astro';
+import { Image } from 'astro:assets';
 import ProfilePageJsonLd from '@/components/seo/ProfilePageJsonLd.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -64,7 +65,7 @@ import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { toRenderableImageUrl } from '@/lib/media';
+import { isCloudinaryDeliveryUrl, toRenderableImageUrl } from '@/lib/media';
 import { evaluateAuthorIndexability } from '@/lib/seo/author-indexable';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -227,6 +228,7 @@ const bio = author.bio?.trim() ?? '';
 // stays indexable — strictly better than dropping out of the index, and it keeps
 // exactly one source of truth for "has an avatar".
 const avatar = toRenderableImageUrl(author.avatar) ?? '';
+const shouldProxyAvatar = avatar ? isCloudinaryDeliveryUrl(avatar) : false;
 
 const { isIndexable } = evaluateAuthorIndexability({
 	isSystemAccount: author.isSystemAccount,
@@ -322,15 +324,28 @@ const metaDescription =
 	{(avatar || bio || socialLinks.length > 0) && (
 		<div class="author-page__profile">
 			{avatar && (
-				<img
-					src={avatar}
-					alt={authorName}
-					class="author-page__avatar"
-					width={96}
-					height={96}
-					loading="eager"
-					decoding="async"
-				/>
+				shouldProxyAvatar ? (
+					<Image
+						src={avatar}
+						alt={authorName}
+						class="author-page__avatar"
+						width={96}
+						height={96}
+						format="webp"
+						loading="eager"
+						decoding="async"
+					/>
+				) : (
+					<img
+						src={avatar}
+						alt={authorName}
+						class="author-page__avatar"
+						width={96}
+						height={96}
+						loading="eager"
+						decoding="async"
+					/>
+				)
 			)}
 
 			{(bio || socialLinks.length > 0) && (

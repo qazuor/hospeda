@@ -27,7 +27,7 @@ const pageSrc = readFileSync(PAGE_PATH, 'utf8');
 
 describe('PostAuthorCard.astro — the component that emits the <img>', () => {
     it('guards the avatar through the shared helper', () => {
-        expect(cardSrc).toContain("import { toRenderableImageUrl } from '@/lib/media';");
+        expect(cardSrc).toContain("from '@/lib/media';");
         expect(cardSrc).toContain('toRenderableImageUrl(author.profilePicture)');
     });
 

@@ -10,7 +10,9 @@
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { Image } from 'astro:assets';
 import { StarIcon, LocationIcon } from '@repo/icons';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -57,6 +59,7 @@ const openNowStatus: boolean | null = data.openingHours
 const featuredLabel = t('gastronomy.card.featured', 'Destacado');
 const openNowLabel = t('gastronomy.card.openNow', 'Abierto ahora');
 const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
+const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 ---
 
 <article class="gastro-card">
@@ -64,17 +67,32 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
         <!-- IMAGE AREA -->
         <div class="gastro-card__image-area">
             {data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (
-                <img
-                    src={data.featuredImage.url}
-                    alt={data.featuredImage.caption ?? data.name}
-                    width="432"
-                    height="220"
-                    loading={eager ? 'eager' : 'lazy'}
-                    fetchpriority={eager ? 'high' : undefined}
-                    decoding="async"
-                    class="gastro-card__img"
-                    data-fallback="/assets/images/placeholder-gastronomy.svg"
-                />
+                shouldProxyFeaturedImage ? (
+                    <Image
+                        src={data.featuredImage.url}
+                        alt={data.featuredImage.caption ?? data.name}
+                        width={432}
+                        height={220}
+                        format="webp"
+                        loading={eager ? 'eager' : 'lazy'}
+                        fetchpriority={eager ? 'high' : undefined}
+                        decoding="async"
+                        class="gastro-card__img"
+                        data-fallback="/assets/images/placeholder-gastronomy.svg"
+                    />
+                ) : (
+                    <img
+                        src={data.featuredImage.url}
+                        alt={data.featuredImage.caption ?? data.name}
+                        width="432"
+                        height="220"
+                        loading={eager ? 'eager' : 'lazy'}
+                        fetchpriority={eager ? 'high' : undefined}
+                        decoding="async"
+                        class="gastro-card__img"
+                        data-fallback="/assets/images/placeholder-gastronomy.svg"
+                    />
+                )
             ) : (
                 <img
                     src={data.featuredImage.url || '/assets/images/placeholder-gastronomy.svg'}
