@@ -8,6 +8,7 @@
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignIn } from '../../../src/components/auth/SignIn.client';
 
@@ -40,8 +41,7 @@ function renderIsland() {
 }
 
 async function readyForm(): Promise<void> {
-    // The island renders a hydration skeleton until a mount-effect flips
-    // isClientReady — wait for the real form before interacting with it.
+    // Wait for the hydrated tree before interacting with submit behavior.
     await screen.findByLabelText('Correo electrónico');
 }
 
@@ -104,5 +104,19 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
                 password: 'Whatever1!'
             });
         });
+    });
+
+    it('server-renders the real sign-in form fields on first paint', () => {
+        document.body.innerHTML = renderToStaticMarkup(
+            <SignIn
+                locale="es"
+                redirectTo="/es/mi-cuenta/"
+                showOAuth={false}
+            />
+        );
+
+        expect(screen.getByRole('form', { name: 'Iniciar sesión' })).toBeInTheDocument();
+        expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
+        expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
     });
 });

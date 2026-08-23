@@ -38,18 +38,23 @@ describe('SignIn.client.tsx', () => {
     });
 
     describe('i18n', () => {
-        it('should use t() for loading skeleton aria-label', () => {
-            expect(src).toContain("t('auth-ui.loading'");
+        it('should use t() for the form aria-label', () => {
+            expect(src).toContain("aria-label={t('auth.signIn.submit', 'Iniciar sesión')}");
         });
 
         it('should not have hardcoded Spanish in aria-labels', () => {
             expect(src).not.toContain('aria-label="Cargando');
         });
+
+        it('should not keep the legacy loading skeleton i18n key', () => {
+            expect(src).not.toContain("t('auth-ui.loading'");
+        });
     });
 
     describe('accessibility', () => {
-        it('should have aria-busy on loading skeleton', () => {
-            expect(src).toContain('aria-busy="true"');
+        it('should render a named form for first-paint sign-in', () => {
+            expect(src).toContain('<form');
+            expect(src).toContain("aria-label={t('auth.signIn.submit', 'Iniciar sesión')}");
         });
     });
 

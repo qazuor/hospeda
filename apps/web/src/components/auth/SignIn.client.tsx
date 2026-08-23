@@ -4,14 +4,13 @@
  *
  * Standalone component — no dependency on @repo/auth-ui.
  * Calls auth-client.ts directly, styled with CSS Modules + web design tokens.
- * Shows a skeleton while hydrating to prevent layout shift.
+ * Server-renders the real form so the sign-in surface exists before hydration.
  */
 
 import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn } from '@/lib/auth-client';
-import { cn } from '@/lib/cn';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -71,7 +70,7 @@ function providerLabel(provider: string | undefined): string {
 /**
  * Sign-in form with email/password and optional OAuth providers.
  *
- * Handles its own loading, error, and hydration-skeleton states.
+ * Handles its own loading and error states.
  * Redirects via `window.location.replace` after success.
  *
  * @example
@@ -93,11 +92,6 @@ export function SignIn({
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isClientReady, setIsClientReady] = useState(false);
-
-    useEffect(() => {
-        setIsClientReady(true);
-    }, []);
 
     // SPEC-120: hydrate OAuth banner from SSR-supplied initialOAuthError and
     // sanitize the URL so the banner does not survive a reload. Runs once.
@@ -267,22 +261,6 @@ export function SignIn({
             setError(t('auth.signIn.error', 'Error al iniciar sesión'));
             setOauthLoading(null);
         }
-    }
-
-    if (!isClientReady) {
-        return (
-            <div
-                className={styles.skeleton}
-                role="status"
-                aria-busy="true"
-                aria-label={t('auth-ui.loading')}
-            >
-                <div className={cn(styles.skeletonLine, styles.skeletonTitle)} />
-                <div className={styles.skeletonField} />
-                <div className={styles.skeletonField} />
-                <div className={styles.skeletonButton} />
-            </div>
-        );
     }
 
     return (
