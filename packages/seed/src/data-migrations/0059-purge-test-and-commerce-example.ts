@@ -15,6 +15,22 @@
  *   `alojamiento`).
  * - The **commerce example content** those accounts own: gastronomies,
  *   experiences and partners, including the `zzqa-*` rows created during smoke.
+ *   Gastronomies, experiences and accommodations are matched BOTH by their
+ *   literal slug and by `owner_id` (HOS-712) — see "Deletion order" for why the
+ *   slug lists alone are not enough. Owner decision, 2026-08-23: purge them,
+ *   "0059 does what it says on the tin".
+ *
+ *   **Accepted consequence, written down deliberately**: production's
+ *   `experiences` and `gastronomies` tables contain ONLY rows owned by these 23
+ *   test accounts — the three publicly visible experiences on the site are
+ *   exactly three of the seven that block this migration, and the nine
+ *   gastronomies are the entire table. Purging by owner therefore leaves both
+ *   verticals at ZERO, and the public experiences section ships empty. That is
+ *   the declared purpose of this migration (start the first real customer from a
+ *   clean slate), not a side effect. Preserving the three public rows was
+ *   rejected because it keeps a `ZZQA` account alive in production, and
+ *   reassigning them to a staff account was rejected as new logic inside a
+ *   destructive migration two days before launch.
  * - The **`zzqa-*` accommodations** left over from smoke runs.
  * - **`billing_payments` rows owned by the purged accounts.** Owner decision,
  *   2026-08-20 (HOS-712): one of the 23 — `qazuor+r1host@gmail.com` — holds a
@@ -56,17 +72,43 @@
  * (the lone exception, `alliance_leads.provisioned_partner_id`, is SET NULL), so
  * those parents are deleted directly and Postgres clears their children.
  *
- * The FKs to `users` are the delicate ones. Measured against these 23 accounts,
- * only two hold rows:
+ * The FKs to `users` are the delicate ones. Thirteen columns reference `users`
+ * with `ON DELETE restrict` or `no action` — the two Postgres treats identically
+ * for blocking purposes. Re-counted on 2026-08-23 against a clone of production,
+ * four of them hold rows for these 23 accounts:
  *
- *   - `accommodation_occupancy.created_by_id` — RESTRICT, NOT NULL (9 rows)
- *   - `accommodations.owner_id` — RESTRICT, NOT NULL (5 rows, the zzqa listings)
+ *   - `gastronomies.owner_id` — RESTRICT (9 rows)
+ *   - `experiences.owner_id` — RESTRICT (7 rows)
+ *   - `accommodation_occupancy.created_by_id` — RESTRICT, NOT NULL (6 rows)
+ *   - `accommodations.owner_id` — RESTRICT (4 rows)
  *
- * Everything else came back zero: `owner_promotions`, `newsletter_campaigns`,
- * `sponsorships`, `accommodation_calendar_sync`, `events`, `posts`,
- * `ai_prompt_versions`, `ai_settings`, `platform_settings`. They are still
- * cleared defensively — a zero measured today is not a guarantee for the day
- * this runs.
+ * All four are cleared below. They are cleared TOGETHER on purpose: the runner
+ * stops at the first failing migration (HOS-25 G-5), so resolving one of them
+ * simply moves the abort to the next — which is precisely what happened, four
+ * times over, while HOS-712 was being diagnosed.
+ *
+ * The remaining nine came back ZERO on that same sweep:
+ * `accommodation_calendar_sync.created_by_id`, `events.author_id`,
+ * `newsletter_campaigns.created_by`, `owner_promotions.owner_id`,
+ * `posts.author_id`, `sponsorships.sponsor_user_id`,
+ * `ai_prompt_versions.created_by`, `ai_settings.updated_by`,
+ * `platform_settings.updated_by`.
+ *
+ * They are NOT cleared here, and that is a deliberate choice rather than an
+ * oversight — an earlier revision of this file claimed they were "still cleared
+ * defensively" while the code touched none of them, which is the same species of
+ * lying comment HOS-712 exists to stamp out. A blanket defensive delete would be
+ * actively wrong for at least three of them: `platform_settings` and
+ * `ai_settings` are singleton configuration rows that merely record WHO last
+ * edited them, and `events`/`posts` may hold curated real content that a test
+ * account happened to author. The correct treatment differs per table (null out
+ * an audit pointer; delete a genuinely test-owned row), so if a future run finds
+ * rows in any of them, it needs a decision, not a reflex.
+ *
+ * The check that keeps this honest is empirical, not textual: before running
+ * this against production, sweep `pg_constraint` for FKs to `users` with
+ * `confdeltype IN ('r','a')` and COUNT rows per table for the 23 ids. A zero
+ * measured on 2026-08-23 is evidence about 2026-08-23, not a guarantee.
  *
  * The four review tables deserve their own note: `user_id` is declared
  * `SET NULL` over a `NOT NULL` column, a shape that does not merely cascade
@@ -74,9 +116,18 @@
  * told to write. They must be cleared before the users, not after.
  *
  * Order:
- *   1. Polymorphic rows with no FK at all (`entity_views`, `entity_comments`,
- *      `r_entity_tag`, `user_bookmarks`), which would otherwise orphan silently.
- *   2. `accommodation_occupancy` for the zzqa listings.
+ *   1. Polymorphic rows with no FK at all (`entity_views`, `entity_comments`),
+ *      which would otherwise orphan silently. NOTE: `r_entity_tag` and
+ *      `user_bookmarks` are the same shape and are NOT cleared here. Having no
+ *      FK, they cannot block anything, so they are out of HOS-712's scope — but
+ *      they do leave orphan rows pointing at deleted content, tracked as a
+ *      follow-up rather than widened into this destructive migration two days
+ *      before launch.
+ *   2. `accommodation_occupancy`, on BOTH its columns: `accommodation_id`
+ *      (cascade, cleared ahead of step 5 anyway) and `created_by_id` (RESTRICT —
+ *      the one that actually blocks step 9).
+ *   2b. `conversations` for those listings — `conversations.accommodation_id` is
+ *      the single non-cascade inbound FK to `accommodations`.
  *   3. Reviews authored by the test accounts (the NOT NULL + SET NULL trap).
  *   4. Gastronomies, experiences, partners — CASCADE clears their children.
  *   5. The zzqa accommodations.
@@ -120,6 +171,7 @@ import {
     billingInvoices,
     billingPayments,
     billingSubscriptions,
+    conversations,
     destinationReviews,
     entityComments,
     entityViews,
@@ -247,6 +299,18 @@ async function deleteWhereIn(params: {
     return deleted.length;
 }
 
+/**
+ * Flattens any number of `{ id }` row sets into one de-duplicated id list.
+ *
+ * Used to union the two arms every content lookup in step 2 now has — matched
+ * by literal slug, and matched by owner — without double-counting a row both
+ * arms return, which would make the subsequent `IN (...)` list carry the same
+ * id twice.
+ */
+function unionIds(...rowSets: readonly (readonly { readonly id: string }[])[]): string[] {
+    return [...new Set(rowSets.flat().map((row) => row.id))];
+}
+
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const { db } = ctx;
 
@@ -286,28 +350,66 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         testUserIds.push(user.id);
     }
 
-    // ── Step 2: resolve the content ids from their slugs ────────────────────
-    const gastronomyRows = await db
-        .select({ id: gastronomies.id })
-        .from(gastronomies)
-        .where(inArray(gastronomies.slug, [...GASTRONOMY_SLUGS]));
-    const experienceRows = await db
-        .select({ id: experiences.id })
-        .from(experiences)
-        .where(inArray(experiences.slug, [...EXPERIENCE_SLUGS]));
-    const partnerRows = await db
-        .select({ id: partners.id })
-        .from(partners)
-        .where(inArray(partners.slug, [...PARTNER_SLUGS]));
-    const accommodationRows = await db
-        .select({ id: accommodations.id })
-        .from(accommodations)
-        .where(inArray(accommodations.slug, [...TEST_ACCOMMODATION_SLUGS]));
-
-    const gastronomyIds = gastronomyRows.map((row) => row.id);
-    const experienceIds = experienceRows.map((row) => row.id);
-    const partnerIds = partnerRows.map((row) => row.id);
-    const accommodationIds = accommodationRows.map((row) => row.id);
+    // ── Step 2: resolve the content ids — by slug AND by owner ──────────────
+    //
+    // Two arms, unioned. The literal slug lists were inventoried against
+    // production on 2026-08-19 and are therefore a SNAPSHOT: a row one of these
+    // 23 accounts created after that date — or one whose slug was edited since —
+    // is invisible to the slug arm, while its `owner_id` still holds an
+    // `ON DELETE restrict` reference that aborts the `users` delete in step 9.
+    //
+    // That is not hypothetical. Measured on 2026-08-23 against a clone of
+    // production, `0059` aborted on exactly this gap, with 20 rows the slug
+    // lists did not name (HOS-712): `gastronomies` 9, `experiences` 7,
+    // `accommodations` 4. Fixing one table alone only moves the abort to the
+    // next one, so all three carry an owner arm.
+    //
+    // `partners` deliberately has NO owner arm: `partners.owner_user_id` is
+    // `ON DELETE set null`, so it can never block the users delete, and
+    // widening it would hard-delete curated partner rows that a test account
+    // merely happens to own. The slug list stays the whole story there.
+    const gastronomyIds = unionIds(
+        await db
+            .select({ id: gastronomies.id })
+            .from(gastronomies)
+            .where(inArray(gastronomies.slug, [...GASTRONOMY_SLUGS])),
+        testUserIds.length === 0
+            ? []
+            : await db
+                  .select({ id: gastronomies.id })
+                  .from(gastronomies)
+                  .where(inArray(gastronomies.ownerId, testUserIds))
+    );
+    const experienceIds = unionIds(
+        await db
+            .select({ id: experiences.id })
+            .from(experiences)
+            .where(inArray(experiences.slug, [...EXPERIENCE_SLUGS])),
+        testUserIds.length === 0
+            ? []
+            : await db
+                  .select({ id: experiences.id })
+                  .from(experiences)
+                  .where(inArray(experiences.ownerId, testUserIds))
+    );
+    const accommodationIds = unionIds(
+        await db
+            .select({ id: accommodations.id })
+            .from(accommodations)
+            .where(inArray(accommodations.slug, [...TEST_ACCOMMODATION_SLUGS])),
+        testUserIds.length === 0
+            ? []
+            : await db
+                  .select({ id: accommodations.id })
+                  .from(accommodations)
+                  .where(inArray(accommodations.ownerId, testUserIds))
+    );
+    const partnerIds = (
+        await db
+            .select({ id: partners.id })
+            .from(partners)
+            .where(inArray(partners.slug, [...PARTNER_SLUGS]))
+    ).map((row) => row.id);
 
     // Polymorphic tables key rows by a bare `entity_id` (a globally unique uuid),
     // so matching on the id alone — without the entity_type discriminator — is
@@ -329,11 +431,27 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     });
 
     // ── Step 4: the RESTRICT holders measured against these accounts ────────
+    //
+    // TWO different columns, and only the second one actually blocks.
+    // `accommodation_occupancy.accommodation_id` is `ON DELETE cascade`, so
+    // clearing it here is belt-and-braces ahead of step 6's accommodation
+    // delete — Postgres would clear it anyway. The column that blocks is
+    // `created_by_id`, which is `ON DELETE restrict` over a NOT NULL column:
+    // an occupancy row a test account created on an accommodation that
+    // SURVIVES this purge is never reached by the cascade, and holds the
+    // `users` delete in step 9 open. Production had 6 such rows on 2026-08-23
+    // (HOS-712).
     const occupancyDeleted = await deleteWhereIn({
         db,
         table: accommodationOccupancy,
         column: accommodationOccupancy.accommodationId,
         values: accommodationIds
+    });
+    const occupancyByCreatorDeleted = await deleteWhereIn({
+        db,
+        table: accommodationOccupancy,
+        column: accommodationOccupancy.createdById,
+        values: testUserIds
     });
 
     // ── Step 5: reviews — `user_id` is SET NULL over a NOT NULL column, which
@@ -381,6 +499,21 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         table: partners,
         column: partners.id,
         values: partnerIds
+    });
+    // `conversations.accommodation_id` is `ON DELETE restrict` — the ONLY
+    // inbound FK to `accommodations` that is not cascade/set-null — so a
+    // conversation attached to one of these listings blocks the delete just
+    // below. It never surfaced before HOS-712 because the slug list happened to
+    // name only listings with no conversations; the owner arm added in step 2
+    // widens this set to rows that were never inventoried, so it is cleared
+    // explicitly rather than assumed empty. Its own children
+    // (`messages`, `conversation_access_tokens`,
+    // `conversation_notification_schedules`) are all cascade.
+    const conversationsDeleted = await deleteWhereIn({
+        db,
+        table: conversations,
+        column: conversations.accommodationId,
+        values: accommodationIds
     });
     const accommodationsDeleted = await deleteWhereIn({
         db,
@@ -489,6 +622,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         billingInvoicesDeleted,
         billingCustomersDeleted,
         occupancyDeleted,
+        occupancyByCreatorDeleted,
+        conversationsDeleted,
         entityViewsDeleted,
         entityCommentsDeleted,
         accommodationReviewsDeleted,
