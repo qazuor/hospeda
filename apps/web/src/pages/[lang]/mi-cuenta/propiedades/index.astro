@@ -26,7 +26,10 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
+import {
+    fetchHostUsageBadge,
+    MAX_ACCOMMODATIONS_LIMIT_KEY
+} from '@/lib/host/usage-badge';
 import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
@@ -94,17 +97,13 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodations + usage limit + entitlements/plan
-        const [accomResponse, usageResponse, entitlementsResponse] = await Promise.all([
+        // Parallel fetch: accommodations + plan-aware usage badge context.
+        const [accomResponse, usageBadgeResult] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
-            fetch(
-                `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
-                { headers }
-            ),
-            fetch(`${apiUrl}/api/v1/protected/users/me/entitlements`, { headers })
+            fetchHostUsageBadge({ apiUrl, headers })
         ]);
 
         if (accomResponse.ok) {
@@ -117,23 +116,12 @@ try {
             logger.error('[propiedades] API responded with status', accomResponse.status);
         }
 
-        if (usageResponse.ok) {
-            usageData = parseUsageResponse({ json: await usageResponse.json() });
-        }
-        // Usage fetch failure is non-critical — badge simply won't render
+        usageData = usageBadgeResult.usageData;
+        hasOwnerPlan = usageBadgeResult.hasOwnerPlan;
 
-        if (entitlementsResponse.ok) {
-            // `plan` is null when the owner has no real owner/complex-category
-            // subscription — including the HOS-217 bug case (a HOST whose only
-            // live subscription is a tourist plan, or a HOST with no
-            // subscription at all resolving owner-basico draft defaults).
-            const entJson = (await entitlementsResponse.json()) as {
-                data?: { plan?: unknown };
-            };
-            hasOwnerPlan = entJson.data?.plan != null;
-        } else {
+        if (!usageBadgeResult.entitlementsReadOk) {
             logger.warn('[propiedades] entitlements fetch returned non-ok', {
-                status: entitlementsResponse.status
+                status: usageBadgeResult.entitlementsStatus
             });
         }
         // Entitlements fetch failure is non-fatal — hasOwnerPlan stays true (fail-open)

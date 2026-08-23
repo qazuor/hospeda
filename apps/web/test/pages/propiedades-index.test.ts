@@ -16,14 +16,15 @@ const propiedadesIndexSource = readFileSync(
 
 describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
     describe('plan/limit awareness badge', () => {
-        it('should fetch usage data from the billing usage endpoint via the SSOT limit-key constant', () => {
-            // The URL must use the imported MAX_ACCOMMODATIONS_LIMIT_KEY constant
-            // (= the lowercase enum VALUE 'max_accommodations'), NOT the uppercase
-            // enum key name, which z.nativeEnum(LimitKey) rejects with HTTP 400.
+        it('should delegate the usage read to the shared host-usage helper', () => {
+            // The page no longer hardcodes the billing usage URL itself. That
+            // read lives in the shared helper so the "check entitlements first,
+            // then maybe fetch usage" rule is testable and cannot drift across
+            // pages.
             expect(propiedadesIndexSource).toContain(
-                'billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}'
+                "import {\n    fetchHostUsageBadge,\n    MAX_ACCOMMODATIONS_LIMIT_KEY\n} from '@/lib/host/usage-badge'"
             );
-            // Bug-2 regression: the old uppercase literal must NOT reappear.
+            expect(propiedadesIndexSource).toContain('fetchHostUsageBadge({ apiUrl, headers })');
             expect(propiedadesIndexSource).not.toContain('billing/usage/MAX_ACCOMMODATIONS');
         });
 
