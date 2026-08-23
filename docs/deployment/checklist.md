@@ -67,7 +67,7 @@ The deploy is a human action: a button in the Coolify dashboard, or `hops redepl
 Managed with `hops env-*` from the VPS, or through the Coolify UI per app.
 
 - [ ] `pnpm env:check:registry` passes locally (the CI gate for registry drift)
-- [ ] `hops env-list <target>` shows every variable the release needs
+- [ ] `hops env-list --target=<prod|staging>` shows every variable the release needs
 - [ ] `hops env-doctor` / `hops env-check-rules` report no inconsistency between environments
 - [ ] Any newly registered variable is actually **set in Coolify** for every environment
       that needs it — a registered-but-unset variable is the classic silent failure
@@ -120,12 +120,16 @@ Or the equivalent: open `https://coolify.hospeda.com.ar`, pick the app, hit Rede
 
 ## Database Migrations
 
-There are **three rails**, and they run in this order:
+There are **three rails**, applied by **two commands** — `hops db-migrate` bundles the
+first two. Count rails, not commands, when working out what a release still owes:
 
-```
-1. hops db-migrate       → drizzle-kit migrate (schema) + db:apply-extras (triggers, matviews, CHECKs)
-2. hops db-seed-migrate  → seed --data-migrate (seed DATA, ledgered in seed_migrations)
-```
+| Rail | What it carries | Applied by |
+| --- | --- | --- |
+| 1. Schema | `packages/db/src/migrations/*.sql` (tables, columns, indexes, FKs, enums) | `hops db-migrate` |
+| 2. Extras | `packages/db/src/migrations/extras/*.sql` (triggers, matviews, CHECKs, special indexes) | `hops db-migrate` |
+| 3. Seed data | `packages/seed/src/data-migrations/NNNN-*.ts`, ledgered in `seed_migrations` | `hops db-seed-migrate` |
+
+They run in that order.
 
 `hops db-migrate` takes a `pg_dump` backup, runs `drizzle-kit migrate`, then
 `db:apply-extras` — all in one step. Never run `drizzle-kit` by hand on the VPS, and
@@ -300,9 +304,13 @@ hops app-restart <api|web|admin>
 hops logs api --since 2m
 
 # ---- VPS: environment ----
-hops env-list <target>
-hops env-set  <target> KEY VALUE
+# NOTE: env-set takes the APP as its first argument, and --target= is REQUIRED
+# (it writes data, so HOPS_DEFAULT_TARGET is deliberately not honoured).
+hops env-set --target=<prod|staging> <api|web|admin> <KEY> <VALUE>
+hops env-set --target=<prod|staging> <api|web|admin> <KEY> --secret   # masked prompt
+hops env-list --target=<prod|staging>
 hops env-doctor
+hops env-check-rules
 
 # ---- VPS: database ----
 hops db-backup-now   --target=prod
