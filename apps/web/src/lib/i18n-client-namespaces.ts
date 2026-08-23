@@ -113,7 +113,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'alliance-leads',
     'alliance-leads.form',
     'auth-ui.common',
-    'auth-ui.loading',
     'auth-ui.signIn',
     'auth-ui.signOut',
     'auth-ui.signUp',
