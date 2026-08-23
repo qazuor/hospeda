@@ -336,6 +336,27 @@ function getMockConfirmPurchase(): ReturnType<typeof vi.fn> {
     >;
 }
 
+/**
+ * A payment that CLEARED, spelled the way the live webhook path delivers it.
+ *
+ * HOS-742: the add-on confirmation branch is gated on the charge having cleared,
+ * so every add-on test needs a payment that did. `'succeeded'` rather than
+ * `'approved'` because the MercadoPago adapter normalizes MP's raw status before
+ * `payment-handler.ts` forwards it (`approved → succeeded`), which makes this —
+ * not the raw spelling — the only shape a real webhook produces. Tests that
+ * previously handed the add-on branch a `null` payment were describing an input
+ * no producer in this codebase can build.
+ */
+function clearedWebhookPaymentInfo() {
+    return {
+        amount: asMajor(5000),
+        currency: 'ARS',
+        status: 'succeeded',
+        statusDetail: null,
+        paymentMethod: 'credit_card'
+    };
+}
+
 const mockBilling = {
     customers: {
         get: vi.fn().mockResolvedValue({
@@ -388,7 +409,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -403,7 +424,11 @@ describe('processPaymentUpdated', () => {
             1000,
             'ARS',
             'credit_card',
-            mockBilling
+            mockBilling,
+            // HOS-757: the payment-scoped idempotency key. `undefined` here
+            // because this payload carries no `data.id` — nothing to key on, so
+            // the send proceeds ungated rather than being suppressed on a guess.
+            undefined
         );
         expect(result.success).toBe(true);
     });
@@ -423,7 +448,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -438,7 +463,11 @@ describe('processPaymentUpdated', () => {
             1000,
             'ARS',
             'credit_card',
-            mockBilling
+            mockBilling,
+            // HOS-757: the payment-scoped idempotency key. `undefined` here
+            // because this payload carries no `data.id` — nothing to key on, so
+            // the send proceeds ungated rather than being suppressed on a guess.
+            undefined
         );
         expect(result.success).toBe(true);
     });
@@ -447,7 +476,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -468,7 +497,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -502,7 +531,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -525,7 +554,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -549,7 +578,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -574,7 +603,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -593,7 +622,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -615,7 +644,11 @@ describe('processPaymentUpdated', () => {
                 1000,
                 'ARS',
                 'credit_card',
-                mockBilling
+                mockBilling,
+                // HOS-757: the payment-scoped idempotency key. `undefined` here
+                // because this payload carries no `data.id` — nothing to key on,
+                // so the send proceeds ungated rather than being suppressed.
+                undefined
             );
         });
     });
@@ -626,7 +659,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_insufficient_amount',
                 paymentMethod: 'credit_card'
             });
@@ -647,7 +680,7 @@ describe('processPaymentUpdated', () => {
                     currency: 'ARS',
                     payment_provider: 'mercadopago',
                     failure_reason: 'cc_rejected_insufficient_amount',
-                    failure_category: 'rejected',
+                    failure_category: 'failed',
                     source: 'webhook'
                 }
             });
@@ -658,7 +691,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -681,7 +714,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -706,7 +739,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'cancelled',
+                status: 'canceled',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -721,14 +754,14 @@ describe('processPaymentUpdated', () => {
             );
             expect(
                 (call?.[0] as { properties: { failure_reason: string } }).properties.failure_reason
-            ).toBe('cancelled');
+            ).toBe('canceled');
         });
 
         it('does NOT capture payment_failed for an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -769,7 +802,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_other_reason',
             paymentMethod: 'credit_card'
         });
@@ -783,7 +816,7 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             500,
             'ARS',
-            'cc_rejected_other_reason',
+            'La tarjeta fue rechazada',
             mockBilling
         );
         expect(result.success).toBe(true);
@@ -793,7 +826,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(750),
             currency: 'ARS',
-            status: 'cancelled',
+            status: 'canceled',
             statusDetail: null,
             paymentMethod: 'debit_card'
         });
@@ -807,7 +840,7 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             750,
             'ARS',
-            'cancelled',
+            'Motivo no informado por el banco',
             mockBilling
         );
         expect(result.success).toBe(true);
@@ -820,7 +853,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_other_reason',
             paymentMethod: 'credit_card'
         });
@@ -834,14 +867,241 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             500,
             'ARS',
-            'cc_rejected_other_reason',
+            'La tarjeta fue rechazada',
             mockBilling
         );
         expect(result.success).toBe(true);
     });
 
+    // ── HOS-763: the notification gates must speak BOTH vocabularies ───────
+    //
+    // Every notification test above this block hands the gate a MercadoPago
+    // RAW status (`approved` / `rejected` / `cancelled`). No producer in this
+    // codebase delivers those to `processPaymentUpdated` on the primary path:
+    // the MP adapter normalizes inside `payments.retrieve()` before
+    // `payment-handler.ts` forwards, so the live webhook says `succeeded` /
+    // `failed` / `canceled`. Only the polling fallback speaks raw.
+    //
+    // That makes every test above structurally blind to the bug that shipped:
+    // they were all green while BOTH gates were false for every payment the
+    // live webhook ever confirmed, and neither email was sent to anyone in the
+    // lifetime of the feature. These tests assert the normalized spellings,
+    // and each one fails against the pre-HOS-763 literal comparisons.
+    describe('HOS-763: qzpay-normalized statuses reach the notification gates', () => {
+        it('sends the SUCCESS notification for a normalized `succeeded` payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(1000),
+                currency: 'ARS',
+                status: 'succeeded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledWith(
+                'cust-1',
+                1000,
+                'ARS',
+                'credit_card',
+                mockBilling,
+                // HOS-757: the payment-scoped idempotency key. `undefined` here
+                // because this payload carries no `data.id` — nothing to key on,
+                // so the send proceeds ungated rather than being suppressed.
+                undefined
+            );
+            // A cleared charge must never also be reported as a failure.
+            expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        it('sends the FAILURE notification for a normalized `failed` payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(500),
+                currency: 'ARS',
+                status: 'failed',
+                statusDetail: 'cc_rejected_insufficient_amount',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                500,
+                'ARS',
+                'Fondos insuficientes en la tarjeta',
+                mockBilling
+            );
+            expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        // `canceled` with ONE `l` — qzpay's spelling. MercadoPago writes
+        // `cancelled`. The two are one keystroke apart and the old gate knew
+        // only the MP one, which is precisely why nothing looked wrong.
+        it('sends the FAILURE notification for a normalized `canceled` payment (single l)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(750),
+                currency: 'ARS',
+                status: 'canceled',
+                statusDetail: null,
+                paymentMethod: 'debit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                750,
+                'ARS',
+                'Motivo no informado por el banco',
+                mockBilling
+            );
+            expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        // The one status whose spellings coincide, and the only branch of this
+        // family known to fire in production (HOS-704). It is kept OUT of
+        // `FAILED_PAYMENT_STATUSES` and left as its own explicit disjunct, so
+        // this asserts that repairing dead behaviour did not disturb the live
+        // behaviour standing next to it.
+        it('still sends the FAILURE notification for `refunded` (behaviour that already worked)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(900),
+                currency: 'ARS',
+                status: 'refunded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                900,
+                'ARS',
+                'Motivo no informado por el banco',
+                mockBilling
+            );
+            expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        // ── Negative control ───────────────────────────────────────────────
+        //
+        // Widening a gate too far is the same defect as leaving it shut, and
+        // it is the one this change could plausibly introduce: an in-flight
+        // charge is NOT terminal — MP's `pending` / `in_process` (qzpay
+        // `pending` / `processing`) can still settle either way. Mailing "your
+        // payment failed" or "your payment cleared" at that point is a claim a
+        // later webhook cannot retract.
+        for (const status of ['pending', 'processing', 'in_process'] as const) {
+            it(`dispatches NEITHER email for a non-terminal \`${status}\` payment`, async () => {
+                vi.mocked(extractPaymentInfo).mockReturnValue({
+                    amount: asMajor(1000),
+                    currency: 'ARS',
+                    status,
+                    statusDetail: null,
+                    paymentMethod: 'credit_card'
+                });
+
+                const result = await processPaymentUpdated({
+                    data: { metadata: { customer_id: 'cust-1' } },
+                    billing: mockBilling
+                });
+
+                expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+                expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
+                expect(result.success).toBe(true);
+            });
+        }
+    });
+
+    // ── HOS-764: the email says it in Spanish, analytics keeps the code ────
+    //
+    // Two consumers read the same `status_detail` and want opposite things.
+    // The payer gets a sentence they can act on; PostHog gets MercadoPago's
+    // raw code, because grouping rejections by cause is the whole point of
+    // `failure_reason` and prose would shatter that grouping into locale
+    // variants. Asserting them in ONE test is deliberate: it is the pairing
+    // that is easy to break, not either half on its own.
+    describe('HOS-764: translated reason to the payer, raw code to analytics', () => {
+        it('sends the Spanish sentence to the email and the raw code to PostHog', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(500),
+                currency: 'ARS',
+                status: 'failed',
+                statusDetail: 'cc_rejected_insufficient_amount',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                500,
+                'ARS',
+                'Fondos insuficientes en la tarjeta',
+                mockBilling
+            );
+
+            const analyticsCall = mockPostHogCapture.mock.calls.find(
+                ([arg]) => (arg as { event?: string }).event === 'subscription_payment_failed'
+            );
+            expect(
+                (analyticsCall?.[0] as { properties: { failure_reason: string } }).properties
+                    .failure_reason
+            ).toBe('cc_rejected_insufficient_amount');
+            expect(result.success).toBe(true);
+        });
+
+        // An unrecognised code must never reach the payer verbatim — that is the
+        // exact failure HOS-764 exists to end, and a code MercadoPago adds
+        // tomorrow lands here rather than in the mapped branch above.
+        it('sends the unknown-reason phrase, never the raw code, for an unmapped status_detail', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(500),
+                currency: 'ARS',
+                status: 'failed',
+                statusDetail: 'cc_rejected_a_code_invented_next_year',
+                paymentMethod: 'credit_card'
+            });
+
+            await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                500,
+                'ARS',
+                'Motivo no informado por el banco',
+                mockBilling
+            );
+        });
+    });
+
     it('should confirm addon purchase when addon metadata present', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -866,7 +1126,7 @@ describe('processPaymentUpdated', () => {
     // `sendNotification` for a confirmed addon purchase; the send belongs solely
     // to `confirmAddonPurchase`.
     it('HOS-676: must NOT send a duplicate ADDON_PURCHASE notification on successful confirmation', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -895,7 +1155,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('should return failure when addon confirmation fails (generic error)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -922,7 +1182,7 @@ describe('processPaymentUpdated', () => {
     // exists. processPaymentUpdated must signal this as a semantic success so
     // the polling job can go terminal instead of error-backoff spinning.
     it('ADDON_ALREADY_ACTIVE: returns success=true + addonAlreadyActive=true (SPEC-194 T-013)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -953,7 +1213,7 @@ describe('processPaymentUpdated', () => {
     // undefined and took its "should not happen" branch on EVERY
     // visibility-boost purchase — featured_listing_addon_grants stayed empty.
     it('forwards accommodationId into confirmPurchase metadata (HOS-675)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'visibility-boost-7d',
             customerId: 'cust-1',
@@ -976,12 +1236,18 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: { accommodationId: 'accom_target_1' }
         });
     });
 
     it('omits the metadata key entirely for an owner-wide addon (HOS-675)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -996,7 +1262,13 @@ describe('processPaymentUpdated', () => {
 
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
-            addonSlug: 'extra-photos-20'
+            addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS'
         });
     });
 
@@ -1012,7 +1284,7 @@ describe('processPaymentUpdated', () => {
             // MP reports transaction_amount in MAJOR units.
             amount: asMajor(5000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'account_money'
         });
@@ -1044,11 +1316,18 @@ describe('processPaymentUpdated', () => {
         });
     });
 
-    it('withholds the settled amount when the charge was not approved (HOS-595)', async () => {
+    // HOS-595 asserted the WEAK form of this invariant: a rejected charge still
+    // reached `confirmPurchase`, only without an `amountInCents`, so no
+    // `billing_payments` row could be booked. That left the purchase itself
+    // confirmed and its entitlement granted on a charge that never cleared —
+    // the defect HOS-742 closes. The invariant is kept here in its strong form:
+    // a charge that did not clear does not reach the service at all, which
+    // implies the original "no amount is ever booked" claim.
+    it('never lets an unsettled charge reach confirmPurchase at all (HOS-595 → HOS-742)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_insufficient_amount',
             paymentMethod: 'credit_card'
         });
@@ -1056,8 +1335,6 @@ describe('processPaymentUpdated', () => {
             addonSlug: 'visibility-boost-7d',
             customerId: 'cust-1'
         });
-
-        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
 
         await processPaymentUpdated({
             data: {
@@ -1067,15 +1344,305 @@ describe('processPaymentUpdated', () => {
             billing: mockBilling
         });
 
-        // The payment id still travels (it is the idempotency key), but no amount
-        // does — `confirmAddonPurchase` books a `succeeded` ledger row only when
-        // it receives one, so a rejected charge can never be booked as collected.
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+    });
+
+    // ── HOS-742: a charge that did not clear must confirm NOTHING ──────────
+    //
+    // The annual (SPEC-141 D1) and plan-change (D7) dispatches in this same
+    // function both require an approved payment before committing; the add-on
+    // branch did not. `extractAddonMetadata` returning a slug was the entire
+    // entry condition, so a `rejected` or `cancelled` MercadoPago payment that
+    // happened to carry add-on metadata walked into `confirmPurchase` exactly
+    // like an approved one — the purchase row was written and the entitlement
+    // granted with no money collected.
+    //
+    // HOS-595 (the test directly above) fixed only the LEDGER consequence: the
+    // amount is withheld so `billing_payments` stays honest. That test is the
+    // proof the two halves are distinct — it asserts `confirmPurchase` IS
+    // called on a rejected charge, which is the bug this one closes. The
+    // assertion here is `not.toHaveBeenCalled()` rather than a shape check
+    // precisely because `confirmPurchase` is the ONLY door to the purchase row
+    // and its entitlement grant: if it is never called, nothing was granted.
+    //
+    // Both status vocabularies are covered on purpose. `'rejected'` /
+    // `'cancelled'` are MercadoPago's RAW spellings; `'failed'` / `'canceled'`
+    // are what the same two dispositions look like after the MP adapter's
+    // normalization table, which is the ONLY form the live webhook path can
+    // ever deliver. A gate written against one vocabulary is silently blind to
+    // the other, so the pair is what makes this test mean "the charge did not
+    // clear" instead of "the string happened to match".
+    it.each([
+        ['rejected', 'cc_rejected_insufficient_amount'],
+        ['cancelled', null],
+        ['failed', 'cc_rejected_insufficient_amount'],
+        ['canceled', null]
+    ])('does not confirm the add-on purchase when the payment is %s (HOS-742)', async (status, statusDetail) => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // Fail closed, exactly like the annual and plan-change branches: both read
+    // `paymentInfo &&` before their own status check. `extractPaymentInfo`
+    // returns null when the payload carries no numeric `transaction_amount` or
+    // no string `status` — i.e. when the charge's outcome is UNKNOWABLE. An
+    // unknowable outcome is not an approval.
+    //
+    // Rescued from the closed PR #2967 (the discarded duplicate implementation of
+    // HOS-742). The merged gate already refuses this input, but no test SAID so
+    // by name, which is how a `paymentInfo === null` fall-through comes back
+    // unnoticed.
+    it('does NOT confirm the add-on when the payment status cannot be read (HOS-742)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // ── The other half of HOS-742: the cleared RE-DELIVERY must still work ──
+    //
+    // HOS-595 started forwarding `paymentId` unconditionally, so an ungated
+    // non-cleared delivery wrote `billing_addon_purchases.payment_id = X` with no
+    // amount — no `billing_payments` row, only an error log. When MP then
+    // re-delivered the SAME payment X as cleared, the idempotency SELECT found
+    // that row and returned early, so the ledger entry was never written and
+    // never could be. The gate is what makes the re-delivery reachable: the first
+    // delivery now writes nothing at all.
+    //
+    // Rescued from the closed PR #2967, and widened here. The original ran only
+    // on `'approved'`, the polling job's spelling — testing the re-delivery on
+    // the one path that barely sees add-on payments. `'succeeded'` is what the
+    // live webhook delivers, which is how an add-on purchase actually arrives
+    // (HOS-756).
+    // HOS-757: this case used to run `it.each(['approved', 'succeeded'])`,
+    // treating MercadoPago's raw spelling as an equally valid producer output.
+    // It is not one any more — the polling cron forwards the adapter's
+    // normalized status instead of hand-translating back — so `'approved'` has
+    // no producer and a positive control built on it would assert something
+    // nothing can send. The raw spellings get their own negative control below.
+    it('lets the succeeded re-delivery of the same payment book the charge (HOS-742)', async () => {
+        const status = 'succeeded';
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        const data = {
+            id: '174625958196',
+            metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+        };
+
+        // 1st delivery: MP says in_process. Nothing is written, so no purchase
+        // row can carry this paymentId.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'in_process',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        await processPaymentUpdated({ data, billing: mockBilling });
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+
+        // 2nd delivery: the same payment id, now cleared. The idempotency SELECT
+        // (annualDbState.subRows, empty) finds nothing precisely because the
+        // first delivery confirmed nothing — so the charge is booked.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        const result = await processPaymentUpdated({ data, billing: mockBilling });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledTimes(1);
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
-            paymentId: '999999999'
+            amountInCents: 500_000,
+            currency: 'ARS',
+            paymentId: '174625958196'
         });
+        expect(result).toEqual({ success: true, addonConfirmed: true });
     });
+
+    // Why the above matters: once ANY purchase row carries the paymentId, the
+    // idempotency check short-circuits a cleared delivery of that same payment —
+    // permanently. This test pins that trapdoor so it stays visible.
+    //
+    // Rescued from the closed PR #2967, widened to both vocabularies. HOS-756
+    // moved exactly the ordering this exercises: the branch gate now rejects a
+    // charge that did not clear BEFORE the idempotency SELECT runs, so this case
+    // is reachable only for a charge that did — in either spelling.
+    // HOS-757: this case used to run `it.each(['approved', 'succeeded'])`,
+    // treating MercadoPago's raw spelling as an equally valid producer output.
+    // It is not one any more — the polling cron forwards the adapter's
+    // normalized status instead of hand-translating back — so `'approved'` has
+    // no producer and a positive control built on it would assert something
+    // nothing can send. The raw spellings get their own negative control below.
+    it('an existing purchase row for this paymentId short-circuits even a succeeded charge (HOS-742)', async () => {
+        const status = 'succeeded';
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        // The idempotency SELECT is the first `getDb().select()` of this path.
+        annualDbState.subRows = [{ id: 'existing-purchase-uuid', customerId: 'cust-1' }];
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // The positive controls for the cases above. Without these, a gate that
+    // refused EVERYTHING would pass every negative case and look correct while
+    // taking add-on sales offline.
+    //
+    // `'approved'` is the raw spelling the subscription-poll fallback puts in its
+    // synthetic payload; `'succeeded'` is the normalized one the live webhook
+    // delivers. HOS-756: both clear the single canonical predicate, so the ledger
+    // figures travel on either — which is the whole point of collapsing the two
+    // sets into one. (`'accredited'` was dropped from this list: it is a
+    // `status_detail` descriptor and no producer can put it in `status`.)
+    // HOS-757: this case used to run `it.each(['approved', 'succeeded'])`,
+    // treating MercadoPago's raw spelling as an equally valid producer output.
+    // It is not one any more — the polling cron forwards the adapter's
+    // normalized status instead of hand-translating back — so `'approved'` has
+    // no producer and a positive control built on it would assert something
+    // nothing can send. The raw spellings get their own negative control below.
+    it('still confirms the add-on purchase when the payment is succeeded (HOS-742)', async () => {
+        const status = 'succeeded';
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            paymentId: '174625958196',
+            amountInCents: 500_000,
+            currency: 'ARS'
+        });
+        expect(result.addonConfirmed).toBe(true);
+    });
+
+    // `'succeeded'` is the SAME cleared charge as above, spelled the way the MP
+    // adapter normalizes it — and therefore the only spelling a live webhook can
+    // produce. This is the case that decides whether HOS-742 is a fix or an
+    // outage: gating on `MP_APPROVED_STATUSES` alone would refuse it, which is
+    // every real add-on purchase that arrives by webhook rather than by polling.
+    //
+    // HOS-756: this test used to pin the ABSENCE of `amountInCents` / `currency`
+    // here, because the amount forward asked the raw-only `MP_APPROVED_STATUSES`
+    // while the branch gate asked the wider set — so a webhook-borne purchase
+    // confirmed and booked no `billing_payments` row at all. An add-on payment
+    // reaches this function by webhook in practically every real purchase, which
+    // means HOS-595 ("an add-on charge leaves no ledger row") was fixed in code
+    // and dormant in production for its entire life. Both now ask the same
+    // canonical predicate, so the ledger figures travel on the webhook spelling
+    // exactly as they always did on the polling one. This assertion is the
+    // difference between HOS-595 being shipped and HOS-595 being merely written.
+    it('HOS-756: books the ledger figures for a live-webhook add-on purchase (`succeeded`)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'succeeded',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        // Exact-shape assertion on purpose: `expect.objectContaining` cannot tell
+        // a forwarded field from a missing one, which is precisely the defect —
+        // the ledger row is written by `confirmAddonPurchase` if and only if it
+        // receives an amount.
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            paymentId: '174625958196',
+            amountInCents: 500_000,
+            currency: 'ARS'
+        });
+        expect(result.addonConfirmed).toBe(true);
+    });
+
     // ── HOS-721: promo metadata must survive the provider round-trip ───────
     //
     // These cases deliberately do NOT hand `processPaymentUpdated` the shape
@@ -1093,7 +1660,7 @@ describe('processPaymentUpdated', () => {
     // point, precisely so that a regression in the key mapping cannot hide
     // behind a hand-built input.
     it('translates a real MercadoPago snake_case payment payload into canonical promo metadata (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -1124,6 +1691,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 promoCodeId: 'promo-uuid-1',
                 promoCode: 'SAVE10',
@@ -1133,7 +1706,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('reads the polling fallback camelCase payload to the same canonical shape (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -1161,6 +1734,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 promoCodeId: 'promo-uuid-1',
                 promoCode: 'SAVE10',
@@ -1170,7 +1749,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('carries the accommodation and the promo together from one snake_case payload (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'visibility-boost-7d',
             customerId: 'cust-1'
@@ -1198,6 +1777,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 accommodationId: 'accom_target_1',
                 promoCodeId: 'promo-uuid-2',
@@ -1208,7 +1793,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('never turns a null promo key into a metadata property (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -1238,6 +1823,12 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            // HOS-756: the ledger figures now travel on the webhook spelling too
+            // (`clearedWebhookPaymentInfo()` reports `succeeded`). Before the
+            // canonical predicate the amount forward asked the raw-only set, so a
+            // webhook-borne purchase booked no `billing_payments` row at all.
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: { discountAmount: 0 }
         });
     });
@@ -1247,7 +1838,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -1276,7 +1867,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(350_000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -1396,7 +1987,7 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(true);
         });
 
-        it('does NOT activate when MP status is not approved/accredited', async () => {
+        it('does NOT activate when the MP status is not a cleared one', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(350_000),
                 currency: 'ARS',
@@ -1498,7 +2089,57 @@ describe('processPaymentUpdated', () => {
             expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
-        it('accepts `accredited` MP status (alongside `approved`)', async () => {
+        // ── HOS-756 ───────────────────────────────────────────────────────────
+        //
+        // THE case this dispatch never had. Every other annual test above hands
+        // it `'approved'`, MercadoPago's RAW spelling — which only
+        // `subscription-poll.job.ts` produces, and which does not even reach
+        // this branch, because the polling job calls `confirmAnnualSubscription`
+        // DIRECTLY. So the whole annual section described an input the primary
+        // path cannot build, and the gate was false for every live webhook ever
+        // received: the activation ran only because the fallback silently
+        // carried it.
+        //
+        // `'succeeded'` is that same cleared charge as the MP adapter normalizes
+        // it, and therefore the only spelling a real webhook delivers.
+        it('HOS-756: activates on the qzpay-normalized webhook status (`succeeded`)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(350_000),
+                currency: 'ARS',
+                status: 'succeeded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+            vi.mocked(extractAnnualSubscriptionMetadata).mockReturnValue(ANNUAL_SUB_ID);
+            annualDbState.subRows = [
+                { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+            ];
+            annualDbState.paymentDedupeRows = [];
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                },
+                billing: mockBilling
+            });
+
+            expect(result.annualSubscriptionConfirmed).toBe(true);
+            expect(mockBilling.payments.record).toHaveBeenCalledOnce();
+            // The status flip is the part the customer feels — assert the write,
+            // not just the return value.
+            expect(annualDbState.updateCalls).toHaveLength(1);
+            const updateValues = annualDbState.updateCalls[0]?.values as Record<string, unknown>;
+            expect(updateValues.status).toBe('active');
+        });
+
+        // HOS-756: the inverse of the test this replaces, which asserted that
+        // `'accredited'` ACTIVATES. It never could: `'accredited'` is a
+        // `status_detail` descriptor, and `extractPaymentInfo` reads
+        // `status_detail` into a separate `statusDetail` field, so no producer
+        // can place it in `status`. Keeping it in the predicate cost nothing but
+        // implied a vocabulary that does not exist; this pins the removal.
+        it('HOS-756: `accredited` is a status_detail, never a status — it activates nothing', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(350_000),
                 currency: 'ARS',
@@ -1519,8 +2160,9 @@ describe('processPaymentUpdated', () => {
                 billing: mockBilling
             });
 
-            expect(result.annualSubscriptionConfirmed).toBe(true);
-            expect(mockBilling.payments.record).toHaveBeenCalledOnce();
+            expect(result.annualSubscriptionConfirmed).toBeUndefined();
+            expect(mockBilling.payments.record).not.toHaveBeenCalled();
+            expect(annualDbState.updateCalls).toHaveLength(0);
         });
 
         it('addon and annual branches are mutually exclusive (annual short-circuits dispatch)', async () => {
@@ -1755,7 +2397,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1_000), // major units; delta is ~1k ARS for the upgrade
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -2107,7 +2749,66 @@ describe('processPaymentUpdated', () => {
             expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
-        it('does not commit when MP status is not approved/accredited', async () => {
+        // ── HOS-756 ───────────────────────────────────────────────────────────
+        //
+        // The gravest of the three dormant gates, and the one with no safety
+        // net. `confirmPlanUpgrade` has exactly ONE call site — the gate this
+        // exercises — and `subscription-poll.job.ts` deliberately keeps
+        // `planChangeUpgradeId` out of its synthetic payload. So unlike the
+        // annual dispatch, which the polling fallback quietly covered, a paid
+        // plan upgrade confirmed by webhook was committed NOWHERE: the customer
+        // paid the prorated delta and stayed on the old plan.
+        //
+        // Every other test in this describe block uses `approvedUpgradePayment()`
+        // (`status: 'approved'`), the polling vocabulary — a shape that cannot
+        // reach this branch from any producer. This is the one that matches the
+        // only path that exists in production.
+        it('HOS-756: commits the upgrade on the qzpay-normalized webhook status (`succeeded`)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(1_000),
+                currency: 'ARS',
+                status: 'succeeded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+            vi.mocked(extractPlanChangeUpgradeMetadata).mockReturnValue({
+                planChangeUpgradeId: UPGRADE_SUB_ID,
+                oldPlanId: OLD_PLAN_ID,
+                newPlanId: NEW_PLAN_ID,
+                newPriceId: NEW_PRICE_ID,
+                targetTransactionAmountMajor: 2000
+            });
+            annualDbState.subRows = [];
+            annualDbState.paymentDedupeRows = [];
+            const billing = makeUpgradeBilling();
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                },
+                billing
+            });
+
+            expect(result.planUpgradeConfirmed).toBe(true);
+            // The plan actually changes — the whole point of the dispatch.
+            expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
+            const changePlanArg = billing.subscriptions.changePlan.mock.calls[0]?.[1] as Record<
+                string,
+                unknown
+            >;
+            expect(changePlanArg).toMatchObject({
+                newPlanId: NEW_PLAN_ID,
+                newPriceId: NEW_PRICE_ID
+            });
+            // And the prorated delta is booked.
+            expect(billing.payments.record).toHaveBeenCalledOnce();
+            const recordArg = billing.payments.record.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(recordArg.amount).toBe(100_000);
+            expect(recordArg.providerPaymentId).toBe(MP_PAYMENT_ID);
+        });
+
+        it('does not commit when the MP status is not a cleared one', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1_000),
                 currency: 'ARS',
@@ -2280,7 +2981,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -2479,7 +3180,7 @@ describe('processPaymentUpdated', () => {
                 data: {
                     id: 'mp-legacy-1',
                     external_reference: 'addon_visibility-boost-7d_1700000000000',
-                    status: 'approved',
+                    status: 'succeeded',
                     metadata: null
                 },
                 billing: mockBilling
@@ -2505,7 +3206,7 @@ describe('processPaymentUpdated', () => {
                 data: {
                     id: 'mp-qzpay-1',
                     external_reference: qzpaySessionId,
-                    status: 'approved',
+                    status: 'succeeded',
                     metadata: {}
                 },
                 billing: mockBilling
@@ -2517,7 +3218,7 @@ describe('processPaymentUpdated', () => {
                 expect.objectContaining({
                     externalReference: qzpaySessionId,
                     paymentId: 'mp-qzpay-1',
-                    paymentStatus: 'approved',
+                    paymentStatus: 'succeeded',
                     metadataKeys: []
                 }),
                 'Payment has bare UUID external_reference (qzpay session id) but no addon metadata - possible qzpay-era addon payment missing metadata; correlate via qzpay checkout session'
@@ -2526,6 +3227,10 @@ describe('processPaymentUpdated', () => {
 
         it('payment WITH addon metadata goes through normal confirm path without any fallback warn', async () => {
             const { apiLogger } = await import('../../../src/utils/logger');
+            // HOS-742: the confirm path is now reachable only for a cleared
+            // charge, so this test needs a payment that cleared to still be
+            // exercising the "normal confirm path" its name describes.
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
             vi.mocked(extractAddonMetadata).mockReturnValue({
                 addonSlug: 'visibility-boost-7d',
                 customerId: 'cust-1'
@@ -2737,7 +3442,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1500),
             currency: 'ARS',
-            status: 'cancelled',
+            status: 'canceled',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -2756,7 +3461,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_other_reason',
             paymentMethod: 'credit_card'
         });
@@ -2820,7 +3525,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
             CUSTOMER_ID,
             1500,
             'ARS',
-            'refunded',
+            'Motivo no informado por el banco',
             mockBilling
         );
         expect(applyRefundLifecycle).toHaveBeenCalledOnce();

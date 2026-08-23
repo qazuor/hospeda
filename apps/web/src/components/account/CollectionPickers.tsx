@@ -59,7 +59,7 @@ export function CollectionColorPicker({
                 type="button"
                 role="radio"
                 aria-checked={value === ''}
-                aria-label={t('account.favorites.collections.fields.colorNone', 'Sin color')}
+                aria-label={t('account.favorites.collections.fields.colorNone')}
                 className={[
                     styles.colorSwatch,
                     styles.colorSwatchNone,
@@ -134,7 +134,7 @@ export function CollectionIconPicker({
                 type="button"
                 role="radio"
                 aria-checked={value === ''}
-                aria-label={t('account.favorites.collections.fields.iconNone', 'Sin ícono')}
+                aria-label={t('account.favorites.collections.fields.iconNone')}
                 className={[
                     styles.iconBtn,
                     styles.iconBtnNone,
@@ -144,7 +144,7 @@ export function CollectionIconPicker({
                     .join(' ')}
                 onClick={() => onChange('')}
             >
-                {t('account.favorites.collections.fields.iconNoneLabel', 'Ninguno')}
+                {t('account.favorites.collections.fields.iconNoneLabel')}
             </button>
 
             {/* Icon buttons */}

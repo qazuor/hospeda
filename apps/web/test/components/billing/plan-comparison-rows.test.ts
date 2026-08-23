@@ -49,7 +49,6 @@ const OWNER_PRO = plan('owner-pro', [
     EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
     EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
     EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-    EntitlementKey.VIEW_ADVANCED_STATS,
     EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
     EntitlementKey.FEATURED_LISTING
 ]);
@@ -141,10 +140,10 @@ describe('resolveRowCells — full catalog baseline', () => {
         });
     });
 
-    it('gives pro-and-up rows to pro and premium', () => {
+    it('gives advanced stats to premium only', () => {
         expect(cellsBySlug('advancedStats', ALL_OWNER_PLANS)).toEqual({
             'owner-basico': 'no',
-            'owner-pro': 'yes',
+            'owner-pro': 'no',
             'owner-premium': 'yes'
         });
     });
@@ -177,9 +176,9 @@ describe('resolveRowCells — column set changes (HOS-329 regression)', () => {
         }
     });
 
-    it('keeps pro-and-up rows correct when the básico tier is not rendered', () => {
+    it('keeps premium-only rows correct when the básico tier is not rendered', () => {
         expect(cellsBySlug('advancedStats', [OWNER_PRO, OWNER_PREMIUM])).toEqual({
-            'owner-pro': 'yes',
+            'owner-pro': 'no',
             'owner-premium': 'yes'
         });
     });

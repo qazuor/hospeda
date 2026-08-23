@@ -11,6 +11,10 @@ import { asMajor, createMercadoPagoAdapter } from '@repo/billing';
 import { and, billingWebhookEvents, eq, getDb, or, sql } from '@repo/db';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import {
+    normalizeMercadoPagoMetadata,
+    parseMetadataNumber
+} from '../../../services/addon-checkout-metadata';
 import { apiLogger } from '../../../utils/logger';
 import { enqueueWebhookForRetry, failedWebhookEventReturning } from './dead-letter';
 import type { AddonMetadata, PaymentInfo } from './types';
@@ -330,27 +334,32 @@ export function getWebhookDependencies(): {
 /**
  * Check if payment metadata contains add-on purchase information.
  *
- * HOS-675: also carries `accommodationId` when present. `createAddonCheckout`
- * writes the target accommodation into the checkout metadata under BOTH
- * `accommodation_id` and `accommodationId`, because MercadoPago normalizes
- * metadata keys to snake_case on the payment object while the polling
- * fallback's synthetic payload keeps the camelCase form. Reading both here is
- * what makes the key survive whichever of the two confirmation paths fires.
+ * ## This is the add-on dispatch discriminator (HOS-743)
  *
- * Dropping it (as this function did until HOS-675) is silent: the add-on still
- * confirms, but `confirmAddonPurchase` finds no accommodationId and skips the
+ * Returning `null` here does not surface as an error anywhere: it simply means
+ * the incoming payment is not treated as an add-on purchase, so the customer is
+ * charged and nothing is granted. That makes the key spelling load-bearing.
+ *
+ * The raw payload is passed through {@link normalizeMercadoPagoMetadata} first,
+ * because MercadoPago snake_cases preference metadata keys when it copies them
+ * onto the payment object — a real `payment.updated` payload carries
+ * `addon_slug`, not `addonSlug`. Before HOS-743 this read camelCase only and
+ * survived purely because `createAddonCheckout` writes those two keys in BOTH
+ * spellings; removing that duplication would have silently killed add-on
+ * dispatch. The translation now happens once, at the border, so this function
+ * reads the canonical spelling only.
+ *
+ * HOS-675: also carries `accommodationId` when present. Dropping it (as this
+ * function did until HOS-675) is silent too: the add-on still confirms, but
+ * `confirmAddonPurchase` finds no accommodationId and skips the
  * `featured_listing_addon_grants` write, so the purchase is never tied to the
  * listing it was bought for.
  *
- * @param metadata - Payment metadata object
+ * @param metadata - Payment metadata object, in either spelling
  * @returns Add-on slug, customer ID, and optional target accommodation if found, null otherwise
  */
 export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
-    if (!metadata || typeof metadata !== 'object') {
-        return null;
-    }
-
-    const meta = metadata as Record<string, unknown>;
+    const meta = normalizeMercadoPagoMetadata({ metadata });
 
     if (
         typeof meta.addonSlug === 'string' &&
@@ -361,9 +370,7 @@ export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
         const accommodationId =
             typeof meta.accommodationId === 'string' && meta.accommodationId.length > 0
                 ? meta.accommodationId
-                : typeof meta.accommodation_id === 'string' && meta.accommodation_id.length > 0
-                  ? meta.accommodation_id
-                  : undefined;
+                : undefined;
 
         return {
             addonSlug: meta.addonSlug,
@@ -385,14 +392,17 @@ export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
  * annual-confirmation path by this metadata key (mirrors how
  * `addonSlug` + `customerId` dispatches to add-on confirmation).
  *
- * @param metadata - Payment metadata object
+ * HOS-743: reads through {@link normalizeMercadoPagoMetadata}, so the
+ * `annual_subscription_id` spelling MercadoPago delivers resolves as well as
+ * the canonical one the polling fallback keeps. Like every dispatch
+ * discriminator here, a key that fails to resolve is silent — the payment just
+ * falls through to the next branch.
+ *
+ * @param metadata - Payment metadata object, in either spelling
  * @returns The local subscription UUID if found, null otherwise.
  */
 export function extractAnnualSubscriptionMetadata(metadata: unknown): string | null {
-    if (!metadata || typeof metadata !== 'object') {
-        return null;
-    }
-    const meta = metadata as Record<string, unknown>;
+    const meta = normalizeMercadoPagoMetadata({ metadata });
     if (typeof meta.annualSubscriptionId === 'string' && meta.annualSubscriptionId.length > 0) {
         return meta.annualSubscriptionId;
     }
@@ -427,21 +437,37 @@ export interface PlanChangeUpgradeMetadata {
  * Returns `null` when the metadata is absent or malformed — the
  * caller short-circuits to the next dispatch branch (addon, default,
  * etc.) in that case.
+ *
+ * HOS-743: reads through {@link normalizeMercadoPagoMetadata}. Unlike the
+ * add-on checkout, `initiatePaidPlanUpgrade` writes these five keys in
+ * camelCase ONLY, so nothing was covering the snake_case spelling MercadoPago
+ * delivers — an upgrade whose keys did not resolve would be charged and never
+ * committed.
+ *
+ * The amount goes through {@link parseMetadataNumber} for the same reason the
+ * keys go through the normalizer: HOS-743 fixed the key spelling but not the
+ * VALUE type, and MercadoPago stringifies numeric metadata on the round-trip.
+ * A bare `typeof === 'number'` guard on `targetTransactionAmountMajor` is
+ * therefore a prorated upgrade the customer pays for and never receives — the
+ * silent-drop failure mode this whole family of extractors keeps reproducing.
+ * The parse stays fail-closed: a value that denotes no finite amount (`NaN`
+ * and `Infinity` included, both of which the old `typeof` check let through)
+ * still returns `null` rather than reaching the MP preapproval update.
  */
 export function extractPlanChangeUpgradeMetadata(
     metadata: unknown
 ): PlanChangeUpgradeMetadata | null {
-    if (!metadata || typeof metadata !== 'object') {
-        return null;
-    }
-    const m = metadata as Record<string, unknown>;
+    const m = normalizeMercadoPagoMetadata({ metadata });
+    const targetTransactionAmountMajor = parseMetadataNumber({
+        value: m.targetTransactionAmountMajor
+    });
     if (
         typeof m.planChangeUpgradeId !== 'string' ||
         m.planChangeUpgradeId.length === 0 ||
         typeof m.oldPlanId !== 'string' ||
         typeof m.newPlanId !== 'string' ||
         typeof m.newPriceId !== 'string' ||
-        typeof m.targetTransactionAmountMajor !== 'number'
+        targetTransactionAmountMajor === undefined
     ) {
         return null;
     }
@@ -450,7 +476,7 @@ export function extractPlanChangeUpgradeMetadata(
         oldPlanId: m.oldPlanId,
         newPlanId: m.newPlanId,
         newPriceId: m.newPriceId,
-        targetTransactionAmountMajor: m.targetTransactionAmountMajor
+        targetTransactionAmountMajor
     };
 }
 

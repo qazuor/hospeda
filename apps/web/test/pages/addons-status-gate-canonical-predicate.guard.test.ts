@@ -26,7 +26,7 @@
  * co-occurs with `'trialing'` in the fixed source.
  */
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -66,8 +66,12 @@ function stripComments(source: string): string {
  */
 function hasHandRolledActiveTrialingPair(source: string): boolean {
     const liveCode = stripComments(source);
-    const activePositions = [...liveCode.matchAll(/['"]active['"]/g)].map((m) => m.index ?? -1);
-    const trialingPositions = [...liveCode.matchAll(/['"]trialing['"]/g)].map((m) => m.index ?? -1);
+    const activePositions = [
+        ...liveCode.matchAll(/['"]active['"]|SubscriptionStatusEnum\.ACTIVE\b/g)
+    ].map((m) => m.index ?? -1);
+    const trialingPositions = [
+        ...liveCode.matchAll(/['"]trialing['"]|SubscriptionStatusEnum\.TRIALING\b/g)
+    ].map((m) => m.index ?? -1);
 
     for (const activeIndex of activePositions) {
         for (const trialingIndex of trialingPositions) {
@@ -77,6 +81,43 @@ function hasHandRolledActiveTrialingPair(source: string): boolean {
         }
     }
     return false;
+}
+
+/** Root of the web app's source tree, scanned below. */
+const WEB_SRC_ROOT = resolve(__dirname, '../../src');
+
+/**
+ * Files under `apps/web/src` that rebuild the status set by hand and are
+ * allowed to. The web app cannot import the server-side predicate, so the bar
+ * here is different from the API's: what the scan protects against is a page
+ * inventing its own idea of "subscription is live" and hiding paid UI from a
+ * complimentary subscriber — which is exactly what HOS-594 did.
+ */
+const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
+    readonly file: string;
+    readonly why: string;
+}> = [
+    {
+        file: 'components/billing/CheckoutStatusPoller.client.tsx',
+        why: 'SUCCESS_STATUSES already includes comp; the second, separate set is deliberate because the API it polls remaps comp to active.'
+    }
+] as const;
+
+/** Source extensions the scan reads — .astro included, since pages gate UI too. */
+const SCANNED_EXTENSIONS = ['.ts', '.tsx', '.astro'];
+
+/** Recursively collect source files under a directory, as paths relative to it. */
+function collectSourceFiles(dir: string, base: string): string[] {
+    const found: string[] = [];
+    for (const entry of readdirSync(dir)) {
+        const full = `${dir}/${entry}`;
+        if (statSync(full).isDirectory()) {
+            found.push(...collectSourceFiles(full, base));
+        } else if (SCANNED_EXTENSIONS.some((ext) => entry.endsWith(ext))) {
+            found.push(full.slice(base.length + 1));
+        }
+    }
+    return found;
 }
 
 describe('HOS-594 guard: addons page status gate uses the canonical entitlement predicate', () => {
@@ -109,5 +150,44 @@ describe('HOS-594 guard: addons page status gate uses the canonical entitlement 
                 "instead (plus the page's own deliberate 'trial' exception, kept outside the " +
                 'predicate on purpose).'
         ).toBe(false);
+    });
+
+    it('no unreviewed file under src/ hand-rolls the entitlement-granting set', () => {
+        /*
+         * HOS-594's page-level gate hid the purchase UI from a comp subscriber.
+         * The server-side gate was the real one and was fixed too, but a page
+         * that quietly disagrees with the server about who is entitled is its
+         * own bug — and this file was the only one anybody had checked.
+         */
+        const allowed = new Set(HAND_ROLLED_SCAN_EXCLUSIONS.map((e) => e.file));
+        const offenders = collectSourceFiles(WEB_SRC_ROOT, WEB_SRC_ROOT)
+            .filter((file) => !allowed.has(file))
+            .filter((file) =>
+                hasHandRolledActiveTrialingPair(readFileSync(`${WEB_SRC_ROOT}/${file}`, 'utf-8'))
+            );
+
+        expect(
+            offenders,
+            `These files rebuild the entitlement-granting set by hand:\n` +
+                `${offenders.map((f) => `  - ${f}`).join('\n')}\n\n` +
+                'Omitting `comp` hides paid UI from complimentary subscribers (HOS-594). ' +
+                'Either derive the set from the server response, or add the file to ' +
+                'HAND_ROLLED_SCAN_EXCLUSIONS with the reason it is deliberate.'
+        ).toEqual([]);
+    });
+
+    it('every scan exclusion still matches the pattern it excuses', () => {
+        const stale = HAND_ROLLED_SCAN_EXCLUSIONS.filter(
+            (entry) =>
+                !hasHandRolledActiveTrialingPair(
+                    readFileSync(`${WEB_SRC_ROOT}/${entry.file}`, 'utf-8')
+                )
+        ).map((entry) => entry.file);
+
+        expect(
+            stale,
+            `Listed in HAND_ROLLED_SCAN_EXCLUSIONS but no longer matching:\n` +
+                `${stale.map((f) => `  - ${f}`).join('\n')}`
+        ).toEqual([]);
     });
 });

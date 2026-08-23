@@ -766,7 +766,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         type="button"
                         className={styles.backdrop}
                         onClick={closePanel}
-                        aria-label={t('home.searchBar.closePanel', 'Cerrar panel')}
+                        aria-label={t('home.searchBar.closePanel')}
                         tabIndex={-1}
                     />
                 )}
@@ -810,7 +810,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         data-search-panel=""
                     >
                         <PanelCloseHeader
-                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            ariaLabel={t('home.searchBar.closePanel')}
                             onClose={closePanel}
                             closeButtonRef={panelCloseButtonRef}
                         />
@@ -821,14 +821,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 className="form-input"
                                 value={destinationQuery}
                                 onChange={(event) => setDestinationQuery(event.target.value)}
-                                placeholder={t(
-                                    'home.searchBar.destinationSearchPlaceholder',
-                                    'Buscá un destino'
-                                )}
-                                aria-label={t(
-                                    'home.searchBar.destinationSearchLabel',
-                                    'Buscar entre los destinos'
-                                )}
+                                placeholder={t('home.searchBar.destinationSearchPlaceholder')}
+                                aria-label={t('home.searchBar.destinationSearchLabel')}
                             />
                         </div>
                         <div
@@ -883,8 +877,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                                 className="featured-indicator"
                                                 role="img"
                                                 aria-label={t(
-                                                    'home.searchBar.featuredDestinationLabel',
-                                                    'Destino destacado'
+                                                    'home.searchBar.featuredDestinationLabel'
                                                 )}
                                             >
                                                 <StarIcon
@@ -904,10 +897,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                               'home.searchBar.noDestinationsText',
                                               'No hay destinos disponibles'
                                           )
-                                        : t(
-                                              'home.searchBar.noDestinationsMatch',
-                                              'No hay destinos que coincidan con tu búsqueda'
-                                          )}
+                                        : t('home.searchBar.noDestinationsMatch')}
                                 </div>
                             )}
                         </div>
@@ -936,7 +926,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         data-search-panel=""
                     >
                         <PanelCloseHeader
-                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            ariaLabel={t('home.searchBar.closePanel')}
                             onClose={closePanel}
                             closeButtonRef={panelCloseButtonRef}
                         />
@@ -947,14 +937,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 className="form-input"
                                 value={typeQuery}
                                 onChange={(event) => setTypeQuery(event.target.value)}
-                                placeholder={t(
-                                    'home.searchBar.typeSearchPlaceholder',
-                                    'Buscá un tipo'
-                                )}
-                                aria-label={t(
-                                    'home.searchBar.typeSearchLabel',
-                                    'Buscar entre los tipos de alojamiento'
-                                )}
+                                placeholder={t('home.searchBar.typeSearchPlaceholder')}
+                                aria-label={t('home.searchBar.typeSearchLabel')}
                             />
                         </div>
                         <div
@@ -1010,10 +994,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             })}
                             {filteredTypes.length === 0 && (
                                 <div className="combobox__status">
-                                    {t(
-                                        'home.searchBar.noTypesMatch',
-                                        'No hay tipos que coincidan con tu búsqueda'
-                                    )}
+                                    {t('home.searchBar.noTypesMatch')}
                                 </div>
                             )}
                         </div>
@@ -1036,7 +1017,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         data-search-panel=""
                     >
                         <PanelCloseHeader
-                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            ariaLabel={t('home.searchBar.closePanel')}
                             onClose={closePanel}
                             closeButtonRef={panelCloseButtonRef}
                         />
@@ -1068,7 +1049,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         data-search-panel=""
                     >
                         <PanelCloseHeader
-                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            ariaLabel={t('home.searchBar.closePanel')}
                             onClose={closePanel}
                             closeButtonRef={panelCloseButtonRef}
                         />

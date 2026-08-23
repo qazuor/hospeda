@@ -58,7 +58,7 @@ WHERE s.status = 'comp';
 
 The owner's grant is `5cf22a13-e353-4627-825a-e95586771ab7` (`qazuor@gmail.com`).
 The other two belong to `qazuor+smoke2@gmail.com` (purged) and
-`rominapaolavillaverde@gmail.com` (**preserved** — see the OPEN DECISION below).
+`rominapaolavillaverde@gmail.com` (**preserved** — owner decision resolved on 2026-08-22; see the RESOLVED note below).
 
 ---
 
@@ -196,24 +196,86 @@ WHERE s.deleted_at IS NULL
 ```
 
 **Expect exactly the preserved rows** — the owner's comp
-(`5cf22a13-…` / `qazuor@gmail.com`) and Romina's comp (`9da44403-…`) unless the
-open decision below says otherwise. Any other row here is a live entitlement
-that should not exist.
+(`5cf22a13-…` / `qazuor@gmail.com`) and Romina's comp (`9da44403-…`), which the
+owner explicitly decided to preserve on 2026-08-22. Any other row here is a
+live entitlement that should not exist.
 
-> **Known caveat — the account dashboard will still show a plan for one purged
-> account.** `apps/api/src/routes/user/protected/stats.ts:129-133` and `:146-156`
-> read `billing_customers` and `billing_subscriptions` **without filtering
-> `deleted_at`**, so `GET /users/me/stats` keeps reporting a soft-deleted
-> subscription whose status is in `ENTITLEMENT_GRANTING_STATUSES`. Today that
-> affects two accounts (`turistatest@hospeda.com.ar` shows `tourist-plus`/"Plus"
-> and `ownertest@hospeda.com.ar` shows `owner-basico`/"Basic", both with a period
-> ending in **2126**). After this cleanup the purged smoke comp
-> (`qazuor+smoke2@gmail.com`) becomes a third. It is a **display** divergence
-> only — entitlements are correctly revoked, because `loadEntitlements` goes
-> through qzpay, which does filter. Tracked as FU-1; do not treat it as a failed
-> cleanup.
+> **FU-1 (account dashboard shows a plan for a purged account) is FIXED — do not
+> expect it.** `apps/api/src/routes/user/protected/stats.ts` used to read
+> `billing_customers` and `billing_subscriptions` without filtering `deleted_at`,
+> so `GET /users/me/stats` kept reporting a soft-deleted subscription whose
+> status is in `ENTITLEMENT_GRANTING_STATUSES`. **HOS-755 (PR #2981) added
+> `isNull(...deletedAt)` to both reads and is merged to `staging`** — verified on
+> `origin/staging`, where `resolveUserPlanSummary` now carries the filter on the
+> customer read and on the subscription read alike. Provided the deploy running
+> in production includes it, a purged account correctly reports no plan. If one
+> still shows a stale plan after this cleanup, the deployed build predates
+> HOS-755 — check that before filing anything new.
+>
+> **Two call sites are still unfiltered, and they are NOT display-only.** Neither
+> is in scope for HOS-749; they are named here so the next person does not
+> rediscover them as "the stats bug" and assume it regressed:
+>
+> - `apps/api/src/services/accommodation-publish-deps.ts:64-70` — the publish
+>   eligibility check reads the customer and its ten most recent subscriptions
+>   with no `deleted_at` filter, so a soft-deleted subscription can still answer
+>   `has_active_sub`. This one gates a **write**, not a label.
+> - `packages/service-core/src/services/billing/promo-code/promo-code.validation.ts:365,447`
+>   — the `newCustomersOnly` guard and the per-customer usage counter both map a
+>   user id to `billing_customers` without filtering `deleted_at`, so a
+>   soft-deleted customer row can still make somebody look like a returning
+>   customer, or keep a promo-usage count against them.
+>
+> Neither is fixed by this cleanup. Both become *more* reachable after it, since
+> it creates soft-deleted rows on purpose.
 
-### 4.2 The owner's grant is intact and reachable
+### 4.2 The seven preserved customer records survived
+
+The migration preserves seven `billing_customers` rows by explicit id
+(`PRESERVED_CUSTOMER_IDS`), **without** preserving their subscriptions or
+payments. Six are real people who registered and never paid — they own zero
+subscriptions, so the general "a customer survives iff it owns a preserved
+subscription" rule could never have saved them. The seventh is
+`superadmin@hospeda.com`, the owner's staff account, whose two subscriptions and
+three payments are 19/08 smoke data and DO go.
+
+```sql
+SELECT id, email, deleted_at
+FROM billing_customers
+WHERE id IN (
+  '054d5c34-e29f-4d1f-bc26-0bf0f50894f4',  -- asrilevich.joaquin@gmail.com
+  'ac2c775c-a882-48b6-a868-f1dd7876b21b',  -- jasiolga@yahoo.com.ar
+  '626e7bd4-aab1-41be-a736-90b005bf01d2',  -- vivianarichard@hotmail.com
+  '52faa6dd-cb8f-4228-b4a4-44e3e1f67e19',  -- julimogni08@gmail.com
+  'fab75799-a003-459f-86a0-01cdeb7b0940',  -- peychauxchristian@gmail.com
+  '585a3646-f717-4e6e-bc33-bf18e3c8c3f9',  -- olgafrontelli@gmail.com
+  '727d0a5d-6d3e-4f75-ac51-823bb9279a3d'   -- superadmin@hospeda.com
+)
+ORDER BY email;
+```
+
+**Expect seven rows, every `deleted_at` NULL.** The run's own `counts` should
+report `customersPreservedByList: 7` — but that number comes from the thing that
+did the work, so the query above is the real check.
+
+> The superadmin row's `email` still carries the OLD `@hospeda.com` domain, on
+> purpose: `0057-staff-email-domain-to-com-ar` excluded this qzpay-owned mirror
+> column by design. In `users` the same account is `superadmin@hospeda.com.ar`.
+> It is **one** account, not two — do not "fix" the divergence here.
+
+And the complement — the superadmin's own transactional rows are gone:
+
+```sql
+SELECT count(*) FILTER (WHERE deleted_at IS NULL)     AS live,
+       count(*) FILTER (WHERE deleted_at IS NOT NULL) AS soft_deleted
+FROM billing_subscriptions
+WHERE customer_id = '727d0a5d-6d3e-4f75-ac51-823bb9279a3d';
+```
+
+**Expect `live = 0`.** A preserved record with live test subscriptions under it
+means the asymmetry broke in the wrong direction.
+
+### 4.3 The owner's grant is intact and reachable
 
 ```sql
 SELECT s.id, s.status, s.current_period_end, s.deleted_at,
@@ -226,7 +288,7 @@ WHERE s.id = '5cf22a13-e353-4627-825a-e95586771ab7';
 **Expect** both `deleted_at` columns `NULL`. A soft-deleted customer row would
 strip the grant just as effectively as deleting the subscription.
 
-### 4.3 No account was touched
+### 4.4 No account was touched
 
 ```sql
 SELECT count(*) FILTER (WHERE deleted_at IS NULL)  AS live_users,
@@ -239,7 +301,7 @@ Compare against the same counts taken before step 3. `0068` never touches
 accounts, by explicit decision) accounted for it — check their reported counts,
 and if the numbers still do not add up, stop and restore the backup.
 
-### 4.4 Live and soft-deleted counted separately, never mixed
+### 4.5 Live and soft-deleted counted separately, never mixed
 
 ```sql
 SELECT 'billing_customers' t,
@@ -260,7 +322,7 @@ A bare `count(*)` on any of these tables is meaningless after a soft delete and
 has already manufactured false findings in this repo three times in one
 afternoon. Always split the two.
 
-### 4.5 No live row points at a soft-deleted parent
+### 4.6 No live row points at a soft-deleted parent
 
 ```sql
 -- Subscriptions whose customer is gone.
@@ -280,7 +342,7 @@ WHERE a.deleted_at IS NULL AND s.deleted_at IS NOT NULL;
 
 **Expect zero rows from all three.**
 
-### 4.6 The tables with no `deleted_at` are inert
+### 4.7 The tables with no `deleted_at` are inert
 
 ```sql
 SELECT 'commerce_listing_subscriptions' t, count(*) FROM commerce_listing_subscriptions
@@ -295,7 +357,7 @@ UNION ALL SELECT 'pending_checkouts_reusable', count(*) FROM billing_pending_che
 read on live-state paths *without* joining `billing_subscriptions`, so the soft
 delete cannot make them inert on its own — see §4 of the HOS-749 report.
 
-### 4.7 Then re-run the MercadoPago check from step 2
+### 4.8 Then re-run the MercadoPago check from step 2
 
 The database says nothing about whether a card will be charged. Re-run the
 `preapproval/search` verification and confirm `{"cancelled": 67}` again.
@@ -325,16 +387,117 @@ those needs the step-0 backup.
 
 ---
 
-## OPEN DECISION — the third `comp`
+## RESOLVED — the third `comp`
 
 `9da44403-44c3-47b0-8254-af08e57adefd` is a complimentary subscription granted to
 `rominapaolavillaverde@gmail.com` (Romina Villaverde) on 2026-08-14, twenty
 minutes after she signed up. She does not read as a test account.
 
-The migration **preserves it**, because the failure modes are asymmetric: a
-stale grant left in place is visible and reversible, while a stripped grant is
-invisible until the person complains. If the owner decides it was a test, add
-the id to `PURGEABLE_COMP_SUBSCRIPTION_IDS` in
-`packages/seed/src/data-migrations/0068-hos-749-prod-billing-cleanup.ts` **before**
-the migration is applied anywhere — once it is ledgered, editing the file
-corrupts that environment's checksum and a new migration is required instead.
+The owner resolved this on **2026-08-22**: **preserve the subscription**. It
+belongs to a real person who deliberately received the courtesy grant, so
+`9da44403-44c3-47b0-8254-af08e57adefd` stays out of
+`PURGEABLE_COMP_SUBSCRIPTION_IDS` and the migration keeps it.
+
+The preserve-by-default `comp` rule remains intentional because the failure
+modes are asymmetric: a stale grant left in place is visible and reversible,
+while a stripped grant is invisible until the person complains. If that
+decision ever changes after `0068` is ledgered anywhere, do **not** edit the
+existing migration file — add a new migration instead, because rewriting a
+ledgered file corrupts that environment's checksum.
+
+---
+
+## RESOLVED — the three unclassified FK tables do NOT abort the run
+
+Three tables hold a foreign key to `billing_subscriptions` and are **not** listed
+in `RETAINED_REFERENCING_TABLES`:
+
+- `partners.subscription_id`
+- `billing_plan_price_change_targets.subscription_id`
+- `billing_plan_price_change_notices.subscription_id`
+
+All three FKs are real (verified in the Drizzle schemas). Two independent facts
+settle what they mean, and both were needed — neither alone is sufficient.
+
+### 1. The guard is ROW-triggered, not constraint-triggered
+
+`assertNoUnclassifiedReferrers`
+(`packages/seed/src/data-migrations/helpers/billingCleanupGuards.ts`) *discovers*
+referrers from `pg_constraint`, via `getInboundForeignKeys`, so it finds all
+three **whether or not they hold rows**. But discovery is not the trip wire. For
+each unclassified referrer it then runs a `COUNT(*)` against the targeted parent
+ids and throws **only when that count is greater than zero**:
+
+```ts
+const count = Number(result.rows[0]?.count ?? 0);
+if (count > 0) {
+    throw new BillingCleanupAbort(/* … */);
+}
+```
+
+There is also an earlier short-circuit: the outer loop `continue`s on a parent
+whose target list is empty, so a run with no targeted subscriptions never issues
+the catalogue query at all.
+
+**An FK with zero matching rows is therefore silently fine.** The mere existence
+of an unclassified FK cannot abort the migration.
+
+### 2. Production holds zero such rows
+
+Measured on prod over SSH, 2026-08-22, with a sentinel row included in the query
+so an empty result could be distinguished from a query that never ran (`hops
+psql` returns **empty with exit 0** on invalid SQL, and empty is not the same as
+zero rows):
+
+```
+B1_partners_con_sub     | 0
+B2_price_change_targets | 0
+B3_price_change_notices | 0
+```
+
+Also measured, and relevant to whether the batch even reaches `0068`:
+`billing_checkouts` and `billing_invoices` hold zero rows with a
+`subscription_id`, so `0059` does not abort on FK either. HOS-301's 12/08
+repricing run left no target and no notice behind — the scenario that worried us
+most.
+
+### Decision: they are NOT added to `RETAINED_REFERENCING_TABLES`
+
+With the guard row-triggered and the counts at zero, adding them changes nothing
+about this run. It would only change behaviour in the case where a row *appears*
+before step 3 — and in that case adding them now is the **wrong** move, not a
+free defence:
+
+- Listing a table in `RETAINED_REFERENCING_TABLES` is a **classification
+  decision**: an assertion that rows there pointing at a soft-deleted parent are
+  safe to leave live. Nobody has analysed that for these three.
+- `partners` is exactly the shape of thing the guard exists to catch. A partner
+  row pointing at a swept subscription is the same failure mode as
+  `commerce_listing_subscriptions` and `partner_subscriptions`, both of which
+  needed a dedicated `assertRetainedTablesAreInert` probe precisely because a
+  public surface reads them **without** joining `billing_subscriptions`. Note
+  `partner_subscriptions` is already classified and asserted inert;
+  `partners.subscription_id` is a different column on a different table and has
+  had no such analysis.
+- Pre-classifying blind converts a fail-closed abort into a **fail-open pass**
+  for the one case the guard was built to stop.
+
+An abort is cheap: nothing is written, the message names the table, and the run
+is re-runnable after a deliberate decision. A wrong classification is not cheap
+and is invisible.
+
+**Instead, re-run the pre-flight immediately before step 3** — the counts above
+are three days old by the time this runs, and that is the whole risk:
+
+```sql
+SELECT 'partners' t, count(*) FROM partners
+  WHERE subscription_id IS NOT NULL
+UNION ALL SELECT 'billing_plan_price_change_targets', count(*)
+  FROM billing_plan_price_change_targets WHERE subscription_id IS NOT NULL
+UNION ALL SELECT 'billing_plan_price_change_notices', count(*)
+  FROM billing_plan_price_change_notices WHERE subscription_id IS NOT NULL;
+```
+
+All zero → proceed. Any non-zero → **stop and classify that table deliberately**
+before the migration is ledgered anywhere; do not reach for the retained list to
+make the abort go away.

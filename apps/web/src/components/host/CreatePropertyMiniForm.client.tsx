@@ -654,14 +654,8 @@ export function CreatePropertyMiniForm({
             path: 'contacto',
             params: {
                 type: 'publish_accommodation',
-                subject: t(
-                    'host.form.sections.ubicacion.cityPicker.contactSubject',
-                    'Solicitud de nueva ciudad'
-                ),
-                message: t(
-                    'host.form.sections.ubicacion.cityPicker.contactMessage',
-                    'No encontré mi ciudad en el buscador del formulario de publicación. Me gustaría poder publicar mi alojamiento ahí. ¿Pueden agregarla?'
-                )
+                subject: t('host.form.sections.ubicacion.cityPicker.contactSubject'),
+                message: t('host.form.sections.ubicacion.cityPicker.contactMessage')
             }
         });
     }, [locale, t]);
@@ -1016,23 +1010,14 @@ export function CreatePropertyMiniForm({
             <div className="form-field">
                 <SearchableSelect
                     locale={locale}
-                    label={t('host.form.sections.ubicacion.cityPicker.label', 'Ciudad')}
+                    label={t('host.form.sections.ubicacion.cityPicker.label')}
                     value={city}
                     onChange={(item) => setCity(item)}
                     loadItems={loadCityItems}
                     minQueryLength={2}
-                    placeholder={t(
-                        'host.form.sections.ubicacion.cityPicker.placeholder',
-                        'Buscá tu ciudad (mín. 2 letras)'
-                    )}
-                    loadingLabel={t(
-                        'host.form.sections.ubicacion.cityPicker.loading',
-                        'Buscando ciudades...'
-                    )}
-                    emptyLabel={t(
-                        'host.form.sections.ubicacion.cityPicker.empty',
-                        'No hay coincidencias'
-                    )}
+                    placeholder={t('host.form.sections.ubicacion.cityPicker.placeholder')}
+                    loadingLabel={t('host.form.sections.ubicacion.cityPicker.loading')}
+                    emptyLabel={t('host.form.sections.ubicacion.cityPicker.empty')}
                     error={fieldErrors.destinationId ?? null}
                     required
                     testId="property-city"
@@ -1042,10 +1027,7 @@ export function CreatePropertyMiniForm({
                             className="combobox__helper-link"
                             data-testid="city-picker-not-found"
                         >
-                            {t(
-                                'host.form.sections.ubicacion.cityPicker.notFoundLink',
-                                'No encuentro mi ciudad'
-                            )}
+                            {t('host.form.sections.ubicacion.cityPicker.notFoundLink')}
                         </a>
                     }
                 />

@@ -25,7 +25,11 @@
         "viewDetail": "Ver mais",
         "featuredLabel": "Destaque",
         "newLabel": "Novo",
-        "noImage": "Sem imagem"
+        "noImage": "Sem imagem",
+        "maximize": "Maximizar panel",
+        "restore": "Restaurar tamaño",
+        "placeholderHasResults": "Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos",
+        "placeholderNoResults": "No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos."
     },
     "placeholder": "Descreva o que procura, ex: chalé para 4 com piscina perto do rio",
     "submit": "Buscar",
@@ -85,5 +89,8 @@
         "typeRoom": "Quarto privado com banheiro compartilhado",
         "typeMotel": "Motel com estacionamento e acesso direto",
         "typeResort": "Resort all-inclusive frente ao rio"
+    },
+    "nearbyDestinations": {
+        "label": "Incluyendo destinos cercanos:"
     }
 }

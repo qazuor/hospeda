@@ -53,6 +53,7 @@ vi.mock('@repo/db', () => ({
         id: 'id',
         customerId: 'customer_id',
         status: 'status',
+        mpSubscriptionId: 'mp_subscription_id',
         canceledAt: 'canceled_at',
         updatedAt: 'updated_at'
     },
@@ -143,6 +144,15 @@ vi.mock('../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
+// HOS-753: the provider-facing hard-cancel is mocked at its module boundary so
+// the assertions below read the PROVIDER FACADE, not the DB. Asserting on the
+// Drizzle table objects would be vacuous here — they are string stubs from the
+// `@repo/db` mock above, so `toHaveBeenCalledWith(billingSubscriptions)` proves
+// nothing about which table was actually written.
+vi.mock('../../src/services/billing/preapproval-hard-cancel', () => ({
+    hardCancelPreapprovalBestEffort: vi.fn().mockResolvedValue({ kind: 'cancelled' })
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after all mocks)
 // ---------------------------------------------------------------------------
@@ -150,6 +160,7 @@ vi.mock('../../src/utils/logger', () => ({
 import { getDb } from '@repo/db';
 import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
+import { hardCancelPreapprovalBestEffort } from '../../src/services/billing/preapproval-hard-cancel';
 import { applyRefundLifecycle } from '../../src/services/refund-lifecycle.service';
 import { apiLogger } from '../../src/utils/logger';
 
@@ -161,6 +172,14 @@ const SUBSCRIPTION_ID = 'sub-test-0001';
 const CUSTOMER_ID = 'cus_test_0001';
 const PAYMENT_ID = 'pay_test_0001';
 const ADMIN_USER_ID = 'admin-001';
+/**
+ * HOS-753 — the MercadoPago preapproval id linked to SUBSCRIPTION_ID.
+ *
+ * Deliberately the real id from the HOS-751 production incident: a full refund
+ * cancelled the local row while this preapproval stayed authorized and charged
+ * the customer again the following month.
+ */
+const MP_PREAPPROVAL_ID = '275b27a37f6f4e94bc1ab7543c6bd092';
 
 type Payment = Parameters<typeof applyRefundLifecycle>[0]['payment'];
 
@@ -200,9 +219,16 @@ function buildPayment(overrides: Partial<Payment> = {}): Payment {
  * override (in the @repo/service-core mock above) can call it with the tx proxy.
  *
  * @param subscriptionStatus - The status returned by the initial SELECT query.
+ * @param mpSubscriptionId - The MP preapproval id returned by the same SELECT
+ *   (HOS-753). `null` models a `comp` subscription, which has no preapproval.
  */
-function buildDbMock(subscriptionStatus = 'active') {
-    const selectWhere = vi.fn().mockResolvedValue([{ status: subscriptionStatus }]);
+function buildDbMock(
+    subscriptionStatus = 'active',
+    mpSubscriptionId: string | null = MP_PREAPPROVAL_ID
+) {
+    const selectWhere = vi
+        .fn()
+        .mockResolvedValue([{ status: subscriptionStatus, mpSubscriptionId }]);
     const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
     const select = vi.fn().mockReturnValue({ from: selectFrom });
 
@@ -1172,6 +1198,168 @@ describe('applyRefundLifecycle', () => {
 
             expect(second.spies.update).toHaveBeenCalledTimes(1);
             expect(second.spies.insertValues).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // ── HOS-753: the provider must be told, not just the local row ──────────
+    //
+    // The bug: a full refund flipped `billing_subscriptions.status` to
+    // `cancelled` with a plain Drizzle UPDATE and never called MercadoPago. The
+    // preapproval stayed authorized and charged again the next cycle (HOS-751,
+    // preapproval 275b27a37f6f4e94bc1ab7543c6bd092).
+    //
+    // It could not self-heal either: the ONLY code that hard-cancels a
+    // preapproval is the `finalize-cancelled-subs` cron, whose selection filter
+    // is `status IN ('active','past_due','trialing')`. By writing `cancelled`
+    // the refund excluded its own row from the one sweep that would have caught
+    // the omission — it skipped the gate AND shut it behind itself.
+    //
+    // These assertions read the PROVIDER FACADE (the mocked hard-cancel module),
+    // never the DB: `apps/api` mocks `@repo/db`, which makes table-level
+    // assertions vacuous.
+    describe('HOS-753 — full refund hard-cancels the MercadoPago preapproval', () => {
+        it('REGRESSION: calls the provider hard-cancel with the row mp_subscription_id', async () => {
+            const { db } = buildDbMock('active');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            // Exact-shape assertion on purpose. `expect.objectContaining` is
+            // BLIND to a missing field, so it would stay green if the call
+            // stopped passing `mpSubscriptionId` — green with the bug back.
+            expect(hardCancelPreapprovalBestEffort).toHaveBeenCalledTimes(1);
+            expect(hardCancelPreapprovalBestEffort).toHaveBeenCalledWith({
+                subscriptionId: SUBSCRIPTION_ID,
+                mpSubscriptionId: MP_PREAPPROVAL_ID,
+                source: 'refund-lifecycle'
+            });
+        });
+
+        it('fires for an implicit full refund (refundAmount undefined) too', async () => {
+            const { db } = buildDbMock('active');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: undefined,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(hardCancelPreapprovalBestEffort).toHaveBeenCalledWith({
+                subscriptionId: SUBSCRIPTION_ID,
+                mpSubscriptionId: MP_PREAPPROVAL_ID,
+                source: 'refund-lifecycle'
+            });
+        });
+
+        it('passes mpSubscriptionId null for a comp subscription (no preapproval)', async () => {
+            // `comp` subscriptions are direct DB inserts with mp_subscription_id
+            // NULL. The call must still happen and must carry the null through —
+            // the helper owns the clean no-op, so short-circuiting here would
+            // move that decision to the wrong place and hide it from the logs.
+            const { db } = buildDbMock('active', null);
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(hardCancelPreapprovalBestEffort).toHaveBeenCalledWith({
+                subscriptionId: SUBSCRIPTION_ID,
+                mpSubscriptionId: null,
+                source: 'refund-lifecycle'
+            });
+        });
+
+        it('does not throw when the provider hard-cancel rejects (money is already returned)', async () => {
+            // Best-effort: a refund cannot be un-made, so a provider failure must
+            // never surface as an error the admin endpoint retries.
+            vi.mocked(hardCancelPreapprovalBestEffort).mockRejectedValueOnce(new Error('MP 500'));
+            const { db } = buildDbMock('active');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await expect(
+                applyRefundLifecycle({
+                    payment: buildPayment({ amount: 1000 }),
+                    refundAmount: 1000,
+                    adminUserId: ADMIN_USER_ID
+                })
+            ).resolves.toBeUndefined();
+
+            // The cache clear still ran — the local revocation is unaffected.
+            expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+        });
+
+        it('still hard-cancels when the status transaction throws', async () => {
+            // Mirrors the pre-existing fail-open reasoning for clearEntitlementCache:
+            // the money left the account, so "keep charging the card" is never the
+            // safer branch when the local write fails.
+            const { db, spies } = buildDbMock('active');
+            spies.transaction.mockRejectedValueOnce(new Error('DB down'));
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(hardCancelPreapprovalBestEffort).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // ── Control positive for the HOS-753 assertions ─────────────────────────
+    //
+    // Without this block the assertions above could not tell "fixed" from
+    // "always calls the provider". Each case here reaches a code path that must
+    // NOT touch the provider, and each would fail if the call were hoisted to
+    // the top of `applyRefundLifecycle` — the cheapest wrong way to make the
+    // regression test green.
+    describe('HOS-753 control positive — paths that must NOT call the provider', () => {
+        it('a pure partial refund does not hard-cancel (the subscription lives on)', async () => {
+            const { db } = buildPartialRefundDbMock(300);
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 300,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(hardCancelPreapprovalBestEffort).not.toHaveBeenCalled();
+        });
+
+        it('a payment with no linked subscription does not hard-cancel', async () => {
+            const { db } = buildDbMock('active');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ subscriptionId: null }),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(hardCancelPreapprovalBestEffort).not.toHaveBeenCalled();
+        });
+
+        it('a missing subscription row does not hard-cancel', async () => {
+            const { db, spies } = buildDbMock('active');
+            spies.selectWhere.mockResolvedValueOnce([]);
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(hardCancelPreapprovalBestEffort).not.toHaveBeenCalled();
         });
     });
 });

@@ -637,10 +637,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             'account.favorites.notes.placeholder',
                             'Agregá una nota personal...'
                         )}
-                        noteSaveErrorMessage={t(
-                            'account.favorites.errors.saveFailed',
-                            'No se pudo guardar la nota'
-                        )}
+                        noteSaveErrorMessage={t('account.favorites.errors.saveFailed')}
                         moveBtnLabel={t('account.favorites.collections.move', 'Mover')}
                         moveBtnAriaLabel={t(
                             'account.favorites.collections.move_button_aria',

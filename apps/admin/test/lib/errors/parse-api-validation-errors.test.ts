@@ -18,12 +18,20 @@ import {
 /**
  * Identity translation function: returns the key as-is.
  *
- * NOTE (H-27): `parseApiValidationErrors` now routes the reported key through
+ * NOTE (H-27): `parseApiValidationErrors` routes the reported key through
  * `resolveValidationMessage` before calling `t`, so these stubs receive the
  * REWRITTEN key (`validation.*`), never the `zodError.*` one the API sent.
- * The expectations below encode that rewrite on purpose — it is the fix.
  * The real-dictionary assertions live in
  * `parse-api-validation-errors.messages.test.ts`.
+ *
+ * NOTE (HOS-775): what `t` RECEIVES is unchanged, but what the caller gets back
+ * is not. An identity stub returns exactly the key it was handed, and
+ * `resolveValidationMessage` now recognises that echo as "no translation" — so
+ * it returns the ORIGINAL `zodError.*` key, which is what its JSDoc always
+ * promised ("the original `key` is returned unchanged"). These expectations
+ * used to read `validation.*`, i.e. they froze the stripped key the function
+ * returned only because the echo went undetected. Production behaviour does not
+ * change: admin's real `t` emits the `[MISSING:` marker, never a bare echo.
  */
 const identityT = (key: string) => key;
 
@@ -166,11 +174,13 @@ describe('parseApiValidationErrors', () => {
             // Act
             const result = parseApiValidationErrors({ error, t: identityT });
 
-            // Assert
+            // Assert — the identity stub echoes each key back, so every lookup
+            // reads as untranslated and each field keeps its ORIGINAL
+            // `zodError.*` key (HOS-775).
             expect(result).toEqual({
-                name: 'validation.accommodation.name.min',
-                slug: 'validation.accommodation.slug.required',
-                'address.city': 'validation.accommodation.address.city.required'
+                name: 'zodError.accommodation.name.min',
+                slug: 'zodError.accommodation.slug.required',
+                'address.city': 'zodError.accommodation.address.city.required'
             });
         });
 
@@ -202,8 +212,9 @@ describe('parseApiValidationErrors', () => {
             // Act
             const result = parseApiValidationErrors({ error, t: identityT });
 
-            // Assert – last entry wins
-            expect(result.name).toBe('validation.accommodation.name.max');
+            // Assert – last entry wins, keeping its original key (see HOS-775
+            // note above on why this is `zodError.*` and not `validation.*`).
+            expect(result.name).toBe('zodError.accommodation.name.max');
         });
     });
 

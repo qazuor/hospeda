@@ -219,6 +219,11 @@
             "reasonCardDeclined": "La tarjeta fue rechazada",
             "reasonExpired": "La tarjeta está vencida",
             "reasonInvalidData": "Datos de la tarjeta inválidos",
+            "reasonHighRisk": "La operación no fue autorizada por prevención de fraude",
+            "reasonSecurityCode": "Revisá el código de seguridad de la tarjeta",
+            "reasonCardDisabled": "La tarjeta está bloqueada o deshabilitada",
+            "reasonInvalidInstallments": "El plan de cuotas elegido no es válido para esta tarjeta",
+            "reasonUnknown": "Motivo no informado por el banco",
             "retryCta": "Intentar de nuevo",
             "supportCta": "Contactar soporte",
             "pageTitle": "Pago rechazado"
@@ -420,7 +425,7 @@
         },
         "owner-pro": {
             "name": "Profesional",
-            "description": "Estadísticas avanzadas, listado destacado y soporte prioritario para hacer crecer tu negocio."
+            "description": "Listado destacado, contenido más completo para tu alojamiento y más margen para hacer crecer tu negocio."
         },
         "owner-premium": {
             "name": "Premium",

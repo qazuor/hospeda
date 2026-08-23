@@ -219,6 +219,11 @@
             "reasonCardDeclined": "O cartão foi recusado",
             "reasonExpired": "O cartão está vencido",
             "reasonInvalidData": "Dados do cartão inválidos",
+            "reasonHighRisk": "A operação não foi autorizada pela prevenção de fraudes",
+            "reasonSecurityCode": "Confira o código de segurança do cartão",
+            "reasonCardDisabled": "O cartão está bloqueado ou desabilitado",
+            "reasonInvalidInstallments": "O parcelamento escolhido não é válido para este cartão",
+            "reasonUnknown": "Motivo não informado pelo banco",
             "retryCta": "Tentar novamente",
             "supportCta": "Falar com o suporte",
             "pageTitle": "Pagamento recusado"
@@ -420,7 +425,7 @@
         },
         "owner-pro": {
             "name": "Profissional",
-            "description": "Estatísticas avançadas, anúncio em destaque e suporte prioritário para fazer seu negócio crescer."
+            "description": "Anúncio em destaque, conteúdo mais completo para sua hospedagem e mais espaço para fazer seu negócio crescer."
         },
         "owner-premium": {
             "name": "Premium",

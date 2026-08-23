@@ -249,7 +249,7 @@ export function ExperienceReviews({
                                         margin: 0
                                     }}
                                 >
-                                    {review.user?.name ?? t('common.anonymous', 'Usuario')}
+                                    {review.user?.name ?? t('common.anonymous')}
                                 </p>
                                 {review.averageRating != null && (
                                     <div

@@ -30,6 +30,7 @@
 
 import type { Locale } from './config.shared';
 import { defaultLocale, webTrans as trans } from './config.shared';
+import { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
 
 /**
  * Type alias for supported locale values. Exported so web can re-export it
@@ -168,11 +169,13 @@ export function translateApiErrorWithT(params: {
     // Prefer the more specific `reason` over `code` when both are present —
     // e.g. `code: 'SERVICE_UNAVAILABLE'` + `reason: 'NEWSLETTER_NOT_CONFIGURED'`
     // should render the newsletter-specific copy, not the generic 503 one.
-    // Detect [MISSING: ...] sentinel (returned in DEV when a key is absent
-    // and no fallback is supplied) so we fall through to `code`.
+    // Detect absence via the canonical predicate so the fall-through to `code`
+    // works in production too: a DEV build reports an absent key with the
+    // `[MISSING:` marker, a production build echoes the raw key back.
     if (error?.reason) {
-        const reasonText = t(`common.apiError.${error.reason}`);
-        if (reasonText && !reasonText.startsWith('[MISSING:')) return reasonText;
+        const reasonKey = `common.apiError.${error.reason}`;
+        const reasonText = t(reasonKey);
+        if (!isMissingTranslation({ key: reasonKey, value: reasonText })) return reasonText;
     }
 
     if (error?.code) {
@@ -184,12 +187,13 @@ export function translateApiErrorWithT(params: {
     // No `code` (or `reason`) resolved — some failure modes only carry an HTTP
     // status (client-side timeout, network/offline, raw rate-limit). Map the few
     // statuses with a clear meaning to a dedicated localized message instead of
-    // the raw English `message` or the generic fallback (BETA-146). Guard against
-    // the `[MISSING:` sentinel so an absent key falls through, never leaks.
+    // the raw English `message` or the generic fallback (BETA-146). Guard with
+    // the canonical predicate so an absent key falls through, never leaks.
     const statusKey = error?.status == null ? undefined : HTTP_STATUS_MESSAGE_KEY[error.status];
     if (statusKey) {
-        const statusText = t(`common.apiError.${statusKey}`);
-        if (statusText && !statusText.startsWith('[MISSING:')) return statusText;
+        const statusFullKey = `common.apiError.${statusKey}`;
+        const statusText = t(statusFullKey);
+        if (!isMissingTranslation({ key: statusFullKey, value: statusText })) return statusText;
     }
 
     return apiMessage || genericFallback;
@@ -205,14 +209,16 @@ export function translateApiError(params: {
 
     // Resolve the translation function: prefer an explicit `t`, then build one
     // from `locale` using the package's own `trans` map.
-    // The built-in function uses `[MISSING: key]` as the sentinel for absent keys
-    // (when no fallback is supplied) so that the `reason` fall-through check in
-    // the priority logic works identically to the web's `createT` behaviour.
+    // The built-in function emits the shared missing-key marker for absent keys
+    // (when no fallback is supplied). `isMissingTranslation` also treats a raw
+    // key echo as absent, so the fall-through works with either convention.
     const t: TranslationFn | undefined =
         params.t ??
         (params.locale
             ? (key: string, fb?: string) =>
-                  lookupTrans(params.locale as Locale, key) ?? fb ?? `[MISSING: ${key}]`
+                  lookupTrans(params.locale as Locale, key) ??
+                  fb ??
+                  `${MISSING_TRANSLATION_MARKER} ${key}]`
             : undefined);
 
     if (!t) {

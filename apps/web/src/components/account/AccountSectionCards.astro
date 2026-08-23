@@ -26,7 +26,7 @@ interface Props {
 const { locale, navItems } = Astro.props;
 const { t } = createTranslations(locale);
 
-const sectionsLabel = t('account.pages.dashboard.sectionsLabel', 'Secciones');
+const sectionsLabel = t('account.pages.dashboard.sectionsLabel');
 ---
 
 <section class="account__sections" aria-label={t('account.sections', 'Account sections')}>

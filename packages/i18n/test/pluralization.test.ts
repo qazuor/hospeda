@@ -188,3 +188,156 @@ describe('pluralize', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// Build-mode independence (production vs development missing-key reporting)
+// ---------------------------------------------------------------------------
+
+/**
+ * Mock `t` mirroring apps/web's `resolve()` in a PRODUCTION build: an absent
+ * key is echoed back verbatim, with no `[MISSING:` marker.
+ */
+function createProductionT(translations: Record<string, string>) {
+    return (key: string, params?: Record<string, unknown>): string => {
+        const raw = translations[key];
+        if (raw === undefined) {
+            return key;
+        }
+        if (!params) return raw;
+
+        return Object.keys(params).reduce((acc, k) => {
+            const v = params[k];
+            return acc
+                .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v))
+                .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        }, raw);
+    };
+}
+
+describe('pluralize — missing-key detection is build-mode independent', () => {
+    describe('production mode (no [MISSING: marker)', () => {
+        it('falls back to the base key when the _other key is absent', () => {
+            // Arrange: only the base key exists in the catalog.
+            const prodT = createProductionT({
+                'billing.limit.max_active_alerts.message':
+                    'Alcanzaste el limite de {{count}} alertas activas.'
+            });
+
+            // Act
+            const result = pluralize({
+                t: prodT,
+                key: 'billing.limit.max_active_alerts.message',
+                count: 5
+            });
+
+            // Assert: the user must never see the raw dotted key.
+            expect(result).toBe('Alcanzaste el limite de 5 alertas activas.');
+            expect(result).not.toBe('billing.limit.max_active_alerts.message_other');
+        });
+
+        it('falls back to the base key when the _one key is absent', () => {
+            const prodT = createProductionT({
+                'billing.limit.max_active_alerts.message':
+                    'Alcanzaste el limite de {{count}} alerta activa.'
+            });
+
+            const result = pluralize({
+                t: prodT,
+                key: 'billing.limit.max_active_alerts.message',
+                count: 1
+            });
+
+            expect(result).toBe('Alcanzaste el limite de 1 alerta activa.');
+            expect(result).not.toBe('billing.limit.max_active_alerts.message_one');
+        });
+
+        it('never leaks a suffixed key when both the plural and base keys are absent', () => {
+            const prodT = createProductionT({});
+
+            const result = pluralize({ t: prodT, key: 'totally.unknown.key', count: 3 });
+
+            // Degrades to the BASE key, never to the suffixed variant.
+            expect(result).toBe('totally.unknown.key');
+            expect(result).not.toBe('totally.unknown.key_other');
+        });
+
+        it('still resolves the _one key when it is present', () => {
+            const prodT = createProductionT({
+                'list.totalReviews_one': '{{count}} resena',
+                'list.totalReviews_other': '{{count}} resenas'
+            });
+
+            const result = pluralize({ t: prodT, key: 'list.totalReviews', count: 1 });
+
+            expect(result).toBe('1 resena');
+        });
+
+        it('still resolves the _other key when it is present', () => {
+            const prodT = createProductionT({
+                'list.totalReviews_one': '{{count}} resena',
+                'list.totalReviews_other': '{{count}} resenas'
+            });
+
+            const result = pluralize({ t: prodT, key: 'list.totalReviews', count: 7 });
+
+            expect(result).toBe('7 resenas');
+        });
+
+        it('merges extra params into the base-key fallback', () => {
+            const prodT = createProductionT({
+                'search.results': '{{count}} resultados en {{city}}'
+            });
+
+            const result = pluralize({
+                t: prodT,
+                key: 'search.results',
+                count: 4,
+                params: { city: 'Concepcion del Uruguay' }
+            });
+
+            expect(result).toBe('4 resultados en Concepcion del Uruguay');
+        });
+    });
+
+    describe('development mode ([MISSING: marker) keeps working', () => {
+        it('falls back to the base key when the _other key is absent', () => {
+            const devT = createMockT({
+                'billing.limit.max_active_alerts.message':
+                    'Alcanzaste el limite de {{count}} alertas activas.'
+            });
+
+            const result = pluralize({
+                t: devT,
+                key: 'billing.limit.max_active_alerts.message',
+                count: 5
+            });
+
+            expect(result).toBe('Alcanzaste el limite de 5 alertas activas.');
+        });
+
+        it('returns the dev marker for the base key when everything is absent', () => {
+            const devT = createMockT({});
+
+            const result = pluralize({ t: devT, key: 'totally.unknown.key', count: 3 });
+
+            expect(result).toBe('[MISSING: totally.unknown.key]');
+        });
+    });
+
+    describe('every supported locale falls back identically in production mode', () => {
+        it('falls back to the base key in es', () => {
+            const prodT = createProductionT({ 'review.count': '{{count}} resenas' });
+            expect(pluralize({ t: prodT, key: 'review.count', count: 2 })).toBe('2 resenas');
+        });
+
+        it('falls back to the base key in en', () => {
+            const prodT = createProductionT({ 'review.count': '{{count}} reviews' });
+            expect(pluralize({ t: prodT, key: 'review.count', count: 2 })).toBe('2 reviews');
+        });
+
+        it('falls back to the base key in pt', () => {
+            const prodT = createProductionT({ 'review.count': '{{count}} avaliacoes' });
+            expect(pluralize({ t: prodT, key: 'review.count', count: 2 })).toBe('2 avaliacoes');
+        });
+    });
+});

@@ -25,16 +25,15 @@ import { FOCUSABLE_SELECTORS } from '../../../src/lib/focus-trap';
 // ---------------------------------------------------------------------------
 
 /**
- * Mock i18n to avoid locale file loading in JSDOM. Returns the provided
- * fallback (which is what the component always passes) so the visible text
- * matches the literal Spanish strings in the source.
+ * Mock i18n to avoid the full `@repo/i18n` catalog in JSDOM: `tFromCatalog`
+ * reads only the `es` namespace a key names. It resolves against the real
+ * catalog, so the visible text still matches the Spanish a user sees — the
+ * previous stub matched it only because the copy was duplicated inline, which
+ * HOS-616 removed.
  */
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (_key: string, fallback?: string, vars?: Record<string, unknown>) => {
-        const base = fallback ?? _key;
-        if (!vars) return base;
-        return base.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
-    };
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    const t = tFromCatalog;
     const tPlural = (key: string, count: number, params?: Record<string, unknown>) => {
         if (key === 'home.searchBar.guestsAdultsCount')
             return `${count} adulto${count === 1 ? '' : 's'}`;
@@ -504,8 +503,8 @@ describe('<SearchBar /> guests selector (BETA-26 regression)', () => {
         await user.click(guestsTrigger);
 
         // Bump adults 2 -> 3, then back 3 -> 2: the user deliberately lands on 2.
-        await user.click(screen.getByRole('button', { name: /more adults/i }));
-        await user.click(screen.getByRole('button', { name: /fewer adults/i }));
+        await user.click(screen.getByRole('button', { name: /más adultos/i }));
+        await user.click(screen.getByRole('button', { name: /menos adultos/i }));
 
         // The chosen value must remain visible; it must NOT collapse back to the
         // placeholder just because it equals the default (the original bug).
@@ -682,7 +681,7 @@ describe('<SearchBar /> mobile panel portal (HOS-323 regression)', () => {
 
         const trigger = screen.getByRole('button', { name: /huéspedes/i });
         await user.click(trigger);
-        await user.click(screen.getByRole('button', { name: /more adults/i }));
+        await user.click(screen.getByRole('button', { name: /más adultos/i }));
 
         expect(trigger).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByRole('dialog', { name: 'Huéspedes' })).toBeInTheDocument();
@@ -1184,7 +1183,7 @@ describe('<SearchBar /> sheet focus management', () => {
         await user.click(screen.getByRole('button', { name: /huéspedes/i }));
         const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
 
-        const moreChildren = screen.getByRole('button', { name: /more children/i });
+        const moreChildren = screen.getByRole('button', { name: /más niños/i });
         for (let index = 0; index < 6; index += 1) {
             await user.click(moreChildren);
         }

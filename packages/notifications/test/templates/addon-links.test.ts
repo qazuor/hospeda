@@ -40,9 +40,18 @@ describe('buildAddonManagementUrl', () => {
     });
 
     it.each([
-        ['es', `${BASE_URL}/es/mi-cuenta/addons/?focus=visibility-boost-7d`],
-        ['en', `${BASE_URL}/en/mi-cuenta/addons/?focus=visibility-boost-7d`],
-        ['pt', `${BASE_URL}/pt/mi-cuenta/addons/?focus=visibility-boost-7d`]
+        [
+            'es',
+            `${BASE_URL}/es/mi-cuenta/addons/?focus=visibility-boost-7d#addon-visibility-boost-7d`
+        ],
+        [
+            'en',
+            `${BASE_URL}/en/mi-cuenta/addons/?focus=visibility-boost-7d#addon-visibility-boost-7d`
+        ],
+        [
+            'pt',
+            `${BASE_URL}/pt/mi-cuenta/addons/?focus=visibility-boost-7d#addon-visibility-boost-7d`
+        ]
     ] as const)('builds a %s-locale URL focused on the expiring add-on', (locale, expected) => {
         const url = buildAddonManagementUrl({
             baseUrl: BASE_URL,
@@ -57,7 +66,7 @@ describe('buildAddonManagementUrl', () => {
         const url = buildAddonManagementUrl({ baseUrl: BASE_URL, addonSlug: 'priority-support' });
 
         expect(url).toBe(
-            `${BASE_URL}/${DEFAULT_ADDON_LINK_LOCALE}/mi-cuenta/addons/?focus=priority-support`
+            `${BASE_URL}/${DEFAULT_ADDON_LINK_LOCALE}/mi-cuenta/addons/?focus=priority-support#addon-priority-support`
         );
     });
 
@@ -71,7 +80,9 @@ describe('buildAddonManagementUrl', () => {
             addonSlug: 'priority-support'
         });
 
-        expect(url).toBe(`${BASE_URL}/es/mi-cuenta/addons/?focus=priority-support`);
+        expect(url).toBe(
+            `${BASE_URL}/es/mi-cuenta/addons/?focus=priority-support#addon-priority-support`
+        );
     });
 
     it('omits the focus param entirely when no addonSlug is given', () => {
@@ -92,6 +103,31 @@ describe('buildAddonManagementUrl', () => {
         expect(url).toContain('?focus=visibility-boost-30d');
     });
 
+    it('carries the HOS-729 `#addon-<slug>` fragment, not just the focus param', () => {
+        // The fragment is the half of the contract native browser scroll uses:
+        // `?focus=` reorders and highlights the card, `#addon-<slug>` is what
+        // actually lands the viewport on it. Emitting only the param (the
+        // helper's original shape) left the deep link depending on the focused
+        // card happening to render first, which is a rendering coincidence.
+        // Full contract: apps/web/src/lib/billing/addon-focus.ts.
+        const url = buildAddonManagementUrl({
+            baseUrl: BASE_URL,
+            locale: 'es',
+            addonSlug: 'extra-photos-20'
+        });
+
+        expect(url).toBe(
+            `${BASE_URL}/es/mi-cuenta/addons/?focus=extra-photos-20#addon-extra-photos-20`
+        );
+    });
+
+    it('emits no fragment at all when there is no addonSlug to focus', () => {
+        const url = buildAddonManagementUrl({ baseUrl: BASE_URL, locale: 'pt' });
+
+        expect(url).toBe(`${BASE_URL}/pt/mi-cuenta/addons/`);
+        expect(url).not.toContain('#');
+    });
+
     it('URL-encodes an addon slug with characters that need escaping', () => {
         const url = buildAddonManagementUrl({
             baseUrl: BASE_URL,
@@ -99,6 +135,8 @@ describe('buildAddonManagementUrl', () => {
             addonSlug: 'weird slug/with?chars'
         });
 
-        expect(url).toBe(`${BASE_URL}/es/mi-cuenta/addons/?focus=weird%20slug%2Fwith%3Fchars`);
+        expect(url).toBe(
+            `${BASE_URL}/es/mi-cuenta/addons/?focus=weird%20slug%2Fwith%3Fchars#addon-weird%20slug%2Fwith%3Fchars`
+        );
     });
 });

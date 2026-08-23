@@ -53,7 +53,9 @@
         "fetchFailed": "Could not load external reviews. Please try again later.",
         "notFound": "No reputation data found for this platform.",
         "blocked": "Access to this platform's data has been temporarily blocked.",
-        "statusFailed": "Could not retrieve the update status."
+        "statusFailed": "Could not retrieve the update status.",
+        "invalidUrl": "Ingresá una URL válida (https://...).",
+        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo."
     },
     "status": {
         "pending": "Updating...",

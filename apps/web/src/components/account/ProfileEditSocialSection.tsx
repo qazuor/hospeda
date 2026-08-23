@@ -113,12 +113,12 @@ export function ProfileEditSocialSection({
                 className={styles.sectionTitle}
                 id="social-section-title"
             >
-                {t('account.pages.editProfile.socialSection', 'Redes sociales')}
+                {t('account.pages.editProfile.socialSection')}
             </h3>
             <div className={styles.grid}>
                 <SocialField
                     id="facebookUrl"
-                    label={t('account.editProfile.fields.facebook', 'Facebook')}
+                    label={t('account.editProfile.fields.facebook')}
                     placeholder="https://facebook.com/usuario"
                     value={facebookUrl}
                     error={fieldErrors.facebookUrl}
@@ -127,7 +127,7 @@ export function ProfileEditSocialSection({
                 />
                 <SocialField
                     id="instagramUrl"
-                    label={t('account.editProfile.fields.instagram', 'Instagram')}
+                    label={t('account.editProfile.fields.instagram')}
                     placeholder="https://instagram.com/usuario"
                     value={instagramUrl}
                     error={fieldErrors.instagramUrl}
@@ -136,7 +136,7 @@ export function ProfileEditSocialSection({
                 />
                 <SocialField
                     id="twitterUrl"
-                    label={t('account.editProfile.fields.twitter', 'X / Twitter')}
+                    label={t('account.editProfile.fields.twitter')}
                     placeholder="https://x.com/usuario"
                     value={twitterUrl}
                     error={fieldErrors.twitterUrl}
@@ -145,7 +145,7 @@ export function ProfileEditSocialSection({
                 />
                 <SocialField
                     id="linkedinUrl"
-                    label={t('account.editProfile.fields.linkedin', 'LinkedIn')}
+                    label={t('account.editProfile.fields.linkedin')}
                     placeholder="https://linkedin.com/in/usuario"
                     value={linkedinUrl}
                     error={fieldErrors.linkedinUrl}
@@ -154,7 +154,7 @@ export function ProfileEditSocialSection({
                 />
                 <SocialField
                     id="youtubeUrl"
-                    label={t('account.editProfile.fields.youtube', 'YouTube')}
+                    label={t('account.editProfile.fields.youtube')}
                     placeholder="https://youtube.com/@usuario"
                     value={youtubeUrl}
                     error={fieldErrors.youtubeUrl}

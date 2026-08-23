@@ -185,16 +185,10 @@ export function SearchChatPanel({
     // - initial: no search has completed yet — the original onboarding copy.
     const composerPlaceholder = (() => {
         if (chat.results.length > 0) {
-            return t(
-                'aiSearch.chat.placeholderHasResults',
-                'Afiná tu búsqueda: sumá precio, características, o pedí destinos cercanos'
-            );
+            return t('aiSearch.chat.placeholderHasResults');
         }
         if (chat.hasSearched && !chat.resultsLoading) {
-            return t(
-                'aiSearch.chat.placeholderNoResults',
-                'No encontré nada con esos filtros. Probá quitando alguno o buscá en destinos cercanos.'
-            );
+            return t('aiSearch.chat.placeholderNoResults');
         }
         return t(
             'aiSearch.chat.placeholder',

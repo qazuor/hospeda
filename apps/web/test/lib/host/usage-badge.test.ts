@@ -12,8 +12,9 @@
  *    name, causing HTTP 400. Fixed by using the imported const.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+    fetchHostUsageBadge,
     MAX_ACCOMMODATIONS_LIMIT_KEY,
     parseUsageResponse
 } from '../../../src/lib/host/usage-badge';
@@ -141,5 +142,89 @@ describe('parseUsageResponse', () => {
 
         // Act & Assert
         expect(parseUsageResponse({ json })).toBeNull();
+    });
+});
+
+describe('fetchHostUsageBadge', () => {
+    it('does not request usage when entitlements say the owner has no real host plan', async () => {
+        // Arrange
+        const fetchImpl = vi
+            .fn<typeof fetch>()
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ data: { plan: null } }), { status: 200 })
+            )
+            .mockResolvedValueOnce(new Response('not found', { status: 404 }));
+
+        // Act
+        const result = await fetchHostUsageBadge({
+            apiUrl: 'https://api.test',
+            headers: { cookie: 'session=abc', Accept: 'application/json' },
+            fetchImpl
+        });
+
+        // Assert
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+        expect(fetchImpl).toHaveBeenCalledWith(
+            'https://api.test/api/v1/protected/users/me/entitlements',
+            {
+                headers: { cookie: 'session=abc', Accept: 'application/json' }
+            }
+        );
+        expect(result).toEqual({
+            usageData: null,
+            hasOwnerPlan: false,
+            entitlementsReadOk: true,
+            entitlementsStatus: 200
+        });
+    });
+
+    it('requests usage after entitlements confirm a real host plan', async () => {
+        // Arrange
+        const fetchImpl = vi
+            .fn<typeof fetch>()
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ data: { plan: { id: 'plan-1' } } }), {
+                    status: 200
+                })
+            )
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        success: true,
+                        data: { currentUsage: 2, maxAllowed: 5, threshold: 'warning' }
+                    }),
+                    { status: 200 }
+                )
+            );
+
+        // Act
+        const result = await fetchHostUsageBadge({
+            apiUrl: 'https://api.test',
+            headers: { cookie: 'session=abc', Accept: 'application/json' },
+            fetchImpl
+        });
+
+        // Assert
+        expect(fetchImpl).toHaveBeenCalledTimes(2);
+        expect(fetchImpl).toHaveBeenNthCalledWith(
+            1,
+            'https://api.test/api/v1/protected/users/me/entitlements',
+            {
+                headers: { cookie: 'session=abc', Accept: 'application/json' }
+            }
+        );
+        expect(fetchImpl).toHaveBeenNthCalledWith(
+            2,
+            `https://api.test/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
+            {
+                headers: { cookie: 'session=abc', Accept: 'application/json' }
+            }
+        );
+        expect(result).toEqual({
+            usageData: { currentUsage: 2, maxAllowed: 5, threshold: 'warning' },
+            hasOwnerPlan: true,
+            entitlementsReadOk: true,
+            entitlementsStatus: 200
+        });
     });
 });

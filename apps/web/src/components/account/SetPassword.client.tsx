@@ -74,22 +74,19 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
     // ── i18n for PasswordField ────────────────────────────────────────────────
 
     const passwordI18n: PasswordFieldI18n = {
-        showPassword: t('account.setPassword.showPassword', 'Mostrar contraseña'),
-        hidePassword: t('account.setPassword.hidePassword', 'Ocultar contraseña'),
+        showPassword: t('account.setPassword.showPassword'),
+        hidePassword: t('account.setPassword.hidePassword'),
         strength: {
-            weak: t('account.setPassword.passwordStrength.weak', 'Débil'),
-            medium: t('account.setPassword.passwordStrength.medium', 'Media'),
-            strong: t('account.setPassword.passwordStrength.strong', 'Fuerte')
+            weak: t('account.setPassword.passwordStrength.weak'),
+            medium: t('account.setPassword.passwordStrength.medium'),
+            strong: t('account.setPassword.passwordStrength.strong')
         },
         rules: {
-            length: t('account.setPassword.rules.length', 'Mínimo 8 caracteres'),
-            upper: t('account.setPassword.rules.upper', 'Al menos 1 mayúscula'),
-            lower: t('account.setPassword.rules.lower', 'Al menos 1 minúscula'),
-            digit: t('account.setPassword.rules.digit', 'Al menos 1 número'),
-            special: t(
-                'account.setPassword.rules.special',
-                'Al menos 1 carácter especial (@$!%*?&)'
-            )
+            length: t('account.setPassword.rules.length'),
+            upper: t('account.setPassword.rules.upper'),
+            lower: t('account.setPassword.rules.lower'),
+            digit: t('account.setPassword.rules.digit'),
+            special: t('account.setPassword.rules.special')
         }
     };
 
@@ -140,12 +137,7 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                 // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet for
                 // this case — the fallback below is shown for every locale
                 // until `account.setPassword.errors.passwordMax` is added.
-                setPasswordError(
-                    t(
-                        'account.setPassword.errors.passwordMax',
-                        'La contraseña no puede superar los 128 caracteres.'
-                    )
-                );
+                setPasswordError(t('account.setPassword.errors.passwordMax'));
             } else {
                 setPasswordError(
                     t(
@@ -158,9 +150,7 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
         }
 
         if (password !== confirmPassword) {
-            setConfirmError(
-                t('account.setPassword.errors.passwordsMismatch', 'Las contraseñas no coinciden.')
-            );
+            setConfirmError(t('account.setPassword.errors.passwordsMismatch'));
             return;
         }
 

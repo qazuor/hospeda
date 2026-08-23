@@ -140,6 +140,31 @@ function mapDetailFaqs(raw: unknown, locale: string): DetailFaq[] {
  * @param locale - The requested page locale.
  * @returns The language code to place on the FAQPage node.
  */
+/**
+ * Drops the FAQs that did not resolve into the page's language — HOS-616.
+ *
+ * A destination FAQ with no localized text for the active locale falls back to
+ * the legacy Spanish columns, so under /en and /pt the block rendered Spanish
+ * while the surrounding page was translated. That is worse than rendering
+ * nothing: it tells a crawler the English page is written in English and then
+ * serves it Spanish prose.
+ *
+ * Under /es every FAQ resolves to Spanish, so nothing is ever hidden there. A
+ * FAQ whose question and answer disagree is reported as Spanish by
+ * {@link mapDetailFaqs} and is therefore dropped too — a half-translated pair
+ * is not a translated pair.
+ *
+ * @param faqs - Normalized FAQs from a public detail transform.
+ * @param locale - Active page locale.
+ * @returns Only the FAQs whose text really is in that locale.
+ */
+export function faqsInPageLanguage<T extends Pick<DetailFaq, 'resolvedLocale'>>(
+    faqs: ReadonlyArray<T>,
+    locale: string
+): T[] {
+    return faqs.filter((faq) => faq.resolvedLocale === locale);
+}
+
 export function faqSetInLanguage(
     faqs: ReadonlyArray<Pick<DetailFaq, 'resolvedLocale'>>,
     locale: string

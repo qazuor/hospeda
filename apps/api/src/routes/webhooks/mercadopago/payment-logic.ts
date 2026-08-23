@@ -15,6 +15,7 @@ import { asMajor, createMercadoPagoAdapter, type Major, toCentavos } from '@repo
 import {
     and,
     billingAddonPurchases,
+    billingNotificationLog,
     billingPayments,
     billingSubscriptions,
     eq,
@@ -22,6 +23,7 @@ import {
     isNull,
     sql
 } from '@repo/db';
+import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
@@ -40,6 +42,7 @@ import { normalizeAddonCheckoutMetadata } from '../../../services/addon-checkout
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
+import { resolvePaymentFailureReason } from '../../../services/payment-failure-reason';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
@@ -47,6 +50,7 @@ import { resolveOwnerUserId } from '../../../services/subscription-pause.service
 import { apiLogger } from '../../../utils/logger';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
 import { completeReactivationSupersession } from './subscription-logic';
+import type { PaymentInfo } from './types';
 import {
     extractAddonFromReference,
     extractAddonMetadata,
@@ -84,10 +88,182 @@ interface ProcessPaymentUpdatedResult {
 }
 
 /**
- * MP payment statuses that indicate the charge cleared successfully and
- * the linked annual subscription should be activated.
+ * Every status value that means "this charge cleared", across BOTH vocabularies
+ * a `data.status` reaching this module can be spelled in.
+ *
+ * `processPaymentUpdated` is handed payment payloads by three producers, and
+ * they do NOT agree on the spelling of `status`:
+ *
+ * - `payment-handler.ts` — the LIVE webhook, and the PRIMARY path. It forwards
+ *   `providerPayment.status` from `paymentAdapter.payments.retrieve()`, and the
+ *   MercadoPago adapter NORMALIZES that value through its own table before
+ *   returning it (`approved → succeeded`, `rejected → failed`,
+ *   `cancelled → canceled`, `in_process → processing`; `refunded` and
+ *   `pending` happen to map to themselves). So on the live webhook path an
+ *   approved charge arrives here spelled `'succeeded'`, and the raw string
+ *   `'approved'` NEVER appears. The same mapping is written a second time,
+ *   independently, in `subscription-payment-handler.ts::mapMpStatusToQZPayStatus`.
+ * - `subscription-poll.job.ts` — the polling FALLBACK. It forwards
+ *   `succeeded.status` off a `payments.search` hit, which is the same
+ *   adapter-normalized field. Until HOS-757 it hand-translated back to
+ *   MercadoPago's raw vocabulary, and it was the only producer that did.
+ * - `webhook-retry.job.ts` — the dead-letter replay. It replays the stored raw
+ *   IPN body, which carries no `status` at all.
+ *
+ * ## Why there is exactly one of these (HOS-756)
+ *
+ * The predicate this file used to gate on — `MP_APPROVED_STATUSES`, holding
+ * `{'approved', 'accredited'}` — knew only the raw vocabulary. It therefore did
+ * not mean "the charge cleared". It meant **"this event arrived by the polling
+ * job"**, and on the live webhook it was FALSE for every approved payment ever
+ * received. Three dispatches were gated on it and were dormant on the primary
+ * path for their whole lifetime:
+ *
+ * 1. the annual activation (SPEC-141 D1),
+ * 2. the plan-change upgrade commit (SPEC-141 D7) — and unlike the other two,
+ *    this one had NO second dispatcher covering it: `confirmPlanUpgrade` has a
+ *    single call site, and `subscription-poll.job.ts` deliberately keeps
+ *    `planChangeUpgradeId` out of its synthetic payload, so a paid plan upgrade
+ *    was never committed anywhere,
+ * 3. HOS-595's `billing_payments` ledger entry for an add-on charge — an add-on
+ *    payment confirmed by webhook left no ledger row at all, which is the very
+ *    defect HOS-595 believed it had closed.
+ *
+ * HOS-742 hit the same wall from the other side and had to add a SECOND, wider
+ * set scoped to its own branch so that fixing the add-on gate would not switch
+ * the other three on by accident. Two predicates answering one question in one
+ * file is the shape of the bug, not a fix for it, so this is now the only one.
+ *
+ * Corroboration that the split is real rather than theoretical:
+ * `applyWebhookRefundLifecycle` gates on `'refunded'`, the ONE status whose two
+ * spellings coincide, and it demonstrably fires in production (HOS-704 was a
+ * live partial-refund incident). The only gate in this file that COULD work on
+ * the webhook path is the only one known to have worked.
+ *
+ * ## Why the translation lives here and not at the entry border
+ *
+ * HOS-743 established the sibling convention one layer over: metadata keys are
+ * snake_cased once, at the border, by `normalizeMercadoPagoMetadata`, and no
+ * consumer downstream ever knows the wire spelling. This is deliberately NOT
+ * that shape, because a status is not addressing — it is payload.
+ * `data.status` flows on from here into `billing_payments.status`, the payment
+ * notification copy, the PostHog `failure_category`, and every log line in this
+ * module; rewriting it at the border would change what gets stored and what the
+ * customer is emailed. So the vocabulary is reconciled at the point of the
+ * QUESTION rather than at the point of the DATA, which is the same "translate
+ * exactly once" guarantee with none of the blast radius.
+ *
+ * ## On `'accredited'`
+ *
+ * Removed, and it must not come back. `'accredited'` is not a payment status at
+ * all: MercadoPago publishes it under `status_detail`, and `extractPaymentInfo`
+ * reads `status_detail` into a separate `statusDetail` field. It could not have
+ * reached a `status` comparison from any of the three producers — dead weight
+ * in the set since the day it was written.
+ *
+ * ## Why the raw spelling is gone (HOS-757)
+ *
+ * This set held `'approved'` as well, because one producer really did emit it:
+ * `subscription-poll.job.ts` hand-translated the adapter's `'succeeded'` back to
+ * MercadoPago's raw word when building its synthetic payload. HOS-757 removed
+ * that translation — the cron now forwards `succeeded.status` verbatim — which
+ * leaves `'approved'` with no producer at all. All three were checked before
+ * dropping it:
+ *
+ * 1. `payment-handler.ts` forwards `QZPayProviderPayment.status`, which the
+ *    adapter has already rewritten. It never carried the raw spelling.
+ * 2. `subscription-poll.job.ts` no longer translates (HOS-757).
+ * 3. `webhook-retry.job.ts` replays `billing_webhook_events.payload.data`, and a
+ *    MercadoPago payment notification carries only `{ id }` there — no status
+ *    and no amount. That is precisely why `payment-handler.ts` has to call
+ *    `payments.retrieve` before it can dispatch anything, so the replay cannot
+ *    introduce a status of any spelling.
+ *
+ * Keeping a value nothing can send is how `'accredited'` survived for years
+ * looking like a working gate, so it goes.
  */
-const MP_APPROVED_STATUSES = new Set(['approved', 'accredited']);
+const CLEARED_PAYMENT_STATUSES = ['succeeded'] as const;
+
+/**
+ * Whether a payment status reaching this module means the money actually moved.
+ *
+ * The single canonical answer to "did this charge clear?" for every dispatch
+ * gate in this file, and producer-agnostic by construction — see
+ * {@link CLEARED_PAYMENT_STATUSES} for why asking it any other way silently
+ * answers "arrived by polling" instead.
+ *
+ * @param status - The payment status as `extractPaymentInfo` read it off the
+ *   payload's `status` field, in either provider vocabulary.
+ * @returns `true` only for `'succeeded'`; `false` for every other status,
+ *   MercadoPago's raw `'approved'` included — no producer emits it any more.
+ *
+ * @example
+ * ```ts
+ * const settled = paymentInfo !== null && isClearedPaymentStatus(paymentInfo.status)
+ *     ? paymentInfo
+ *     : null;
+ * ```
+ */
+export function isClearedPaymentStatus(status: string): boolean {
+    // Derive from the const set so the two can never drift out of sync.
+    return (CLEARED_PAYMENT_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * The statuses that mean the charge did NOT go through, in both vocabularies.
+ *
+ * The mirror image of {@link CLEARED_PAYMENT_STATUSES} and written in the same
+ * shape on purpose, so the pair reads as one decision rather than two unrelated
+ * lists. MercadoPago's raw spellings are `'rejected'` and `'cancelled'`; the
+ * qzpay adapter normalizes them inside `payments.retrieve()` to `'failed'` and
+ * `'canceled'` (one `l`). The live webhook therefore delivers the normalized
+ * pair and the polling fallback delivers the raw pair, exactly as with the
+ * cleared side — so a gate that knows only one of the two vocabularies is
+ * false for a whole producer (HOS-763).
+ *
+ * ## Why `'refunded'` is NOT in here
+ *
+ * It is the one status whose two spellings coincide, so it never suffered the
+ * blindness this set exists to cure, and it is the only member of this family
+ * known to actually fire in production (HOS-704 was a live partial-refund
+ * incident). The failure-notification gate below keeps it as its own explicit
+ * disjunct: including it here would fold live, working behaviour into a
+ * predicate whose whole point is to repair dead behaviour, and would also make
+ * `isFailedPaymentStatus` lie about what a refund is — a refund is a reversal
+ * of a charge that DID clear, not a charge that failed.
+ *
+ * ## Why the raw spellings are gone (HOS-757)
+ *
+ * `'rejected'` and `'cancelled'` are dropped for exactly the reason
+ * {@link CLEARED_PAYMENT_STATUSES} drops `'approved'`: with the polling cron no
+ * longer translating back, no producer can emit MercadoPago's raw vocabulary
+ * into this module. HOS-763 included them because the cron still could when it
+ * shipped; that stopped being true one commit later.
+ *
+ * The DISPOSITION is unchanged — a failed charge still notifies the customer,
+ * and `'refunded'` still reaches that gate through its own explicit disjunct
+ * below, exactly as HOS-763 left it.
+ */
+const FAILED_PAYMENT_STATUSES = ['failed', 'canceled'] as const;
+
+/**
+ * Whether a payment status reaching this module means the charge did not go
+ * through.
+ *
+ * The canonical, producer-agnostic answer to "did this charge fail?", the
+ * sibling of {@link isClearedPaymentStatus}. Deliberately silent about
+ * `'refunded'` — see {@link FAILED_PAYMENT_STATUSES}.
+ *
+ * @param status - The payment status as `extractPaymentInfo` read it off the
+ *   payload's `status` field, in either provider vocabulary.
+ * @returns `true` for `'failed'` / `'canceled'` (qzpay-normalized); `false` for
+ *   every other status, `'refunded'` included. MercadoPago's raw `'rejected'` /
+ *   `'cancelled'` are no longer accepted — nothing emits them (HOS-757).
+ */
+export function isFailedPaymentStatus(status: string): boolean {
+    // Derive from the const set so the two can never drift out of sync.
+    return (FAILED_PAYMENT_STATUSES as readonly string[]).includes(status);
+}
 
 /**
  * Activate an annual local subscription after the linked MP one-time
@@ -1088,6 +1264,130 @@ function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined)
 }
 
 /**
+ * The idempotency key identifying "the payment-success receipt for THIS
+ * MercadoPago payment".
+ *
+ * Keyed on the PAYMENT, deliberately — not on the notification. See
+ * {@link wasPaymentSuccessAlreadyDispatched} for why that distinction is the
+ * whole point.
+ *
+ * @param providerPaymentId - MercadoPago `payment.id`.
+ * @returns The key written into `billing_notification_log.metadata`.
+ */
+function paymentSuccessIdempotencyKey(providerPaymentId: string): string {
+    return `payment-success:mercadopago:${providerPaymentId}`;
+}
+
+/**
+ * Has the payment-success receipt for this MercadoPago payment already been
+ * delivered?
+ *
+ * ## Why a payment-scoped check exists at all (HOS-757)
+ *
+ * HOS-763 turned the success notification on. One settled charge can reach that
+ * dispatch more than once, from two independent producers, and NEITHER is
+ * covered by the webhook-event idempotency upstream:
+ *
+ * - **Two provider notifications for the same payment.** The
+ *   `billing_webhook_events` guard in `event-handler.ts` dedupes on
+ *   `providerEventId`, and in `@qazuor/qzpay-mercadopago` `mapToQZPayEvent` sets
+ *   `id: String(mpEvent.id)` — the id of the NOTIFICATION, not of the payment.
+ *   Two `payment.updated` notifications about one charge therefore carry two
+ *   distinct `providerEventId`s, both pass that guard, and both reach the
+ *   dispatch. That guard stops a REDELIVERY of one notification; it cannot stop
+ *   two notifications about one payment.
+ * - **The polling cron.** `subscription-poll.job.ts` re-enters
+ *   `processPaymentUpdated` with a synthetic payload for a charge the webhook
+ *   may already have processed, and it writes no `billing_webhook_events` row at
+ *   all, so the upstream guard never even looks at it.
+ *
+ * The add-on flow has a second, narrower defence (the
+ * `billing_addon_purchases.paymentId` lookup further down), but a SUBSCRIPTION
+ * charge — annual, plan upgrade, or a plain renewal — has none: it carries no
+ * add-on metadata, so nothing downstream of the dispatch would have suppressed
+ * a repeat. That path is the hole this closes, and it is live and unguarded
+ * between HOS-763 landing and this change.
+ *
+ * ## Why `billing_notification_log`
+ *
+ * It is the repo's existing durable answer to "was this notification already
+ * sent?", and the pattern is already load-bearing in `addon-expiry.job.ts`:
+ * write an `idempotencyKey` into `metadata`, query it back before sending. It
+ * survives a process restart and is shared across instances, unlike the
+ * Redis-with-in-memory-fallback scheme in `notification-schedule.job.ts`, whose
+ * fallback is per-process and would not hold for a multi-instance webhook.
+ *
+ * Note the division of labour, which `propagate-plan-price-changes.job.ts`
+ * states explicitly for the same mechanism: passing `idempotencyKey` to the
+ * sender only RECORDS the key — it does not prevent a second delivery. This
+ * pre-send lookup is the gate.
+ *
+ * The query filters `status = 'sent'`, a deliberate deviation from
+ * `addon-expiry.job.ts`, which matches any logged row. A row logged `failed`
+ * means the customer did NOT receive the email, so treating it as "already sent"
+ * would convert a delivery failure into a permanently missing payment receipt.
+ * Excluding it still prevents every real duplicate, because only a delivered
+ * notification can be duplicated.
+ *
+ * FAIL-OPEN on error, matching that precedent verbatim ("allowing send to avoid
+ * missing notifications"): a lookup that cannot run must not silence a receipt
+ * the customer is owed. The worst case in this direction is the duplicate it is
+ * trying to prevent; the worst case in the other is a paying customer told
+ * nothing.
+ *
+ * @param params.customerId - Billing customer id, which narrows the query onto
+ *   the existing `(customer_id, type)` index.
+ * @param params.providerPaymentId - MercadoPago `payment.id`.
+ * @param params.source - Caller label, for the diagnostic log only.
+ * @returns `true` only when a DELIVERED payment-success notification is already
+ *   on record for this payment; `false` when none is, and `false` when the
+ *   lookup itself failed.
+ */
+async function wasPaymentSuccessAlreadyDispatched(params: {
+    readonly customerId: string;
+    readonly providerPaymentId: string;
+    readonly source: string;
+}): Promise<boolean> {
+    const { customerId, providerPaymentId, source } = params;
+    const idempotencyKey = paymentSuccessIdempotencyKey(providerPaymentId);
+
+    try {
+        const [existing] = await getDb()
+            .select({ id: billingNotificationLog.id })
+            .from(billingNotificationLog)
+            .where(
+                and(
+                    eq(billingNotificationLog.type, NotificationType.PAYMENT_SUCCESS),
+                    eq(billingNotificationLog.customerId, customerId),
+                    eq(billingNotificationLog.status, 'sent'),
+                    eq(sql`${billingNotificationLog.metadata}->>'idempotencyKey'`, idempotencyKey)
+                )
+            )
+            .limit(1);
+
+        if (existing) {
+            apiLogger.info(
+                { customerId, providerPaymentId, source },
+                'Payment-success notification already delivered for this payment — skipping (idempotent)'
+            );
+            return true;
+        }
+        return false;
+    } catch (lookupError) {
+        apiLogger.warn(
+            {
+                customerId,
+                providerPaymentId,
+                source,
+                error: lookupError instanceof Error ? lookupError.message : String(lookupError)
+            },
+            'Payment-success idempotency check failed — proceeding as not-yet-sent'
+        );
+        return false;
+    }
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -1106,22 +1406,106 @@ export async function processPaymentUpdated({
     const metadata = data.metadata as Record<string, unknown> | undefined;
     const customerId = resolvePaymentCustomerId(metadata);
 
+    const providerPaymentId =
+        typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+
+    /**
+     * The payment, but ONLY when it actually cleared — `null` otherwise.
+     *
+     * HOS-757: the single call site of {@link isClearedPaymentStatus}. Every
+     * branch below that spends, books or reports money reads its amount and
+     * currency from HERE and nowhere else, so a new branch cannot collect
+     * without having come through the gate. HOS-756 could only offer "every gate
+     * calls the predicate"; this offers "an ungated amount is not reachable",
+     * which is the property `cleared-payment-predicate.guard.test.ts` asserts.
+     */
+    const settled: PaymentInfo | null =
+        paymentInfo !== null && isClearedPaymentStatus(paymentInfo.status) ? paymentInfo : null;
+
+    /**
+     * The key identifying this payment's receipt, read back by the dedupe below
+     * and written into `billing_notification_log.metadata` by the send.
+     *
+     * `undefined` when the payload carries no id: there is then nothing to key
+     * on, so the send proceeds ungated rather than being suppressed on a guess.
+     */
+    const successIdempotencyKey =
+        providerPaymentId === null ? undefined : paymentSuccessIdempotencyKey(providerPaymentId);
+
+    // HOS-757: has the payment-success receipt for THIS PAYMENT already gone
+    // out? Resolved once, before the dispatch, because two independent producers
+    // can reach that branch for one charge — see
+    // `wasPaymentSuccessAlreadyDispatched`.
+    const successAlreadyDispatched =
+        settled !== null && customerId !== null && providerPaymentId !== null
+            ? await wasPaymentSuccessAlreadyDispatched({ customerId, providerPaymentId, source })
+            : false;
+
     // Dispatch payment status notifications
     if (paymentInfo && customerId) {
-        const { amount, currency, status, statusDetail, paymentMethod } = paymentInfo;
+        // HOS-757: named `attempted*`, not `amount`/`currency`. These describe a
+        // charge that MAY NOT have cleared — `paymentInfo` is ungated by
+        // construction — and only the FAILURE branch may read them. A bare
+        // `amount` in the same scope as `settled` is an ungated figure that looks
+        // exactly like a gated one, so a new line inside a money branch would
+        // compile and be wrong; the static guard asserts this naming for that
+        // reason.
+        const {
+            amount: attemptedAmount,
+            currency: attemptedCurrency,
+            status,
+            statusDetail
+        } = paymentInfo;
 
-        if (status === 'approved' || status === 'accredited') {
+        // HOS-763 — this gate and its failure sibling below were BOTH mute for
+        // their entire lifetime, and turning them on is this change.
+        //
+        // HOS-756 left them deliberately unrepaired while it fixed the three
+        // dispatch gates further down: an approved charge arrives from the live
+        // webhook spelled `'succeeded'`, so `status === 'approved'` was false
+        // for every payment the webhook ever confirmed, and
+        // `sendPaymentSuccessNotification` has exactly one call site — this one.
+        // Its sibling was blind the same way (`rejected → failed`,
+        // `cancelled → canceled`). Neither email was ever sent, to anyone.
+        //
+        // The scope note HOS-756 left here said the repair "starts sending
+        // customer-facing emails for every payment the webhook confirms, which
+        // is a different blast radius and needs its own issue and its own
+        // smoke". That issue is HOS-763; the owner decided to switch them on,
+        // both templates were render-verified against the BUILT
+        // `@repo/notifications` artifact (the resolution production uses) first,
+        // and the change carries a staging smoke.
+        // HOS-757 collapses HOS-763's `isClearedPaymentStatus(status)` into
+        // `settled`, with the predicate author's agreement: same disposition,
+        // same semantics, one call site instead of several. The failure gate
+        // below keeps its own predicate — the two dispositions stay separately
+        // covered, and `'refunded'` keeps its explicit disjunct untouched.
+        //
+        // The `!successAlreadyDispatched` conjunct is the new part. HOS-763 turned
+        // this email on and does not carry a duplicate guard; the moment the gate
+        // opens, one settled charge can dispatch twice — see
+        // `wasPaymentSuccessAlreadyDispatched` for the two producers that make
+        // that happen. Without this the repair ships the HOS-676 duplicate along
+        // with it.
+        if (settled !== null && !successAlreadyDispatched) {
             apiLogger.debug(
-                { customerId, amount, currency, status, source },
+                {
+                    customerId,
+                    amount: settled.amount,
+                    currency: settled.currency,
+                    status: settled.status,
+                    source
+                },
                 'Payment succeeded - sending success notification'
             );
 
             await sendPaymentSuccessNotification(
                 customerId,
-                amount,
-                currency,
-                paymentMethod,
-                billing
+                settled.amount,
+                settled.currency,
+                settled.paymentMethod,
+                billing,
+                successIdempotencyKey
             );
 
             // Fire-and-forget product analytics (no DB, no await). Wrapped in
@@ -1146,10 +1530,10 @@ export async function processPaymentUpdated({
                     distinctId: analyticsDistinctId,
                     name: AnalyticsEvents.subscriptionPaymentSucceeded,
                     properties: {
-                        amount,
-                        currency,
+                        amount: settled.amount,
+                        currency: settled.currency,
                         payment_provider: 'mercadopago',
-                        payment_method: paymentMethod,
+                        payment_method: settled.paymentMethod,
                         payment_kind: kind,
                         source,
                         $set: { plan_status: 'active' }
@@ -1167,19 +1551,46 @@ export async function processPaymentUpdated({
             }
         }
 
-        if (status === 'rejected' || status === 'cancelled' || status === 'refunded') {
+        // HOS-763 — `'refunded'` stays an explicit disjunct rather than a member
+        // of `FAILED_PAYMENT_STATUSES`. Its two spellings coincide, so it was
+        // never blind, and it is the only branch of this family known to fire in
+        // production (HOS-704). The predicate repairs the two dead spellings
+        // WITHOUT touching the one live behaviour standing next to them.
+        if (isFailedPaymentStatus(status) || status === 'refunded') {
             const failureReason = statusDetail || status;
 
             apiLogger.debug(
-                { customerId, amount, currency, status, statusDetail, source },
+                {
+                    customerId,
+                    amount: attemptedAmount,
+                    currency: attemptedCurrency,
+                    status,
+                    statusDetail,
+                    source
+                },
                 'Payment failed - sending failure notifications'
             );
 
+            // HOS-757: the attempted figures, not `settled.*` — this is the one
+            // branch that legitimately reports a charge that did NOT clear, so
+            // it is the reason the ungated bindings exist at all.
+            //
+            // It needs no duplicate guard of its own: `successAlreadyDispatched`
+            // is computed only for a SETTLED payment, and a settled payment never
+            // reaches here. Both duplicate sources this module defends against —
+            // a second provider notification for one charge, and the polling cron
+            // re-entering — carry a cleared status, so neither can produce a
+            // second failure dispatch.
             await sendPaymentFailureNotifications(
                 customerId,
-                amount,
-                currency,
-                failureReason,
+                attemptedAmount,
+                attemptedCurrency,
+                // HOS-764: the payer reads a sentence, not `cc_rejected_*`.
+                // `failureReason` above stays the RAW code on purpose — it feeds
+                // PostHog's `failure_reason` below, where prose would shatter
+                // rejection grouping into locale variants. Same value, two
+                // consumers, opposite requirements.
+                resolvePaymentFailureReason({ statusDetail }),
                 billing
             );
 
@@ -1192,8 +1603,8 @@ export async function processPaymentUpdated({
                     distinctId: analyticsDistinctId,
                     name: AnalyticsEvents.subscriptionPaymentFailed,
                     properties: {
-                        amount,
-                        currency,
+                        amount: attemptedAmount,
+                        currency: attemptedCurrency,
                         payment_provider: 'mercadopago',
                         failure_reason: failureReason,
                         failure_category: status,
@@ -1224,14 +1635,9 @@ export async function processPaymentUpdated({
     // refunded events are mutually exclusive with those activation paths in
     // practice, but `applyWebhookRefundLifecycle` is self-contained and safe
     // to run even if other metadata is present (the activation guards below
-    // short-circuit on non-approved statuses anyway).
-    if (paymentInfo?.status === 'refunded') {
-        const mpPaymentId =
-            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
-
-        if (mpPaymentId) {
-            await applyWebhookRefundLifecycle({ mpPaymentId, data, source });
-        }
+    // short-circuit on any status that did not clear anyway).
+    if (paymentInfo?.status === 'refunded' && providerPaymentId) {
+        await applyWebhookRefundLifecycle({ mpPaymentId: providerPaymentId, data, source });
     }
 
     // SPEC-141 D1: annual subscription confirmation. The metadata
@@ -1241,17 +1647,23 @@ export async function processPaymentUpdated({
     // (annual checkout never carries addonSlug metadata and vice versa).
     const annualSubscriptionId = extractAnnualSubscriptionMetadata(data.metadata);
 
-    if (annualSubscriptionId && paymentInfo && MP_APPROVED_STATUSES.has(paymentInfo.status)) {
-        const providerPaymentId =
-            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
-
+    // HOS-756: this gate used to ask `MP_APPROVED_STATUSES`, which knew only
+    // MercadoPago's raw spellings and was therefore false for every live
+    // webhook. The annual activation ran exclusively because
+    // `subscription-poll.job.ts` calls `confirmAnnualSubscription` DIRECTLY,
+    // bypassing this dispatch entirely — so the fallback silently carried the
+    // primary path's job. `confirmAnnualSubscription` is idempotent by design
+    // for exactly this reason (see its JSDoc: webhook and polling race, one
+    // wins, the other no-ops), so restoring the webhook path re-enables the
+    // race the function was always written to survive.
+    if (annualSubscriptionId && settled !== null) {
         if (providerPaymentId) {
             try {
                 const result = await confirmAnnualSubscription({
                     annualSubscriptionId,
                     providerPaymentId,
-                    amount: paymentInfo.amount,
-                    currency: paymentInfo.currency,
+                    amount: settled.amount,
+                    currency: settled.currency,
                     billing,
                     source,
                     // MP echoes back the checkout-session id qzpay set as the
@@ -1284,17 +1696,23 @@ export async function processPaymentUpdated({
     // a bug) still picks annual first; in practice the two metadata
     // shapes are mutually exclusive.
     const upgradeMetadata = extractPlanChangeUpgradeMetadata(data.metadata);
-    if (upgradeMetadata && paymentInfo && MP_APPROVED_STATUSES.has(paymentInfo.status)) {
-        const providerPaymentId =
-            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
-
+    // HOS-756: the gravest of the three. `confirmPlanUpgrade` has exactly ONE
+    // call site — this one — and `subscription-poll.job.ts` deliberately keeps
+    // `planChangeUpgradeId` out of its synthetic payload, so unlike the annual
+    // dispatch above there was no fallback quietly covering for it. With the
+    // raw-vocabulary predicate this branch could not be reached from any
+    // producer: a customer paid the prorated delta and the plan was never
+    // changed. Idempotency is unaffected by re-enabling it — `confirmPlanUpgrade`
+    // short-circuits on `sub.planId === newPlanId` and dedupes its
+    // `billing_payments` row on the provider payment id.
+    if (upgradeMetadata && settled !== null) {
         if (providerPaymentId) {
             try {
                 const result = await confirmPlanUpgrade({
                     metadata: upgradeMetadata,
                     providerPaymentId,
-                    amount: paymentInfo.amount,
-                    currency: paymentInfo.currency,
+                    amount: settled.amount,
+                    currency: settled.currency,
                     billing,
                     source
                 });
@@ -1373,10 +1791,58 @@ export async function processPaymentUpdated({
     // below — one reader, one spelling convention (HOS-721).
     const { addonSlug, customerId: addonCustomerId } = addonInfo;
 
-    // ── Idempotency check: skip if this paymentId was already processed ───────
-    const paymentId =
-        typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+    // HOS-757: resolved once at the top of the function, alongside the dispatch
+    // that needs the same value.
+    const paymentId = providerPaymentId;
 
+    // ── HOS-742: confirm the purchase only when the charge actually cleared ──
+    //
+    // The two sibling dispatches above (annual, SPEC-141 D1; plan-change, D7)
+    // both refuse to commit anything unless the payment is approved. This one
+    // never did: `extractAddonMetadata` decided the event was an add-on
+    // purchase and control walked straight into `confirmPurchase`, whatever
+    // MercadoPago said about the money. A `rejected` or `cancelled` payment
+    // carrying add-on metadata therefore activated the add-on and granted its
+    // entitlements with nothing collected.
+    //
+    // HOS-595 closed the LEDGER half of this hole — the `amountInCents` forward
+    // below is conditional on the payment having cleared, so a rejected charge
+    // is never booked in `billing_payments`. But withholding the amount only
+    // keeps the books honest; it does not stop the purchase from being
+    // confirmed. This is the confirmation half.
+    //
+    // The predicate is {@link isClearedPaymentStatus}, the single canonical
+    // answer to "did this charge clear?" in this file. The two producers spell
+    // an approved charge differently, and a gate that only knew the raw spelling
+    // would refuse every webhook — turning a fix for unpaid confirmations into an
+    // outage of paid ones. HOS-742 had to introduce a second, wider set to say
+    // this; HOS-756 collapsed both into the predicate; HOS-757 removed the
+    // disagreement at its source and collapsed the predicate to the single
+    // `settled` binding this branch and the ledger forward below both read.
+    //
+    // On `paymentInfo === null`: both real producers always populate the two
+    // fields `extractPaymentInfo` requires — the live webhook handler maps a
+    // fetched `payments.retrieve` response (`status` + `transaction_amount`),
+    // and `subscription-poll` builds its synthetic payload from a
+    // `payments.search` hit. The dead-letter retry replays the stored payload,
+    // which carries neither — but it carries no `metadata` either, so it exits
+    // at the `!addonInfo` branch above and never reaches here.
+    if (settled === null) {
+        apiLogger.warn(
+            {
+                addonSlug,
+                customerId: addonCustomerId,
+                paymentId,
+                paymentStatus: paymentInfo?.status ?? null,
+                source
+            },
+            'Add-on payment has not cleared — skipping purchase confirmation'
+        );
+
+        return { success: true, addonConfirmed: false };
+    }
+
+    // ── Idempotency check: skip if this paymentId was already processed ───────
     if (paymentId) {
         try {
             const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
@@ -1444,24 +1910,37 @@ export async function processPaymentUpdated({
         customerId: addonCustomerId,
         addonSlug,
         ...(paymentId === null ? {} : { paymentId }),
-        // The charged amount is forwarded ONLY for an approved payment, which is
-        // what makes the ledger row conditional on the money having actually
-        // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
-        // when — it receives an amount. Unlike the annual and plan-upgrade
-        // dispatches above, this branch has never gated itself on
-        // MP_APPROVED_STATUSES, so without this gate a rejected charge would be
-        // written to the ledger as collected.
-        ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
-            ? {
-                  // `paymentInfo.amount` is typed `Major` (extractPaymentInfo
-                  // reads MP's `transaction_amount`); billing_payments stores
-                  // integer centavos, the same crossing the sibling
-                  // `billing.payments.record()` calls above perform — and since
-                  // HOS-720 the same named function performs it everywhere.
-                  amountInCents: toCentavos(paymentInfo.amount),
-                  currency: paymentInfo.currency
-              }
-            : {}),
+        // The charged amount is what makes the ledger row conditional on the
+        // money having actually moved: `confirmAddonPurchase` books a
+        // `succeeded` row when — and only when — it receives an amount.
+        //
+        // HOS-756: this used to be NARROWER than the branch gate above — it asked
+        // `MP_APPROVED_STATUSES`, which knew only MercadoPago's RAW spellings, so
+        // on the live webhook path (where an approved charge arrives normalized
+        // as `'succeeded'`) the amount was withheld and no `billing_payments` row
+        // was ever written. An add-on payment reaches this function by webhook in
+        // the overwhelming majority of cases, so HOS-595 — "an add-on charge
+        // leaves no ledger row" — was fixed in code and dormant in production.
+        //
+        // HOS-757: UNCONDITIONAL. HOS-756 kept a second, redundant clearance
+        // check here so the forward would state its own precondition rather than
+        // inherit it silently from a guard forty lines up. With `settled` that
+        // precondition is carried by the TYPE instead of by a repeated
+        // comparison: the `settled === null` gate above returns, so `settled` is
+        // non-null from here on and the compiler knows it. Restating the check
+        // would now be provably dead code — and a repeated question is a question
+        // that can be answered two different ways, which is the whole defect
+        // class HOS-742/756/757 walked through.
+        //
+        // `settled.amount` is typed `Major` (extractPaymentInfo reads MP's
+        // `transaction_amount`); billing_payments stores integer centavos, the
+        // same crossing the sibling `billing.payments.record()` calls above
+        // perform — and since HOS-720 the same named function performs it
+        // everywhere. A duplicate delivery cannot double-book the ledger:
+        // `recordAddonPayment` dedupes on `providerPaymentIds->>'mercadopago'`
+        // before inserting.
+        amountInCents: toCentavos(settled.amount),
+        currency: settled.currency,
         ...(Object.keys(addonMetadata).length === 0 ? {} : { metadata: addonMetadata })
     });
 

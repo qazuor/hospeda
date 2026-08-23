@@ -36,6 +36,16 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 export interface ChangePasswordFormProps {
     /** Active locale for i18n and redirect URL. */
     readonly locale: SupportedLocale;
+    /**
+     * Email of the account whose password this form changes — HOS-752.
+     *
+     * The submit carries NO account identifier: it posts with
+     * `credentials: 'include'` and the API resolves the account from the
+     * session cookie. So the account being changed is whoever is signed in on
+     * this browser, which is not necessarily who the person believes they are
+     * acting as. Rendering it is what makes that visible.
+     */
+    readonly accountEmail: string;
 }
 
 interface FormFields {
@@ -91,7 +101,7 @@ function evaluateStrength(password: string): PasswordStrength {
  *
  * @param props - Component props (see {@link ChangePasswordFormProps})
  */
-export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormProps) {
     const { t } = createTranslations(locale);
 
     const [fields, setFields] = useState<FormFields>(INITIAL_FIELDS);
@@ -143,10 +153,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
         if (!fields.currentPassword) {
             setErrors((prev) => ({
                 ...prev,
-                currentPassword: t(
-                    'commerce.changePassword.currentRequired',
-                    'La contraseña actual es requerida.'
-                )
+                currentPassword: t('commerce.changePassword.currentRequired')
             }));
             return;
         }
@@ -244,10 +251,10 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
 
     const strengthLabel =
         strength === 'strong'
-            ? t('commerce.changePassword.strength.strong', 'Segura')
+            ? t('commerce.changePassword.strength.strong')
             : strength === 'medium'
-              ? t('commerce.changePassword.strength.medium', 'Media')
-              : t('commerce.changePassword.strength.weak', 'Débil');
+              ? t('commerce.changePassword.strength.medium')
+              : t('commerce.changePassword.strength.weak');
 
     // ── Success state ─────────────────────────────────────────────────────────
 
@@ -277,6 +284,19 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                         'commerce.changePassword.subtitle',
                         'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
                     )}
+                </p>
+                {/*
+                 * HOS-752: names the account. Not decoration — this is the only
+                 * thing on screen that distinguishes "activating the account
+                 * from the email I just opened" from "changing the password of
+                 * the session already signed in on this browser".
+                 */}
+                <p
+                    className={styles.accountNotice}
+                    data-testid="change-password-account-notice"
+                >
+                    {t('commerce.changePassword.accountNotice')}{' '}
+                    <span className={styles.accountNoticeEmail}>{accountEmail}</span>
                 </p>
             </div>
 
@@ -325,14 +345,8 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                 onClick={() => setShowCurrent((v) => !v)}
                                 aria-label={
                                     showCurrent
-                                        ? t(
-                                              'commerce.changePassword.hidePassword',
-                                              'Ocultar contraseña'
-                                          )
-                                        : t(
-                                              'commerce.changePassword.showPassword',
-                                              'Mostrar contraseña'
-                                          )
+                                        ? t('commerce.changePassword.hidePassword')
+                                        : t('commerce.changePassword.showPassword')
                                 }
                                 tabIndex={0}
                             >
@@ -386,14 +400,8 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                 onClick={() => setShowNew((v) => !v)}
                                 aria-label={
                                     showNew
-                                        ? t(
-                                              'commerce.changePassword.hidePassword',
-                                              'Ocultar contraseña'
-                                          )
-                                        : t(
-                                              'commerce.changePassword.showPassword',
-                                              'Mostrar contraseña'
-                                          )
+                                        ? t('commerce.changePassword.hidePassword')
+                                        : t('commerce.changePassword.showPassword')
                                 }
                                 tabIndex={0}
                             >
@@ -406,10 +414,7 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                             <div
                                 className={styles.strengthMeter}
                                 role="status"
-                                aria-label={t(
-                                    'commerce.changePassword.strengthLabel',
-                                    'Seguridad de la contraseña'
-                                )}
+                                aria-label={t('commerce.changePassword.strengthLabel')}
                             >
                                 <div className={styles.strengthBars}>
                                     <span
@@ -492,14 +497,8 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                                 onClick={() => setShowConfirm((v) => !v)}
                                 aria-label={
                                     showConfirm
-                                        ? t(
-                                              'commerce.changePassword.hidePassword',
-                                              'Ocultar contraseña'
-                                          )
-                                        : t(
-                                              'commerce.changePassword.showPassword',
-                                              'Mostrar contraseña'
-                                          )
+                                        ? t('commerce.changePassword.hidePassword')
+                                        : t('commerce.changePassword.showPassword')
                                 }
                                 tabIndex={0}
                             >

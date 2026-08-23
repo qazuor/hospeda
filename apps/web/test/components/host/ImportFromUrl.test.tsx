@@ -16,9 +16,16 @@ const { mockImportFromUrl, mockUseImportStatus } = vi.hoisted(() => ({
     mockUseImportStatus: vi.fn()
 }));
 
+// HOS-775: a key with no fallback resolves to a DISTINGUISHABLE stand-in, not to
+// the key itself. The real `t` echoes the raw key in a production build, and
+// `isMissingTranslation` (correctly) reads that echo as "key absent" — so a mock
+// that echoed the key made every lookup here look missing and collapsed the
+// reason rail into the code-level fallback. The `copy:` prefix keeps these tests
+// able to observe WHICH key won the chain while still modelling a key that
+// resolves. The real strings are covered by the catalog test below.
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (key: string, fallback?: string) => fallback ?? `copy:${key}`
     })
 }));
 
@@ -617,7 +624,9 @@ describe('ImportFromUrl i18n keys', () => {
 
         // HOS-283: the component test mocks `t`, so it can never prove the real
         // strings exist. Without this, the first `reason` the API emits without a
-        // matching key would render a raw dotted key to the user.
+        // matching key would silently degrade to the code-level "your plan does
+        // not include this" copy, losing the cause-specific message. (Before
+        // HOS-775 it was worse: the raw dotted key reached the user.)
         it(`defines every entitlement 402 reason key in ${locale}/common.json`, () => {
             // Arrange
             const common = JSON.parse(
@@ -748,12 +757,18 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
     }
 
     // NOTE on what these assert: the `@/lib/i18n` mock resolves a key with no
-    // fallback to the key ITSELF, so the banner renders the dotted key the
-    // component picked. That is the useful observation here — WHICH key won the
-    // reason → code → status chain. Asserting on Spanish prose instead would be
-    // vacuous: the mock can never produce it, so a negative match against the
+    // fallback to `copy:<key>`, so the banner renders a stand-in naming the key
+    // the component picked. That is the useful observation here — WHICH key won
+    // the reason → code → status chain. Asserting on Spanish prose instead would
+    // be vacuous: the mock can never produce it, so a negative match against the
     // old copy would hold no matter how broken the component was. The real
     // strings are covered by the catalog test below.
+    //
+    // HOS-775: these used to assert the BARE dotted key, because the mock echoed
+    // it back and `translateApiErrorWithT` had no way to tell that echo apart
+    // from a resolved value. That made them assert the production bug as the
+    // expected outcome — a raw key rendered to the user. The chain being
+    // observed is unchanged; only the stand-in the mock returns is.
     it('resolves the message through the `reason` rail, not INTERNAL_ERROR', async () => {
         // Arrange / Act
         const alert = await submitWithError({
@@ -765,9 +780,9 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert — the cause-specific key, not the code-level one and not the
         // INTERNAL_ERROR that produced "Algo salió mal del lado nuestro".
-        expect(alert).toHaveTextContent('common.apiError.TRIAL_EXPIRED');
-        expect(alert).not.toHaveTextContent('common.apiError.INTERNAL_ERROR');
-        expect(alert).not.toHaveTextContent('common.apiError.GENERIC');
+        expect(alert).toHaveTextContent('copy:common.apiError.TRIAL_EXPIRED');
+        expect(alert).not.toHaveTextContent('copy:common.apiError.INTERNAL_ERROR');
+        expect(alert).not.toHaveTextContent('copy:common.apiError.GENERIC');
     });
 
     it('falls back to the entitlement copy when the API sends no reason', async () => {
@@ -842,9 +857,9 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
         });
 
         // Assert — the reason rail picks the overdue key (see the note above on
-        // why this asserts the key rather than the prose).
-        expect(alert).toHaveTextContent('common.apiError.GRACE_PERIOD_EXPIRED');
-        expect(alert).not.toHaveTextContent('common.apiError.TRIAL_EXPIRED');
+        // why this asserts the key stand-in rather than the prose).
+        expect(alert).toHaveTextContent('copy:common.apiError.GRACE_PERIOD_EXPIRED');
+        expect(alert).not.toHaveTextContent('copy:common.apiError.TRIAL_EXPIRED');
     });
 
     it('does NOT render the CTA on a 403', async () => {

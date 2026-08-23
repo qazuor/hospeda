@@ -39,6 +39,7 @@ export const AnalyticsEvents = {
     aiSearchIntentApplied: 'ai_search_intent_applied',
     aiSearchFallbackKeyword: 'ai_search_fallback_keyword',
     aiSearchLoginPrompted: 'ai_search_login_prompted',
+    aiSearchFailed: 'ai_search_failed',
     contributionBannerClicked: 'contribution_banner_clicked',
     contributionReportSubmitted: 'contribution_report_submitted',
     contributionPhotoSubmitted: 'contribution_photo_submitted',
@@ -259,6 +260,27 @@ export const AnalyticsEventSchemas = {
         failure_reason: z.string().min(1)
     }),
     [AnalyticsEvents.aiSearchLoginPrompted]: z.object({
+        locale: localeSchema
+    }),
+    /*
+     * A conversational-search turn that ended in an error the visitor saw.
+     *
+     * Exists because the failure this records is invisible everywhere else
+     * (HOS-668). When the edge answers 5xx the request never reaches the
+     * origin, so `api-prod` logs nothing; and when the fetch never leaves the
+     * browser there is no server-side trace by construction. The UI already
+     * computes the status to pick its copy and then discards it — this event
+     * is what keeps it.
+     *
+     * `error_status` is the discriminator that matters:
+     *   > 0  an HTTP response arrived (502/504/520-526 ⇒ the edge, not us)
+     *   = 0  the fetch threw — network/DNS/CORS, the request never left
+     *   null an SSE-level `error` frame, which carries a code but no status
+     */
+    [AnalyticsEvents.aiSearchFailed]: z.object({
+        error_source: z.enum(['transport', 'sse']),
+        error_status: z.number().int().nullable(),
+        error_code: nullableStringSchema,
         locale: localeSchema
     }),
     [AnalyticsEvents.contributionBannerClicked]: z.object({

@@ -4,7 +4,7 @@
  *
  * Standalone component — no dependency on @repo/auth-ui.
  * Calls auth-client.ts directly, styled with CSS Modules + web design tokens.
- * Validates password length client-side before submitting.
+ * Server-renders the real form so the sign-up surface exists before hydration.
  *
  * The `name` field has been intentionally removed (SPEC-113). Name collection
  * happens in the post-signup profile completion form, where users provide
@@ -13,13 +13,12 @@
 
 import { AnalyticsEvents } from '@repo/analytics';
 import { StrongPasswordSchema } from '@repo/schemas';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn, signUp } from '@/lib/auth-client';
-import { cn } from '@/lib/cn';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -74,7 +73,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isClientReady, setIsClientReady] = useState(false);
 
     /**
      * i18n strings for the PasswordField component. Built from the same
@@ -103,10 +101,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
         hidePassword: passwordI18n.hidePassword,
         strength: passwordI18n.strength
     };
-
-    useEffect(() => {
-        setIsClientReady(true);
-    }, []);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
@@ -271,22 +265,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
             setOauthLoading(null);
         }
-    }
-
-    if (!isClientReady) {
-        return (
-            <div
-                className={styles.skeleton}
-                role="status"
-                aria-busy="true"
-                aria-label={t('auth-ui.loading', 'Loading form')}
-            >
-                <div className={cn(styles.skeletonLine, styles.skeletonTitle)} />
-                <div className={styles.skeletonField} />
-                <div className={styles.skeletonField} />
-                <div className={styles.skeletonButton} />
-            </div>
-        );
     }
 
     return (

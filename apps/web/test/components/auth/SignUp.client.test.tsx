@@ -2,12 +2,14 @@
  * @file SignUp.client.test.tsx
  * @description Regression tests for the SignUp island's HOS-190 slice 3
  * changes: a real email presence/format guard (the form is `noValidate`,
- * so the browser's native check never ran), and unifying the password check
- * onto `StrongPasswordSchema.safeParse` (adds the 128-char cap the old
- * `StrongPasswordRegex.test()` never enforced).
+ * so the browser's native check never ran), unifying the password check onto
+ * `StrongPasswordSchema.safeParse` (adds the 128-char cap the old
+ * `StrongPasswordRegex.test()` never enforced), and HOS-779's SSR-first
+ * guarantee that the real sign-up form exists on the first paint.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { SignUp } from '../../../src/components/auth/SignUp.client';
@@ -179,5 +181,20 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
                 name: ''
             });
         });
+    });
+
+    it('server-renders the real sign-up form fields on first paint', () => {
+        document.body.innerHTML = renderToStaticMarkup(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+                showOAuth={false}
+            />
+        );
+
+        expect(screen.getByRole('form', { name: 'Crear cuenta' })).toBeInTheDocument();
+        expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
+        expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
+        expect(screen.getByLabelText('Confirmar contraseña')).toBeInTheDocument();
     });
 });

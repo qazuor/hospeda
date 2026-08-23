@@ -242,10 +242,23 @@ export const providerResponseFixtures = {
             metadata: input.metadata ?? {}
         };
     },
+    /**
+     * HOS-757: the default status is `'succeeded'`, not MercadoPago's raw
+     * `'approved'`.
+     *
+     * This helper models {@link ProviderPaymentResponse}, which mirrors
+     * `QZPayProviderPayment` — the shape the qzpay adapter RETURNS, after it has
+     * normalized MercadoPago's vocabulary. `'approved'` is what MP sends on the
+     * wire and what the adapter rewrites; it can never appear on the object this
+     * fixture stands in for. The sibling double for the same adapter,
+     * `packages/billing/src/adapters/mercadopago-stub.ts`, has always answered
+     * `'succeeded'` here — the two doubles contradicted each other and both
+     * stayed green, because no test drove a status all the way to a predicate.
+     */
     payment(input: PaymentFixtureInput = {}): ProviderPaymentResponse {
         return {
             id: input.id ?? `pay_test_${randomUUID()}`,
-            status: input.status ?? 'approved',
+            status: input.status ?? 'succeeded',
             amount: input.amount ?? 1000,
             currency: input.currency ?? 'ARS',
             metadata: input.metadata ?? {},

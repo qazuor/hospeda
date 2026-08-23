@@ -457,7 +457,7 @@ function CancelConfirmModal({
                                 className={styles.btnSecondary}
                                 onClick={onDismiss}
                             >
-                                {t('common.close', 'Cerrar')}
+                                {t('common.close')}
                             </button>
                         </div>
                     </>
@@ -478,7 +478,7 @@ function CancelConfirmModal({
                                 className={styles.btnSecondary}
                                 onClick={onDismiss}
                             >
-                                {t('common.close', 'Cerrar')}
+                                {t('common.close')}
                             </button>
                             <a
                                 href={mailtoHref}

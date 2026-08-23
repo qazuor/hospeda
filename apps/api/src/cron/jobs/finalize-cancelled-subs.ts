@@ -91,7 +91,6 @@
  * @module cron/jobs/finalize-cancelled-subs
  */
 
-import type { QZPayBilling } from '@qazuor/qzpay-core';
 import {
     and,
     billingSubscriptionEvents,
@@ -113,11 +112,11 @@ import {
     syncFeaturedByEntitlementForOwner,
     validateSubscriptionStatusTransition
 } from '@repo/service-core';
-import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
+import { hardCancelPreapprovalBestEffort } from '../../services/billing/preapproval-hard-cancel.js';
 import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
@@ -681,84 +680,6 @@ async function finalizeOne(
 }
 
 // ---------------------------------------------------------------------------
-// MercadoPago preapproval hard-cancel (HOS-237)
-// ---------------------------------------------------------------------------
-
-/**
- * Best-effort hard-cancel of the MercadoPago preapproval for a subscription
- * that has just been finalized to `cancelled` (HOS-237).
- *
- * Soft-cancel only PAUSED the preapproval (reversible `status: 'paused'`), so
- * without this the preapproval would linger `paused` on the provider forever
- * after the local subscription reaches `cancelled` — accumulating open
- * preapprovals whose only close path today is a manual admin hard-cancel. This
- * issues the irreversible provider cancel (`status: 'cancelled'`) so the
- * provider state matches the local terminal state.
- *
- * **Non-blocking by design.** The local finalization is already the
- * authoritative, user-facing outcome (and a `paused` preapproval will not
- * charge). A provider-cancel failure is therefore logged + captured to Sentry
- * for follow-up but does NOT re-queue the sub — it is already `cancelled`
- * locally, so re-queuing is structurally impossible. This runs exactly once
- * (on the finalizing tick); there is NO automated retry, so on failure the
- * preapproval stays `paused` until a manual admin hard-cancel clears it. The
- * Sentry capture is the signal ops watch for that manual sweep.
- *
- * @param input.subscriptionId - Local subscription id (for logging).
- * @param input.mpSubscriptionId - MP preapproval id, or null when unlinked.
- * @param input.billing - The QZPay billing instance (source of the payment adapter).
- * @param input.logger - Logger from the cron context.
- */
-async function hardCancelPreapprovalBestEffort(input: {
-    readonly subscriptionId: string;
-    readonly mpSubscriptionId: string | null;
-    readonly billing: QZPayBilling;
-    readonly logger: ReminderLogger;
-}): Promise<void> {
-    const { subscriptionId, mpSubscriptionId, billing, logger } = input;
-
-    if (!mpSubscriptionId) {
-        logger.warn(
-            'finalize-cancelled-subs: no mpSubscriptionId — skipping MP preapproval hard-cancel',
-            { subscriptionId }
-        );
-        return;
-    }
-
-    const paymentAdapter = billing.getPaymentAdapter();
-    if (!paymentAdapter) {
-        logger.warn(
-            'finalize-cancelled-subs: payment adapter unavailable — skipping MP preapproval hard-cancel',
-            { subscriptionId, mpSubscriptionId }
-        );
-        return;
-    }
-
-    try {
-        // cancelAtPeriodEnd=false → PUT { status: 'cancelled' } (irreversible).
-        await paymentAdapter.subscriptions.cancel(mpSubscriptionId, false);
-        logger.info('finalize-cancelled-subs: MP preapproval hard-cancelled', {
-            subscriptionId,
-            mpSubscriptionId
-        });
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        logger.error('finalize-cancelled-subs: MP preapproval hard-cancel failed (non-blocking)', {
-            subscriptionId,
-            mpSubscriptionId,
-            error: message
-        });
-        Sentry.captureException(err instanceof Error ? err : new Error(message), {
-            tags: {
-                subsystem: 'billing-subscription-lifecycle',
-                action: 'finalize_hard_cancel_preapproval'
-            },
-            extra: { subscriptionId, mpSubscriptionId }
-        });
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Job definition
 // ---------------------------------------------------------------------------
 
@@ -839,7 +760,8 @@ export const finalizeCancelledSubsJob: CronJobDefinition = {
                     subscriptionId: row.id,
                     mpSubscriptionId: row.mpSubscriptionId,
                     billing,
-                    logger
+                    logger,
+                    source: 'finalize-cancelled-subs'
                 });
             } else if (outcome.kind === 'skipped') {
                 // HOS-232: the row was un-cancelled between the batch scan and its

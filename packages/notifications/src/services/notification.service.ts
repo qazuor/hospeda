@@ -9,6 +9,7 @@ import {
     AddonCancellation,
     AddonExpirationWarning,
     AddonExpired,
+    AddonPurchaseConfirmation,
     AddonRenewalConfirmation,
     AdminLeadReceived,
     AdminPaymentFailure,
@@ -51,6 +52,7 @@ import type {
     AccommodationCalendarFeedBrokenPayload,
     AddonCancellationPayload,
     AddonEventPayload,
+    AddonPurchaseConfirmationPayload,
     AdminLeadReceivedPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
@@ -82,6 +84,7 @@ import type {
     SubscriptionLifecyclePayload,
     TrialEventPayload
 } from '../types/notification.types.js';
+import { buildAddonLinkMetadata } from '../utils/addon-link-metadata.js';
 import {
     findUnresolvedPlaceholders,
     getSubject,
@@ -343,8 +346,7 @@ export class NotificationService {
 
         // Map notification type to template component and props
         switch (type) {
-            case 'subscription_purchase':
-            case 'addon_purchase': {
+            case 'subscription_purchase': {
                 const p = payload as PurchaseConfirmationPayload;
                 return PurchaseConfirmation({
                     recipientName,
@@ -354,6 +356,29 @@ export class NotificationService {
                     baseUrl: this.deps.siteUrl,
                     billingPeriod: p.billingPeriod,
                     nextBillingDate: p.nextBillingDate
+                });
+            }
+
+            // HOS-722: `'addon_purchase'` used to fall through to
+            // `PurchaseConfirmation` above. That made `AddonPurchaseConfirmation`
+            // — the add-on-specific template, with the locale-aware CTA that
+            // points at the add-ons page — unreachable dead code, so the receipt
+            // an add-on buyer actually received was the subscription email:
+            // locale-blind, and linking to `/es/mi-cuenta` instead of
+            // `/{locale}/mi-cuenta/addons/?focus=<slug>`.
+            case 'addon_purchase': {
+                const p = payload as AddonPurchaseConfirmationPayload;
+                return AddonPurchaseConfirmation({
+                    customerName: recipientName,
+                    addonName: p.addonName,
+                    addonDescription: p.addonDescription,
+                    expiresAt: p.expiresAt ?? null,
+                    orderId: p.orderId,
+                    amount: p.amount,
+                    currency: p.currency,
+                    baseUrl: this.deps.siteUrl,
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
                 });
             }
 
@@ -839,7 +864,8 @@ export class NotificationService {
                     recipientName: payload.recipientName,
                     messageId: messageId || null,
                     category: NOTIFICATION_CATEGORY_MAP[payload.type],
-                    idempotencyKey: payload.idempotencyKey || null
+                    idempotencyKey: payload.idempotencyKey || null,
+                    ...buildAddonLinkMetadata(payload)
                 }
             });
 

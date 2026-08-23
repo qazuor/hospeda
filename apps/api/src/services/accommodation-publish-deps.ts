@@ -23,7 +23,7 @@
  * what is left is one read of the billing tables.
  */
 import { isSubscriptionLive } from '@repo/billing';
-import { billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
+import { and, billingCustomers, billingSubscriptions, desc, eq, getDb, isNull } from '@repo/db';
 import {
     type AccommodationPublishDeps,
     isAccommodationSubscription,
@@ -63,7 +63,13 @@ export function buildAccommodationPublishDeps(): AccommodationPublishDeps {
             const [customer] = await db
                 .select()
                 .from(billingCustomers)
-                .where(eq(billingCustomers.externalId, ownerId))
+                .where(
+                    and(
+                        eq(billingCustomers.externalId, ownerId),
+                        isNull(billingCustomers.deletedAt)
+                    )
+                )
+                .orderBy(desc(billingCustomers.createdAt), desc(billingCustomers.id))
                 .limit(1);
             if (!customer) {
                 return 'first_publish';
@@ -71,7 +77,12 @@ export function buildAccommodationPublishDeps(): AccommodationPublishDeps {
             const subscriptions = await db
                 .select()
                 .from(billingSubscriptions)
-                .where(eq(billingSubscriptions.customerId, customer.id))
+                .where(
+                    and(
+                        eq(billingSubscriptions.customerId, customer.id),
+                        isNull(billingSubscriptions.deletedAt)
+                    )
+                )
                 .orderBy(desc(billingSubscriptions.createdAt))
                 .limit(10);
             if (subscriptions.length === 0) {

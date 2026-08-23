@@ -76,13 +76,8 @@ export function RestartTour({ locale, userRoles }: RestartTourProps) {
 
     return (
         <div className="restart-tour">
-            <h3 className="restart-tour__title">{t('account.nav.repeatTour', 'Repetir tour')}</h3>
-            <p className="restart-tour__desc">
-                {t(
-                    'account.nav.repeatTourDesc',
-                    'Volvé a ver el tour guiado por el panel de cuenta'
-                )}
-            </p>
+            <h3 className="restart-tour__title">{t('account.nav.repeatTour')}</h3>
+            <p className="restart-tour__desc">{t('account.nav.repeatTourDesc')}</p>
             <button
                 type="button"
                 className="restart-tour__button"

@@ -50,7 +50,17 @@
         "success": "Tu contraseña fue actualizada correctamente.",
         "error": "Ocurrió un error al actualizar la contraseña. Por favor, intentá de nuevo.",
         "mismatch": "Las contraseñas no coinciden.",
-        "currentIncorrect": "La contraseña actual es incorrecta."
+        "currentIncorrect": "La contraseña actual es incorrecta.",
+        "currentRequired": "La contraseña actual es requerida.",
+        "hidePassword": "Ocultar contraseña",
+        "showPassword": "Mostrar contraseña",
+        "strength": {
+            "medium": "Media",
+            "strong": "Segura",
+            "weak": "Débil"
+        },
+        "strengthLabel": "Seguridad de la contraseña",
+        "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
     },
     "visibility": {
         "active": "Activo",
@@ -223,7 +233,10 @@
                 "uploadFailed": "Error al subir la imagen",
                 "uploadTimeout": "La subida tardó demasiado. Probá de nuevo.",
                 "capReached_one": "Límite de galería alcanzado (máx. {{cap}} foto)",
-                "capReached_other": "Límite de galería alcanzado (máx. {{cap}} fotos)"
+                "capReached_other": "Límite de galería alcanzado (máx. {{cap}} fotos)",
+                "featuredFailed": "No se pudo marcar la imagen como principal",
+                "persistFailed": "No se pudo guardar la imagen en la base de datos",
+                "removeFailed": "No se pudo eliminar la imagen"
             },
             "slugImmutableNotice": "La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después."
         },
@@ -296,7 +309,10 @@
             "howItWorks": {
                 "tagline": "Es así de fácil",
                 "title": "¿Cómo funciona?",
-                "step1": { "title": "Registrate", "desc": "Creá tu cuenta en menos de 2 minutos." },
+                "step1": {
+                    "title": "Registrate",
+                    "desc": "Creá tu cuenta en menos de 2 minutos."
+                },
                 "step2": {
                     "title": "Publicá tu local",
                     "desc": "Cargá fotos, menú, horarios y ubicación."
@@ -348,7 +364,10 @@
             "howItWorks": {
                 "tagline": "Es así de fácil",
                 "title": "¿Cómo funciona?",
-                "step1": { "title": "Registrate", "desc": "Creá tu cuenta en menos de 2 minutos." },
+                "step1": {
+                    "title": "Registrate",
+                    "desc": "Creá tu cuenta en menos de 2 minutos."
+                },
                 "step2": {
                     "title": "Publicá tu experiencia",
                     "desc": "Cargá fotos, descripción, horarios y ubicación."

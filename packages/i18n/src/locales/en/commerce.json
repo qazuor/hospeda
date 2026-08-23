@@ -50,7 +50,17 @@
         "success": "Your password was updated successfully.",
         "error": "An error occurred while updating the password. Please try again.",
         "mismatch": "Passwords do not match.",
-        "currentIncorrect": "The current password is incorrect."
+        "currentIncorrect": "The current password is incorrect.",
+        "currentRequired": "La contraseña actual es requerida.",
+        "hidePassword": "Ocultar contraseña",
+        "showPassword": "Mostrar contraseña",
+        "strength": {
+            "medium": "Media",
+            "strong": "Segura",
+            "weak": "Débil"
+        },
+        "strengthLabel": "Seguridad de la contraseña",
+        "accountNotice": "You are about to change the password for this account:"
     },
     "visibility": {
         "active": "Active",
@@ -223,7 +233,10 @@
                 "uploadFailed": "Error uploading the image",
                 "uploadTimeout": "The upload took too long. Please try again.",
                 "capReached_one": "Gallery limit reached (max. {{cap}} photo)",
-                "capReached_other": "Gallery limit reached (max. {{cap}} photos)"
+                "capReached_other": "Gallery limit reached (max. {{cap}} photos)",
+                "featuredFailed": "No se pudo marcar la imagen como principal",
+                "persistFailed": "No se pudo guardar la imagen en la base de datos",
+                "removeFailed": "No se pudo eliminar la imagen"
             },
             "slugImmutableNotice": "The public URL is generated from the name when the business is created and cannot be changed afterward."
         },
@@ -296,7 +309,10 @@
             "howItWorks": {
                 "tagline": "It's that easy",
                 "title": "How does it work?",
-                "step1": { "title": "Sign up", "desc": "Create your account in under 2 minutes." },
+                "step1": {
+                    "title": "Sign up",
+                    "desc": "Create your account in under 2 minutes."
+                },
                 "step2": {
                     "title": "Publish your venue",
                     "desc": "Add photos, menu, hours and location."
@@ -348,7 +364,10 @@
             "howItWorks": {
                 "tagline": "It's that easy",
                 "title": "How does it work?",
-                "step1": { "title": "Sign up", "desc": "Create your account in under 2 minutes." },
+                "step1": {
+                    "title": "Sign up",
+                    "desc": "Create your account in under 2 minutes."
+                },
                 "step2": {
                     "title": "Publish your experience",
                     "desc": "Add photos, description, hours and location."

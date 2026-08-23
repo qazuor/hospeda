@@ -339,7 +339,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             });
             addToast({
                 type: 'error',
-                message: t('validation.formHasErrors', 'Revisá los campos marcados')
+                message: t('validation.formHasErrors')
             });
             return;
         }
