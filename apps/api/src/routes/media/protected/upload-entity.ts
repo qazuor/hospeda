@@ -53,6 +53,29 @@ import { resolveVisibleGalleryCount } from '../gallery-count';
 /** Reusable Zod validator for actor.id UUID format. */
 const ActorIdSchema = z.string().uuid();
 
+const formatRetryAfterLabel = (retryAfterSec: number): string => {
+    if (retryAfterSec < 60) {
+        return `${retryAfterSec} segundo${retryAfterSec === 1 ? '' : 's'}`;
+    }
+
+    const minutes = Math.floor(retryAfterSec / 60);
+    const seconds = retryAfterSec % 60;
+    const minuteLabel = `${minutes} minuto${minutes === 1 ? '' : 's'}`;
+
+    if (seconds === 0) {
+        return minuteLabel;
+    }
+
+    return `${minuteLabel} y ${seconds} segundo${seconds === 1 ? '' : 's'}`;
+};
+
+const buildUploadRateLimitMessage = ({
+    retryAfterSec
+}: {
+    readonly retryAfterSec: number;
+}): string =>
+    `Se alcanzó el límite temporal de subida de fotos. Intentá de nuevo en ${formatRetryAfterLabel(retryAfterSec)}.`;
+
 /**
  * Resolve an entity service per-request for ownership verification.
  */
@@ -355,7 +378,8 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: 10,
-                keyPrefix: 'upload:protected-entity'
+                keyPrefix: 'upload:protected-entity',
+                buildExceededMessage: buildUploadRateLimitMessage
             })
         ]
     }

@@ -1060,6 +1060,7 @@ export interface SlidingWindowPerUserOptions {
     readonly windowMs: number;
     readonly max: number;
     readonly keyPrefix?: string;
+    readonly buildExceededMessage?: (params: { readonly retryAfterSec: number }) => string;
 }
 
 /**
@@ -1445,7 +1446,7 @@ export function createSlidingWindowPerUserRateLimit(
     // `resolveDefaultSlidingWindowStore` memoises, so this stays a single lookup.
     const getStoreForRequest = (): SlidingWindowStore =>
         store ?? resolveDefaultSlidingWindowStore();
-    const { windowMs, max, keyPrefix = 'sw' } = opts;
+    const { windowMs, max, keyPrefix = 'sw', buildExceededMessage } = opts;
 
     return async (c: Context, next: Next): Promise<Response | undefined> => {
         // Skip in test environment unless explicitly testing
@@ -1491,7 +1492,13 @@ export function createSlidingWindowPerUserRateLimit(
                 success: false,
                 error: {
                     code: 'RATE_LIMIT_EXCEEDED',
-                    message: 'Too many requests. Please try again later.'
+                    message:
+                        buildExceededMessage?.({ retryAfterSec }) ??
+                        'Too many requests. Please try again later.',
+                    reason: 'RATE_LIMIT_EXCEEDED',
+                    details: {
+                        retryAfter: retryAfterSec
+                    }
                 }
             };
 
