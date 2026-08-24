@@ -84,13 +84,32 @@ live the drop is a no-op for the application.
 > `DROP TABLE` passes it without a marker. That gap is why this had to be caught by
 > hand; it is worth closing separately.
 
-**The reverse order is not available.** The new code needs `0095` (creates
-`billing_orphan_payments`) and the two new `permission_enum` values added by `0092`
-and `0096`. Deploying first exposes a narrow window on those — checked and accepted:
-`billingOrphanPayments` is touched only inside `orphan-payment-queue.service.ts`, in a
-runtime `.insert()`, never at startup, so the container still passes its healthcheck.
-The only exposure is a MercadoPago webhook carrying an orphan payment arriving in the
-minutes between deploy and migrate.
+Deploy-first is not merely the lesser evil here — it is strictly better. Reviewed one
+by one, by whom each pending migration can hurt:
+
+| Migration | What it does | Hurts the OLD image | Hurts the NEW image if applied after it |
+| --- | --- | --- | --- |
+| `0092` | adds enum value `commerce.moderationChange` | no | no |
+| `0093` | stricter unique index on polling jobs | marginally | no |
+| `0094` | `DROP DEFAULT` on `product_domain` | **yes** | no |
+| `0095` | creates `billing_orphan_payments` | no | narrowly |
+| `0096` | adds enum value `billing.addon.purchase` | no | no |
+| `0097` | unique index on refunds | no | no |
+| `0098` | `DROP TABLE commerce_leads` | **yes, seriously** | no |
+
+Redeploying first therefore avoids **three** hazards against the still-running old
+image (`0093`, `0094`, `0098`) and pays exactly one narrow cost: between the deploy and
+the migration, `billing_orphan_payments` does not exist yet, so a MercadoPago webhook
+carrying an orphan payment in that window fails to enqueue. That is a backstop path,
+and `billingOrphanPayments` is touched only inside `orphan-payment-queue.service.ts` in
+a runtime `.insert()` — never at startup — so the container still passes its
+healthcheck and comes up clean.
+
+The two new `permission_enum` values are **not** an exposure, which is worth stating
+because it looks like one. Nothing queries `role_permission` by a literal permission
+value: the startup healthcheck is a bare `count(*)`, and permission checks compare
+in memory against the actor's loaded list. Those values are first written by the seed
+rail (`0062`, `0067`), which runs later in this same session.
 
 ---
 
