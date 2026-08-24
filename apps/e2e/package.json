@@ -32,7 +32,7 @@
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",
         "drizzle-orm": "^0.45.2",
-        "pg": "^8.22.0",
+        "pg": "^8.23.0",
         "zod": "^4.0.8"
     },
     "devDependencies": {
