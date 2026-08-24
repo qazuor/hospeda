@@ -34,6 +34,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 
 /** Shape of the router's `navigate`, kept local to avoid a static virtual-module import. */
 type NavigateFn = (href: string) => void;
@@ -121,6 +122,7 @@ export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGu
     // would let the navigation slip. If it never resolves we fall back to a
     // full load — the user already accepted losing the edits.
     const navigateRef = useRef<NavigateFn | null>(null);
+    const confirmationOpenRef = useRef(false);
 
     useEffect(() => {
         if (!isDirty) {
@@ -158,16 +160,29 @@ export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGu
             // anchor's own navigation. Nothing has been fetched or swapped yet.
             event.preventDefault();
 
-            if (!window.confirm(message)) {
+            if (confirmationOpenRef.current) {
                 return;
             }
 
-            const routerNavigate = navigateRef.current;
-            if (routerNavigate) {
-                routerNavigate(anchor.href);
-            } else {
-                window.location.href = anchor.href;
-            }
+            confirmationOpenRef.current = true;
+            const href = anchor.href;
+
+            void showConfirmationDialog({ message })
+                .then((confirmed) => {
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    const routerNavigate = navigateRef.current;
+                    if (routerNavigate) {
+                        routerNavigate(href);
+                    } else {
+                        window.location.href = href;
+                    }
+                })
+                .finally(() => {
+                    confirmationOpenRef.current = false;
+                });
         };
 
         window.addEventListener('beforeunload', handleBeforeUnload);

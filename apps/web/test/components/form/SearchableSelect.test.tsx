@@ -64,6 +64,12 @@ function listbox(): HTMLElement {
 }
 
 describe('SearchableSelect — zero results keep the recovery path reachable (H-136)', () => {
+    it('should render a dropdown indicator so the field reads as selectable', () => {
+        renderPicker(vi.fn().mockResolvedValue(CITIES));
+
+        expect(screen.getByTestId('property-city-indicator')).toBeVisible();
+    });
+
     it('should keep the dropdown visible when the query yields no matches', async () => {
         // Arrange
         const user = userEvent.setup();

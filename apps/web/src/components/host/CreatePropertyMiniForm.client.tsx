@@ -217,6 +217,23 @@ const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
 
 /** Max suggestions surfaced by the city autocomplete dropdown. */
 const CITY_AUTOCOMPLETE_LIMIT = 10;
+const NAME_MAX_LENGTH = 100;
+const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MAX_LENGTH = 2000;
+
+type CounterState = 'normal' | 'warning' | 'danger';
+
+function getCounterState({
+    current,
+    max
+}: {
+    readonly current: number;
+    readonly max: number;
+}): CounterState {
+    if (current >= max) return 'danger';
+    if (current >= Math.ceil(max * 0.8)) return 'warning';
+    return 'normal';
+}
 
 /**
  * Renders a confidence badge matching the inline pattern used for name/summary/type.
@@ -313,6 +330,15 @@ export function CreatePropertyMiniForm({
     // unknown (loading / unauthenticated / lookup failed) → keep the
     // encouraging default; only an explicit `false` swaps to the no-trial copy.
     const [trialEligible, setTrialEligible] = useState<boolean | null>(null);
+    const nameCounterState = getCounterState({ current: name.length, max: NAME_MAX_LENGTH });
+    const summaryCounterState = getCounterState({
+        current: summary.length,
+        max: SUMMARY_MAX_LENGTH
+    });
+    const descriptionCounterState = getCounterState({
+        current: extras.description?.length ?? 0,
+        max: DESCRIPTION_MAX_LENGTH
+    });
 
     useEffect(() => {
         let cancelled = false;
@@ -971,11 +997,28 @@ export function CreatePropertyMiniForm({
                     type="text"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    maxLength={100}
+                    maxLength={NAME_MAX_LENGTH}
                     required
                     aria-invalid={fieldErrors.name ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
+                    aria-describedby={[
+                        `${nameId}-counter`,
+                        fieldErrors.name ? `${nameId}-error` : ''
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
                 />
+                <p
+                    id={`${nameId}-counter`}
+                    className={`${styles.charCounter} ${styles[`charCounter--${nameCounterState}`]}`}
+                    data-state={nameCounterState}
+                    data-testid="name-char-counter"
+                    aria-live="polite"
+                >
+                    {t('comments.form.charCount', '{{count}}/{{max}}', {
+                        count: String(name.length),
+                        max: String(NAME_MAX_LENGTH)
+                    })}
+                </p>
                 <FieldError
                     id={`${nameId}-error`}
                     message={fieldErrors.name}
@@ -1111,17 +1154,40 @@ export function CreatePropertyMiniForm({
                     value={summary}
                     onChange={(event) => setSummary(event.target.value)}
                     rows={3}
-                    maxLength={300}
+                    maxLength={SUMMARY_MAX_LENGTH}
                     required
                     aria-invalid={fieldErrors.summary ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.summary ? `${summaryId}-error` : undefined}
+                    aria-describedby={[
+                        `${summaryId}-hint`,
+                        `${summaryId}-counter`,
+                        fieldErrors.summary ? `${summaryId}-error` : ''
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
                 />
-                <p className="form-hint">
-                    {t(
-                        'host.miniForm.fields.summaryHint',
-                        'Una frase de presentación. Después podés ampliar todo en el panel.'
-                    )}
-                </p>
+                <div className={styles.fieldMetaRow}>
+                    <p
+                        id={`${summaryId}-hint`}
+                        className="form-hint"
+                    >
+                        {t(
+                            'host.miniForm.fields.summaryHint',
+                            'Una frase de presentación. Después podés ampliar todo en el panel.'
+                        )}
+                    </p>
+                    <p
+                        id={`${summaryId}-counter`}
+                        className={`${styles.charCounter} ${styles[`charCounter--${summaryCounterState}`]}`}
+                        data-state={summaryCounterState}
+                        data-testid="summary-char-counter"
+                        aria-live="polite"
+                    >
+                        {t('comments.form.charCount', '{{count}}/{{max}}', {
+                            count: String(summary.length),
+                            max: String(SUMMARY_MAX_LENGTH)
+                        })}
+                    </p>
+                </div>
                 <FieldError
                     id={`${summaryId}-error`}
                     message={fieldErrors.summary}
@@ -1186,14 +1252,30 @@ export function CreatePropertyMiniForm({
                                             }))
                                         }
                                         rows={5}
+                                        maxLength={DESCRIPTION_MAX_LENGTH}
                                         aria-invalid={fieldErrors.description ? 'true' : 'false'}
-                                        aria-describedby={
+                                        aria-describedby={[
+                                            `${descriptionId}-counter`,
                                             fieldErrors.description
                                                 ? fieldErrorId('description')
-                                                : undefined
-                                        }
+                                                : ''
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ')}
                                         data-testid="extras-description"
                                     />
+                                    <p
+                                        id={`${descriptionId}-counter`}
+                                        className={`${styles.charCounter} ${styles[`charCounter--${descriptionCounterState}`]}`}
+                                        data-state={descriptionCounterState}
+                                        data-testid="extras-description-char-counter"
+                                        aria-live="polite"
+                                    >
+                                        {t('comments.form.charCount', '{{count}}/{{max}}', {
+                                            count: String(extras.description?.length ?? 0),
+                                            max: String(DESCRIPTION_MAX_LENGTH)
+                                        })}
+                                    </p>
                                     <FieldError
                                         id={fieldErrorId('description')}
                                         message={fieldErrors.description}
