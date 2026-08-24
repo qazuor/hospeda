@@ -36,6 +36,12 @@ export interface ExperienceListingEmptyStateFilters {
 export interface AccommodationListingEmptyStateFilters {
     readonly q: string | undefined;
     readonly types: ReadonlyArray<string>;
+    /**
+     * The legacy singular `?type=` param. It still narrows results (the page
+     * forwards it to the API alongside `types`), so an old link landing on an
+     * empty grid must read as "no matches", not as an empty catalog.
+     */
+    readonly legacyType: string | undefined;
     readonly destinationIds: string | undefined;
     readonly minPrice: number | undefined;
     readonly maxPrice: number | undefined;
@@ -106,6 +112,7 @@ export function hasActiveExperienceListingFilters({
 export function hasActiveAccommodationEmptyStateFilters({
     q,
     types,
+    legacyType,
     destinationIds,
     minPrice,
     maxPrice,
@@ -129,6 +136,7 @@ export function hasActiveAccommodationEmptyStateFilters({
     return Boolean(
         hasNonEmptyText(q) ||
             types.some((type) => type.trim().length > 0) ||
+            hasNonEmptyText(legacyType) ||
             hasNonEmptyCsv(destinationIds) ||
             hasFiniteNumber(minPrice) ||
             hasFiniteNumber(maxPrice) ||

@@ -63,6 +63,10 @@ const pageSize = 20;
 // Extract filter params
 const q = url.searchParams.get('q') ?? undefined;
 const types = url.searchParams.get('types') ?? undefined;
+// HOS-96 pre-merge review (Option A): the legacy singular `?type=` still
+// narrows the grid (forwarded to the API below), so it is read once here
+// and reused by both the request and the empty-state filter detection.
+const legacyType = url.searchParams.get('type') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
@@ -241,11 +245,11 @@ const [destinationsResult, amenitiesResult, featuresResult, result] = await Prom
 	pageSize,
 	q,
 	types,
-	// HOS-96 pre-merge review (Option A): forward the legacy singular `type`
-	// too (backend applies `types` OR, else `type`), so an old `?type=HOTEL`
-	// link filters the grid — matching how it now drives the SEO canonical and
-	// chip/sidebar highlight. Mirrors events/blog, which already forward both.
-	type: url.searchParams.get('type') ?? undefined,
+	// Forward the legacy singular `type` too (backend applies `types` OR, else
+	// `type`), so an old `?type=HOTEL` link filters the grid — matching how it
+	// now drives the SEO canonical and chip/sidebar highlight. Mirrors
+	// events/blog, which already forward both.
+	type: legacyType,
 	destinationIds,
 	minPrice,
 	maxPrice,
@@ -334,6 +338,7 @@ const typesArray = types?.split(',').filter(Boolean) ?? [];
 const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
 	q,
 	types: typesArray,
+	legacyType,
 	destinationIds,
 	minPrice,
 	maxPrice,

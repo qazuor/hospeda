@@ -87,6 +87,7 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
             hasActiveAccommodationEmptyStateFilters({
                 q: undefined,
                 types: [],
+                legacyType: undefined,
                 destinationIds: undefined,
                 minPrice: undefined,
                 maxPrice: undefined,
@@ -113,6 +114,7 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
     it.each([
         { q: 'hotel' },
         { types: ['HOTEL'] },
+        { legacyType: 'HOTEL' },
         { destinationIds: 'dest-1' },
         { minPrice: 5000 },
         { maxPrice: 10000 },
@@ -137,6 +139,7 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
             hasActiveAccommodationEmptyStateFilters({
                 q: undefined,
                 types: [],
+                legacyType: undefined,
                 destinationIds: undefined,
                 minPrice: undefined,
                 maxPrice: undefined,
@@ -166,6 +169,7 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
             hasActiveAccommodationEmptyStateFilters({
                 q: undefined,
                 types: [],
+                legacyType: undefined,
                 destinationIds: undefined,
                 minPrice: undefined,
                 maxPrice: undefined,

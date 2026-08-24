@@ -25,6 +25,14 @@ describe('alojamientos/index.astro empty states', () => {
         expect(src).toContain('suggestions={emptyStateSuggestions}');
     });
 
+    it('counts the legacy singular ?type= param as an active filter', () => {
+        expect(src).toContain("const legacyType = url.searchParams.get('type') ?? undefined;");
+        expect(src).toContain('\tlegacyType,');
+        // Read exactly once: a second inline read is how the API request and
+        // the empty-state detection would silently drift apart again.
+        expect(src.match(/url\.searchParams\.get\('type'\)/g)).toHaveLength(1);
+    });
+
     it('renders a distinct empty-catalog state when there are no active filters', () => {
         expect(src).toContain('{!hasError && cards.length === 0 && !hasActiveFilters && (');
         expect(src).toContain('variant="empty"');
