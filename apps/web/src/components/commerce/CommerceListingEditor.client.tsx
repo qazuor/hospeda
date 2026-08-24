@@ -5,8 +5,9 @@
  * HTML form (no TanStack Form, per web conventions) that persists changes
  * through the vertical's protected PATCH endpoint (`updateOwn`).
  *
- * `slug` stays out of this form — it is server-derived at create time and
- * immutable post-create (HOS-166 OQ-3), shown read-only by the hosting page.
+ * `slug` stays out of this form — the owner never edits it directly. The server
+ * keeps it in sync with the name while the listing is still a draft, then stops
+ * auto-changing it once the listing is published (HOS-784 stage 1).
  *
  * Field-group coverage (SPEC-253 additions marked *, HOS-166 D-1 marked †):
  *   † name + destinationId (SPEC-239 decision #5 reversed — the owner now

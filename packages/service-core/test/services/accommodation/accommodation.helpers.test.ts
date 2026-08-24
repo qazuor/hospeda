@@ -36,6 +36,20 @@ describe('generateSlug (AccommodationService)', () => {
         expect(slug).toMatch(/^hostel-la-posta-[a-z0-9]+$/);
     });
 
+    it('keeps the current slug when the regenerated candidate belongs to the same accommodation', async () => {
+        findOneMock.mockResolvedValueOnce({ id: 'acc-123' });
+        const slug = await generateSlug('hotel', 'Gran Hotel Plaza', 'acc-123');
+        expect(slug).toBe('hotel-gran-hotel-plaza');
+    });
+
+    it('deduplicates against other accommodations when regenerating a renamed draft slug', async () => {
+        findOneMock
+            .mockResolvedValueOnce({ id: 'other-accommodation' })
+            .mockResolvedValueOnce(null);
+        const slug = await generateSlug('hotel', 'Gran Hotel Plaza', 'acc-123');
+        expect(slug).toBe('hotel-gran-hotel-plaza-2');
+    });
+
     it('handles multiple collisions and increments suffix', async () => {
         findOneMock
             .mockResolvedValueOnce({}) // slug exists

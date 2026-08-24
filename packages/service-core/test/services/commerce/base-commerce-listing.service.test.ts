@@ -419,6 +419,67 @@ describe('BaseCommerceListingService — destination CITY validation', () => {
     });
 });
 
+describe('BaseCommerceListingService — draft rename slug sync (_beforeUpdate)', () => {
+    it('regenerates the slug when an unpublished listing is renamed', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        (model.findOne as Mock).mockResolvedValue(null);
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBe('mi-restaurante-nuevo');
+        expect(model.findOne).toHaveBeenCalledWith({ slug: 'mi-restaurante-nuevo' });
+    });
+
+    it('does not regenerate the slug when a published listing is renamed', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'ACTIVE'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBeUndefined();
+        expect(model.findOne).not.toHaveBeenCalled();
+    });
+
+    it('deduplicates the slug when a renamed unpublished listing collides with another row', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        (model.findOne as Mock)
+            .mockResolvedValueOnce({ id: 'other-row', slug: 'mi-restaurante-nuevo' })
+            .mockResolvedValueOnce(null);
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBe('mi-restaurante-nuevo-2');
+    });
+});
+
 // ---------------------------------------------------------------------------
 // (c) Junction ID capture into hookState
 // ---------------------------------------------------------------------------

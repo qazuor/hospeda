@@ -238,7 +238,7 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "The public URL is generated from the name when the business is created and cannot be changed afterward."
+            "slugImmutableNotice": "The public URL follows the name while the listing is still unpublished. Once it is published, it stops changing automatically."
         },
         "checklist": {
             "field": {

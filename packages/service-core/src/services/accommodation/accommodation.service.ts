@@ -128,6 +128,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
+import { shouldRegenerateSlugOnDraftRename } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
@@ -1137,6 +1138,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
+
         // SPEC-095: when destinationId is being changed, validate it is a CITY.
         if (data.destinationId) {
             await this._assertDestinationIsCity(data.destinationId);
@@ -1156,6 +1159,24 @@ export class AccommodationService extends BaseCrudService<
             const entityId = ctx.hookState.updateId;
             if (entityId) {
                 const current = await this.model.findById(entityId, ctx.tx);
+
+                if (
+                    current &&
+                    shouldRegenerateSlugOnDraftRename({
+                        currentLifecycleState: current.lifecycleState,
+                        currentName: current.name,
+                        nextName: data.name,
+                        slugWasProvided
+                    })
+                ) {
+                    const nextType = typeof data.type === 'string' ? data.type : current.type;
+                    ctx.hookState.regeneratedSlug = await generateSlug(
+                        nextType,
+                        data.name as string,
+                        current.id
+                    );
+                }
+
                 ctx.hookState.previousTranslatableFields = {
                     name: current?.name ?? undefined,
                     summary: current?.summary ?? undefined,
@@ -1198,6 +1219,10 @@ export class AccommodationService extends BaseCrudService<
                 { aiAssistedFields },
                 '[accommodation] AI-assisted fields detected in update payload'
             );
+        }
+
+        if (ctx.hookState?.regeneratedSlug) {
+            cleanData.slug = ctx.hookState.regeneratedSlug;
         }
 
         return cleanData as Partial<Accommodation>;

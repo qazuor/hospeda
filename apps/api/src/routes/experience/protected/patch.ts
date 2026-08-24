@@ -7,7 +7,8 @@
  * - Validates the payload through ExperienceOwnerUpdateInputSchema. Since
  *   HOS-166 D-1, `name`, `description`, and `destinationId` are
  *   owner-editable identity fields (SPEC-239 decision #5 reversed — see the
- *   schema's docstring). Only `slug` (immutable post-create, HOS-166 OQ-3)
+ *   schema's docstring). Only `slug` (never owner-editable directly; it now
+ *   auto-follows draft renames server-side, HOS-784 stage 1)
  *   plus the control fields (`lifecycleState`, `visibility`,
  *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
  *   so any forged keys for those are silently stripped by Zod.
