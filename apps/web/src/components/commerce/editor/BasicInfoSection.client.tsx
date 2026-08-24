@@ -67,6 +67,7 @@ export interface BasicInfoSectionProps {
         description?: string;
     }>;
     readonly onFieldChange: CommerceFieldChange;
+    readonly shouldOfferSlugRefresh?: boolean;
 }
 
 export function BasicInfoSection({
@@ -76,7 +77,8 @@ export function BasicInfoSection({
     destinations,
     destinationsLoadFailed,
     errors,
-    onFieldChange
+    onFieldChange,
+    shouldOfferSlugRefresh = false
 }: BasicInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
     const typeOptions =
@@ -102,6 +104,37 @@ export function BasicInfoSection({
                         onFieldChange('name', event.target.value);
                     }}
                 />
+                {shouldOfferSlugRefresh ? (
+                    <div>
+                        <p className={styles.hint}>
+                            {t(
+                                'commerce.owner.editor.slugRefresh.notice',
+                                'Esta ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.'
+                            )}
+                        </p>
+                        <p className={styles.hint}>
+                            {t(
+                                'commerce.owner.editor.slugRefresh.warning',
+                                'Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                            )}
+                        </p>
+                        <label className={styles.checkbox}>
+                            <input
+                                type="checkbox"
+                                checked={data.refreshSlugFromName}
+                                onChange={(event) => {
+                                    onFieldChange('refreshSlugFromName', event.target.checked);
+                                }}
+                            />
+                            <span>
+                                {t(
+                                    'commerce.owner.editor.slugRefresh.checkbox',
+                                    'Cambiar igual la dirección pública para que siga este nuevo nombre'
+                                )}
+                            </span>
+                        </label>
+                    </div>
+                ) : null}
             </section>
 
             {/* HOS-166 D-1: destinationId — identity field, now owner-editable.

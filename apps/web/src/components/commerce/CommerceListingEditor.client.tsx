@@ -25,7 +25,7 @@
 
 import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
-import { type JSX, useCallback, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/commerce/destination-option';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
@@ -37,6 +37,10 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import {
+    buildSlugRefreshPayload,
+    shouldOfferPublishedSlugRefresh
+} from '@/lib/listing-slug-refresh';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './CommerceListingEditor.module.css';
@@ -177,11 +181,13 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
 function buildPatchPayload({
     current,
     baseline,
-    vertical
+    vertical,
+    lifecycleState
 }: {
     current: CommerceEditData;
     baseline: CommerceEditData;
     vertical: CommerceVertical;
+    lifecycleState?: string | null;
 }): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
@@ -200,6 +206,15 @@ function buildPatchPayload({
     if (current.description !== baseline.description) {
         payload.description = current.description || undefined;
     }
+    Object.assign(
+        payload,
+        buildSlugRefreshPayload({
+            currentLifecycleState: lifecycleState,
+            initialName: baseline.name,
+            currentName: current.name,
+            refreshSlugFromName: current.refreshSlugFromName
+        })
+    );
     if (current.richDescription !== baseline.richDescription) {
         payload.richDescription = current.richDescription;
     }
@@ -362,7 +377,8 @@ export function CommerceListingEditor({
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
-        i18nValues: parseCommerceI18nValues(data)
+        i18nValues: parseCommerceI18nValues(data),
+        refreshSlugFromName: false
     });
 
     const [formData, setFormData] = useState<CommerceEditData>(buildInitialEditData);
@@ -377,6 +393,7 @@ export function CommerceListingEditor({
     // Only the values still read by the orchestrator's own JSX. Everything else
     // reaches its section component through the `data` prop (HOS-258 PR 2).
     const { openingHours, amenityIds, featureIds, i18nValues } = formData;
+    const currentLifecycleState = String(data.lifecycleState ?? 'DRAFT');
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -443,9 +460,27 @@ export function CommerceListingEditor({
      * render.
      */
     const patchPayload = useMemo(
-        () => buildPatchPayload({ current: formData, baseline, vertical }),
-        [formData, baseline, vertical]
+        () =>
+            buildPatchPayload({
+                current: formData,
+                baseline,
+                vertical,
+                lifecycleState: currentLifecycleState
+            }),
+        [formData, baseline, vertical, currentLifecycleState]
     );
+
+    const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
+        currentLifecycleState,
+        initialName: baseline.name,
+        currentName: formData.name
+    });
+
+    useEffect(() => {
+        if (!shouldOfferSlugRefresh && formData.refreshSlugFromName) {
+            setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
+        }
+    }, [formData.refreshSlugFromName, shouldOfferSlugRefresh]);
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
@@ -486,7 +521,8 @@ export function CommerceListingEditor({
             });
 
             if (result.ok) {
-                setBaseline(persisted);
+                setBaseline({ ...persisted, refreshSlugFromName: false });
+                setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
                 setStatus({ kind: 'idle' });
                 addToast({
                     type: 'success',
@@ -619,6 +655,7 @@ export function CommerceListingEditor({
                         destinationsLoadFailed={destinationsLoadFailed}
                         errors={fieldErrors}
                         onFieldChange={onFieldChange}
+                        shouldOfferSlugRefresh={shouldOfferSlugRefresh}
                     />
 
                     <ContactSection

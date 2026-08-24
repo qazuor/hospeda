@@ -157,6 +157,8 @@ const installFetchMock = (factory: () => Promise<Response> | Response) => {
 
 const MOCK_DATA = {
     id: 'acc-1',
+    slug: 'test-hotel',
+    lifecycleState: 'DRAFT',
     name: 'Test Hotel',
     summary: 'Test summary for accommodation',
     description: 'Test description with content',

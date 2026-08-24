@@ -261,7 +261,9 @@ export const ExperienceOwnerUpdateInputSchema = z
          */
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
-            .optional()
+            .optional(),
+        /** Published rename opt-in (HOS-784 stage 2). */
+        refreshSlugFromName: z.boolean().optional()
     });
 
 /** TypeScript type for {@link ExperienceOwnerUpdateInputSchema}. */
@@ -413,7 +415,9 @@ export const ExperienceUpdateInputSchema = z
          */
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
-            .optional()
+            .optional(),
+        /** Published rename opt-in (HOS-784 stage 2). */
+        refreshSlugFromName: z.boolean().optional()
     });
 
 /** TypeScript type for {@link ExperienceUpdateInputSchema}. */

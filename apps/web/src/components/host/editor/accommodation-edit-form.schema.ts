@@ -181,7 +181,8 @@ export const AccommodationBasicsSchema = z.object({
     summary: inherited.summary,
     description: descriptionField,
     type: inherited.type,
-    destinationId: inherited.destinationId
+    destinationId: inherited.destinationId,
+    refreshSlugFromName: z.boolean().optional()
 });
 
 /** `…/editar/capacidad-precio/` — guests, bedrooms, bathrooms, price, currency, minNights. */

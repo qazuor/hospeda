@@ -47,6 +47,9 @@ export interface BasicInfoSectionProps {
         destinationId?: string;
     }>;
     readonly onFieldChange: (field: keyof AccommodationEditData, value: string) => void;
+    readonly shouldOfferSlugRefresh?: boolean;
+    readonly refreshSlugFromName?: boolean;
+    readonly onRefreshSlugFromNameChange?: (value: boolean) => void;
 }
 
 /**
@@ -58,7 +61,10 @@ export function BasicInfoSection({
     data,
     destinations,
     errors,
-    onFieldChange
+    onFieldChange,
+    shouldOfferSlugRefresh = false,
+    refreshSlugFromName = false,
+    onRefreshSlugFromNameChange
 }: BasicInfoSectionProps) {
     const { t } = createTranslations(locale);
 
@@ -82,6 +88,37 @@ export function BasicInfoSection({
                     required
                     maxLength={100}
                 />
+                {shouldOfferSlugRefresh ? (
+                    <div className={styles.slugNotice}>
+                        <p className={styles.fieldHint}>
+                            {t(
+                                'host.properties.editor.slugRefresh.notice',
+                                'Tu ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.'
+                            )}
+                        </p>
+                        <p className={styles.fieldHint}>
+                            {t(
+                                'host.properties.editor.slugRefresh.warning',
+                                'Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                            )}
+                        </p>
+                        <label className={styles.slugCheckbox}>
+                            <input
+                                type="checkbox"
+                                checked={refreshSlugFromName}
+                                onChange={(event) =>
+                                    onRefreshSlugFromNameChange?.(event.target.checked)
+                                }
+                            />
+                            <span>
+                                {t(
+                                    'host.properties.editor.slugRefresh.checkbox',
+                                    'Cambiar igual la dirección pública para que siga este nuevo nombre'
+                                )}
+                            </span>
+                        </label>
+                    </div>
+                ) : null}
             </div>
 
             <div className={styles.field}>

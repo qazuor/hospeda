@@ -128,7 +128,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
-import { shouldRegenerateSlugOnDraftRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
@@ -1162,11 +1162,12 @@ export class AccommodationService extends BaseCrudService<
 
                 if (
                     current &&
-                    shouldRegenerateSlugOnDraftRename({
+                    shouldRegenerateSlugOnRename({
                         currentLifecycleState: current.lifecycleState,
                         currentName: current.name,
                         nextName: data.name,
-                        slugWasProvided
+                        slugWasProvided,
+                        refreshSlugFromName: data.refreshSlugFromName
                     })
                 ) {
                     const nextType = typeof data.type === 'string' ? data.type : current.type;
@@ -1212,6 +1213,7 @@ export class AccommodationService extends BaseCrudService<
         const cleanData = { ...data } as Record<string, unknown>;
         const aiAssistedFields = cleanData.aiAssistedFields as readonly string[] | undefined;
         cleanData.aiAssistedFields = undefined;
+        cleanData.refreshSlugFromName = undefined;
 
         if (aiAssistedFields !== undefined && ctx.hookState) {
             ctx.hookState.pendingAiAssistedFields = aiAssistedFields;

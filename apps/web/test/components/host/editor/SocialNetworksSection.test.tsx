@@ -33,6 +33,8 @@ vi.mock('@/components/host/editor/SocialNetworksSection.module.css', () => ({
 
 const MOCK_DATA = {
     id: 'acc-1',
+    slug: 'test',
+    lifecycleState: 'DRAFT',
     name: 'Test',
     summary: 'Test summary for accommodation',
     description: 'Test description',

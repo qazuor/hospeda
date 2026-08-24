@@ -51,6 +51,7 @@ export function buildEditData(overrides: Partial<CommerceEditData> = {}): Commer
             descriptionI18n: blankI18n(),
             richDescriptionI18n: blankI18n()
         },
+        refreshSlugFromName: false,
         ...overrides
     };
 }

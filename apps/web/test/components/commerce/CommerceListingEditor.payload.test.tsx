@@ -178,6 +178,7 @@ function buildListing(overrides: Record<string, unknown> = {}): CommerceListingD
         ownerId: 'owner-1',
         name: 'La Parrilla',
         slug: 'la-parrilla',
+        lifecycleState: 'DRAFT',
         destinationId: DESTINATION_1,
         description: 'Descripción original con suficiente longitud para pasar validación.',
         ...overrides
@@ -292,6 +293,35 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
 
             const body = await wireBody();
             expect(body).toHaveProperty('menuUrl', 'https://menu.test/carta');
+        });
+    });
+
+    describe('published slug refresh opt-in (HOS-784 stage 2)', () => {
+        it('does not send refreshSlugFromName by default when a published listing is renamed', async () => {
+            renderEditor('gastronomy', buildListing({ lifecycleState: 'ACTIVE' }));
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'La Parrilla Nueva' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('name', 'La Parrilla Nueva');
+            expect(body).not.toHaveProperty('refreshSlugFromName');
+        });
+
+        it('sends refreshSlugFromName when the owner opts in on a published rename', async () => {
+            renderEditor('gastronomy', buildListing({ lifecycleState: 'ACTIVE' }));
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'La Parrilla Nueva' }
+            });
+            fireEvent.click(screen.getByLabelText(/cambiar igual la dirección pública/i));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('name', 'La Parrilla Nueva');
+            expect(body).toHaveProperty('refreshSlugFromName', true);
         });
     });
 

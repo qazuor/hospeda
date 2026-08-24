@@ -238,7 +238,12 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "La URL pública sigue al nombre mientras la ficha siga sin publicar. Una vez publicada, deja de cambiarse sola."
+            "slugImmutableNotice": "La URL pública sigue al nombre mientras la ficha siga sin publicar. Una vez publicada, deja de cambiarse sola.",
+            "slugRefresh": {
+                "notice": "Esta ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.",
+                "warning": "Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
+                "checkbox": "Cambiar igual la dirección pública para que siga este nuevo nombre"
+            }
         },
         "checklist": {
             "field": {

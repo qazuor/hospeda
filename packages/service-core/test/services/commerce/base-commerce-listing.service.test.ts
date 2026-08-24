@@ -149,7 +149,8 @@ const updateSchema = z.object({
     type: z.string().optional(),
     destinationId: z.string().optional(),
     amenityIds: z.array(z.string()).optional(),
-    featureIds: z.array(z.string()).optional()
+    featureIds: z.array(z.string()).optional(),
+    refreshSlugFromName: z.boolean().optional()
 });
 
 const searchSchema = z.object({ q: z.string().optional() });
@@ -456,6 +457,29 @@ describe('BaseCommerceListingService — draft rename slug sync (_beforeUpdate)'
 
         expect(patch.slug).toBeUndefined();
         expect(model.findOne).not.toHaveBeenCalled();
+    });
+
+    it('regenerates the slug for a published listing only when explicitly requested', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'ACTIVE'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        (model.findOne as Mock).mockResolvedValue(null);
+
+        const patch = await svc.testBeforeUpdate(
+            { name: 'Mi Restaurante Nuevo', refreshSlugFromName: true },
+            actor,
+            ctx
+        );
+
+        expect(patch.slug).toBe('mi-restaurante-nuevo');
     });
 
     it('deduplicates the slug when a renamed unpublished listing collides with another row', async () => {

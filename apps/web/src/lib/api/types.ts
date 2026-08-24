@@ -239,6 +239,8 @@ export interface MarketComparisonData {
  */
 export interface AccommodationEditData {
     readonly id: string;
+    readonly slug: string;
+    readonly lifecycleState: string;
     readonly name: string;
     readonly summary: string;
     readonly description: string;

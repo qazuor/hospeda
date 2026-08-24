@@ -158,6 +158,52 @@ describe('AccommodationService.update', () => {
         );
     });
 
+    it('regenerates the slug for a published accommodation only when explicitly requested', async () => {
+        const actor = createAdminActor();
+        const id = 'published-accommodation-opt-in-id';
+        const existing = createMockAccommodation({
+            id,
+            name: 'Publicado original',
+            slug: 'house-publicado-original',
+            type: AccommodationTypeEnum.HOUSE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+        const updateInput = {
+            name: 'Publicado renombrado',
+            refreshSlugFromName: true
+        };
+
+        vi.spyOn(helpers, 'generateSlug').mockResolvedValueOnce('house-publicado-renombrado');
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue({
+            ...existing,
+            ...updateInput,
+            slug: 'house-publicado-renombrado'
+        });
+
+        const result = await service.update(actor, id, updateInput);
+
+        expect(result.error).toBeUndefined();
+        expect(helpers.generateSlug).toHaveBeenCalledWith(
+            AccommodationTypeEnum.HOUSE,
+            'Publicado renombrado',
+            id
+        );
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.objectContaining({
+                name: 'Publicado renombrado',
+                slug: 'house-publicado-renombrado'
+            }),
+            undefined
+        );
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.not.objectContaining({ refreshSlugFromName: true }),
+            undefined
+        );
+    });
+
     it('should return FORBIDDEN if actor lacks permission', async () => {
         // Arrange
         const actor = createActor({ permissions: [] });

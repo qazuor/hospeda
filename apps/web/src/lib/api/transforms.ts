@@ -1855,6 +1855,8 @@ export function transformAccommodationEdit({
 
     return {
         id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
         name: String(item.name ?? ''),
         summary: String(item.summary ?? ''),
         description: String(item.description ?? ''),
