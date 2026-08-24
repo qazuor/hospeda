@@ -12,7 +12,9 @@
  *   - Closes on `Escape` (when `closeOnEscape !== false`).
  *   - Closes on click on the overlay (when `closeOnOverlayClick !== false`).
  *   - Closes on the browser/system back button instead of navigating away
- *     (HOS-310, see `@/lib/dialog-history`).
+ *     (HOS-310, see `@/lib/dialog-history`). Opt out with
+ *     `claimHistoryEntry={false}` when the dialog itself resolves into a
+ *     navigation.
  *   - Focus management: focuses the panel on open, restores focus to the
  *     element that had it before opening on close.
  *   - Focus-trap so Tab cannot escape the panel (shared implementation in
@@ -70,6 +72,18 @@ export interface DialogProps {
     readonly className?: string;
     /** Optional extra class on the overlay. */
     readonly overlayClassName?: string;
+    /**
+     * Whether the back gesture should close this dialog instead of navigating
+     * (HOS-310). Default: `true`.
+     *
+     * Set `false` for a dialog whose whole job is to answer a navigation the
+     * user has already started. Claiming an entry costs a `history.go(-1)` on
+     * close, and `apps/web/docs/dialog-history.md` is explicit that racing that
+     * traversal against an in-flight ClientRouter navigation corrupts the
+     * history stack — which is exactly the shape of a "leave without saving?"
+     * confirm that navigates the moment it resolves.
+     */
+    readonly claimHistoryEntry?: boolean;
 }
 
 /**
@@ -86,7 +100,8 @@ export function Dialog({
     closeOnEscape = true,
     closeOnOverlayClick = true,
     className,
-    overlayClassName
+    overlayClassName,
+    claimHistoryEntry = true
 }: DialogProps): JSX.Element | null {
     const panelRef = useRef<HTMLDivElement>(null);
     // Render only after mount so SSR + initial hydration don't try to use `document`.
@@ -145,7 +160,7 @@ export function Dialog({
 
     // Back button closes the dialog instead of leaving the page (HOS-310).
     // Gated on `mounted` so the entry is only claimed once the portal is real.
-    useDialogHistoryBack({ isOpen: isOpen && mounted, onClose });
+    useDialogHistoryBack({ isOpen: isOpen && mounted && claimHistoryEntry, onClose });
 
     const handleOverlayClick = useCallback(
         (event: React.MouseEvent<HTMLDivElement>): void => {
