@@ -16,7 +16,8 @@ type ConfirmationDialogOptions = {
 function resolveDocumentLocale(): 'es' | 'en' | 'pt' {
     if (typeof document === 'undefined') return DEFAULT_LOCALE;
 
-    const [candidate] = document.documentElement.lang.trim().toLowerCase().split('-');
+    const rawLocale = document.documentElement.getAttribute('data-locale') ?? DEFAULT_LOCALE;
+    const [candidate] = rawLocale.trim().toLowerCase().split('-');
     return candidate && isValidLocale(candidate) ? candidate : DEFAULT_LOCALE;
 }
 
@@ -30,9 +31,9 @@ export function showConfirmationDialog({ message }: ConfirmationDialogOptions): 
 
     const locale = resolveDocumentLocale();
     const { t } = createTranslations(locale);
-    const title = t('admin-entities.confirmations.unsavedChanges.title', 'Cambios sin guardar');
-    const confirmLabel = t('admin-entities.confirmations.unsavedChanges.confirm', 'Sí, descartar');
-    const cancelLabel = t('admin-entities.confirmations.unsavedChanges.cancel', 'Seguir editando');
+    const title = t('account.confirmations.unsavedChanges.title', 'Cambios sin guardar');
+    const confirmLabel = t('account.confirmations.unsavedChanges.confirm', 'Sí, descartar');
+    const cancelLabel = t('account.confirmations.unsavedChanges.cancel', 'Seguir editando');
 
     return new Promise<boolean>((resolve) => {
         const container = document.createElement('div');

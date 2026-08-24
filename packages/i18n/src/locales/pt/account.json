@@ -209,6 +209,13 @@
             "displayNameRequired": "O nome de exibição é obrigatório",
             "firstNameRequired": "O nome é obrigatório",
             "lastNameRequired": "O sobrenome é obrigatório"
+        },
+        "confirmations": {
+            "unsavedChanges": {
+                "title": "Alterações não salvas",
+                "confirm": "Sim, descartar",
+                "cancel": "Continuar editando"
+            }
         }
     },
     "profileEdit": {
