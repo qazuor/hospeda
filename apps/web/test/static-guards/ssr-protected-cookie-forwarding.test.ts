@@ -25,8 +25,10 @@ import { describe, expect, it } from 'vitest';
 
 const WEB_ROOT = path.resolve(__dirname, '../../src');
 const LIB_ROOT = path.join(WEB_ROOT, 'lib');
-const SCANNED_EXTENSIONS = new Set(['.astro', '.ts']);
+const SCANNED_EXTENSIONS = new Set(['.astro', '.ts', '.tsx']);
 const SCAN_DIRS = [path.join(WEB_ROOT, 'pages'), path.join(WEB_ROOT, 'components'), LIB_ROOT];
+/** The unavoidable token: every protected endpoint's path carries it. */
+const PROTECTED_ROUTE_SEGMENT = '/api/v1/protected';
 
 interface Offense {
     readonly file: string;
@@ -57,14 +59,133 @@ function collectFiles(dir: string): string[] {
     return files;
 }
 
+/**
+ * Resolves an import specifier to a file on disk.
+ *
+ * Only `@/…` and relative specifiers are resolvable; anything else is a package
+ * and out of scope.
+ *
+ * @param params - The importing file and the raw specifier it declared.
+ * @returns The absolute path of the imported module, or null.
+ */
+function resolveImport({
+    fromFile,
+    specifier
+}: {
+    readonly fromFile: string;
+    readonly specifier: string;
+}): string | null {
+    let base: string;
+    if (specifier.startsWith('@/')) {
+        base = path.join(WEB_ROOT, specifier.slice(2));
+    } else if (specifier.startsWith('.')) {
+        base = path.resolve(path.dirname(fromFile), specifier);
+    } else {
+        return null;
+    }
+
+    const candidates = [
+        base,
+        `${base}.ts`,
+        `${base}.tsx`,
+        path.join(base, 'index.ts'),
+        path.join(base, 'index.tsx')
+    ];
+
+    return candidates.find((c) => fs.existsSync(c) && fs.statSync(c).isFile()) ?? null;
+}
+
+/**
+ * Reads every import specifier declared by a module (or an `.astro`
+ * frontmatter).
+ *
+ * @param file - Absolute path of the module.
+ * @returns The raw specifiers, in source order.
+ */
+function readImportSpecifiers(file: string): readonly string[] {
+    const source = readParseableSource(file);
+    if (!source.trim()) return [];
+
+    const sourceFile = ts.createSourceFile(
+        file,
+        source,
+        ts.ScriptTarget.Latest,
+        true,
+        file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+    );
+
+    const specifiers: string[] = [];
+    sourceFile.forEachChild((node) => {
+        if (
+            (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+            node.moduleSpecifier &&
+            ts.isStringLiteral(node.moduleSpecifier)
+        ) {
+            specifiers.push(node.moduleSpecifier.text);
+        }
+    });
+
+    return specifiers;
+}
+
+/**
+ * Computes the set of `.ts`/`.tsx` modules that actually execute on the server,
+ * by walking the import graph out of every `.astro` frontmatter.
+ *
+ * This replaces the earlier path-shape heuristic ("under `src/lib`, no
+ * `.client.` in the name"), which misfiled browser-only helpers — the streaming
+ * chat clients and the entitlements cache — as server code. Reachability is the
+ * property the guard actually cares about, and it survives a file move.
+ *
+ * The walk deliberately stops at React modules (`.tsx`, or a `.client.` entry
+ * point): an island's module body is evaluated during SSR, but the requests it
+ * makes happen after hydration, in a browser that does have a cookie jar. Only
+ * plain `.ts` modules run inside an Astro frontmatter. Note that `.client.` is
+ * NOT a reliable island marker on its own — it names only the top-level entry
+ * point, so `AiChatWidget.tsx` (a React component with no suffix) would
+ * otherwise drag its whole runtime subtree into the server set.
+ *
+ * @returns Absolute paths of every server-reachable module.
+ */
+function collectServerReachableModules(): ReadonlySet<string> {
+    const reachable = new Set<string>();
+    const queue: string[] = [];
+
+    for (const dir of [WEB_ROOT]) {
+        for (const file of collectFiles(dir)) {
+            if (file.endsWith('.astro')) queue.push(file);
+        }
+    }
+
+    const seen = new Set<string>(queue);
+
+    while (queue.length > 0) {
+        const current = queue.shift() as string;
+
+        for (const specifier of readImportSpecifiers(current)) {
+            const resolved = resolveImport({ fromFile: current, specifier });
+            if (!resolved || seen.has(resolved)) continue;
+            seen.add(resolved);
+
+            // An island's own network calls run post-hydration; do not pull its
+            // dependency subtree into the server set.
+            if (resolved.endsWith('.tsx') || resolved.includes('.client.')) continue;
+
+            reachable.add(resolved);
+            queue.push(resolved);
+        }
+    }
+
+    return reachable;
+}
+
+const SERVER_REACHABLE_MODULES = collectServerReachableModules();
+
 function isServerFile(file: string): boolean {
     if (file.endsWith('.astro')) {
         return true;
     }
-    if (!file.startsWith(LIB_ROOT)) {
-        return false;
-    }
-    return !file.includes('.client.') && !file.includes('/hooks/') && !file.includes('/store/');
+    return SERVER_REACHABLE_MODULES.has(file);
 }
 
 function readParseableSource(file: string): string {
@@ -98,6 +219,68 @@ function hasCookieHeaderArgument(argument: ts.Node | undefined): boolean {
         ts.isObjectLiteralExpression(argument) &&
         argument.properties.some((property) => isCookieHeaderProperty(property))
     );
+}
+
+/**
+ * Collects module-level `const x = 'literal'` bindings so a URL assembled from
+ * a constant (`fetch(`${PROTECTED}/accommodations/...`)`) can still be matched
+ * against the route segment. Anchoring on the segment rather than on the
+ * constant's NAME keeps the detector alive through a rename.
+ *
+ * @param sourceFile - Parsed module.
+ * @returns Map of binding name to its literal string value.
+ */
+function collectStringConstants(sourceFile: ts.SourceFile): ReadonlyMap<string, string> {
+    const constants = new Map<string, string>();
+
+    function visit(node: ts.Node): void {
+        if (
+            ts.isVariableDeclaration(node) &&
+            ts.isIdentifier(node.name) &&
+            node.initializer &&
+            (ts.isStringLiteral(node.initializer) ||
+                ts.isNoSubstitutionTemplateLiteral(node.initializer))
+        ) {
+            constants.set(node.name.text, node.initializer.text);
+        }
+        ts.forEachChild(node, visit);
+    }
+
+    visit(sourceFile);
+    return constants;
+}
+
+/**
+ * Renders a URL argument to the most complete string the module can prove,
+ * expanding identifiers that resolve to string constants.
+ *
+ * @param node - The first argument of the `fetch()` call.
+ * @param constants - Literal string bindings collected from the module.
+ * @returns The expanded text, used only for segment matching.
+ */
+function expandUrlArgument(node: ts.Node, constants: ReadonlyMap<string, string>): string {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+        return node.text;
+    }
+
+    if (ts.isIdentifier(node)) {
+        return constants.get(node.text) ?? '';
+    }
+
+    if (ts.isTemplateExpression(node)) {
+        return (
+            node.head.text +
+            node.templateSpans
+                .map((span) => expandUrlArgument(span.expression, constants) + span.literal.text)
+                .join('')
+        );
+    }
+
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+        return expandUrlArgument(node.left, constants) + expandUrlArgument(node.right, constants);
+    }
+
+    return '';
 }
 
 function collectObjectLiterals(
@@ -174,22 +357,16 @@ function hasCookieHeaderInHeaders(
 
 function fetchOptionsForwardCookie(
     argument: ts.Node | undefined,
-    objects: ReadonlyMap<string, ts.ObjectLiteralExpression>,
-    sourceFile: ts.SourceFile
+    objects: ReadonlyMap<string, ts.ObjectLiteralExpression>
 ): boolean {
     if (!argument || !ts.isObjectLiteralExpression(argument)) {
         return false;
     }
 
-    // Browser-only helpers correctly rely on `credentials: 'include'`; they are
-    // out of scope for this SSR guard. Server-side callers must forward the raw
-    // cookie header explicitly instead.
-    if (
-        argument.getText(sourceFile).includes("credentials: 'include'") &&
-        !sourceFile.text.includes('cookieHeader')
-    ) {
-        return true;
-    }
+    // NOTE: `credentials: 'include'` is deliberately NOT an exemption. It is the
+    // failure mode this guard exists to catch — on the server there is no cookie
+    // jar for it to include, so it reads as "authenticated" while sending
+    // nothing. Browser-only callers are excluded earlier, by `isServerFile`.
 
     return argument.properties.some((property) => {
         if (ts.isShorthandPropertyAssignment(property)) {
@@ -254,6 +431,7 @@ function inspectFile(file: string): readonly Offense[] {
     );
     const protectedBindings = collectProtectedBindings(sourceFile);
     const objects = collectObjectLiterals(sourceFile);
+    const stringConstants = collectStringConstants(sourceFile);
     const offenses: Offense[] = [];
 
     function push(node: ts.CallExpression, kind: Offense['kind'], expression: string): void {
@@ -279,12 +457,16 @@ function inspectFile(file: string): readonly Offense[] {
                 push(node, 'protected-wrapper', expression.getText(sourceFile));
             }
 
+            const urlArgument = node.arguments[0];
             if (
                 ts.isIdentifier(expression) &&
                 expression.text === 'fetch' &&
-                node.arguments[0] &&
-                node.arguments[0].getText(sourceFile).includes('/api/v1/protected/') &&
-                !fetchOptionsForwardCookie(node.arguments[1], objects, sourceFile)
+                urlArgument &&
+                (urlArgument.getText(sourceFile).includes(PROTECTED_ROUTE_SEGMENT) ||
+                    expandUrlArgument(urlArgument, stringConstants).includes(
+                        PROTECTED_ROUTE_SEGMENT
+                    )) &&
+                !fetchOptionsForwardCookie(node.arguments[1], objects)
             ) {
                 push(node, 'protected-fetch', 'fetch');
             }
@@ -304,6 +486,16 @@ describe('HOS-786 static guard — SSR protected reads must forward the session 
 
     it('scans at least one server file', () => {
         expect(files.length).toBeGreaterThan(0);
+    });
+
+    // Positive control. If import resolution silently breaks, every module falls
+    // out of the server set and the guard below passes while checking nothing.
+    // These two are the exact SSR path HOS-786 was reported on.
+    it.each([
+        'lib/editor/resolve-editor-page.ts',
+        'lib/api/accommodation-editor-data.ts'
+    ])('classifies %s as server-reachable', (relative) => {
+        expect(files).toContain(path.join(WEB_ROOT, relative));
     });
 
     it('requires cookie forwarding on server calls to protected web endpoints', () => {
