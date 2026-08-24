@@ -233,6 +233,16 @@ describe('editor routes — navigation feel (T-025)', () => {
         expect(account).toContain('BaseLayout');
         expect(editor).toContain('AccountLayout');
     });
+
+    it('should keep the nav column stretched so the sticky sidebar can travel', () => {
+        const editor = readFileSync(
+            resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
+            'utf8'
+        );
+
+        expect(editor).toContain('.editor-shell__nav');
+        expect(editor).toContain('align-self: stretch;');
+    });
 });
 
 describe('editor routes — preserved behaviours', () => {

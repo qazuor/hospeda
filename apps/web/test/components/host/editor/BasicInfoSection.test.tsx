@@ -179,7 +179,7 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         render(<BasicInfoSection {...buildProps({ onFieldChange })} />);
 
         // Confirm the plain textarea (not TipTap) is the active branch.
-        expect(screen.getByLabelText(/descripción/i).tagName).toBe('TEXTAREA');
+        expect(screen.getByLabelText(/^descripción$/i).tagName).toBe('TEXTAREA');
 
         fireEvent.click(screen.getByTestId('ai-mock-trigger-description'));
 
@@ -216,6 +216,15 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         // No interaction with the AI trigger — onFieldChange should not fire
         // from the AI-improve wiring path.
         expect(onFieldChange).not.toHaveBeenCalled();
+    });
+});
+
+describe('BasicInfoSection — summary label consistency (HOS-783 B6)', () => {
+    it('should label the summary field as short description', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.getByLabelText(/descripción corta/i)).toBeInTheDocument();
+        expect(screen.queryByLabelText(/^resumen\b/i)).not.toBeInTheDocument();
     });
 });
 

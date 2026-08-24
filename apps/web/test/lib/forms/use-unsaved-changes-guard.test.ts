@@ -15,6 +15,20 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 
 const MESSAGE = 'Tenés cambios sin guardar. ¿Salir igual?';
+const { showConfirmationDialogMock } = vi.hoisted(() => ({
+    showConfirmationDialogMock: vi.fn<
+        [
+            {
+                readonly message: string;
+            }
+        ],
+        Promise<boolean>
+    >()
+}));
+
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: showConfirmationDialogMock
+}));
 
 /** Appends an anchor to the document so `closest('a')` can find it. */
 function addAnchor(attrs: Readonly<Record<string, string>>): HTMLAnchorElement {
@@ -61,6 +75,7 @@ describe('useUnsavedChangesGuard', () => {
         confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         navigateSpy = vi.fn();
         __setNavigateImpl(navigateSpy);
+        showConfirmationDialogMock.mockReset();
     });
 
     afterEach(() => {
@@ -99,29 +114,33 @@ describe('useUnsavedChangesGuard', () => {
             expect(event.defaultPrevented).toBe(true);
         });
 
-        it('should block an internal link click and ask for confirmation', () => {
-            confirmSpy.mockReturnValue(false);
+        it('should block an internal link click and open the custom confirmation dialog', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
             renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
             const anchor = addAnchor({ href: '/es/destinos/' });
 
             const event = clickAnchor(anchor);
+            await flushRouterImport();
 
             expect(event.defaultPrevented).toBe(true);
-            expect(confirmSpy).toHaveBeenCalledWith(MESSAGE);
+            expect(showConfirmationDialogMock).toHaveBeenCalledWith({ message: MESSAGE });
+            expect(confirmSpy).not.toHaveBeenCalled();
             expect(navigateSpy).not.toHaveBeenCalled();
         });
 
         it('should navigate via the router when the user confirms', async () => {
-            confirmSpy.mockReturnValue(true);
+            showConfirmationDialogMock.mockResolvedValue(true);
             renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
             await flushRouterImport();
             const anchor = addAnchor({ href: '/es/destinos/' });
 
             const event = clickAnchor(anchor);
+            await flushRouterImport();
 
             // Still prevented: the router re-issues the navigation itself, so
             // the anchor's own navigation must not also fire.
             expect(event.defaultPrevented).toBe(true);
+            expect(confirmSpy).not.toHaveBeenCalled();
             expect(navigateSpy).toHaveBeenCalledTimes(1);
             expect(navigateSpy.mock.calls[0]?.[0]).toContain('/es/destinos/');
         });

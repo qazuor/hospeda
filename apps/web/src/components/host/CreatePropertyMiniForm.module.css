@@ -117,6 +117,29 @@
     flex-wrap: wrap;
 }
 
+.fieldMetaRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.charCounter {
+    margin: var(--space-1, 0.25rem) 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+.charCounter--warning {
+    color: var(--brand-accent);
+}
+
+.charCounter--danger {
+    color: var(--destructive, oklch(0.6 0.22 25));
+}
+
 .confidenceBadge {
     display: inline-flex;
     align-items: center;

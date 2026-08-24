@@ -1042,12 +1042,28 @@ select[aria-invalid="true"] {
     width: 100%;
 }
 
+.combobox__input {
+    padding-right: 4.5rem;
+}
+
 .combobox__loading-hint {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--space-3, 0.75rem) + 1.75rem);
+    transform: translateY(-50%);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    pointer-events: none;
+}
+
+.combobox__indicator {
     position: absolute;
     top: 50%;
     right: var(--space-3, 0.75rem);
     transform: translateY(-50%);
-    font-size: var(--text-caption, 0.75rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--core-muted-foreground);
     pointer-events: none;
 }

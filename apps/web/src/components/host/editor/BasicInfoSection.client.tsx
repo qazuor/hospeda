@@ -89,7 +89,7 @@ export function BasicInfoSection({
                     as="textarea"
                     prefix={ACCOMMODATION_FIELD_PREFIX}
                     name="summary"
-                    label={`${t('host.properties.editor.field.summary', 'Resumen')} *`}
+                    label={`${t('host.properties.editor.field.summary', 'Descripción corta')} *`}
                     labelClassName={styles.fieldLabel}
                     className={styles.fieldInput}
                     error={errors.summary}

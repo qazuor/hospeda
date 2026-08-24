@@ -20,7 +20,7 @@
  */
 
 import type { IconProps } from '@repo/icons';
-import { StarIcon } from '@repo/icons';
+import { ChevronDownIcon, StarIcon } from '@repo/icons';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -342,7 +342,7 @@ export function SearchableSelect<T extends SelectableItem>({
                     id={fieldId}
                     type="text"
                     role="combobox"
-                    className="form-input"
+                    className="form-input combobox__input"
                     value={query}
                     placeholder={resolvedPlaceholder}
                     autoComplete="off"
@@ -384,10 +384,20 @@ export function SearchableSelect<T extends SelectableItem>({
                         {resolvedLoadingLabel}
                     </span>
                 ) : null}
+                <span
+                    className="combobox__indicator"
+                    aria-hidden="true"
+                    data-testid={testId ? `${testId}-indicator` : undefined}
+                >
+                    <ChevronDownIcon
+                        size={16}
+                        weight="regular"
+                        aria-hidden="true"
+                    />
+                </span>
 
                 <div
                     id={listboxId}
-                    // biome-ignore lint/a11y/useSemanticElements: custom combobox listbox renders icon + text rows a native <select> cannot
                     role="listbox"
                     tabIndex={-1}
                     className="combobox__listbox"
@@ -417,7 +427,6 @@ export function SearchableSelect<T extends SelectableItem>({
                                 key={item.id}
                                 id={optionId}
                                 type="button"
-                                // biome-ignore lint/a11y/useSemanticElements: button with role=option is the documented ARIA combobox/listbox pattern
                                 role="option"
                                 aria-selected={isSelected}
                                 className={classes}

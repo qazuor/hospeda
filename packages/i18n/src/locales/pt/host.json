@@ -266,7 +266,7 @@
             },
             "field": {
                 "name": "Nome",
-                "summary": "Resumo",
+                "summary": "Descrição curta",
                 "description": "Descrição",
                 "type": "Tipo",
                 "destination": "Destino",
