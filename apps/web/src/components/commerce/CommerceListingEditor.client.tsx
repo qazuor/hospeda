@@ -588,6 +588,9 @@ export function CommerceListingEditor({
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
     useUnsavedChangesGuard({
         isDirty: Object.keys(patchPayload).length > 0,
+        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
+        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
+        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
         message: t(
             'commerce.owner.editor.unsavedChanges',
             'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'

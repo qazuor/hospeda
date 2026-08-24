@@ -198,6 +198,13 @@
         "create": "Crear",
         "save": "Guardar"
     },
+    "confirmations": {
+        "unsavedChanges": {
+            "title": "Unsaved changes",
+            "confirm": "Yes, discard",
+            "cancel": "Keep editing"
+        }
+    },
     "modal": {
         "close": "Cerrar"
     },

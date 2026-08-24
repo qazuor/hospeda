@@ -153,6 +153,9 @@ export function EventEditor({
 
     useUnsavedChangesGuard({
         isDirty: isDirty || startDateCleared,
+        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
+        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
+        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
         message: t(
             'account.myContent.events.editor.unsavedChanges',
             'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'

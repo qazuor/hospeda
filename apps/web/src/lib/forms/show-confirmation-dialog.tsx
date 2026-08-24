@@ -4,35 +4,29 @@ import {
     DialogFooter,
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
-import { createTranslations, DEFAULT_LOCALE, isValidLocale } from '@/lib/i18n';
 import styles from './show-confirmation-dialog.module.css';
 
 const TITLE_ID = 'confirmation-dialog-title';
 
 type ConfirmationDialogOptions = {
     readonly message: string;
+    readonly title: string;
+    readonly confirmLabel: string;
+    readonly cancelLabel: string;
 };
-
-function resolveDocumentLocale(): 'es' | 'en' | 'pt' {
-    if (typeof document === 'undefined') return DEFAULT_LOCALE;
-
-    const [candidate] = document.documentElement.lang.trim().toLowerCase().split('-');
-    return candidate && isValidLocale(candidate) ? candidate : DEFAULT_LOCALE;
-}
 
 /**
  * Shows a product-styled confirmation dialog and resolves with the user's choice.
  */
-export function showConfirmationDialog({ message }: ConfirmationDialogOptions): Promise<boolean> {
+export function showConfirmationDialog({
+    message,
+    title,
+    confirmLabel,
+    cancelLabel
+}: ConfirmationDialogOptions): Promise<boolean> {
     if (typeof document === 'undefined') {
         return Promise.resolve(false);
     }
-
-    const locale = resolveDocumentLocale();
-    const { t } = createTranslations(locale);
-    const title = t('admin-entities.confirmations.unsavedChanges.title', 'Cambios sin guardar');
-    const confirmLabel = t('admin-entities.confirmations.unsavedChanges.confirm', 'Sí, descartar');
-    const cancelLabel = t('admin-entities.confirmations.unsavedChanges.cancel', 'Seguir editando');
 
     return new Promise<boolean>((resolve) => {
         const container = document.createElement('div');
