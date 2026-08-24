@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { PasswordFieldI18n } from '../../../src/components/ui/PasswordField.client';
 import { PasswordField } from '../../../src/components/ui/PasswordField.client';
@@ -113,33 +114,37 @@ describe('PasswordField', () => {
         expect(screen.getByTestId('eye-icon')).toBeInTheDocument();
     });
 
-    it('toggles to text type when eye button is clicked', () => {
+    it('toggles to text type when eye button is clicked', async () => {
+        const user = userEvent.setup();
         render(<PasswordField {...baseProps} />);
         const eyeBtn = screen.getByRole('button', { name: 'Show password' });
-        fireEvent.click(eyeBtn);
+        await user.click(eyeBtn);
         const input = screen.getByLabelText('Password');
         expect(input).toHaveAttribute('type', 'text');
     });
 
-    it('shows EyeOffIcon after toggling to visible', () => {
+    it('shows EyeOffIcon after toggling to visible', async () => {
+        const user = userEvent.setup();
         render(<PasswordField {...baseProps} />);
         const eyeBtn = screen.getByRole('button', { name: 'Show password' });
-        fireEvent.click(eyeBtn);
+        await user.click(eyeBtn);
         expect(screen.getByTestId('eye-off-icon')).toBeInTheDocument();
     });
 
-    it('shows aria-label "Hide password" after toggling to visible', () => {
+    it('shows aria-label "Hide password" after toggling to visible', async () => {
+        const user = userEvent.setup();
         render(<PasswordField {...baseProps} />);
         const eyeBtn = screen.getByRole('button', { name: 'Show password' });
-        fireEvent.click(eyeBtn);
+        await user.click(eyeBtn);
         expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument();
     });
 
-    it('toggles back to password type on second click', () => {
+    it('toggles back to password type on second click', async () => {
+        const user = userEvent.setup();
         render(<PasswordField {...baseProps} />);
         const eyeBtn = screen.getByRole('button', { name: 'Show password' });
-        fireEvent.click(eyeBtn);
-        fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+        await user.click(eyeBtn);
+        await user.click(screen.getByRole('button', { name: 'Hide password' }));
         const input = screen.getByLabelText('Password');
         expect(input).toHaveAttribute('type', 'password');
     });
@@ -417,6 +422,12 @@ describe('PasswordField', () => {
 
             // Assert: min-width must be 44px
             expect(eyeBtnBlock).toMatch(/min-width\s*:\s*44px/);
+        });
+
+        it('.eyeBtn declares z-index so the toggle stays clickable above the input', () => {
+            const eyeBtnBlock = cssSrc.match(/\.eyeBtn\s*\{([^}]+)\}/s)?.[1] ?? '';
+
+            expect(eyeBtnBlock).toMatch(/z-index\s*:\s*1/);
         });
     });
 });
