@@ -16,7 +16,7 @@
 
 process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
 
-import { PermissionEnum } from '@repo/schemas';
+import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSlidingWindowStore } from '../../../src/middlewares/rate-limit';
@@ -82,6 +82,8 @@ const REAL_PNG_FILE = new File(
     'test.png',
     { type: 'image/png' }
 );
+
+const PROTECTED_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS));
 
 const buildOwnedEntityStub = () =>
     vi.fn().mockResolvedValue({
@@ -239,7 +241,7 @@ describe('Protected media upload-entity endpoint', () => {
             vi.useRealTimers();
         });
 
-        it('returns the translated rate-limit message with Retry-After on the 11th gallery upload', async () => {
+        it('returns the translated rate-limit message with Retry-After on the 51st gallery upload', async () => {
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementation(
                 buildOwnedEntityStub()
             );
@@ -253,7 +255,7 @@ describe('Protected media upload-entity endpoint', () => {
             const { initApp } = await import('../../../src/app');
             const app = await initApp();
 
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < PROTECTED_UPLOAD_RATE_LIMIT_MAX; i++) {
                 const okRes = await app.request(
                     new Request(UPLOAD_URL, {
                         method: 'POST',

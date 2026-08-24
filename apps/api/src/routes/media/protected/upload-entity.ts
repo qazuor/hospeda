@@ -20,6 +20,7 @@
  */
 import { generateGalleryId } from '@repo/media';
 import {
+    ENTITY_GALLERY_CAPS,
     getGalleryCap,
     ProtectedUploadEntityRequestSchema,
     UploadResponseDataSchema
@@ -75,6 +76,8 @@ const buildUploadRateLimitMessage = ({
     readonly retryAfterSec: number;
 }): string =>
     `Se alcanzó el límite temporal de subida de fotos. Intentá de nuevo en ${formatRetryAfterLabel(retryAfterSec)}.`;
+
+const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS));
 
 /**
  * Resolve an entity service per-request for ownership verification.
@@ -377,7 +380,7 @@ export const protectedUploadEntityRoute = createProtectedRoute({
         middlewares: [
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
-                max: 10,
+                max: PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX,
                 keyPrefix: 'upload:protected-entity',
                 buildExceededMessage: buildUploadRateLimitMessage
             })
