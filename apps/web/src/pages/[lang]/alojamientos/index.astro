@@ -45,7 +45,7 @@ import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
-import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { hasActiveAccommodationEmptyStateFilters } from '@/lib/listing-empty-state-filters';
 import { getApiUrl } from '@/lib/env';
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 
@@ -331,6 +331,29 @@ const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 // type-specific count (equivalent to `subjectTotal`). Pass it explicitly so the
 // builder can render "hoteles" instead of the generic "hospedajes".
 const typesArray = types?.split(',').filter(Boolean) ?? [];
+const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
+	q,
+	types: typesArray,
+	destinationIds,
+	minPrice,
+	maxPrice,
+	hasWifi,
+	hasPool,
+	hasParking,
+	allowsPets,
+	isFeatured,
+	minBedrooms,
+	minBathrooms,
+	minRating,
+	amenitiesParam,
+	featuresParam,
+	includeNoPrice,
+	includeNoReviews,
+	hasGeoRadius,
+	hasAvailabilityFilter: availabilityParams !== undefined,
+	adults,
+	childrenCount,
+});
 const filterSummary = buildAccommodationListingSummary({
 	locale: summaryLocale,
 	filters: {
@@ -888,13 +911,24 @@ const emptyStateSuggestions = [
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
 	)}
 
-	{!hasError && cards.length === 0 && (
+	{!hasError && cards.length === 0 && hasActiveFilters && (
 		<EmptyState
 			locale={locale}
 			variant="no-results"
 			actionUrl={baseUrl}
 			activeFilters={activeFilterChips}
 			suggestions={emptyStateSuggestions}
+		/>
+	)}
+
+	{!hasError && cards.length === 0 && !hasActiveFilters && (
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			message={t(
+				'accommodations.emptyMessage',
+				'Pronto agregaremos más opciones de hospedaje para ti.'
+			)}
 		/>
 	)}
 

@@ -31,6 +31,7 @@ import { toGastronomyCardProps } from '@/lib/api/transforms';
 import { getGastronomyTypeIcon } from '@/lib/gastronomy-type-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { hasActiveGastronomyListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
@@ -130,6 +131,15 @@ const baseCards = items.map((item) =>
 // here — the hearts resolve it themselves after hydration, once per page load
 // for the whole grid (`store/favorites-store`).
 const cards = baseCards;
+
+const hasActiveFilters = hasActiveGastronomyListingFilters({
+	q,
+	destinationId,
+	type,
+	priceRange,
+	isFeatured,
+	minRating,
+});
 
 // --- Gastronomy types for filter (from the confirmed enum) ---
 const GASTRONOMY_TYPES = [
@@ -339,7 +349,7 @@ const itemListEntries = cards.map((card) => ({
         />
     )}
 
-    {!hasError && cards.length === 0 && (
+    {!hasError && cards.length === 0 && hasActiveFilters && (
         <EmptyState
             locale={locale}
             variant="no-results"
@@ -350,6 +360,17 @@ const itemListEntries = cards.map((card) => ({
             )}
         />
     )}
+
+	{!hasError && cards.length === 0 && !hasActiveFilters && (
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			message={t(
+				'gastronomy.listing.emptyCatalog',
+				'Todavía no hay establecimientos gastronómicos publicados.'
+			)}
+		/>
+	)}
 
     {!hasError && cards.length > 0 && (
         <div class="gastro-grid">

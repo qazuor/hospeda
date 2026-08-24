@@ -3,6 +3,7 @@
         "title": "Gastronomy",
         "subtitle": "Discover the best restaurants, bars, and flavors of the region",
         "emptyState": "No gastronomic establishments found with the selected filters.",
+        "emptyCatalog": "There are no published gastronomic establishments yet.",
         "errorBanner": "Could not load the gastronomy listings. Please try again later.",
         "results_one": "{{count}} establishment found",
         "results_other": "{{count}} establishments found",

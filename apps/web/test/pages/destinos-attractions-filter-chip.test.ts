@@ -94,5 +94,19 @@ describe('destinos/index.astro — attraction quick-filter chip', () => {
         it('still carries data-attraction-id on every chip for the inline script selector', () => {
             expect(src).toContain('data-attraction-id={attr.id}');
         });
+
+        it('publishes the valid attraction id set for the inline script to validate stale URLs', () => {
+            expect(src).toContain(
+                'data-valid-attraction-ids={JSON.stringify(availableAttractions.map((attr) => attr.id))}'
+            );
+        });
+
+        it('normalizes URL attraction ids against the valid badge set before showing the empty-filter banner', () => {
+            expect(src).toContain(
+                "var validIdsRaw = filterRoot.getAttribute('data-valid-attraction-ids') || '[]';"
+            );
+            expect(src).toContain('JSON.parse(validIdsRaw).forEach');
+            expect(src).toContain('return validIds.has(id);');
+        });
     });
 });

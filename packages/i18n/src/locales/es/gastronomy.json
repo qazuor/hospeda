@@ -3,6 +3,7 @@
         "title": "Gastronomía",
         "subtitle": "Descubrí los mejores restaurantes, bares y sabores de la región",
         "emptyState": "No se encontraron establecimientos gastronómicos con los filtros seleccionados.",
+        "emptyCatalog": "Todavía no hay establecimientos gastronómicos publicados.",
         "errorBanner": "No se pudo cargar el listado de gastronomía. Intentá de nuevo más tarde.",
         "results_one": "{{count}} establecimiento encontrado",
         "results_other": "{{count}} establecimientos encontrados",
