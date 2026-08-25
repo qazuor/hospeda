@@ -19,7 +19,8 @@
  */
 
 import { ChangePasswordInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -57,7 +58,8 @@ interface FormFields {
 type FieldErrors = Partial<Record<keyof FormFields, string>>;
 
 /** Password strength level (based on local heuristic — no npm deps). */
-type PasswordStrength = 'weak' | 'medium' | 'strong';
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 // ─── Initial state ────────────────────────────────────────────────────────────
 
@@ -66,30 +68,6 @@ const INITIAL_FIELDS: FormFields = {
     newPassword: '',
     confirmNewPassword: ''
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Evaluates password strength using a pure heuristic (no npm deps).
- *
- * - weak:   fewer than 8 characters
- * - medium: 8+ chars with both letters AND digits
- * - strong: 8+ chars with letters, digits AND at least one special character
- *
- * @param password - Raw password string to evaluate.
- * @returns PasswordStrength level.
- */
-function evaluateStrength(password: string): PasswordStrength {
-    if (password.length < 8) return 'weak';
-    const hasLetters = /[a-zA-Z]/.test(password);
-    const hasDigits = /\d/.test(password);
-    const hasSpecial = /[^a-zA-Z\d]/.test(password);
-    if (hasLetters && hasDigits && hasSpecial) return 'strong';
-    if (hasLetters && hasDigits) return 'medium';
-    return 'weak';
-}
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 /**
  * ChangePasswordForm — forced or voluntary password-change island.
@@ -124,17 +102,18 @@ export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormP
         };
     }, []);
 
-    // Show/hide toggles — one per input field.
-    const [showCurrent, setShowCurrent] = useState(false);
-    const [showNew, setShowNew] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
+    /** Translated strings every `PasswordField` on this form shares. */
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('commerce.changePassword.showPassword'),
+        hidePassword: t('commerce.changePassword.hidePassword'),
+        strength: {
+            weak: t('commerce.changePassword.strength.weak'),
+            medium: t('commerce.changePassword.strength.medium'),
+            strong: t('commerce.changePassword.strength.strong')
+        }
+    };
 
-    // Derived: real-time strength of the new-password field.
-    const strength: PasswordStrength =
-        fields.newPassword.length > 0 ? evaluateStrength(fields.newPassword) : 'weak';
-
-    function handleChange(e: ChangeEvent<HTMLInputElement>): void {
-        const { name, value } = e.currentTarget;
+    function handleFieldChange(name: keyof FormFields, value: string): void {
         setFields((prev) => ({ ...prev, [name]: value }));
         if (errors[name as keyof FieldErrors]) {
             setErrors((prev) => ({ ...prev, [name]: undefined }));
@@ -247,15 +226,6 @@ export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormP
         }
     }
 
-    // ── Strength meter label ──────────────────────────────────────────────────
-
-    const strengthLabel =
-        strength === 'strong'
-            ? t('commerce.changePassword.strength.strong')
-            : strength === 'medium'
-              ? t('commerce.changePassword.strength.medium')
-              : t('commerce.changePassword.strength.weak');
-
     // ── Success state ─────────────────────────────────────────────────────────
 
     if (isSuccess) {
@@ -307,214 +277,53 @@ export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormP
                     noValidate
                 >
                     {/* Current password */}
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="cpf-currentPassword"
-                        >
-                            {t(
-                                'commerce.changePassword.fields.currentPassword',
-                                'Contraseña actual'
-                            )}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <div className={styles.inputWrapper}>
-                            <input
-                                id="cpf-currentPassword"
-                                type={showCurrent ? 'text' : 'password'}
-                                name="currentPassword"
-                                value={fields.currentPassword}
-                                onChange={handleChange}
-                                className={`${styles.input}${errors.currentPassword ? ` ${styles.inputError}` : ''}`}
-                                autoComplete="current-password"
-                                aria-describedby={
-                                    errors.currentPassword ? 'cpf-currentPassword-error' : undefined
-                                }
-                                aria-invalid={!!errors.currentPassword}
-                                required
-                                disabled={isSubmitting}
-                            />
-                            <button
-                                type="button"
-                                className={styles.toggleBtn}
-                                onClick={() => setShowCurrent((v) => !v)}
-                                aria-label={
-                                    showCurrent
-                                        ? t('commerce.changePassword.hidePassword')
-                                        : t('commerce.changePassword.showPassword')
-                                }
-                                tabIndex={0}
-                            >
-                                {showCurrent ? '🙈' : '👁'}
-                            </button>
-                        </div>
-                        {errors.currentPassword && (
-                            <p
-                                id="cpf-currentPassword-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errors.currentPassword}
-                            </p>
+                    <PasswordField
+                        id="cpf-currentPassword"
+                        name="currentPassword"
+                        label={t(
+                            'commerce.changePassword.fields.currentPassword',
+                            'Contraseña actual'
                         )}
-                    </div>
+                        value={fields.currentPassword}
+                        onChange={(value) => handleFieldChange('currentPassword', value)}
+                        autoComplete="current-password"
+                        required
+                        disabled={isSubmitting}
+                        error={errors.currentPassword}
+                        i18n={passwordI18n}
+                    />
 
                     {/* New password */}
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="cpf-newPassword"
-                        >
-                            {t('commerce.changePassword.fields.newPassword', 'Nueva contraseña')}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <div className={styles.inputWrapper}>
-                            <input
-                                id="cpf-newPassword"
-                                type={showNew ? 'text' : 'password'}
-                                name="newPassword"
-                                value={fields.newPassword}
-                                onChange={handleChange}
-                                className={`${styles.input}${errors.newPassword ? ` ${styles.inputError}` : ''}`}
-                                autoComplete="new-password"
-                                aria-describedby={
-                                    errors.newPassword ? 'cpf-newPassword-error' : undefined
-                                }
-                                aria-invalid={!!errors.newPassword}
-                                required
-                                disabled={isSubmitting}
-                            />
-                            <button
-                                type="button"
-                                className={styles.toggleBtn}
-                                onClick={() => setShowNew((v) => !v)}
-                                aria-label={
-                                    showNew
-                                        ? t('commerce.changePassword.hidePassword')
-                                        : t('commerce.changePassword.showPassword')
-                                }
-                                tabIndex={0}
-                            >
-                                {showNew ? '🙈' : '👁'}
-                            </button>
-                        </div>
-
-                        {/* Password strength meter — only shown while the field has content */}
-                        {fields.newPassword.length > 0 && (
-                            <div
-                                className={styles.strengthMeter}
-                                role="status"
-                                aria-label={t('commerce.changePassword.strengthLabel')}
-                            >
-                                <div className={styles.strengthBars}>
-                                    <span
-                                        className={`${styles.strengthBar} ${styles.strengthBarActive} ${
-                                            strength === 'weak'
-                                                ? styles.strengthBarWeak
-                                                : strength === 'medium'
-                                                  ? styles.strengthBarMedium
-                                                  : styles.strengthBarStrong
-                                        }`}
-                                    />
-                                    <span
-                                        className={`${styles.strengthBar} ${
-                                            strength === 'weak'
-                                                ? ''
-                                                : `${styles.strengthBarActive} ${strength === 'medium' ? styles.strengthBarMedium : styles.strengthBarStrong}`
-                                        }`}
-                                    />
-                                    <span
-                                        className={`${styles.strengthBar} ${
-                                            strength === 'strong'
-                                                ? `${styles.strengthBarActive} ${styles.strengthBarStrong}`
-                                                : ''
-                                        }`}
-                                    />
-                                </div>
-                                <span className={styles.strengthLabel}>{strengthLabel}</span>
-                            </div>
-                        )}
-
-                        {errors.newPassword && (
-                            <p
-                                id="cpf-newPassword-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errors.newPassword}
-                            </p>
-                        )}
-                    </div>
+                    <PasswordField
+                        id="cpf-newPassword"
+                        name="newPassword"
+                        label={t('commerce.changePassword.fields.newPassword', 'Nueva contraseña')}
+                        value={fields.newPassword}
+                        onChange={(value) => handleFieldChange('newPassword', value)}
+                        autoComplete="new-password"
+                        required
+                        disabled={isSubmitting}
+                        error={errors.newPassword}
+                        showStrength
+                        i18n={passwordI18n}
+                    />
 
                     {/* Confirm new password */}
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="cpf-confirmNewPassword"
-                        >
-                            {t(
-                                'commerce.changePassword.fields.confirmNewPassword',
-                                'Confirmá la nueva contraseña'
-                            )}
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <div className={styles.inputWrapper}>
-                            <input
-                                id="cpf-confirmNewPassword"
-                                type={showConfirm ? 'text' : 'password'}
-                                name="confirmNewPassword"
-                                value={fields.confirmNewPassword}
-                                onChange={handleChange}
-                                className={`${styles.input}${errors.confirmNewPassword ? ` ${styles.inputError}` : ''}`}
-                                autoComplete="new-password"
-                                aria-describedby={
-                                    errors.confirmNewPassword
-                                        ? 'cpf-confirmNewPassword-error'
-                                        : undefined
-                                }
-                                aria-invalid={!!errors.confirmNewPassword}
-                                required
-                                disabled={isSubmitting}
-                            />
-                            <button
-                                type="button"
-                                className={styles.toggleBtn}
-                                onClick={() => setShowConfirm((v) => !v)}
-                                aria-label={
-                                    showConfirm
-                                        ? t('commerce.changePassword.hidePassword')
-                                        : t('commerce.changePassword.showPassword')
-                                }
-                                tabIndex={0}
-                            >
-                                {showConfirm ? '🙈' : '👁'}
-                            </button>
-                        </div>
-                        {errors.confirmNewPassword && (
-                            <p
-                                id="cpf-confirmNewPassword-error"
-                                className={styles.errorMsg}
-                                role="alert"
-                            >
-                                {errors.confirmNewPassword}
-                            </p>
+                    <PasswordField
+                        id="cpf-confirmNewPassword"
+                        name="confirmNewPassword"
+                        label={t(
+                            'commerce.changePassword.fields.confirmNewPassword',
+                            'Confirmá la nueva contraseña'
                         )}
-                    </div>
+                        value={fields.confirmNewPassword}
+                        onChange={(value) => handleFieldChange('confirmNewPassword', value)}
+                        autoComplete="new-password"
+                        required
+                        disabled={isSubmitting}
+                        error={errors.confirmNewPassword}
+                        i18n={passwordI18n}
+                    />
 
                     {/* Global error banner */}
                     {globalError && (

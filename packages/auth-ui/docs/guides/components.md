@@ -48,46 +48,6 @@ import { SignInForm } from '@repo/auth-ui';
 
 ---
 
-## SignUpForm
-
-Registration form with email, password, name fields, and optional OAuth.
-
-### Props
-
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `signUp` | `SignUpMethods` | Yes | - | Auth client sign-up methods |
-| `signIn` | `Pick<SignInMethods, 'social'>` | Yes | - | OAuth methods (shared with sign-in) |
-| `redirectTo` | `string` | No | - | URL to redirect after success |
-| `onSuccess` | `() => void` | No | - | Callback after successful registration |
-| `showOAuth` | `boolean` | No | `true` | Show OAuth buttons |
-
-### SignUpMethods Interface
-
-```ts
-interface SignUpMethods {
-  email: (params: {
-    email: string;
-    password: string;
-    name: string;
-  }) => Promise<AuthResult>;
-}
-```
-
-### Usage
-
-```tsx
-import { SignUpForm } from '@repo/auth-ui';
-
-<SignUpForm
-  signUp={authClient.signUp}
-  signIn={authClient.signIn}
-  redirectTo="/onboarding"
-/>
-```
-
----
-
 ## SignOutButton
 
 Simple button that triggers sign-out with optional redirect.
