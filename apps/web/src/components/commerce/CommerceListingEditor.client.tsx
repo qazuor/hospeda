@@ -336,7 +336,7 @@ export function CommerceListingEditor({
         vertical === 'gastronomy'
             ? GastronomyOwnerUpdateInputSchema
             : ExperienceOwnerUpdateInputSchema;
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({
+    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,
         // HOS-373: a failed submit focuses the first invalid field on the page.
@@ -514,6 +514,18 @@ export function CommerceListingEditor({
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
+            // HOS-816: retire the previous attempt's banner as this one STARTS.
+            // Nothing else ever cleared it: `handleApiError` only ever sets a
+            // message, and the success branch below left whatever was on screen
+            // untouched — so a save that failed and then succeeded showed the
+            // green toast and the red banner at the same time, and the banner
+            // is the one a person believes. It has to run before the no-changes
+            // early return too, or the stale banner outlives that path as well.
+            // Every other consumer of `useZodForm` (PostEditor, EventEditor,
+            // ProfileEditForm, PartnerEditForm, HostTradeEditForm,
+            // use-accommodation-section-form) already opens its submit this way;
+            // this editor and `CommerceCreateForm` were the two that did not.
+            setFormError(null);
             if (Object.keys(patchPayload).length === 0) {
                 // Never save silently (HOS-190): "Guardar" always visibly does
                 // something. This used to be a bare `return`, which was
@@ -569,7 +581,7 @@ export function CommerceListingEditor({
                 setStatus({ kind: 'error' });
             }
         },
-        [patchPayload, formData, vertical, listingId, validate, handleApiError, t]
+        [patchPayload, formData, vertical, listingId, validate, handleApiError, setFormError, t]
     );
 
     const isSaving = status.kind === 'saving';
