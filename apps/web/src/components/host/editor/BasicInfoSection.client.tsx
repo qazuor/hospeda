@@ -4,6 +4,7 @@
  * description, type, and destination. Uses native HTML form elements.
  */
 
+import { CharacterCounter } from '@/components/ui/CharacterCounter';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
@@ -33,6 +34,16 @@ const DESCRIPTION_FIELD = {
 } as const;
 
 const DESCRIPTION_ID = buildFieldId(DESCRIPTION_FIELD);
+const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
+
+/**
+ * Field length limits. Same three fields the publish mini form edits, so the
+ * numbers must match it — a host who fills `name` in one screen and edits it in
+ * the other cannot be told two different maximums.
+ */
+const NAME_MAX_LENGTH = 100;
+const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MAX_LENGTH = 2000;
 
 /** Props for BasicInfoSection. */
 export interface BasicInfoSectionProps {
@@ -86,7 +97,8 @@ export function BasicInfoSection({
                     value={data.name}
                     onChange={(e) => onFieldChange('name', e.target.value)}
                     required
-                    maxLength={100}
+                    maxLength={NAME_MAX_LENGTH}
+                    counter={{ locale, testId: 'name-char-counter' }}
                 />
                 {shouldOfferSlugRefresh ? (
                     <div className={styles.slugNotice}>
@@ -133,8 +145,9 @@ export function BasicInfoSection({
                     value={data.summary}
                     onChange={(e) => onFieldChange('summary', e.target.value)}
                     required
-                    maxLength={300}
+                    maxLength={SUMMARY_MAX_LENGTH}
                     rows={3}
+                    counter={{ locale, testId: 'summary-char-counter' }}
                 />
                 <PlanEntitlementGate
                     entitlementKey="ai_text_improve"
@@ -176,17 +189,20 @@ export function BasicInfoSection({
                                 value={data.description}
                                 onChange={(e) => onFieldChange('description', e.target.value)}
                                 rows={6}
-                                maxLength={2000}
+                                maxLength={DESCRIPTION_MAX_LENGTH}
                                 placeholder={t(
                                     'host.properties.editor.richText.placeholder',
                                     'Describí tu propiedad con detalle...'
                                 )}
                                 aria-invalid={Boolean(errors.description)}
-                                aria-describedby={
+                                aria-describedby={[
                                     errors.description
                                         ? buildFieldErrorId(DESCRIPTION_FIELD)
-                                        : undefined
-                                }
+                                        : null,
+                                    DESCRIPTION_COUNTER_ID
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')}
                             />
                             <p className={styles.fieldHint}>
                                 {t(
@@ -215,6 +231,13 @@ export function BasicInfoSection({
                         errorMessage={errors.description}
                     />
                 </PlanEntitlementGate>
+                <CharacterCounter
+                    id={DESCRIPTION_COUNTER_ID}
+                    locale={locale}
+                    current={data.description.length}
+                    max={DESCRIPTION_MAX_LENGTH}
+                    testId="description-char-counter"
+                />
                 <FieldError
                     id={buildFieldErrorId(DESCRIPTION_FIELD)}
                     message={errors.description}

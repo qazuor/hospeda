@@ -119,14 +119,33 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
         // (backend applies `types` OR, else `type`). Mirrors events/blog.
         it('forwards the legacy singular type param so old ?type=HOTEL links filter the grid', () => {
             // Same anchoring note as above: bind to the call, not to how its
-            // result is assigned.
+            // result is assigned. Anchor on the FACT — a singular `type` reaches
+            // the API and its value comes from the `?type=` param — rather than
+            // on one syntactic shape of it. The read may be inline or hoisted to
+            // a const so the empty-state detection can reuse it (BETA-208); both
+            // forward the param, and a rewrite that stops forwarding it fails.
             const callIndex = src.indexOf('accommodationsApi.list({');
             expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
 
             const fetchBlock = src.slice(callIndex, callIndex + 700);
-            expect(fetchBlock).toMatch(
-                /type:\s*url\.searchParams\.get\('type'\)\s*\?\?\s*undefined/
-            );
+            const forwarded = fetchBlock.match(/^\s*type:\s*(.+?),\s*$/m);
+            expect(
+                forwarded,
+                'accommodationsApi.list does not forward a singular `type`'
+            ).not.toBeNull();
+
+            const expression = (forwarded as RegExpMatchArray)[1].trim();
+            const readsParamInline = /url\.searchParams\.get\('type'\)/.test(expression);
+            const readsParamViaConst =
+                /^[A-Za-z_$][\w$]*$/.test(expression) &&
+                new RegExp(`const ${expression}\\s*=\\s*url\\.searchParams\\.get\\('type'\\)`).test(
+                    src
+                );
+
+            expect(
+                readsParamInline || readsParamViaConst,
+                `forwarded \`type\` value \`${expression}\` does not come from the ?type= param`
+            ).toBe(true);
         });
     });
 });

@@ -87,6 +87,14 @@ describe('gastronomia/index.astro', () => {
             expect(src).toContain('EmptyState');
         });
 
+        it('splits filtered-empty vs empty-catalog states', () => {
+            expect(src).toContain('hasActiveGastronomyListingFilters');
+            expect(src).toContain('const hasActiveFilters = hasActiveGastronomyListingFilters({');
+            expect(src).toContain('{!hasError && cards.length === 0 && hasActiveFilters && (');
+            expect(src).toContain('{!hasError && cards.length === 0 && !hasActiveFilters && (');
+            expect(src).toContain('gastronomy.listing.emptyCatalog');
+        });
+
         it('renders ErrorBanner on fetch failure', () => {
             expect(src).toContain('ErrorBanner');
         });

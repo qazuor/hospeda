@@ -211,13 +211,6 @@
             "lastNameRequired": "Last name is required"
         }
     },
-    "confirmations": {
-        "unsavedChanges": {
-            "title": "Unsaved changes",
-            "confirm": "Yes, discard",
-            "cancel": "Keep editing"
-        }
-    },
     "profileEdit": {
         "name": "Full name",
         "email": "Email address",

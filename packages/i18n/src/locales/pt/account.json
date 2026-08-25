@@ -211,13 +211,6 @@
             "lastNameRequired": "O sobrenome é obrigatório"
         }
     },
-    "confirmations": {
-        "unsavedChanges": {
-            "title": "Alterações não salvas",
-            "confirm": "Sim, descartar",
-            "cancel": "Continuar editando"
-        }
-    },
     "profileEdit": {
         "name": "Nome completo",
         "email": "Endereço de e-mail",

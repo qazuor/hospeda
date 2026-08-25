@@ -20,6 +20,7 @@
  */
 import { generateGalleryId } from '@repo/media';
 import {
+    ENTITY_GALLERY_CAPS,
     getGalleryCap,
     ProtectedUploadEntityRequestSchema,
     UploadResponseDataSchema
@@ -52,6 +53,39 @@ import { resolveVisibleGalleryCount } from '../gallery-count';
 
 /** Reusable Zod validator for actor.id UUID format. */
 const ActorIdSchema = z.string().uuid();
+
+const formatRetryAfterLabel = (retryAfterSec: number): string => {
+    if (retryAfterSec < 60) {
+        return `${retryAfterSec} segundo${retryAfterSec === 1 ? '' : 's'}`;
+    }
+
+    const minutes = Math.floor(retryAfterSec / 60);
+    const seconds = retryAfterSec % 60;
+    const minuteLabel = `${minutes} minuto${minutes === 1 ? '' : 's'}`;
+
+    if (seconds === 0) {
+        return minuteLabel;
+    }
+
+    return `${minuteLabel} y ${seconds} segundo${seconds === 1 ? '' : 's'}`;
+};
+
+const buildUploadRateLimitMessage = ({
+    retryAfterSec
+}: {
+    readonly retryAfterSec: number;
+}): string =>
+    `Se alcanzó el límite temporal de subida de fotos. Intentá de nuevo en ${formatRetryAfterLabel(retryAfterSec)}.`;
+
+/**
+ * Burst allowance for one album, uploaded in a single pass.
+ *
+ * The cap PLUS ONE: `featured` and `gallery` upload through this same route,
+ * and `limit-enforcement.ts` counts them together under `state: 'visible'`.
+ * Sizing the burst to the gallery cap alone left the featured image as the one
+ * request that got refused — a 50-photo Premium album still ended in a 429.
+ */
+const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
 
 /**
  * Resolve an entity service per-request for ownership verification.
@@ -354,8 +388,9 @@ export const protectedUploadEntityRoute = createProtectedRoute({
         middlewares: [
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
-                max: 10,
-                keyPrefix: 'upload:protected-entity'
+                max: PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX,
+                keyPrefix: 'upload:protected-entity',
+                buildExceededMessage: buildUploadRateLimitMessage
             })
         ]
     }

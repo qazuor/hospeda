@@ -42,7 +42,10 @@ describe('generateSlug (AccommodationService)', () => {
         expect(slug).toBe('hotel-gran-hotel-plaza');
     });
 
-    it('deduplicates against other accommodations when regenerating a renamed draft slug', async () => {
+    it('still suffixes against a foreign collision once the excluded id is passed', async () => {
+        // Guards the regression, not the exclusion: passing an id must not
+        // stop an ordinary collision from getting its suffix. The exclusion
+        // itself is the test above, which mocks the accommodation's OWN id.
         findOneMock
             .mockResolvedValueOnce({ id: 'other-accommodation' })
             .mockResolvedValueOnce(null);

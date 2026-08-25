@@ -15,11 +15,17 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 
 const MESSAGE = 'Tenés cambios sin guardar. ¿Salir igual?';
+const TITLE = 'Cambios sin guardar';
+const CONFIRM_LABEL = 'Sí, descartar';
+const CANCEL_LABEL = 'Seguir editando';
 const { showConfirmationDialogMock } = vi.hoisted(() => ({
     showConfirmationDialogMock: vi.fn<
         [
             {
                 readonly message: string;
+                readonly title: string;
+                readonly confirmLabel: string;
+                readonly cancelLabel: string;
             }
         ],
         Promise<boolean>
@@ -87,7 +93,15 @@ describe('useUnsavedChangesGuard', () => {
 
     describe('when the form is clean', () => {
         it('should not prompt on beforeunload', () => {
-            renderHook(() => useUnsavedChangesGuard({ isDirty: false, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: false,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
 
             const event = fireBeforeUnload();
 
@@ -95,7 +109,15 @@ describe('useUnsavedChangesGuard', () => {
         });
 
         it('should not intercept an internal link click', () => {
-            renderHook(() => useUnsavedChangesGuard({ isDirty: false, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: false,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
             const anchor = addAnchor({ href: '/es/destinos/' });
 
             const event = clickAnchor(anchor);
@@ -107,7 +129,15 @@ describe('useUnsavedChangesGuard', () => {
 
     describe('when the form is dirty', () => {
         it('should prompt on beforeunload', () => {
-            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
 
             const event = fireBeforeUnload();
 
@@ -116,21 +146,42 @@ describe('useUnsavedChangesGuard', () => {
 
         it('should block an internal link click and open the custom confirmation dialog', async () => {
             showConfirmationDialogMock.mockResolvedValue(false);
-            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
             const anchor = addAnchor({ href: '/es/destinos/' });
 
             const event = clickAnchor(anchor);
             await flushRouterImport();
 
             expect(event.defaultPrevented).toBe(true);
-            expect(showConfirmationDialogMock).toHaveBeenCalledWith({ message: MESSAGE });
+            expect(showConfirmationDialogMock).toHaveBeenCalledWith({
+                message: MESSAGE,
+                title: TITLE,
+                confirmLabel: CONFIRM_LABEL,
+                cancelLabel: CANCEL_LABEL
+            });
             expect(confirmSpy).not.toHaveBeenCalled();
             expect(navigateSpy).not.toHaveBeenCalled();
         });
 
         it('should navigate via the router when the user confirms', async () => {
             showConfirmationDialogMock.mockResolvedValue(true);
-            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
             await flushRouterImport();
             const anchor = addAnchor({ href: '/es/destinos/' });
 
@@ -186,7 +237,15 @@ describe('useUnsavedChangesGuard', () => {
 
         for (const { name, attrs, init } of cases) {
             it(`should ignore ${name}`, () => {
-                renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+                renderHook(() =>
+                    useUnsavedChangesGuard({
+                        isDirty: true,
+                        message: MESSAGE,
+                        title: TITLE,
+                        confirmLabel: CONFIRM_LABEL,
+                        cancelLabel: CANCEL_LABEL
+                    })
+                );
                 const anchor = addAnchor(attrs);
 
                 const event = clickAnchor(anchor, init);
@@ -197,7 +256,15 @@ describe('useUnsavedChangesGuard', () => {
         }
 
         it('should ignore a pure hash change on the same page', () => {
-            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
             const anchor = addAnchor({ href: `${window.location.pathname}#seccion` });
 
             const event = clickAnchor(anchor);
@@ -211,7 +278,15 @@ describe('useUnsavedChangesGuard', () => {
             // scrolls without writing the hash, so clicking the already-active
             // section produces target.hash === location.hash. Comparing hashes
             // for inequality would pop a confirm mid-edit.
-            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
             const anchor = addAnchor({ href: window.location.pathname });
 
             const event = clickAnchor(anchor);
@@ -226,7 +301,15 @@ describe('useUnsavedChangesGuard', () => {
             // run *after* it and could never prevent it in time.
             const earlier = (e: Event) => e.preventDefault();
             document.addEventListener('click', earlier, true);
-            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
+            );
             const anchor = addAnchor({ href: '/es/destinos/' });
 
             clickAnchor(anchor);
@@ -239,7 +322,14 @@ describe('useUnsavedChangesGuard', () => {
     describe('lifecycle', () => {
         it('should stop guarding once the form goes clean', () => {
             const { rerender } = renderHook(
-                ({ isDirty }) => useUnsavedChangesGuard({ isDirty, message: MESSAGE }),
+                ({ isDirty }) =>
+                    useUnsavedChangesGuard({
+                        isDirty,
+                        message: MESSAGE,
+                        title: TITLE,
+                        confirmLabel: CONFIRM_LABEL,
+                        cancelLabel: CANCEL_LABEL
+                    }),
                 { initialProps: { isDirty: true } }
             );
 
@@ -253,7 +343,13 @@ describe('useUnsavedChangesGuard', () => {
 
         it('should remove every listener on unmount', () => {
             const { unmount } = renderHook(() =>
-                useUnsavedChangesGuard({ isDirty: true, message: MESSAGE })
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL
+                })
             );
 
             unmount();

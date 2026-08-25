@@ -85,6 +85,14 @@ describe('experiencias/index.astro', () => {
             expect(src).toContain('EmptyState');
         });
 
+        it('splits filtered-empty vs empty-catalog states', () => {
+            expect(src).toContain('hasActiveExperienceListingFilters');
+            expect(src).toContain('const hasActiveFilters = hasActiveExperienceListingFilters({');
+            expect(src).toContain('{!hasError && cards.length === 0 && hasActiveFilters && (');
+            expect(src).toContain('{!hasError && cards.length === 0 && !hasActiveFilters && (');
+            expect(src).toContain('experience.listing.emptyCatalog');
+        });
+
         it('renders ErrorBanner on fetch failure', () => {
             expect(src).toContain('ErrorBanner');
         });

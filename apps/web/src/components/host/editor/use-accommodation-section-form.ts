@@ -138,6 +138,9 @@ export function useAccommodationSectionForm<TValues extends object>({
 
     useUnsavedChangesGuard({
         isDirty,
+        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
+        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
+        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
         message: t(
             'host.properties.editor.unsavedChanges',
             'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'

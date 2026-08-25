@@ -7,6 +7,7 @@
         "title": "Experiences",
         "subtitle": "Discover the best tourism experiences and services of the Litoral Entrerriano",
         "emptyState": "No experiences found with the selected filters.",
+        "emptyCatalog": "There are no published experiences yet.",
         "errorBanner": "Could not load the experiences list. Please try again later.",
         "results_one": "{{count}} experience found",
         "results_other": "{{count}} experiences found",

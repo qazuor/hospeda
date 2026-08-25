@@ -16,7 +16,6 @@ src/
 ├── logger.ts                 # Auth-specific logger instance
 ├── hooks/                    # Auth hooks (useSession, etc.)
 ├── sign-in-form.tsx          # Sign-in form component
-├── sign-up-form.tsx          # Sign-up form component
 ├── forgot-password-form.tsx  # Forgot password form
 ├── reset-password-form.tsx   # Reset password form
 ├── verify-email.tsx          # Email verification component

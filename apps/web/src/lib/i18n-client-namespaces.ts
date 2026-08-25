@@ -66,7 +66,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.alerts',
     'account.alliances',
     'account.avatar',
-    'account.confirmations',
     // HOS-691 — `PUBLISH_CTA_OPTIONS`' option titles (`account.doors.publish.
     // options.<id>.title`) are resolved by both `PublishMenu.client.tsx` (the
     // desktop header dropdown) and `MobileMenuAccountSection.client.tsx` (the
@@ -142,6 +141,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.back',
     'common.cancel',
     'common.close',
+    'common.confirmations',
     'common.deleting',
     'common.enums',
     'common.form',

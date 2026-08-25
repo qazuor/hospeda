@@ -61,27 +61,7 @@ export function SignInPage() {
 }
 ```
 
-### 3. Add a sign-up page
-
-```tsx
-import { SignUpForm } from '@repo/auth-ui';
-import { authClient } from '../lib/auth-client';
-
-export function SignUpPage() {
-  return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Create Account</h1>
-      <SignUpForm
-        signUp={authClient.signUp}
-        signIn={authClient.signIn}
-        redirectTo="/onboarding"
-      />
-    </div>
-  );
-}
-```
-
-### 4. Add a user menu
+### 3. Add a user menu
 
 ```tsx
 import { UserMenu } from '@repo/auth-ui';
@@ -110,7 +90,6 @@ export function AppHeader() {
 | Component | Purpose |
 |-----------|---------|
 | `SignInForm` | Email/password + OAuth login |
-| `SignUpForm` | Registration with email/password + OAuth |
 | `SignOutButton` | Sign-out trigger |
 | `ForgotPasswordForm` | Password reset email request |
 | `ResetPasswordForm` | New password form (token-based) |

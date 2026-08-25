@@ -52,6 +52,12 @@ export interface PasswordFieldI18n {
 export interface PasswordFieldProps {
     /** HTML id for the input — also used to derive aria-describedby targets. */
     readonly id: string;
+    /**
+     * Form control name. Optional, but pass it: password managers key their
+     * autofill on it, and it is what lets a test query the field the way a
+     * user agent addresses it.
+     */
+    readonly name?: string;
     /** Visible label text rendered above the input. */
     readonly label: string;
     /** Controlled value. */
@@ -115,6 +121,7 @@ const STRENGTH_SEGMENT_CLASS: Record<StrengthLevel, string> = {
  */
 export function PasswordField({
     id,
+    name,
     label,
     value,
     onChange,
@@ -189,6 +196,7 @@ export function PasswordField({
             <div className={styles.inputWrapper}>
                 <input
                     id={id}
+                    name={name}
                     type={visible ? 'text' : 'password'}
                     className={error ? `${styles.input} ${styles.inputError}` : styles.input}
                     value={value}

@@ -160,8 +160,10 @@ describe('useAuthTranslations', () => {
         /**
          * DOCUMENTED INCONSISTENCY:
          *
-         * The following keys are used by SignUpForm but do NOT have fallback entries
-         * in getFallbackText:
+         * The following `auth-ui.signUp.*` keys do NOT have fallback entries in
+         * getFallbackText. Their only consumer, SignUpForm, was removed as dead
+         * code — the gap is documented here because the keys themselves are
+         * still exposed by the hook:
          * - 'auth-ui.signUp.name'
          * - 'auth-ui.signUp.namePlaceholder'
          * - 'auth-ui.signUp.emailPlaceholder'
