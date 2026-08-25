@@ -514,7 +514,15 @@
                 "nothingGenerated": "There were no pending translations to generate.",
                 "allFailed": "No translation could be generated. Check the per-field detail and try again.",
                 "partialFailure": "Some translations were not generated. Check the per-field detail.",
-                "refresh": "Refresh the page"
+                "refresh": "Refresh the page",
+                "roleSource": "Original",
+                "roleTranslated": "AI-generated",
+                "roleMissing": "Not translated",
+                "sourceEmpty": "You have not written this content yet.",
+                "translationEmpty": "This translation has not been generated yet.",
+                "textUnavailable": "Just generated. Refresh the page to read it.",
+                "expandText": "Show full text",
+                "collapseText": "Show less"
             },
             "featuredToggle": {
                 "label": "Destacar mi alojamiento",

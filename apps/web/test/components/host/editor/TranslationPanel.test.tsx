@@ -269,7 +269,10 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         await waitFor(() => {
             expect(screen.getByText('No se pudo traducir a EN, PT')).toBeInTheDocument();
         });
-        expect(screen.getByText(/Traducido/i)).toBeInTheDocument();
+        // EXACT, not `/Traducido/i`. HOS-797 put a per-locale role line on the
+        // same card, so a substring match now finds two elements — and would
+        // have gone on matching if the run note itself were ever dropped.
+        expect(screen.getByText('Traducido')).toBeInTheDocument();
         // Partial success: content WAS written, so a refresh is offered — but the
         // page must not reload on its own and take the detail with it.
         expect(reloadSpy).not.toHaveBeenCalled();
@@ -558,7 +561,10 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         await waitFor(() => {
             expect(screen.getByText(/Sin cambios/i)).toBeInTheDocument();
         });
-        expect(screen.getByText(/Traducido/i)).toBeInTheDocument();
+        // EXACT, not `/Traducido/i`. HOS-797 put a per-locale role line on the
+        // same card, so a substring match now finds two elements — and would
+        // have gone on matching if the run note itself were ever dropped.
+        expect(screen.getByText('Traducido')).toBeInTheDocument();
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
@@ -809,5 +815,168 @@ describe('TranslationPanel — run state (HOS-317)', () => {
         expect(
             screen.queryByRole('button', { name: /Actualizar la página/i })
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('TranslationPanel — the translated text itself (HOS-797)', () => {
+    /**
+     * The panel received the text all along and rendered a badge from it, so the
+     * one screen called "Traducciones" could report a clean green run over a
+     * translation that had quietly renamed the business. These assertions are on
+     * the RENDERED value: a panel that goes back to reporting presence only fails
+     * every one of them.
+     */
+
+    /** Distinct per locale, so an assertion cannot pass on the wrong one. */
+    const NAMED: AccommodationTranslationData = {
+        name: {
+            locales: { es: null, en: 'Cheroga Country House', pt: null },
+            plain: 'Cabaña Cheroga'
+        },
+        summary: FULLY_TRANSLATED,
+        description: FULLY_TRANSLATED,
+        richDescription: null
+    };
+
+    function nameCardOf(container: HTMLElement): HTMLElement {
+        const card = [...container.querySelectorAll('.fieldCard')].find((element) =>
+            element.querySelector('.fieldName')?.textContent?.includes('Nombre')
+        );
+        expect(card).toBeDefined();
+        return card as HTMLElement;
+    }
+
+    it('renders the text each locale holds', () => {
+        const { container } = renderPanel(NAMED);
+        const card = nameCardOf(container);
+
+        // The Spanish source comes from the PLAIN column — `locales.es` is null
+        // here, which is the state of every never-translated accommodation.
+        expect(card.textContent).toContain('Cabaña Cheroga');
+        // And the AI's answer, which is the whole point: the host can see that it
+        // renamed the place instead of translating the name.
+        expect(card.textContent).toContain('Cheroga Country House');
+    });
+
+    it('says which text the host wrote and which a machine produced', () => {
+        const { container } = renderPanel(NAMED);
+        const roles = [...nameCardOf(container).querySelectorAll('.localeTextRole')].map(
+            (element) => element.textContent
+        );
+
+        // AC-2. Three locales, three roles, and the source is not one of the
+        // generated ones.
+        expect(roles).toEqual(['Original', 'Generado con IA', 'Sin traducir']);
+    });
+
+    it('names the kind of empty instead of leaving a blank', () => {
+        // AC-3. PT holds nothing on this card, and "nothing" must not render as
+        // whitespace the host has to interpret.
+        const { container } = renderPanel(NAMED);
+
+        expect(nameCardOf(container).textContent).toContain('Todavía no se generó esta traducción');
+    });
+
+    it('distinguishes an unwritten source from an ungenerated translation', () => {
+        // The two empties are addressed to different people: one asks the host to
+        // write something, the other waits on the button below.
+        const { container } = renderPanel({
+            name: EMPTY_FIELD,
+            summary: FULLY_TRANSLATED,
+            description: FULLY_TRANSLATED,
+            richDescription: null
+        });
+
+        expect(nameCardOf(container).textContent).toContain('Todavía no escribiste este contenido');
+    });
+
+    it('shows what a run just generated without waiting for a reload', async () => {
+        // The reload is what would cost an unsaved draft, so text that only
+        // appears after one is text the host will not read. `translatedText` has
+        // always been in the response; HOS-797 is the first reader of it.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    {
+                        fieldType: 'name',
+                        locale: 'pt',
+                        success: true,
+                        translatedText: 'Chácara Cheroga'
+                    }
+                ]
+            }
+        });
+
+        const { container } = renderPanel(NAMED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(nameCardOf(container).textContent).toContain('Chácara Cheroga');
+        });
+        expect(reloadSpy).not.toHaveBeenCalled();
+    });
+
+    it('never overwrites stored text with a run that may not have persisted', async () => {
+        // A reported success is the PROVIDER's: `persistTranslations` skips a
+        // locale flagged `autoTranslated: false` while the route still returns it
+        // as successful. Replacing a real stored value with AI text the DB refused
+        // is the one way this panel could put words on screen that will never be
+        // published.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    {
+                        fieldType: 'name',
+                        locale: 'en',
+                        success: true,
+                        translatedText: 'Something Else Entirely'
+                    },
+                    {
+                        fieldType: 'name',
+                        locale: 'pt',
+                        success: true,
+                        translatedText: 'Chácara Cheroga'
+                    }
+                ]
+            }
+        });
+
+        const { container } = renderPanel(NAMED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(nameCardOf(container).textContent).toContain('Chácara Cheroga');
+        });
+        expect(nameCardOf(container).textContent).toContain('Cheroga Country House');
+        expect(nameCardOf(container).textContent).not.toContain('Something Else Entirely');
+    });
+
+    it('says a locale is unreadable rather than printing the presence marker', async () => {
+        // A success with no text still has to count as present, or the generate
+        // button never retires (BETA-199's loop). What it must NOT do is render
+        // the marker as if it were the translation.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: { translations: [{ fieldType: 'name', locale: 'pt', success: true }] }
+        });
+
+        const { container } = renderPanel(NAMED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(nameCardOf(container).textContent).toContain('Actualizá la página para leerlo');
+        });
+
+        const card = nameCardOf(container);
+        // Present, so the row agrees with the fold — and the marker is not on
+        // screen in any form.
+        const present = [...card.querySelectorAll('.localeBadgePresent')].map((element) =>
+            element.textContent?.trim()
+        );
+        expect(present).toContain('PT');
+        expect(card.textContent).not.toContain('\u0000');
+        expect(card.textContent).not.toContain('Todavía no se generó esta traducción');
     });
 });

@@ -514,7 +514,15 @@
                 "nothingGenerated": "Não havia traduções pendentes para gerar.",
                 "allFailed": "Não foi possível gerar nenhuma tradução. Revise o detalhe por campo e tente novamente.",
                 "partialFailure": "Algumas traduções não foram geradas. Revise o detalhe por campo.",
-                "refresh": "Atualizar a página"
+                "refresh": "Atualizar a página",
+                "roleSource": "Original",
+                "roleTranslated": "Gerado com IA",
+                "roleMissing": "Sem tradução",
+                "sourceEmpty": "Você ainda não escreveu este conteúdo.",
+                "translationEmpty": "Esta tradução ainda não foi gerada.",
+                "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
+                "expandText": "Ver completo",
+                "collapseText": "Ver menos"
             },
             "featuredToggle": {
                 "label": "Destacar mi alojamiento",

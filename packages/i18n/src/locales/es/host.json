@@ -514,7 +514,15 @@
                 "nothingGenerated": "No había traducciones pendientes para generar.",
                 "allFailed": "No se pudo generar ninguna traducción. Revisá el detalle por campo e intentá de nuevo.",
                 "partialFailure": "Algunas traducciones no se generaron. Revisá el detalle por campo.",
-                "refresh": "Actualizar la página"
+                "refresh": "Actualizar la página",
+                "roleSource": "Original",
+                "roleTranslated": "Generado con IA",
+                "roleMissing": "Sin traducir",
+                "sourceEmpty": "Todavía no escribiste este contenido.",
+                "translationEmpty": "Todavía no se generó esta traducción.",
+                "textUnavailable": "Se generó recién. Actualizá la página para leerlo.",
+                "expandText": "Ver completo",
+                "collapseText": "Ver menos"
             },
             "featuredToggle": {
                 "label": "Destacar mi alojamiento",
