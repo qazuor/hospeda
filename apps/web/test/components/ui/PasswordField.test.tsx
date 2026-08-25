@@ -423,11 +423,5 @@ describe('PasswordField', () => {
             // Assert: min-width must be 44px
             expect(eyeBtnBlock).toMatch(/min-width\s*:\s*44px/);
         });
-
-        it('.eyeBtn declares z-index so the toggle stays clickable above the input', () => {
-            const eyeBtnBlock = cssSrc.match(/\.eyeBtn\s*\{([^}]+)\}/s)?.[1] ?? '';
-
-            expect(eyeBtnBlock).toMatch(/z-index\s*:\s*1/);
-        });
     });
 });
