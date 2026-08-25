@@ -19,14 +19,14 @@
  *
  * ## Where each entity type is counted from
  *
- * | Entity type   | Counted from                                  |
- * |---------------|-----------------------------------------------|
- * | accommodation | `accommodation_media` rows (`state='visible'`) |
- * | gastronomy    | `gastronomy_media` rows (`state='visible'`)    |
- * | experience    | `experience_media` rows (`state='visible'`)    |
- * | destination   | JSONB `media.gallery`                          |
- * | event         | JSONB `media.gallery`                          |
- * | post          | JSONB `media.gallery`                          |
+ * | Entity type   | Counted from                                                     |
+ * |---------------|------------------------------------------------------------------|
+ * | accommodation | `accommodation_media` rows (`state='visible'`, `is_featured=false`) |
+ * | gastronomy    | `gastronomy_media` rows (`state='visible'`, `is_featured=false`)    |
+ * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
+ * | destination   | JSONB `media.gallery`                                              |
+ * | event         | JSONB `media.gallery`                                              |
+ * | post          | JSONB `media.gallery`                                              |
  *
  * The JSONB branch is NOT legacy dead code: destinations, events and posts still
  * keep their whole media object in a JSONB column and were never part of the
@@ -66,6 +66,13 @@ function countFromJsonb(entity: unknown): number {
  * Archived rows are deliberately excluded: an archived photo is not occupying a
  * gallery slot, so counting it would cap an owner below their real allowance.
  *
+ * The featured image is excluded for the same reason (HOS-791). It is not a
+ * gallery item, so charging it a gallery slot closed an owner's gallery one
+ * photo early. This is also what makes the two branches of this function mean
+ * the same thing: the JSONB branch reads `media.gallery`, which has always been
+ * a sibling of `media.featuredImage` rather than a container for it, so the
+ * relational branches were the odd ones out.
+ *
  * @param input - {@link ResolveVisibleGalleryCountInput}
  * @returns The current visible gallery photo count.
  */
@@ -78,21 +85,24 @@ export async function resolveVisibleGalleryCount(
         case 'accommodation': {
             const { total } = await accommodationMediaModel.findByAccommodation({
                 accommodationId: entityId,
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
             return total;
         }
         case 'gastronomy': {
             const { total } = await gastronomyMediaModel.findByGastronomy({
                 gastronomyId: entityId,
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
             return total;
         }
         case 'experience': {
             const { total } = await experienceMediaModel.findByExperience({
                 experienceId: entityId,
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
             return total;
         }

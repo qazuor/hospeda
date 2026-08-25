@@ -196,7 +196,7 @@ Two billing limits are scaffolded with `count = 0` stubs in `apps/api/src/middle
 | Limit Key | Middleware | Count Source | Status |
 |-----------|-----------|--------------|--------|
 | `MAX_ACCOMMODATIONS` | `enforceAccommodationLimit()` | `AccommodationService.count()` | Active - mounted on POST /protected/accommodations |
-| `MAX_PHOTOS_PER_ACCOMMODATION` | `enforcePhotoLimit()` | Reads photo count from `media` JSONB (`gallery.length + featuredImage`) | Active - reads photo count from media JSONB |
+| `MAX_PHOTOS_PER_ACCOMMODATION` | none — enforced inline in the route handlers | `accommodation_media` rows with `state='visible'` AND `is_featured=false` (gallery only, HOS-791) | Enforced in `routes/accommodation/{protected,admin}/addMedia.ts` and `routes/media/admin/upload.ts`. `enforcePhotoLimit()` exists but is NOT mounted on any route. |
 | `MAX_ACTIVE_PROMOTIONS` | `enforcePromotionLimit()` | `OwnerPromotionService.count()` | Active - mounted on POST /protected/owner-promotions |
 | `MAX_FAVORITES` | `enforceFavoritesLimit()` | `UserBookmarkService.countBookmarksForUser()` | Active - mounted on POST /protected/user-bookmarks |
 

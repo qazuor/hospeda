@@ -3828,17 +3828,32 @@ export class AccommodationService extends BaseCrudService<
                 // directly with an already-uploaded URL walked straight past it.
                 //
                 // Same `getGalleryCap` constant those routes read, and the same
-                // `state: 'visible'` filter `resolveVisibleGalleryCount` applies
-                // for accommodations — an archived photo does not occupy a slot.
-                // The count is the one this method ALREADY fetched for
-                // `sortOrder`: `findAll` returns a full `total` from its own
-                // count query, independent of `pageSize`. So this costs nothing.
+                // filter `resolveVisibleGalleryCount` applies for accommodations:
+                // `state: 'visible'` (an archived photo does not occupy a slot)
+                // AND `isFeatured: false` (HOS-791 — the featured image is not a
+                // gallery item, so charging it a slot closed the gallery one
+                // photo early).
+                //
+                // This is a SECOND query rather than a reuse of `existing.total`.
+                // `existing` is deliberately left unfiltered because it also
+                // computes the next `sortOrder`, and skipping the featured row
+                // there would hand out a `sortOrder` already in use whenever the
+                // featured row holds the current maximum.
+                const galleryCount = await mediaModel.count(
+                    {
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        isFeatured: false,
+                        deletedAt: null
+                    },
+                    { tx: ctx?.tx }
+                );
                 const galleryCap = getGalleryCap('accommodation');
-                if (existing.total >= galleryCap) {
+                if (galleryCount >= galleryCap) {
                     throw new ServiceError(
                         ServiceErrorCode.QUOTA_EXCEEDED,
                         `Gallery limit of ${galleryCap} photos reached for this accommodation`,
-                        { currentCount: existing.total, maxAllowed: galleryCap }
+                        { currentCount: galleryCount, maxAllowed: galleryCap }
                     );
                 }
 

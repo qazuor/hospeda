@@ -237,15 +237,16 @@ export interface RestoreAccommodationPhotosInput {
      */
     readonly restoreCount?: number;
     /**
-     * Restore enough items so that `visible_gallery_count + (hasFeaturedImage ? 1 : 0) === toCap`.
-     * In other words, `toCap` is the TOTAL plan cap (gallery + featuredImage combined).
-     * The primitive reserves one slot for `featuredImage` when it is present, so the
-     * effective gallery target is `toCap - 1`. If the gallery already meets or exceeds
-     * the effective target, this is a no-op. When there are fewer archived items than
-     * needed, all archived items are restored (partial fill up to cap).
+     * Restore enough items so that `visible_gallery_count === toCap`.
      *
-     * This is symmetric with the downgrade restriction side, which computes
-     * `gallerySlots = cap - (hasFeaturedImage ? 1 : 0)` before archiving.
+     * `toCap` is the plan cap measured against the GALLERY ALONE (HOS-791): the
+     * featured image consumes no plan photo slot, so no seat is reserved for it
+     * and the whole cap is available to the gallery. If the gallery already meets
+     * or exceeds the target this is a no-op. When there are fewer archived items
+     * than needed, all archived items are restored (partial fill up to cap).
+     *
+     * This is symmetric with the downgrade restriction side, which now computes
+     * `gallerySlots = cap` before archiving.
      *
      * Mutually exclusive with `restoreCount`. Provide exactly one.
      */
@@ -263,8 +264,9 @@ export interface RestoreAccommodationPhotosInput {
  *
  * Provide exactly one of `restoreCount` or `toCap`:
  * - `restoreCount`: move exactly this many items (or all if fewer exist).
- * - `toCap`: restore enough so that the TOTAL occupied cap slots
- *   (visible gallery + featuredImage) equal `toCap`.
+ * - `toCap`: restore enough so that the visible GALLERY count equals `toCap`.
+ *   The featured image occupies no cap slot (HOS-791), so no seat is reserved
+ *   for it.
  *
  * **Idempotent**: if no archived rows exist or the gallery already meets the
  * cap, returns `{ movedCount: 0, totalCount }` without a DB write.
@@ -301,20 +303,10 @@ export async function restoreAccommodationPhotos(
             );
         }
 
-        // 2a. Determine if there is a featured image (for toCap seat reservation).
-        //     Count visible rows that are is_featured=true.
-        const featuredRows = await tx
-            .select({ url: accommodationMedia.url })
-            .from(accommodationMedia)
-            .where(
-                and(
-                    eq(accommodationMedia.accommodationId, input.accommodationId),
-                    eq(accommodationMedia.isFeatured, true),
-                    eq(accommodationMedia.state, 'visible'),
-                    isNull(accommodationMedia.deletedAt)
-                )
-            );
-        const hasFeaturedImage = featuredRows.length > 0;
+        // HOS-791: the featured image no longer reserves a cap seat, so this
+        // function no longer needs to know whether one exists — the probe that
+        // used to run here was removed with the `- (hasFeaturedImage ? 1 : 0)`
+        // adjustment it fed.
 
         // 2b. Read current visible gallery count (non-featured, visible rows).
         const visibleGalleryRows = await tx
@@ -356,10 +348,11 @@ export async function restoreAccommodationPhotos(
                 'restoreAccommodationPhotos: provide exactly one of restoreCount or toCap'
             );
         } else {
-            // M-3: toCap is the TOTAL plan cap (gallery + featuredImage combined).
-            // Reserve one slot for featuredImage when present — symmetric with the
-            // restriction side: gallerySlots = cap - (hasFeaturedImage ? 1 : 0).
-            const galleryTarget = Math.max(0, input.toCap - (hasFeaturedImage ? 1 : 0));
+            // HOS-791: toCap is the plan cap for the GALLERY alone. No seat is
+            // reserved for the featured image — symmetric with the restriction
+            // side, which now computes gallerySlots = cap. Keeping the old `- 1`
+            // here would restore one photo fewer than the plan actually allows.
+            const galleryTarget = Math.max(0, input.toCap); // clamp guards a negative toCap only
             const needed = Math.max(0, galleryTarget - currentGalleryCount);
             count = Math.min(needed, currentArchivedCount);
         }

@@ -200,6 +200,15 @@ export function enforceAccommodationLimit(): AppMiddleware {
 /**
  * Enforces photo limit before upload
  *
+ * ⚠ NOT MOUNTED. This middleware is currently registered on no route — its
+ * siblings in this file are wired up, this one never was. The live per-request
+ * photo-limit enforcement lives inline in the route handlers:
+ * `routes/accommodation/protected/addMedia.ts`,
+ * `routes/accommodation/admin/addMedia.ts` and `routes/media/admin/upload.ts`.
+ * It is kept (and kept correct) so that mounting it later cannot silently
+ * reintroduce a counting rule the rest of the codebase has moved off; if you
+ * change the counting rule, change it here too or delete this function.
+ *
  * Checks if accommodation has reached its max_photos_per_accommodation limit.
  * Returns 403 if limit reached.
  *
@@ -243,17 +252,18 @@ export function enforcePhotoLimit(): AppMiddleware {
                 return;
             }
 
-            // SPEC-204 T-014: count visible accommodation_media rows directly.
-            // The relational table is the read source of truth (T-013); a single
-            // count query is far cheaper than getById (which loads relations and
-            // composes the media object) on every upload. `state: 'visible'` covers
-            // the featured image + active gallery (both are visible rows), matching
-            // the prior `gallery.length + (featuredImage ? 1 : 0)` semantics.
+            // SPEC-204 T-014: count accommodation_media rows directly. The
+            // relational table is the read source of truth (T-013); a single count
+            // query is far cheaper than getById (which loads relations and composes
+            // the media object) on every upload.
+            // The count is GALLERY-ONLY (`isFeatured: false`, HOS-791) so it agrees
+            // with the live enforcement sites listed above.
             // A query failure is swallowed by the method-level catch (logs + next()),
             // preserving the "don't block uploads on a count failure" behavior.
             const { total: currentPhotoCount } = await accommodationMediaModel.findByAccommodation({
                 accommodationId,
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
 
             // Check limit

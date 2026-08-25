@@ -181,13 +181,14 @@ export const defaultExcessDeps: ComputeDowngradeExcessDeps = {
         // SPEC-204 direct cutover: read photo counts from the relational
         // `accommodation_media` table instead of the JSONB `media` blob.
         //
-        // Semantics preserved (byte-identical to the old JSONB path):
-        //   totalCount = gallery.length + (hasFeaturedImage ? 1 : 0)
-        //   overflowGallery = gallery items beyond gallerySlots (array-head ordering)
+        // Excess semantics (HOS-791):
+        //   totalCount = gallery.length          (the featured image is excluded)
+        //   overflowGallery = gallery items beyond the cap (array-head ordering)
         //
-        // `state: 'visible'` covers both the featured image row AND active gallery
-        // rows (the same definition used by `enforcePhotoLimit` in limit-enforcement.ts
-        // after it was migrated in SPEC-204 T-014).  Within the returned rows, rows
+        // NOTE the read below deliberately does NOT filter `isFeatured`: it needs
+        // BOTH kinds of row so it can split them into `featuredImage` and
+        // `gallery`. The featured image is excluded from the COUNT, downstream,
+        // not from the query.  Within the returned rows, rows
         // with `isFeatured = true` become `media.featuredImage`; the rest (sorted by
         // `sortOrder ASC`) become `media.gallery`.  This produces an identical shape
         // to the old JSONB object, so the excess computation logic is unchanged.
@@ -444,18 +445,20 @@ export async function computeDowngradeExcess(
         for (const acc of accommodations) {
             const gallery = acc.media?.gallery ?? [];
             const hasFeaturedImage = Boolean(acc.media?.featuredImage?.url);
-            // Total = gallery + featured
-            const totalCount = gallery.length + (hasFeaturedImage ? 1 : 0);
+            // GALLERY-ONLY (HOS-791). The featured image consumes no plan photo
+            // slot, so it is neither counted here nor subtracted from the cap
+            // below. This has to track enforcement exactly: if a downgrade
+            // measured the cap one photo tighter than the upload routes do, a
+            // plan change would archive a photo the owner was just allowed to
+            // add — and a same-plan "change" would archive one for nothing.
+            const totalCount = gallery.length;
 
             if (totalCount <= maxPhotosPerAccommodation) {
                 continue; // at or under cap
             }
 
-            // How many gallery slots are available (featuredImage occupies one slot)?
-            const gallerySlots = Math.max(
-                0,
-                maxPhotosPerAccommodation - (hasFeaturedImage ? 1 : 0)
-            );
+            // The whole cap is available to the gallery.
+            const gallerySlots = maxPhotosPerAccommodation;
             // Overflow = gallery items beyond gallerySlots, taken from the end of the
             // array (array-head order = keep first N items, archive the rest).
             //
