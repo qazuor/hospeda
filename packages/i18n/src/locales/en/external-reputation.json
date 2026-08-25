@@ -47,7 +47,12 @@
             "booking": "Log in to the Booking extranet, open your property and copy the public link of the accommodation page.",
             "airbnb": "In your Airbnb host dashboard, open the listing and copy the URL from 'Preview listing'.",
             "other": "Paste the direct public link to your listing on that platform."
-        }
+        },
+        "removeDialogTitle": "Delete platform",
+        "removeConfirm": "Delete this platform? Its reviews will stop showing on your listing.",
+        "removeConfirmButton": "Delete platform",
+        "removing": "Deleting...",
+        "removeError": "Could not delete the platform."
     },
     "errors": {
         "fetchFailed": "Could not load external reviews. Please try again later.",

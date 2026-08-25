@@ -13,6 +13,14 @@
  *  - Master toggle (showExternalReputation on/off)
  *  - "Add listing" form: platform select, URL, showLink/showReviews checkboxes
  *  - Per-listing row with PATCH (showLink/showReviews toggles) and DELETE
+ *
+ * HOS-794: removing a listing now asks for confirmation through the shared
+ * `ConfirmDeleteDialog` — the same criterion the FAQ section uses. The two
+ * deletions used to disagree (FAQ asked via `window.confirm`, this one wiped
+ * the row on a single click of a bare "✕" sitting right next to the
+ * visibility checkboxes), and neither is less destructive than the other.
+ * A failed DELETE no longer disappears either: it reports through the same
+ * `errorBanner` treatment the master toggle got in HOS-290.
  *  - "Refresh reputation" button with rate-limit (429) message
  *  - Always-visible Google-only explainer note
  */
@@ -26,6 +34,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PlatformStatusEntry } from '@/components/host/PlatformStatusChips';
 import { PlatformStatusChips } from '@/components/host/PlatformStatusChips';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useReputationStatus } from '@/hooks/use-reputation-status';
 import { getApiUrl } from '@/lib/env';
@@ -202,6 +211,15 @@ export function ExternalReputationSection({
     const [isTogglingMaster, setIsTogglingMaster] = useState(false);
     const [masterToggleError, setMasterToggleError] = useState<string | null>(null);
 
+    // --- Per-listing removal (HOS-794) ---
+    /** The listing awaiting delete confirmation, or `null` when none is. */
+    const [listingPendingDelete, setListingPendingDelete] = useState<ExternalListingRow | null>(
+        null
+    );
+    /** Id of the listing whose DELETE is in flight. */
+    const [removingListingId, setRemovingListingId] = useState<string | null>(null);
+    const [removeError, setRemoveError] = useState<string | null>(null);
+
     // --- Load listings ---
     const loadListings = useCallback(async () => {
         setIsLoadingData(true);
@@ -370,26 +388,60 @@ export function ExternalReputationSection({
         [accommodationId]
     );
 
-    // --- Per-listing remove handler ---
-    const handleRemoveListing = useCallback(
-        async (listingId: string) => {
-            try {
-                const res = await fetch(
-                    `${protectedBase()}/accommodations/${accommodationId}/external-listings/${listingId}`,
-                    {
-                        method: 'DELETE',
-                        credentials: 'include'
-                    }
-                );
-                if (res.ok) {
-                    setListings((prev) => prev.filter((l) => l.id !== listingId));
+    // --- Per-listing remove handler (HOS-794) ---
+
+    /**
+     * Dismisses the delete confirmation. Ignored while the DELETE is in
+     * flight — the dialog is the surface reporting its own outcome.
+     */
+    const cancelRemoveListing = useCallback(() => {
+        if (removingListingId !== null) {
+            return;
+        }
+        setListingPendingDelete(null);
+    }, [removingListingId]);
+
+    /**
+     * Deletes the listing the user confirmed. A failure keeps the row on
+     * screen and explains itself instead of looking like a dead button.
+     */
+    const handleRemoveListing = useCallback(async () => {
+        if (!listingPendingDelete) {
+            return;
+        }
+        const listingId = listingPendingDelete.id;
+        setRemovingListingId(listingId);
+        setRemoveError(null);
+        try {
+            const res = await fetch(
+                `${protectedBase()}/accommodations/${accommodationId}/external-listings/${listingId}`,
+                {
+                    method: 'DELETE',
+                    credentials: 'include'
                 }
-            } catch {
-                // Silently fail; user can retry
+            );
+            if (res.ok) {
+                setListings((prev) => prev.filter((l) => l.id !== listingId));
+                setListingPendingDelete(null);
+            } else {
+                setRemoveError(
+                    t(
+                        'external-reputation.ownerConfig.removeError',
+                        'No se pudo eliminar la plataforma.'
+                    )
+                );
             }
-        },
-        [accommodationId]
-    );
+        } catch {
+            setRemoveError(
+                t(
+                    'external-reputation.ownerConfig.removeError',
+                    'No se pudo eliminar la plataforma.'
+                )
+            );
+        } finally {
+            setRemovingListingId(null);
+        }
+    }, [accommodationId, listingPendingDelete, t]);
 
     // --- Refresh handler ---
     const handleRefresh = useCallback(async () => {
@@ -637,7 +689,8 @@ export function ExternalReputationSection({
                             <button
                                 type="button"
                                 className={styles.removeButton}
-                                onClick={() => void handleRemoveListing(listing.id)}
+                                onClick={() => setListingPendingDelete(listing)}
+                                disabled={removingListingId !== null}
                                 aria-label={`Eliminar ${platformLabel(listing.platform)}`}
                             >
                                 {'✕'}
@@ -840,6 +893,41 @@ export function ExternalReputationSection({
                     </span>
                 )}
             </div>
+
+            {/* Per-listing removal error (HOS-794: used to fail silently) */}
+            {removeError && (
+                <div
+                    className={styles.errorBanner}
+                    role="alert"
+                >
+                    {removeError}
+                </div>
+            )}
+
+            <ConfirmDeleteDialog
+                isOpen={listingPendingDelete !== null}
+                title={t(
+                    'external-reputation.ownerConfig.removeDialogTitle',
+                    'Eliminar plataforma'
+                )}
+                message={t(
+                    'external-reputation.ownerConfig.removeConfirm',
+                    '¿Eliminás esta plataforma? Se dejan de mostrar sus reseñas en tu ficha.'
+                )}
+                detail={
+                    listingPendingDelete ? platformLabel(listingPendingDelete.platform) : undefined
+                }
+                confirmLabel={t(
+                    'external-reputation.ownerConfig.removeConfirmButton',
+                    'Eliminar plataforma'
+                )}
+                busyLabel={t('external-reputation.ownerConfig.removing', 'Eliminando...')}
+                cancelLabel={t('common.cancel', 'Cancelar')}
+                closeLabel={t('common.close', 'Cerrar')}
+                isBusy={removingListingId !== null}
+                onConfirm={handleRemoveListing}
+                onCancel={cancelRemoveListing}
+            />
         </fieldset>
     );
 }

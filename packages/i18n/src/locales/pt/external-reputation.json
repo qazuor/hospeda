@@ -47,7 +47,12 @@
             "booking": "Entre no extranet do Booking, abra sua propriedade e copie o link público da página da hospedagem.",
             "airbnb": "No painel de anfitrião do Airbnb, abra o anúncio e copie a URL em 'Pré-visualizar anúncio'.",
             "other": "Cole o link público direto do seu anúncio nessa plataforma."
-        }
+        },
+        "removeDialogTitle": "Excluir plataforma",
+        "removeConfirm": "Excluir esta plataforma? As avaliações dela deixam de aparecer no seu anúncio.",
+        "removeConfirmButton": "Excluir plataforma",
+        "removing": "Excluindo...",
+        "removeError": "Não foi possível excluir a plataforma."
     },
     "errors": {
         "fetchFailed": "Não foi possível carregar as avaliações externas. Tente novamente mais tarde.",

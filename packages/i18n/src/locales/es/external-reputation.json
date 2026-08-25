@@ -47,7 +47,12 @@
             "booking": "Entrá al extranet de Booking, abrí tu propiedad y copiá el enlace público de la página del alojamiento.",
             "airbnb": "En tu panel de anfitrión de Airbnb, abrí el anuncio y copiá la URL desde 'Vista previa del anuncio'.",
             "other": "Pegá el enlace público directo a tu anuncio en esa plataforma."
-        }
+        },
+        "removeDialogTitle": "Eliminar plataforma",
+        "removeConfirm": "¿Eliminás esta plataforma? Se dejan de mostrar sus reseñas en tu ficha.",
+        "removeConfirmButton": "Eliminar plataforma",
+        "removing": "Eliminando...",
+        "removeError": "No se pudo eliminar la plataforma."
     },
     "errors": {
         "fetchFailed": "No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.",

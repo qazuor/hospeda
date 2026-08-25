@@ -1,0 +1,68 @@
+/**
+ * @file ConfirmDeleteDialog.module.css
+ * @description Styles for ConfirmDeleteDialog — HOS-794.
+ */
+
+.dialogText {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.dialogDetail {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    margin: var(--space-2, 0.5rem) 0 0;
+    word-break: break-word;
+}
+
+.dialogActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+
+.cancelBtn {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.cancelBtn:hover:not(:disabled) {
+    background: var(--surface-warm);
+}
+
+.deleteBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--destructive-a25, oklch(0.88 0.06 25));
+    border-radius: var(--radius-md, 10px);
+    background: transparent;
+    color: var(--destructive);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.deleteBtn:hover:not(:disabled) {
+    background: var(--destructive-a10, oklch(0.96 0.02 25));
+}
+
+.cancelBtn:disabled,
+.deleteBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

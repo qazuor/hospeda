@@ -24,6 +24,12 @@
  * "Bajar" / "Editar" / "Eliminar" with nothing to tell rows apart). Every
  * action button's `aria-label` here embeds a truncated snippet of the FAQ's
  * own question so each row's controls stay uniquely named.
+ *
+ * HOS-794: submitting an invalid add/edit form marks the offending fields
+ * (`faq-validation.ts` against the shared payload schema) instead of
+ * returning silently, and deleting a FAQ asks for confirmation through
+ * the shared `ConfirmDeleteDialog` instead of the browser's native
+ * `window.confirm()`.
  */
 
 import {
@@ -36,12 +42,14 @@ import {
     SparkleIcon
 } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
+import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
 import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { addToast } from '@/store/toast-store';
 import styles from './FaqSection.module.css';
+import { clearFaqFieldError, type FaqFieldErrors, validateFaqEditorValues } from './faq-validation';
 
 // Re-export for consumers (the SSR page needs the type for `initialFaqs`).
 export type { AccommodationFaqItem };
@@ -135,26 +143,71 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
     const [faqs, setFaqs] = useState<readonly AccommodationFaqItem[]>(() => sortFaqs(initialFaqs));
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const [editFieldErrors, setEditFieldErrors] = useState<FaqFieldErrors>({});
     const [isAdding, setIsAdding] = useState(false);
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
+    const [addFieldErrors, setAddFieldErrors] = useState<FaqFieldErrors>({});
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [faqPendingDelete, setFaqPendingDelete] = useState<AccommodationFaqItem | null>(null);
 
     const reportError = useCallback((message: string) => {
         setActionError(message);
         addToast({ type: 'error', message });
     }, []);
 
+    /**
+     * Publishes a failed validation: marks the fields inline, fires the same
+     * "Revisá los campos marcados" toast every other editor form uses
+     * (`useZodForm.validate()`'s contract), and moves focus to the first
+     * invalid field (HOS-373) so the error is never a dead click.
+     *
+     * @returns `true` when errors were found (the caller should abort).
+     */
+    const reportValidationErrors = useCallback(
+        (errors: FaqFieldErrors, mode: 'add' | 'edit', faqId?: string) => {
+            if (errors.question === undefined && errors.answer === undefined) {
+                return false;
+            }
+
+            if (mode === 'add') {
+                setAddFieldErrors(errors);
+            } else {
+                setEditFieldErrors(errors);
+            }
+
+            addToast({
+                type: 'error',
+                message: t('validation.formHasErrors', 'Revisá los campos marcados')
+            });
+
+            const firstInvalidId =
+                errors.question === undefined
+                    ? mode === 'add'
+                        ? 'faq-new-a'
+                        : `faq-a-${faqId}`
+                    : mode === 'add'
+                      ? 'faq-new-q'
+                      : `faq-q-${faqId}`;
+            document.getElementById(firstInvalidId)?.focus();
+
+            return true;
+        },
+        [t]
+    );
+
     // ---------------------------------------------------------------------------
     // Add
     // ---------------------------------------------------------------------------
 
     const handleAddSubmit = useCallback(async () => {
-        if (!addValues.question.trim() || !addValues.answer.trim()) {
+        if (reportValidationErrors(validateFaqEditorValues(addValues, t), 'add')) {
             return;
         }
+
         setBusyId('add');
         setActionError(null);
+        setAddFieldErrors({});
 
         const result = await accommodationFaqApi.add({
             accommodationId,
@@ -168,6 +221,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
         if (result.ok) {
             setFaqs((prev) => sortFaqs([...prev, result.data.faq]));
             setAddValues(EMPTY_EDITOR);
+            setAddFieldErrors({});
             setIsAdding(false);
         } else {
             webLogger.warn('[FaqSection] add failed:', result.error);
@@ -175,7 +229,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 t('host.properties.editor.faq.saveError', 'No se pudo guardar la pregunta.')
             );
         }
-    }, [addValues, accommodationId, t, reportError]);
+    }, [addValues, accommodationId, t, reportError, reportValidationErrors]);
 
     // ---------------------------------------------------------------------------
     // Edit
@@ -189,21 +243,25 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
             isVisibleOnListing: faq.isVisibleOnListing,
             isUsableByAi: faq.isUsableByAi
         });
+        setEditFieldErrors({});
         setActionError(null);
     }, []);
 
     const cancelEdit = useCallback(() => {
         setEditingId(null);
         setEditValues(EMPTY_EDITOR);
+        setEditFieldErrors({});
     }, []);
 
     const handleEditSubmit = useCallback(
         async (faqId: string) => {
-            if (!editValues.question.trim() || !editValues.answer.trim()) {
+            if (reportValidationErrors(validateFaqEditorValues(editValues, t), 'edit', faqId)) {
                 return;
             }
+
             setBusyId(faqId);
             setActionError(null);
+            setEditFieldErrors({});
 
             const result = await accommodationFaqApi.update({
                 accommodationId,
@@ -221,6 +279,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 );
                 setEditingId(null);
                 setEditValues(EMPTY_EDITOR);
+                setEditFieldErrors({});
             } else {
                 webLogger.warn('[FaqSection] update failed:', result.error);
                 reportError(
@@ -228,39 +287,45 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 );
             }
         },
-        [editValues, accommodationId, t, reportError]
+        [editValues, accommodationId, t, reportError, reportValidationErrors]
     );
 
     // ---------------------------------------------------------------------------
     // Delete
     // ---------------------------------------------------------------------------
 
-    const handleDelete = useCallback(
-        async (faq: AccommodationFaqItem) => {
-            if (
-                !window.confirm(
-                    t('host.properties.editor.faq.deleteConfirm', '¿Eliminás esta pregunta?')
-                )
-            ) {
-                return;
-            }
-            setBusyId(faq.id);
-            setActionError(null);
+    const closeDeleteDialog = useCallback(() => {
+        // Ignore close requests while the DELETE request is in flight — the
+        // dialog is the surface reporting its own outcome.
+        if (busyId !== null && busyId === faqPendingDelete?.id) {
+            return;
+        }
+        setFaqPendingDelete(null);
+    }, [busyId, faqPendingDelete]);
 
-            const result = await accommodationFaqApi.remove({ accommodationId, faqId: faq.id });
+    const handleDelete = useCallback(async () => {
+        if (!faqPendingDelete) {
+            return;
+        }
+        setBusyId(faqPendingDelete.id);
+        setActionError(null);
 
-            setBusyId(null);
-            if (result.ok) {
-                setFaqs((prev) => prev.filter((f) => f.id !== faq.id));
-            } else {
-                webLogger.warn('[FaqSection] remove failed:', result.error);
-                reportError(
-                    t('host.properties.editor.faq.deleteError', 'No se pudo eliminar la pregunta.')
-                );
-            }
-        },
-        [accommodationId, t, reportError]
-    );
+        const result = await accommodationFaqApi.remove({
+            accommodationId,
+            faqId: faqPendingDelete.id
+        });
+
+        setBusyId(null);
+        if (result.ok) {
+            setFaqs((prev) => prev.filter((f) => f.id !== faqPendingDelete.id));
+            setFaqPendingDelete(null);
+        } else {
+            webLogger.warn('[FaqSection] remove failed:', result.error);
+            reportError(
+                t('host.properties.editor.faq.deleteError', 'No se pudo eliminar la pregunta.')
+            );
+        }
+    }, [accommodationId, faqPendingDelete, t, reportError]);
 
     // ---------------------------------------------------------------------------
     // Reorder
@@ -366,7 +431,14 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
             <ol className={styles.list}>
                 {faqs.map((faq, index) => {
                     const isEditing = editingId === faq.id;
-                    const isBusy = busyId === faq.id;
+                    // Any request in flight locks every row action, not just
+                    // this row's. `busyId` is a single slot shared by add,
+                    // edit, delete and reorder, so a second action started
+                    // mid-flight overwrites it and whichever request settles
+                    // FIRST clears the flag for the one still running — which
+                    // re-enables the buttons (and the delete dialog's CTAs)
+                    // while its own request is still open.
+                    const isAnyBusy = busyId !== null;
                     const snippet = toLabelSnippet(faq.question);
 
                     return (
@@ -387,17 +459,36 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                         className={styles.textarea}
                                         rows={2}
                                         value={editValues.question}
+                                        aria-invalid={
+                                            editFieldErrors.question !== undefined || undefined
+                                        }
+                                        aria-describedby={
+                                            editFieldErrors.question === undefined
+                                                ? undefined
+                                                : `faq-q-${faq.id}-error`
+                                        }
                                         placeholder={t(
                                             'host.properties.editor.faq.questionPlaceholder',
                                             'Escribí la pregunta...'
                                         )}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
                                             setEditValues((v) => ({
                                                 ...v,
                                                 question: e.target.value
-                                            }))
-                                        }
+                                            }));
+                                            setEditFieldErrors((prev) =>
+                                                clearFaqFieldError(prev, 'question')
+                                            );
+                                        }}
                                     />
+                                    {editFieldErrors.question && (
+                                        <p
+                                            id={`faq-q-${faq.id}-error`}
+                                            className={styles.fieldError}
+                                        >
+                                            {editFieldErrors.question}
+                                        </p>
+                                    )}
                                     <label
                                         className={styles.fieldLabel}
                                         htmlFor={`faq-a-${faq.id}`}
@@ -409,14 +500,36 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                         className={styles.textarea}
                                         rows={4}
                                         value={editValues.answer}
+                                        aria-invalid={
+                                            editFieldErrors.answer !== undefined || undefined
+                                        }
+                                        aria-describedby={
+                                            editFieldErrors.answer === undefined
+                                                ? undefined
+                                                : `faq-a-${faq.id}-error`
+                                        }
                                         placeholder={t(
                                             'host.properties.editor.faq.answerPlaceholder',
                                             'Escribí la respuesta...'
                                         )}
-                                        onChange={(e) =>
-                                            setEditValues((v) => ({ ...v, answer: e.target.value }))
-                                        }
+                                        onChange={(e) => {
+                                            setEditValues((v) => ({
+                                                ...v,
+                                                answer: e.target.value
+                                            }));
+                                            setEditFieldErrors((prev) =>
+                                                clearFaqFieldError(prev, 'answer')
+                                            );
+                                        }}
                                     />
+                                    {editFieldErrors.answer && (
+                                        <p
+                                            id={`faq-a-${faq.id}-error`}
+                                            className={styles.fieldError}
+                                        >
+                                            {editFieldErrors.answer}
+                                        </p>
+                                    )}
                                     <div className={styles.channelCheckboxes}>
                                         <label className={styles.checkboxLabel}>
                                             <input
@@ -455,7 +568,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                         <button
                                             type="button"
                                             className={styles.saveBtn}
-                                            disabled={isBusy}
+                                            disabled={isAnyBusy}
                                             onClick={() => handleEditSubmit(faq.id)}
                                         >
                                             {t('host.properties.editor.faq.saveButton', 'Guardar')}
@@ -517,7 +630,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Subir "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={index === 0 || isBusy}
+                                            disabled={index === 0 || isAnyBusy}
                                             onClick={() => moveItem(index, 'up')}
                                         >
                                             <ChevronUpIcon
@@ -534,7 +647,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Bajar "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={index === faqs.length - 1 || isBusy}
+                                            disabled={index === faqs.length - 1 || isAnyBusy}
                                             onClick={() => moveItem(index, 'down')}
                                         >
                                             <ChevronDownIcon
@@ -551,7 +664,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Editar "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={isBusy}
+                                            disabled={isAnyBusy}
                                             onClick={() => startEdit(faq)}
                                         >
                                             <EditIcon
@@ -574,8 +687,8 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Eliminar "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={isBusy}
-                                            onClick={() => handleDelete(faq)}
+                                            disabled={isAnyBusy}
+                                            onClick={() => setFaqPendingDelete(faq)}
                                         >
                                             <DeleteIcon
                                                 size="sm"
@@ -610,12 +723,27 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                         className={styles.textarea}
                         rows={2}
                         value={addValues.question}
+                        aria-invalid={addFieldErrors.question !== undefined || undefined}
+                        aria-describedby={
+                            addFieldErrors.question === undefined ? undefined : 'faq-new-q-error'
+                        }
                         placeholder={t(
                             'host.properties.editor.faq.questionPlaceholder',
                             'Escribí la pregunta...'
                         )}
-                        onChange={(e) => setAddValues((v) => ({ ...v, question: e.target.value }))}
+                        onChange={(e) => {
+                            setAddValues((v) => ({ ...v, question: e.target.value }));
+                            setAddFieldErrors((prev) => clearFaqFieldError(prev, 'question'));
+                        }}
                     />
+                    {addFieldErrors.question && (
+                        <p
+                            id="faq-new-q-error"
+                            className={styles.fieldError}
+                        >
+                            {addFieldErrors.question}
+                        </p>
+                    )}
                     <label
                         className={styles.fieldLabel}
                         htmlFor="faq-new-a"
@@ -627,12 +755,27 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                         className={styles.textarea}
                         rows={4}
                         value={addValues.answer}
+                        aria-invalid={addFieldErrors.answer !== undefined || undefined}
+                        aria-describedby={
+                            addFieldErrors.answer === undefined ? undefined : 'faq-new-a-error'
+                        }
                         placeholder={t(
                             'host.properties.editor.faq.answerPlaceholder',
                             'Escribí la respuesta...'
                         )}
-                        onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
+                        onChange={(e) => {
+                            setAddValues((v) => ({ ...v, answer: e.target.value }));
+                            setAddFieldErrors((prev) => clearFaqFieldError(prev, 'answer'));
+                        }}
                     />
+                    {addFieldErrors.answer && (
+                        <p
+                            id="faq-new-a-error"
+                            className={styles.fieldError}
+                        >
+                            {addFieldErrors.answer}
+                        </p>
+                    )}
                     <div className={styles.channelCheckboxes}>
                         <label className={styles.checkboxLabel}>
                             <input
@@ -668,7 +811,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                         <button
                             type="button"
                             className={styles.saveBtn}
-                            disabled={busyId === 'add'}
+                            disabled={busyId !== null}
                             onClick={handleAddSubmit}
                         >
                             {t('host.properties.editor.faq.saveButton', 'Guardar')}
@@ -679,6 +822,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                             onClick={() => {
                                 setIsAdding(false);
                                 setAddValues(EMPTY_EDITOR);
+                                setAddFieldErrors({});
                             }}
                         >
                             {t('host.properties.editor.faq.cancelButton', 'Cancelar')}
@@ -689,7 +833,11 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 <button
                     type="button"
                     className={styles.addBtn}
-                    onClick={() => setIsAdding(true)}
+                    disabled={busyId !== null}
+                    onClick={() => {
+                        setIsAdding(true);
+                        setAddFieldErrors({});
+                    }}
                 >
                     <AddIcon
                         size="sm"
@@ -699,6 +847,23 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                     {t('host.properties.editor.faq.addButton', 'Agregar pregunta')}
                 </button>
             )}
+
+            <ConfirmDeleteDialog
+                isOpen={faqPendingDelete !== null}
+                title={t('host.properties.editor.faq.deleteDialogTitle', 'Eliminar pregunta')}
+                message={t('host.properties.editor.faq.deleteConfirm', '¿Eliminás esta pregunta?')}
+                detail={faqPendingDelete?.question}
+                confirmLabel={t(
+                    'host.properties.editor.faq.deleteConfirmButton',
+                    'Eliminar pregunta'
+                )}
+                busyLabel={t('host.properties.editor.faq.deleting', 'Eliminando...')}
+                cancelLabel={t('host.properties.editor.faq.cancelButton', 'Cancelar')}
+                closeLabel={t('common.close', 'Cerrar')}
+                isBusy={busyId !== null && busyId === faqPendingDelete?.id}
+                onConfirm={handleDelete}
+                onCancel={closeDeleteDialog}
+            />
         </fieldset>
     );
 }
