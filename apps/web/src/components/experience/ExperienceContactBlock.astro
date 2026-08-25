@@ -1,0 +1,214 @@
+---
+/**
+ * @file ExperienceContactBlock.astro
+ * @description Phone / email / website block for the public experience detail
+ * page (HOS-815).
+ *
+ * ## Why this exists
+ *
+ * The listing form BLOCKS publication without a phone or an email — it is a
+ * hard requirement listed next to the main photo, there to protect the
+ * traveller from a dead-end listing. The public page then rendered none of it:
+ * the only contact affordance was the site-wide WhatsApp button, which points
+ * at Hospeda's own number (`wa.me/5493442453797`), not the provider's. The
+ * datum was demanded and then withheld from the person it was demanded for.
+ *
+ * ## Field selection (HOS-815)
+ *
+ * The narrowing is enforced upstream in `ExperiencePublicContactInfoSchema`
+ * (`packages/schemas/src/entities/experience/experience.access.schema.ts`) —
+ * Zod strips every key not named there before the payload leaves the API, so
+ * this component cannot render a field the schema does not publish even if a
+ * future edit tried. It renders exactly what that schema publishes:
+ * `workPhone`, `mobilePhone`, `workEmail`, `website`.
+ *
+ * `personalEmail` / `homePhone` are NOT published (collected as personal
+ * contact, not as the listing's channel), and neither is `whatsapp` — that
+ * number is gated by the VIEWER's plan on a separate protected endpoint
+ * (HOS-19), and this page is shared-cached with no auth in the cache key.
+ * `AccommodationContactBlock` (H-118) excludes it for the same reason; this
+ * component mirrors that precedent field-for-field.
+ *
+ * ## No WhatsApp deep link from `mobilePhone`
+ *
+ * Deliberate. The repo's precedent keeps WhatsApp a SEPARATE, entitlement-gated
+ * channel sourced only from `contactInfo.whatsapp` — `AccommodationContactBlock`
+ * never derives one from `phone`, and `ExperienceContactCTA` builds its link
+ * only from `contactInfo.whatsapp`. Assuming a mobile line accepts WhatsApp
+ * would invent a channel the provider never opted into, so mobiles render as a
+ * plain `tel:` link.
+ *
+ * ## Anti-scraping
+ *
+ * None, matching the site's existing convention: `AccommodationContactBlock`
+ * and `EventDetailOrganizerCard` both publish a plain `mailto:` with the
+ * address in the link text. Inventing an obfuscation scheme here would make
+ * this the only page that does it.
+ *
+ * `rel="noopener noreferrer"` on the outbound site link, NOT `sponsored
+ * nofollow` — this is the provider's own declared contact info, not a paid
+ * placement (contrast the HOS-294 partner carousel).
+ *
+ * Hydration: none — fully static Astro component.
+ */
+
+import { EmailIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
+import type { ExperienceContactInfo } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+
+interface Props {
+    readonly contactInfo: ExperienceContactInfo | null;
+    readonly locale: SupportedLocale;
+}
+
+const { contactInfo, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+/**
+ * Normalizes a stored value to a non-empty trimmed string, or `undefined`.
+ * `contact_info` is an unbounded JSONB blob, so a key can legitimately hold
+ * `null`, `''`, or whitespace.
+ */
+const clean = (value: string | null | undefined): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const workPhone = clean(contactInfo?.workPhone);
+const mobilePhone = clean(contactInfo?.mobilePhone);
+const workEmail = clean(contactInfo?.workEmail);
+
+/**
+ * The site URL is owner-authored and published with no review in between, and
+ * `z.string().url()` accepts `javascript:` — so this allow-list, not the
+ * schema, is what keeps a payload out of the href (HOS-592 / F-02). A refused
+ * value yields `undefined` and the link is dropped entirely, never rendered raw.
+ */
+const websiteHref = resolveSafeExternalUrl(contactInfo?.website ?? undefined);
+
+/**
+ * `tel:` hrefs carry digits, `+`, and nothing else. Stored numbers arrive with
+ * spaces and dashes ("+54 3447 412233"), which are legal in the displayed text
+ * but not wanted in the URI.
+ */
+const toTelHref = (phone: string): string => `tel:${phone.replace(/[^\d+]/g, '')}`;
+
+const phones = [
+    { value: workPhone, key: 'work' },
+    { value: mobilePhone, key: 'mobile' }
+].filter((entry): entry is { value: string; key: string } => entry.value !== undefined);
+
+// Render nothing rather than an empty card — the three seeded experience
+// listings have an empty `contact_info` (noted on HOS-815).
+if (phones.length === 0 && !workEmail && !websiteHref) {
+    return;
+}
+
+const heading = t('experience.detail.contact', 'Contacto');
+---
+
+<section class="exp-contact" aria-label={heading}>
+    <h3 class="exp-contact__title">{heading}</h3>
+
+    <div class="exp-contact__channels">
+        {phones.map(({ value }) => (
+            <a
+                href={toTelHref(value)}
+                class="exp-contact__link"
+                aria-label={t(
+                    'experience.detail.contactPhoneAriaLabel',
+                    'Llamar al prestador'
+                )}
+            >
+                <PhoneIcon size={16} aria-hidden="true" />
+                <span>{value}</span>
+            </a>
+        ))}
+
+        {workEmail && (
+            <a
+                href={`mailto:${workEmail}`}
+                class="exp-contact__link"
+                aria-label={t(
+                    'experience.detail.contactEmailAriaLabel',
+                    'Enviar un email al prestador'
+                )}
+            >
+                <EmailIcon size={16} aria-hidden="true" />
+                <span>{workEmail}</span>
+            </a>
+        )}
+
+        {websiteHref && (
+            <a
+                href={websiteHref}
+                class="exp-contact__link"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t(
+                    'experience.detail.contactWebsiteAriaLabel',
+                    'Visitar el sitio web del prestador'
+                )}
+            >
+                <GlobeIcon size={16} aria-hidden="true" />
+                <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
+            </a>
+        )}
+    </div>
+</section>
+
+<style>
+    .exp-contact {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+        padding: var(--space-5, 20px);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card, 24px);
+        border: 1px solid var(--border);
+    }
+
+    .exp-contact__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-contact__channels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .exp-contact__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: var(--radius-pill, 9999px);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+            background-color 150ms ease-out,
+            border-color 150ms ease-out;
+    }
+
+    .exp-contact__link:hover {
+        border-color: var(--brand-primary);
+    }
+
+    .exp-contact__link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

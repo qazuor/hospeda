@@ -29,6 +29,9 @@
     },
     "detail": {
         "contact": "Contact",
+        "contactPhoneAriaLabel": "Call the provider",
+        "contactEmailAriaLabel": "Email the provider",
+        "contactWebsiteAriaLabel": "Visit the provider's website",
         "whatsapp": "Enquire via WhatsApp",
         "whatsappMessage": "Hi, I'm interested in more information about {{name}}",
         "hours": "Opening hours",
