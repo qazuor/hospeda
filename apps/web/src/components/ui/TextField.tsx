@@ -78,9 +78,27 @@ interface TextFieldCommonProps {
      * string `value` — a counter without a limit has nothing to count towards,
      * and an uncontrolled control has no length to read.
      */
+    /**
+     * Id of an EXTRA element the caller renders below the control and wants
+     * announced with it — a hint that carries information the label, the error
+     * and the counter do not, such as the SEO default preview (HOS-792).
+     *
+     * The caller owns both halves: pass it only while that element is actually
+     * in the tree, since an `aria-describedby` aimed at a missing id is a
+     * dangling reference. Symmetric to `beforeControl`, which is the existing
+     * precedent for caller-supplied content inside this field.
+     */
+    readonly describedByExtraId?: string;
     readonly counter?: {
         /** Active UI locale, for the `used/total` string. */
         readonly locale: SupportedLocale;
+        /** Minimum length enforced for the field, when present. */
+        readonly min?: number;
+        /**
+         * Set when the field may be left empty, so `min` governs only once
+         * there IS content — an empty optional field is valid, not short.
+         */
+        readonly optional?: boolean;
         /** Optional test hook forwarded to the counter element. */
         readonly testId?: string;
     };
@@ -133,6 +151,7 @@ export function TextField(props: TextFieldProps) {
         labelClassName,
         beforeControl,
         renderError = true,
+        describedByExtraId,
         counter,
         as = 'input',
         className,
@@ -152,11 +171,13 @@ export function TextField(props: TextFieldProps) {
         counter !== undefined && typeof maxLength === 'number' && typeof value === 'string';
     const counterId = `${id}-counter`;
 
-    // Both ids or neither: an `aria-describedby` aimed at an element that is
-    // not rendered is a dangling reference.
+    // Every id here is gated on its element actually being rendered: an
+    // `aria-describedby` aimed at an element that is not in the tree is a
+    // dangling reference. `describedByExtraId` is the caller's to gate.
     const describedBy =
-        [hasError ? errorId : null, showCounter ? counterId : null].filter(Boolean).join(' ') ||
-        undefined;
+        [hasError ? errorId : null, showCounter ? counterId : null, describedByExtraId ?? null]
+            .filter(Boolean)
+            .join(' ') || undefined;
 
     const sharedControlProps = {
         id,
@@ -198,6 +219,8 @@ export function TextField(props: TextFieldProps) {
                     id={counterId}
                     locale={counter.locale}
                     current={(value as string).length}
+                    min={counter.min}
+                    optional={counter.optional}
                     max={maxLength as number}
                     testId={counter.testId}
                 />

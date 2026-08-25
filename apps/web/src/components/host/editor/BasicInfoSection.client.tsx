@@ -41,8 +41,11 @@ const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
  * numbers must match it — a host who fills `name` in one screen and edits it in
  * the other cannot be told two different maximums.
  */
+const NAME_MIN_LENGTH = 3;
 const NAME_MAX_LENGTH = 100;
+const SUMMARY_MIN_LENGTH = 10;
 const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MIN_LENGTH = 30;
 const DESCRIPTION_MAX_LENGTH = 2000;
 
 /** Props for BasicInfoSection. */
@@ -98,7 +101,7 @@ export function BasicInfoSection({
                     onChange={(e) => onFieldChange('name', e.target.value)}
                     required
                     maxLength={NAME_MAX_LENGTH}
-                    counter={{ locale, testId: 'name-char-counter' }}
+                    counter={{ locale, min: NAME_MIN_LENGTH, testId: 'name-char-counter' }}
                 />
                 {shouldOfferSlugRefresh ? (
                     <div className={styles.slugNotice}>
@@ -147,7 +150,7 @@ export function BasicInfoSection({
                     required
                     maxLength={SUMMARY_MAX_LENGTH}
                     rows={3}
-                    counter={{ locale, testId: 'summary-char-counter' }}
+                    counter={{ locale, min: SUMMARY_MIN_LENGTH, testId: 'summary-char-counter' }}
                 />
                 <PlanEntitlementGate
                     entitlementKey="ai_text_improve"
@@ -235,6 +238,7 @@ export function BasicInfoSection({
                     id={DESCRIPTION_COUNTER_ID}
                     locale={locale}
                     current={data.description.length}
+                    min={DESCRIPTION_MIN_LENGTH}
                     max={DESCRIPTION_MAX_LENGTH}
                     testId="description-char-counter"
                 />

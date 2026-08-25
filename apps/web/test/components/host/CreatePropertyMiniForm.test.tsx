@@ -567,15 +567,18 @@ describe('CreatePropertyMiniForm — character counters (HOS-783 B5)', () => {
         const user = userEvent.setup();
         render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
-        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('0/100');
-        expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'normal');
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('0/100 · mín. 3');
+        expect(screen.getByTestId('name-char-counter')).toHaveAttribute(
+            'data-state',
+            'under-minimum'
+        );
 
         await user.type(
             screen.getByRole('textbox', { name: /Nombre del alojamiento/i }),
             'A'.repeat(85)
         );
 
-        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('85/100');
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('85/100 · mín. 3');
         expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'warning');
     });
 
@@ -588,7 +591,7 @@ describe('CreatePropertyMiniForm — character counters (HOS-783 B5)', () => {
             'B'.repeat(300)
         );
 
-        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300');
+        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300 · mín. 10');
         expect(screen.getByTestId('summary-char-counter')).toHaveAttribute('data-state', 'danger');
     });
 
@@ -599,7 +602,7 @@ describe('CreatePropertyMiniForm — character counters (HOS-783 B5)', () => {
         await triggerFullImport(user);
 
         expect(screen.getByTestId('extras-description-char-counter')).toHaveTextContent(
-            `${FIXTURE_IMPORT_RESPONSE_FULL.draft.description?.value.length ?? 0}/2000`
+            `${FIXTURE_IMPORT_RESPONSE_FULL.draft.description?.value.length ?? 0}/2000 · mín. 30`
         );
         expect(screen.getByTestId('extras-description-char-counter')).toHaveAttribute(
             'data-state',

@@ -218,8 +218,11 @@ const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
 
 /** Max suggestions surfaced by the city autocomplete dropdown. */
 const CITY_AUTOCOMPLETE_LIMIT = 10;
+const NAME_MIN_LENGTH = 3;
 const NAME_MAX_LENGTH = 100;
+const SUMMARY_MIN_LENGTH = 10;
 const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MIN_LENGTH = 30;
 const DESCRIPTION_MAX_LENGTH = 2000;
 
 /**
@@ -989,6 +992,7 @@ export function CreatePropertyMiniForm({
                     id={`${nameId}-counter`}
                     locale={locale}
                     current={name.length}
+                    min={NAME_MIN_LENGTH}
                     max={NAME_MAX_LENGTH}
                     testId="name-char-counter"
                 />
@@ -1152,6 +1156,7 @@ export function CreatePropertyMiniForm({
                         id={`${summaryId}-counter`}
                         locale={locale}
                         current={summary.length}
+                        min={SUMMARY_MIN_LENGTH}
                         max={SUMMARY_MAX_LENGTH}
                         testId="summary-char-counter"
                     />
@@ -1236,6 +1241,7 @@ export function CreatePropertyMiniForm({
                                         id={`${descriptionId}-counter`}
                                         locale={locale}
                                         current={extras.description?.length ?? 0}
+                                        min={DESCRIPTION_MIN_LENGTH}
                                         max={DESCRIPTION_MAX_LENGTH}
                                         testId="extras-description-char-counter"
                                     />
