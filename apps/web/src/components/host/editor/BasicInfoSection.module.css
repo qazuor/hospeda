@@ -67,6 +67,49 @@
     text-decoration: underline;
 }
 
+/*
+ * HOS-800: the plan notice that replaces the rich editor's formatting toolbar.
+ * It used to render as a plain `.fieldHint` — the same muted grey as every
+ * ordinary form hint — directly above the AI-improve trigger, so a restriction
+ * and an available action were typographically indistinguishable. The boxed
+ * treatment (and the lock) is what makes "this is locked" readable at a glance,
+ * separately from the copy. Mirrors `.slugNotice`, the section's existing
+ * notice surface.
+ */
+.formatUpsell {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: flex-start;
+    margin-bottom: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-warm);
+}
+
+.formatUpsellIcon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    /* Optical alignment with the first line of the adjacent 0.8125rem text. */
+    margin-top: 0.125rem;
+    color: var(--core-muted-foreground);
+}
+
+.formatUpsellText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--core-foreground);
+}
+
+.formatUpsellText a {
+    color: var(--brand-primary);
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
 .slugNotice {
     margin-top: var(--space-2, 0.5rem);
     padding: var(--space-3, 0.75rem);

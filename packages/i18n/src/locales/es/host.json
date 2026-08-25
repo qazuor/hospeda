@@ -449,7 +449,7 @@
             "entitlement": {
                 "premiumFeature": "Función premium",
                 "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
-                "richDescriptionHint": "Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).",
+                "richDescriptionHint": "Texto con formato: negritas, listas y más. Disponible en planes superiores.",
                 "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
                 "genericNudge": "Esta función está disponible en un plan superior.",
                 "upgradeLink": "Mejorar plan"

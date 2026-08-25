@@ -4,6 +4,7 @@
  * description, type, and destination. Uses native HTML form elements.
  */
 
+import { LockIcon } from '@repo/icons';
 import { CharacterCounter } from '@/components/ui/CharacterCounter';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
@@ -35,6 +36,13 @@ const DESCRIPTION_FIELD = {
 
 const DESCRIPTION_ID = buildFieldId(DESCRIPTION_FIELD);
 const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
+
+/**
+ * Id of the plan notice shown in place of the formatting toolbar. Referenced
+ * from the textarea's `aria-describedby` so a screen-reader user learns WHY
+ * there is no toolbar on focus, rather than only on encountering the notice.
+ */
+const DESCRIPTION_FORMAT_UPSELL_ID = `${DESCRIPTION_ID}-format-upsell`;
 
 /**
  * Field length limits. Same three fields the publish mini form edits, so the
@@ -186,6 +194,39 @@ export function BasicInfoSection({
                     locale={locale}
                     fallback={
                         <>
+                            {/*
+                             * Sits ABOVE the textarea, in the slot the rich
+                             * editor's formatting toolbar occupies (HOS-800).
+                             * Below it, the notice ended up one element away
+                             * from the AI-improve trigger and was read as
+                             * gating that button — the product owner concluded
+                             * the AI feature was plan-restricted while using
+                             * it. Placement, the boxed treatment and copy that
+                             * leads with the capability instead of the upgrade
+                             * verb all serve the same end: this announces a
+                             * missing toolbar, not a locked button.
+                             */}
+                            <div className={styles.formatUpsell}>
+                                <LockIcon
+                                    className={styles.formatUpsellIcon}
+                                    aria-hidden="true"
+                                />
+                                <p
+                                    id={DESCRIPTION_FORMAT_UPSELL_ID}
+                                    className={styles.formatUpsellText}
+                                >
+                                    {t(
+                                        'host.properties.editor.entitlement.richDescriptionHint',
+                                        'Texto con formato: negritas, listas y más. Disponible en planes superiores.'
+                                    )}{' '}
+                                    <a href={buildUrl({ locale, path: 'suscriptores/planes' })}>
+                                        {t(
+                                            'host.properties.editor.entitlement.upgradeLink',
+                                            'Mejorar plan'
+                                        )}
+                                    </a>
+                                </p>
+                            </div>
                             <textarea
                                 id={DESCRIPTION_ID}
                                 className={styles.fieldInput}
@@ -202,23 +243,12 @@ export function BasicInfoSection({
                                     errors.description
                                         ? buildFieldErrorId(DESCRIPTION_FIELD)
                                         : null,
-                                    DESCRIPTION_COUNTER_ID
+                                    DESCRIPTION_COUNTER_ID,
+                                    DESCRIPTION_FORMAT_UPSELL_ID
                                 ]
                                     .filter(Boolean)
                                     .join(' ')}
                             />
-                            <p className={styles.fieldHint}>
-                                {t(
-                                    'host.properties.editor.entitlement.richDescriptionHint',
-                                    'Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).'
-                                )}{' '}
-                                <a href={buildUrl({ locale, path: 'suscriptores/planes' })}>
-                                    {t(
-                                        'host.properties.editor.entitlement.upgradeLink',
-                                        'Mejorar plan'
-                                    )}
-                                </a>
-                            </p>
                         </>
                     }
                 >
