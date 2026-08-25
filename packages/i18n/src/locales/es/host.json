@@ -253,6 +253,8 @@
                 "socialNetworks": "Redes sociales",
                 "photos": "Fotos",
                 "photosDescription": "Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes",
+                "photosDescription_one": "Subí hasta {{cap}} foto de tu propiedad para atraer más huéspedes",
+                "photosDescription_other": "Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes",
                 "externalReputation": "Reputación externa",
                 "featuredToggle": "Destacado",
                 "calendar": "Calendario",

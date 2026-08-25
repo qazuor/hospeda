@@ -62,7 +62,9 @@ const {
 // (BETA-98 regression: galleryAlt must interpolate {{index}} via params, not
 // via a pre-interpolated fallback string).
 const MOCK_TRANSLATIONS: Record<string, string> = {
-    'host.properties.editor.section.photosDescription':
+    'host.properties.editor.section.photosDescription_one':
+        'Subí hasta {{cap}} foto de tu propiedad para atraer más huéspedes',
+    'host.properties.editor.section.photosDescription_other':
         'Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes',
     'host.properties.editor.photo.gallery': 'Galería de fotos (máx. {{cap}})',
     'host.properties.editor.photo.galleryAlt': 'Foto {{index}}',

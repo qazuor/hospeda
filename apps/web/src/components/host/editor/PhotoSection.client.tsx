@@ -146,9 +146,9 @@ export function PhotoSection({
                 {t('host.properties.editor.section.photos', 'Fotos')}
             </h3>
             <p className={styles.sectionDescription}>
-                {t(
+                {tPlural(
                     'host.properties.editor.section.photosDescription',
-                    'Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes',
+                    ACCOMMODATION_GALLERY_CAP,
                     { cap: ACCOMMODATION_GALLERY_CAP }
                 )}
             </p>
