@@ -3,15 +3,29 @@
  * @file signup.astro
  * @description Sign-up page — allows users to create a new account.
  *
- * Authenticated users are immediately redirected to /mi-cuenta/.
- * After a successful registration, the API does NOT auto sign-in the user
- * (email verification is required). The user is sent to verify-email-sent
- * where they are instructed to click the verification link in their inbox.
+ * Authenticated users are immediately redirected — to the destination carried
+ * by a safe `returnUrl` / `redirect` query param when one is present, otherwise
+ * to /mi-cuenta/ (HOS-810). That param is what lets an edge-cached marketing
+ * landing point one constant CTA at "create your account OR, if you already
+ * have one, go straight to the thing you came here to do": the landing itself
+ * cannot branch on the session without losing its cache, this page already
+ * parses it. See `src/lib/commerce/start-url.ts` for the full rationale.
+ *
+ * The param does NOT survive a brand-new registration, and that is a known
+ * gap, not an oversight: the API does NOT auto sign-in the user (email
+ * verification is required), so registration continues to verify-email-sent
+ * and the destination is lost at the verification hop. The "already have an
+ * account" link below forwards the param, so the existing-user path keeps it.
+ *
+ * Both `returnUrl` and `redirect` are accepted, mirroring `signin.astro`;
+ * `returnUrl` wins when both are present. The value is attacker-controlled, so
+ * it goes through the shared `resolveSafeReturnPath` open-redirect guard.
  *
  * @route    /[lang]/auth/signup/
- * @rendering SSR (auth state from locals)
+ * @rendering SSR (auth state from locals; reads `returnUrl`/`redirect` query params)
  */
 
+import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -22,9 +36,20 @@ import { SparkleIcon, UsersIcon } from '@repo/icons';
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
 
-// Redirect authenticated users to their account dashboard.
+// Post-auth destination carried by `returnUrl` (canonical) or `redirect`
+// (legacy alias); `returnUrl` wins when both are present. Validated against the
+// same open-redirect guard signin.astro uses — the raw value is query input.
+const rawReturn =
+    Astro.url.searchParams.get('returnUrl') ?? Astro.url.searchParams.get('redirect') ?? '';
+const returnPath = resolveSafeReturnPath({ rawReturn, locale });
+
+// Redirect authenticated users to that destination (the account dashboard when
+// no safe one was provided). Honouring the param HERE is the whole mechanism
+// behind HOS-810: a signed-in visitor who clicks "Empezar ahora" on a cached
+// commerce landing arrives at this page and is forwarded to the create form,
+// instead of being dumped on /mi-cuenta/ with no link onward.
 if (Astro.locals.user) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+    return Astro.redirect(returnPath);
 }
 
 const t = createT(locale);
@@ -51,15 +76,31 @@ const redirectTo = new URL(
 // user is fully authenticated when the callback returns. Sending them
 // to /auth/verify-email-sent/ would be confusing ("check your inbox"
 // when there's no email to check). Land them on the account dashboard
-// instead.
-const oauthRedirectTo = new URL(
-    buildUrl({ locale, path: 'mi-cuenta' }),
-    Astro.url.origin
-).href;
+// instead — or on the requested destination, when one was carried in
+// (HOS-810).
+//
+// This is the ONE registration path where the return destination CAN
+// survive, and it survives for the same reason the confusing page does not
+// apply: the provider vouches for the address, so a session exists the
+// moment the callback returns. The password path has no session to redirect
+// with until the verification e-mail is opened, which is why it keeps going
+// to verify-email-sent. `returnPath` is already through the open-redirect
+// guard and is relative, so anchoring it on the request origin cannot leave
+// this host.
+const oauthRedirectTo = new URL(returnPath, Astro.url.origin).href;
 
 // Localized secondary link labels via i18n
 const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');
 const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
+
+// Forward the return destination to sign-in so a visitor who already has an
+// account keeps it end to end (signin.astro reads the same param). Only when a
+// destination was actually requested — a bare link stays bare, so nothing
+// changes for the ordinary "I came here to sign up" visitor.
+const signInHref =
+    rawReturn === ''
+        ? buildUrl({ locale, path: 'auth/signin' })
+        : `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${encodeURIComponent(returnPath)}`;
 ---
 
 <AuthLayout locale={locale} title={title} description={description}>
@@ -88,7 +129,7 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
         <span class="auth-page__footer-text">{haveAccountLabel}</span>
         {' '}
         <a
-            href={buildUrl({ locale, path: 'auth/signin' })}
+            href={signInHref}
             class="auth-page__link auth-page__link--strong"
         >
             {signInLabel}
