@@ -65,7 +65,7 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 	<div class="feedback-standalone__container">
 		<header class="feedback-standalone__header">
 			<a href={homeUrl} class="feedback-standalone__logo" aria-label="Volver a Hospeda">
-				<img src={logoSrc.src} alt="Hospeda" width="120" height="32" />
+				<img src={logoSrc.src} alt="Hospeda" width={logoSrc.width} height={logoSrc.height} />
 			</a>
 		</header>
 
@@ -146,6 +146,30 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 	.feedback-root {
 		--fb-primary: #ed7b00;
 		--fb-primary-hover: #df5400;
+
+		/*
+		 * Surface tokens. The widget package ships a DARK neutral palette by
+		 * default (--fb-card #111827, --fb-input-bg #1f2937, --fb-foreground
+		 * #f9fafb). Every other page gets the light values from
+		 * feedback-overrides.css, which this standalone page cannot import
+		 * (it maps --fb-* onto global brand tokens that only exist under
+		 * BaseLayout). Overriding only --fb-primary above therefore left a
+		 * dark form on a light page: inputs rendered near-black and labels
+		 * rendered #f9fafb on the page's own #fcfcfa background, a ~1.03:1
+		 * contrast ratio that made them effectively invisible.
+		 *
+		 * These point at the :root tokens declared above rather than repeating
+		 * the hex codes, so the widget follows this page's palette. The page
+		 * pins data-theme="light" on <html>, so there is no dark variant to
+		 * track here.
+		 */
+		--fb-background: var(--background);
+		--fb-foreground: var(--foreground);
+		--fb-foreground-muted: var(--muted-foreground);
+		--fb-card: var(--card);
+		--fb-border: var(--border);
+		--fb-input-bg: var(--card);
+		--fb-input-border: var(--border);
 	}
 </style>
 
@@ -178,6 +202,17 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 		display: inline-block;
 		opacity: 0.7;
 		transition: opacity 0.2s ease;
+	}
+
+	/*
+	 * The logo asset is near-square (200x216). The intrinsic width/height
+	 * attributes come straight from the imported asset so the aspect ratio can
+	 * never drift from the file; CSS only constrains the rendered height.
+	 */
+	.feedback-standalone__logo img {
+		height: 2.5rem;
+		width: auto;
+		object-fit: contain;
 	}
 
 	.feedback-standalone__logo:hover {
