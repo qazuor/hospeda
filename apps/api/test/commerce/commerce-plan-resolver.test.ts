@@ -16,8 +16,8 @@
  */
 import {
     DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
-    EXPERIENCE_PREMIUM_PLAN,
-    GASTRONOMY_PREMIUM_PLAN
+    EXPERIENCE_BASICO_PLAN,
+    GASTRONOMY_BASICO_PLAN
 } from '@repo/billing';
 import { CommerceEntityTypeEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
@@ -52,8 +52,9 @@ describe('resolveCommercePlanSlug (HOS-688)', () => {
         });
 
         expect(gastronomy).not.toBe(experience);
-        expect(gastronomy).toBe(GASTRONOMY_PREMIUM_PLAN.slug);
-        expect(experience).toBe(EXPERIENCE_PREMIUM_PLAN.slug);
+        // HOS-818: the sellable tier of both verticals is the BASIC one.
+        expect(gastronomy).toBe(GASTRONOMY_BASICO_PLAN.slug);
+        expect(experience).toBe(EXPERIENCE_BASICO_PLAN.slug);
     });
 
     it('falls back to the shipped catalogue when the variable is unset', () => {

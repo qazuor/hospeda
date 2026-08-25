@@ -677,7 +677,7 @@ async function syncTestUserRoles(params: {
  *   {@link ensureHostPromotion}. Idempotent: skipped entirely if the user
  *   already owns a promotion.
  * - (For the one fixture with `ownsGastronomyAtCap`, HOS-694) Exactly one
- *   gastronomy listing they own, so their `gastronomy-premium` subscription
+ *   gastronomy listing they own, so their sellable-gastronomy-plan subscription
  *   (`MAX_GASTRONOMIES: 1`) starts AT its cap — the state AC-13 / AC-30 need
  *   to exercise. See {@link ensureGastronomyAtCapListing}. Idempotent:
  *   skipped entirely if the user already owns a gastronomy listing.
@@ -842,7 +842,7 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
 
                 // ── Ensure the at-cap gastronomy listing (HOS-694) ────────────
                 // Idempotent: skips if the user already owns one. Puts this
-                // owner's gastronomy-premium subscription AT its
+                // owner's sellable-gastronomy-plan subscription AT its
                 // MAX_GASTRONOMIES=1 cap, the state AC-13 / AC-30 need.
                 if (spec.ownsGastronomyAtCap) {
                     await ensureGastronomyAtCapListing({ userId, spec });

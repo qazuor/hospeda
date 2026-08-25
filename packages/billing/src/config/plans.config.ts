@@ -585,7 +585,7 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  * not meter that", which is what is true here. A gastronomy plan has no opinion
  * about photos, promotions or AI quotas.
  *
- * @param input.slug - Plan slug (`gastronomy-premium`, …).
+ * @param input.slug - Plan slug (`gastronomy-basico`, …).
  * @param input.name - Buyer-visible display name; becomes MercadoPago's `reason`.
  * @param input.description - Admin-facing description.
  * @param input.limitKey - The vertical's cap key.
@@ -645,30 +645,54 @@ function commerceVerticalTier(input: {
 }
 
 /**
- * The gastronomy catalogue (HOS-688 §6.8).
+ * The gastronomy catalogue (HOS-688 §6.8, retiered by HOS-818).
  *
  * Built for the full three-tier shape so enabling a tier later is a
- * data-migration rather than a code change, but **only premium is enabled**.
- * The two disabled tiers carry `monthlyPriceArs: 0` because they have not been
- * priced — shipping them inactive is the same precedent {@link AI_SUPPORT_ADDON}
- * set for a definition whose price is still TBD, and `seedCommercePlan` skips
- * the `billing_prices` row for a tier priced at zero rather than seeding a free
- * one.
+ * data-migration rather than a code change. **Only ONE tier is ever enabled at
+ * a time**, and since HOS-818 that tier is BÁSICO, not premium: the owner
+ * reserved the "premium" name for a future step that actually carries more
+ * functionality, so today's buyers land on the entry tier instead of on the top
+ * one with nowhere left to go.
+ *
+ * The disabled tiers carry `monthlyPriceArs: 0` when they have not been priced
+ * — shipping them inactive is the same precedent {@link AI_SUPPORT_ADDON} set
+ * for a definition whose price is still TBD, and `seedCommercePlan` skips the
+ * `billing_prices` row for a tier priced at zero rather than seeding a free
+ * one. The now-disabled premium tier is the exception: it keeps its price and
+ * trial, because the row already exists (priced, with a live MercadoPago
+ * `preapproval_plan` behind it) in every seeded environment and zeroing the
+ * baseline would describe a state no real database is in.
  *
  * Deliberately excluded from {@link ALL_PLANS}, exactly like
  * {@link COMMERCE_LISTING_PLAN}: the accommodation seed loop, the public plan
  * list and the grant-matrix snapshot tests all operate on `ALL_PLANS` and must
  * stay accommodation-only.
+ *
+ * ---
+ *
+ * Gastronomy basic tier — **the only sellable gastronomy plan today** (HOS-818).
+ *
+ * One listing for {@link COMMERCE_VERTICAL_MONTHLY_PRICE_ARS} — the exact price,
+ * limits and (empty) entitlement set the premium tier carried before it, so the
+ * swap changes nothing for anyone paying. What it changes is the NAME the buyer
+ * sees, which is the entire point.
+ *
+ * Carries the same 30-day trial as every accommodation plan
+ * ({@link COMMERCE_TRIAL_DAYS}); checkout resolves it through
+ * `resolveCheckoutFreeTrialDays`, the same canonical resolver the accommodation
+ * paths use (HOS-590).
  */
 export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-basico',
     name: 'Gastronomía Básico',
-    description: 'Gastronomy listing plan — basic tier (not enabled yet, HOS-688).',
+    description: 'Gastronomy listing plan — one listing per owner (HOS-688, HOS-818).',
     limitKey: LimitKey.MAX_GASTRONOMIES,
     maxListings: 1,
     sortOrder: 1,
-    isActive: false,
-    monthlyPriceArs: 0
+    isActive: true,
+    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS
 });
 
 /** Gastronomy professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
@@ -684,7 +708,18 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
 });
 
 /**
- * Gastronomy premium tier — **the only sellable gastronomy plan today**.
+ * Gastronomy premium tier — **retired from sale by HOS-818, held for a real
+ * premium step**.
+ *
+ * It was the only sellable gastronomy plan until HOS-818 moved that role to
+ * {@link GASTRONOMY_BASICO_PLAN}, which is byte-for-byte identical in price,
+ * limits and entitlements — so nothing changed for anyone paying, and the name
+ * is now free for a tier that genuinely offers more.
+ *
+ * Kept priced and trial-carrying rather than zeroed out, unlike the never-sold
+ * `-pro` tier: the row exists in every seeded environment with a live
+ * MercadoPago `preapproval_plan` behind it, and the live subscriptions hang off
+ * that plan. Zeroing the baseline would describe a state no real database is in.
  *
  * One listing for {@link COMMERCE_VERTICAL_MONTHLY_PRICE_ARS}. The cap is the
  * entire commercial substance of §6.8, and every layer beneath it resolves an
@@ -699,26 +734,38 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
 export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-premium',
     name: 'Gastronomía Premium',
-    description: 'Gastronomy listing plan — one listing per owner (HOS-688).',
+    description: 'Gastronomy listing plan — one listing per owner (HOS-688, retired by HOS-818).',
     limitKey: LimitKey.MAX_GASTRONOMIES,
     maxListings: 1,
     sortOrder: 3,
-    isActive: true,
+    isActive: false,
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS
 });
 
-/** Experience basic tier. See {@link GASTRONOMY_BASICO_PLAN} for the shape. */
+/**
+ * Experience basic tier — **the only sellable experience plan today** (HOS-818).
+ * See {@link GASTRONOMY_BASICO_PLAN} for the shape and for why the sellable tier
+ * is the basic one.
+ *
+ * A distinct plan from gastronomy's, not a shared one, and that is worth its
+ * own sentence: MercadoPago scopes a free trial to `(payer, preapproval_plan)`,
+ * so an owner who spends their trial on gastronomy still receives one when they
+ * later add an experience. A single pooled commerce plan would have silently
+ * charged them from day one while the page promised a trial.
+ */
 export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-basico',
     name: 'Experiencias Básico',
-    description: 'Experience listing plan — basic tier (not enabled yet, HOS-688).',
+    description: 'Experience listing plan — one listing per owner (HOS-688, HOS-818).',
     limitKey: LimitKey.MAX_EXPERIENCES,
     maxListings: 1,
     sortOrder: 1,
-    isActive: false,
-    monthlyPriceArs: 0
+    isActive: true,
+    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS
 });
 
 /** Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
@@ -734,23 +781,19 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
 });
 
 /**
- * Experience premium tier — **the only sellable experience plan today**.
- * See {@link GASTRONOMY_PREMIUM_PLAN}.
- *
- * A distinct plan from gastronomy's, not a shared one, and that is worth its
- * own sentence: MercadoPago scopes a free trial to `(payer, preapproval_plan)`,
- * so an owner who spends their trial on gastronomy still receives one when they
- * later add an experience. A single pooled commerce plan would have silently
- * charged them from day one while the page promised a trial.
+ * Experience premium tier — **retired from sale by HOS-818**, on the same terms
+ * and for the same reasons as {@link GASTRONOMY_PREMIUM_PLAN}: the sellable role
+ * moved to {@link EXPERIENCE_BASICO_PLAN}, and this definition stays priced
+ * because its row and its MercadoPago `preapproval_plan` both still exist.
  */
 export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-premium',
     name: 'Experiencias Premium',
-    description: 'Experience listing plan — one listing per owner (HOS-688).',
+    description: 'Experience listing plan — one listing per owner (HOS-688, retired by HOS-818).',
     limitKey: LimitKey.MAX_EXPERIENCES,
     maxListings: 1,
     sortOrder: 3,
-    isActive: true,
+    isActive: false,
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS
@@ -779,8 +822,13 @@ export const ALL_EXPERIENCE_PLANS: readonly PlanDefinition[] = [
  * that does it.
  */
 export const DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL = {
-    gastronomy: GASTRONOMY_PREMIUM_PLAN.slug,
-    experience: EXPERIENCE_PREMIUM_PLAN.slug
+    // HOS-818: the sellable tier is now the BASIC one in both verticals. Note
+    // that flipping this default does NOT move an already-deployed environment:
+    // `HOSPEDA_COMMERCE_PLAN_SLUG_BY_VERTICAL` is set explicitly on staging and
+    // production, and an explicit env value wins over this default. That variable
+    // has to be updated in Coolify for the rename to take effect there.
+    gastronomy: GASTRONOMY_BASICO_PLAN.slug,
+    experience: EXPERIENCE_BASICO_PLAN.slug
 } as const;
 
 /**

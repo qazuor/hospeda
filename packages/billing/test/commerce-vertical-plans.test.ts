@@ -26,7 +26,9 @@ import {
     ALL_PLANS,
     COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
+    EXPERIENCE_BASICO_PLAN,
     EXPERIENCE_PREMIUM_PLAN,
+    GASTRONOMY_BASICO_PLAN,
     GASTRONOMY_PREMIUM_PLAN
 } from '../src/config/plans.config.js';
 import { COMMERCE_TRIAL_DAYS } from '../src/constants/billing.constants.js';
@@ -38,9 +40,13 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(ALL_EXPERIENCE_PLANS).toHaveLength(3);
     });
 
-    it('enables exactly one tier per vertical', () => {
-        expect(ALL_GASTRONOMY_PLANS.filter((p) => p.isActive)).toEqual([GASTRONOMY_PREMIUM_PLAN]);
-        expect(ALL_EXPERIENCE_PLANS.filter((p) => p.isActive)).toEqual([EXPERIENCE_PREMIUM_PLAN]);
+    it('enables exactly one tier per vertical, and since HOS-818 it is the BASIC one', () => {
+        // Owner decision (HOS-818): "premium" is reserved for a future step that
+        // actually carries more functionality, so today's buyers land on the entry
+        // tier. Asserting the identity (not just the count) is what makes a silent
+        // slide back to premium fail here rather than in production.
+        expect(ALL_GASTRONOMY_PLANS.filter((p) => p.isActive)).toEqual([GASTRONOMY_BASICO_PLAN]);
+        expect(ALL_EXPERIENCE_PLANS.filter((p) => p.isActive)).toEqual([EXPERIENCE_BASICO_PLAN]);
     });
 
     it('declares exactly one limit key per tier, and it is that vertical own cap', () => {
@@ -65,13 +71,30 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
     });
 
     it('caps the sellable tier at one listing', () => {
-        expect(GASTRONOMY_PREMIUM_PLAN.limits[0]?.value).toBe(1);
-        expect(EXPERIENCE_PREMIUM_PLAN.limits[0]?.value).toBe(1);
+        expect(GASTRONOMY_BASICO_PLAN.limits[0]?.value).toBe(1);
+        expect(EXPERIENCE_BASICO_PLAN.limits[0]?.value).toBe(1);
     });
 
     it('keeps the sellable tier at the price commerce charges today', () => {
-        expect(GASTRONOMY_PREMIUM_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
-        expect(EXPERIENCE_PREMIUM_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
+        expect(GASTRONOMY_BASICO_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
+        expect(EXPERIENCE_BASICO_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
+    });
+
+    it('hands the retired premium tier over unchanged in everything but its flag (HOS-818)', () => {
+        // The rename is only safe because the two tiers are indistinguishable to
+        // a payer. If they ever diverge, the swap stops being a no-op for the
+        // people already paying, and that has to fail loudly here.
+        for (const [basico, premium] of [
+            [GASTRONOMY_BASICO_PLAN, GASTRONOMY_PREMIUM_PLAN],
+            [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PREMIUM_PLAN]
+        ] as const) {
+            expect(premium.isActive).toBe(false);
+            expect(basico.monthlyPriceArs).toBe(premium.monthlyPriceArs);
+            expect(basico.limits).toEqual(premium.limits);
+            expect(basico.entitlements).toEqual(premium.entitlements);
+            expect(basico.hasTrial).toBe(premium.hasTrial);
+            expect(basico.trialDays).toBe(premium.trialDays);
+        }
     });
 
     it('grants no entitlement in either vertical', () => {
@@ -86,10 +109,10 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // MercadoPago scopes a free trial to (payer, preapproval_plan): sharing
         // one plan across both verticals would silently charge the second one
         // from day one while the page promised a trial (HOS-522).
-        expect(GASTRONOMY_PREMIUM_PLAN.slug).not.toBe(EXPERIENCE_PREMIUM_PLAN.slug);
+        expect(GASTRONOMY_BASICO_PLAN.slug).not.toBe(EXPERIENCE_BASICO_PLAN.slug);
         expect(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL).toEqual({
-            gastronomy: GASTRONOMY_PREMIUM_PLAN.slug,
-            experience: EXPERIENCE_PREMIUM_PLAN.slug
+            gastronomy: GASTRONOMY_BASICO_PLAN.slug,
+            experience: EXPERIENCE_BASICO_PLAN.slug
         });
     });
 
@@ -101,20 +124,33 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
     });
 
     it('grants the sellable tier the same 30-day trial every accommodation plan gets (HOS-590)', () => {
-        expect(GASTRONOMY_PREMIUM_PLAN.hasTrial).toBe(true);
-        expect(GASTRONOMY_PREMIUM_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
-        expect(EXPERIENCE_PREMIUM_PLAN.hasTrial).toBe(true);
-        expect(EXPERIENCE_PREMIUM_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+        expect(GASTRONOMY_BASICO_PLAN.hasTrial).toBe(true);
+        expect(GASTRONOMY_BASICO_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+        expect(EXPERIENCE_BASICO_PLAN.hasTrial).toBe(true);
+        expect(EXPERIENCE_BASICO_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
         expect(COMMERCE_TRIAL_DAYS).toBe(30);
     });
 
-    it('leaves the two disabled tiers per vertical without a trial (not sellable, nothing to precede)', () => {
-        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
-            if (plan.isActive) {
-                continue;
-            }
+    it('leaves the NEVER-SOLD disabled tiers without a trial or a price (nothing to precede)', () => {
+        // The retired premium tier is deliberately excluded: it keeps its price
+        // and trial because its row, its price row and its MercadoPago
+        // preapproval_plan all still exist in every seeded environment, and live
+        // subscriptions hang off them (HOS-818). Zeroing the baseline would
+        // describe a state no real database is in — and would make rolling the
+        // rename back a second migration instead of an env-var edit.
+        const retired = new Set([GASTRONOMY_PREMIUM_PLAN.slug, EXPERIENCE_PREMIUM_PLAN.slug]);
+        const neverSold = [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS].filter(
+            (plan) => !plan.isActive && !retired.has(plan.slug)
+        );
+
+        // Guards the filter itself: an empty list would make every assertion
+        // below vacuously true, which is exactly how this test would rot into
+        // green after a future retier.
+        expect(neverSold.length).toBe(2);
+        for (const plan of neverSold) {
             expect(plan.hasTrial).toBe(false);
             expect(plan.trialDays).toBe(0);
+            expect(plan.monthlyPriceArs).toBe(0);
         }
     });
 });
