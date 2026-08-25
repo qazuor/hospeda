@@ -431,7 +431,14 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
             <ol className={styles.list}>
                 {faqs.map((faq, index) => {
                     const isEditing = editingId === faq.id;
-                    const isBusy = busyId === faq.id;
+                    // Any request in flight locks every row action, not just
+                    // this row's. `busyId` is a single slot shared by add,
+                    // edit, delete and reorder, so a second action started
+                    // mid-flight overwrites it and whichever request settles
+                    // FIRST clears the flag for the one still running — which
+                    // re-enables the buttons (and the delete dialog's CTAs)
+                    // while its own request is still open.
+                    const isAnyBusy = busyId !== null;
                     const snippet = toLabelSnippet(faq.question);
 
                     return (
@@ -561,7 +568,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                         <button
                                             type="button"
                                             className={styles.saveBtn}
-                                            disabled={isBusy}
+                                            disabled={isAnyBusy}
                                             onClick={() => handleEditSubmit(faq.id)}
                                         >
                                             {t('host.properties.editor.faq.saveButton', 'Guardar')}
@@ -623,7 +630,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Subir "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={index === 0 || isBusy}
+                                            disabled={index === 0 || isAnyBusy}
                                             onClick={() => moveItem(index, 'up')}
                                         >
                                             <ChevronUpIcon
@@ -640,7 +647,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Bajar "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={index === faqs.length - 1 || isBusy}
+                                            disabled={index === faqs.length - 1 || isAnyBusy}
                                             onClick={() => moveItem(index, 'down')}
                                         >
                                             <ChevronDownIcon
@@ -657,7 +664,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Editar "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={isBusy}
+                                            disabled={isAnyBusy}
                                             onClick={() => startEdit(faq)}
                                         >
                                             <EditIcon
@@ -680,7 +687,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                                 'Eliminar "{{question}}"',
                                                 { question: snippet }
                                             )}
-                                            disabled={isBusy}
+                                            disabled={isAnyBusy}
                                             onClick={() => setFaqPendingDelete(faq)}
                                         >
                                             <DeleteIcon
@@ -804,7 +811,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                         <button
                             type="button"
                             className={styles.saveBtn}
-                            disabled={busyId === 'add'}
+                            disabled={busyId !== null}
                             onClick={handleAddSubmit}
                         >
                             {t('host.properties.editor.faq.saveButton', 'Guardar')}
@@ -826,6 +833,7 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 <button
                     type="button"
                     className={styles.addBtn}
+                    disabled={busyId !== null}
                     onClick={() => {
                         setIsAdding(true);
                         setAddFieldErrors({});

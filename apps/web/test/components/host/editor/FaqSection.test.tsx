@@ -21,7 +21,9 @@
  * 10. Per-row non-default marker (AC-14): a FAQ with either flag off shows a
  *     text-visible badge (not colour-only); a FAQ at the all-true default
  *     shows neither badge.
- * 11. Submitting an invalid form marks the fields instead of returning
+ * 11. A failed DELETE keeps the row and the dialog, and a request in flight
+ *     locks every row action (one shared `busyId`).
+ * 12. Submitting an invalid form marks the fields instead of returning
  *     silently: empty fields get the required message, short fields get the
  *     schema's min message, the shared "Revisá los campos marcados" toast
  *     fires, and typing clears the per-field error (HOS-794 AC-1/AC-2).
@@ -415,6 +417,62 @@ describe('FaqSection', () => {
 
         expect(mockRemove).not.toHaveBeenCalled();
         expect(screen.queryByText('¿Eliminás esta pregunta?')).not.toBeInTheDocument();
+    });
+
+    it('keeps the FAQ and the dialog open when the DELETE fails (HOS-794)', async () => {
+        mockRemove.mockResolvedValueOnce({ ok: false, error: 'boom' });
+
+        renderSection([FAQ_1]);
+        fireEvent.click(screen.getByRole('button', { name: /^Eliminar "/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
+
+        await waitFor(() => {
+            expect(vi.mocked(addToast)).toHaveBeenCalledWith({
+                type: 'error',
+                message: 'No se pudo eliminar la pregunta.'
+            });
+        });
+
+        // Nothing is lost and the user can retry: the row survives and the
+        // dialog is still up with its CTAs live again (busyId back to null).
+        expect(screen.getByRole('button', { name: /^Eliminar "/ })).toBeInTheDocument();
+        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Eliminar pregunta' })).toBeEnabled();
+    });
+
+    it('locks every row action while a request is in flight (HOS-794)', async () => {
+        // `busyId` is one shared slot: a second action started mid-flight
+        // overwrites it, and whichever request settles first clears the flag
+        // for the one still running. Locking every action closes that race.
+        let releaseRemove: (v: { ok: true; data: { success: true } }) => void = () => {};
+        mockRemove.mockReturnValueOnce(
+            new Promise((resolve) => {
+                releaseRemove = resolve;
+            })
+        );
+
+        renderSection([FAQ_1, FAQ_2]);
+        fireEvent.click(
+            screen.getByRole('button', { name: /^Eliminar "¿Cuándo es el check-in\?"/ })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
+
+        // The OTHER row's actions are locked too, not just the deleted one's.
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /^Eliminar "¿Aceptan mascotas\?"/ })
+            ).toBeDisabled();
+        });
+        expect(
+            screen.getByRole('button', { name: /^Editar "¿Aceptan mascotas\?"/ })
+        ).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Agregar pregunta' })).toBeDisabled();
+
+        releaseRemove({ ok: true, data: { success: true } });
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'Agregar pregunta' })).toBeEnabled();
+        });
     });
 
     it('does not use the browser-native window.confirm for deletion (HOS-794)', () => {
