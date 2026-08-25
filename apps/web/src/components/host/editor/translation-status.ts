@@ -49,6 +49,15 @@ export interface TranslationResultItem {
     readonly locale: string;
     readonly success: boolean;
     readonly error?: string;
+    /**
+     * The text the provider produced for this pair.
+     *
+     * Optional because it crosses an HTTP boundary and because the panel must
+     * keep working without it — see {@link PRESENCE_ONLY_MARKER}. The route has
+     * always returned it (`TranslateResult.translatedText`); HOS-797 is the first
+     * reader.
+     */
+    readonly translatedText?: string;
 }
 
 /** What happened to one field during a generation run. */
@@ -73,12 +82,24 @@ export interface FieldOutcome {
 export type GenerationOutcomes = Partial<Record<TranslatableField, FieldOutcome>>;
 
 /**
- * Stand-in written into a locale a run just filled.
+ * Stand-in written into a locale a run reported as succeeded WITHOUT text.
  *
- * Never rendered — the panel only ever asks whether a locale HAS content. See
- * {@link applyRunToTranslations} for why the real translated text is not used.
+ * Since HOS-797 the panel RENDERS the translated text, so the fold writes the
+ * real `translatedText` whenever the response carries one, and this marker is the
+ * fallback for when it does not. It exists because presence and text are separate
+ * obligations: the badge, `missingLocalesFor` and the generate button all depend
+ * on the locale reading as FILLED, and dropping a reported success on the floor
+ * for want of a string would revive BETA-199's loop — a row noted "Traducido"
+ * under a live button whose next run comes back empty.
+ *
+ * NUL rather than a visible glyph (it used to be a check mark). Every reader
+ * decides presence by trimming, and `String.prototype.trim` does not strip NUL,
+ * so presence still holds — but no provider output can collide with it, which
+ * is what lets {@link localeDisplaysFor} tell "filled, text unknown" apart from
+ * real content instead of guessing. A visible marker would have been rendered AS
+ * the translation the moment this panel started showing text.
  */
-const TRANSLATED_MARKER = '\u2713';
+const PRESENCE_ONLY_MARKER = '\u0000';
 
 /** Whether any requested field came back with a failed locale. */
 export function anyFieldFailed(outcomes: GenerationOutcomes): boolean {
@@ -97,6 +118,43 @@ export function anyFieldUntouched(outcomes: GenerationOutcomes): boolean {
 }
 
 /**
+ * The value one succeeded (field, locale) pair contributes to the fold.
+ *
+ * Three branches, in this order:
+ *
+ *  1. **Stored content wins.** See {@link applyRunToTranslations} — a success is
+ *     the provider's, not the database's, so replacing real stored text with the
+ *     run's is how AI text that was never persisted would reach the screen.
+ *  2. **Otherwise the run's text**, which is what HOS-797 puts on screen without
+ *     forcing the reload that discards an unsaved draft.
+ *  3. **Otherwise the presence marker.** The pair succeeded, so the locale MUST
+ *     read as filled even when no text came with it.
+ *
+ * `isFilled`, NOT `??`, at both steps. Every reader of this data decides presence
+ * by trimming (the badges, `missingLocalesFor`, `hasSourceContent`) while
+ * `extractI18nField` does not trim — it only maps `''` to null. A stored `'   '`
+ * is therefore non-null AND absent, so a null-check would keep it, leaving the
+ * badge on a dash under a note reading "Traducido", with the button never
+ * retiring and the next run coming back empty. That is the bug the fold exists to
+ * close, and it survived once already for exactly this data shape.
+ *
+ * @param stored - What the panel currently holds for that locale.
+ * @param result - The succeeded result for that pair.
+ * @returns The value to write. Never blank, so presence always holds.
+ */
+function foldedValueFor({
+    stored,
+    result
+}: {
+    readonly stored: string | null | undefined;
+    readonly result: TranslationResultItem;
+}): string {
+    if (isFilled(stored)) return stored as string;
+    if (isFilled(result.translatedText)) return result.translatedText as string;
+    return PRESENCE_ONLY_MARKER;
+}
+
+/**
  * Folds a finished run back into the field status the panel renders.
  *
  * `translations` is frozen at SSR and never refetched, so without this the panel
@@ -111,26 +169,29 @@ export function anyFieldUntouched(outcomes: GenerationOutcomes): boolean {
  * Only successes are folded in. A failed locale is left exactly as it was, so the
  * badges keep showing the real gap the failure left behind.
  *
- * The value written is a marker, not the translation — the endpoint returns the
- * text but nothing here renders it, and inventing a value that does not match
- * what the DB holds would be worse than the dash. Presence is the entire contract
- * of this data, and it is decided by {@link isFilled} everywhere it is read; an
- * earlier revision of this comment named a `Boolean(...)` badge that had already
- * been replaced by a trimming one, and writing to match that stale citation is
- * precisely how the whitespace case below got missed.
+ * What gets written is decided by {@link foldedValueFor}, and the order of its
+ * three branches is the whole design. Presence is decided by {@link isFilled}
+ * everywhere it is read; an earlier revision of this comment named a
+ * `Boolean(...)` badge that had already been replaced by a trimming one, and
+ * writing to match that stale citation is precisely how the whitespace case got
+ * missed.
  *
  * A reported success is the PROVIDER's, not the database's: `persistTranslations`
  * skips a locale flagged `autoTranslated: false` while the route still returns it
- * as successful, so a manual override holding a blank value can produce a check
- * here for a row that was never written. A refresh corrects it, and the refresh is
- * offered — the alternative (trusting nothing) is the stale-dash bug, which fired
- * on every clean run instead of on a degenerate admin action.
+ * as successful. That is why stored content WINS over the run's text (HOS-797):
+ * overwriting a real value the DB kept with AI text it rejected would put words
+ * on screen that are never going to be published — in the one panel whose job is
+ * letting the host catch exactly that. Filling a BLANK locale from the run has no
+ * such downside, and it is what makes the generated text readable without the
+ * reload that costs an unsaved draft. Where the two can still diverge, the refresh
+ * is offered; the alternative (trusting nothing) is the stale-dash bug, which
+ * fired on every clean run instead of on a degenerate admin action.
  *
  * @param translations - The per-field status the panel was rendered with.
  * @param results - The endpoint's per-pair results.
  * @returns A new status map with every succeeded (field, locale) whose stored
- *   value is blank marked present. A locale that already holds real content keeps
- *   it; a field the plan withheld (`null`) stays withheld.
+ *   value is blank filled from the run. A locale that already holds real content
+ *   keeps it; a field the plan withheld (`null`) stays withheld.
  */
 export function applyRunToTranslations({
     translations,
@@ -148,26 +209,22 @@ export function applyRunToTranslations({
         const status = next[field];
         if (status === null || status === undefined) continue;
 
-        const locales = succeeded
-            .filter((result) => result.fieldType === field)
-            .map((result) => result.locale)
-            .filter(isSupportedLocale);
-        if (locales.length === 0) continue;
+        const own = succeeded.filter((result) => result.fieldType === field);
+        if (own.length === 0) continue;
 
         const merged = { ...status.locales };
-        for (const locale of locales) {
-            // `isFilled`, NOT `??`. Every reader of this data decides presence by
-            // trimming (the badge, `missingLocalesFor`, `hasSourceContent`), and
-            // `extractI18nField` does not trim — it only maps `''` to null. A
-            // stored `'   '` is therefore non-null AND absent, so a null-check
-            // here would keep it, leaving the badge on a dash under a note reading
-            // "Traducido", with the button never retiring and the next run coming
-            // back empty. That is the bug this whole function exists to close,
-            // surviving for one data shape.
-            merged[locale] = isFilled(status.locales[locale])
-                ? (status.locales[locale] as string)
-                : TRANSLATED_MARKER;
+        let folded = false;
+        for (const result of own) {
+            // `locale` crosses an HTTP boundary; one this client cannot name is
+            // dropped rather than written under a key nothing reads.
+            if (!isSupportedLocale(result.locale)) continue;
+            merged[result.locale] = foldedValueFor({
+                stored: status.locales[result.locale],
+                result
+            });
+            folded = true;
         }
+        if (!folded) continue;
         next[field] = { ...status, locales: merged };
     }
 
@@ -222,10 +279,30 @@ export function hasSourceContent({
     readonly status: TranslatableFieldStatus;
     readonly sourceLocale: SupportedLocale;
 }): boolean {
-    if (sourceLocale === 'es') {
-        return isFilled(status.plain);
-    }
-    return isFilled(status.locales[sourceLocale]);
+    return sourceTextFor({ status, sourceLocale }) !== null;
+}
+
+/**
+ * The source text itself, or `null` when the field has none.
+ *
+ * Same rule as {@link hasSourceContent} — which is now expressed THROUGH this
+ * function, so the panel cannot display one thing while the run logic decides
+ * another. Two copies of "where the source lives" is how the `plain || locales.es`
+ * over-promise walked back in once already.
+ *
+ * @param status - The field's i18n values plus its plain column.
+ * @param sourceLocale - Locale the content is authored in.
+ * @returns The trimmed-non-empty source text, or `null`.
+ */
+export function sourceTextFor({
+    status,
+    sourceLocale
+}: {
+    readonly status: TranslatableFieldStatus;
+    readonly sourceLocale: SupportedLocale;
+}): string | null {
+    const value = sourceLocale === 'es' ? status.plain : status.locales[sourceLocale];
+    return isFilled(value) ? (value as string) : null;
 }
 
 /**
@@ -249,6 +326,87 @@ export function missingLocalesFor({
     return SUPPORTED_LOCALES.filter(
         (locale) => locale !== sourceLocale && !isFilled(status.locales[locale])
     );
+}
+
+// ---------------------------------------------------------------------------
+// Display
+// ---------------------------------------------------------------------------
+
+/** What one locale of one field is, from the reader's point of view. */
+export type LocaleDisplayRole =
+    /** The locale the content is authored in. */
+    | 'source'
+    /** Holds content that was translated out of the source. */
+    | 'translated'
+    /** Holds nothing. */
+    | 'missing';
+
+/** One locale of one field, ready to render (HOS-797). */
+export interface LocaleDisplay {
+    readonly locale: SupportedLocale;
+    readonly role: LocaleDisplayRole;
+    /** The text to show, or `null` when there is none to show. */
+    readonly text: string | null;
+    /**
+     * The locale is filled but its text is not knowable here.
+     *
+     * Only reachable through {@link PRESENCE_ONLY_MARKER}: a run reported the pair
+     * as succeeded without returning the text. `role` is still `translated` — it
+     * IS translated — and `text` is `null`, so the panel says so instead of
+     * printing a control character or, worse, a dash that contradicts its own
+     * badge.
+     */
+    readonly presenceOnly: boolean;
+}
+
+/**
+ * Every locale of one field, in `SUPPORTED_LOCALES` order, ready to render.
+ *
+ * The single answer behind BOTH halves of a field card — the badges and the text
+ * beneath them. Before HOS-797 the badge decided presence with its own inline
+ * `.trim()` while `missingLocalesFor` decided it here, and the two disagreeing on
+ * a whitespace-only value is a bug this repo has already shipped once. Deriving
+ * the badge from the same call that yields the text makes that disagreement
+ * unrepresentable rather than merely tested-for.
+ *
+ * The source locale is `source` even when it is empty: an accommodation with no
+ * Spanish text yet has nothing to translate FROM, which is a different thing to
+ * say than "this translation is missing", and the panel says it differently.
+ *
+ * @param status - The field's i18n values plus its plain column.
+ * @param sourceLocale - Locale the content is authored in.
+ * @returns One entry per supported locale.
+ */
+export function localeDisplaysFor({
+    status,
+    sourceLocale
+}: {
+    readonly status: TranslatableFieldStatus;
+    readonly sourceLocale: SupportedLocale;
+}): readonly LocaleDisplay[] {
+    return SUPPORTED_LOCALES.map((locale) => {
+        if (locale === sourceLocale) {
+            return {
+                locale,
+                role: 'source' as const,
+                text: sourceTextFor({ status, sourceLocale }),
+                presenceOnly: false
+            };
+        }
+
+        const stored = status.locales[locale];
+        if (!isFilled(stored)) {
+            return { locale, role: 'missing' as const, text: null, presenceOnly: false };
+        }
+
+        const presenceOnly = stored === PRESENCE_ONLY_MARKER;
+        return {
+            locale,
+            role: 'translated' as const,
+            text: presenceOnly ? null : (stored as string),
+            presenceOnly
+        };
+    });
 }
 
 /**
