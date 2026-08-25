@@ -209,13 +209,13 @@
             "displayNameRequired": "Display name is required",
             "firstNameRequired": "First name is required",
             "lastNameRequired": "Last name is required"
-        },
-        "confirmations": {
-            "unsavedChanges": {
-                "title": "Unsaved changes",
-                "confirm": "Yes, discard",
-                "cancel": "Keep editing"
-            }
+        }
+    },
+    "confirmations": {
+        "unsavedChanges": {
+            "title": "Unsaved changes",
+            "confirm": "Yes, discard",
+            "cancel": "Keep editing"
         }
     },
     "profileEdit": {
