@@ -389,8 +389,15 @@ vi.mock('../../../src/lib/logger', () => ({
     }
 }));
 
-/** Mock urls module — not under test here. */
-vi.mock('../../../src/lib/urls', () => ({
+/**
+ * Partial mock of the urls module: only `buildUrlWithParams` is stubbed (it
+ * feeds an unrelated contact link). `buildUrl` is deliberately left REAL —
+ * it builds the post-submit redirect the tests below assert on, so stubbing
+ * it would make those assertions describe the stub instead of the URL
+ * production actually navigates to.
+ */
+vi.mock('../../../src/lib/urls', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/urls')>()),
     buildUrlWithParams: vi.fn(() => '/es/contacto')
 }));
 
@@ -447,9 +454,6 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
 const DEFAULT_PROPS = {
     locale: 'es' as const,
     apiUrl: 'http://localhost:3001',
-    adminUrl: 'http://localhost:3000',
-    accountPropertiesUrl: '/es/mi-cuenta/propiedades/',
-    canAccessAdminPanel: false,
     // Deliberately NOT `OWNER_TRIAL_DAYS`: asserting against the same constant
     // the component renders would pass whatever the value is. A fixed number
     // different from the real one proves the prop reaches the copy.
@@ -612,8 +616,9 @@ describe('CreatePropertyMiniForm — character counters (HOS-783 B5)', () => {
 });
 
 describe('CreatePropertyMiniForm — post-submit redirect', () => {
-    it('redirects to admin edit page on created status', async () => {
-        // Regression guard: `created` must redirect to the admin edit page.
+    it("redirects to the created listing's editor on created status (HOS-801)", async () => {
+        // Regression guard: `created` must land on the editor of the listing
+        // that was just created, NOT on the generic property list.
         vi.stubGlobal(
             'fetch',
             vi
@@ -659,13 +664,7 @@ describe('CreatePropertyMiniForm — post-submit redirect', () => {
         );
 
         const user = userEvent.setup();
-        render(
-            <CreatePropertyMiniForm
-                {...DEFAULT_PROPS}
-                canAccessAdminPanel={true}
-                adminUrl="http://localhost:3000"
-            />
-        );
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
         await fillAllFields(user);
 
@@ -674,17 +673,17 @@ describe('CreatePropertyMiniForm — post-submit redirect', () => {
         });
 
         await waitFor(() => {
-            expect(window.location.href).toBe('http://localhost:3000/accommodations/abc-123/edit');
+            expect(window.location.href).toBe('/es/mi-cuenta/propiedades/abc-123/editar/');
         });
     });
 
-    it('redirects to accountPropertiesUrl (NOT the admin panel) when canAccessAdminPanel is false (HOS-152 regression)', async () => {
-        // Regression guard: HOST/COMMERCE_OWNER users do not have
-        // `access.panelAdmin` (HOS-152). A previous bug had this component
-        // destructure `canAccessAdminPanel`/`accountPropertiesUrl` as unused
-        // (underscore-prefixed) props and always redirect to the admin edit
-        // page regardless of the actor's access, sending non-staff owners
-        // into the admin panel where they could still navigate around.
+    it('never redirects to the admin panel, and builds the URL from the ID rather than the slug (HOS-152 + HOS-801)', async () => {
+        // Two regressions in one destination. HOS-152: HOST/COMMERCE_OWNER
+        // users do not have `access.panelAdmin`, so any redirect into
+        // `/admin/*` bounces them to `/auth/forbidden` — an earlier bug did
+        // exactly that for every actor. HOS-801: the editor route resolves by
+        // ID, and entering it with a slug is silently redirected back to the
+        // list, so the response's `accommodationSlug` must never reach the URL.
         vi.stubGlobal(
             'fetch',
             vi
@@ -705,12 +704,7 @@ describe('CreatePropertyMiniForm — post-submit redirect', () => {
         );
 
         const user = userEvent.setup();
-        render(
-            <CreatePropertyMiniForm
-                {...DEFAULT_PROPS}
-                canAccessAdminPanel={false}
-            />
-        );
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
         await fillAllFields(user);
 
@@ -719,8 +713,12 @@ describe('CreatePropertyMiniForm — post-submit redirect', () => {
         });
 
         await waitFor(() => {
-            expect(window.location.href).toBe('/es/mi-cuenta/propiedades/');
+            expect(window.location.href).toBe('/es/mi-cuenta/propiedades/abc-123/editar/');
         });
+
+        expect(window.location.href).not.toContain('mi-alojamiento');
+        expect(window.location.href).not.toContain('/admin');
+        expect(window.location.href).not.toContain('localhost:3000');
     });
 });
 
@@ -1248,12 +1246,7 @@ describe('CreatePropertyMiniForm — submit payload with extras (SPEC-258)', () 
         vi.stubGlobal('fetch', fetchMock);
 
         const user = userEvent.setup();
-        render(
-            <CreatePropertyMiniForm
-                {...DEFAULT_PROPS}
-                canAccessAdminPanel={true}
-            />
-        );
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
         // Trigger a full import (name, summary, type + all extras)
         await triggerFullImport(user);
