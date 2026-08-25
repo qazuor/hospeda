@@ -12,6 +12,14 @@
  * `ctx.aiExtract` is provided, the stripped page text is sent to the AI port.
  * AI fields are merged into gaps only — structured results always win.
  *
+ * **Body text (HOS-799)**: the `description` and `summary` candidates no longer
+ * come from the page's SEO metadata alone. Metadata is single-line by
+ * construction and routinely pre-truncated by the source's SEO plugin, which is
+ * how a host ended up with a flat description and a summary carrying the
+ * source's own "..." inside the value. The adapter now also reads the page BODY
+ * (preserving paragraphs) and derives the summary from the resolved
+ * description. See {@link GenericAdapter._applyBodyText}.
+ *
  * **Hard rule (SPEC-222)**: Reviews and ratings MUST NEVER appear in the
  * returned `RawExtraction`. The structured extractors already enforce this;
  * the adapter does not re-introduce any such fields.
@@ -21,9 +29,15 @@
 
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
+import { stripHtmlToParagraphText, stripHtmlToText } from '../extractors/html-text.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
-import { extractOpenGraph, stripHtmlToText } from '../extractors/meta.js';
+import { extractOpenGraph } from '../extractors/meta.js';
 import { mapAccommodationType } from '../mapping.js';
+import {
+    resolveImportedDescription,
+    resolveImportedSummary,
+    stripLeadingTitle
+} from './imported-text.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -43,6 +57,15 @@ import { mapAccommodationType } from '../mapping.js';
  * `scrapedCountry`) are NOT counted.
  */
 export const STRATEGY_B_THRESHOLD = 2;
+
+/**
+ * Character ceiling applied when converting the page body to text (HOS-799).
+ *
+ * Generous on purpose: `toDescriptionText` enforces the real 2000-char schema
+ * bound afterwards, on a word boundary. Cutting hard at 2000 here instead would
+ * chop mid-word before the word-aware truncation ever saw the text.
+ */
+const BODY_TEXT_MAX_CHARS = 12_000;
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -290,6 +313,9 @@ export class GenericAdapter implements ImportSourceAdapter {
      * 4. Count useful draft-mirroring fields. If fewer than
      *    {@link STRATEGY_B_THRESHOLD} are found AND `ctx.aiExtract` is
      *    defined, strip the page to plain text and call the AI port.
+     * 4b. Resolve `description` / `summary` against the page body (HOS-799).
+     *    Deliberately AFTER the count above, so the body candidate cannot
+     *    silently retire the AI fallback by inflating the field tally.
      * 5. Merge AI results into gaps (structured always wins). On AI error,
      *    return the structured partial without throwing.
      *
@@ -329,23 +355,34 @@ export class GenericAdapter implements ImportSourceAdapter {
         const structured = this._buildStructuredExtraction(jsonld, og);
 
         // Step 4: Check whether Strategy B is needed.
+        //
+        // Counted on the STRUCTURED result, deliberately BEFORE the body-text
+        // pass (HOS-799). The body almost always yields a description, so
+        // counting it here would push nearly every page over the threshold and
+        // silently retire Strategy B. The AI gate must keep firing on exactly
+        // the same pages it fired on before this change.
         const usefulCount = countUsefulFields(structured);
+
+        // Step 4b: Recover the real listing text from the page body, and derive
+        // the summary from it instead of copying a pre-truncated og:description.
+        const enriched = this._applyBodyText(structured, html);
 
         if (usefulCount >= STRATEGY_B_THRESHOLD) {
             // Enough structured data found — return as-is, no failureCode.
-            return structured;
+            return enriched;
         }
 
         if (ctx.aiExtract === undefined) {
             // Fetch succeeded but the page has no recognisable accommodation data
             // and AI extraction is disabled — signal nothing_found so the host
             // receives an actionable message instead of a silent empty result.
-            if (usefulCount === 0) {
+            // A body-derived description counts as "something found".
+            if (usefulCount === 0 && enriched.description === undefined) {
                 return { sourcePlatform: 'generic', failureCode: 'nothing_found' };
             }
             // Partial structured data — return it without a failureCode so the
             // host can at least review what was found.
-            return structured;
+            return enriched;
         }
 
         // Step 5: Strategy B — AI-assisted extraction.
@@ -355,17 +392,77 @@ export class GenericAdapter implements ImportSourceAdapter {
 
             if (ai === null) {
                 // AI produced nothing usable. If structured is also empty → nothing_found.
-                if (usefulCount === 0) {
+                if (usefulCount === 0 && enriched.description === undefined) {
                     return { sourcePlatform: 'generic', failureCode: 'nothing_found' };
                 }
-                return structured;
+                return enriched;
             }
 
-            return mergeAiIntoGaps(structured, ai);
+            return mergeAiIntoGaps(enriched, ai);
         } catch {
             // AI errors are best-effort — keep structured partial, never throw.
-            return structured;
+            return enriched;
         }
+    }
+
+    /**
+     * Replaces the `description` / `summary` candidates with body-aware ones.
+     *
+     * Before HOS-799 both came straight from the page's SEO metadata: the
+     * description from JSON-LD/`og:description`/`<meta name="description">`,
+     * the summary from `og:description` verbatim. Metadata is single-line by
+     * construction and routinely pre-truncated by the source's SEO plugin, so
+     * the host inherited a flat, clipped teaser as their listing body and a
+     * summary carrying the source's own "..." inside the stored value.
+     *
+     * The body candidate is tagged `source: 'text'` (heuristic parsing,
+     * confidence 50); a metadata winner keeps its original, higher-confidence
+     * tag. Both remain PRE-FILLS the host reviews before saving.
+     *
+     * @param extraction - The structured extraction to enrich.
+     * @param html - The raw page HTML.
+     * @returns A new `RawExtraction` with the resolved text candidates.
+     */
+    private _applyBodyText(extraction: RawExtraction, html: string): RawExtraction {
+        const bodyText = stripLeadingTitle({
+            text: stripHtmlToParagraphText({ html, maxChars: BODY_TEXT_MAX_CHARS }),
+            title: typeof extraction.name?.value === 'string' ? extraction.name.value : undefined
+        });
+
+        const metaDescription = extraction.description;
+        const metaSummary = extraction.summary;
+
+        const resolved = resolveImportedDescription({
+            bodyText,
+            metadataText:
+                typeof metaDescription?.value === 'string' ? metaDescription.value : undefined
+        });
+
+        const description =
+            resolved === null
+                ? undefined
+                : {
+                      value: resolved.text,
+                      source:
+                          resolved.origin === 'body'
+                              ? ('text' as const)
+                              : (metaDescription?.source ?? ('text' as const))
+                  };
+
+        const summaryValue = resolveImportedSummary({
+            descriptionText: description?.value,
+            metadataSummary: typeof metaSummary?.value === 'string' ? metaSummary.value : undefined
+        });
+
+        const summary =
+            summaryValue === null
+                ? undefined
+                : {
+                      value: summaryValue,
+                      source: description?.source ?? metaSummary?.source ?? ('text' as const)
+                  };
+
+        return { ...extraction, description, summary };
     }
 
     // ---------------------------------------------------------------------------
