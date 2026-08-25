@@ -132,6 +132,7 @@ export function PhotoGalleryItem({
                 locale={locale}
                 item={item}
                 disabled={disabled}
+                compactLayout
                 toggleAriaLabel={t(
                     'host.properties.editor.photo.editDetailsAria',
                     'Editar textos de la foto {{index}}',

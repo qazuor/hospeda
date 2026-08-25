@@ -43,6 +43,8 @@ export interface PhotoMetadataEditorProps {
     readonly item: AccommodationMediaItem;
     /** True while any other op is in flight, hydration is pending, or the item lacks a DB id yet. */
     readonly disabled: boolean;
+    /** Gallery thumbnails need a wider floating panel than their own narrow column. */
+    readonly compactLayout?: boolean;
     /** Accessible label for the toggle button while the panel is closed. */
     readonly toggleAriaLabel: string;
     /** Accessible label for the toggle button while the panel is open. */
@@ -63,6 +65,7 @@ export function PhotoMetadataEditor({
     locale,
     item,
     disabled,
+    compactLayout = false,
     toggleAriaLabel,
     closeAriaLabel,
     onSave
@@ -120,10 +123,12 @@ export function PhotoMetadataEditor({
     const fieldId = (name: string) => `photo-${name}-${item.id || 'pending'}`;
 
     return (
-        <div className={styles.metadataBlock}>
+        <div
+            className={`${styles.metadataBlock} ${compactLayout ? styles.metadataBlockCompact : ''}`}
+        >
             <button
                 type="button"
-                className={styles.metadataToggle}
+                className={`${styles.metadataToggle} ${compactLayout ? styles.metadataToggleCompact : ''}`}
                 onClick={handleToggle}
                 disabled={!canOperate}
                 aria-expanded={isOpen}
@@ -134,7 +139,7 @@ export function PhotoMetadataEditor({
 
             {isOpen && (
                 <form
-                    className={styles.metadataPanel}
+                    className={`${styles.metadataPanel} ${compactLayout ? styles.metadataPanelFloating : ''}`}
                     onSubmit={handleSubmit}
                 >
                     <div className={styles.formGroup}>

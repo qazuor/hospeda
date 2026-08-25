@@ -138,6 +138,8 @@ export function PhotoSection({
         initialGallery
     });
 
+    const remainingGallerySlots = Math.max(ACCOMMODATION_GALLERY_CAP - galleryItems.length, 0);
+
     return (
         <div className={styles.section}>
             <h3 className={styles.sectionTitle}>
@@ -146,7 +148,8 @@ export function PhotoSection({
             <p className={styles.sectionDescription}>
                 {t(
                     'host.properties.editor.section.photosDescription',
-                    'Subí fotos de tu propiedad para atraer más huéspedes'
+                    'Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes',
+                    { cap: ACCOMMODATION_GALLERY_CAP }
                 )}
             </p>
 
@@ -260,7 +263,9 @@ export function PhotoSection({
                     htmlFor="gallery-image-input"
                     className={styles.uploadTextStrong}
                 >
-                    {t('host.properties.editor.photo.gallery', 'Galería de fotos')}
+                    {t('host.properties.editor.photo.gallery', 'Galería de fotos (máx. {{cap}})', {
+                        cap: ACCOMMODATION_GALLERY_CAP
+                    })}
                 </label>
 
                 {isGalleryFull && (
@@ -315,7 +320,7 @@ export function PhotoSection({
                     id="gallery-image-input"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    multiple
+                    multiple={remainingGallerySlots > 1}
                     className={styles.fileInput}
                     onChange={handleGallerySelect}
                 />
