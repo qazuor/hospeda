@@ -117,14 +117,86 @@ describe('ExperiencePublicSchema — SPEC-210 leak-guard discipline', () => {
             }
         });
 
-        it('should NOT include contactInfo in parsed output (leak-guard)', () => {
+        /**
+         * HOS-815 RECALIBRATES THIS LEAK-GUARD — it is deliberately narrowed,
+         * not deleted.
+         *
+         * It used to assert `contactInfo` was absent WHOLESALE. That was the
+         * bug: an experience cannot be published without a phone or an email
+         * (the listing form blocks it, to protect the traveller from a
+         * dead-end listing), and then the public payload carried neither — so
+         * the only contact affordance on the page was Hospeda's own WhatsApp
+         * button. The datum was demanded and then withheld from the person it
+         * was demanded for.
+         *
+         * The guard's PURPOSE is preserved and still enforced below: the
+         * sensitive half of the blob must never reach an anonymous visitor.
+         * What changed is the boundary, from "nothing" to an explicit
+         * four-key allow-list. Zod strips everything not named in
+         * `ExperiencePublicContactInfoSchema`, so the subset is fail-closed
+         * and stays fail-closed if `contact_info` grows a key.
+         */
+        it('should strip the non-published contactInfo keys (leak-guard)', () => {
             const raw = buildPublicExperience({
-                contactInfo: { mobilePhone: '+54911234567', personalEmail: 'owner@example.com' }
+                contactInfo: {
+                    mobilePhone: '+54911234567',
+                    personalEmail: 'owner@example.com',
+                    homePhone: '+543442111111',
+                    whatsapp: '+54911234567',
+                    preferredEmail: 'WORK',
+                    preferredPhone: 'MOBILE'
+                }
             });
             const result = ExperiencePublicSchema.safeParse(raw);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect((result.data as Record<string, unknown>).contactInfo).toBeUndefined();
+                const contactInfo = (result.data as Record<string, unknown>).contactInfo as
+                    | Record<string, unknown>
+                    | null
+                    | undefined;
+
+                // Personal channels: collected as personal contact, never the
+                // listing's published channel.
+                expect(contactInfo).not.toHaveProperty('personalEmail');
+                expect(contactInfo).not.toHaveProperty('homePhone');
+                // The WhatsApp number is gated by the VIEWER's plan on a
+                // separate protected endpoint (HOS-19). This payload is
+                // shared-cached with no auth in the cache key, so emitting it
+                // here would serve a gated value to every visitor.
+                expect(contactInfo).not.toHaveProperty('whatsapp');
+                // Internal routing preferences, not contact values.
+                expect(contactInfo).not.toHaveProperty('preferredEmail');
+                expect(contactInfo).not.toHaveProperty('preferredPhone');
+            }
+        });
+
+        it('should publish exactly the four intended contact keys (HOS-815)', () => {
+            const raw = buildPublicExperience({
+                contactInfo: {
+                    workEmail: 'contacto@kayakaventura.com.ar',
+                    workPhone: '+543442222222',
+                    mobilePhone: '+54911234567',
+                    website: 'https://kayakaventura.com.ar',
+                    personalEmail: 'owner@example.com',
+                    whatsapp: '+54911234567'
+                }
+            });
+            const result = ExperiencePublicSchema.safeParse(raw);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                const contactInfo = (result.data as Record<string, unknown>).contactInfo as Record<
+                    string,
+                    unknown
+                >;
+
+                // An exact key set, not a subset check: a fifth key appearing
+                // here must be a deliberate decision, never an accident.
+                expect(Object.keys(contactInfo).sort()).toEqual([
+                    'mobilePhone',
+                    'website',
+                    'workEmail',
+                    'workPhone'
+                ]);
             }
         });
 
