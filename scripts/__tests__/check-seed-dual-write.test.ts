@@ -19,7 +19,7 @@
  * sibling guard) is bash.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,13 +38,18 @@ interface RunResult {
 /**
  * Runs the guard script with the given env overrides and captures the result.
  *
- * `options.cwd` points the script at a different repository — used only by the
- * real-diff reachability test, which needs a throwaway repo it can commit into.
- * Defaults to this checkout, which every override-driven test uses read-only.
+ * `options.scriptPath` / `options.cwd` run a COPY of the script from inside a
+ * throwaway repo — used only by the real-diff reachability test. The script
+ * derives its repo root from its own location, so the copy is what makes it
+ * operate anywhere other than this checkout. Both default to this checkout,
+ * which every override-driven test uses read-only.
  */
-function runGuard(env: Record<string, string>, options: { readonly cwd?: string } = {}): RunResult {
+function runGuard(
+    env: Record<string, string>,
+    options: { readonly cwd?: string; readonly scriptPath?: string } = {}
+): RunResult {
     try {
-        const stdout = execFileSync('bash', [SCRIPT_PATH], {
+        const stdout = execFileSync('bash', [options.scriptPath ?? SCRIPT_PATH], {
             cwd: options.cwd ?? REPO_ROOT,
             env: { ...process.env, ...env },
             encoding: 'utf8'
@@ -409,11 +414,18 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         // matter what the predicate says, and the guard then reads as covering a
         // file it silently ignores.
         //
-        // This drives the real diff, in a THROWAWAY repository built in a temp
-        // dir. It must never run against the checkout under test: the guard's
-        // teardown would be a `git reset --hard`, which discards every
-        // uncommitted change in the working tree — including the very edits a
-        // developer is running the suite to validate.
+        // This drives the real diff inside a THROWAWAY repository. It must never
+        // run against the checkout under test: exercising the real diff needs
+        // commits, and cleaning those up means `git reset --hard`, which
+        // discards every uncommitted change in the working tree — including the
+        // very edits a developer is running the suite to validate. An earlier
+        // draft did exactly that.
+        //
+        // The script derives REPO_ROOT from its OWN location and `cd`s there, so
+        // pointing a child process's cwd at another repo does nothing. Running a
+        // COPY of the script from inside the throwaway repo is what makes it
+        // operate on that repo — and it is the real script, byte for byte, so
+        // the pathspec list under test is the shipped one.
         const repo = mkdtempSync(path.join(tmpdir(), 'dual-write-guard-'));
         const git = (...args: readonly string[]): string =>
             execFileSync('git', [...args], { cwd: repo, encoding: 'utf8' });
@@ -423,21 +435,25 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
             git('config', 'user.email', 'guard-test@example.invalid');
             git('config', 'user.name', 'guard test');
 
-            // A file outside every guarded path, so the base commit is neutral.
-            mkdirSync(path.join(repo, 'docs'), { recursive: true });
-            writeFileSync(path.join(repo, 'docs/readme.md'), 'base\n');
+            mkdirSync(path.join(repo, 'scripts'), { recursive: true });
+            copyFileSync(SCRIPT_PATH, path.join(repo, 'scripts/check-seed-dual-write.sh'));
+
+            // A base commit holding only the script copy — no guarded path yet.
             git('add', '-A');
             git('commit', '-q', '-m', 'base');
             const base = git('rev-parse', 'HEAD').trim();
 
-            // Act: a commit whose only change is the ai-core baseline.
+            // Act: a commit whose only content change is the ai-core baseline.
             const baselineDir = path.join(repo, 'packages/ai-core/src/engine');
             mkdirSync(baselineDir, { recursive: true });
             writeFileSync(path.join(baselineDir, 'default-prompts.ts'), 'export const X = 1;\n');
             git('add', '-A');
             git('commit', '-q', '-m', 'reword a prompt');
 
-            const result = runGuard({ BASE_SHA: base, MARKER_TEXT_OVERRIDE: '' }, { cwd: repo });
+            const result = runGuard(
+                { BASE_SHA: base, MARKER_TEXT_OVERRIDE: '' },
+                { cwd: repo, scriptPath: path.join(repo, 'scripts/check-seed-dual-write.sh') }
+            );
 
             // Assert
             expect(result.exitCode, 'the real diff must reach the ai-core baseline').toBe(1);
