@@ -58,44 +58,56 @@ function VideoRowField({
     const { t } = createTranslations(locale);
 
     return (
-        <div className={styles.preview}>
-            <TextField
-                prefix="acc"
-                name={`video-${index}-url`}
-                label={t('host.properties.editor.video.urlLabel', 'Enlace del video')}
-                type="url"
-                value={row.url}
-                placeholder={t(
-                    'host.properties.editor.video.urlPlaceholder',
-                    'https://youtube.com/watch?v=...'
-                )}
-                disabled={disabled}
-                onChange={(e) => onChange('url', e.target.value)}
-            />
-            <TextField
-                prefix="acc"
-                name={`video-${index}-caption`}
-                label={t('host.properties.editor.video.captionLabel', 'Título (opcional)')}
-                type="text"
-                value={row.caption}
-                disabled={disabled}
-                onChange={(e) => onChange('caption', e.target.value)}
-            />
-            <button
-                type="button"
-                className={styles.previewButton}
-                onClick={onRemove}
-                disabled={disabled}
-                aria-label={t(
-                    'host.properties.editor.video.removeAria',
-                    'Eliminar video {{index}}',
-                    {
-                        index: index + 1
-                    }
-                )}
-            >
-                ✕
-            </button>
+        <div className={styles.videoRow}>
+            <div className={styles.videoFieldGrid}>
+                <div className={styles.formGroup}>
+                    <TextField
+                        prefix="acc"
+                        name={`video-${index}-url`}
+                        label={t('host.properties.editor.video.urlLabel', 'Enlace del video')}
+                        labelClassName={styles.formLabel}
+                        className={styles.formInput}
+                        type="url"
+                        value={row.url}
+                        placeholder={t(
+                            'host.properties.editor.video.urlPlaceholder',
+                            'https://youtube.com/watch?v=...'
+                        )}
+                        disabled={disabled}
+                        onChange={(e) => onChange('url', e.target.value)}
+                    />
+                </div>
+                <div className={styles.formGroup}>
+                    <TextField
+                        prefix="acc"
+                        name={`video-${index}-caption`}
+                        label={t('host.properties.editor.video.captionLabel', 'Título (opcional)')}
+                        labelClassName={styles.formLabel}
+                        className={styles.formInput}
+                        type="text"
+                        value={row.caption}
+                        disabled={disabled}
+                        onChange={(e) => onChange('caption', e.target.value)}
+                    />
+                </div>
+            </div>
+            <div className={styles.videoRowActions}>
+                <button
+                    type="button"
+                    className={styles.videoRemoveButton}
+                    onClick={onRemove}
+                    disabled={disabled}
+                    aria-label={t(
+                        'host.properties.editor.video.removeAria',
+                        'Eliminar video {{index}}',
+                        {
+                            index: index + 1
+                        }
+                    )}
+                >
+                    ✕
+                </button>
+            </div>
         </div>
     );
 }
@@ -154,25 +166,26 @@ export function VideoSection({ locale, accommodationId, initialVideos }: VideoSe
                 </div>
             )}
 
-            <button
-                type="button"
-                className={styles.galleryAddButton}
-                onClick={addRow}
-                disabled={isSaving}
-            >
-                {t('host.properties.editor.video.addButton', 'Agregar video')}
-            </button>
+            <div className={styles.videoSectionActions}>
+                <button
+                    type="button"
+                    className={styles.videoAddButton}
+                    onClick={addRow}
+                    disabled={isSaving}
+                >
+                    {t('host.properties.editor.video.addButton', 'Agregar video')}
+                </button>
 
-            <button
-                type="submit"
-                className={styles.uploadTextStrong}
-                disabled={isSaving || !isDirty}
-                style={{ display: 'block', marginTop: '1rem', cursor: 'pointer' }}
-            >
-                {isSaving
-                    ? t('host.properties.editor.action.saving', 'Guardando...')
-                    : t('host.properties.editor.video.saveButton', 'Guardar videos')}
-            </button>
+                <button
+                    type="submit"
+                    className={styles.videoSaveButton}
+                    disabled={isSaving || !isDirty}
+                >
+                    {isSaving
+                        ? t('host.properties.editor.action.saving', 'Guardando...')
+                        : t('host.properties.editor.video.saveButton', 'Guardar videos')}
+                </button>
+            </div>
         </form>
     );
 }
