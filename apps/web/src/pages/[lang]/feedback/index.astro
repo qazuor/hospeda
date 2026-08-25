@@ -148,20 +148,29 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 		--fb-primary-hover: #df5400;
 
 		/*
-		 * Surface tokens. The widget package ships a DARK neutral palette by
-		 * default (--fb-card #111827, --fb-input-bg #1f2937, --fb-foreground
-		 * #f9fafb). Every other page gets the light values from
-		 * feedback-overrides.css, which this standalone page cannot import
-		 * (it maps --fb-* onto global brand tokens that only exist under
-		 * BaseLayout). Overriding only --fb-primary above therefore left a
-		 * dark form on a light page: inputs rendered near-black and labels
-		 * rendered #f9fafb on the page's own #fcfcfa background, a ~1.03:1
-		 * contrast ratio that made them effectively invisible.
+		 * Surface tokens, pinned because this page and the widget disagreed
+		 * about who decides the theme.
+		 *
+		 * This page pins data-theme="light" on <html> unconditionally. The
+		 * widget package does not read that attribute: its own
+		 * packages/feedback/src/styles/tokens.css switches on
+		 * `@media (prefers-color-scheme: dark)`, so a visitor whose OS is set
+		 * to dark got --fb-card #111827 / --fb-input-bg #1f2937 /
+		 * --fb-foreground #f9fafb inside a page painted #fcfcfa — near-black
+		 * inputs, and labels at a measured 1.03:1 contrast against the page
+		 * background. A visitor whose OS is set to light never saw it, which
+		 * is why the package's unconditional defaults look fine in isolation.
+		 *
+		 * Every other page dodges this through feedback-overrides.css, which
+		 * this standalone page cannot import (it maps --fb-* onto global brand
+		 * tokens that only exist under BaseLayout). Overriding only
+		 * --fb-primary above left the media query in charge of everything
+		 * else.
 		 *
 		 * These point at the :root tokens declared above rather than repeating
-		 * the hex codes, so the widget follows this page's palette. The page
-		 * pins data-theme="light" on <html>, so there is no dark variant to
-		 * track here.
+		 * the hex codes. Being unconditional, they win over the package's
+		 * media-gated rule in either OS setting, which is what makes the form
+		 * match the light theme the page already committed to.
 		 */
 		--fb-background: var(--background);
 		--fb-foreground: var(--foreground);
