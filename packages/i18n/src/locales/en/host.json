@@ -486,9 +486,12 @@
                 "toolbarLink": "Link"
             },
             "location": {
-                "searchAddress": "Search address",
+                "searchOnMap": "Search on the map",
+                "searchHint": "This field only moves the map to find the spot. What you type here is not saved. The address that gets saved is the one above.",
                 "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
                 "useMyLocation": "Use my current location",
+                "mapSubtitle": "Location on the map",
+                "pinAt": "The pin is at:",
                 "mapHint": "Drag the pin to adjust the exact location.",
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",

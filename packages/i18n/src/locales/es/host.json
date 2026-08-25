@@ -486,9 +486,12 @@
                 "toolbarLink": "Enlace"
             },
             "location": {
-                "searchAddress": "Buscar dirección",
+                "searchOnMap": "Buscar en el mapa",
+                "searchHint": "Este campo sólo mueve el mapa para encontrar el punto. Lo que escribas acá no se guarda. La dirección que se guarda es la de arriba.",
                 "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
                 "useMyLocation": "Usar mi ubicación actual",
+                "mapSubtitle": "Ubicación en el mapa",
+                "pinAt": "El pin está en:",
                 "mapHint": "Arrastrá el pin para ajustar la ubicación exacta.",
                 "geolocationUnavailable": "La geolocalización no está disponible en este navegador.",
                 "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
