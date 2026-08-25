@@ -81,6 +81,8 @@ interface TextFieldCommonProps {
     readonly counter?: {
         /** Active UI locale, for the `used/total` string. */
         readonly locale: SupportedLocale;
+        /** Minimum length enforced for the field, when present. */
+        readonly min?: number;
         /** Optional test hook forwarded to the counter element. */
         readonly testId?: string;
     };
@@ -198,6 +200,7 @@ export function TextField(props: TextFieldProps) {
                     id={counterId}
                     locale={counter.locale}
                     current={(value as string).length}
+                    min={counter.min}
                     max={maxLength as number}
                     testId={counter.testId}
                 />

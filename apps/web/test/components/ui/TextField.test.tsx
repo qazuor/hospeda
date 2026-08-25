@@ -9,10 +9,24 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import { buildFieldId } from '@/lib/forms/build-field-id';
+
+vi.mock('@/lib/i18n', () => ({
+    createTranslations: () => ({
+        t: (_key: string, fallback: string, params: Record<string, string>) =>
+            fallback
+                .replaceAll('{{count}}', params.count)
+                .replaceAll('{{max}}', params.max)
+                .replaceAll('{{min}}', params.min ?? '')
+    })
+}));
+
+vi.mock('@/components/ui/CharacterCounter.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
 
 describe('TextField', () => {
     it('should render the label associated with the control', () => {
@@ -276,5 +290,26 @@ describe('TextField', () => {
         const control = screen.getByLabelText('Nombre');
         expect(control).toHaveClass('section-input');
         expect(document.querySelector('label')).toHaveClass('section-label');
+    });
+
+    it('should pass the minimum-aware counter through the shared wiring', () => {
+        render(
+            <TextField
+                prefix="acc"
+                name="name"
+                label="Nombre"
+                value="AB"
+                maxLength={100}
+                onChange={() => undefined}
+                counter={{ locale: 'es', min: 3, testId: 'name-counter' }}
+            />
+        );
+
+        const control = screen.getByLabelText('Nombre');
+        const counter = screen.getByTestId('name-counter');
+
+        expect(counter).toHaveTextContent('2/100 · mín. 3');
+        expect(counter).toHaveAttribute('data-state', 'under-minimum');
+        expect(control.getAttribute('aria-describedby')).toBe(counter.id);
     });
 });
