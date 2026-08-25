@@ -179,5 +179,30 @@
         "description": "Explore os planos e preços desenvolvidos para turistas e proprietários. Encontre a opção perfeita para você.",
         "touristPricing": "Ver preços para turistas",
         "ownerPricing": "Ver preços para proprietários"
+    },
+    "experience": {
+        "tagline": "Para experiências",
+        "cta": "Publique sua experiência"
+    },
+    "gastronomy": {
+        "tagline": "Para gastronomia",
+        "cta": "Publique seu local gastronômico"
+    },
+    "partner": {
+        "tagline": "Para parceiros",
+        "title": "Benefícios para sua aliança",
+        "cta": "Seja um parceiro",
+        "1": {
+            "title": "Rede verificada"
+        },
+        "2": {
+            "title": "Divulgação conjunta"
+        },
+        "3": {
+            "title": "Condições sob medida"
+        },
+        "4": {
+            "title": "Avaliação personalizada"
+        }
     }
 }
