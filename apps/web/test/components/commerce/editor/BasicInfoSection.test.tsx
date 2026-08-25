@@ -235,4 +235,25 @@ describe('BasicInfoSection', () => {
 
         expect(document.getElementById('editor-basicInfo')).not.toBeNull();
     });
+
+    it('renders the published slug refresh choice when requested', () => {
+        renderSection({
+            shouldOfferSlugRefresh: true,
+            data: buildEditData({ refreshSlugFromName: false })
+        });
+
+        expect(screen.getByText(/esta ficha ya está publicada/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/cambiar igual la dirección pública/i)).toBeInTheDocument();
+    });
+
+    it('reports the slug refresh checkbox through onFieldChange', () => {
+        const { onFieldChange } = renderSection({
+            shouldOfferSlugRefresh: true,
+            data: buildEditData({ refreshSlugFromName: false })
+        });
+
+        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección pública/i));
+
+        expect(onFieldChange).toHaveBeenCalledWith('refreshSlugFromName', true);
+    });
 });

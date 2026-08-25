@@ -238,7 +238,12 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "The public URL follows the name while the listing is still unpublished. Once it is published, it stops changing automatically."
+            "slugImmutableNotice": "The public URL follows the name while the listing is still unpublished. Once it is published, it stops changing automatically.",
+            "slugRefresh": {
+                "notice": "This listing is already published. By default, the current address stays as it is even if you rename it.",
+                "warning": "If you change the public address, you may affect how it appears in Google today or in links you already shared.",
+                "checkbox": "Change the public address too so it follows this new name"
+            }
         },
         "checklist": {
             "field": {

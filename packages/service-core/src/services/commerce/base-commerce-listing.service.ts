@@ -47,7 +47,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { shouldRegenerateSlugOnDraftRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
@@ -685,11 +685,12 @@ export abstract class BaseCommerceListingService<
             const current = await this.model.findById(updateId, ctx.tx);
             if (
                 current &&
-                shouldRegenerateSlugOnDraftRename({
+                shouldRegenerateSlugOnRename({
                     currentLifecycleState: current.lifecycleState as string | null | undefined,
                     currentName: current.name as string | null | undefined,
                     nextName: typeof payload.name === 'string' ? payload.name : undefined,
-                    slugWasProvided
+                    slugWasProvided,
+                    refreshSlugFromName: payload.refreshSlugFromName === true
                 })
             ) {
                 typedCtx.hookState = typedCtx.hookState ?? {};
@@ -714,7 +715,12 @@ export abstract class BaseCommerceListingService<
         }
 
         // Strip write-only junction fields from the DB write payload
-        const { amenityIds: _a, featureIds: _f, ...rest } = payload;
+        const {
+            amenityIds: _a,
+            featureIds: _f,
+            refreshSlugFromName: _refreshSlugFromName,
+            ...rest
+        } = payload;
         if (typedCtx.hookState?.regeneratedSlug) {
             rest.slug = typedCtx.hookState.regeneratedSlug;
         }

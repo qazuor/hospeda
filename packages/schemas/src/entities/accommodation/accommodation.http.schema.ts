@@ -582,7 +582,13 @@ export const AccommodationUpdateHttpSchema = z
             .string()
             .min(70, { message: 'zodError.common.seo.description.min' })
             .max(160, { message: 'zodError.common.seo.description.max' })
-            .optional()
+            .optional(),
+        /**
+         * HOS-784 stage 2 — published rename opt-in. The server still derives
+         * the slug; this boolean only authorizes regenerating it from `name`
+         * when the listing is already published.
+         */
+        refreshSlugFromName: z.boolean().optional()
     });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -1211,6 +1217,9 @@ export const httpToDomainAccommodationUpdate = (
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
     ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
+    ...(httpData.refreshSlugFromName === undefined
+        ? {}
+        : { refreshSlugFromName: httpData.refreshSlugFromName }),
 
     // Media (HOS-372): the domain update surface has no `media` field — the HTTP
     // `media` object carries videos only, and they land on the top-level column.

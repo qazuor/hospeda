@@ -264,6 +264,11 @@
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
             },
+            "slugRefresh": {
+                "notice": "Tu ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.",
+                "warning": "Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
+                "checkbox": "Cambiar igual la dirección pública para que siga este nuevo nombre"
+            },
             "field": {
                 "name": "Nombre",
                 "summary": "Descripción corta",

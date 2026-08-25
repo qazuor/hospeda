@@ -194,6 +194,14 @@ export const AccommodationUpdateInputSchema = z
          * `'description' | 'summary' | 'faq_answer'`.
          */
         aiAssistedFields: z.array(AiTextImproveFieldTypeSchema).optional(),
+        /**
+         * HOS-784 stage 2 — published rename opt-in.
+         *
+         * Owners never send a raw slug. When `true`, a published listing may
+         * regenerate its public slug from the new name; when absent/false, the
+         * current slug is preserved.
+         */
+        refreshSlugFromName: z.boolean().optional(),
 
         /**
          * Deep-partial override for grouped JSONB columns (SPEC-229).

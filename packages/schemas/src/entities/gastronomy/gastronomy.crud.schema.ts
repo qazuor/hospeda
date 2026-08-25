@@ -193,7 +193,9 @@ export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
          */
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
-            .optional()
+            .optional(),
+        /** Published rename opt-in (HOS-784 stage 2). */
+        refreshSlugFromName: z.boolean().optional()
     });
 
 /** TypeScript type for {@link GastronomyOwnerUpdateInputSchema}. */
@@ -341,7 +343,9 @@ export const GastronomyUpdateInputSchema = z
          */
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
-            .optional()
+            .optional(),
+        /** Published rename opt-in (HOS-784 stage 2). */
+        refreshSlugFromName: z.boolean().optional()
     });
 
 /** TypeScript type for {@link GastronomyUpdateInputSchema}. */

@@ -6,8 +6,13 @@
  * one PATCH carrying only those keys.
  */
 
+import { useEffect, useState } from 'react';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import {
+    buildSlugRefreshPayload,
+    shouldOfferPublishedSlugRefresh
+} from '@/lib/listing-slug-refresh';
 import { ActionBar } from '../ActionBar.client';
 import { AccommodationBasicsSchema } from '../accommodation-edit-form.schema';
 import { BasicInfoSection } from '../BasicInfoSection.client';
@@ -35,13 +40,35 @@ export function BasicsForm({
     initialData,
     destinations
 }: BasicsFormProps) {
+    const [refreshSlugFromName, setRefreshSlugFromName] = useState(false);
     const form = useAccommodationSectionForm({
         locale,
         accommodationId,
         initialValues: initialData,
         ownFields: [...OWN_FIELDS],
-        schema: AccommodationBasicsSchema
+        schema: AccommodationBasicsSchema,
+        extendPayload: ({ payload, values, baseline }) => ({
+            ...payload,
+            ...buildSlugRefreshPayload({
+                currentLifecycleState: initialData.lifecycleState,
+                initialName: baseline.name,
+                currentName: values.name,
+                refreshSlugFromName
+            })
+        })
     });
+
+    const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
+        currentLifecycleState: initialData.lifecycleState,
+        initialName: form.baselineValues.name,
+        currentName: form.values.name
+    });
+
+    useEffect(() => {
+        if (!shouldOfferSlugRefresh) {
+            setRefreshSlugFromName(false);
+        }
+    }, [shouldOfferSlugRefresh]);
 
     return (
         <form
@@ -56,6 +83,9 @@ export function BasicsForm({
                     destinations={destinations}
                     errors={form.fieldErrors}
                     onFieldChange={(field, value) => form.setValue(field, value)}
+                    shouldOfferSlugRefresh={shouldOfferSlugRefresh}
+                    refreshSlugFromName={refreshSlugFromName}
+                    onRefreshSlugFromNameChange={setRefreshSlugFromName}
                 />
             </div>
 

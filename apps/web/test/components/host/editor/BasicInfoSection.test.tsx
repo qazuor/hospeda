@@ -98,6 +98,8 @@ vi.mock('@/components/host/editor/RichTextEditor.module.css', () => ({
 
 const MOCK_DATA = {
     id: 'acc-1',
+    slug: 'test-hotel',
+    lifecycleState: 'DRAFT',
     name: 'Test Hotel',
     summary: 'Test summary for accommodation',
     description: 'Test description with content',
@@ -235,6 +237,38 @@ describe('BasicInfoSection — summary label consistency (HOS-783 B6)', () => {
 
         expect(screen.getByLabelText(/descripción corta/i)).toBeInTheDocument();
         expect(screen.queryByLabelText(/^resumen\b/i)).not.toBeInTheDocument();
+    });
+});
+
+describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)', () => {
+    it('renders the warning and checkbox when the published-rename choice is offered', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefresh={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText(/tu ficha ya está publicada/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/cambiar igual la dirección pública/i)).toBeInTheDocument();
+    });
+
+    it('forwards the checkbox toggle through onRefreshSlugFromNameChange', () => {
+        const onRefreshSlugFromNameChange = vi.fn();
+        render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefresh={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+            />
+        );
+
+        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección pública/i));
+
+        expect(onRefreshSlugFromNameChange).toHaveBeenCalledWith(true);
     });
 });
 
