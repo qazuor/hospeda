@@ -811,6 +811,13 @@ export async function initiateCommerceMonthlySubscription(
         // paths (`:559`, `:1303`) — the third of the three hardcodes that had
         // to move together, or this would promise a trial and charge day one.
         trialGranted: freeTrialDays !== undefined,
+        // HOS-812: `trialGranted` is metadata only — it is `createPendingProviderSubscription`'s
+        // `freeTrialDays` that writes `trial_start`/`trial_end`. Omitting it here (while both
+        // accommodation paths passed it) left every commerce row with a NULL `trial_end`, so
+        // `deriveTrialingStatus` could never flip it to `trialing`: MercadoPago advertised the
+        // trial on its hosted page and our row was born `active`, outside the H-137 control that
+        // only scans `trialing` rows.
+        freeTrialDays,
         // D3: stamped inside the helper's transaction. ADR-035 / SPEC-239 —
         // `loadEntitlements()` filters to `product_domain = 'accommodation'`, so
         // this is what keeps a commerce subscription from granting its owner the

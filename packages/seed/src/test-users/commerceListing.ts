@@ -6,7 +6,7 @@
  * exactly one gastronomy listing so the create route's
  * `enforceGastronomyLimit()` middleware refuses a second one locally, the
  * same way it refuses a real owner who already used their
- * `gastronomy-premium` plan's single slot.
+ * sellable gastronomy plan's single slot.
  *
  * Mirrors `hostAccommodation.ts`'s shape (narrow spec interface, idempotency
  * check via a row count, a minimal actor, one direct `*Service` call) but
@@ -109,7 +109,7 @@ export function buildAtCapGastronomyListingInput(input: {
     return GastronomyAdminCreateInputSchema.parse({
         name: `Comercio al tope — ${spec.displayName}`,
         summary: `Ficha de gastronomía de prueba (seed) que deja a "${spec.displayName}" en su tope de MAX_GASTRONOMIES (HOS-694).`,
-        description: `Ficha de gastronomía generada automáticamente para el test user "${spec.displayName}" (HOS-694). Ocupa el único cupo del plan gastronomy-premium, así la ruta de creación de una segunda ficha lo rechaza en local (AC-13 / AC-30). No representa un comercio real.`,
+        description: `Ficha de gastronomía generada automáticamente para el test user "${spec.displayName}" (HOS-694). Ocupa el único cupo del plan de gastronomía vendible, así la ruta de creación de una segunda ficha lo rechaza en local (AC-13 / AC-30). No representa un comercio real.`,
         type: GastronomyTypeEnum.RESTAURANT,
         ownerId,
         destinationId,
@@ -120,7 +120,7 @@ export function buildAtCapGastronomyListingInput(input: {
 
 /**
  * Ensures the given COMMERCE_OWNER test user owns exactly one gastronomy
- * listing, so their `gastronomy-premium` subscription (`MAX_GASTRONOMIES: 1`)
+ * listing, so their sellable-gastronomy-plan subscription (`MAX_GASTRONOMIES: 1`)
  * starts AT its cap.
  *
  * Idempotent: if the user already owns at least one non-deleted gastronomy

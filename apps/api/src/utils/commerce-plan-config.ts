@@ -57,8 +57,8 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  *
  * @example
  * ```ts
- * parseCommercePlanSlugMap('gastronomy:gastronomy-premium,experience:experience-premium');
- * // → { ok: true, map: { gastronomy: 'gastronomy-premium', experience: 'experience-premium' } }
+ * parseCommercePlanSlugMap('gastronomy:gastronomy-basico,experience:experience-basico');
+ * // → { ok: true, map: { gastronomy: 'gastronomy-basico', experience: 'experience-basico' } }
  * ```
  */
 export function parseCommercePlanSlugMap(raw: string | undefined): CommercePlanConfigResult {

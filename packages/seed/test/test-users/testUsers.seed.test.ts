@@ -8,6 +8,7 @@
  * existing precedent for every other helper in this file (see the docstring
  * on `hostAccommodation.test.ts`).
  */
+import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { TEST_USERS } from '../../src/test-users/testUsers.seed.js';
@@ -45,9 +46,13 @@ describe('TEST_USERS matrix', () => {
     describe('commerce-gastronomy@local.test (under cap, HOS-694)', () => {
         const user = findUser('commerce-gastronomy@local.test');
 
-        it('should hold the COMMERCE_OWNER role on the gastronomy-premium plan', () => {
+        it('should hold the COMMERCE_OWNER role on the sellable gastronomy plan', () => {
             expect(user.role).toBe(RoleEnum.COMMERCE_OWNER);
-            expect(user.planSlug).toBe('gastronomy-premium');
+            // Asserted against the catalogue default rather than a literal: the
+            // fixture derives its slug from that same constant, so hard-coding the
+            // slug here would only re-break on the next retier (HOS-818 moved it
+            // from `gastronomy-premium` to `gastronomy-basico`).
+            expect(user.planSlug).toBe(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy);
         });
 
         it('should stamp the subscription with the gastronomy product domain', () => {
@@ -62,9 +67,9 @@ describe('TEST_USERS matrix', () => {
     describe('commerce-experience@local.test (under cap, HOS-694)', () => {
         const user = findUser('commerce-experience@local.test');
 
-        it('should hold the COMMERCE_OWNER role on the experience-premium plan', () => {
+        it('should hold the COMMERCE_OWNER role on the sellable experience plan', () => {
             expect(user.role).toBe(RoleEnum.COMMERCE_OWNER);
-            expect(user.planSlug).toBe('experience-premium');
+            expect(user.planSlug).toBe(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience);
         });
 
         it('should stamp the subscription with the experience product domain', () => {
@@ -75,9 +80,9 @@ describe('TEST_USERS matrix', () => {
     describe('commerce-gastronomy-at-cap@local.test (HOS-694 AC-13 / AC-30)', () => {
         const user = findUser('commerce-gastronomy-at-cap@local.test');
 
-        it('should hold the COMMERCE_OWNER role on the gastronomy-premium plan', () => {
+        it('should hold the COMMERCE_OWNER role on the sellable gastronomy plan', () => {
             expect(user.role).toBe(RoleEnum.COMMERCE_OWNER);
-            expect(user.planSlug).toBe('gastronomy-premium');
+            expect(user.planSlug).toBe(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy);
             expect(user.subscriptionProductDomain).toBe('gastronomy');
         });
 
@@ -106,7 +111,10 @@ describe('TEST_USERS matrix', () => {
         // Assert
         expect(commerceOwners).toHaveLength(3);
         for (const user of commerceOwners) {
-            expect(['gastronomy-premium', 'experience-premium']).toContain(user.planSlug);
+            expect([
+                DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
+                DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience
+            ]).toContain(user.planSlug);
         }
     });
 });
