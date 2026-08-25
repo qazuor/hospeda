@@ -37,14 +37,41 @@
  *    checkout resolves the PRICE row, not the plan column: `NO_MONTHLY_PRICE` is
  *    a hard throw in `initiateCommerceMonthlySubscription`. Without this step the
  *    rename would take both verticals offline.
- * 3. **Retires both `*-premium` rows**: `active = false`, and nothing else.
- *    Their price rows, metadata and MercadoPago `preapproval_plan`s are left
- *    completely alone — live subscriptions hang off those plans (HOS-818: "do
- *    NOT delete or deactivate the preapproval_plan in the MercadoPago panel").
+ * 3. **Retires the `*-premium` row — but ONLY if its `*-basico` counterpart
+ *    verifiably took over** (active AND carrying an active monthly ARS price).
+ *    `active = false` and nothing else: price rows, metadata and MercadoPago
+ *    `preapproval_plan`s are left completely alone, because live subscriptions
+ *    hang off those plans (HOS-818: "do NOT delete or deactivate the
+ *    preapproval_plan in the MercadoPago panel").
  * 4. **Repoints LIVE subscriptions** from the premium plan to its basic
  *    counterpart. Scoped to non-terminal statuses on purpose: a cancelled or
  *    expired row is a historical record of what that customer actually bought,
  *    and rewriting it would falsify the archive to no one's benefit.
+ *
+ * Every step runs per vertical, so gastronomy and experience are decided
+ * independently — one can complete while the other is left alone.
+ *
+ * ## The sellability gate (step 3), and why it is not optional
+ *
+ * Steps 1 and 2 can BOTH decline to act on the same row, and the combination is
+ * not hypothetical. A `*-basico` sitting at `active = false` with a NON-ZERO
+ * `monthly_price_ars` — an operator who priced it from the admin editor without
+ * enabling it — is skipped by step 1's OR-PRESERVE guard (which requires the
+ * price to still be 0) and is invisible to step 2 (which only serves active
+ * plans). Retiring the premium anyway would leave that vertical with no sellable
+ * plan at all.
+ *
+ * That failure is silent, which is what makes it serious: the commerce checkout
+ * has no `PLAN_DISABLED` guard (unlike `routes/billing/start-paid.ts` and
+ * `plan-change.ts`), and `resolvePlanBySlug` does not filter on `active`. So
+ * nothing rejects the retired plan up front — the vertical simply throws
+ * `NO_MONTHLY_PRICE` on a real buyer's first attempt.
+ *
+ * The gate inverts the risk: the premium stays active until its replacement is
+ * provably ready. Leaving the OLD tier selling is a no-op for the customer
+ * (identical price, limits and entitlements); retiring it early is an outage.
+ * When the gate fires, the `summary` names the vertical and the reason — the
+ * environment is then half-migrated, and only an operator can decide the fix.
  *
  * ## MercadoPago
  *
@@ -134,48 +161,70 @@ const LIVE_SUBSCRIPTION_STATUSES = [
 ] as const;
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
-    const basicoNames = TIER_PAIRS.map((pair) => pair.basico);
-    const premiumNames = TIER_PAIRS.map((pair) => pair.premium);
-
-    // ── 1. Promote both `*-basico` rows to the sellable configuration ────────
-    const promoted = await ctx.db
-        .update(billingPlans)
-        .set({
-            active: true,
-            monthlyPriceArs: NEW_MONTHLY_PRICE_ARS,
-            metadata: sql`${billingPlans.metadata} || jsonb_build_object('hasTrial', ${NEW_HAS_TRIAL}::boolean, 'trialDays', ${NEW_TRIAL_DAYS}::int, 'monthlyPriceArs', ${NEW_MONTHLY_PRICE_ARS}::int)`,
-            updatedAt: new Date()
-        })
-        .where(
-            and(
-                inArray(billingPlans.name, [...basicoNames]),
-                // OR-PRESERVE: only a row still at the pre-HOS-818 baseline
-                // (inactive AND unpriced). An operator who already priced or
-                // enabled it made a decision this migration must not overwrite.
-                eq(billingPlans.active, false),
-                sql`COALESCE(${billingPlans.monthlyPriceArs}, 0) = 0`
-            )
-        )
-        .returning({ name: billingPlans.name });
-
-    // ── 2. Give each now-sellable plan its monthly ARS price row ─────────────
-    const basicoPlans = await ctx.db
-        .select({
-            id: billingPlans.id,
-            name: billingPlans.name,
-            livemode: billingPlans.livemode
-        })
-        .from(billingPlans)
-        .where(and(inArray(billingPlans.name, [...basicoNames]), eq(billingPlans.active, true)));
-
+    let plansPromoted = 0;
     let pricesCreated = 0;
-    for (const plan of basicoPlans) {
-        const existingPrice = await ctx.db
-            .select({ id: billingPrices.id })
+    let plansRetired = 0;
+    let subscriptionsRepointed = 0;
+
+    /** Verticals where the premium tier was deliberately LEFT ACTIVE, and why. */
+    const blocked: string[] = [];
+
+    // One pass per vertical. The whole sequence is per-pair rather than four
+    // catalogue-wide statements for two reasons: the gastronomy premium must
+    // only ever land on the gastronomy basic plan, and — more importantly — step
+    // 3 has to be able to spare ONE vertical's premium without sparing both.
+    for (const pair of TIER_PAIRS) {
+        // ── 1. Promote the `*-basico` row to the sellable configuration ──────
+        const promoted = await ctx.db
+            .update(billingPlans)
+            .set({
+                active: true,
+                monthlyPriceArs: NEW_MONTHLY_PRICE_ARS,
+                metadata: sql`${billingPlans.metadata} || jsonb_build_object('hasTrial', ${NEW_HAS_TRIAL}::boolean, 'trialDays', ${NEW_TRIAL_DAYS}::int, 'monthlyPriceArs', ${NEW_MONTHLY_PRICE_ARS}::int)`,
+                updatedAt: new Date()
+            })
+            .where(
+                and(
+                    eq(billingPlans.name, pair.basico),
+                    // OR-PRESERVE: only a row still at the pre-HOS-818 baseline
+                    // (inactive AND unpriced). An operator who already priced or
+                    // enabled it made a decision this migration must not overwrite.
+                    eq(billingPlans.active, false),
+                    sql`COALESCE(${billingPlans.monthlyPriceArs}, 0) = 0`
+                )
+            )
+            .returning({ name: billingPlans.name });
+
+        plansPromoted += promoted.length;
+
+        // Re-read rather than trusting step 1's result: the row may have been
+        // promoted just now, promoted by an earlier run, or skipped by
+        // OR-PRESERVE. Only the row's CURRENT state decides what follows.
+        const basicoRows = await ctx.db
+            .select({
+                id: billingPlans.id,
+                active: billingPlans.active,
+                livemode: billingPlans.livemode
+            })
+            .from(billingPlans)
+            .where(eq(billingPlans.name, pair.basico))
+            .limit(1);
+
+        const basico = basicoRows[0];
+        if (!basico) {
+            blocked.push(
+                `${pair.premium}: left ACTIVE — no ${pair.basico} row in this environment`
+            );
+            continue;
+        }
+
+        // ── 2. Give the now-sellable plan its monthly ARS price row ──────────
+        const existingPrices = await ctx.db
+            .select({ id: billingPrices.id, active: billingPrices.active })
             .from(billingPrices)
             .where(
                 and(
-                    eq(billingPrices.planId, plan.id),
+                    eq(billingPrices.planId, basico.id),
                     eq(billingPrices.currency, 'ARS'),
                     eq(billingPrices.billingInterval, 'month'),
                     eq(billingPrices.intervalCount, 1)
@@ -183,51 +232,84 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             )
             .limit(1);
 
-        if (existingPrice.length > 0) {
+        const existingPrice = existingPrices[0];
+        let hasActiveMonthlyPrice = existingPrice?.active === true;
+
+        if (basico.active && !existingPrice) {
+            await ctx.db.insert(billingPrices).values({
+                planId: basico.id,
+                currency: 'ARS',
+                unitAmount: NEW_MONTHLY_PRICE_ARS,
+                billingInterval: 'month',
+                intervalCount: 1,
+                active: true,
+                // Mirrors the plan row's own livemode, exactly as
+                // `ensureCommercePlan` does — a price in the other mode is
+                // invisible to checkout.
+                livemode: basico.livemode
+            });
+            pricesCreated += 1;
+            hasActiveMonthlyPrice = true;
+        }
+
+        // An EXISTING but inactive price is left alone rather than reactivated:
+        // deactivating a price is an operator action, and overriding it here
+        // would be the same class of mistake OR-PRESERVE exists to avoid. The
+        // gate below then refuses to retire this vertical's premium, which is
+        // the safe half of that trade.
+
+        // ── 3. Sellability gate — the premium is retired ONLY if the basic
+        //       tier verifiably took over (HOS-818 review finding) ────────────
+        //
+        // Steps 1 and 2 can BOTH decline to act on the same row, and the
+        // combination is not hypothetical: a `*-basico` sitting at
+        // `active = false` with a non-zero `monthly_price_ars` (an operator who
+        // priced it from the admin editor without enabling it) is skipped by
+        // step 1's OR-PRESERVE guard AND invisible to step 2's `active` check.
+        // Retiring the premium anyway would leave that vertical with NO sellable
+        // plan at all, and — because the commerce checkout has no
+        // `PLAN_DISABLED` guard — the failure would surface only as
+        // `NO_MONTHLY_PRICE` on a real buyer's first attempt.
+        //
+        // So the premium stays active until its replacement is provably ready.
+        // Leaving the OLD tier selling is a no-op for the customer; retiring it
+        // early is an outage.
+        if (!basico.active || !hasActiveMonthlyPrice) {
+            const reason = basico.active
+                ? `${pair.basico} has no ACTIVE monthly ARS price`
+                : `${pair.basico} is INACTIVE (operator-edited, so OR-PRESERVE skipped the promotion)`;
+            blocked.push(`${pair.premium}: left ACTIVE — ${reason}`);
             continue;
         }
 
-        await ctx.db.insert(billingPrices).values({
-            planId: plan.id,
-            currency: 'ARS',
-            unitAmount: NEW_MONTHLY_PRICE_ARS,
-            billingInterval: 'month',
-            intervalCount: 1,
-            active: true,
-            // Mirrors the plan row's own livemode, exactly as `ensureCommercePlan`
-            // does — a price in the other mode is invisible to checkout.
-            livemode: plan.livemode
-        });
-        pricesCreated += 1;
-    }
+        // ── 4. Retire the `*-premium` row (flag only — see the header) ───────
+        const retired = await ctx.db
+            .update(billingPlans)
+            .set({ active: false, updatedAt: new Date() })
+            .where(and(eq(billingPlans.name, pair.premium), eq(billingPlans.active, true)))
+            .returning({ name: billingPlans.name });
 
-    // ── 3. Retire both `*-premium` rows (flag only — see the header) ─────────
-    const retired = await ctx.db
-        .update(billingPlans)
-        .set({ active: false, updatedAt: new Date() })
-        .where(and(inArray(billingPlans.name, [...premiumNames]), eq(billingPlans.active, true)))
-        .returning({ name: billingPlans.name });
+        plansRetired += retired.length;
 
-    // ── 4. Repoint live subscriptions premium → basico, per vertical ─────────
-    // Per pair rather than in one statement: the gastronomy premium must land on
-    // the gastronomy basic plan, never on the experience one.
-    let subscriptionsRepointed = 0;
-    for (const pair of TIER_PAIRS) {
-        const rows = await ctx.db
-            .select({ id: billingPlans.id, name: billingPlans.name })
+        // ── 5. Repoint this vertical's LIVE subscriptions premium → basico ───
+        // Reached only past the gate, so a subscription is never moved onto a
+        // plan that cannot bill it.
+        const premiumRows = await ctx.db
+            .select({ id: billingPlans.id })
             .from(billingPlans)
-            .where(inArray(billingPlans.name, [pair.basico, pair.premium]));
+            .where(eq(billingPlans.name, pair.premium))
+            .limit(1);
 
-        const basicoId = rows.find((row) => row.name === pair.basico)?.id;
-        const premiumId = rows.find((row) => row.name === pair.premium)?.id;
-        if (!basicoId || !premiumId) {
-            // An environment that never seeded this vertical has nothing to move.
+        const premiumId = premiumRows[0]?.id;
+        if (!premiumId) {
+            // An environment that never seeded this vertical's premium tier has
+            // nothing to move.
             continue;
         }
 
         const moved = await ctx.db
             .update(billingSubscriptions)
-            .set({ planId: basicoId, updatedAt: new Date() })
+            .set({ planId: basico.id, updatedAt: new Date() })
             .where(
                 and(
                     eq(billingSubscriptions.planId, premiumId),
@@ -243,23 +325,31 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     }
 
     const counts = {
-        plansPromoted: promoted.length,
+        plansPromoted,
         pricesCreated,
-        plansRetired: retired.length,
-        subscriptionsRepointed
+        plansRetired,
+        subscriptionsRepointed,
+        verticalsBlocked: blocked.length
     };
 
-    const changed =
-        counts.plansPromoted +
-            counts.pricesCreated +
-            counts.plansRetired +
-            counts.subscriptionsRepointed >
-        0;
+    const changed = plansPromoted + pricesCreated + plansRetired + subscriptionsRepointed > 0;
+
+    const applied = changed
+        ? `HOS-818: promoted ${plansPromoted} basico plan(s) (${pricesCreated} price row(s) created), retired ${plansRetired} premium plan(s), repointed ${subscriptionsRepointed} live subscription(s).`
+        : 'HOS-818: commerce tiers already retiered or operator-edited — no change.';
+
+    // Surfaced in the summary, not just swallowed into a count: an operator who
+    // runs this has to learn that a vertical was left untouched AND why, because
+    // the environment is now half-migrated and only they can decide the fix.
+    const warning =
+        blocked.length > 0
+            ? ` ATTENTION — ${blocked.length} vertical(s) left on the PREMIUM tier because the basic tier is not sellable: ${blocked.join('; ')}. Those verticals keep selling premium (no outage), but the rename did NOT take effect for them: activate/price the basic plan and re-run.`
+            : '';
+
+    const manual = ` MANUAL STEP STILL PENDING: repoint the API's commerce plan-slug env var in Coolify at gastronomy:gastronomy-basico,experience:experience-basico — until then checkout keeps resolving the premium plans.`;
 
     return {
-        summary: changed
-            ? `HOS-818: promoted ${counts.plansPromoted} basico plan(s) (${counts.pricesCreated} price row(s) created), retired ${counts.plansRetired} premium plan(s), repointed ${counts.subscriptionsRepointed} live subscription(s). MANUAL STEP STILL PENDING: repoint the API's commerce plan-slug env var in Coolify at gastronomy:gastronomy-basico,experience:experience-basico — until then checkout keeps resolving the retired premium plans.`
-            : 'HOS-818: commerce tiers already retiered or operator-edited — no change.',
+        summary: `${applied}${warning}${manual}`,
         counts
     };
 }
