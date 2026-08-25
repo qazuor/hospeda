@@ -167,6 +167,35 @@
     margin-bottom: var(--space-3, 1rem);
 }
 
+/* Map subsection heading (HOS-795) — separates the stored address from the map */
+.subsectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin-top: var(--space-5, 2rem);
+    margin-bottom: var(--space-3, 1rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+/*
+ * Reverse-geocoded pin location (HOS-795). Reference text, never an input —
+ * this string used to be injected into the search box and read as a saved
+ * address.
+ */
+.pinReference {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin-bottom: var(--space-3, 1rem);
+}
+
+.pinReferenceLabel {
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
 /* Coordinate inputs */
 .coordRow {
     display: grid;
