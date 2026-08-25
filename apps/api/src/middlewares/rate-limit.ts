@@ -1495,7 +1495,10 @@ export function createSlidingWindowPerUserRateLimit(
                     message:
                         buildExceededMessage?.({ retryAfterSec }) ??
                         'Too many requests. Please try again later.',
-                    reason: 'RATE_LIMIT_EXCEEDED',
+                    // `details` is the contract's own escape hatch for extra
+                    // context (base-response.schema.ts). A sibling `reason` is
+                    // not in it, and duplicating `code` under a second name
+                    // gives a client one more thing to branch on for nothing.
                     details: {
                         retryAfter: retryAfterSec
                     }

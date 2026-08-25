@@ -283,7 +283,6 @@ describe('Protected media upload-entity endpoint', () => {
                 success: boolean;
                 error: {
                     code: string;
-                    reason?: string;
                     message: string;
                     details?: { retryAfter?: number };
                 };
@@ -291,7 +290,6 @@ describe('Protected media upload-entity endpoint', () => {
 
             expect(body.success).toBe(false);
             expect(body.error.code).toBe('RATE_LIMIT_EXCEEDED');
-            expect(body.error.reason).toBe('RATE_LIMIT_EXCEEDED');
             expect(body.error.message).toContain('límite temporal de subida de fotos');
             expect(body.error.message).toContain('Intentá de nuevo en');
             expect(body.error.message).not.toContain('Too many requests');
