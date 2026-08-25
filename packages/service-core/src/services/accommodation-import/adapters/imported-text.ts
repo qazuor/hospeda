@@ -170,3 +170,211 @@ export function toSummaryText(input: { readonly plainText: string }): string | n
     // a couple of characters, which would fail the schema minimum on save.
     return summary.length < SUMMARY_MIN_CHARS ? null : summary;
 }
+
+// ---------------------------------------------------------------------------
+// Source-truncation repair and candidate resolution (HOS-799)
+// ---------------------------------------------------------------------------
+
+/**
+ * Matches a truncation marker at the very end of a string: either three ASCII
+ * dots or a single U+2026 ellipsis, possibly repeated and possibly padded.
+ */
+const SOURCE_TRUNCATION_RE = /(?:\s*(?:\.{3}|…))+\s*$/;
+
+/**
+ * Trust floor for a body-scraped description, well above the schema's 30-char
+ * validity minimum.
+ *
+ * The two numbers answer different questions. `DESCRIPTION_MIN_CHARS` asks "is
+ * this long enough to save?"; this one asks "is this long enough to BELIEVE?".
+ * A scrape is a heuristic over someone else's markup, and a thin page yields a
+ * few dozen characters of leftover chrome that would clear the schema bound
+ * while being worthless as a listing description — and, worse, would preempt a
+ * better candidate (metadata, or the AI fallback). Real listing prose clears
+ * this comfortably; below it we discard the body candidate entirely and behave
+ * exactly as the importer did before HOS-799.
+ */
+const BODY_DESCRIPTION_MIN_CHARS = 120;
+
+/**
+ * Repairs a value the SOURCE already truncated.
+ *
+ * SEO plugins emit `og:description` / `<meta name="description">` clipped to
+ * ~150-160 characters and terminated with three ASCII dots — frequently
+ * mid-word ("…ubicada en Concepcion del Urug..."). Stored verbatim, that marker
+ * sits INSIDE the host's data, indistinguishable from text they wrote, and the
+ * word is left broken.
+ *
+ * Merely deleting the dots would be worse than leaving them: the value would
+ * still be clipped, now with nothing signalling it. So this function cuts back
+ * to the last whole word and re-terminates with a single U+2026 — the same
+ * unambiguous marker {@link truncateAtWordBoundary} uses, so every shortened
+ * value in the system ends the same way regardless of who shortened it.
+ *
+ * Text with no trailing marker is returned untouched.
+ *
+ * @param input - The possibly source-truncated text.
+ * @returns The repaired text, or the input unchanged when no marker is present.
+ *
+ * @example
+ * ```ts
+ * normaliseSourceTruncation({ text: 'una casa en Concepcion del Urug...' });
+ * // 'una casa en Concepcion del…'
+ * normaliseSourceTruncation({ text: 'una casa completa.' });
+ * // 'una casa completa.' — unchanged
+ * ```
+ */
+export function normaliseSourceTruncation(input: { readonly text: string }): string {
+    const { text } = input;
+    const stripped = text.replace(SOURCE_TRUNCATION_RE, '');
+
+    // No marker found — the value is complete as the source published it.
+    if (stripped.length === text.length) {
+        return text;
+    }
+
+    const trimmed = stripped.trimEnd();
+    const lastSpace = trimmed.lastIndexOf(' ');
+    const cut = lastSpace > 0 ? trimmed.slice(0, lastSpace).trimEnd() : trimmed;
+
+    return cut.length === 0 ? '…' : `${cut}…`;
+}
+
+/**
+ * Drops a leading line that merely repeats the listing's own title.
+ *
+ * A page body almost always opens with an `<h1>` carrying the listing name,
+ * which the body converter turns into the first line of the extracted text.
+ * Left in place it duplicates the `name` candidate and — because the summary is
+ * derived from the description — leaks into the summary too, which then reads
+ * "Quinta Los Alamos Bienvenidos a nuestra quinta…".
+ *
+ * Only an EXACT (case-insensitive, trimmed) match is removed. A heading that
+ * merely starts with the title, or a real opening sentence, is left alone:
+ * deleting genuine prose would be a worse failure than keeping a duplicated
+ * heading.
+ *
+ * @param input - The body text and the listing title, when one is known.
+ * @returns The text without its redundant leading title line.
+ *
+ * @example
+ * ```ts
+ * stripLeadingTitle({ text: 'Casa Azul\n\nUna casa…', title: 'Casa Azul' });
+ * // 'Una casa…'
+ * ```
+ */
+export function stripLeadingTitle(input: {
+    readonly text: string;
+    readonly title?: string | undefined;
+}): string {
+    const { text, title } = input;
+    if (title === undefined || title.trim().length === 0) {
+        return text;
+    }
+
+    const breakAt = text.indexOf('\n');
+    if (breakAt === -1) {
+        return text;
+    }
+
+    const firstLine = text.slice(0, breakAt).trim();
+    if (firstLine.toLowerCase() !== title.trim().toLowerCase()) {
+        return text;
+    }
+
+    return text.slice(breakAt).trim();
+}
+
+/**
+ * Which candidate won the description resolution.
+ *
+ * `'body'` maps to the `text` field source (heuristic DOM/text parsing);
+ * `'metadata'` keeps whichever source tag the metadata candidate carried
+ * (`jsonld` / `opengraph` / `meta`).
+ */
+export type ImportedTextOrigin = 'body' | 'metadata';
+
+/**
+ * Picks the best long-form `description` candidate between the page BODY and
+ * the page's SEO METADATA, normalising both.
+ *
+ * The body is preferred — that is the point of HOS-799, since metadata is a
+ * single-line, frequently pre-truncated teaser rather than listing content.
+ * But it is preferred only when it is actually better: a page that renders its
+ * content client-side leaves an almost-empty body, and a clean JSON-LD
+ * description beats a scrap of navigation text. "Better" means the body either
+ * carries real paragraph structure or is no shorter than the metadata value.
+ *
+ * The body candidate must also clear {@link BODY_DESCRIPTION_MIN_CHARS} before
+ * it is considered at all — see that constant for why the schema minimum is
+ * the wrong bar for a scrape.
+ *
+ * @param input - The stripped page-body text and the optional metadata value.
+ * @returns The winning candidate with its origin, or `null` when neither
+ *   candidate satisfies the description minimum.
+ *
+ * @example
+ * ```ts
+ * resolveImportedDescription({ bodyText: 'Uno\n\nDos', metadataText: 'Uno Dos' });
+ * // { text: 'Uno\n\nDos', origin: 'body' }
+ * ```
+ */
+export function resolveImportedDescription(input: {
+    readonly bodyText: string;
+    readonly metadataText?: string | undefined;
+}): { readonly text: string; readonly origin: ImportedTextOrigin } | null {
+    const { bodyText, metadataText } = input;
+
+    const bodyCandidate = toDescriptionText({ plainText: bodyText });
+    const body =
+        bodyCandidate !== null && bodyCandidate.length >= BODY_DESCRIPTION_MIN_CHARS
+            ? bodyCandidate
+            : null;
+    const metadata =
+        metadataText === undefined
+            ? null
+            : toDescriptionText({ plainText: normaliseSourceTruncation({ text: metadataText }) });
+
+    if (body === null) {
+        return metadata === null ? null : { text: metadata, origin: 'metadata' };
+    }
+
+    if (metadata === null) {
+        return { text: body, origin: 'body' };
+    }
+
+    const bodyIsBetter = body.includes('\n') || body.length >= metadata.length;
+
+    return bodyIsBetter ? { text: body, origin: 'body' } : { text: metadata, origin: 'metadata' };
+}
+
+/**
+ * Derives the short `summary` candidate.
+ *
+ * Always derived from the resolved description when one exists — never copied
+ * verbatim from `og:description`, which is what imported the source's own
+ * "..." into the host's data (HOS-799). {@link toSummaryText} flattens to a
+ * single line and, when over the schema max, cuts on a word boundary and
+ * terminates with a single U+2026.
+ *
+ * Falls back to the metadata summary (repaired first) only when there is no
+ * description to derive from.
+ *
+ * @param input - The resolved description text and the optional metadata summary.
+ * @returns The summary candidate, or `null` when neither seed yields one long
+ *   enough to satisfy the schema minimum.
+ */
+export function resolveImportedSummary(input: {
+    readonly descriptionText?: string | undefined;
+    readonly metadataSummary?: string | undefined;
+}): string | null {
+    const { descriptionText, metadataSummary } = input;
+
+    const seed =
+        descriptionText ??
+        (metadataSummary === undefined
+            ? undefined
+            : normaliseSourceTruncation({ text: metadataSummary }));
+
+    return seed === undefined ? null : toSummaryText({ plainText: seed });
+}
