@@ -125,7 +125,7 @@
                 "menuUrl": "Link do cardápio",
                 "priceRange": "Faixa de preço",
                 "isPriceOnRequest": "Preço sob consulta",
-                "priceFrom": "Preço a partir de (centavos)",
+                "priceFrom": "Preço a partir de",
                 "priceUnit": "Unidade de preço",
                 "richDescription": "Descrição ampliada",
                 "amenities": "Comodidades",
@@ -280,7 +280,10 @@
             },
             "subtitle": "Preencha o básico agora — você vai poder adicionar fotos, horários e mais detalhes depois.",
             "fields": {
-                "name": "Nome do comércio",
+                "name": {
+                    "gastronomy": "Nome do comércio",
+                    "experience": "Nome da experiência"
+                },
                 "type": "Categoria",
                 "summary": "Resumo",
                 "description": "Descrição",
@@ -288,9 +291,15 @@
                 "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
                 "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
             },
-            "submit": "Criar comércio",
+            "submit": {
+                "gastronomy": "Criar comércio",
+                "experience": "Criar experiência"
+            },
             "submitting": "Criando...",
-            "error": "Não conseguimos criar o comércio. Tente novamente."
+            "error": {
+                "gastronomy": "Não conseguimos criar o comércio. Tente novamente.",
+                "experience": "Não conseguimos criar a experiência. Tente novamente."
+            }
         }
     },
     "landing": {

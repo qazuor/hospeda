@@ -125,7 +125,7 @@
                 "menuUrl": "Menu link",
                 "priceRange": "Price range",
                 "isPriceOnRequest": "Price on request",
-                "priceFrom": "Price from (cents)",
+                "priceFrom": "Price from",
                 "priceUnit": "Price unit",
                 "richDescription": "Extended description",
                 "amenities": "Amenities",
@@ -280,7 +280,10 @@
             },
             "subtitle": "Fill in the basics now — you'll be able to add photos, hours, and more details afterward.",
             "fields": {
-                "name": "Business name",
+                "name": {
+                    "gastronomy": "Business name",
+                    "experience": "Experience name"
+                },
                 "type": "Category",
                 "summary": "Summary",
                 "description": "Description",
@@ -288,9 +291,15 @@
                 "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
                 "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
             },
-            "submit": "Create business",
+            "submit": {
+                "gastronomy": "Create business",
+                "experience": "Create experience"
+            },
             "submitting": "Creating...",
-            "error": "We couldn't create the business. Please try again."
+            "error": {
+                "gastronomy": "We couldn't create the business. Please try again.",
+                "experience": "We couldn't create the experience. Please try again."
+            }
         }
     },
     "landing": {

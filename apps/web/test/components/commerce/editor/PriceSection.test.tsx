@@ -7,7 +7,7 @@
  *
  * @module test/components/commerce/editor/PriceSection
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PriceSection } from '../../../../src/components/commerce/editor/PriceSection.client';
 import { buildEditData } from './edit-data-fixture';
@@ -96,12 +96,50 @@ describe('PriceSection', () => {
             expect(onFieldChange).toHaveBeenCalledWith('isPriceOnRequest', true);
         });
 
-        it('parses a typed price into an integer', () => {
+        it('does not expose the internal centavo unit in the label (HOS-809)', () => {
+            renderSection(experienceProps);
+
+            // The label used to read "Precio desde (centavos)", which is the
+            // only reason an owner would type 15000 meaning fifteen thousand
+            // pesos and publish $ 150.
+            expect(screen.getByLabelText(/Precio desde/)).toBeInTheDocument();
+            expect(screen.queryByLabelText(/centavos/i)).toBeNull();
+        });
+
+        it('converts a price typed in pesos into centavos (HOS-809)', () => {
             const { onFieldChange } = renderSection(experienceProps);
 
             fireEvent.change(screen.getByLabelText(/Precio desde/), { target: { value: '750' } });
 
-            expect(onFieldChange).toHaveBeenCalledWith('priceFrom', 750);
+            expect(onFieldChange).toHaveBeenCalledWith('priceFrom', 75000);
+        });
+
+        it('shows the stored centavo amount as pesos (HOS-809)', () => {
+            // The read half of the round trip. Without it, every open-and-save
+            // would multiply the stored price by 100.
+            renderSection({
+                ...experienceProps,
+                data: buildEditData({ priceFrom: 350000 })
+            });
+
+            expect(screen.getByLabelText(/Precio desde/)).toHaveValue(3500);
+        });
+
+        it('round-trips a typed price through storage unchanged (HOS-809)', () => {
+            // Type 15000 pesos → the editor reports 1500000 centavos → loading
+            // that stored value back must put 15000 in the field again.
+            const { onFieldChange } = renderSection(experienceProps);
+            fireEvent.change(screen.getByLabelText(/Precio desde/), { target: { value: '15000' } });
+            expect(onFieldChange).toHaveBeenCalledWith('priceFrom', 1500000);
+
+            const stored = onFieldChange.mock.calls.at(-1)?.[1] as number;
+            // Unmount first: both renders emit the same field id, and a second
+            // copy in the document would make the label→control lookup
+            // ambiguous — the reload has to be observed on its own.
+            cleanup();
+            renderSection({ ...experienceProps, data: buildEditData({ priceFrom: stored }) });
+
+            expect(screen.getByLabelText(/Precio desde/)).toHaveValue(15000);
         });
 
         it('floors a fractional price rather than sending a decimal', () => {
@@ -111,20 +149,29 @@ describe('PriceSection', () => {
             // would fail validation at submit with no field-level hint.
             fireEvent.change(screen.getByLabelText(/Precio desde/), { target: { value: '750.9' } });
 
-            expect(onFieldChange).toHaveBeenCalledWith('priceFrom', 750);
+            expect(onFieldChange).toHaveBeenCalledWith('priceFrom', 75000);
         });
 
         it('maps a cleared price to null, not to zero or NaN', () => {
             const { onFieldChange } = renderSection({
                 ...experienceProps,
-                data: buildEditData({ priceFrom: 500 })
+                data: buildEditData({ priceFrom: 50000 })
             });
 
             fireEvent.change(screen.getByLabelText(/Precio desde/), { target: { value: '' } });
 
-            // `Number('')` is 0 and `Math.floor(Number(''))` is 0 — an empty
-            // field must not read as a free experience.
+            // `Number('')` is 0 — an empty field must not read as a free
+            // experience.
             expect(onFieldChange).toHaveBeenCalledWith('priceFrom', null);
+        });
+
+        it('keeps an explicit zero visible instead of blanking the field', () => {
+            renderSection({
+                ...experienceProps,
+                data: buildEditData({ priceFrom: 0 })
+            });
+
+            expect(screen.getByLabelText(/Precio desde/)).toHaveValue(0);
         });
 
         it('reports a unit change through onFieldChange', () => {
