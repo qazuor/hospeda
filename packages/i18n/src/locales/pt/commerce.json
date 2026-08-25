@@ -1,10 +1,10 @@
 {
     "lead": {
         "title": "Adicione seu negócio",
-        "subtitle": "Preencha o formulário e entraremos em contato para incluir seu estabelecimento na plataforma.",
+        "subtitle": "Crie sua conta, publique seu local e comece a alcançar clientes que procuram onde comer na região.",
         "experience": {
             "title": "Publique sua experiência",
-            "subtitle": "Conte-nos sobre as experiências que você oferece e entraremos em contato para somá-lo ao Hospeda."
+            "subtitle": "Crie sua conta, publique sua experiência e comece a alcançar viajantes que procuram o que fazer na região."
         },
         "fields": {
             "businessName": "Nome do negócio",
