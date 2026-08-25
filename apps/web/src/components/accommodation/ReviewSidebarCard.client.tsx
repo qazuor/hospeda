@@ -206,7 +206,10 @@ export function ReviewSidebarCard({
                 });
 
                 setSuccess(true);
-                window.setTimeout(() => window.location.reload(), 1400);
+                window.setTimeout(() => {
+                    if (typeof window === 'undefined') return;
+                    window.location.reload();
+                }, 1400);
             } catch {
                 setError(
                     t(
