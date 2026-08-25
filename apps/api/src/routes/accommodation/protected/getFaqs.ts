@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/public/accommodations/:id/faqs
+ * GET /api/v1/protected/accommodations/:id/faqs
  * Get all FAQs for an accommodation
  */
 
@@ -7,7 +7,7 @@ import { AccommodationFaqListOutputSchema, ServiceErrorCode } from '@repo/schema
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { createGuestActor } from '../../../utils/actor';
+import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -24,8 +24,12 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 const getFaqsHandler = async (c: Context) => {
     const { id } = c.req.param();
 
-    // Create guest actor for public endpoint
-    const actor = createGuestActor();
+    // HOS-786: this route lives under `/protected/`, so the actor MUST come from
+    // the authenticated session. It previously fabricated a guest actor (copied
+    // from the public route), which made `_canView` reject every DRAFT/PRIVATE
+    // accommodation with NOT_FOUND — the owner's own FAQs read back as an empty
+    // list no matter which session cookie was forwarded.
+    const actor = getActorFromContext(c);
 
     // Validate required parameters
     if (!id) {
