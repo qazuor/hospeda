@@ -77,7 +77,15 @@ const buildUploadRateLimitMessage = ({
 }): string =>
     `Se alcanzó el límite temporal de subida de fotos. Intentá de nuevo en ${formatRetryAfterLabel(retryAfterSec)}.`;
 
-const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS));
+/**
+ * Burst allowance for one album, uploaded in a single pass.
+ *
+ * The cap PLUS ONE: `featured` and `gallery` upload through this same route,
+ * and `limit-enforcement.ts` counts them together under `state: 'visible'`.
+ * Sizing the burst to the gallery cap alone left the featured image as the one
+ * request that got refused — a 50-photo Premium album still ended in a 429.
+ */
+const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
 
 /**
  * Resolve an entity service per-request for ownership verification.
