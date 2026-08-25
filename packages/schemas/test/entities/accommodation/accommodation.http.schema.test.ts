@@ -1179,6 +1179,19 @@ describe('AccommodationUpdateHttpSchema — seoTitle/seoDescription (H-121)', ()
         const result = AccommodationUpdateHttpSchema.safeParse({ seoDescription: 'too short' });
         expect(result.success).toBe(false);
     });
+
+    // HOS-792: `''` is how the host editor clears a saved override. It is not a
+    // short title — it is the absence of one — and rejecting it left a stored
+    // value unremovable from every write surface there is.
+    it('accepts an empty seoTitle as "clear the override"', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ seoTitle: '' });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts an empty seoDescription as "clear the override"', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ seoDescription: '' });
+        expect(result.success).toBe(true);
+    });
 });
 
 describe('httpToDomainAccommodationUpdate — SEO override reaches seo (H-121)', () => {
@@ -1201,6 +1214,23 @@ describe('httpToDomainAccommodationUpdate — SEO override reaches seo (H-121)',
     it('omits seo entirely when neither seoTitle nor seoDescription is sent', () => {
         const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
         expect(result.seo).toBeUndefined();
+    });
+
+    // The distinction the whole clearing path rests on: an ABSENT key leaves the
+    // stored group untouched (`seo` is shallow-merged JSONB), while `''` must
+    // travel all the way through as a value so it overwrites what is stored.
+    it('carries an empty seoTitle through as a value, not as an omission', () => {
+        const result = httpToDomainAccommodationUpdate({ seoTitle: '' });
+        expect(result.seo).toEqual({ title: '' });
+    });
+
+    it('clears one field without disturbing the other', () => {
+        const description = 'B'.repeat(70);
+        const result = httpToDomainAccommodationUpdate({
+            seoTitle: '',
+            seoDescription: description
+        });
+        expect(result.seo).toEqual({ title: '', description });
     });
 });
 
