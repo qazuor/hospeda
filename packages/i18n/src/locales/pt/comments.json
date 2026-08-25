@@ -10,7 +10,9 @@
         "errorNetwork": "Não foi possível enviar seu comentário. Tente novamente.",
         "errorRateLimit": "Muitos comentários, aguarde um momento.",
         "errorAuthCta": "Entre para comentar",
-        "charCount": "{{count}}/{{max}}"
+        "charCount": "{{count}}/{{max}}",
+        "charCountWithMin": "{{count}}/{{max}} · mín. {{min}}",
+        "charCountBelowMin": "Ainda abaixo do mínimo de {{min}} caracteres"
     },
     "moderation": {
         "approved": "Aprovado",

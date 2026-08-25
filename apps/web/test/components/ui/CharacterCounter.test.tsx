@@ -16,7 +16,10 @@ import { CharacterCounter, getCharacterCounterState } from '@/components/ui/Char
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
         t: (_key: string, fallback: string, params: Record<string, string>) =>
-            fallback.replaceAll('{{count}}', params.count).replaceAll('{{max}}', params.max)
+            fallback
+                .replaceAll('{{count}}', params.count)
+                .replaceAll('{{max}}', params.max)
+                .replaceAll('{{min}}', params.min ?? '')
     })
 }));
 
@@ -44,10 +47,15 @@ describe('getCharacterCounterState', () => {
         expect(getCharacterCounterState({ current: 2, max: 3 })).toBe('normal');
         expect(getCharacterCounterState({ current: 3, max: 3 })).toBe('danger');
     });
+
+    it('treats values below the minimum as their own state', () => {
+        expect(getCharacterCounterState({ current: 2, min: 3, max: 100 })).toBe('under-minimum');
+        expect(getCharacterCounterState({ current: 3, min: 3, max: 100 })).toBe('normal');
+    });
 });
 
 describe('CharacterCounter', () => {
-    it('renders used/total and exposes the state', () => {
+    it('renders used/total and exposes the warning state', () => {
         render(
             <CharacterCounter
                 id="c"
@@ -60,6 +68,71 @@ describe('CharacterCounter', () => {
 
         expect(screen.getByTestId('counter')).toHaveTextContent('85/100');
         expect(screen.getByTestId('counter')).toHaveAttribute('data-state', 'warning');
+    });
+
+    it('renders the minimum when one exists and marks values below it', () => {
+        render(
+            <CharacterCounter
+                id="c"
+                locale="es"
+                current={2}
+                min={3}
+                max={100}
+                testId="counter"
+            />
+        );
+
+        expect(screen.getByTestId('counter')).toHaveTextContent('2/100 · mín. 3');
+        expect(screen.getByTestId('counter')).toHaveAttribute('data-state', 'under-minimum');
+    });
+
+    it('spells the below-minimum state out for assistive tech, not just in colour', () => {
+        const { rerender } = render(
+            <CharacterCounter
+                id="c"
+                locale="es"
+                current={2}
+                min={3}
+                max={100}
+                testId="counter"
+            />
+        );
+
+        const srText = screen
+            .getByTestId('counter')
+            .querySelector('.sr-only') as HTMLElement | null;
+        expect(srText).not.toBeNull();
+        expect(srText?.textContent).toContain('mínimo de 3');
+
+        // Reaching the minimum must retract the announcement, otherwise a
+        // screen reader keeps reporting a field that is already valid.
+        rerender(
+            <CharacterCounter
+                id="c"
+                locale="es"
+                current={3}
+                min={3}
+                max={100}
+                testId="counter"
+            />
+        );
+
+        expect(screen.getByTestId('counter').querySelector('.sr-only')).toBeNull();
+    });
+
+    it('never names the paragraph with aria-label, which ARIA prohibits on generic roles', () => {
+        render(
+            <CharacterCounter
+                id="c"
+                locale="es"
+                current={2}
+                min={3}
+                max={100}
+                testId="counter"
+            />
+        );
+
+        expect(screen.getByTestId('counter')).not.toHaveAttribute('aria-label');
     });
 
     it('never prints an undefined modifier class in the normal state', () => {

@@ -9,6 +9,10 @@
     white-space: nowrap;
 }
 
+.counter--under-minimum {
+    color: var(--destructive, oklch(0.6 0.22 25));
+}
+
 .counter--warning {
     color: var(--brand-accent);
 }
