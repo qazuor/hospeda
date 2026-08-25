@@ -82,6 +82,19 @@
 #    seeders are NOT here: their data lives in `packages/billing/src/config/
 #    *.config.ts`, already guarded below — the seeders only read it.)
 #
+#    EXTERNAL BASELINES (HOS-789): `required/aiPrompts.seed.ts` is listed above
+#    as though its data were inline, and it is not — it only READS
+#    `DEFAULT_PROMPTS` / `DEFAULT_RULES` from
+#    `packages/ai-core/src/engine/default-prompts.ts`, exactly the way the
+#    billing seeders read `billing/src/config/*.config.ts`. Billing had the
+#    right shape from the start (guard the config, the seeder is incidental);
+#    aiPrompts had it backwards, so rewording a prompt — which touches only
+#    ai-core — moved nothing in the guarded surface and CI stayed silent while
+#    staging and prod kept the old `ai_prompt_versions` rows. That is what
+#    HOS-789 ended up backfilling by hand. EXTERNAL_BASELINE_FILES below closes
+#    it; the seeder entry stays, since a change to HOW it seeds is still
+#    prod-relevant.
+#
 #    DEMO-ONLY inline seeders — deliberately NOT guarded (audited HOS-173, not an
 #    omission). Three other `example/*.seed.ts` files bake fixtures into inline
 #    constants with no live `data/` folder, but they attach ONLY to demo entities
@@ -218,6 +231,25 @@ INLINE_CONSTANT_FILES=(
     'packages/seed/src/required/systemUser.seed.ts'
 )
 
+# Baselines that live OUTSIDE packages/seed but are seeded from, verbatim, into
+# a table a live environment already holds (HOS-789).
+#
+# The seeder for these is already in INLINE_CONSTANT_FILES, which looks like
+# enough and is not: the seeder only READS the constant. Change the constant and
+# leave the seeder alone — the ordinary way to reword a prompt — and nothing in
+# the guarded surface moved, so the guard passed while staging and prod kept the
+# old rows forever. That is precisely the failure HOS-789 had to backfill by
+# hand, and nothing stopped it from recurring.
+#
+# The bar for adding a path here: a live environment holds a copy of this value,
+# and the seed that put it there cannot update it (ON CONFLICT DO NOTHING or
+# equivalent), so only a numbered migration can move it.
+EXTERNAL_BASELINE_FILES=(
+    # Seeded verbatim into ai_prompt_versions by required/aiPrompts.seed.ts,
+    # which inserts ON CONFLICT DO NOTHING so an existing row is never updated.
+    'packages/ai-core/src/engine/default-prompts.ts'
+)
+
 # Billing plan/limit/entitlement/addon/promo-code TS constants (023-025
 # precedent).
 BILLING_CONFIG_FILES=(
@@ -260,8 +292,14 @@ compute_changed_files() {
 
     # Diff roots: `data` (default-guarded surface + mixed folders), the two
     # inline-constant orchestrator dirs (`example`, `required` — so the named
-    # INLINE_CONSTANT_FILES show up in the diff), `billing/config`, and
+    # INLINE_CONSTANT_FILES show up in the diff), `billing/config`,
+    # `ai-core/src/engine` (so EXTERNAL_BASELINE_FILES show up), and
     # `data-migrations` (to detect the accompanying migration).
+    #
+    # A path missing from this list is invisible to the guard NO MATTER what
+    # is_guarded_path says about it — the diff never emits it, so the predicate
+    # is never asked. Adding an entry to any guarded list without adding its
+    # root here produces a guard that reads as covering the file and does not.
     #
     # `--no-renames` keeps every diff line a strict A/M/D with a single path, so
     # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES /
@@ -273,6 +311,7 @@ compute_changed_files() {
         'packages/seed/src/example' \
         'packages/seed/src/required' \
         'packages/billing/src/config' \
+        'packages/ai-core/src/engine' \
         'packages/seed/src/data-migrations'
 }
 
@@ -305,9 +344,10 @@ $(git log "${base}..HEAD" --format=%B 2>/dev/null || true)"
 is_guarded_path() {
     local path="$1"
 
-    # Exact-match guarded files (billing config + inline-constant seeders).
+    # Exact-match guarded files (billing config + inline-constant seeders +
+    # baselines living outside packages/seed).
     local f
-    for f in "${BILLING_CONFIG_FILES[@]}" "${INLINE_CONSTANT_FILES[@]}"; do
+    for f in "${BILLING_CONFIG_FILES[@]}" "${INLINE_CONSTANT_FILES[@]}" "${EXTERNAL_BASELINE_FILES[@]}"; do
         [[ "${path}" == "${f}" ]] && return 0
     done
 
