@@ -259,7 +259,7 @@
                 "capacityPricing": "Capacity and price",
                 "contactSocial": "Contact and social",
                 "seo": "Search engines (Google)",
-                "seoDescription": "Choose how your property shows up when someone finds it on Google. Leave these fields blank to use your property's name."
+                "seoDescription": "Choose how your property appears when someone finds it on Google. Both fields are optional: leave them empty and we publish your property's name and summary."
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -310,7 +310,8 @@
                 "seoTitle": "Google title",
                 "seoTitleHint": "The bold title shown in the search result. For now it only applies in Spanish — English and Portuguese still show your property's name.",
                 "seoDescription": "Google description",
-                "seoDescriptionHint": "The text shown below the title in the search result. Like the title, it only applies in Spanish for now."
+                "seoDescriptionHint": "The text shown below the title in the search result. Like the title, it only applies in Spanish for now.",
+                "seoDefaultPreview": "Leave it empty and this is published: \"{{value}}\""
             },
             "photo": {
                 "addToGallery": "Add photos to the gallery",

@@ -294,6 +294,30 @@ export interface AccommodationEditData {
     /** SEO description override (G7 smoke, H-121). Maps to `seo.description`. */
     readonly seoDescription: string;
     /**
+     * What the public detail page publishes as the search-result TITLE while
+     * `seoTitle` is empty (HOS-792). Read-only — the editor shows it, never
+     * sends it.
+     *
+     * It is NOT `name`, and that distinction is the whole reason this field
+     * exists. `name` here is the raw column; the public page resolves
+     * `nameI18n ?? name` for the `es` locale, and `resolveI18nText` cross-falls
+     * `es → en → pt`, so an accommodation whose `nameI18n` carries only English
+     * publishes the English title. The editor showing `name` would then be
+     * naming a value that never reaches Google.
+     *
+     * Empty when the accommodation has no usable name yet (a fresh draft), in
+     * which case the editor announces no default rather than an empty one.
+     */
+    readonly seoTitleDefault: string;
+    /**
+     * What the public detail page publishes as the search-result DESCRIPTION
+     * while `seoDescription` is empty (HOS-792). Resolved from
+     * `summaryI18n ?? summary` — the SUMMARY, not the name. See
+     * {@link AccommodationEditData.seoTitleDefault} for why it is stored
+     * separately from `summary`.
+     */
+    readonly seoDescriptionDefault: string;
+    /**
      * Embedded videos (G7 smoke, H-121). Maps to the read-composed
      * `media.videos` field (HOS-372: the domain column is `videos`, `media` is
      * assembled on the way out). Written via the SAME field on PATCH
