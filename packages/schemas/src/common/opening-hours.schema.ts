@@ -26,11 +26,32 @@ export const HHmmSchema = z
 
 /**
  * A single operating-hours shift: an open time and a close time in HH:mm format.
- * The close time MUST be strictly after the open time (validated via `.refine`).
+ *
+ * ## `close` BEFORE `open` means the shift crosses midnight (HOS-813)
+ *
+ * This schema used to require `close > open`, which made a night shift
+ * unrepresentable: a bar, a brewery or a parrilla that works 22:00—02:00 was
+ * rejected, and so were the nocturnal bird-watching, dawn fishing and sunrise
+ * boat trips on the experiences side. That is the working schedule of a whole
+ * category of listing, not an edge case.
+ *
+ * So the ordering rule is gone and `close < open` is now MEANINGFUL: the window
+ * runs from `open` on the given day to `close` on the NEXT day. The data model
+ * is unchanged — still two plain `HH:mm` strings, no day offset, no duration —
+ * because the wrap is derivable from the pair alone, and every consumer that
+ * needs it already derives it (see `computeOpenNowStatus` in
+ * `apps/web/src/lib/gastronomy-hours.ts`, which has handled the wrap since
+ * SPEC-239).
+ *
+ * The ONE remaining rule is `close !== open`, kept because that pair is
+ * genuinely ambiguous — it reads equally as a zero-length shift and as a 24-hour
+ * one, and nothing in the value says which. A venue open around the clock is
+ * expressed as `00:00—23:59`.
  *
  * @example
- * ShiftSchema.parse({ open: "09:00", close: "18:00" }) // ok
- * ShiftSchema.parse({ open: "18:00", close: "09:00" }) // throws — close before open
+ * ShiftSchema.parse({ open: "09:00", close: "18:00" }) // ok — same-day
+ * ShiftSchema.parse({ open: "22:00", close: "02:00" }) // ok — crosses midnight
+ * ShiftSchema.parse({ open: "10:00", close: "10:00" }) // throws — ambiguous
  */
 export const ShiftSchema = z
     .object({
@@ -41,18 +62,23 @@ export const ShiftSchema = z
         open: HHmmSchema,
         /**
          * Closing time in HH:mm (24-hour) format.
-         * Must be strictly after `open`.
+         *
+         * May be EARLIER than `open`, which means the shift runs past midnight
+         * into the following day. It may not be EQUAL to `open` (see the schema
+         * doc for why that pair is rejected).
+         *
          * @example "18:00"
+         * @example "02:00" // open "22:00" — closes at 2am the next day
          */
         close: HHmmSchema
     })
     .refine(
         (shift) => {
-            // Compare lexicographically — valid because both are zero-padded HH:mm.
-            return shift.close > shift.open;
+            // Both are zero-padded HH:mm, so string equality is time equality.
+            return shift.close !== shift.open;
         },
         {
-            message: 'zodError.common.openingHours.shift.closeBeforeOpen',
+            message: 'zodError.common.openingHours.shift.sameOpenAndClose',
             path: ['close']
         }
     );

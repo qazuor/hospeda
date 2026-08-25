@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError, z } from 'zod';
 import {
+    DayScheduleSchema,
     OpeningHoursFields,
     OpeningHoursSchema,
     ShiftSchema
@@ -180,7 +181,83 @@ describe('OpeningHoursSchema', () => {
         });
     });
 
-    describe('close-before-open edge case', () => {
+    /**
+     * HOS-813 — a shift may cross midnight.
+     *
+     * `close > open` used to be a hard rule, which made a night shift
+     * unrepresentable: 22:00 -> 02:00 was rejected while 22:00 -> 23:59 saved.
+     * That is the working schedule of a bar, a brewery or a parrilla, and of
+     * nocturnal bird-watching and dawn fishing on the experiences side.
+     *
+     * The control below is deliberately the same pair the smoke used: only the
+     * closing time differs between the accepted and the once-rejected case.
+     */
+    describe('midnight-crossing shifts (HOS-813)', () => {
+        it('should accept a shift that crosses midnight (22:00 -> 02:00)', () => {
+            // Arrange / Act
+            const result = ShiftSchema.safeParse({ open: '22:00', close: '02:00' });
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept the same-day control the crossing shift is compared against', () => {
+            // Arrange / Act
+            const result = ShiftSchema.safeParse({ open: '22:00', close: '23:59' });
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a dawn shift that opens before midnight (23:30 -> 06:00)', () => {
+            // Arrange / Act
+            const result = ShiftSchema.safeParse({ open: '23:30', close: '06:00' });
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a crossing shift inside a full weekly schedule', () => {
+            // Arrange
+            const hours = {
+                timezone: 'America/Argentina/Buenos_Aires',
+                days: {
+                    mon: { closed: false, shifts: [{ open: '20:00', close: '02:00' }] },
+                    tue: { closed: false, shifts: [{ open: '20:00', close: '02:00' }] },
+                    wed: { closed: false, shifts: [{ open: '20:00', close: '02:00' }] },
+                    thu: { closed: false, shifts: [{ open: '20:00', close: '02:00' }] },
+                    fri: { closed: false, shifts: [{ open: '20:00', close: '04:00' }] },
+                    sat: { closed: false, shifts: [{ open: '20:00', close: '04:00' }] },
+                    sun: { closed: true, shifts: [] }
+                }
+            };
+            // Act
+            const result = OpeningHoursSchema.safeParse(hours);
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a split day whose second shift crosses midnight', () => {
+            // Arrange
+            const day = {
+                closed: false,
+                shifts: [
+                    { open: '12:00', close: '15:00' },
+                    { open: '20:00', close: '01:00' }
+                ]
+            };
+            // Act
+            const result = DayScheduleSchema.safeParse(day);
+            // Assert
+            expect(result.success).toBe(true);
+        });
+    });
+
+    /**
+     * The ONE surviving window rule. Kept because `close === open` reads equally
+     * as a zero-length shift and as a 24-hour one, and nothing in the value says
+     * which. It is also what keeps HOS-814's field-marking fix a live path: had
+     * every rejection been removed here, that fix would have had no case left to
+     * show.
+     */
+    describe('ambiguous zero-length window', () => {
         it('should reject a shift where close equals open', () => {
             // Arrange / Act
             const result = ShiftSchema.safeParse({ open: '10:00', close: '10:00' });
@@ -188,18 +265,23 @@ describe('OpeningHoursSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject a shift where close is before open', () => {
+        it('should report the rejection on `close`, where the editor marks it', () => {
             // Arrange / Act
-            const result = ShiftSchema.safeParse({ open: '18:00', close: '09:00' });
+            const result = ShiftSchema.safeParse({ open: '22:00', close: '22:00' });
             // Assert
             expect(result.success).toBe(false);
+            if (result.success) throw new Error('expected a rejection');
+            expect(result.error.issues[0]?.path).toEqual(['close']);
+            expect(result.error.issues[0]?.message).toBe(
+                'zodError.common.openingHours.shift.sameOpenAndClose'
+            );
         });
 
-        it('should accept a shift where close is after open (midnight approach 23:59)', () => {
+        it('should still reject a malformed time regardless of ordering', () => {
             // Arrange / Act
-            const result = ShiftSchema.safeParse({ open: '23:00', close: '23:59' });
+            const result = ShiftSchema.safeParse({ open: '25:00', close: '02:00' });
             // Assert
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
         });
     });
 });

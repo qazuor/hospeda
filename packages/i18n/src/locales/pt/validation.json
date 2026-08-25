@@ -1846,8 +1846,8 @@
         },
         "openingHours": {
             "shift": {
-                "closeBeforeOpen": "La hora de cierre no puede ser anterior a la hora de apertura",
-                "invalidTime": "El formato de hora no es válido"
+                "invalidTime": "O formato de hora não é válido",
+                "sameOpenAndClose": "O horário de fechamento não pode ser igual ao de abertura"
             }
         },
         "options": {
