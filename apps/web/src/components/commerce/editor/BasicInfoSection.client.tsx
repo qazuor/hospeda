@@ -110,13 +110,13 @@ export function BasicInfoSection({
                         <p className={styles.hint}>
                             {t(
                                 'commerce.owner.editor.slugRefresh.notice',
-                                'Esta ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.'
+                                'Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
                             )}
                         </p>
                         <p className={styles.hint}>
                             {t(
                                 'commerce.owner.editor.slugRefresh.warning',
-                                'Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                                'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
                             )}
                         </p>
                         <label className={styles.checkbox}>
@@ -130,7 +130,7 @@ export function BasicInfoSection({
                             <span>
                                 {t(
                                     'commerce.owner.editor.slugRefresh.checkbox',
-                                    'Cambiar igual la dirección pública para que siga este nuevo nombre'
+                                    'Cambiar igual la dirección web para que siga este nuevo nombre'
                                 )}
                             </span>
                         </label>

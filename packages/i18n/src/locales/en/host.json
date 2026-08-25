@@ -267,9 +267,9 @@
                 "ariaLabel": "Form section navigation"
             },
             "slugRefresh": {
-                "notice": "This listing is already published. By default, the current address stays as it is even if you rename it.",
-                "warning": "If you change the public address, you may affect how it appears in Google today or in links you already shared.",
-                "checkbox": "Change the public address too so it follows this new name"
+                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
+                "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
+                "checkbox": "Change the web address too so it follows this new name"
             },
             "field": {
                 "name": "Name",

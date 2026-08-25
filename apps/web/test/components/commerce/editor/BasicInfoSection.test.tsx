@@ -243,7 +243,7 @@ describe('BasicInfoSection', () => {
         });
 
         expect(screen.getByText(/esta ficha ya está publicada/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/cambiar igual la dirección pública/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
     });
 
     it('reports the slug refresh checkbox through onFieldChange', () => {
@@ -252,7 +252,7 @@ describe('BasicInfoSection', () => {
             data: buildEditData({ refreshSlugFromName: false })
         });
 
-        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección pública/i));
+        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección web/i));
 
         expect(onFieldChange).toHaveBeenCalledWith('refreshSlugFromName', true);
     });
