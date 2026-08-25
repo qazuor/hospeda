@@ -43,6 +43,8 @@ import {
 } from '@/lib/listing-slug-refresh';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
+import type { CommerceFaq } from './CommerceFaqManager.client';
+import { CommerceFaqManager } from './CommerceFaqManager.client';
 import styles from './CommerceListingEditor.module.css';
 import {
     type CommerceI18nValues,
@@ -58,6 +60,7 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
+import fieldStyles from './editor/editor-fields.module.css';
 import {
     COMMERCE_FIELD_ID_SUFFIXES,
     COMMERCE_FIELD_PREFIX,
@@ -97,18 +100,34 @@ export interface CommerceListingEditorProps {
      */
     readonly destinationsLoadFailed?: boolean;
     /**
-     * `true` when the hosting page renders the commerce FAQ manager below this
-     * editor AND gives its wrapper `id="editor-faqs"` (H-153). Adds the matching
-     * entry to the section nav, which otherwise cannot advertise a section that
-     * is not part of this component.
+     * `true` to render the commerce FAQ manager as a section of this editor,
+     * with the matching `editor-faqs` entry in the section nav.
      *
-     * Opt-in rather than always-on because the nav's contract is that every link
-     * resolves: a page that embeds the editor WITHOUT the FAQ card would get a
-     * link scrolling nowhere, which reads as a dead control rather than an error
-     * — the same failure the conditional amenities entry exists to avoid.
-     * Defaults to `false`.
+     * HOS-827 changed what this prop DOES, not what it means. It used to be a
+     * promise made by the hosting page — "I render the FAQ card below you and
+     * give it `id='editor-faqs'`" (H-153) — with the card living outside the
+     * form as a sibling of it. That split had two costs, both reported:
+     *
+     * - The card sat outside the form's grid, so it painted 202px wider and
+     *   227px further left than every other card, BELOW the save button
+     *   (HOS-827). It did not read as part of what was being edited.
+     * - It was a SEPARATE `client:idle` island. Anything that kept it from
+     *   hydrating turned the whole section into decoration — an "Agregar
+     *   pregunta" that opens nothing and a Guardar that fires no request, with
+     *   no error anywhere, which is exactly how HOS-811 was reported. Inside
+     *   this editor it shares the `client:load` island the rest of the form
+     *   already depends on, so the section is live whenever the form is.
+     *
+     * Still opt-in rather than always-on: the nav's contract is that every
+     * link resolves, and only a page that supplies `initialFaqs` should get a
+     * FAQ section. Defaults to `false`.
      */
     readonly hasFaqSection?: boolean;
+    /**
+     * FAQs already stored for this listing, pre-fetched SSR from the protected
+     * detail. Only read when {@link hasFaqSection} is `true`.
+     */
+    readonly initialFaqs?: readonly CommerceFaq[];
 }
 
 type SaveStatus =
@@ -300,7 +319,8 @@ export function CommerceListingEditor({
     features = [],
     destinations = [],
     destinationsLoadFailed = false,
-    hasFaqSection = false
+    hasFaqSection = false,
+    initialFaqs = []
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -615,11 +635,10 @@ export function CommerceListingEditor({
             label: t('commerce.owner.editor.sectionNav.price', 'Precio')
         });
 
-        // H-153: the FAQ manager is a SIBLING card rendered by the page, not a
-        // section of this form, so its anchor is not ours to guarantee — the
-        // page that renders it opts in. Appended last because it sits below the
-        // editor in the DOM, which is what the scrollspy's first-match tie-break
-        // requires.
+        // H-153 added this entry; HOS-827 moved its target INTO this component,
+        // so the anchor and the link are now emitted by the same file and cannot
+        // drift apart. Appended last because the FAQ card renders last among the
+        // sections, which is what the scrollspy's first-match tie-break requires.
         if (hasFaqSection) {
             sections.push({
                 id: 'editor-faqs',
@@ -732,6 +751,31 @@ export function CommerceListingEditor({
                         errors={fieldErrors}
                         onFieldChange={onFieldChange}
                     />
+
+                    {/*
+                     * HOS-827: a section of the form, above the save button and
+                     * inside the same column as every other card — not a
+                     * full-width sibling below it. The wrapper carries the card
+                     * recipe (`fieldStyles.section`) and the nav anchor, because
+                     * `CommerceFaqManager` renders a bare <section> with neither:
+                     * it is also mounted standalone elsewhere.
+                     *
+                     * The FAQ endpoints are its own; nothing here reaches the
+                     * form's PATCH payload or its dirty tracking (HOS-811).
+                     */}
+                    {hasFaqSection && (
+                        <div
+                            id="editor-faqs"
+                            className={fieldStyles.section}
+                        >
+                            <CommerceFaqManager
+                                vertical={vertical}
+                                listingId={listingId}
+                                locale={locale}
+                                initialFaqs={initialFaqs}
+                            />
+                        </div>
+                    )}
 
                     {formError && (
                         <p

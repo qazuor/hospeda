@@ -15,7 +15,17 @@
  * - Optimistic local reorder (displayOrder) — PUT to /reorder on every move.
  * - This component manages its own async state (loading / error per action).
  *   It does NOT participate in the parent editor's dirty / PATCH payload — FAQs
- *   have their own endpoints and are saved independently.
+ *   have their own endpoints and are saved independently. That last point is
+ *   what the editor's "No hay cambios para guardar" means when a FAQ is on
+ *   screen: the general save button never carried FAQs and never will.
+ *
+ * HOS-811 — why a blank field is now an ERROR and not a bare `return`.
+ * Both submit handlers used to bail out silently when question or answer was
+ * empty: no request, no message, no marked field, no state change. That is
+ * indistinguishable from a dead button, and it is exactly how the bug was
+ * reported ("se aprieta Guardar, y no pasa nada. Ni cartel, ni campo marcado,
+ * ni error"). Refusing to submit an empty FAQ is still correct; refusing
+ * SILENTLY never is — it leaves the owner with no next move.
  */
 
 import { type JSX, useCallback, useState } from 'react';
@@ -59,9 +69,58 @@ interface FaqEditor {
 
 const EMPTY_EDITOR: FaqEditor = { question: '', answer: '', category: '' };
 
+/** Per-field validation messages for one FAQ form. */
+interface FaqFieldErrors {
+    readonly question?: string;
+    readonly answer?: string;
+}
+
+const NO_FIELD_ERRORS: FaqFieldErrors = {};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Validates one FAQ form, returning a message per offending field.
+ *
+ * Mirrors the API's own requirement (question and answer are both `notNull`),
+ * so a submit this rejects would have been rejected server-side anyway. The
+ * point is not the rule — it is that the rejection is now VISIBLE (HOS-811).
+ *
+ * @param params.values - Current form values.
+ * @param params.t - Translator for the messages.
+ * @returns One entry per invalid field; empty when the form may be submitted.
+ */
+function validateFaqEditor({
+    values,
+    t
+}: {
+    values: FaqEditor;
+    t: (key: string, fallback?: string) => string;
+}): FaqFieldErrors {
+    const errors: { question?: string; answer?: string } = {};
+
+    if (!values.question.trim()) {
+        errors.question = t(
+            'commerce.owner.editor.faqManager.questionRequired',
+            'Escribí la pregunta antes de guardar.'
+        );
+    }
+    if (!values.answer.trim()) {
+        errors.answer = t(
+            'commerce.owner.editor.faqManager.answerRequired',
+            'Escribí la respuesta antes de guardar.'
+        );
+    }
+
+    return errors;
+}
+
+/** Whether a validation result blocks submission. */
+function hasFieldErrors(errors: FaqFieldErrors): boolean {
+    return Boolean(errors.question || errors.answer);
+}
 
 /** Build the base FAQ endpoint prefix for a given vertical + listing. */
 function faqBasePath({
@@ -116,6 +175,8 @@ export function CommerceFaqManager({
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [addErrors, setAddErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
+    const [editErrors, setEditErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
 
     const basePath = faqBasePath({ vertical, listingId });
 
@@ -124,7 +185,9 @@ export function CommerceFaqManager({
     // ---------------------------------------------------------------------------
 
     const handleAddSubmit = useCallback(async () => {
-        if (!addValues.question.trim() || !addValues.answer.trim()) {
+        const validation = validateFaqEditor({ values: addValues, t });
+        setAddErrors(validation);
+        if (hasFieldErrors(validation)) {
             return;
         }
         setBusyId('add');
@@ -146,6 +209,7 @@ export function CommerceFaqManager({
         if (result.ok) {
             setFaqs((prev) => sortFaqs([...prev, result.data]));
             setAddValues(EMPTY_EDITOR);
+            setAddErrors(NO_FIELD_ERRORS);
             setIsAdding(false);
         } else {
             setActionError(
@@ -166,16 +230,20 @@ export function CommerceFaqManager({
             category: faq.category ?? ''
         });
         setActionError(null);
+        setEditErrors(NO_FIELD_ERRORS);
     }, []);
 
     const cancelEdit = useCallback(() => {
         setEditingId(null);
         setEditValues(EMPTY_EDITOR);
+        setEditErrors(NO_FIELD_ERRORS);
     }, []);
 
     const handleEditSubmit = useCallback(
         async (faqId: string) => {
-            if (!editValues.question.trim() || !editValues.answer.trim()) {
+            const validation = validateFaqEditor({ values: editValues, t });
+            setEditErrors(validation);
+            if (hasFieldErrors(validation)) {
                 return;
             }
             setBusyId(faqId);
@@ -200,6 +268,7 @@ export function CommerceFaqManager({
                 );
                 setEditingId(null);
                 setEditValues(EMPTY_EDITOR);
+                setEditErrors(NO_FIELD_ERRORS);
             } else {
                 setActionError(
                     t(
@@ -343,6 +412,12 @@ export function CommerceFaqManager({
                                         className={styles.textarea}
                                         rows={2}
                                         value={editValues.question}
+                                        aria-invalid={editErrors.question ? 'true' : undefined}
+                                        aria-describedby={
+                                            editErrors.question
+                                                ? `faq-q-${faq.id}-error`
+                                                : undefined
+                                        }
                                         placeholder={t(
                                             'commerce.owner.editor.faqManager.questionPlaceholder',
                                             'Escribí la pregunta...'
@@ -354,6 +429,15 @@ export function CommerceFaqManager({
                                             }))
                                         }
                                     />
+                                    {editErrors.question && (
+                                        <p
+                                            id={`faq-q-${faq.id}-error`}
+                                            className={styles.fieldError}
+                                            role="alert"
+                                        >
+                                            {editErrors.question}
+                                        </p>
+                                    )}
                                     <label
                                         className={styles.fieldLabel}
                                         htmlFor={`faq-a-${faq.id}`}
@@ -368,6 +452,10 @@ export function CommerceFaqManager({
                                         className={styles.textarea}
                                         rows={4}
                                         value={editValues.answer}
+                                        aria-invalid={editErrors.answer ? 'true' : undefined}
+                                        aria-describedby={
+                                            editErrors.answer ? `faq-a-${faq.id}-error` : undefined
+                                        }
                                         placeholder={t(
                                             'commerce.owner.editor.faqManager.answerPlaceholder',
                                             'Escribí la respuesta...'
@@ -379,6 +467,15 @@ export function CommerceFaqManager({
                                             }))
                                         }
                                     />
+                                    {editErrors.answer && (
+                                        <p
+                                            id={`faq-a-${faq.id}-error`}
+                                            className={styles.fieldError}
+                                            role="alert"
+                                        >
+                                            {editErrors.answer}
+                                        </p>
+                                    )}
                                     <div className={styles.editActions}>
                                         <button
                                             type="button"
@@ -479,12 +576,23 @@ export function CommerceFaqManager({
                         className={styles.textarea}
                         rows={2}
                         value={addValues.question}
+                        aria-invalid={addErrors.question ? 'true' : undefined}
+                        aria-describedby={addErrors.question ? 'faq-new-q-error' : undefined}
                         placeholder={t(
                             'commerce.owner.editor.faqManager.questionPlaceholder',
                             'Escribí la pregunta...'
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, question: e.target.value }))}
                     />
+                    {addErrors.question && (
+                        <p
+                            id="faq-new-q-error"
+                            className={styles.fieldError}
+                            role="alert"
+                        >
+                            {addErrors.question}
+                        </p>
+                    )}
                     <label
                         className={styles.fieldLabel}
                         htmlFor="faq-new-a"
@@ -496,12 +604,23 @@ export function CommerceFaqManager({
                         className={styles.textarea}
                         rows={4}
                         value={addValues.answer}
+                        aria-invalid={addErrors.answer ? 'true' : undefined}
+                        aria-describedby={addErrors.answer ? 'faq-new-a-error' : undefined}
                         placeholder={t(
                             'commerce.owner.editor.faqManager.answerPlaceholder',
                             'Escribí la respuesta...'
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
                     />
+                    {addErrors.answer && (
+                        <p
+                            id="faq-new-a-error"
+                            className={styles.fieldError}
+                            role="alert"
+                        >
+                            {addErrors.answer}
+                        </p>
+                    )}
                     <div className={styles.editActions}>
                         <button
                             type="button"
@@ -517,6 +636,7 @@ export function CommerceFaqManager({
                             onClick={() => {
                                 setIsAdding(false);
                                 setAddValues(EMPTY_EDITOR);
+                                setAddErrors(NO_FIELD_ERRORS);
                             }}
                         >
                             {t('commerce.owner.editor.faqManager.cancelButton', 'Cancelar')}

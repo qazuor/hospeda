@@ -183,6 +183,19 @@
     outline-offset: 1px;
 }
 
+/* HOS-811: the box the owner has to fix, and the message telling them so. The
+   silent early return these replace marked nothing and said nothing. */
+.textarea[aria-invalid="true"] {
+    border-color: var(--destructive, #b91c1c);
+}
+
+.fieldError {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--destructive, #b91c1c);
+    margin: 0;
+}
+
 .editActions {
     display: flex;
     gap: var(--space-3, 1rem);

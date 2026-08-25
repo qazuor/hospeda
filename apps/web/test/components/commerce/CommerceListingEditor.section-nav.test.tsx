@@ -176,37 +176,40 @@ describe('CommerceListingEditor — section nav', () => {
         expect(container.querySelector('#editor-translations')).not.toBeNull();
     });
 
-    // ── H-153: the FAQ entry ────────────────────────────────────────────────
+    // ── H-153 / HOS-827: the FAQ entry ──────────────────────────────────────
     //
-    // The FAQ manager is NOT part of this component — `editar.astro` renders it
-    // as a sibling card below the editor. It has been on that page since
-    // 2026-06-22, but it was absent from this nav, so the only way to reach it
-    // was to scroll past the entire editor. The smoke enumerated this nav, found
-    // eight entries and none named "preguntas frecuentes", and concluded the
-    // merchant had nowhere to enter FAQs at all.
+    // H-153 added the entry while the FAQ manager was still a sibling card the
+    // page rendered BELOW the form: it had been on that page since 2026-06-22
+    // and was absent from this nav, so the only way to reach it was to scroll
+    // past the entire editor. The smoke enumerated this nav, found eight
+    // entries and none named "preguntas frecuentes", and concluded the merchant
+    // had nowhere to enter FAQs at all.
     //
-    // Because the anchor lives outside this component, the entry is OPT-IN: the
-    // page that supplies `id="editor-faqs"` is the one that asks for the link.
-    // Defaulting it on would make every "the links resolve" assertion above a
-    // lie for any future page that embeds the editor without the FAQ card —
-    // the same dangling-link failure the amenities case exists to prevent.
+    // HOS-827 moved the target INTO this component, so the link and the anchor
+    // are now emitted by the same file and cannot drift apart. The entry stays
+    // OPT-IN, for the same reason as before: a page that embeds the editor
+    // without asking for a FAQ section must not get a link scrolling nowhere —
+    // the dangling-link failure the amenities case also exists to prevent.
 
-    it('omits the FAQ entry by default, since its anchor is not this component', () => {
+    it('omits the FAQ entry AND its anchor when the page does not ask for one', () => {
         const { container } = renderEditor({ withCatalogs: true });
 
         expect(navTargetIds()).not.toContain('editor-faqs');
         expect(container.querySelector('#editor-faqs')).toBeNull();
     });
 
-    it('appends the FAQ entry LAST when the page provides the anchor', () => {
-        renderEditor({ withCatalogs: true, hasFaqSection: true });
+    it('appends the FAQ entry LAST and renders the anchor it points at', () => {
+        const { container } = renderEditor({ withCatalogs: true, hasFaqSection: true });
 
         const ids = navTargetIds();
         expect(ids).toContain('editor-faqs');
-        // Last, because the FAQ card renders below the editor. The scrollspy
-        // resolves ties by first-in-array, so an out-of-order entry highlights
-        // the wrong link whenever two sections share the viewport.
+        // Last, because the FAQ card renders last among the sections. The
+        // scrollspy resolves ties by first-in-array, so an out-of-order entry
+        // highlights the wrong link whenever two sections share the viewport.
         expect(ids[ids.length - 1]).toBe('editor-faqs');
+        // The half that used to live in another file. This is what H-153's
+        // page-source guard below was standing in for.
+        expect(container.querySelector('#editor-faqs')).not.toBeNull();
     });
 
     it('keeps the amenities rule independent of the FAQ entry', () => {
@@ -217,16 +220,15 @@ describe('CommerceListingEditor — section nav', () => {
         expect(ids[ids.length - 1]).toBe('editor-faqs');
     });
 
-    // The two halves of the opt-in live in different files and neither fails on
-    // its own: a page that asks for the link without rendering the anchor gets
-    // exactly the dead control this suite exists to prevent, and nothing here
-    // would catch it because the anchor is outside the component.
+    // HOS-827 retired H-153's cross-file pairing: the anchor is emitted by this
+    // component now, and the test above asserts it directly against the DOM.
+    // What is left for the page to get wrong is the OTHER half — asking for the
+    // section without handing over the FAQs it is supposed to show, which
+    // renders an editor that silently claims the listing has no questions.
     //
     // LIMIT, stated plainly: this reads the page SOURCE, so it proves the two
-    // literals are declared together, not that the anchor survives to the
-    // response. That second question was answered by hand against the running
-    // server (the served DOM carries `id="editor-faqs"` and the FAQ card).
-    it('pairs the opt-in with the anchor in the page that uses it', () => {
+    // props are declared together, not that they survive to the response.
+    it('hands the FAQs over on the page that asks for the section', () => {
         const source = readFileSync(
             resolve(
                 __dirname,
@@ -236,6 +238,9 @@ describe('CommerceListingEditor — section nav', () => {
         );
 
         expect(source).toContain('hasFaqSection');
-        expect(source).toContain('id="editor-faqs"');
+        expect(source).toContain('initialFaqs={initialFaqs}');
+        // The FAQ block is no longer a sibling of the editor — that placement
+        // is what put it outside the grid and below the save button (HOS-827).
+        expect(source).not.toContain('<CommerceFaqManager');
     });
 });

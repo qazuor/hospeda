@@ -211,6 +211,8 @@
                 "answerLabel": "Answer",
                 "questionPlaceholder": "Write the question...",
                 "answerPlaceholder": "Write the answer...",
+                "questionRequired": "Write the question before saving.",
+                "answerRequired": "Write the answer before saving.",
                 "moveUp": "Move up",
                 "moveDown": "Move down",
                 "deleteConfirm": "Delete this question?",
