@@ -152,11 +152,29 @@ describe('NotificationService — addon_purchase template routing (HOS-722)', ()
     it('titles the receipt with the add-on name', async () => {
         // The subject pattern moved from `{planName}` to `{addonName}` with the
         // payload split; a leftover `{planName}` would leak the raw placeholder.
+        //
+        // HOS-830 updated the expected string from "Add-on adquirido - Fotos
+        // extra" to "Complemento adquirido - …". What this asserted before was
+        // the LITERAL previous copy, and that copy is the defect HOS-830
+        // removes: "add-on" is a word the buyer never sees on any screen. The
+        // assertion was therefore freezing the bug, and the same email already
+        // contradicted itself — the heading rendered above is "Complemento
+        // adquirido exitosamente", so only the subject still said "Add-on".
+        //
+        // The claim itself is unchanged: the subject names the ADD-ON, from
+        // `{addonName}`. Only the wording it is pinned to moved. Routing to the
+        // right template stays asserted by the two tests above, which is where
+        // this file's real job lives — nothing was loosened here to go green.
         await service.send(addonPayload);
 
         expect(emailTransport.send).toHaveBeenCalledWith(
-            expect.objectContaining({ subject: 'Add-on adquirido - Fotos extra' })
+            expect.objectContaining({ subject: 'Complemento adquirido - Fotos extra' })
         );
+
+        // Pins the intent rather than just the new literal: the point is that
+        // the word "add-on" is gone from what lands in the inbox list.
+        const sent = (emailTransport.send as Mock).mock.calls[0]?.[0] as { subject: string };
+        expect(sent.subject).not.toContain('Add-on');
     });
 
     it('persists addonSlug and locale to the notification log so a retry can rebuild the same link', async () => {
