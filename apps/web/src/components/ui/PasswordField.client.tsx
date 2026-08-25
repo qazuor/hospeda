@@ -4,9 +4,9 @@
  * bar, and optional rule checklist. Uses CSS Modules (no Tailwind) and
  * `@repo/icons` for the eye toggle icons.
  *
- * Mirrors the API of `packages/auth-ui/src/password-field.tsx` so the props
- * feel familiar, but is implemented entirely with vanilla CSS custom properties
- * as required by `apps/web`.
+ * This is the ONLY password field in `apps/web` — every password input on the
+ * site (sign-in, sign-up, reset, change, set) goes through it. Implemented with
+ * vanilla CSS custom properties, as required by `apps/web`.
  *
  * @example
  * <PasswordField
@@ -212,8 +212,11 @@ export function PasswordField({
                     type="button"
                     className={styles.eyeBtn}
                     onClick={() => setVisible((v) => !v)}
+                    // HOS-796 AC-2: the toggle must be reachable with Tab. It
+                    // previously carried tabIndex={-1}, which made the reveal
+                    // control mouse-only — a WCAG 2.1.1 keyboard trap for the
+                    // exact users the reveal exists to help.
                     aria-label={visible ? i18n.hidePassword : i18n.showPassword}
-                    tabIndex={-1}
                     disabled={disabled}
                 >
                     {visible ? (

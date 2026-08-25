@@ -149,6 +149,27 @@ describe('PasswordField', () => {
         expect(input).toHaveAttribute('type', 'password');
     });
 
+    // Keyboard reachability (HOS-796 AC-2)
+    it('reaches the eye button by tabbing from the input', async () => {
+        const user = userEvent.setup();
+        render(<PasswordField {...baseProps} />);
+
+        screen.getByLabelText('Password').focus();
+        await user.tab();
+
+        expect(screen.getByRole('button', { name: 'Show password' })).toHaveFocus();
+    });
+
+    it('activates the toggle with the keyboard', async () => {
+        const user = userEvent.setup();
+        render(<PasswordField {...baseProps} />);
+
+        screen.getByRole('button', { name: 'Show password' }).focus();
+        await user.keyboard('{Enter}');
+
+        expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text');
+    });
+
     // onChange
     it('calls onChange with the new value when input changes', () => {
         const onChange = vi.fn();

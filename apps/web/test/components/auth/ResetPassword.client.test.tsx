@@ -10,7 +10,6 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
 import { ResetPassword } from '../../../src/components/auth/ResetPassword.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -24,15 +23,13 @@ vi.mock('../../../src/lib/i18n', () => {
     return { createTranslations: () => ({ t }) };
 });
 
-vi.mock('@repo/schemas', () => ({
-    // Mirrors StrongPasswordSchema's bounds (HOS-190 slice 3: min 8, max 128,
-    // upper/lower/digit/special) without pulling in the full package.
-    StrongPasswordSchema: z
-        .string()
-        .min(8)
-        .max(128)
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
-}));
+// HOS-796: `@repo/schemas` is deliberately NOT mocked. It used to be, with a
+// whole-module mock that hand-reimplemented StrongPasswordSchema — so the
+// bounds under test were a copy free to drift from the real ones. Worse, once
+// this form started rendering the shared PasswordField (which imports
+// `StrongPasswordRegex` from the same package), the whole-module mock left
+// that import `undefined` and the suite blew up. Using the real package fixes
+// both: nothing to keep in sync, and every export stays reachable.
 
 const resetPasswordMock = vi.fn();
 vi.mock('../../../src/lib/auth-client', () => ({
@@ -68,10 +65,10 @@ describe('ResetPassword password validation (HOS-190 slice 3)', () => {
     it('rejects a password with no complexity (previously accepted — now unified with siblings)', () => {
         renderIsland();
 
-        fireEvent.change(screen.getByLabelText('Nueva contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
             target: { value: 'alllowercase' }
         });
-        fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), {
             target: { value: 'alllowercase' }
         });
         submit();
@@ -86,10 +83,10 @@ describe('ResetPassword password validation (HOS-190 slice 3)', () => {
         renderIsland();
 
         const tooLong = `Aa1!${'a'.repeat(125)}`;
-        fireEvent.change(screen.getByLabelText('Nueva contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
             target: { value: tooLong }
         });
-        fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), {
             target: { value: tooLong }
         });
         submit();
@@ -103,10 +100,10 @@ describe('ResetPassword password validation (HOS-190 slice 3)', () => {
     it('rejects a too-short password', () => {
         renderIsland();
 
-        fireEvent.change(screen.getByLabelText('Nueva contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
             target: { value: 'Aa1!' }
         });
-        fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), {
             target: { value: 'Aa1!' }
         });
         submit();
@@ -120,10 +117,10 @@ describe('ResetPassword password validation (HOS-190 slice 3)', () => {
     it('accepts a valid strong password and calls resetPassword', async () => {
         renderIsland();
 
-        fireEvent.change(screen.getByLabelText('Nueva contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
             target: { value: VALID_PASSWORD }
         });
-        fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), {
             target: { value: VALID_PASSWORD }
         });
         submit();
@@ -134,5 +131,44 @@ describe('ResetPassword password validation (HOS-190 slice 3)', () => {
                 token: 'reset-token-123'
             });
         });
+    });
+});
+
+describe('ResetPassword reveal controls (HOS-796)', () => {
+    beforeEach(() => {
+        resetPasswordMock.mockReset();
+        resetPasswordMock.mockResolvedValue({ error: null });
+    });
+
+    it('offers a reveal control on both password fields', () => {
+        renderIsland();
+
+        expect(screen.getAllByRole('button', { name: 'Mostrar contraseña' })).toHaveLength(2);
+    });
+
+    it('reveals each field independently', () => {
+        renderIsland();
+
+        const newPassword = screen.getByLabelText(/^Nueva contraseña/);
+        const confirmPassword = screen.getByLabelText(/^Confirmar contraseña/);
+        const [newToggle] = screen.getAllByRole('button', { name: 'Mostrar contraseña' });
+
+        fireEvent.click(newToggle as HTMLElement);
+
+        expect(newPassword).toHaveAttribute('type', 'text');
+        expect(confirmPassword).toHaveAttribute('type', 'password');
+    });
+
+    it('shows the rule checklist so a rejected password says which rule failed', () => {
+        renderIsland();
+
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
+            target: { value: 'abc' }
+        });
+
+        // The checklist only renders once the user starts typing. Each item
+        // prefixes the label with a status emoji, so match on a substring.
+        expect(screen.getByText(/Al menos 8 caracteres/)).toBeInTheDocument();
+        expect(screen.getByText(/Una letra mayúscula \(A-Z\)/)).toBeInTheDocument();
     });
 });

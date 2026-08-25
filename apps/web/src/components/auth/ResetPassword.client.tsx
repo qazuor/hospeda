@@ -10,6 +10,7 @@
 import { StrongPasswordSchema } from '@repo/schemas';
 import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { translateApiError } from '@/lib/api-errors';
 import { resetPassword } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -47,6 +48,36 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isComplete, setIsComplete] = useState(false);
+
+    /**
+     * i18n strings for the shared `PasswordField`. The rule checklist matters
+     * here: this form rejects weak passwords via `StrongPasswordSchema`, so
+     * without it the user gets a "password too weak" error with no way to see
+     * which rule they missed.
+     */
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('auth.resetPassword.showPassword', 'Mostrar contraseña'),
+        hidePassword: t('auth.resetPassword.hidePassword', 'Ocultar contraseña'),
+        strength: {
+            weak: t('auth.resetPassword.strength.weak', 'Débil'),
+            medium: t('auth.resetPassword.strength.medium', 'Media'),
+            strong: t('auth.resetPassword.strength.strong', 'Fuerte')
+        },
+        rules: {
+            length: t('auth.resetPassword.rules.length', 'Al menos 8 caracteres'),
+            upper: t('auth.resetPassword.rules.upper', 'Una letra mayúscula (A-Z)'),
+            lower: t('auth.resetPassword.rules.lower', 'Una letra minúscula (a-z)'),
+            digit: t('auth.resetPassword.rules.digit', 'Un número (0-9)'),
+            special: t('auth.resetPassword.rules.special', 'Un carácter especial (@$!%*?&)')
+        }
+    };
+
+    /** Confirm field reuses the visibility toggle but skips the rules block. */
+    const confirmI18n: PasswordFieldI18n = {
+        showPassword: passwordI18n.showPassword,
+        hidePassword: passwordI18n.hidePassword,
+        strength: passwordI18n.strength
+    };
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
@@ -180,50 +211,36 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                 </div>
             )}
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="reset-password"
-                    className={styles.label}
-                >
-                    {t('auth.resetPassword.password', 'Nueva contraseña')}
-                </label>
-                <input
-                    id="reset-password"
-                    type="password"
-                    className={styles.input}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.resetPassword.passwordPlaceholder', 'Mínimo 8 caracteres')}
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    disabled={isLoading}
-                />
-            </div>
+            <PasswordField
+                id="reset-password"
+                name="password"
+                label={t('auth.resetPassword.password', 'Nueva contraseña')}
+                value={password}
+                onChange={setPassword}
+                placeholder={t('auth.resetPassword.passwordPlaceholder', 'Mínimo 8 caracteres')}
+                autoComplete="new-password"
+                required
+                disabled={isLoading}
+                showStrength
+                showRuleChecklist
+                i18n={passwordI18n}
+            />
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="reset-confirm-password"
-                    className={styles.label}
-                >
-                    {t('auth.resetPassword.confirmPassword', 'Confirmar contraseña')}
-                </label>
-                <input
-                    id="reset-confirm-password"
-                    type="password"
-                    className={styles.input}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder={t(
-                        'auth.resetPassword.confirmPasswordPlaceholder',
-                        'Repetí tu contraseña'
-                    )}
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    disabled={isLoading}
-                />
-            </div>
+            <PasswordField
+                id="reset-confirm-password"
+                name="confirmPassword"
+                label={t('auth.resetPassword.confirmPassword', 'Confirmar contraseña')}
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                placeholder={t(
+                    'auth.resetPassword.confirmPasswordPlaceholder',
+                    'Repetí tu contraseña'
+                )}
+                autoComplete="new-password"
+                required
+                disabled={isLoading}
+                i18n={confirmI18n}
+            />
 
             <GradientButton
                 as="button"

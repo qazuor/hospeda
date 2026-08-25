@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn } from '@/lib/auth-client';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
@@ -92,6 +93,21 @@ export function SignIn({
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    /**
+     * i18n strings for the shared `PasswordField`. Sign-in only uses the
+     * show/hide toggle — the strength bar is off, since measuring the
+     * strength of a password the account already has helps nobody.
+     */
+    const passwordI18n: PasswordFieldI18n = {
+        showPassword: t('auth.signIn.showPassword', 'Mostrar contraseña'),
+        hidePassword: t('auth.signIn.hidePassword', 'Ocultar contraseña'),
+        strength: {
+            weak: t('auth.signIn.strength.weak', 'Débil'),
+            medium: t('auth.signIn.strength.medium', 'Media'),
+            strong: t('auth.signIn.strength.strong', 'Fuerte')
+        }
+    };
 
     // SPEC-120: hydrate OAuth banner from SSR-supplied initialOAuthError and
     // sanitize the URL so the banner does not survive a reload. Runs once.
@@ -300,25 +316,18 @@ export function SignIn({
                 />
             </div>
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="signin-password"
-                    className={styles.label}
-                >
-                    {t('auth.signIn.password', 'Contraseña')}
-                </label>
-                <input
-                    id="signin-password"
-                    type="password"
-                    className={styles.input}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contraseña')}
-                    required
-                    autoComplete="current-password"
-                    disabled={isLoading}
-                />
-            </div>
+            <PasswordField
+                id="signin-password"
+                name="password"
+                label={t('auth.signIn.password', 'Contraseña')}
+                value={password}
+                onChange={setPassword}
+                placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contraseña')}
+                autoComplete="current-password"
+                required
+                disabled={isLoading}
+                i18n={passwordI18n}
+            />
 
             <GradientButton
                 as="button"
