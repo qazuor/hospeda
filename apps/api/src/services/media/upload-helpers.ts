@@ -9,7 +9,8 @@
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
-import { UploadResponseDataSchema } from '@repo/schemas';
+import type { MediaEntityType } from '@repo/schemas';
+import { resolveMediaFolder, UploadResponseDataSchema } from '@repo/schemas';
 import { Sentry } from '../../lib/sentry';
 import { incrementDomainCounter } from '../../middlewares/metrics';
 import { env } from '../../utils/env.js';
@@ -265,13 +266,37 @@ export async function uploadToProvider(
 /**
  * Build the storage folder path for an entity upload.
  *
+ * Delegates to `ENTITY_FOLDER_MAP` (via {@link resolveMediaFolder}) — the
+ * single source of truth for the Cloudinary folder layout — rather than
+ * pluralizing the entity type inline.
+ *
+ * It used to return ``hospeda/${environment}/${entityType}s/${entityId}``, and
+ * naive `+ 's'` pluralization is exactly the failure `ENTITY_FOLDER_MAP` was
+ * introduced to prevent: `gastronomy` came out as `gastronomys`, so every photo
+ * uploaded through the WEB owner editor (which reaches Cloudinary through this
+ * helper, on the protected tier) landed in `hospeda/<env>/gastronomys/` while
+ * the ADMIN upload route — already resolving through the map — wrote the same
+ * listing's photos to the correct `gastronomies/` (HOS-831). Both folders
+ * therefore exist today, split by which surface performed the upload.
+ *
+ * That existing split needs no migration, and this change does not create one:
+ * `<entity>_media.url` stores the COMPLETE CDN URL (`text NOT NULL`), and
+ * `getMediaUrl()` only splices transform tokens in after `/upload/` — it never
+ * rebuilds the folder from the entity type. Photos already in `gastronomys/`
+ * keep resolving from the URLs recorded against them; only the destination of
+ * NEW uploads moves.
+ *
+ * Correcting the call site rather than the string is deliberate: patching the
+ * template here would have left two independent folder builders alive to drift
+ * apart again on the next entity type whose plural is irregular.
+ *
  * @param entityType - The entity type
  * @param entityId - The entity UUID
  * @returns The Cloudinary folder path
  */
-export function buildEntityFolder(entityType: string, entityId: string): string {
+export function buildEntityFolder(entityType: MediaEntityType, entityId: string): string {
     const environment = resolveEnvironment();
-    return `hospeda/${environment}/${entityType}s/${entityId}`;
+    return resolveMediaFolder({ entityType, environment, entityId });
 }
 
 /** Content-length margin for the pre-check. */
