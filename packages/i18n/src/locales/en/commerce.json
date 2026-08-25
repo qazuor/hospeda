@@ -149,31 +149,6 @@
                 "summaryHint": "{{count}}/300",
                 "priceMustBePositive": "Price must be a positive number."
             },
-            "typeOption": {
-                "RESTAURANT": "Restaurant",
-                "BAR": "Bar",
-                "CAFE": "Café",
-                "PARRILLA": "Parrilla",
-                "CERVECERIA": "Brewery",
-                "HELADERIA": "Ice Cream Shop",
-                "PANADERIA": "Bakery",
-                "ROTISERIA": "Deli",
-                "FOOD_TRUCK": "Food Truck",
-                "CAR_RENTAL": "Car Rental",
-                "BIKE_RENTAL": "Bike Rental",
-                "KAYAK_RENTAL": "Kayak Rental",
-                "QUAD_RENTAL": "Quad Rental",
-                "TOUR_GUIDE": "Tour Guide",
-                "GUIDED_VISIT": "Guided Visit",
-                "EXCURSION": "Excursion",
-                "BOAT_TRIP": "Boat Trip",
-                "FISHING_CHARTER": "Fishing Charter",
-                "BIRD_WATCHING": "Bird Watching",
-                "CULTURAL_TOUR": "Cultural Tour",
-                "WINE_TASTING": "Wine Tasting",
-                "OUTDOOR_ADVENTURE": "Outdoor Adventure",
-                "OTHER": "Other"
-            },
             "priceRangeOption": {
                 "BUDGET": "Budget",
                 "MID": "Moderate",
@@ -241,7 +216,8 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "The public URL follows the name while the listing is still unpublished. Once it is published, it stops changing automatically.",
+            "slugFollowsNameNotice": "The public address will follow the name until you publish the listing.",
+            "slugFixedNotice": "The public address is now fixed: renaming the listing does not change it.",
             "slugRefresh": {
                 "notice": "This listing is already published. By default, the current address stays as it is even if you rename it.",
                 "warning": "If you change the public address, you may affect how it appears in Google today or in links you already shared.",

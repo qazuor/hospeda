@@ -17,6 +17,7 @@ import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import { resolveCommerceTypeLabel } from '@/lib/commerce-type-labels';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -224,7 +225,7 @@ export function BasicInfoSection({
                             key={opt}
                             value={opt}
                         >
-                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
+                            {resolveCommerceTypeLabel({ t, vertical, type: opt })}
                         </option>
                     ))}
                 </TextField>
