@@ -209,13 +209,13 @@
             "displayNameRequired": "El nombre visible es obligatorio",
             "firstNameRequired": "El nombre es obligatorio",
             "lastNameRequired": "El apellido es obligatorio"
-        },
-        "confirmations": {
-            "unsavedChanges": {
-                "title": "Cambios sin guardar",
-                "confirm": "Sí, descartar",
-                "cancel": "Seguir editando"
-            }
+        }
+    },
+    "confirmations": {
+        "unsavedChanges": {
+            "title": "Cambios sin guardar",
+            "confirm": "Sí, descartar",
+            "cancel": "Seguir editando"
         }
     },
     "profileEdit": {
