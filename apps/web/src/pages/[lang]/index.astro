@@ -26,7 +26,6 @@ import HeroSection from "@/components/sections/HeroSection.astro";
 import { HERO_IMAGE_SIZES, HERO_RAW_SLIDES, buildHeroVariants } from "@/components/sections/hero-images";
 import LatestArticlesSection from "@/components/sections/LatestArticlesSection.astro";
 import NextEventsSection from "@/components/sections/NextEventsSection.astro";
-import NextEventsSectionSkeleton from "@/components/skeletons/NextEventsSectionSkeleton.astro";
 import PartnersSection from "@/components/sections/PartnersSection.astro";
 import StatsSection from "@/components/sections/StatsSection.astro";
 import TestimonialsSection from "@/components/sections/TestimonialsSection.astro";
@@ -263,10 +262,26 @@ const categoryTiles = [
     <!-- 4. Destinations -->
     <DestinationsSection locale={locale} />
 
-    <!-- 5. Next Events -->
-    <NextEventsSection server:defer locale={locale}>
-        <NextEventsSectionSkeleton slot="fallback" />
-    </NextEventsSection>
+    <!--
+      5. Next Events
+
+      Rendered inline, NOT `server:defer` (HOS-804). A server island emits two
+      inline scripts, and the second carries the island URL with its props
+      encrypted using a fresh IV per render — so its CSP hash differs on every
+      response. A `<ClientRouter />` soft navigation keeps the ORIGIN page's
+      policy in force, which can never have authorised an unpredictable hash, so
+      the island was blocked and the home arrived with its skeleton stuck
+      whenever a visitor got here by clicking the logo. Unlike the fixed runtime
+      payloads pinned in `lib/csp-astro-runtime-hashes.ts` (HOS-798), this one
+      cannot be pre-authorised by any means.
+
+      Deferring bought freshness that the cache tags already provide: editing an
+      event purges the home (`entity-tag-mapper.ts` adds `CACHE_TAG_HOME` for
+      `entityType: 'event'`). What inlining cedes is only staleness by the
+      PASSAGE OF TIME — an event that ends without anyone editing it may linger
+      here for up to the `s-maxage=3600` window plus its stale-while-revalidate.
+    -->
+    <NextEventsSection locale={locale} />
 
     <!-- 6. About Us -->
     <AboutUsSection locale={locale} />
