@@ -79,6 +79,7 @@ import { CommerceListingEditor } from '../../../src/components/commerce/Commerce
 import { apiClient } from '../../../src/lib/api/client';
 
 const mockPostProtected = vi.mocked(apiClient.postProtected);
+const mockPut = vi.mocked(apiClient.put);
 
 const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
@@ -118,6 +119,24 @@ function faqBlock(container: HTMLElement): HTMLElement {
     return block;
 }
 
+/**
+ * The FAQ rows currently on screen, as their rendered text.
+ *
+ * Reads the `<li>` rows rather than searching the block for a string, and the
+ * caller asserts OUTSIDE `waitFor` (HOS-841). Both matter. `waitFor(() =>
+ * getByText(q))` looked like it proved the row rendered and did not: driving the
+ * add with the envelope bug still satisfied it, because the text is present in
+ * an intermediate render and gone by the time the list settles — `waitFor`
+ * resolves on the first poll that does not throw, so it caught the flicker.
+ * The identical `getByText` one line later threw. Asserting on settled rows is
+ * what makes this catch the blank card.
+ */
+function faqRowTexts(container: HTMLElement): string[] {
+    return within(faqBlock(container))
+        .queryAllByRole('listitem')
+        .map((row) => row.textContent ?? '');
+}
+
 /** Opens the add form and fills it. */
 function openAndFill({
     container,
@@ -142,14 +161,22 @@ function openAndFill({
 describe('CommerceListingEditor — FAQ block', () => {
     beforeEach(() => {
         mockPostProtected.mockReset();
+        mockPut.mockReset();
+        // HOS-841: the FAQ arrives WRAPPED — `ExperienceFaqSingleOutputSchema`
+        // and its gastronomy twin are both `z.object({ faq: … })`. This fixture
+        // used to return the FAQ bare, which is the shape the buggy code
+        // assumed, so the suite reproduced the assumption instead of the API and
+        // stayed green while the manager put the envelope into the list.
         mockPostProtected.mockResolvedValue({
             ok: true,
             data: {
-                id: 'faq-new',
-                question: '¿Hace falta saber nadar?',
-                answer: 'No, el recorrido es en aguas calmas y vamos con guía.',
-                category: null,
-                displayOrder: 0
+                faq: {
+                    id: 'faq-new',
+                    question: '¿Hace falta saber nadar?',
+                    answer: 'No, el recorrido es en aguas calmas y vamos con guía.',
+                    category: null,
+                    displayOrder: 0
+                }
             }
         } as never);
     });
@@ -190,13 +217,115 @@ describe('CommerceListingEditor — FAQ block', () => {
         });
         fireEvent.click(within(block).getByRole('button', { name: 'Guardar' }));
 
-        // Re-queries the block on every poll: the add form is replaced by the
-        // list row, so a node captured before the request resolves is stale.
+        // Wait for the list to SETTLE (one row present), then assert on its text
+        // outside `waitFor` — see `faqRowTexts`.
         await waitFor(() => {
-            expect(
-                within(faqBlock(container)).getByText('¿Hace falta saber nadar?')
-            ).toBeInTheDocument();
+            expect(faqRowTexts(container)).toHaveLength(1);
         });
+
+        expect(faqRowTexts(container)[0]).toContain('¿Hace falta saber nadar?');
+        expect(faqRowTexts(container)[0]).toContain(
+            'No, el recorrido es en aguas calmas y vamos con guía.'
+        );
+    });
+
+    // ── HOS-841 ─────────────────────────────────────────────────────────────
+
+    it('keeps the id of a just-created FAQ, so editing it targets the real row', async () => {
+        // The blank card was the visible half of HOS-841; this is the half that
+        // corrupted a request. With the envelope stored instead of the FAQ, the
+        // new item carried `id: undefined` and the very next edit went to
+        // `…/faqs/undefined` (400) while telling the owner the save had failed —
+        // on a row that existed. Asserting the rendered text alone cannot catch
+        // that: the id is never rendered, only sent. So the assertion is on the
+        // PATH of the follow-up request.
+        mockPut.mockResolvedValue({
+            ok: true,
+            data: {
+                faq: {
+                    id: 'faq-new',
+                    question: '¿Hace falta saber nadar? (corregida)',
+                    answer: 'No, el recorrido es en aguas calmas y vamos con guía.',
+                    category: null,
+                    displayOrder: 0
+                }
+            }
+        } as never);
+
+        const { container } = renderEditor();
+
+        const block = openAndFill({
+            container,
+            question: '¿Hace falta saber nadar?',
+            answer: 'No, el recorrido es en aguas calmas y vamos con guía.'
+        });
+        fireEvent.click(within(block).getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => {
+            expect(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+        });
+        fireEvent.click(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+
+        const editing = faqBlock(container);
+        fireEvent.change(within(editing).getByLabelText('Pregunta'), {
+            target: { value: '¿Hace falta saber nadar? (corregida)' }
+        });
+        fireEvent.click(within(editing).getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => {
+            expect(mockPut).toHaveBeenCalledTimes(1);
+        });
+
+        const call = mockPut.mock.calls[0]?.[0] as { path: string };
+        expect(call.path).toBe(`/api/v1/protected/experiences/${LISTING_ID}/faqs/faq-new`);
+        expect(call.path).not.toContain('undefined');
+    });
+
+    it('shows the edited text in the list without needing a page reload', async () => {
+        // Second half of HOS-841: this PUT answered 200 and the row WAS updated,
+        // but the merge spread the envelope over the item, so every field it
+        // should have refreshed stayed at its old value on screen.
+        mockPut.mockResolvedValue({
+            ok: true,
+            data: {
+                faq: {
+                    id: 'faq-new',
+                    question: '¿Hace falta saber nadar? (corregida)',
+                    answer: 'No, el recorrido es en aguas calmas y vamos con guía.',
+                    category: null,
+                    displayOrder: 0
+                }
+            }
+        } as never);
+
+        const { container } = renderEditor();
+
+        const block = openAndFill({
+            container,
+            question: '¿Hace falta saber nadar?',
+            answer: 'No, el recorrido es en aguas calmas y vamos con guía.'
+        });
+        fireEvent.click(within(block).getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => {
+            expect(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+        });
+        fireEvent.click(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+
+        const editing = faqBlock(container);
+        fireEvent.change(within(editing).getByLabelText('Pregunta'), {
+            target: { value: '¿Hace falta saber nadar? (corregida)' }
+        });
+        fireEvent.click(within(editing).getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => {
+            expect(mockPut).toHaveBeenCalledTimes(1);
+        });
+        await waitFor(() => {
+            expect(faqRowTexts(container)).toHaveLength(1);
+        });
+
+        expect(faqRowTexts(container)[0]).toContain('¿Hace falta saber nadar? (corregida)');
     });
 
     it('marks the empty field and says so instead of doing nothing silently', async () => {

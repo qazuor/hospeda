@@ -136,7 +136,10 @@ describe('CommerceFaqManager', () => {
             category: null,
             displayOrder: 2
         };
-        mockPostProtected.mockResolvedValueOnce({ ok: true, data: newFaq });
+        // HOS-841: the add/update endpoints answer `{ faq: … }`. This fixture
+        // returned the FAQ bare, matching the component's wrong assumption
+        // instead of the API, which is why the envelope bug never showed here.
+        mockPostProtected.mockResolvedValueOnce({ ok: true, data: { faq: newFaq } });
 
         renderManager([FAQ_1]);
         fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
@@ -171,7 +174,8 @@ describe('CommerceFaqManager', () => {
 
     it('calls PUT (the verb the API registers) and updates the FAQ on successful edit', async () => {
         const updated = { ...FAQ_1, question: '¿Cuándo abre el local?' };
-        mockPut.mockResolvedValueOnce({ ok: true, data: updated });
+        // HOS-841: wrapped, same as the add above.
+        mockPut.mockResolvedValueOnce({ ok: true, data: { faq: updated } });
 
         renderManager([FAQ_1]);
         fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
