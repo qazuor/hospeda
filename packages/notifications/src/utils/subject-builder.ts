@@ -14,7 +14,10 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // placeholder must always name a field the payload actually has —
     // naming one that does not is what made every addon receipt arrive titled
     // "Add-on adquirido - {addonName}".
-    [NotificationType.ADDON_PURCHASE]: 'Add-on adquirido - {addonName}',
+    // "Complemento", not "add-on": the buyer never saw the word "add-on" on any
+    // screen — the web calls these complementos throughout, as the cancellation
+    // subject below already does. HOS-830.
+    [NotificationType.ADDON_PURCHASE]: 'Complemento adquirido - {addonName}',
     [NotificationType.PAYMENT_SUCCESS]: 'Pago recibido - ${amount}',
     [NotificationType.PAYMENT_FAILURE]: 'Error en tu pago - Acción requerida',
     [NotificationType.RENEWAL_REMINDER]: 'Tu suscripción se renueva pronto - {planName}',

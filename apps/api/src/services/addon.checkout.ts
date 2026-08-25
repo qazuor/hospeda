@@ -1382,8 +1382,28 @@ export async function confirmAddonPurchase(
                     recipientName: customerName,
                     userId,
                     customerId: input.customerId,
-                    addonName: addon.name,
-                    addonDescription: addon.description,
+                    // HOS-830: the receipt names the add-on with the SAME
+                    // string the buyer read on screen. `addon.name` /
+                    // `.description` are English config literals by convention
+                    // (see `packages/billing/CLAUDE.md`) that the web never
+                    // renders raw — it resolves `account.addons.catalog.<slug>.*`
+                    // by slug. Sending the config value straight through is
+                    // what made a Spanish buyer's receipt arrive titled
+                    // "Add-on adquirido - Visibility Boost (7 days)". This is
+                    // the same lookup the MercadoPago checkout line item
+                    // already goes through (HOS-606), reused rather than
+                    // re-translated in the template: one source, so the email
+                    // cannot drift from the screen.
+                    addonName: resolveAddonCheckoutName({
+                        locale: recipientLocale,
+                        slug: input.addonSlug,
+                        fallback: addon.name
+                    }),
+                    addonDescription: resolveAddonCheckoutDescription({
+                        locale: recipientLocale,
+                        slug: input.addonSlug,
+                        fallback: addon.description
+                    }),
                     orderId: input.paymentId ?? '',
                     amount: addon.priceArs,
                     currency: 'ARS',
