@@ -116,12 +116,12 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * exists to prevent.
  *
  * **`slug` stays out of this schema on purpose (HOS-166 OQ-3).** It is
- * owner-*visible* but not owner-*editable* post-create: it is derived
- * server-side from `name` at creation time (`_beforeCreate` slug
- * auto-generation) and a public URL, so a free rename vector would enable
- * slug-squatting and break indexed links. Post-publish renames are staff-only.
- * Any `slug` key in an owner PATCH body is silently stripped (Zod's default
- * unknown-key behaviour).
+ * owner-*visible* but not owner-*editable* directly: the server derives it from
+ * `name`, now auto-syncs it while the listing is still unpublished (HOS-784
+ * stage 1), and keeps it out of the PATCH body so the owner cannot forge an
+ * arbitrary URL. Once the listing is published, a free rename vector would
+ * enable slug-squatting and break indexed links. Any `slug` key in an owner
+ * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
  * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
  * `visibility`, `moderationState`, `isFeatured`, `ownerId` are **intentionally
@@ -150,7 +150,7 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * - `featureIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
- * - `slug` (immutable post-create — HOS-166 OQ-3)
+ * - `slug` (not owner-editable directly — HOS-166 OQ-3)
  * - `lifecycleState`, `visibility`, `moderationState`, `isFeatured`, `ownerId`
  *   (control fields — HOS-166 §6.2)
  * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)

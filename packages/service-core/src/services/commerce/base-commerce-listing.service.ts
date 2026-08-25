@@ -47,6 +47,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { shouldRegenerateSlugOnDraftRename } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
@@ -248,6 +249,19 @@ export abstract class BaseCommerceListingService<
      */
     protected get _viewOwnPermission(): PermissionEnum {
         return this._viewAllPermission;
+    }
+
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<TUpdateSchema>,
+        ctx?: ServiceContext<CommerceListingHookState>
+    ): Promise<ServiceOutput<TEntity>> {
+        const resolvedCtx: ServiceContext<CommerceListingHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
+        return super.update(actor, id, data, resolvedCtx);
     }
 
     // -----------------------------------------------------------------------
@@ -659,10 +673,34 @@ export abstract class BaseCommerceListingService<
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
         const typedCtx = ctx as ServiceContext<CommerceListingHookState>;
+        const slugWasProvided = Object.hasOwn(payload, 'slug');
 
         // (a) Destination CITY-type validation on re-assignment
         if (payload.destinationId) {
             await this._assertDestinationIsCity(payload.destinationId as string, ctx.tx);
+        }
+
+        const updateId = typedCtx.hookState?.updateId;
+        if (updateId) {
+            const current = await this.model.findById(updateId, ctx.tx);
+            if (
+                current &&
+                shouldRegenerateSlugOnDraftRename({
+                    currentLifecycleState: current.lifecycleState as string | null | undefined,
+                    currentName: current.name as string | null | undefined,
+                    nextName: typeof payload.name === 'string' ? payload.name : undefined,
+                    slugWasProvided
+                })
+            ) {
+                typedCtx.hookState = typedCtx.hookState ?? {};
+                typedCtx.hookState.regeneratedSlug = await createUniqueSlug(
+                    payload.name as string,
+                    async (candidate) => {
+                        const existing = await this.model.findOne({ slug: candidate });
+                        return !!existing && existing.id !== current.id;
+                    }
+                );
+            }
         }
 
         // (c) Capture junction IDs into hookState
@@ -677,6 +715,9 @@ export abstract class BaseCommerceListingService<
 
         // Strip write-only junction fields from the DB write payload
         const { amenityIds: _a, featureIds: _f, ...rest } = payload;
+        if (typedCtx.hookState?.regeneratedSlug) {
+            rest.slug = typedCtx.hookState.regeneratedSlug;
+        }
         return rest as Partial<TEntity>;
     }
 

@@ -36,6 +36,23 @@ describe('generateSlug (AccommodationService)', () => {
         expect(slug).toMatch(/^hostel-la-posta-[a-z0-9]+$/);
     });
 
+    it('keeps the current slug when the regenerated candidate belongs to the same accommodation', async () => {
+        findOneMock.mockResolvedValueOnce({ id: 'acc-123' });
+        const slug = await generateSlug('hotel', 'Gran Hotel Plaza', 'acc-123');
+        expect(slug).toBe('hotel-gran-hotel-plaza');
+    });
+
+    it('still suffixes against a foreign collision once the excluded id is passed', async () => {
+        // Guards the regression, not the exclusion: passing an id must not
+        // stop an ordinary collision from getting its suffix. The exclusion
+        // itself is the test above, which mocks the accommodation's OWN id.
+        findOneMock
+            .mockResolvedValueOnce({ id: 'other-accommodation' })
+            .mockResolvedValueOnce(null);
+        const slug = await generateSlug('hotel', 'Gran Hotel Plaza', 'acc-123');
+        expect(slug).toBe('hotel-gran-hotel-plaza-2');
+    });
+
     it('handles multiple collisions and increments suffix', async () => {
         findOneMock
             .mockResolvedValueOnce({}) // slug exists

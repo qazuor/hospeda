@@ -140,4 +140,6 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * `undefined` value means the field was absent on the pre-update entity.
      */
     previousTranslatableFields?: Readonly<Record<string, string | undefined>>;
+    /** Auto-regenerated slug for an unpublished rename (HOS-784 stage 1). */
+    regeneratedSlug?: string;
 }

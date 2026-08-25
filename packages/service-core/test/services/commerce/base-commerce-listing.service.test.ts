@@ -146,6 +146,10 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
     name: z.string().optional(),
+    // Present on the ADMIN update schemas of the real listings and absent from
+    // the owner ones (HOS-166 OQ-3, against slug-squatting). The service reads
+    // it either way, so the harness has to be able to send it.
+    slug: z.string().optional(),
     type: z.string().optional(),
     destinationId: z.string().optional(),
     amenityIds: z.array(z.string()).optional(),
@@ -416,6 +420,187 @@ describe('BaseCommerceListingService — destination CITY validation', () => {
         await svc.testBeforeUpdate({ name: 'Updated name' }, actor, ctx);
 
         expect(destFindByIdMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('BaseCommerceListingService — draft rename slug sync (_beforeUpdate)', () => {
+    it('regenerates the slug when an unpublished listing is renamed', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        (model.findOne as Mock).mockResolvedValue(null);
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBe('mi-restaurante-nuevo');
+        expect(model.findOne).toHaveBeenCalledWith({ slug: 'mi-restaurante-nuevo' });
+    });
+
+    it('does not regenerate the slug when a published listing is renamed', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'ACTIVE'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBeUndefined();
+        expect(model.findOne).not.toHaveBeenCalled();
+    });
+
+    it('keeps the current slug when the colliding row IS the listing being renamed', async () => {
+        // The collision probe excludes the listing's own row. Without that
+        // exclusion a listing whose new slug already belongs to itself would
+        // be pushed to a needless `-2` suffix.
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        (model.findOne as Mock).mockResolvedValue({
+            id: ENTITY_ID,
+            slug: 'mi-restaurante-nuevo'
+        });
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBe('mi-restaurante-nuevo');
+    });
+
+    it('keeps a caller-provided slug instead of regenerating one from the name', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        const patch = await svc.testBeforeUpdate(
+            { name: 'Mi Restaurante Nuevo', slug: 'slug-elegido-a-mano' },
+            actor,
+            ctx
+        );
+
+        expect(patch.slug).toBe('slug-elegido-a-mano');
+        expect(model.findOne).not.toHaveBeenCalled();
+    });
+
+    it('does not probe for a slug when the update leaves the name unchanged', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante' }, actor, ctx);
+
+        expect(patch.slug).toBeUndefined();
+        expect(model.findOne).not.toHaveBeenCalled();
+    });
+
+    it('deduplicates the slug when a renamed unpublished listing collides with another row', async () => {
+        const current = {
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        } as TestEntity;
+        const { svc, model } = makeService(current);
+        const actor = makeActor();
+        const ctx = { hookState: { updateId: ENTITY_ID } as Record<string, unknown> };
+
+        (model.findOne as Mock)
+            .mockResolvedValueOnce({ id: 'other-row', slug: 'mi-restaurante-nuevo' })
+            .mockResolvedValueOnce(null);
+
+        const patch = await svc.testBeforeUpdate({ name: 'Mi Restaurante Nuevo' }, actor, ctx);
+
+        expect(patch.slug).toBe('mi-restaurante-nuevo-2');
+    });
+});
+
+describe('BaseCommerceListingService — draft rename slug sync (public update path)', () => {
+    // The three suites above hand `_beforeUpdate` a hookState with `updateId`
+    // already in it. That is the value the PUBLIC `update()` override is
+    // responsible for producing — so those tests stay green even if the
+    // override is deleted and the feature never reaches production. These
+    // enter through `update()` with no ctx at all, which is how a route calls
+    // it.
+    const draftListing = () =>
+        ({
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT'
+        }) as TestEntity;
+
+    it('regenerates the slug of a renamed draft when called with no context', async () => {
+        const { svc, model } = makeService(draftListing());
+        const actor = makeActor();
+
+        (model.findOne as Mock).mockResolvedValue(null);
+
+        const result = await svc.update(actor, ENTITY_ID, {
+            name: 'Mi Restaurante Nuevo'
+        } as never);
+
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalledWith(
+            { id: ENTITY_ID },
+            expect.objectContaining({ slug: 'mi-restaurante-nuevo' }),
+            undefined
+        );
+    });
+
+    it('leaves the slug of a renamed published listing alone when called with no context', async () => {
+        const { svc, model } = makeService({
+            ...draftListing(),
+            lifecycleState: 'ACTIVE'
+        } as TestEntity);
+        const actor = makeActor();
+
+        const result = await svc.update(actor, ENTITY_ID, {
+            name: 'Mi Restaurante Nuevo'
+        } as never);
+
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalledTimes(1);
+        const [, writtenPatch] = (model.update as Mock).mock.calls[0] as [
+            Record<string, unknown>,
+            Record<string, unknown>
+        ];
+        expect(writtenPatch).not.toHaveProperty('slug');
     });
 });
 

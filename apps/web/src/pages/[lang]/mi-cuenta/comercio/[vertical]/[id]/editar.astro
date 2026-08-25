@@ -5,9 +5,9 @@
  * by the authenticated COMMERCE_OWNER (SPEC-249 Part A). Mounts the editor
  * island, which now ALSO covers `name`/`destinationId` (HOS-166 D-1 — SPEC-239
  * decision #5 reversed: the owner loads their own identity). `slug` stays
- * shown read-only in the page header — it is server-derived at create time
- * and immutable post-create (HOS-166 OQ-3), the one identity field that did
- * NOT flip owner-editable.
+ * shown read-only in the page header — the owner never edits it directly. The
+ * server keeps it aligned with the name while the listing is still a draft,
+ * then stops auto-changing it after publication (HOS-784 stage 1).
  *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -133,7 +133,7 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         <p class="ce-identity__notice">
             {t(
                 'commerce.owner.editor.slugImmutableNotice',
-                'La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después.'
+                'La URL pública sigue al nombre mientras la ficha siga sin publicar. Una vez publicada, deja de cambiarse sola.'
             )}
         </p>
     </div>

@@ -238,7 +238,7 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "A URL pública é gerada a partir do nome ao criar o comércio e não pode ser alterada depois."
+            "slugImmutableNotice": "A URL pública acompanha o nome enquanto a ficha ainda não foi publicada. Depois de publicada, ela para de mudar sozinha."
         },
         "checklist": {
             "field": {

@@ -32,6 +32,8 @@ export type { CommerceEntityType } from '@repo/schemas';
  *  - `[id, …]`   → sync to exactly that set
  */
 export interface CommerceListingHookState extends Record<string, unknown> {
+    /** ID of the entity being updated, injected by `update()` for draft slug sync. */
+    updateId?: string;
     /**
      * Amenity UUIDs extracted from create/update input (write-only sync).
      * Set by `_beforeCreate` / `_beforeUpdate`; consumed by the
@@ -52,4 +54,6 @@ export interface CommerceListingHookState extends Record<string, unknown> {
      * Entity data captured before restore for post-restore side effects.
      */
     restoredEntity?: { ownerId?: string; slug?: string };
+    /** Auto-regenerated slug for an unpublished rename (HOS-784 stage 1). */
+    regeneratedSlug?: string;
 }
