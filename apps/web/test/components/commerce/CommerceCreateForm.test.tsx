@@ -198,8 +198,61 @@ describe('CommerceCreateForm', () => {
                 />
             );
 
-            expect(screen.getByLabelText('Precio desde (centavos)')).toBeInTheDocument();
+            expect(screen.getByLabelText('Precio desde')).toBeInTheDocument();
             expect(screen.getByLabelText('Unidad de precio')).toBeInTheDocument();
+        });
+
+        it('does not expose the internal centavo unit in the price label (HOS-809)', () => {
+            render(
+                <CommerceCreateForm
+                    vertical="experience"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            expect(screen.queryByLabelText(/centavos/i)).toBeNull();
+        });
+
+        it('converts the price typed in pesos into centavos before creating (HOS-809)', async () => {
+            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-3') });
+
+            render(
+                <CommerceCreateForm
+                    vertical="experience"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'Kayak Aventura' }
+            });
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'TOUR_GUIDE' }
+            });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Salidas en kayak por el río Uruguay' }
+            });
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Una salida guiada en kayak de dos horas por el río Uruguay.' }
+            });
+            fireEvent.change(screen.getByLabelText('Unidad de precio'), {
+                target: { value: 'per_person' }
+            });
+            // Fifteen thousand PESOS — the amount the bug published as $ 150.
+            fireEvent.change(screen.getByLabelText('Precio desde'), {
+                target: { value: '15000' }
+            });
+
+            fireEvent.click(screen.getByTestId('commerce-create-submit'));
+
+            await waitFor(() => {
+                expect(mockCreate).toHaveBeenCalledTimes(1);
+            });
+
+            const call = mockCreate.mock.calls[0]?.[0];
+            expect(call?.data).toMatchObject({ priceFrom: 1500000, isPriceOnRequest: false });
         });
 
         it('does not require priceFrom when isPriceOnRequest is checked', async () => {

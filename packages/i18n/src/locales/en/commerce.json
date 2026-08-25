@@ -125,7 +125,7 @@
                 "menuUrl": "Menu link",
                 "priceRange": "Price range",
                 "isPriceOnRequest": "Price on request",
-                "priceFrom": "Price from (cents)",
+                "priceFrom": "Price from",
                 "priceUnit": "Price unit",
                 "richDescription": "Extended description",
                 "amenities": "Amenities",

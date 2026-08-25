@@ -125,7 +125,7 @@
                 "menuUrl": "Enlace al menú",
                 "priceRange": "Rango de precios",
                 "isPriceOnRequest": "Precio a consultar",
-                "priceFrom": "Precio desde (centavos)",
+                "priceFrom": "Precio desde",
                 "priceUnit": "Unidad de precio",
                 "richDescription": "Descripción ampliada",
                 "amenities": "Servicios",

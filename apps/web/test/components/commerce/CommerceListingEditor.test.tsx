@@ -324,11 +324,12 @@ describe('CommerceListingEditor', () => {
                 vertical="experience"
                 listingId="abc"
                 locale="es"
-                initialData={{ ...baseData, priceFrom: 500 } as unknown as CommerceListingDetail}
+                initialData={{ ...baseData, priceFrom: 50000 } as unknown as CommerceListingDetail}
                 destinations={destinationOptions}
             />
         );
 
+        // HOS-809: the row stores 50000 centavos, the field shows $ 500.
         const priceFromInput = screen.getByLabelText(/Precio desde/);
         expect(priceFromInput).toHaveValue(500);
         fireEvent.change(priceFromInput, { target: { value: '' } });

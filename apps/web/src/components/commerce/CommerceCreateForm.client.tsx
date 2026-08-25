@@ -25,6 +25,11 @@
  * blank now, which was already its behaviour for the common case
  * (AC-10/AC-11 predate this and still hold).
  *
+ * HOS-809: the price field asks for PESOS and converts to the centavos the
+ * schema and the column store, via `@/lib/commerce/price-units`. It used to
+ * pass the typed number straight through under a label reading "Precio desde
+ * (centavos)", so an owner who typed 15000 meaning pesos published $ 150.
+ *
  * Hydration: caller MUST use `client:load` (the primary interactive surface
  * of the create page).
  */
@@ -43,6 +48,7 @@ import type { DestinationOption } from '@/components/commerce/destination-option
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { createOwnerListing } from '@/lib/commerce/owner-listings';
+import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/commerce/price-units';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -122,7 +128,9 @@ export function CommerceCreateForm({
     const [summary, setSummary] = useState('');
     const [description, setDescription] = useState('');
     const [destinationId, setDestinationId] = useState('');
-    const [priceFrom, setPriceFrom] = useState<number | null>(null);
+    // HOS-809: held in CENTAVOS, the unit `ExperienceOwnerCreateInputSchema`
+    // and the column both use. The field below shows and reads PESOS.
+    const [priceFromCents, setPriceFromCents] = useState<number | null>(null);
     const [priceUnit, setPriceUnit] = useState('');
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,7 +150,7 @@ export function CommerceCreateForm({
         };
 
         if (vertical === 'experience') {
-            basePayload.priceFrom = isPriceOnRequest ? 0 : (priceFrom ?? undefined);
+            basePayload.priceFrom = isPriceOnRequest ? 0 : (priceFromCents ?? undefined);
             // H-156: an experience with no price has no billing unit. Send an
             // explicit null rather than whatever the select happened to hold, so
             // the row does not end up asserting "price on request", "price 0"
@@ -383,8 +391,9 @@ export function CommerceCreateForm({
                         className={styles.label}
                         htmlFor="cc-priceFrom"
                     >
-                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
+                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde')}
                     </label>
+                    {/* HOS-809: the owner types PESOS; the state holds centavos. */}
                     <input
                         id="cc-priceFrom"
                         type="number"
@@ -392,10 +401,9 @@ export function CommerceCreateForm({
                         step={1}
                         className={styles.input}
                         disabled={isPriceOnRequest}
-                        value={priceFrom ?? ''}
+                        value={centsToPesosInputValue({ cents: priceFromCents })}
                         onChange={(event) => {
-                            const raw = event.target.value;
-                            setPriceFrom(raw === '' ? null : Math.floor(Number(raw)));
+                            setPriceFromCents(parsePesosInputToCents({ raw: event.target.value }));
                         }}
                         aria-invalid={fieldErrors.priceFrom ? 'true' : 'false'}
                         aria-describedby={
