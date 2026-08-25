@@ -20,6 +20,15 @@ interface FindByGastronomyInput {
      * - omit to return all states (both visible and archived).
      */
     state?: 'visible' | 'archived';
+    /**
+     * Filter by featured flag.
+     * - `false` — gallery photos ONLY, excluding the featured image. This is the
+     *   count the per-entity gallery cap and the per-plan photo limit are measured
+     *   against (HOS-791): the featured image does not occupy a gallery slot.
+     * - `true`  — the featured image only.
+     * - omit to return both.
+     */
+    isFeatured?: boolean;
     /** Pagination: 1-based page number. Defaults to 1. */
     page?: number;
     /** Pagination: maximum rows per page. Defaults to 50. */
@@ -103,6 +112,8 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
      *
      * @param input.gastronomyId - UUID of the parent gastronomy listing.
      * @param input.state        - Optional state filter ('visible' | 'archived').
+     * @param input.isFeatured   - Optional featured filter. Pass `false` to count
+     *                             gallery photos only, excluding the featured image (HOS-791).
      * @param input.page         - 1-based page number (default 1).
      * @param input.pageSize     - Rows per page (default 50, max 200 via BaseModel).
      * @param input.tx           - Optional transaction client.
@@ -111,9 +122,9 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
     async findByGastronomy(
         input: FindByGastronomyInput
     ): Promise<{ items: GastronomyMedia[]; total: number }> {
-        const { gastronomyId, state, page = 1, pageSize = 50, tx } = input;
+        const { gastronomyId, state, isFeatured, page = 1, pageSize = 50, tx } = input;
         const db = this.getClient(tx);
-        const logContext = { gastronomyId, state, page, pageSize };
+        const logContext = { gastronomyId, state, isFeatured, page, pageSize };
 
         try {
             const conditions = [
@@ -122,6 +133,9 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
             ];
             if (state !== undefined) {
                 conditions.push(eq(gastronomyMedia.state, state));
+            }
+            if (isFeatured !== undefined) {
+                conditions.push(eq(gastronomyMedia.isFeatured, isFeatured));
             }
 
             const whereClause = and(...conditions);
