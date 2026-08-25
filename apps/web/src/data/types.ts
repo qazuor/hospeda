@@ -1164,7 +1164,21 @@ export interface ExperienceSocialNetworks {
  * field is exposed.
  */
 export interface ExperienceContactInfo {
+    /**
+     * WhatsApp number. STILL not exposed on the public tier and still gated by
+     * the VIEWER's plan on a separate protected endpoint (HOS-19) — HOS-815
+     * deliberately left it out of `ExperiencePublicContactInfoSchema`. Kept so
+     * `ExperienceContactCTA` stays correct the day that changes.
+     */
     readonly whatsapp?: string | null;
+    /** Business email — published (HOS-815). */
+    readonly workEmail?: string | null;
+    /** Business landline — published (HOS-815). */
+    readonly workPhone?: string | null;
+    /** Mobile line — published (HOS-815). */
+    readonly mobilePhone?: string | null;
+    /** Provider's own site — published (HOS-815). */
+    readonly website?: string | null;
 }
 
 /**

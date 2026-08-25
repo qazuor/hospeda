@@ -29,6 +29,9 @@
     },
     "detail": {
         "contact": "Contacto",
+        "contactPhoneAriaLabel": "Llamar al prestador",
+        "contactEmailAriaLabel": "Enviar un email al prestador",
+        "contactWebsiteAriaLabel": "Visitar el sitio web del prestador",
         "whatsapp": "Consultar por WhatsApp",
         "whatsappMessage": "Hola, me interesa obtener más información sobre {{name}}",
         "hours": "Horarios de atención",

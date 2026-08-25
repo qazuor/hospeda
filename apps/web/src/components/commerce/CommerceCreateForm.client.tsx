@@ -126,7 +126,10 @@ export function CommerceCreateForm({
     const { t } = createTranslations(locale);
 
     const schema = vertical === 'gastronomy' ? GASTRONOMY_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({ schema, t });
+    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
+        schema,
+        t
+    });
 
     const [name, setName] = useState('');
     const [listingType, setListingType] = useState('');
@@ -171,6 +174,12 @@ export function CommerceCreateForm({
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
+        // HOS-816: the previous attempt's banner belongs to the previous
+        // attempt. `handleApiError` only ever sets one, so without this a
+        // rejected submit left its message on screen through every later
+        // attempt — including one still in flight, which reads as "this failed
+        // again" before the server has answered anything.
+        setFormError(null);
 
         const basePayload: Record<string, unknown> = {
             name,

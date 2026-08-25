@@ -303,7 +303,14 @@ export function BasicInfoSection({
 
                 The title is a <span>, not a <label htmlFor>: the editing surface
                 is a contenteditable `role="textbox"`, which a <label> cannot
-                name. The accessible name comes from `ariaLabel` instead. */}
+                name. The accessible name comes from `ariaLabel` instead.
+
+                HOS-829: no `placeholder`. The owner asked for the hint to go —
+                the field is self-explanatory next to its own title — so the
+                editor renders no overlay text at all here. Passing one back
+                would restore the copy the owner removed, not a bug fix. The
+                overlay itself is positioned correctly since HOS-828 and is
+                still used by the accommodation / event / post editors. */}
             <section className={styles.section}>
                 <span className={styles.label}>
                     {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
@@ -314,10 +321,6 @@ export function BasicInfoSection({
                     ariaLabel={t(
                         'commerce.owner.editor.sections.richDescription',
                         'Descripción ampliada'
-                    )}
-                    placeholder={t(
-                        'commerce.owner.editor.richDescriptionPlaceholder',
-                        'Contá la historia de tu comercio con detalle...'
                     )}
                     onChange={(value) => {
                         onFieldChange('richDescription', value);
