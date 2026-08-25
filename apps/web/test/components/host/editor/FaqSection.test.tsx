@@ -8,7 +8,9 @@
  * 3. Clicking "Agregar pregunta" opens the add form.
  * 4. Submitting the add form calls accommodationFaqApi.add and appends the FAQ.
  * 5. Clicking Edit opens the edit form pre-filled, and Save calls .update (PUT).
- * 6. Clicking Delete (confirmed) calls .remove and removes the FAQ from the list.
+ * 6. Clicking Delete opens the shared ConfirmDeleteDialog; confirming calls .remove and
+ *    removes the FAQ from the list; cancelling closes it without deleting
+ *    (HOS-794 — no more native `window.confirm`).
  * 7. Clicking the down arrow calls .reorder and reorders the list.
  * 8. Per-row action buttons carry a UNIQUE accessible name (question-scoped) —
  *    regression guard for the duplicate-name bug already hit once in
@@ -19,12 +21,17 @@
  * 10. Per-row non-default marker (AC-14): a FAQ with either flag off shows a
  *     text-visible badge (not colour-only); a FAQ at the all-true default
  *     shows neither badge.
+ * 11. Submitting an invalid form marks the fields instead of returning
+ *     silently: empty fields get the required message, short fields get the
+ *     schema's min message, the shared "Revisá los campos marcados" toast
+ *     fires, and typing clears the per-field error (HOS-794 AC-1/AC-2).
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
 import { FaqSection } from '@/components/host/editor/FaqSection.client';
+import { addToast } from '@/store/toast-store';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -43,6 +50,20 @@ const { mockAdd, mockUpdate, mockRemove, mockReorder } = vi.hoisted(() => ({
 
 vi.mock('@/components/host/editor/FaqSection.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('@/components/shared/ui/ConfirmDeleteDialog.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('@/components/shared/ui/Dialog.client', () => ({
+    Dialog: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
+        isOpen ? <div role="presentation">{children}</div> : null,
+    DialogHeader: ({ children, titleId }: { children: React.ReactNode; titleId: string }) => (
+        <div id={titleId}>{children}</div>
+    ),
+    DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
 
 vi.mock('@/lib/i18n', () => ({
@@ -118,7 +139,7 @@ describe('FaqSection', () => {
         mockUpdate.mockReset();
         mockRemove.mockReset();
         mockReorder.mockReset();
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        vi.mocked(addToast).mockClear();
     });
 
     it('renders FAQ questions from initialFaqs', () => {
@@ -228,6 +249,90 @@ describe('FaqSection', () => {
         });
     });
 
+    it('marks both add-form fields, toasts and focuses when saving with empty values', () => {
+        renderSection([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        // No silent return: the fields are marked, nothing is sent (HOS-794).
+        expect(mockAdd).not.toHaveBeenCalled();
+        expect(screen.getByText('La pregunta es obligatoria')).toBeInTheDocument();
+        expect(screen.getByText('La respuesta es obligatoria')).toBeInTheDocument();
+        expect(screen.getByLabelText('Pregunta')).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByLabelText('Pregunta')).toHaveFocus();
+        expect(vi.mocked(addToast)).toHaveBeenCalledWith({
+            type: 'error',
+            message: 'Revisá los campos marcados'
+        });
+    });
+
+    it('marks only the empty field when the other one is filled', () => {
+        renderSection([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+
+        fireEvent.change(screen.getByLabelText('Pregunta'), {
+            target: { value: '¿Hay wifi en las habitaciones?' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        expect(mockAdd).not.toHaveBeenCalled();
+        expect(screen.queryByText('La pregunta es obligatoria')).not.toBeInTheDocument();
+        expect(screen.getByText('La respuesta es obligatoria')).toBeInTheDocument();
+    });
+
+    it('surfaces the schema minimum instead of failing silently (HOS-794 AC-2)', () => {
+        renderSection([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+
+        fireEvent.change(screen.getByLabelText('Pregunta'), {
+            target: { value: '¿Wifi?' }
+        });
+        fireEvent.change(screen.getByLabelText('Respuesta'), {
+            target: { value: 'Sí.' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        // Under the mocked `t`, resolveValidationMessage cannot resolve the
+        // zodError key (the mock echoes it back, which reads as "missing"), so
+        // the raw schema key reaches the DOM. In production the interpolated
+        // "debe tener al menos {{min}} caracteres" copy renders instead — the
+        // point under test is that a min-length failure now MARKS the field.
+        // ('¿Wifi?' is 6 chars and 'Sí.' is 3 — both under the 10-char min.)
+        expect(mockAdd).not.toHaveBeenCalled();
+        expect(screen.getByLabelText('Pregunta')).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByLabelText('Respuesta')).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByText('zodError.common.faq.question.min')).toBeInTheDocument();
+        expect(screen.getByText('zodError.common.faq.answer.min')).toBeInTheDocument();
+    });
+
+    it('clears a field error as soon as the user edits that field', () => {
+        renderSection([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        expect(screen.getByText('La pregunta es obligatoria')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Pregunta'), {
+            target: { value: '¿Hay wifi en las habitaciones?' }
+        });
+
+        expect(screen.queryByText('La pregunta es obligatoria')).not.toBeInTheDocument();
+        // The untouched field keeps its error.
+        expect(screen.getByText('La respuesta es obligatoria')).toBeInTheDocument();
+    });
+
+    it('marks the edit form fields instead of returning silently', () => {
+        renderSection([FAQ_1]);
+        fireEvent.click(screen.getByRole('button', { name: /^Editar/ }));
+
+        fireEvent.change(screen.getByLabelText('Pregunta'), { target: { value: '' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(screen.getByText('La pregunta es obligatoria')).toBeInTheDocument();
+        expect(screen.getByLabelText('Pregunta')).toHaveFocus();
+    });
+
     it('opens the edit form pre-filled and calls .update (PUT) on save', async () => {
         const updated = { ...FAQ_1, question: '¿A qué hora es el check-in?' };
         mockUpdate.mockResolvedValueOnce({ ok: true, data: { faq: updated } });
@@ -275,13 +380,22 @@ describe('FaqSection', () => {
         expect(aiCheckbox.checked).toBe(false);
     });
 
-    it('calls .remove and removes the FAQ when delete is confirmed', async () => {
+    it('opens the delete dialog, and confirming calls .remove and removes the FAQ', async () => {
         mockRemove.mockResolvedValueOnce({ ok: true, data: { success: true } });
 
         renderSection([FAQ_1, FAQ_2]);
         fireEvent.click(
             screen.getByRole('button', { name: /^Eliminar "¿Cuándo es el check-in\?"/ })
         );
+
+        // The dialog opens and echoes what is about to be deleted — the API is
+        // NOT called until the user confirms (HOS-794). The question text now
+        // appears twice: once in the row and once in the dialog body.
+        expect(mockRemove).not.toHaveBeenCalled();
+        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        expect(screen.getAllByText('¿Cuándo es el check-in?')).toHaveLength(2);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
 
         await waitFor(() => {
             expect(mockRemove).toHaveBeenCalledWith({ accommodationId: 'acc-1', faqId: 'faq-1' });
@@ -292,11 +406,27 @@ describe('FaqSection', () => {
         });
     });
 
-    it('does NOT call .remove when the confirm dialog is cancelled', () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('does NOT call .remove when the delete dialog is cancelled', () => {
         renderSection([FAQ_1]);
         fireEvent.click(screen.getByRole('button', { name: /^Eliminar "/ }));
+
+        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
         expect(mockRemove).not.toHaveBeenCalled();
+        expect(screen.queryByText('¿Eliminás esta pregunta?')).not.toBeInTheDocument();
+    });
+
+    it('does not use the browser-native window.confirm for deletion (HOS-794)', () => {
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        renderSection([FAQ_1]);
+        fireEvent.click(screen.getByRole('button', { name: /^Eliminar "/ }));
+
+        // The maquetated dialog opened instead of the browser's native confirm.
+        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        expect(confirmSpy).not.toHaveBeenCalled();
+        confirmSpy.mockRestore();
     });
 
     it('calls .reorder when the down arrow is clicked', async () => {
