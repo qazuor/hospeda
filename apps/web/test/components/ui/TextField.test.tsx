@@ -312,4 +312,48 @@ describe('TextField', () => {
         expect(counter).toHaveAttribute('data-state', 'under-minimum');
         expect(control.getAttribute('aria-describedby')).toBe(counter.id);
     });
+
+    it('should announce a caller-supplied hint alongside the error and the counter', () => {
+        render(
+            <>
+                <TextField
+                    prefix="acc"
+                    name="seoTitle"
+                    label="Título para Google"
+                    value=""
+                    maxLength={60}
+                    onChange={() => undefined}
+                    error="Muy corto"
+                    describedByExtraId="acc-seoTitle-default-preview"
+                    counter={{ locale: 'es', min: 30, optional: true, testId: 'seo-counter' }}
+                />
+                <p id="acc-seoTitle-default-preview">Si lo dejás vacío, se publica: «Cheroga»</p>
+            </>
+        );
+
+        const describedBy = screen
+            .getByLabelText('Título para Google')
+            .getAttribute('aria-describedby');
+
+        // All three, and the hint must not displace the other two.
+        expect(describedBy?.split(' ')).toEqual([
+            buildFieldErrorId({ prefix: 'acc', name: 'seoTitle' }),
+            screen.getByTestId('seo-counter').id,
+            'acc-seoTitle-default-preview'
+        ]);
+    });
+
+    it('should leave aria-describedby untouched when the caller supplies no hint', () => {
+        render(
+            <TextField
+                prefix="acc"
+                name="seoTitle"
+                label="Título para Google"
+                value=""
+                onChange={() => undefined}
+            />
+        );
+
+        expect(screen.getByLabelText('Título para Google')).not.toHaveAttribute('aria-describedby');
+    });
 });

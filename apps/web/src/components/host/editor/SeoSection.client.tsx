@@ -51,6 +51,16 @@ import styles from './SeoSection.module.css';
  * "no override", but ONCE typed in they must clear the floor. The counters
  * carry `optional` for exactly that reason.
  */
+/**
+ * Ids of the "this is what gets published" preview lines. They are handed to
+ * `TextField` as `describedByExtraId` so the sentence reaches a screen-reader
+ * user too: without it the announcement is label → error → counter, and what
+ * the empty field would actually publish is carried by the placeholder alone,
+ * whose announcement is notoriously inconsistent across assistive tech.
+ */
+const SEO_TITLE_PREVIEW_ID = `${ACCOMMODATION_FIELD_PREFIX}-seoTitle-default-preview`;
+const SEO_DESCRIPTION_PREVIEW_ID = `${ACCOMMODATION_FIELD_PREFIX}-seoDescription-default-preview`;
+
 const SEO_TITLE_MIN = 30;
 const SEO_TITLE_MAX = 60;
 const SEO_DESCRIPTION_MIN = 70;
@@ -81,6 +91,12 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
     const titleDefault = data.seoTitleDefault;
     const descriptionDefault = data.seoDescriptionDefault;
 
+    // One flag per preview, because the same condition also gates the id
+    // handed to `aria-describedby`. Duplicating the expression would let the
+    // two drift into a dangling reference.
+    const showTitlePreview = data.seoTitle === '' && titleDefault !== '';
+    const showDescriptionPreview = data.seoDescription === '' && descriptionDefault !== '';
+
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
@@ -104,6 +120,7 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     type="text"
                     value={data.seoTitle}
                     placeholder={titleDefault || undefined}
+                    describedByExtraId={showTitlePreview ? SEO_TITLE_PREVIEW_ID : undefined}
                     maxLength={SEO_TITLE_MAX}
                     counter={{
                         locale,
@@ -113,8 +130,11 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     }}
                     onChange={(e) => onFieldChange('seoTitle', e.target.value)}
                 />
-                {data.seoTitle === '' && titleDefault !== '' && (
-                    <p className={styles.defaultPreview}>
+                {showTitlePreview && (
+                    <p
+                        id={SEO_TITLE_PREVIEW_ID}
+                        className={styles.defaultPreview}
+                    >
                         {t(
                             'host.properties.editor.field.seoDefaultPreview',
                             'Si lo dejás vacío, se publica: «{{value}}»',
@@ -144,6 +164,9 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     error={errors.seoDescription}
                     value={data.seoDescription}
                     placeholder={descriptionDefault || undefined}
+                    describedByExtraId={
+                        showDescriptionPreview ? SEO_DESCRIPTION_PREVIEW_ID : undefined
+                    }
                     maxLength={SEO_DESCRIPTION_MAX}
                     rows={3}
                     counter={{
@@ -154,8 +177,11 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     }}
                     onChange={(e) => onFieldChange('seoDescription', e.target.value)}
                 />
-                {data.seoDescription === '' && descriptionDefault !== '' && (
-                    <p className={styles.defaultPreview}>
+                {showDescriptionPreview && (
+                    <p
+                        id={SEO_DESCRIPTION_PREVIEW_ID}
+                        className={styles.defaultPreview}
+                    >
                         {t(
                             'host.properties.editor.field.seoDefaultPreview',
                             'Si lo dejás vacío, se publica: «{{value}}»',

@@ -266,6 +266,26 @@ describe('SeoSection', () => {
         });
     });
 
+    describe('the default preview and assistive tech', () => {
+        it('should associate the preview with its field, not leave it to the placeholder', () => {
+            render(<SeoSection {...buildProps()} />);
+
+            const preview = screen.getByText(`Si lo dejás vacío, se publica: «${NAME}»`);
+            expect(preview.id).not.toBe('');
+            expect(titleField().getAttribute('aria-describedby')).toContain(preview.id);
+        });
+
+        it('should drop the reference when the preview stops being rendered', () => {
+            render(<SeoSection {...buildProps({ data: { ...MOCK_DATA, seoTitle: 'Hola' } })} />);
+
+            // Nothing to point at any more: a dangling `aria-describedby` makes
+            // a screen reader announce an id it cannot resolve.
+            expect(titleField().getAttribute('aria-describedby') ?? '').not.toContain(
+                'default-preview'
+            );
+        });
+    });
+
     describe('the character counter', () => {
         it('should render the shared counter for both fields, minimum included', () => {
             render(<SeoSection {...buildProps()} />);
