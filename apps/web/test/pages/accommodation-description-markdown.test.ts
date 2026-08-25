@@ -268,3 +268,32 @@ describe('HOS-817 wiring — Description.astro only ever set:html the sanitized 
         expect(COMPONENT_CODE).not.toContain('renderPlain');
     });
 });
+
+describe('HOS-817 — the rendered HTML must never leak into meta / OG / JSON-LD', () => {
+    /**
+     * `description` is now HTML. Any surface that takes TEXT must keep taking a
+     * text field, or a `<strong>` ends up inside a `<meta content="...">` or a
+     * JSON-LD `description`. Verified at the time of the fix:
+     *   - meta/OG  -> `seoDescription` = seo.description ?? summary
+     *   - JSON-LD  -> `accommodation.summary`
+     * Neither reads `accommodation.description`, and `summary` is deliberately
+     * left as plain text (see the component's note), so both stay plain.
+     */
+    it('builds seoDescription from seo.description with a summary fallback, not from description', () => {
+        expect(PAGE_CODE).toMatch(
+            /const\s+seoDescription\s*=\s*pickLocalizedSeo\(\{[\s\S]{0,200}?fallback:\s*accommodation\.summary/
+        );
+    });
+
+    it('never feeds the sanitized HTML to the layout description or the JSON-LD', () => {
+        expect(PAGE_CODE).not.toMatch(/description=\{safeDescriptionHtml\}/);
+        expect(PAGE_CODE).not.toMatch(/description=\{accommodation\.description\}/);
+        expect(PAGE_CODE).not.toMatch(/description=\{safeRichDescriptionHtml\}/);
+    });
+
+    it('feeds the JSON-LD description from the plain summary field', () => {
+        expect(PAGE_CODE).toMatch(
+            /<LodgingBusinessJsonLd[\s\S]{0,200}?description=\{accommodation\.summary\}/
+        );
+    });
+});
