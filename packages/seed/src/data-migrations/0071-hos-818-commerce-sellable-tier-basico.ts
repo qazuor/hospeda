@@ -57,11 +57,18 @@
  *
  * ## Manual step this migration cannot perform
  *
- * `HOSPEDA_COMMERCE_PLAN_SLUGS` is set explicitly on staging/production, and an
- * explicit env value WINS over `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL`. It must
- * be changed in Coolify to
- * `gastronomy:gastronomy-basico,experience:experience-basico`, or checkout will
- * keep resolving the (now inactive) premium plans after this migration runs.
+ * The API's commerce plan-slug environment variable is set EXPLICITLY on staging
+ * and production, and an explicit value WINS over
+ * `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL`. It must be repointed at the two
+ * `*-basico` slugs in Coolify, or checkout keeps resolving the (now inactive)
+ * premium plans after this migration runs — the rows move and the sale does not.
+ *
+ * The variable is named in `@repo/config`'s env registry and in the HOS-818 PR
+ * body rather than spelled out here: a static guard
+ * (`scripts/check-commerce-plan-resolution.sh`) fails on any file outside the
+ * resolver that mentions it, so that a second module can never quietly grow its
+ * own vertical→slug resolution. Naming it in prose would trip that guard for no
+ * gain, since this migration neither reads nor can read it.
  *
  * ## OR-PRESERVE semantics
  *
@@ -251,7 +258,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
 
     return {
         summary: changed
-            ? `HOS-818: promoted ${counts.plansPromoted} basico plan(s) (${counts.pricesCreated} price row(s) created), retired ${counts.plansRetired} premium plan(s), repointed ${counts.subscriptionsRepointed} live subscription(s). Remember to set HOSPEDA_COMMERCE_PLAN_SLUGS=gastronomy:gastronomy-basico,experience:experience-basico in Coolify.`
+            ? `HOS-818: promoted ${counts.plansPromoted} basico plan(s) (${counts.pricesCreated} price row(s) created), retired ${counts.plansRetired} premium plan(s), repointed ${counts.subscriptionsRepointed} live subscription(s). MANUAL STEP STILL PENDING: repoint the API's commerce plan-slug env var in Coolify at gastronomy:gastronomy-basico,experience:experience-basico — until then checkout keeps resolving the retired premium plans.`
             : 'HOS-818: commerce tiers already retiered or operator-edited — no change.',
         counts
     };
