@@ -277,62 +277,53 @@ export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormP
                     noValidate
                 >
                     {/* Current password */}
-                    <div className={styles.field}>
-                        <PasswordField
-                            id="cpf-currentPassword"
-                            name="currentPassword"
-                            label={t(
-                                'commerce.changePassword.fields.currentPassword',
-                                'Contraseña actual'
-                            )}
-                            value={fields.currentPassword}
-                            onChange={(value) => handleFieldChange('currentPassword', value)}
-                            autoComplete="current-password"
-                            required
-                            disabled={isSubmitting}
-                            error={errors.currentPassword}
-                            i18n={passwordI18n}
-                        />
-                    </div>
+                    <PasswordField
+                        id="cpf-currentPassword"
+                        name="currentPassword"
+                        label={t(
+                            'commerce.changePassword.fields.currentPassword',
+                            'Contraseña actual'
+                        )}
+                        value={fields.currentPassword}
+                        onChange={(value) => handleFieldChange('currentPassword', value)}
+                        autoComplete="current-password"
+                        required
+                        disabled={isSubmitting}
+                        error={errors.currentPassword}
+                        i18n={passwordI18n}
+                    />
 
                     {/* New password */}
-                    <div className={styles.field}>
-                        <PasswordField
-                            id="cpf-newPassword"
-                            name="newPassword"
-                            label={t(
-                                'commerce.changePassword.fields.newPassword',
-                                'Nueva contraseña'
-                            )}
-                            value={fields.newPassword}
-                            onChange={(value) => handleFieldChange('newPassword', value)}
-                            autoComplete="new-password"
-                            required
-                            disabled={isSubmitting}
-                            error={errors.newPassword}
-                            showStrength
-                            i18n={passwordI18n}
-                        />
-                    </div>
+                    <PasswordField
+                        id="cpf-newPassword"
+                        name="newPassword"
+                        label={t('commerce.changePassword.fields.newPassword', 'Nueva contraseña')}
+                        value={fields.newPassword}
+                        onChange={(value) => handleFieldChange('newPassword', value)}
+                        autoComplete="new-password"
+                        required
+                        disabled={isSubmitting}
+                        error={errors.newPassword}
+                        showStrength
+                        i18n={passwordI18n}
+                    />
 
                     {/* Confirm new password */}
-                    <div className={styles.field}>
-                        <PasswordField
-                            id="cpf-confirmNewPassword"
-                            name="confirmNewPassword"
-                            label={t(
-                                'commerce.changePassword.fields.confirmNewPassword',
-                                'Confirmá la nueva contraseña'
-                            )}
-                            value={fields.confirmNewPassword}
-                            onChange={(value) => handleFieldChange('confirmNewPassword', value)}
-                            autoComplete="new-password"
-                            required
-                            disabled={isSubmitting}
-                            error={errors.confirmNewPassword}
-                            i18n={passwordI18n}
-                        />
-                    </div>
+                    <PasswordField
+                        id="cpf-confirmNewPassword"
+                        name="confirmNewPassword"
+                        label={t(
+                            'commerce.changePassword.fields.confirmNewPassword',
+                            'Confirmá la nueva contraseña'
+                        )}
+                        value={fields.confirmNewPassword}
+                        onChange={(value) => handleFieldChange('confirmNewPassword', value)}
+                        autoComplete="new-password"
+                        required
+                        disabled={isSubmitting}
+                        error={errors.confirmNewPassword}
+                        i18n={passwordI18n}
+                    />
 
                     {/* Global error banner */}
                     {globalError && (
