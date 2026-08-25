@@ -211,6 +211,8 @@
                 "answerLabel": "Resposta",
                 "questionPlaceholder": "Escreva a pergunta...",
                 "answerPlaceholder": "Escreva a resposta...",
+                "questionRequired": "Escreva a pergunta antes de salvar.",
+                "answerRequired": "Escreva a resposta antes de salvar.",
                 "moveUp": "Mover para cima",
                 "moveDown": "Mover para baixo",
                 "deleteConfirm": "Excluir esta pergunta?",
