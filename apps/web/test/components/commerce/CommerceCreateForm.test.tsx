@@ -202,6 +202,66 @@ describe('CommerceCreateForm', () => {
             expect(screen.getByLabelText('Unidad de precio')).toBeInTheDocument();
         });
 
+        it('names the thing being created an experience, not a comercio (HOS-820)', () => {
+            render(
+                <CommerceCreateForm
+                    vertical="experience"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            expect(screen.getByLabelText('Nombre de la experiencia')).toBeInTheDocument();
+            expect(screen.getByTestId('commerce-create-submit')).toHaveTextContent(
+                'Crear experiencia'
+            );
+            // The internal module name must not reach the screen on this form.
+            expect(screen.queryByLabelText(/comercio/i)).toBeNull();
+            expect(screen.queryByText(/comercio/i)).toBeNull();
+        });
+
+        it('surfaces a create failure in experience words (HOS-820)', async () => {
+            // No `message` and no `code`: the shapeless failure (a dropped
+            // connection) is exactly when the form's own fallback copy shows.
+            // An API error that carries its own message renders THAT instead.
+            mockCreate.mockResolvedValue({ ok: false, error: {} } as unknown as Awaited<
+                ReturnType<typeof createOwnerListing>
+            >);
+
+            render(
+                <CommerceCreateForm
+                    vertical="experience"
+                    locale="es"
+                    destinations={destinations}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Nombre de la experiencia'), {
+                target: { value: 'Kayak Aventura' }
+            });
+            fireEvent.change(screen.getByLabelText('Categoría'), {
+                target: { value: 'TOUR_GUIDE' }
+            });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Salidas en kayak por el río Uruguay' }
+            });
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Una salida guiada en kayak de dos horas por el río Uruguay.' }
+            });
+            fireEvent.change(screen.getByLabelText('Unidad de precio'), {
+                target: { value: 'per_person' }
+            });
+            fireEvent.change(screen.getByLabelText('Precio desde'), {
+                target: { value: '15000' }
+            });
+
+            fireEvent.click(screen.getByTestId('commerce-create-submit'));
+
+            expect(await screen.findByRole('alert')).toHaveTextContent(
+                'No pudimos crear la experiencia. Probá de nuevo.'
+            );
+        });
+
         it('does not expose the internal centavo unit in the price label (HOS-809)', () => {
             render(
                 <CommerceCreateForm
@@ -225,7 +285,7 @@ describe('CommerceCreateForm', () => {
                 />
             );
 
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+            fireEvent.change(screen.getByLabelText('Nombre de la experiencia'), {
                 target: { value: 'Kayak Aventura' }
             });
             fireEvent.change(screen.getByLabelText('Categoría'), {
@@ -266,7 +326,7 @@ describe('CommerceCreateForm', () => {
                 />
             );
 
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+            fireEvent.change(screen.getByLabelText('Nombre de la experiencia'), {
                 target: { value: 'City Tour CdU' }
             });
             fireEvent.change(screen.getByLabelText('Categoría'), {

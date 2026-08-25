@@ -280,7 +280,10 @@
             },
             "subtitle": "Completá lo básico ahora — vas a poder sumar fotos, horarios y más detalles después.",
             "fields": {
-                "name": "Nombre del comercio",
+                "name": {
+                    "gastronomy": "Nombre del comercio",
+                    "experience": "Nombre de la experiencia"
+                },
                 "type": "Categoría",
                 "summary": "Resumen",
                 "description": "Descripción",
@@ -288,9 +291,15 @@
                 "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.",
                 "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo."
             },
-            "submit": "Crear comercio",
+            "submit": {
+                "gastronomy": "Crear comercio",
+                "experience": "Crear experiencia"
+            },
             "submitting": "Creando...",
-            "error": "No pudimos crear el comercio. Probá de nuevo."
+            "error": {
+                "gastronomy": "No pudimos crear el comercio. Probá de nuevo.",
+                "experience": "No pudimos crear la experiencia. Probá de nuevo."
+            }
         }
     },
     "landing": {

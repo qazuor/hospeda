@@ -30,6 +30,10 @@
  * pass the typed number straight through under a label reading "Precio desde
  * (centavos)", so an owner who typed 15000 meaning pesos published $ 150.
  *
+ * HOS-820: the copy that NAMES what is being created (the name field, the
+ * submit button, the create-failed message) follows the vertical instead of
+ * the shared module — an excursion is not a "comercio".
+ *
  * Hydration: caller MUST use `client:load` (the primary interactive surface
  * of the create page).
  */
@@ -138,6 +142,32 @@ export function CommerceCreateForm({
     const typeOptions =
         vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
+    // HOS-820: "comercio" is the name of the internal module gastronomy and
+    // experience share — not a word an excursion, a boat trip or a tour guide
+    // recognises itself in. The page already knows which vertical it is
+    // creating (the route carries it), so the three strings that NAME the thing
+    // being created follow the vertical instead of the module. Deliberately out
+    // of scope: the account sidebar's "Mi comercio", which is one shared entry
+    // across both verticals and needs a neutral term rather than a branch.
+    const nameLabel =
+        vertical === 'gastronomy'
+            ? t('commerce.owner.create.fields.name.gastronomy', 'Nombre del comercio')
+            : t('commerce.owner.create.fields.name.experience', 'Nombre de la experiencia');
+    const submitLabel =
+        vertical === 'gastronomy'
+            ? t('commerce.owner.create.submit.gastronomy', 'Crear comercio')
+            : t('commerce.owner.create.submit.experience', 'Crear experiencia');
+    const createErrorMessage =
+        vertical === 'gastronomy'
+            ? t(
+                  'commerce.owner.create.error.gastronomy',
+                  'No pudimos crear el comercio. Probá de nuevo.'
+              )
+            : t(
+                  'commerce.owner.create.error.experience',
+                  'No pudimos crear la experiencia. Probá de nuevo.'
+              );
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
 
@@ -193,10 +223,7 @@ export function CommerceCreateForm({
             return;
         }
 
-        handleApiError(
-            created.error,
-            t('commerce.owner.create.error', 'No pudimos crear el comercio. Probá de nuevo.')
-        );
+        handleApiError(created.error, createErrorMessage);
         setIsSubmitting(false);
     }
 
@@ -211,7 +238,7 @@ export function CommerceCreateForm({
                     className={styles.label}
                     htmlFor="cc-name"
                 >
-                    {t('commerce.owner.create.fields.name', 'Nombre del comercio')}
+                    {nameLabel}
                 </label>
                 <input
                     id="cc-name"
@@ -474,9 +501,7 @@ export function CommerceCreateForm({
                 aria-busy={isSubmitting}
                 data-testid="commerce-create-submit"
             >
-                {isSubmitting
-                    ? t('commerce.owner.create.submitting', 'Creando...')
-                    : t('commerce.owner.create.submit', 'Crear comercio')}
+                {isSubmitting ? t('commerce.owner.create.submitting', 'Creando...') : submitLabel}
             </button>
         </form>
     );
