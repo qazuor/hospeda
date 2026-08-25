@@ -53,6 +53,7 @@ import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { createOwnerListing } from '@/lib/commerce/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/commerce/price-units';
+import { resolveCommerceTypeLabel } from '@/lib/commerce-type-labels';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -287,7 +288,7 @@ export function CommerceCreateForm({
                             key={opt}
                             value={opt}
                         >
-                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
+                            {resolveCommerceTypeLabel({ t, vertical, type: opt })}
                         </option>
                     ))}
                 </select>

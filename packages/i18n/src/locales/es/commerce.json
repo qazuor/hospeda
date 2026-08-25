@@ -148,31 +148,6 @@
                 "summaryHint": "{{count}}/300",
                 "priceMustBePositive": "El precio debe ser un número positivo."
             },
-            "typeOption": {
-                "RESTAURANT": "Restaurante",
-                "BAR": "Bar",
-                "CAFE": "Café",
-                "PARRILLA": "Parrilla",
-                "CERVECERIA": "Cervecería",
-                "HELADERIA": "Heladería",
-                "PANADERIA": "Panadería",
-                "ROTISERIA": "Rotisería",
-                "FOOD_TRUCK": "Food Truck",
-                "CAR_RENTAL": "Alquiler de autos",
-                "BIKE_RENTAL": "Alquiler de bicicletas",
-                "KAYAK_RENTAL": "Alquiler de kayaks",
-                "QUAD_RENTAL": "Alquiler de cuatriciclos",
-                "TOUR_GUIDE": "Guía de turismo",
-                "GUIDED_VISIT": "Visita guiada",
-                "EXCURSION": "Excursión",
-                "BOAT_TRIP": "Paseo en lancha",
-                "FISHING_CHARTER": "Pesca deportiva",
-                "BIRD_WATCHING": "Avistamiento de aves",
-                "CULTURAL_TOUR": "Tour cultural",
-                "WINE_TASTING": "Degustación de vinos",
-                "OUTDOOR_ADVENTURE": "Aventura al aire libre",
-                "OTHER": "Otro"
-            },
             "priceRangeOption": {
                 "BUDGET": "Económico",
                 "MID": "Moderado",
@@ -240,7 +215,8 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "La URL pública sigue al nombre mientras la ficha siga sin publicar. Una vez publicada, deja de cambiarse sola.",
+            "slugFollowsNameNotice": "La dirección pública va a seguir al nombre hasta que publiques la ficha.",
+            "slugFixedNotice": "La dirección pública ya está fija: cambiar el nombre no la modifica.",
             "slugRefresh": {
                 "notice": "Esta ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.",
                 "warning": "Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",

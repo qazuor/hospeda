@@ -17,6 +17,7 @@ import { CommerceListingEditor } from '@/components/commerce/CommerceListingEdit
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { transformAmenityList } from '@/lib/api/transforms';
+import { isListingPublished } from '@/lib/listing-slug-refresh';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import {
     type CommerceVertical,
@@ -104,6 +105,15 @@ const destinations = destinationsResult.ok
 // `CommerceListingEditor`'s `destinationsLoadFailed` prop doc.
 const destinationsLoadFailed = !destinationsResult.ok;
 
+// HOS-834: the address notice states ONE state, the one this listing is
+// actually in. The previous single line described both at once ("follows the
+// name while unpublished; once published it stops") and never said which
+// applied, so on a published listing its first half described something that
+// does not happen to it. Resolved through `isListingPublished` — the same
+// predicate that gates the slug-refresh opt-in inside the editor (HOS-784), so
+// the sentence above the form and the behaviour below it can never disagree.
+const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycleState });
+
 const title = t('commerce.owner.list.edit', 'Editar');
 const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 
@@ -129,10 +139,15 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         </div>
         <p class="ce-identity__slug"><code>{detail.slug}</code></p>
         <p class="ce-identity__notice">
-            {t(
-                'commerce.owner.editor.slugImmutableNotice',
-                'La URL pública sigue al nombre mientras la ficha siga sin publicar. Una vez publicada, deja de cambiarse sola.'
-            )}
+            {listingIsPublished
+                ? t(
+                      'commerce.owner.editor.slugFixedNotice',
+                      'La dirección pública ya está fija: cambiar el nombre no la modifica.'
+                  )
+                : t(
+                      'commerce.owner.editor.slugFollowsNameNotice',
+                      'La dirección pública va a seguir al nombre hasta que publiques la ficha.'
+                  )}
         </p>
     </div>
 

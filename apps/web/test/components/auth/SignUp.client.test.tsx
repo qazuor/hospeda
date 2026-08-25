@@ -85,7 +85,7 @@ function renderIsland() {
 }
 
 async function readyForm(): Promise<void> {
-    await screen.findByLabelText('Correo electrónico');
+    await screen.findByLabelText(/Correo electrónico/);
 }
 
 const VALID_PASSWORD = 'Aa1!aaaa';
@@ -120,7 +120,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'not-an-email' }
         });
         fireEvent.change(screen.getByLabelText('Contraseña'), {
@@ -141,7 +141,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'user@example.com' }
         });
         const tooLong = `Aa1!${'a'.repeat(125)}`;
@@ -163,7 +163,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: '  user@example.com  ' }
         });
         fireEvent.change(screen.getByLabelText('Contraseña'), {
@@ -183,6 +183,61 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         });
     });
 
+    // ─── HOS-821: the required marker ────────────────────────────────────────
+
+    it('marks the email label as required, like the two password labels', () => {
+        // Arrange / Act
+        render(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+            />
+        );
+
+        // Assert — the label's own text, not the input's attributes: `required`
+        // and `aria-required` were ALREADY on this input, so an attribute check
+        // passed happily while the field was the only mandatory one on the form
+        // that did not look mandatory.
+        const label = screen.getByText('Correo electrónico').closest('label');
+        expect(label).not.toBeNull();
+        expect(label?.textContent).toBe('Correo electrónico *');
+    });
+
+    it('hides the marker from the accessibility tree', () => {
+        // The input already announces itself via `aria-required`; a second,
+        // literal "asterisk" in the accessible name is noise, which is why
+        // `PasswordField` marks its own span `aria-hidden` too.
+        render(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+            />
+        );
+
+        const marker = screen
+            .getByText('Correo electrónico')
+            .closest('label')
+            ?.querySelector('span');
+        expect(marker?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('server-renders the marker too, so it is present before hydration', () => {
+        // NOTE: `PasswordField` is mocked in this file (see the module mocks
+        // above) and its mock renders no marker, so the two password labels are
+        // deliberately NOT asserted here — doing so would test the stub. Their
+        // asterisk is `PasswordField`'s own behaviour, covered where that
+        // component is exercised for real.
+        const html = renderToStaticMarkup(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+            />
+        );
+
+        expect(html).toContain('Correo electr');
+        expect(html).toMatch(/aria-hidden="true"[^>]*>\s*\*|\*<\/span>/);
+    });
+
     it('server-renders the real sign-up form fields on first paint', () => {
         document.body.innerHTML = renderToStaticMarkup(
             <SignUp
@@ -193,7 +248,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         );
 
         expect(screen.getByRole('form', { name: 'Crear cuenta' })).toBeInTheDocument();
-        expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
         expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
         expect(screen.getByLabelText('Confirmar contraseña')).toBeInTheDocument();
     });

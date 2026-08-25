@@ -14,6 +14,8 @@
  * - buildPatchPayload: preserves null featuredImageId for DB clear (SPEC-208 PR3 Bug 2)
  */
 
+import { resolveEnvironment } from '@repo/media/server';
+import { ENTITY_FOLDER_MAP } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     buildEntityFolder,
@@ -98,6 +100,47 @@ describe('upload-helpers', () => {
         it('should produce correct folder for post', () => {
             const folder = buildEntityFolder('post', 'post-012');
             expect(folder).toMatch(/^hospeda\/[^/]+\/posts\/post-012$/);
+        });
+
+        // HOS-831. This helper used to append a bare 's' to the entity type,
+        // which is right for the four cases above and wrong for `gastronomy`:
+        // every photo uploaded through the web owner editor landed in
+        // `gastronomys/`, a permanent folder name in object storage. The two
+        // assertions are deliberately separate — matching the correct plural
+        // alone would still pass if BOTH spellings somehow appeared, and the
+        // negative one is what actually pins the defect.
+        it('should pluralize gastronomy as "gastronomies", never "gastronomys"', () => {
+            const folder = buildEntityFolder('gastronomy', 'gastro-345');
+
+            expect(folder).toMatch(/^hospeda\/[^/]+\/gastronomies\/gastro-345$/);
+            expect(folder).not.toContain('gastronomys');
+        });
+
+        it('should produce correct folder for experience', () => {
+            const folder = buildEntityFolder('experience', 'exp-678');
+            expect(folder).toMatch(/^hospeda\/[^/]+\/experiences\/exp-678$/);
+        });
+
+        // The regression that made the above possible was not the plural — it
+        // was a SECOND folder builder living beside `ENTITY_FOLDER_MAP`. This
+        // pins the delegation itself, so re-introducing an inline template here
+        // fails even if someone hardcodes the right plural for gastronomy.
+        it('should agree with ENTITY_FOLDER_MAP for every entity type it serves', () => {
+            const environment = resolveEnvironment();
+            const entityTypes = [
+                'accommodation',
+                'destination',
+                'event',
+                'post',
+                'gastronomy',
+                'experience'
+            ] as const;
+
+            for (const entityType of entityTypes) {
+                expect(buildEntityFolder(entityType, 'id-1')).toBe(
+                    ENTITY_FOLDER_MAP[entityType]({ environment, entityId: 'id-1' })
+                );
+            }
         });
     });
 

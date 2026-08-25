@@ -289,6 +289,24 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                     className={styles.label}
                 >
                     {t('auth.signUp.email', 'Correo electrónico')}
+                    {/*
+                        HOS-821: the email input has always carried
+                        `required` + `aria-required`, so assistive tech was
+                        already told. The VISIBLE marker was the only thing
+                        missing, which left the one mandatory field on the
+                        sign-up form that did not look mandatory next to two
+                        that did. Same span, same class and same
+                        `aria-hidden` as `PasswordField` renders for the two
+                        password labels below — hidden from the a11y tree
+                        precisely because `aria-required` already says it, and
+                        announcing it twice is worse than not at all.
+                    */}
+                    <span
+                        className={styles.required}
+                        aria-hidden="true"
+                    >
+                        {' *'}
+                    </span>
                 </label>
                 <input
                     id="signup-email"

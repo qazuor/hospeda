@@ -44,7 +44,10 @@ describe('Subject Builder', () => {
                 const result = getSubject(NotificationType.ADDON_PURCHASE, data);
 
                 // Assert
-                expect(result).toBe('Add-on adquirido - Soporte Prioritario');
+                // HOS-830: "Complemento", not "add-on" — the word the
+                // product uses on every screen the buyer actually saw.
+                expect(result).toBe('Complemento adquirido - Soporte Prioritario');
+                expect(result).not.toContain('Add-on');
             });
 
             it('should return payment success subject with amount', () => {
@@ -219,7 +222,7 @@ describe('Subject Builder', () => {
                 // was handed nothing. What must never happen is that string
                 // reaching a transport, which NotificationService.generateSubject
                 // now prevents.
-                expect(result).toBe('Add-on adquirido - {addonName}');
+                expect(result).toBe('Complemento adquirido - {addonName}');
             });
 
             it('should preserve placeholder when data has unrelated keys', () => {

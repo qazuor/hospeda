@@ -44,6 +44,15 @@ export const OTHER_CATEGORY_KEY = '__other__';
 /**
  * Maps an `AmenitiesTypeEnum` value to its i18n key suffix (camelCase) and a
  * Spanish fallback label.
+ *
+ * `GENERAL_APPLIANCES` deliberately reads "Equipamiento" here and in
+ * `accommodations.amenityCategories.generalAppliances`, while the admin panel
+ * keeps "Electrodomesticos" (HOS-823). The enum value is a catch-all: it groups
+ * parking, bikes, pet policy and an experience's included gear, none of which is
+ * an appliance. On an experience listing that heading was the most misleading
+ * one on the page. "Equipamiento" covers a fridge and a kayak alike, so ONE
+ * string serves both verticals -- a per-vertical key would add a layer for a
+ * naming problem, which is why it was rejected.
  */
 export const AMENITY_CATEGORY_LABELS: Readonly<
     Record<string, { readonly i18nKey: string; readonly fallback: string }>
@@ -59,7 +68,7 @@ export const AMENITY_CATEGORY_LABELS: Readonly<
     SAFETY: { i18nKey: 'safety', fallback: 'Seguridad' },
     FAMILY_FRIENDLY: { i18nKey: 'familyFriendly', fallback: 'Apto familia' },
     WORK_FRIENDLY: { i18nKey: 'workFriendly', fallback: 'Apto trabajo' },
-    GENERAL_APPLIANCES: { i18nKey: 'generalAppliances', fallback: 'Electrodomésticos' }
+    GENERAL_APPLIANCES: { i18nKey: 'generalAppliances', fallback: 'Equipamiento' }
 };
 
 /** A single amenity category group, ready to render as a collapsible section. */
