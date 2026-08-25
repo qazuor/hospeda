@@ -19,6 +19,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { validateCallbackUrl } from '@/lib/auth-callback';
+import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import { getAdminUrl, getSiteUrl, isProduction } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
@@ -42,19 +43,19 @@ const locale = Astro.locals.locale as SupportedLocale;
 // `new URL(returnPath, origin)` resolution does NOT enforce the base
 // origin when `returnPath` is an absolute URL — it returns the absolute
 // URL verbatim. That makes it a textbook open-redirect vector usable
-// for phishing. Reject anything that isn't an obviously-safe relative
-// path (single leading slash, no second slash that could be parsed as
-// `//evil.com`, no scheme prefix). Fall back to the account dashboard
-// when the input looks suspicious.
+// for phishing. `resolveSafeReturnPath` rejects anything that isn't an
+// obviously-safe relative path (single leading slash, no second slash that
+// could be parsed as `//evil.com`, no scheme prefix) and falls back to the
+// account dashboard when the input looks suspicious.
+//
+// HOS-810 lifted that predicate out of this file verbatim so `signup.astro`
+// could honour the same param without a hand-copied second version of a
+// security check. Behaviour here is unchanged.
 const rawReturn =
     Astro.url.searchParams.get('returnUrl') ??
     Astro.url.searchParams.get('redirect') ??
     '';
-const isSafeRelativePath =
-    rawReturn.startsWith('/') &&
-    !rawReturn.startsWith('//') &&
-    !rawReturn.startsWith('/\\');
-const returnPath = isSafeRelativePath ? rawReturn : buildUrl({ locale, path: 'mi-cuenta' });
+const returnPath = resolveSafeReturnPath({ rawReturn, locale });
 
 // SPEC-182: cross-app `callbackUrl` support. The admin panel redirects
 // unauthenticated users here with `?callbackUrl={admin-url}` so the web signin

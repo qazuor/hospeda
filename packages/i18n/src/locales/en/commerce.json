@@ -1,10 +1,10 @@
 {
     "lead": {
         "title": "Add your business",
-        "subtitle": "Fill out the form and we'll get in touch to add your establishment to the platform.",
+        "subtitle": "Create your account, publish your venue and start reaching diners looking for somewhere to eat in the area.",
         "experience": {
             "title": "List your experience",
-            "subtitle": "Tell us about the experiences you offer and we'll reach out to add you to Hospeda."
+            "subtitle": "Create your account, publish your experience and start reaching travelers looking for things to do in the area."
         },
         "fields": {
             "businessName": "Business name",

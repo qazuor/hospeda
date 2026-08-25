@@ -31,11 +31,11 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
-import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -150,7 +150,14 @@ const faqJsonLd = {
     }))
 };
 
-const signupUrl = buildUrl({ locale, path: 'auth/signup' });
+// HOS-810: the CTA no longer stops at `auth/signup`, which redirected an
+// already-signed-in visitor to `/mi-cuenta/` — a page with no link onward to
+// the commerce create form, closing the loop this landing opens. It now
+// carries that form as its post-auth return destination, so signup forwards a
+// signed-in visitor straight there and still renders its form for everyone
+// else. Stays one constant href, because this page is edge-cached and must
+// keep parsing no session (see `lib/commerce/start-url.ts`).
+const signupUrl = buildCommerceStartUrl({ locale, vertical: 'experience' });
 ---
 
 <BaseLayout locale={locale} title={title} description={subtitle}>
