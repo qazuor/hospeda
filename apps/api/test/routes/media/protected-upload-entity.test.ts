@@ -83,7 +83,8 @@ const REAL_PNG_FILE = new File(
     { type: 'image/png' }
 );
 
-const PROTECTED_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS));
+/** Mirrors the route: the gallery cap plus the featured image. */
+const PROTECTED_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
 
 const buildOwnedEntityStub = () =>
     vi.fn().mockResolvedValue({
@@ -241,7 +242,7 @@ describe('Protected media upload-entity endpoint', () => {
             vi.useRealTimers();
         });
 
-        it('returns the translated rate-limit message with Retry-After on the 51st gallery upload', async () => {
+        it('lets a full album through, then returns the translated rate-limit message with Retry-After', async () => {
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementation(
                 buildOwnedEntityStub()
             );
