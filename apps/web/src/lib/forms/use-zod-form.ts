@@ -64,6 +64,27 @@ export interface UseZodFormOptions<TSchema extends ZodTypeAny> {
      * render site reads.
      */
     readonly fieldIdSuffixes?: Readonly<Record<string, string>>;
+    /**
+     * Zod keys whose value is a nested object rendered as ONE group of controls
+     * rather than one labelled input (HOS-814).
+     *
+     * Zod reports an issue at its deepest path, so a bad shift inside commerce
+     * `openingHours` arrives as `openingHours.days.mon.shifts.0.close`. Nothing
+     * reads that key: the section renders `<FieldError>` for `openingHours`, and
+     * `focusFirstInvalidField` derives an id from `openingHours`. The result was
+     * a submit that raised "Revisá los campos marcados" with no field marked
+     * anywhere, no message at the foot of the section and no move of focus —
+     * while emptying the name in the SAME form did all three.
+     *
+     * Listing a key here ADDS an entry under the bare key, carrying the first
+     * nested message, so both of those mechanisms see the failure. The nested
+     * entries are KEPT alongside it, so a section that can pinpoint the exact
+     * control still can.
+     *
+     * Opt-in on purpose: without it this hook behaves exactly as before, so the
+     * other forms that share it are untouched.
+     */
+    readonly aggregateFields?: ReadonlyArray<string>;
 }
 
 /** API error payload shape accepted by `handleApiError` — a superset of `ApiErrorWithDetails`. */
@@ -112,6 +133,41 @@ export interface UseZodFormResult<TSchema extends ZodTypeAny> {
 }
 
 /**
+ * Copies the first nested error under each aggregate key onto the bare key.
+ *
+ * `openingHours.days.mon.shifts.0.close` becomes an ADDITIONAL `openingHours`
+ * entry; the nested one stays. An entry already present under the bare key wins
+ * — a schema that rejects the whole object (wrong type, missing `days`) reports
+ * at that exact path, and that message is more precise than anything nested.
+ *
+ * @param errors - The flat dotted-path map from Zod or the API.
+ * @param aggregateFields - Keys to roll nested errors up to. Absent/empty is a
+ *   no-op returning the input untouched.
+ * @returns The map, with an aggregate entry added per key that had one nested.
+ */
+function withAggregateFieldErrors(
+    errors: FieldErrors,
+    aggregateFields: ReadonlyArray<string> | undefined
+): FieldErrors {
+    if (!aggregateFields || aggregateFields.length === 0) return errors;
+
+    let next: FieldErrors | null = null;
+
+    for (const field of aggregateFields) {
+        if (errors[field]) continue;
+        const prefix = `${field}.`;
+        // Object key order follows insertion order, which mirrors Zod's issue
+        // order, so "first nested" is the first issue the schema reported.
+        const nestedKey = Object.keys(errors).find((key) => key.startsWith(prefix));
+        if (!nestedKey) continue;
+        next ??= { ...errors };
+        next[field] = errors[nestedKey] as string;
+    }
+
+    return next ?? errors;
+}
+
+/**
  * Shared Zod-backed form-validation primitive. See the file doc for scope
  * and the `field-errors.ts` module doc for the real API 400 shape this was
  * designed against.
@@ -139,7 +195,8 @@ export function useZodForm<TSchema extends ZodTypeAny>({
     schema,
     t,
     fieldIdPrefix,
-    fieldIdSuffixes
+    fieldIdSuffixes,
+    aggregateFields
 }: UseZodFormOptions<TSchema>): UseZodFormResult<TSchema> {
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [formError, setFormErrorState] = useState<string | null>(null);
@@ -151,7 +208,10 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                 setFieldErrors({});
             } else {
                 const parseError = (result as { error: z.ZodError }).error;
-                const mapped = zodIssuesToFieldErrors(parseError.issues, t);
+                const mapped = withAggregateFieldErrors(
+                    zodIssuesToFieldErrors(parseError.issues, t),
+                    aggregateFields
+                );
                 setFieldErrors(mapped);
                 // Consistent submit-time feedback across every form: a single
                 // error toast announcing the form has field errors to review,
@@ -173,12 +233,15 @@ export function useZodForm<TSchema extends ZodTypeAny>({
             }
             return result;
         },
-        [schema, t, fieldIdPrefix, fieldIdSuffixes]
+        [schema, t, fieldIdPrefix, fieldIdSuffixes, aggregateFields]
     );
 
     const handleApiError = useCallback(
         (apiError: HandleApiErrorInput, fallback?: string) => {
-            const mapped = apiErrorToFieldErrors(apiError, t);
+            const mapped = withAggregateFieldErrors(
+                apiErrorToFieldErrors(apiError, t),
+                aggregateFields
+            );
             const markedSomeFields = Object.keys(mapped).length > 0;
             if (markedSomeFields) {
                 setFieldErrors((prev) => ({ ...prev, ...mapped }));
@@ -206,7 +269,7 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                 message && reviewInvite ? `${message} ${reviewInvite}` : (message ?? null)
             );
         },
-        [t]
+        [t, aggregateFields]
     );
 
     const clearError = useCallback((field: string) => {

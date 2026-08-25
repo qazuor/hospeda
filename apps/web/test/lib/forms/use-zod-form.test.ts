@@ -306,4 +306,129 @@ describe('useZodForm', () => {
             expect(result.current.formError).toBeNull();
         });
     });
+
+    // -----------------------------------------------------------------------
+    // HOS-814 — aggregateFields
+    //
+    // Zod reports an issue at its DEEPEST path, so the commerce editor's
+    // `openingHours` rejections arrived as
+    // `openingHours.days.mon.shifts.0.close`. The section's <FieldError> reads
+    // `fieldErrors.openingHours` and `focusFirstInvalidField` derives an id from
+    // `openingHours` — neither key was ever written, so a rejected schedule
+    // raised "Revisá los campos marcados" with nothing marked anywhere.
+    // -----------------------------------------------------------------------
+    describe('aggregateFields', () => {
+        const NestedSchema = z.object({
+            name: z.string().min(2, 'zodError.name.min'),
+            openingHours: z.object({
+                days: z.object({
+                    mon: z.object({
+                        shifts: z.array(
+                            z
+                                .object({ open: z.string(), close: z.string() })
+                                .refine((s) => s.close !== s.open, {
+                                    message: 'zodError.shift.sameOpenAndClose',
+                                    path: ['close']
+                                })
+                        )
+                    })
+                })
+            })
+        });
+
+        const nestedValid = {
+            name: 'Bar',
+            openingHours: { days: { mon: { shifts: [{ open: '22:00', close: '02:00' }] } } }
+        };
+        const nestedInvalid = {
+            name: 'Bar',
+            openingHours: { days: { mon: { shifts: [{ open: '22:00', close: '22:00' }] } } }
+        };
+
+        // The opt-in is what changes behaviour: every OTHER form sharing this
+        // hook must keep the exact mapping it had. This pins that isolation —
+        // it is not an endorsement of the empty aggregate, which is precisely
+        // the shape the commerce editor opts OUT of below.
+        it('leaves the aggregate key empty for a form that did NOT opt in', () => {
+            const { result } = renderHook(() => useZodForm({ schema: NestedSchema }));
+
+            act(() => {
+                result.current.validate(nestedInvalid);
+            });
+
+            // The deep key is populated...
+            expect(
+                result.current.fieldErrors['openingHours.days.mon.shifts.0.close']
+            ).toBeDefined();
+            // ...but the key the section and the focus helper read is not.
+            expect(result.current.fieldErrors.openingHours).toBeUndefined();
+        });
+
+        it('rolls the first nested message up onto the bare key when opted in', () => {
+            const { result } = renderHook(() =>
+                useZodForm({ schema: NestedSchema, aggregateFields: ['openingHours'] })
+            );
+
+            act(() => {
+                result.current.validate(nestedInvalid);
+            });
+
+            expect(result.current.fieldErrors.openingHours).toBe('zodError.shift.sameOpenAndClose');
+        });
+
+        it('KEEPS the nested key alongside the aggregate, so the exact control can be marked', () => {
+            const { result } = renderHook(() =>
+                useZodForm({ schema: NestedSchema, aggregateFields: ['openingHours'] })
+            );
+
+            act(() => {
+                result.current.validate(nestedInvalid);
+            });
+
+            expect(result.current.fieldErrors['openingHours.days.mon.shifts.0.close']).toBe(
+                'zodError.shift.sameOpenAndClose'
+            );
+        });
+
+        it('adds nothing when the aggregate field has no errors', () => {
+            const { result } = renderHook(() =>
+                useZodForm({ schema: NestedSchema, aggregateFields: ['openingHours'] })
+            );
+
+            act(() => {
+                result.current.validate({ ...nestedValid, name: 'x' });
+            });
+
+            expect(result.current.fieldErrors.name).toBeDefined();
+            expect(result.current.fieldErrors.openingHours).toBeUndefined();
+        });
+
+        it('does not clobber an error reported at the bare key itself', () => {
+            const { result } = renderHook(() =>
+                useZodForm({ schema: NestedSchema, aggregateFields: ['openingHours'] })
+            );
+
+            act(() => {
+                // `openingHours` missing entirely: Zod reports at that exact path.
+                result.current.validate({ name: 'Bar' });
+            });
+
+            expect(result.current.fieldErrors.openingHours).toBeDefined();
+            expect(result.current.fieldErrors.openingHours).not.toBe(
+                'zodError.shift.sameOpenAndClose'
+            );
+        });
+
+        it('does not disturb the other keys a form already relied on', () => {
+            const { result } = renderHook(() =>
+                useZodForm({ schema: NestedSchema, aggregateFields: ['openingHours'] })
+            );
+
+            act(() => {
+                result.current.validate({ ...nestedInvalid, name: 'x' });
+            });
+
+            expect(result.current.fieldErrors.name).toBe('zodError.name.min');
+        });
+    });
 });

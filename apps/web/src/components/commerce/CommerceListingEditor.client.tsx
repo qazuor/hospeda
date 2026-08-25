@@ -58,7 +58,11 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
-import { COMMERCE_FIELD_ID_SUFFIXES, COMMERCE_FIELD_PREFIX } from './editor/field-ids';
+import {
+    COMMERCE_FIELD_ID_SUFFIXES,
+    COMMERCE_FIELD_PREFIX,
+    OPENING_HOURS_AGGREGATE_FIELDS
+} from './editor/field-ids';
 import { MediaSection } from './editor/MediaSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
@@ -320,7 +324,12 @@ export function CommerceListingEditor({
         // sections render with, so this is a namespace plus the genuine
         // exceptions — not a table that can disagree with the markup.
         fieldIdPrefix: COMMERCE_FIELD_PREFIX,
-        fieldIdSuffixes: COMMERCE_FIELD_ID_SUFFIXES
+        fieldIdSuffixes: COMMERCE_FIELD_ID_SUFFIXES,
+        // HOS-814: `openingHours` is 7 days x N shifts under one Zod key, so
+        // every rejection arrives at a nested path and nothing read the bare
+        // key — the section's <FieldError> and the focus move were both dead.
+        // Rolling the first nested message up revives both.
+        aggregateFields: OPENING_HOURS_AGGREGATE_FIELDS
     });
 
     // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
@@ -678,7 +687,7 @@ export function CommerceListingEditor({
                     <OpeningHoursSection
                         locale={locale}
                         value={openingHours}
-                        error={fieldErrors.openingHours}
+                        errors={fieldErrors}
                         onChange={(next) => {
                             onFieldChange('openingHours', next);
                         }}

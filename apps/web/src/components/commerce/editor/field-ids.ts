@@ -40,3 +40,18 @@ export const COMMERCE_FIELD_PREFIX = 'ce';
 export const COMMERCE_FIELD_ID_SUFFIXES: Readonly<Record<string, string>> = {
     'contactInfo.mobilePhone': 'number'
 } as const;
+
+/**
+ * Zod keys of this editor that are ONE group of controls rather than one
+ * labelled input, so `useZodForm` must roll their nested errors up (HOS-814).
+ *
+ * `openingHours` is 7 days x N shifts under a single key. Zod reports a bad
+ * window at `openingHours.days.mon.shifts.0.close`, which neither the section's
+ * `<FieldError>` nor `focusFirstInvalidField` reads — both derive from the bare
+ * `openingHours`. Listing it here is what makes a rejected schedule mark a
+ * field at all.
+ *
+ * Module-level and frozen on purpose: it feeds a `useCallback` dependency list,
+ * so a fresh array per render would rebuild `validate` on every keystroke.
+ */
+export const OPENING_HOURS_AGGREGATE_FIELDS: ReadonlyArray<string> = ['openingHours'] as const;
