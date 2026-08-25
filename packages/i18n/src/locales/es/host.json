@@ -259,7 +259,7 @@
                 "capacityPricing": "Capacidad y precio",
                 "contactSocial": "Contacto y redes",
                 "seo": "Buscadores (Google)",
-                "seoDescription": "Elegí cómo se muestra tu alojamiento cuando alguien lo encuentra en Google. Si dejás estos campos vacíos, se usa el nombre de tu propiedad."
+                "seoDescription": "Elegí cómo se muestra tu alojamiento cuando alguien lo encuentra en Google. Los dos campos son opcionales: si los dejás vacíos, publicamos el nombre y el resumen de tu propiedad."
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -310,7 +310,8 @@
                 "seoTitle": "Título para Google",
                 "seoTitleHint": "El título en negrita que se ve en el resultado de búsqueda. Por ahora solo se aplica en español — en inglés y portugués se sigue mostrando el nombre de tu propiedad.",
                 "seoDescription": "Descripción para Google",
-                "seoDescriptionHint": "El texto que se ve debajo del título en el resultado de búsqueda. Como el título, por ahora solo se aplica en español."
+                "seoDescriptionHint": "El texto que se ve debajo del título en el resultado de búsqueda. Como el título, por ahora solo se aplica en español.",
+                "seoDefaultPreview": "Si lo dejás vacío, se publica: «{{value}}»"
             },
             "photo": {
                 "addToGallery": "Agregar fotos a la galería",

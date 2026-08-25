@@ -1895,17 +1895,17 @@
         },
         "seo": {
             "description": {
-                "max": "La descripción no puede superar los {{max}} caracteres",
-                "min": "La descripción debe tener al menos {{min}} caracteres",
-                "required": "La descripción es obligatoria"
+                "max": "A descrição não pode ultrapassar {{max}} caracteres",
+                "min": "A descrição deve ter pelo menos {{min}} caracteres, ou deixe-a vazia para usar o valor padrão",
+                "required": "A descrição é obrigatória"
             },
             "keywords": {
-                "required": "El palabras clave es obligatorio"
+                "required": "As palavras-chave são obrigatórias"
             },
             "title": {
-                "max": "El título no puede superar los {{max}} caracteres",
-                "min": "El título debe tener al menos {{min}} caracteres",
-                "required": "El título es obligatorio"
+                "max": "O título não pode ultrapassar {{max}} caracteres",
+                "min": "O título deve ter pelo menos {{min}} caracteres, ou deixe-o vazio para usar o valor padrão",
+                "required": "O título é obrigatório"
             }
         },
         "slug": {

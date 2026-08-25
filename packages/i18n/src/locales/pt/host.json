@@ -259,7 +259,7 @@
                 "capacityPricing": "Capacidade e preço",
                 "contactSocial": "Contato e redes",
                 "seo": "Buscadores (Google)",
-                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Se deixar estes campos vazios, é usado o nome da sua propriedade."
+                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Os dois campos são opcionais: se ficarem vazios, publicamos o nome e o resumo da sua propriedade."
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
@@ -310,7 +310,8 @@
                 "seoTitle": "Título para o Google",
                 "seoTitleHint": "O título em negrito exibido no resultado de busca. Por enquanto só se aplica em espanhol — em inglês e português ainda é exibido o nome da sua propriedade.",
                 "seoDescription": "Descrição para o Google",
-                "seoDescriptionHint": "O texto exibido abaixo do título no resultado de busca. Assim como o título, por enquanto só se aplica em espanhol."
+                "seoDescriptionHint": "O texto exibido abaixo do título no resultado de busca. Assim como o título, por enquanto só se aplica em espanhol.",
+                "seoDefaultPreview": "Se ficar vazio, publicamos: «{{value}}»"
             },
             "photo": {
                 "addToGallery": "Adicionar fotos à galeria",
