@@ -23,13 +23,59 @@ import { ExperienceSchema } from './experience.schema.js';
  * Contains only the minimum data safe to expose to unauthenticated users.
  * Used for public listing and detail pages (`/experiencias` and `/experiencias/:slug`).
  *
- * - Omits: adminInfo, ownerId, contactInfo (direct), audit internals.
+ * - Omits: adminInfo, ownerId, audit internals.
+ * - Includes a NARROWED `contactInfo` (HOS-815) — see
+ *   {@link ExperiencePublicContactInfoSchema} for the published subset.
  * - Includes: `hasActiveSubscription` — clients need this to guard 404 display.
  * - The `richDescription` field is re-added via `.extend()` because it follows
  *   the same entitlement-by-omission gate as in the gastronomy schema:
  *   the service strips it server-side for non-entitled owners before
  *   calling `stripWithSchema`, so schema presence is safe.
  */
+/**
+ * The ONLY `contactInfo` keys an experience listing publishes to anonymous
+ * visitors (HOS-815).
+ *
+ * Publishing a contact channel is required, not optional: the listing form
+ * BLOCKS publication without a phone or an email, to protect the traveller
+ * from a dead-end listing — and then the public tier omitted `contactInfo`
+ * entirely, so the only contact affordance on the page was Hospeda's own
+ * WhatsApp button. The traveller was left with no way to reach the provider.
+ *
+ * This is a deliberately NARROW allow-list rather than the full
+ * `ContactInfoReadSchema`, and the narrowing is the security control: Zod
+ * object schemas STRIP unknown keys, so any field not named here is dropped by
+ * `stripWithSchema` before the payload leaves the API — fail-closed, and it
+ * stays fail-closed if `contact_info` grows a new key.
+ *
+ * Included — the channels a provider fills in TO BE CONTACTED:
+ *   - `workEmail`, `workPhone`, `mobilePhone`, `website`
+ *
+ * Deliberately EXCLUDED:
+ *   - `personalEmail` / `homePhone` — collected as personal/administrative
+ *     contact, not as the listing's published channel.
+ *   - `whatsapp` — the WhatsApp NUMBER is gated by the VIEWER's plan on a
+ *     separate per-user protected endpoint (HOS-19). This payload is
+ *     shared-cached with no auth in the cache key, so emitting it here would
+ *     serve a gated value to everyone. `AccommodationContactBlock` excludes it
+ *     for exactly the same reason.
+ *   - `preferredEmail` / `preferredPhone` — internal routing preferences, not
+ *     contact values.
+ *
+ * Types are `.nullish()` strings with NO format assertion, mirroring
+ * `ContactInfoReadSchema` (HOS-190 read-superset-of-write): a legacy row
+ * holding a phone the strict WRITE regex rejects must not 500 a public page.
+ */
+export const ExperiencePublicContactInfoSchema = z.object({
+    workEmail: z.string().nullish(),
+    workPhone: z.string().nullish(),
+    mobilePhone: z.string().nullish(),
+    website: z.string().nullish()
+});
+
+/** TypeScript type for {@link ExperiencePublicContactInfoSchema}. */
+export type ExperiencePublicContactInfo = z.infer<typeof ExperiencePublicContactInfoSchema>;
+
 export const ExperiencePublicSchema = ExperienceSchema.pick({
     // Identification
     id: true,
@@ -92,6 +138,12 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
         .string()
         .max(5000, { message: 'zodError.commerce.richDescription.max' })
         .nullish(),
+    /**
+     * HOS-815: the publishable contact channels, narrowed by
+     * {@link ExperiencePublicContactInfoSchema}. See that schema for which keys
+     * are published and why the rest are not.
+     */
+    contactInfo: ExperiencePublicContactInfoSchema.nullish(),
     /**
      * Override picked `media` to use `BaseMediaObjectSchema` (without any
      * server-managed internal fields). Mirrors the gastronomy pattern.

@@ -4,25 +4,43 @@
  * @description Accommodation summary + full description section.
  * Summary is highlighted with a warm background.
  *
- * SECURITY (SPEC-187 FR-2 / PD-2 / PD-6):
- * `descriptionText` is a plain-text body field that has already been
- * HTML-escaped by `renderPlain` (see `apps/web/src/lib/render-plain.ts`).
- * The text is emitted as a text child, NEVER via `set:html` —
- * re-parsing the escaped entities as HTML would silently re-introduce
- * the XSS surface that the P0 strip migration was designed to close.
- * The previous version of this component piped sanitized HTML through
- * `set:html`; that contract changed when `accommodation.description`
- * was reverted from RICH_TEXT to TEXTAREA in the admin config.
+ * HOS-817 — WHY `description` IS RENDERED AS MARKDOWN:
+ * The host editor binds its `<RichTextEditor>` to `data.description`, NOT to
+ * `richDescription` (see `components/host/editor/BasicInfoSection.client.tsx`).
+ * So an entitled host's formatting is stored in `description`, and rendering it
+ * as escaped plain text published literal `**asterisks**` on the public page —
+ * a paid capability ("descripciones enriquecidas") that was never delivered.
+ *
+ * ENTITLEMENT: this component does NOT check entitlements, and must not.
+ * `gateRichDescription` (`apps/api/src/middlewares/accommodation-entitlements.ts`)
+ * neutralizes markdown in `description` at WRITE time for any owner lacking
+ * `CAN_USE_RICH_DESCRIPTION`. Markdown present in `description` therefore
+ * implies an entitled owner; rendering it leaks nothing.
+ *
+ * SECURITY (SPEC-187 FR-2 / PD-2 / PD-6 successor contract):
+ * `descriptionHtml` MUST already be the output of `renderContent`
+ * (`@/lib/render-content` = `marked` -> `sanitizeHtml`). It is the ONLY value
+ * allowed into `set:html` here. Never pass the raw `description` API field:
+ * host-authored text reaches this page with no review in between, so the
+ * sanitizer — not the schema — is what keeps `<script>`, `onerror=` and
+ * `javascript:` out of the DOM.
+ *
+ * `summary` stays a TEXT CHILD (auto-escaped), deliberately: the editor offers
+ * only a plain `<textarea>` for it and no write-time gate strips markdown from
+ * it, so interpreting markdown there would hand the paid formatting feature to
+ * Basic-plan owners. See the HOS-817 PR body.
  */
 
 interface Props {
     readonly summary: string;
-    /** Plain text body field, already HTML-escaped by `renderPlain`
-     *  in the parent page. Emitted as a text child below. */
-    readonly descriptionText: string;
+    /**
+     * Sanitized HTML for the description body, produced by `renderContent` in
+     * the parent page. Emitted via `set:html` — see the SECURITY note above.
+     */
+    readonly descriptionHtml: string;
 }
 
-const { summary, descriptionText } = Astro.props;
+const { summary, descriptionHtml } = Astro.props;
 ---
 
 {summary && (
@@ -31,10 +49,8 @@ const { summary, descriptionText } = Astro.props;
   </div>
 )}
 
-{descriptionText && (
-  <div class="description__body">
-    <p>{descriptionText}</p>
-  </div>
+{descriptionHtml && (
+  <div class="description__body description__body--rich" set:html={descriptionHtml} />
 )}
 
 <style>
@@ -63,5 +79,48 @@ const { summary, descriptionText } = Astro.props;
   }
   .description__body p:last-child {
     margin-bottom: 0;
+  }
+
+  /* Rich-text styles for the sanitized markdown emitted via `set:html`.
+     `:global()` is required: Astro's scoped-style hashing only rewrites
+     elements present in the template, and these nodes are injected at
+     runtime. Mirrors `ExperienceInfo.astro`'s `--rich` block. */
+  .description__body--rich :global(h2),
+  .description__body--rich :global(h3),
+  .description__body--rich :global(h4) {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-2, 8px);
+  }
+  .description__body--rich :global(strong) {
+    font-weight: 700;
+  }
+  .description__body--rich :global(em) {
+    font-style: italic;
+  }
+  .description__body--rich :global(ul),
+  .description__body--rich :global(ol) {
+    padding-left: var(--space-5, 20px);
+    margin-bottom: var(--space-3, 12px);
+  }
+  .description__body--rich :global(ul) {
+    list-style: disc;
+  }
+  .description__body--rich :global(ol) {
+    list-style: decimal;
+  }
+  .description__body--rich :global(li) {
+    margin-bottom: var(--space-1, 4px);
+  }
+  .description__body--rich :global(p) {
+    margin-bottom: var(--space-3, 12px);
+  }
+  .description__body--rich :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .description__body--rich :global(a) {
+    color: var(--brand-primary);
+    text-decoration: underline;
   }
 </style>
