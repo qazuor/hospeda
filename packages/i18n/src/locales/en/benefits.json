@@ -179,5 +179,30 @@
         "description": "Explore plans and pricing designed for tourists and property owners. Find the perfect option for you.",
         "touristPricing": "View tourist pricing",
         "ownerPricing": "View owner pricing"
+    },
+    "experience": {
+        "tagline": "For experiences",
+        "cta": "List your experience"
+    },
+    "gastronomy": {
+        "tagline": "For restaurants",
+        "cta": "List your restaurant"
+    },
+    "partner": {
+        "tagline": "For partners",
+        "title": "Benefits for your partnership",
+        "cta": "Become a partner",
+        "1": {
+            "title": "Verified network"
+        },
+        "2": {
+            "title": "Joint outreach"
+        },
+        "3": {
+            "title": "Tailored terms"
+        },
+        "4": {
+            "title": "Personal review"
+        }
     }
 }
