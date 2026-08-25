@@ -13,9 +13,13 @@
  *
  * @module test/routes/media/protected-upload-entity
  */
-import { PermissionEnum } from '@repo/schemas';
+
+process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
+
+import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearSlidingWindowStore } from '../../../src/middlewares/rate-limit';
 import { createAuthenticatedRequest, createMockUserActor } from '../../helpers/auth';
 
 const mockUpload = vi.fn();
@@ -67,6 +71,30 @@ const VALID_PNG_FILE = new File(
     'test.png',
     { type: 'image/png' }
 );
+
+const REAL_PNG_FILE = new File(
+    [
+        Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+            'base64'
+        ) as unknown as BlobPart
+    ],
+    'test.png',
+    { type: 'image/png' }
+);
+
+/** Mirrors the route: the gallery cap plus the featured image. */
+const PROTECTED_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
+
+const buildOwnedEntityStub = () =>
+    vi.fn().mockResolvedValue({
+        data: {
+            id: ENTITY_ID,
+            ownerId: OWNER_ID,
+            media: { gallery: [] }
+        },
+        error: undefined
+    });
 
 describe('Protected media upload-entity endpoint', () => {
     const ownerActor = createMockUserActor({
@@ -166,42 +194,6 @@ describe('Protected media upload-entity endpoint', () => {
     // timeout page — non-JSON — reach the client instead).
     // -------------------------------------------------------------------------
     describe('Cloudinary upload failure resiliency (BETA-134)', () => {
-        /**
-         * Minimal 1x1 red PNG with a real IHDR chunk (dimensions parseable by
-         * `image-size`) — `VALID_PNG_FILE` above only has magic bytes and
-         * fails the dimension check, which would mask these tests behind an
-         * unrelated 422 UNPROCESSABLE_ENTITY before ever reaching the
-         * provider.
-         */
-        const REAL_PNG_FILE = new File(
-            [
-                Buffer.from(
-                    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
-                    'base64'
-                ) as unknown as BlobPart
-            ],
-            'test.png',
-            { type: 'image/png' }
-        );
-
-        /**
-         * Builds a vi mock function resolving to a minimal entity stub owned
-         * by `OWNER_ID` with an empty gallery. Wrapped in `vi.fn()` (matching
-         * the pattern used by `gallery-cap-enforcement.test.ts`) so it can be
-         * passed to `mockImplementationOnce` without a type-unsafe cast — the
-         * route only reads `data.ownerId` and `data.media.gallery` from the
-         * resolved value, so this partial stub is functionally complete.
-         */
-        const buildOwnedEntityStub = () =>
-            vi.fn().mockResolvedValue({
-                data: {
-                    id: ENTITY_ID,
-                    ownerId: OWNER_ID,
-                    media: { gallery: [] }
-                },
-                error: undefined
-            });
-
         it('returns a typed 502 UPSTREAM_ERROR JSON body when Cloudinary persistently times out', async () => {
             // Arrange
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
@@ -235,6 +227,77 @@ describe('Protected media upload-entity endpoint', () => {
             // idempotent, so an automatic retry could leak an orphaned
             // Cloudinary asset version).
             expect(mockUpload).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('rate limit copy (HOS-785)', () => {
+        beforeEach(() => {
+            clearSlidingWindowStore();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-08-24T12:00:00.000Z'));
+        });
+
+        afterEach(() => {
+            clearSlidingWindowStore();
+            vi.useRealTimers();
+        });
+
+        it('lets a full album through, then returns the translated rate-limit message with Retry-After', async () => {
+            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementation(
+                buildOwnedEntityStub()
+            );
+            mockUpload.mockResolvedValue({
+                url: 'https://example.com/photo.png',
+                publicId: 'accommodations/test/gallery/photo',
+                width: 1,
+                height: 1
+            });
+
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+
+            for (let i = 0; i < PROTECTED_UPLOAD_RATE_LIMIT_MAX; i++) {
+                const okRes = await app.request(
+                    new Request(UPLOAD_URL, {
+                        method: 'POST',
+                        body: buildMultipartBody({ role: 'gallery', file: REAL_PNG_FILE }),
+                        headers: buildAuthHeaders(ownerActor)
+                    })
+                );
+                expect(okRes.status).toBe(200);
+            }
+
+            const limitedRes = await app.request(
+                new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: buildMultipartBody({ role: 'gallery', file: REAL_PNG_FILE }),
+                    headers: buildAuthHeaders(ownerActor)
+                })
+            );
+
+            expect(limitedRes.status).toBe(429);
+
+            const retryAfter = limitedRes.headers.get('Retry-After');
+            expect(retryAfter).not.toBeNull();
+
+            const body = (await limitedRes.json()) as {
+                success: boolean;
+                error: {
+                    code: string;
+                    reason?: string;
+                    message: string;
+                    details?: { retryAfter?: number };
+                };
+            };
+
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('RATE_LIMIT_EXCEEDED');
+            expect(body.error.reason).toBe('RATE_LIMIT_EXCEEDED');
+            expect(body.error.message).toContain('límite temporal de subida de fotos');
+            expect(body.error.message).toContain('Intentá de nuevo en');
+            expect(body.error.message).not.toContain('Too many requests');
+            expect(body.error.details?.retryAfter).toBe(Number(retryAfter));
+            expect(Number(retryAfter)).toBeGreaterThan(0);
         });
     });
 });
