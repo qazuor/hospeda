@@ -89,6 +89,19 @@ vi.mock('../../../../src/lib/i18n', () => ({
                       raw
                   )
                 : raw;
+        },
+        // Count-aware translator (mirrors the real `createTranslations().tPlural`).
+        // No fallback string is available here (unlike `t`), so it just names the
+        // key + count — good enough for tests that assert an error surfaced at
+        // all, not its exact copy.
+        tPlural: (key: string, count: number, params?: Record<string, string | number>): string => {
+            const raw = `${key}_${count}`;
+            return params
+                ? Object.entries(params).reduce(
+                      (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                      raw
+                  )
+                : raw;
         }
     })
 }));
@@ -180,6 +193,44 @@ function stubFetchUploadOk(url = NEW_ROW.url, publicId = NEW_ROW.publicId) {
             data: { url, publicId, width: 800, height: 600 }
         })
     } as Response);
+}
+
+/**
+ * Stubs `fetch` to resolve a DIFFERENT upload per call, in order — needed to
+ * tell apart which file landed where in a multi-file batch (HOS-832). Extra
+ * calls beyond the list keep resolving the last entry.
+ */
+function stubFetchUploadSequence(items: ReadonlyArray<{ url: string; publicId: string }>) {
+    let call = 0;
+    global.fetch = vi.fn().mockImplementation(async () => {
+        const item = items[Math.min(call, items.length - 1)];
+        call += 1;
+        return {
+            ok: true,
+            json: async () => ({
+                success: true,
+                data: { url: item?.url, publicId: item?.publicId, width: 800, height: 600 }
+            })
+        } as Response;
+    });
+}
+
+/** Makes `addMedia` echo back whatever `url`/`publicId` it was called with. */
+function stubAddMediaEcho() {
+    mockAddMedia.mockImplementation((args: { body: { url: string; publicId?: string } }) =>
+        Promise.resolve({
+            ok: true as const,
+            data: {
+                media: {
+                    ...NEW_ROW,
+                    id: `media-${args.body.url}`,
+                    url: args.body.url,
+                    publicId: args.body.publicId,
+                    isFeatured: false
+                }
+            }
+        })
+    );
 }
 
 /** A file of an exact byte length. */
@@ -491,6 +542,246 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             await waitFor(() => {
                 expect(screen.getByText('+')).toBeInTheDocument();
             });
+        });
+    });
+
+    // ── Multi-file gallery upload (HOS-832) ────────────────────────────
+    //
+    // Ported from the accommodation editor's `processGalleryFiles`
+    // (`apps/web/src/components/host/editor/use-photo-section.ts`, HOS-122):
+    // the input takes `multiple`, the cap is checked ONCE against the whole
+    // batch (not per file), every file is validated before any upload
+    // starts, and uploads run sequentially.
+
+    describe('multi-file gallery upload (HOS-832)', () => {
+        const GALLERY_CAP = getGalleryCap('gastronomy');
+
+        it('declares `multiple` on the gallery input when more than one slot remains', async () => {
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            expect(gallery).toHaveAttribute('multiple');
+        });
+
+        it('does NOT declare `multiple` when only one slot remains', async () => {
+            const almostFullGallery = Array.from({ length: GALLERY_CAP - 1 }, (_, i) => ({
+                ...GALLERY_ROW_1,
+                id: `g-${i}`,
+                url: `https://cdn.example.com/g${i}.jpg`,
+                publicId: `gallery/g${i}`
+            }));
+            mockListMedia.mockReturnValue(makeListOk(almostFullGallery));
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            expect(gallery).not.toHaveAttribute('multiple');
+        });
+
+        it('uploads a batch of files sequentially and adds every one to the gallery', async () => {
+            stubFetchUploadSequence([
+                { url: 'https://cdn.example.com/batch1.jpg', publicId: 'gallery/batch1' },
+                { url: 'https://cdn.example.com/batch2.jpg', publicId: 'gallery/batch2' },
+                { url: 'https://cdn.example.com/batch3.jpg', publicId: 'gallery/batch3' }
+            ]);
+            stubAddMediaEcho();
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const files = [
+                new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                new File(['b'], 'b.jpg', { type: 'image/jpeg' }),
+                new File(['c'], 'c.jpg', { type: 'image/jpeg' })
+            ];
+            fireEvent.change(gallery, { target: { files } });
+
+            await waitFor(() => expect(mockAddMedia).toHaveBeenCalledTimes(3));
+
+            await waitFor(() => {
+                const urls = screen.getAllByRole('img').map((i) => i.getAttribute('src'));
+                expect(urls).toEqual(
+                    expect.arrayContaining([
+                        'https://cdn.example.com/batch1.jpg',
+                        'https://cdn.example.com/batch2.jpg',
+                        'https://cdn.example.com/batch3.jpg'
+                    ])
+                );
+            });
+        });
+
+        it('shows "uploading photo X of Y" while a multi-file batch is in flight', async () => {
+            // A fetch that never resolves keeps the component in the
+            // "uploading" state so the batch marker for file 1/2 is
+            // observable before the test ends.
+            global.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const files = [
+                new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                new File(['b'], 'b.jpg', { type: 'image/jpeg' })
+            ];
+            fireEvent.change(gallery, { target: { files } });
+
+            await waitFor(() => {
+                expect(screen.getByText('Subiendo foto 1 de 2…')).toBeInTheDocument();
+            });
+        });
+
+        it('does NOT show the batch marker for a single-file selection', async () => {
+            stubFetchUploadOk();
+            mockAddMedia.mockReturnValue(makeAddOk());
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const file = new File(['a'], 'a.jpg', { type: 'image/jpeg' });
+            fireEvent.change(gallery, { target: { files: [file] } });
+
+            await waitFor(() => expect(mockAddMedia).toHaveBeenCalled());
+            expect(screen.queryByText(/de 1/)).not.toBeInTheDocument();
+        });
+
+        it('rejects the whole batch upfront when it exceeds the remaining slots, without uploading anything', async () => {
+            const almostFullGallery = Array.from({ length: GALLERY_CAP - 1 }, (_, i) => ({
+                ...GALLERY_ROW_1,
+                id: `g-${i}`,
+                url: `https://cdn.example.com/g${i}.jpg`,
+                publicId: `gallery/g${i}`
+            }));
+            mockListMedia.mockReturnValue(makeListOk(almostFullGallery));
+            global.fetch = vi.fn();
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const files = [
+                new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                new File(['b'], 'b.jpg', { type: 'image/jpeg' })
+            ];
+            fireEvent.change(gallery, { target: { files } });
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+            expect(global.fetch).not.toHaveBeenCalled();
+            expect(mockAddMedia).not.toHaveBeenCalled();
+        });
+
+        it('validates every file before uploading any of them', async () => {
+            global.fetch = vi.fn();
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const oversized = fileOfBytes(mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB) + 1);
+            const valid = new File(['b'], 'b.jpg', { type: 'image/jpeg' });
+            fireEvent.change(gallery, { target: { files: [valid, oversized] } });
+
+            await waitFor(() => {
+                const alert = screen.getByText((content) => content.includes('no puede superar'));
+                expect(alert).toBeInTheDocument();
+            });
+            expect(global.fetch).not.toHaveBeenCalled();
+            expect(mockAddMedia).not.toHaveBeenCalled();
+        });
+
+        it('stops the batch after the FIRST quota-exceeded response, firing exactly one error and one addMedia call', async () => {
+            // Gastronomy gallery cap is 30 — well above 5, so the client-side
+            // upfront check does NOT reject this batch; the server response
+            // is what enforces the cap here (simulates a concurrent edit in
+            // another tab filling the remaining slots mid-batch).
+            stubFetchUploadSequence([
+                { url: 'https://cdn.example.com/q1.jpg', publicId: 'gallery/q1' },
+                { url: 'https://cdn.example.com/q2.jpg', publicId: 'gallery/q2' },
+                { url: 'https://cdn.example.com/q3.jpg', publicId: 'gallery/q3' },
+                { url: 'https://cdn.example.com/q4.jpg', publicId: 'gallery/q4' },
+                { url: 'https://cdn.example.com/q5.jpg', publicId: 'gallery/q5' }
+            ]);
+            mockAddMedia.mockReturnValue(
+                Promise.resolve({
+                    ok: false as const,
+                    error: {
+                        status: 429,
+                        code: 'QUOTA_EXCEEDED',
+                        message: 'Gallery limit of 30 photos reached for this listing'
+                    }
+                })
+            );
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const files = Array.from(
+                { length: 5 },
+                (_, i) => new File([`f${i}`], `f${i}.jpg`, { type: 'image/jpeg' })
+            );
+            fireEvent.change(gallery, { target: { files } });
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText('Gallery limit of 30 photos reached for this listing')
+                ).toBeInTheDocument();
+            });
+
+            // Give any wrongly-continued iterations a chance to fire before
+            // asserting the loop actually stopped, not merely "reported once
+            // so far".
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockAddMedia).toHaveBeenCalledTimes(1);
+            expect(mockAddToast).toHaveBeenCalledTimes(1);
+            expect(screen.queryAllByRole('img')).toHaveLength(0);
+        });
+
+        it('continues to the next file when one upload fails, keeping the successful ones', async () => {
+            stubFetchUploadSequence([
+                { url: 'https://cdn.example.com/ok1.jpg', publicId: 'gallery/ok1' },
+                { url: 'https://cdn.example.com/ok2.jpg', publicId: 'gallery/ok2' }
+            ]);
+            mockAddMedia
+                .mockImplementationOnce(() =>
+                    Promise.resolve({
+                        ok: true as const,
+                        data: {
+                            media: {
+                                ...NEW_ROW,
+                                id: 'media-ok1',
+                                url: 'https://cdn.example.com/ok1.jpg',
+                                isFeatured: false
+                            }
+                        }
+                    })
+                )
+                .mockImplementationOnce(() => makeError('second upload failed'));
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const { gallery } = fileInputs();
+            const files = [
+                new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                new File(['b'], 'b.jpg', { type: 'image/jpeg' })
+            ];
+            fireEvent.change(gallery, { target: { files } });
+
+            await waitFor(() => expect(mockAddMedia).toHaveBeenCalledTimes(2));
+
+            await waitFor(() => {
+                expect(screen.getByText('second upload failed')).toBeInTheDocument();
+            });
+            const urls = screen.getAllByRole('img').map((i) => i.getAttribute('src'));
+            expect(urls).toEqual(['https://cdn.example.com/ok1.jpg']);
         });
     });
 
