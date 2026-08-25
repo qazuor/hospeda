@@ -12,11 +12,9 @@
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
-import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.client';
 import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.client';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { transformAmenityList } from '@/lib/api/transforms';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
@@ -155,40 +153,11 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         destinations={destinations}
         destinationsLoadFailed={destinationsLoadFailed}
         hasFaqSection={true}
+        initialFaqs={initialFaqs}
     />
-
-    {/*
-        H-153: the FAQ card is a sibling of the editor, not one of its sections,
-        so the editor cannot advertise it in the section nav on its own. This
-        page owns both halves — it passes `hasFaqSection` above and supplies the
-        `id="editor-faqs"` the resulting nav link scrolls to. Removing either one
-        without the other leaves a link that scrolls nowhere; the section-nav
-        suite asserts they stay together.
-    */}
-    <div class="ce-faq-gap" id="editor-faqs">
-        <AccountSectionCard>
-            <CommerceFaqManager
-                client:idle
-                vertical={vertical}
-                listingId={id}
-                locale={locale}
-                initialFaqs={initialFaqs}
-            />
-        </AccountSectionCard>
-    </div>
 </AccountLayout>
 
 <style>
-    /* Stacked-card spacing: the card recipe carries no outer margin, so the FAQ
-       card needs an explicit gap from whatever sits above it. Since HOS-371 that
-       is the editor's LAST section card, not an AccountSectionCard — the value
-       matches `.editor`'s own `gap: var(--space-6)` so the FAQ card is spaced
-       from the editor exactly like the editor's cards are spaced from each
-       other. */
-    .ce-faq-gap {
-        margin-top: var(--space-6);
-    }
-
     .ce-identity {
         margin-bottom: var(--space-6);
         padding-bottom: var(--space-4);
