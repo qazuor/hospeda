@@ -468,12 +468,18 @@ describe('computeDowngradeExcess', () => {
 
     // ── Photo excess per accommodation ─────────────────────────────────────
 
-    it('detects photo overflow when gallery exceeds cap minus featuredImage slot', async () => {
+    it('a featured image creates NO excess when the gallery is exactly at cap (HOS-791 regression)', async () => {
+        // The gallery holds exactly `cap` photos AND there is a featured image.
+        // The featured image consumes no plan photo slot, so nothing is over cap
+        // and the downgrade must archive nothing.
+        //
+        // Mutation check: restore `totalCount = gallery.length + (featured ? 1 : 0)`
+        // and this reports 1 overflow — a plan change would archive a photo the
+        // upload routes had just accepted.
         const acc = makeAccommodation({
             id: 'acc-photo',
             media: {
                 featuredImage: { url: 'https://example.com/featured.jpg' },
-                // 5 gallery photos; with featuredImage, total = 6; cap = 5 → 1 overflow
                 gallery: [
                     { url: 'https://example.com/g1.jpg' },
                     { url: 'https://example.com/g2.jpg' },
@@ -494,25 +500,60 @@ describe('computeDowngradeExcess', () => {
             deps
         );
 
+        expect(result.photos).toHaveLength(0);
+    });
+
+    it('detects photo overflow when the GALLERY ALONE exceeds the cap', async () => {
+        const acc = makeAccommodation({
+            id: 'acc-photo',
+            media: {
+                featuredImage: { url: 'https://example.com/featured.jpg' },
+                // 6 gallery photos, cap = 5 → 1 overflow (the featured image is
+                // not counted and is never in the overflow set).
+                gallery: [
+                    { url: 'https://example.com/g1.jpg' },
+                    { url: 'https://example.com/g2.jpg' },
+                    { url: 'https://example.com/g3.jpg' },
+                    { url: 'https://example.com/g4.jpg' },
+                    { url: 'https://example.com/g5.jpg' },
+                    { url: 'https://example.com/g6.jpg' }
+                ]
+            }
+        });
+
+        const deps = createDeps({
+            getActiveAccommodationsForOwner: vi.fn().mockResolvedValue([acc]),
+            getPlanBySlug: vi.fn().mockReturnValue(makePlan({ maxPhotosPerAccommodation: 5 }))
+        });
+
+        const result = await computeDowngradeExcess(
+            { userId: USER_ID, targetPlanSlug: 'owner-basico' },
+            deps
+        );
+
         expect(result.photos).toHaveLength(1);
         const photoExcess = result.photos[0]!;
         expect(photoExcess.accommodationId).toBe('acc-photo');
         expect(photoExcess.cap).toBe(5);
-        // 1 featured + 5 gallery = 6 total
+        // GALLERY-only count — the featured image is excluded (HOS-791).
         expect(photoExcess.totalCount).toBe(6);
         expect(photoExcess.excessCount).toBe(1);
         expect(photoExcess.hasFeaturedImage).toBe(true);
-        // Overflow is the last gallery item(s)
+        // Overflow is the last gallery item(s); the featured URL is never in it.
         expect(photoExcess.overflowPhotoUrls).toHaveLength(1);
-        expect(photoExcess.overflowPhotoUrls[0]!).toBe('https://example.com/g5.jpg');
+        expect(photoExcess.overflowPhotoUrls[0]!).toBe('https://example.com/g6.jpg');
+        expect(photoExcess.overflowPhotoUrls).not.toContain('https://example.com/featured.jpg');
     });
 
-    it('photo at-cap: no overflow entry when total equals cap', async () => {
+    it('photo under cap: no overflow entry', async () => {
         const acc = makeAccommodation({
             id: 'acc-ok',
             media: {
                 featuredImage: { url: 'https://example.com/featured.jpg' },
-                // 4 gallery + 1 featured = 5 total, cap = 5 → no overflow
+                // 4 gallery, cap = 5 → under cap, no overflow. (The featured
+                // image is not counted since HOS-791, so this fixture sits one
+                // BELOW the boundary; the exact at-cap case is covered by the
+                // gallery-exactly-at-cap test above.)
                 gallery: [
                     { url: 'https://example.com/g1.jpg' },
                     { url: 'https://example.com/g2.jpg' },
@@ -871,9 +912,10 @@ describe('computeDowngradeExcess', () => {
         expect(result.photos).toHaveLength(1);
         const mixedPhoto = result.photos[0]!;
         expect(mixedPhoto.accommodationId).toBe('acc-1');
-        // 1 featured + 6 gallery = 7 total; cap=5; gallery beyond (5-1=4) = 2 overflow
-        expect(mixedPhoto.excessCount).toBe(2);
-        expect(mixedPhoto.overflowPhotoUrls).toHaveLength(2);
+        // 6 gallery (the featured image is not counted, HOS-791); cap=5;
+        // gallery beyond 5 = 1 overflow.
+        expect(mixedPhoto.excessCount).toBe(1);
+        expect(mixedPhoto.overflowPhotoUrls).toHaveLength(1);
 
         // Grandfather flags (for acc-1 which has rich + video, target plan lacks both)
         expect(result.grandfatherFlags).toHaveLength(1);

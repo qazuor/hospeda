@@ -139,6 +139,9 @@ type SelectResult = Array<Record<string, unknown>> & {
 
 interface FakeTx {
     executeCalled: boolean;
+    /** How many SELECT chains the SUT terminated. Lets a test assert that a
+     *  query was REMOVED, which is otherwise invisible from the outside. */
+    selectCallCount: number;
     updateCaptures: UpdateCapture[];
     readonly execute: (_sql: unknown) => Promise<{ rows: Array<{ id: string }> }>;
     readonly select: (_cols: unknown) => FakeTx;
@@ -165,6 +168,7 @@ function makeFakeTx(config: FakeTxConfig): FakeTx {
 
     const tx: FakeTx = {
         executeCalled: false,
+        selectCallCount: 0,
         updateCaptures: [],
 
         async execute(_sql: unknown) {
@@ -197,6 +201,7 @@ function makeFakeTx(config: FakeTxConfig): FakeTx {
             // array) or chain `.orderBy()` on it (resolves to the same rows).
             const rows = selectResults[selectIdx] ?? [];
             selectIdx++;
+            (tx as { selectCallCount: number }).selectCallCount = selectIdx;
             return makeSelectResult(rows);
         },
 
@@ -462,10 +467,14 @@ describe('plan-photo-restriction.service — archiveAccommodationPhotos (SPEC-20
 // restoreAccommodationPhotos
 //
 // SUT SELECT call order:
-//   call 0: featured visible rows (hasFeaturedImage check)  → selectResults[0]
-//   call 1: visible non-featured rows (gallery count)       → selectResults[1]
-//   orderBy 2: archived rows FIFO                           → selectResults[2]
-//   call 3: max(sortOrder) among visible rows               → selectResults[3]
+//   call 0: visible non-featured rows (gallery count)       → selectResults[0]
+//   orderBy 1: archived rows FIFO                           → selectResults[1]
+//   call 2: max(sortOrder) among visible rows               → selectResults[2]
+//
+// HOS-791 removed a leading `featured visible rows` probe: the featured image no
+// longer reserves a cap seat, so this function never asks whether one exists.
+// These mocks are POSITIONAL — re-adding a query without shifting every
+// selectResults array here silently feeds each read the previous one's rows.
 // If count > 0: N update calls (one per restored row).
 // ---------------------------------------------------------------------------
 
@@ -490,10 +499,9 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
         const tx = makeFakeTx({
             selectResults: [
-                [], // call 0: no featured
-                [vis], // call 1: 1 visible gallery item
-                [arch1, arch2, arch3], // orderBy 2: archived FIFO
-                [makeMaxSortOrder(0)] // call 3: max sortOrder = 0
+                [vis], // call 0: 1 visible gallery item
+                [arch1, arch2, arch3], // orderBy 1: archived FIFO
+                [makeMaxSortOrder(0)] // call 2: max sortOrder = 0
             ]
         });
 
@@ -524,7 +532,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [], // no visible gallery
                 [arch1, arch2], // archived FIFO
                 [makeMaxSortOrder(null)] // no visible rows → maxOrder=null
@@ -546,7 +553,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
     it('empty archived set: no-op, movedCount=0, no update calls', async () => {
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [makeVisible('https://cdn.example.com/g.jpg', 0)], // 1 visible
                 [] // no archived → orderBy returns empty
             ]
@@ -580,7 +586,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
         // gallery=1, cap=3, no featured → galleryTarget=3, needed=2
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [vis1], // 1 visible gallery item
                 [arch1, arch2, arch3], // archived FIFO
                 [makeMaxSortOrder(0)] // maxOrder=0
@@ -608,7 +613,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
         // gallery=2, cap=2, no featured → needed=0
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [vis1, vis2], // 2 visible gallery items
                 [arch] // archived (not reached if count=0)
             ]
@@ -624,8 +628,17 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
         expect(tx.updateCaptures.length).toBe(0);
     });
 
-    it('toCap with featuredImage: gallery target = toCap - 1 (M-3)', async () => {
-        const featured = makeVisible('https://cdn.example.com/feat.jpg', 0, true);
+    it('never probes for a featured image, so one cannot shrink the target (HOS-791)', async () => {
+        // This asserts the STRUCTURE, not an arithmetic outcome, and that is
+        // deliberate: a featured image is now unobservable to this function (the
+        // gallery read filters `isFeatured = false`, and archived rows can never
+        // be featured), so no fixture can make its presence change the result.
+        // That unobservability IS the guarantee — and the only way to see it
+        // from outside is to count the queries.
+        //
+        // Restoring `galleryTarget = toCap - (hasFeaturedImage ? 1 : 0)` requires
+        // restoring the featured probe that fed it, which makes this go red on
+        // the call count and points at the reason.
         const vis1 = makeVisible('https://cdn.example.com/g1.jpg', 1);
         const arch1 = makeArchived(
             'https://cdn.example.com/a1.jpg',
@@ -640,12 +653,11 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
             new Date('2026-01-03T10:00:00Z')
         );
 
-        // cap=4, featured present → galleryTarget=3, gallery=1 → need 2
+        // cap=4, gallery=1 → galleryTarget=4, need 3 (NOT 2)
         const tx = makeFakeTx({
             selectResults: [
-                [featured], // call 0: has featured → hasFeaturedImage=true
-                [vis1], // call 1: 1 visible gallery item
-                [arch1, arch2, arch3], // orderBy 2: archived FIFO
+                [vis1], // call 0: 1 visible gallery item
+                [arch1, arch2, arch3], // orderBy 1: archived FIFO
                 [makeMaxSortOrder(1)] // max sortOrder among visible
             ]
         });
@@ -656,9 +668,11 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
             db: tx as unknown as import('@repo/db').DrizzleClient
         });
 
-        // galleryTarget = 4 - 1 = 3; gallery has 1 → need 2
-        expect(result.movedCount).toBe(2);
-        expect(result.totalCount).toBe(4); // 1 + 2 + 1 remaining archived
+        // Three SELECTs, no more: gallery count, archived FIFO, max sortOrder.
+        expect(tx.selectCallCount).toBe(3);
+        // galleryTarget = 4; gallery has 1 → need 3, and 3 are archived.
+        expect(result.movedCount).toBe(3);
+        expect(result.totalCount).toBe(4); // 1 gallery + 3 restored + 0 archived
     });
 
     it('toCap without featuredImage: gallery target = toCap', async () => {
@@ -679,9 +693,8 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
         // cap=4, no featured → galleryTarget=4, gallery=1 → need 3
         const tx = makeFakeTx({
             selectResults: [
-                [], // call 0: no featured
-                [vis1], // call 1: 1 visible gallery item
-                [arch1, arch2, arch3], // orderBy 2: archived FIFO
+                [vis1], // call 0: 1 visible gallery item
+                [arch1, arch2, arch3], // orderBy 1: archived FIFO
                 [makeMaxSortOrder(0)] // max sortOrder
             ]
         });
@@ -712,7 +725,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [], // no visible gallery
                 [arch1, arch2, arch3], // archived FIFO (oldest first)
                 [makeMaxSortOrder(null)] // no visible items yet
@@ -748,7 +760,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [vis1], // 1 visible gallery (sortOrder=5)
                 [arch1, arch2], // archived FIFO
                 [makeMaxSortOrder(5)] // current max visible sortOrder = 5
@@ -784,7 +795,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [vis], // 1 visible gallery item
                 [arch1, arch2, arch3], // 3 archived
                 [makeMaxSortOrder(0)] // max sortOrder
@@ -816,7 +826,7 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
     it('neither restoreCount nor toCap: throws Error', async () => {
         const tx = makeFakeTx({
-            selectResults: [[], [makeVisible('https://cdn.example.com/g.jpg', 0)], [], []]
+            selectResults: [[makeVisible('https://cdn.example.com/g.jpg', 0)], [], []]
         });
 
         await expect(
@@ -835,7 +845,6 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (SPEC-20
 
         const tx = makeFakeTx({
             selectResults: [
-                [], // no featured
                 [], // no visible gallery
                 [arch1], // 1 archived
                 [makeMaxSortOrder(null)]

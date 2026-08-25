@@ -129,7 +129,8 @@ describe('enforcePhotoLimit - relational table counting (SPEC-204)', () => {
             expect(mockNext).toHaveBeenCalled();
             expect(mockFindByAccommodation).toHaveBeenCalledWith({
                 accommodationId: 'acc-1',
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
         });
 
@@ -223,10 +224,13 @@ describe('enforcePhotoLimit - relational table counting (SPEC-204)', () => {
             const c = createMockContext({ id: 'acc-1' }, mockLimitsMap);
 
             await expect(enforcePhotoLimit()(c, mockNext)).rejects.toThrow(ServiceError);
-            // Confirm the model was called with state:'visible' so the DB-level filter is applied.
+            // Confirm the model was called with BOTH DB-level filters: state:'visible'
+            // (archived rows free their slot) and isFeatured:false (HOS-791 — the
+            // featured image is not a gallery item and consumes no plan photo slot).
             expect(mockFindByAccommodation).toHaveBeenCalledWith({
                 accommodationId: 'acc-1',
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
         });
     });
