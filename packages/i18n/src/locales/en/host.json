@@ -449,7 +449,7 @@
             "entitlement": {
                 "premiumFeature": "Premium feature",
                 "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
-                "richDescriptionHint": "Upgrade your plan to format your description (bold, lists and more).",
+                "richDescriptionHint": "Formatted text: bold, lists and more. Available on higher plans.",
                 "videoNudge": "Upgrade your plan to embed videos in your property.",
                 "genericNudge": "This feature is available on a higher plan.",
                 "upgradeLink": "Upgrade plan"

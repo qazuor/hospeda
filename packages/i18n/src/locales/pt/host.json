@@ -449,7 +449,7 @@
             "entitlement": {
                 "premiumFeature": "Recurso premium",
                 "richDescriptionNudge": "Faça upgrade no seu plano para usar descrições enriquecidas com formatação.",
-                "richDescriptionHint": "Atualize seu plano para formatar sua descrição (negrito, listas e mais).",
+                "richDescriptionHint": "Texto com formatação: negrito, listas e mais. Disponível em planos superiores.",
                 "videoNudge": "Faça upgrade no seu plano para incorporar vídeos na sua propriedade.",
                 "genericNudge": "Este recurso está disponível em um plano superior.",
                 "upgradeLink": "Melhorar plano"

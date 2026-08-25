@@ -410,3 +410,86 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
         );
     });
 });
+
+/**
+ * HOS-800. The plan notice for rich text used to render BELOW the textarea, as
+ * a plain `.fieldHint`, one element away from the AI-improve trigger — so a
+ * restriction and an available action sat adjacent, in the same muted grey,
+ * both opening with the same verb. The product owner read his own screen and
+ * concluded the AI feature was plan-gated while actively using it.
+ *
+ * These assert the structural half of the fix (the copy half is held by the
+ * i18n inline-fallback guard): the notice occupies the slot where the rich
+ * editor's formatting toolbar would be, and it is not typographically a hint.
+ */
+describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () => {
+    beforeEach(() => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: true };
+    });
+
+    /** The notice element, located by the id the textarea points at. */
+    const getFormatNotice = (): HTMLElement => {
+        const textarea = screen.getByLabelText(/^descripción$/i);
+        const noticeId = (textarea.getAttribute('aria-describedby') ?? '')
+            .split(' ')
+            .find((id) => id.endsWith('-format-upsell'));
+
+        expect(noticeId).toBeDefined();
+        const notice = document.getElementById(noticeId as string);
+        expect(notice).not.toBeNull();
+
+        return notice as HTMLElement;
+    };
+
+    it('renders the plan notice, then the textarea, then the AI trigger — in that order', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const labelled: ReadonlyArray<readonly [string, HTMLElement]> = [
+            ['notice', getFormatNotice()],
+            ['textarea', screen.getByLabelText(/^descripción$/i)],
+            ['ai-trigger', screen.getByTestId('ai-mock-trigger-description')]
+        ];
+
+        // Sorting by document position and comparing the WHOLE sequence is what
+        // makes this bite. Asserting "notice precedes trigger" on its own was
+        // already true of the buggy layout (notice → counter → trigger); only
+        // the textarea landing BETWEEN them distinguishes the two.
+        const domOrder = [...labelled]
+            .sort(([, a], [, b]) =>
+                a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+            )
+            .map(([name]) => name);
+
+        expect(domOrder).toEqual(['notice', 'textarea', 'ai-trigger']);
+    });
+
+    it('styles the plan notice as a restriction, not as an ordinary field hint', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        // The CSS module is proxied to identity, so the class name IS the key.
+        const notice = getFormatNotice();
+        const box = notice.parentElement;
+
+        expect(box).not.toBeNull();
+        expect(box).toHaveClass('formatUpsell');
+        expect(notice).not.toHaveClass('fieldHint');
+    });
+
+    it('describes the textarea with the plan notice as well as the counter', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const textarea = screen.getByLabelText(/^descripción$/i);
+        const described = (textarea.getAttribute('aria-describedby') ?? '').split(' ');
+
+        expect(described).toContain(getFormatNotice().id);
+        expect(described).toContain(screen.getByTestId('description-char-counter').id);
+    });
+
+    it('drops the plan notice entirely once rich text is entitled', () => {
+        entitlements = { can_use_rich_description: true, ai_text_improve: true };
+
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(document.querySelector('[id$="-format-upsell"]')).toBeNull();
+    });
+});
