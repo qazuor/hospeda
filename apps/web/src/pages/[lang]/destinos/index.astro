@@ -44,6 +44,7 @@ import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
+import { normalizeActiveDestinationAttractionIds } from '@/lib/listing-empty-state-filters';
 import {
 	FACET_CHIP_MAX_ACTIVE_VALUES,
 	resolveCappedChipNote
@@ -118,10 +119,6 @@ const sortedCards = rawCards;
 // no filter is active. We store an ordered array (for canonical URL building)
 // AND a Set (for O(1) membership lookups during filtering and badge rendering).
 const rawAttractionsParam = url.searchParams.get('attractions') ?? '';
-const requestedIds = rawAttractionsParam
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
 
 // Build the union of attractions across all loaded destinations, deduplicated
 // by id. Sorted by displayWeight desc, then name asc, so the most relevant
@@ -157,7 +154,12 @@ const availableAttractions: ReadonlyArray<AttractionBadge> = [...attractionMap.v
 // Drop any requested id that doesn't exist in the available set (stale link,
 // stripped attraction, etc.). This keeps the URL canonical and prevents the
 // filter from "pretending" to be active with no visible badge.
-const activeIds = new Set(requestedIds.filter((id) => attractionMap.has(id)));
+const activeIds = new Set(
+	normalizeActiveDestinationAttractionIds({
+		rawValue: rawAttractionsParam,
+		validIds: availableAttractions.map((attr) => attr.id),
+	})
+);
 const isFilterActive = activeIds.size > 0;
 
 // The chip list renders ALL attractions in a single flex-wrap <ul>, and a
@@ -292,7 +294,11 @@ const itemListEntries = sortedCards.map((card) => ({
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
 
 	{!hasError && sortedCards.length === 0 && (
-		<EmptyState locale={locale} variant="empty" />
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			message={t('destinations.emptyMessage', 'Pronto agregaremos destinos increíbles para ti.')}
+		/>
 	)}
 
 	{!hasError && sortedCards.length > 0 && availableAttractions.length > 0 && (
@@ -301,6 +307,7 @@ const itemListEntries = sortedCards.map((card) => ({
 			class="dest-attractions-filter"
 			aria-label={t('destinations.filter.attractionsAriaLabel', 'Filtrar por atracciones')}
 			data-facet-max-active={FACET_CHIP_MAX_ACTIVE_VALUES}
+			data-valid-attraction-ids={JSON.stringify(availableAttractions.map((attr) => attr.id))}
 		>
 			<ul class="dest-attractions-filter__list">
 				{availableAttractions.map((attr) => {
@@ -765,6 +772,13 @@ const itemListEntries = sortedCards.map((card) => ({
 			var banner = document.querySelector(BANNER_SEL);
 			var clearLink = document.querySelector(CLEAR_LINK_SEL);
 			var details = filterRoot.querySelector(DETAILS_SEL);
+			var validIdsRaw = filterRoot.getAttribute('data-valid-attraction-ids') || '[]';
+			var validIds = new Set();
+			try {
+				JSON.parse(validIdsRaw).forEach(function (id) {
+					if (typeof id === 'string' && id.trim()) validIds.add(id.trim());
+				});
+			} catch (_error) {}
 
 			// Pre-compute each card's attraction id set once — the dataset
 			// never changes within a session, so re-parsing the string on
@@ -781,6 +795,7 @@ const itemListEntries = sortedCards.map((card) => ({
 						.split(',')
 						.map(function (s) { return s.trim(); })
 						.filter(Boolean)
+						.filter(function (id) { return validIds.has(id); })
 				);
 			}
 

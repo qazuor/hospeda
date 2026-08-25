@@ -7,6 +7,7 @@
         "title": "Experiencias",
         "subtitle": "Descubrí las mejores experiencias y servicios turísticos del Litoral Entrerriano",
         "emptyState": "No se encontraron experiencias con los filtros seleccionados.",
+        "emptyCatalog": "Todavía no hay experiencias publicadas.",
         "errorBanner": "No se pudo cargar el listado de experiencias. Intentá de nuevo más tarde.",
         "results_one": "{{count}} experiencia encontrada",
         "results_other": "{{count}} experiencias encontradas",

@@ -52,6 +52,12 @@ export interface UseUnsavedChangesGuardOptions {
      * string there and ignore anything we pass.
      */
     readonly message: string;
+    /** Dialog title for internal-navigation confirms. */
+    readonly title: string;
+    /** Confirm CTA label for internal-navigation confirms. */
+    readonly confirmLabel: string;
+    /** Cancel CTA label for internal-navigation confirms. */
+    readonly cancelLabel: string;
 }
 
 /**
@@ -116,7 +122,13 @@ function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolea
  * });
  * ```
  */
-export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGuardOptions): void {
+export function useUnsavedChangesGuard({
+    isDirty,
+    message,
+    title,
+    confirmLabel,
+    cancelLabel
+}: UseUnsavedChangesGuardOptions): void {
     // Resolved up front, mirroring `dialog-history.ts`'s `warmRouter()`: the
     // click handler must decide synchronously, so awaiting the import there
     // would let the navigation slip. If it never resolves we fall back to a
@@ -167,7 +179,7 @@ export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGu
             confirmationOpenRef.current = true;
             const href = anchor.href;
 
-            void showConfirmationDialog({ message })
+            void showConfirmationDialog({ message, title, confirmLabel, cancelLabel })
                 .then((confirmed) => {
                     if (!confirmed) {
                         return;
@@ -194,5 +206,5 @@ export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGu
             window.removeEventListener('beforeunload', handleBeforeUnload);
             document.removeEventListener('click', handleClickCapture, true);
         };
-    }, [isDirty, message]);
+    }, [isDirty, message, title, confirmLabel, cancelLabel]);
 }

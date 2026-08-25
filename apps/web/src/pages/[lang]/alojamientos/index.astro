@@ -45,7 +45,7 @@ import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
-import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { hasActiveAccommodationEmptyStateFilters } from '@/lib/listing-empty-state-filters';
 import { getApiUrl } from '@/lib/env';
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 
@@ -63,6 +63,10 @@ const pageSize = 20;
 // Extract filter params
 const q = url.searchParams.get('q') ?? undefined;
 const types = url.searchParams.get('types') ?? undefined;
+// HOS-96 pre-merge review (Option A): the legacy singular `?type=` still
+// narrows the grid (forwarded to the API below), so it is read once here
+// and reused by both the request and the empty-state filter detection.
+const legacyType = url.searchParams.get('type') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
@@ -241,11 +245,11 @@ const [destinationsResult, amenitiesResult, featuresResult, result] = await Prom
 	pageSize,
 	q,
 	types,
-	// HOS-96 pre-merge review (Option A): forward the legacy singular `type`
-	// too (backend applies `types` OR, else `type`), so an old `?type=HOTEL`
-	// link filters the grid — matching how it now drives the SEO canonical and
-	// chip/sidebar highlight. Mirrors events/blog, which already forward both.
-	type: url.searchParams.get('type') ?? undefined,
+	// Forward the legacy singular `type` too (backend applies `types` OR, else
+	// `type`), so an old `?type=HOTEL` link filters the grid — matching how it
+	// now drives the SEO canonical and chip/sidebar highlight. Mirrors
+	// events/blog, which already forward both.
+	type: legacyType,
 	destinationIds,
 	minPrice,
 	maxPrice,
@@ -331,6 +335,30 @@ const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 // type-specific count (equivalent to `subjectTotal`). Pass it explicitly so the
 // builder can render "hoteles" instead of the generic "hospedajes".
 const typesArray = types?.split(',').filter(Boolean) ?? [];
+const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
+	q,
+	types: typesArray,
+	legacyType,
+	destinationIds,
+	minPrice,
+	maxPrice,
+	hasWifi,
+	hasPool,
+	hasParking,
+	allowsPets,
+	isFeatured,
+	minBedrooms,
+	minBathrooms,
+	minRating,
+	amenitiesParam,
+	featuresParam,
+	includeNoPrice,
+	includeNoReviews,
+	hasGeoRadius,
+	hasAvailabilityFilter: availabilityParams !== undefined,
+	adults,
+	childrenCount,
+});
 const filterSummary = buildAccommodationListingSummary({
 	locale: summaryLocale,
 	filters: {
@@ -888,13 +916,24 @@ const emptyStateSuggestions = [
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
 	)}
 
-	{!hasError && cards.length === 0 && (
+	{!hasError && cards.length === 0 && hasActiveFilters && (
 		<EmptyState
 			locale={locale}
 			variant="no-results"
 			actionUrl={baseUrl}
 			activeFilters={activeFilterChips}
 			suggestions={emptyStateSuggestions}
+		/>
+	)}
+
+	{!hasError && cards.length === 0 && !hasActiveFilters && (
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			message={t(
+				'accommodations.emptyMessage',
+				'Pronto agregaremos más opciones de hospedaje para ti.'
+			)}
 		/>
 	)}
 
