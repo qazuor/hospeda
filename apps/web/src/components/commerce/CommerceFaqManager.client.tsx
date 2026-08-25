@@ -48,6 +48,20 @@ export interface CommerceFaq {
     readonly displayOrder: number | null;
 }
 
+/**
+ * Envelope the add / update endpoints answer with (HOS-841).
+ *
+ * `ExperienceFaqSingleOutputSchema` and `GastronomyFaqSingleOutputSchema` are
+ * both `z.object({ faq: … })`, so the FAQ arrives one level down. Typing these
+ * two calls as `CommerceFaq` compiled fine and put the ENVELOPE into the list:
+ * `question`/`answer` rendered blank and `id` was `undefined`, which then sent
+ * `PUT …/faqs/undefined` (400) on the next edit — while the row had in fact
+ * been written. Delete and reorder are unaffected: they answer `SuccessSchema`.
+ */
+interface CommerceFaqEnvelope {
+    readonly faq: CommerceFaq;
+}
+
 /** Props for CommerceFaqManager. */
 export interface CommerceFaqManagerProps {
     /** Which vertical this listing belongs to (drives the endpoint path). */
@@ -196,7 +210,7 @@ export function CommerceFaqManager({
         // `postProtected`, never `post`: this hits `/protected/`, and `post` is the
         // ONE verb on the client that omits `credentials: 'include'` (patch, put
         // and delete all send it). Using it made every add 403 — H-89.
-        const result = await apiClient.postProtected<CommerceFaq>({
+        const result = await apiClient.postProtected<CommerceFaqEnvelope>({
             path: basePath,
             body: {
                 question: addValues.question.trim(),
@@ -207,7 +221,7 @@ export function CommerceFaqManager({
 
         setBusyId(null);
         if (result.ok) {
-            setFaqs((prev) => sortFaqs([...prev, result.data]));
+            setFaqs((prev) => sortFaqs([...prev, result.data.faq]));
             setAddValues(EMPTY_EDITOR);
             setAddErrors(NO_FIELD_ERRORS);
             setIsAdding(false);
@@ -252,7 +266,7 @@ export function CommerceFaqManager({
             // PUT, not PATCH: the API registers `PUT /{id}/faqs/{faqId}`
             // (routes/{gastronomy,experience}/protected/updateFaq.ts). PATCH
             // matched no route and 404'd — H-89.
-            const result = await apiClient.put<CommerceFaq>({
+            const result = await apiClient.put<CommerceFaqEnvelope>({
                 path: `${basePath}/${faqId}`,
                 body: {
                     question: editValues.question.trim(),
@@ -264,7 +278,7 @@ export function CommerceFaqManager({
             setBusyId(null);
             if (result.ok) {
                 setFaqs((prev) =>
-                    sortFaqs(prev.map((f) => (f.id === faqId ? { ...f, ...result.data } : f)))
+                    sortFaqs(prev.map((f) => (f.id === faqId ? { ...f, ...result.data.faq } : f)))
                 );
                 setEditingId(null);
                 setEditValues(EMPTY_EDITOR);
