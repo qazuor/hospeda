@@ -30,6 +30,82 @@
 
 .shift {
     display: inline-flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+/* The two time inputs plus the remove control, on one line. */
+.shiftRow {
+    display: inline-flex;
     align-items: center;
     gap: var(--space-2);
+}
+
+/*
+ * HOS-825: the add/remove controls were bare <button> elements, so the browser
+ * painted them with its own chrome — a cramped `x|` and `+|` next to two styled
+ * time inputs. These borrow the tokens the sibling CommerceFaqManager already
+ * uses for the same job (a square icon button and a dashed "add another" one),
+ * so the section matches the rest of the editor instead of a second look.
+ *
+ * Sizing is deliberate: 2rem square clears the 24x24 CSS-pixel target WCAG 2.2
+ * 2.5.8 asks for, which the native buttons did not.
+ */
+.shiftButton,
+.addShiftButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border-radius: var(--radius-sm, 0.25rem);
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 120ms ease,
+        border-color 120ms ease;
+}
+
+.shiftButton {
+    border: 1px solid var(--border);
+    color: var(--core-foreground);
+}
+
+.shiftButton:hover {
+    border-color: oklch(0.88 0.06 25);
+    background: oklch(0.96 0.02 25);
+    color: var(--destructive, #b91c1c);
+}
+
+.addShiftButton {
+    border: 1px dashed var(--border);
+    color: var(--brand-primary, var(--core-foreground));
+    font-weight: 600;
+}
+
+.addShiftButton:hover {
+    border-style: solid;
+    background: oklch(0.96 0.02 240 / 0.15);
+}
+
+/*
+ * Focus stays visible on both: these are the only controls in the row a
+ * keyboard user reaches after the time inputs, and the native ring went away
+ * with the native chrome.
+ */
+.shiftButton:focus-visible,
+.addShiftButton:focus-visible {
+    outline: 2px solid var(--brand-primary, currentcolor);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shiftButton,
+    .addShiftButton {
+        transition: none;
+    }
 }
