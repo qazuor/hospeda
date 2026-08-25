@@ -34,7 +34,17 @@ import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.clie
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
+        // Interpolates `{{token}}` when params are supplied. Without this the
+        // character counters below would read back the raw template and every
+        // assertion on their text would be vacuous.
+        t: (_key: string, fallback?: string, params?: Record<string, string>) => {
+            const template = fallback ?? _key;
+            if (!params) return template;
+            return Object.entries(params).reduce(
+                (acc, [token, value]) => acc.replaceAll(`{{${token}}}`, value),
+                template
+            );
+        },
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
     })
 }));
@@ -274,5 +284,86 @@ describe('BasicInfoSection — AI text-improve (summary field, SPEC-321 T-004)',
         // No interaction with the AI trigger — onFieldChange should not fire
         // from the AI-improve wiring path.
         expect(onFieldChange).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-783 B5 — character counters
+// ---------------------------------------------------------------------------
+
+/**
+ * These three fields are the SAME three the publish mini form edits. B5 first
+ * shipped on the mini form only, so a host saw `47/100` while creating and
+ * nothing at all while editing. The counters are asserted here per field AND
+ * per severity, because the amber/red states are the half of B5 that a
+ * presence-only check would let regress silently.
+ */
+describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
+    beforeEach(() => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: false };
+    });
+
+    it.each([
+        ['name-char-counter', 'Test Hotel'.length, 100],
+        ['summary-char-counter', 'Test summary for accommodation'.length, 300],
+        ['description-char-counter', 'Test description with content'.length, 2000]
+    ])('renders %s as used/total', (testId, used, max) => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.getByTestId(testId)).toHaveTextContent(`${used}/${max}`);
+        expect(screen.getByTestId(testId)).toHaveAttribute('data-state', 'normal');
+    });
+
+    it('turns amber once the name is within 20% of its limit', () => {
+        render(
+            <BasicInfoSection {...buildProps({ data: { ...MOCK_DATA, name: 'x'.repeat(80) } })} />
+        );
+
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('80/100');
+        expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'warning');
+    });
+
+    it('turns red once the summary reaches its limit', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps({ data: { ...MOCK_DATA, summary: 'x'.repeat(300) } })}
+            />
+        );
+
+        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300');
+        expect(screen.getByTestId('summary-char-counter')).toHaveAttribute('data-state', 'danger');
+    });
+
+    it('turns red once the description reaches its limit', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps({ data: { ...MOCK_DATA, description: 'x'.repeat(2000) } })}
+            />
+        );
+
+        expect(screen.getByTestId('description-char-counter')).toHaveAttribute(
+            'data-state',
+            'danger'
+        );
+    });
+
+    // The description counter sits below the entitlement gate because both
+    // branches edit the same `data.description` — the rich-text owner must not
+    // lose it.
+    it('keeps the description counter on the rich-text branch', () => {
+        entitlements = { can_use_rich_description: true, ai_text_improve: false };
+
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.getByTestId('description-char-counter')).toBeInTheDocument();
+    });
+
+    it('points each field at its counter through aria-describedby', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const name = screen.getByLabelText(/^nombre/i);
+        expect(name.getAttribute('aria-describedby')).toContain(
+            screen.getByTestId('name-char-counter').id
+        );
     });
 });
