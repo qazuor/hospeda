@@ -36,6 +36,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
+import { CharacterCounter } from '@/components/ui/CharacterCounter';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
@@ -217,6 +218,9 @@ const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
 
 /** Max suggestions surfaced by the city autocomplete dropdown. */
 const CITY_AUTOCOMPLETE_LIMIT = 10;
+const NAME_MAX_LENGTH = 100;
+const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MAX_LENGTH = 2000;
 
 /**
  * Renders a confidence badge matching the inline pattern used for name/summary/type.
@@ -971,10 +975,22 @@ export function CreatePropertyMiniForm({
                     type="text"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    maxLength={100}
+                    maxLength={NAME_MAX_LENGTH}
                     required
                     aria-invalid={fieldErrors.name ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
+                    aria-describedby={[
+                        `${nameId}-counter`,
+                        fieldErrors.name ? `${nameId}-error` : ''
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
+                />
+                <CharacterCounter
+                    id={`${nameId}-counter`}
+                    locale={locale}
+                    current={name.length}
+                    max={NAME_MAX_LENGTH}
+                    testId="name-char-counter"
                 />
                 <FieldError
                     id={`${nameId}-error`}
@@ -1111,17 +1127,35 @@ export function CreatePropertyMiniForm({
                     value={summary}
                     onChange={(event) => setSummary(event.target.value)}
                     rows={3}
-                    maxLength={300}
+                    maxLength={SUMMARY_MAX_LENGTH}
                     required
                     aria-invalid={fieldErrors.summary ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.summary ? `${summaryId}-error` : undefined}
+                    aria-describedby={[
+                        `${summaryId}-hint`,
+                        `${summaryId}-counter`,
+                        fieldErrors.summary ? `${summaryId}-error` : ''
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
                 />
-                <p className="form-hint">
-                    {t(
-                        'host.miniForm.fields.summaryHint',
-                        'Una frase de presentación. Después podés ampliar todo en el panel.'
-                    )}
-                </p>
+                <div className={styles.fieldMetaRow}>
+                    <p
+                        id={`${summaryId}-hint`}
+                        className="form-hint"
+                    >
+                        {t(
+                            'host.miniForm.fields.summaryHint',
+                            'Una frase de presentación. Después podés ampliar todo en el panel.'
+                        )}
+                    </p>
+                    <CharacterCounter
+                        id={`${summaryId}-counter`}
+                        locale={locale}
+                        current={summary.length}
+                        max={SUMMARY_MAX_LENGTH}
+                        testId="summary-char-counter"
+                    />
+                </div>
                 <FieldError
                     id={`${summaryId}-error`}
                     message={fieldErrors.summary}
@@ -1186,13 +1220,24 @@ export function CreatePropertyMiniForm({
                                             }))
                                         }
                                         rows={5}
+                                        maxLength={DESCRIPTION_MAX_LENGTH}
                                         aria-invalid={fieldErrors.description ? 'true' : 'false'}
-                                        aria-describedby={
+                                        aria-describedby={[
+                                            `${descriptionId}-counter`,
                                             fieldErrors.description
                                                 ? fieldErrorId('description')
-                                                : undefined
-                                        }
+                                                : ''
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ')}
                                         data-testid="extras-description"
+                                    />
+                                    <CharacterCounter
+                                        id={`${descriptionId}-counter`}
+                                        locale={locale}
+                                        current={extras.description?.length ?? 0}
+                                        max={DESCRIPTION_MAX_LENGTH}
+                                        testId="extras-description-char-counter"
                                     />
                                     <FieldError
                                         id={fieldErrorId('description')}

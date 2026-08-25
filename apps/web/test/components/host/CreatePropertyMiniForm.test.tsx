@@ -562,6 +562,52 @@ describe('CreatePropertyMiniForm — step indicator (HOS-456)', () => {
     });
 });
 
+describe('CreatePropertyMiniForm — character counters (HOS-783 B5)', () => {
+    it('should show a live counter for the name field', async () => {
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('0/100');
+        expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'normal');
+
+        await user.type(
+            screen.getByRole('textbox', { name: /Nombre del alojamiento/i }),
+            'A'.repeat(85)
+        );
+
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('85/100');
+        expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'warning');
+    });
+
+    it('should mark the short-description counter as danger at the max length', async () => {
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        await user.type(
+            screen.getByRole('textbox', { name: /Descripción corta/i }),
+            'B'.repeat(300)
+        );
+
+        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300');
+        expect(screen.getByTestId('summary-char-counter')).toHaveAttribute('data-state', 'danger');
+    });
+
+    it('should show a counter for the imported long description textarea', async () => {
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        await triggerFullImport(user);
+
+        expect(screen.getByTestId('extras-description-char-counter')).toHaveTextContent(
+            `${FIXTURE_IMPORT_RESPONSE_FULL.draft.description?.value.length ?? 0}/2000`
+        );
+        expect(screen.getByTestId('extras-description-char-counter')).toHaveAttribute(
+            'data-state',
+            'normal'
+        );
+    });
+});
+
 describe('CreatePropertyMiniForm — post-submit redirect', () => {
     it('redirects to admin edit page on created status', async () => {
         // Regression guard: `created` must redirect to the admin edit page.

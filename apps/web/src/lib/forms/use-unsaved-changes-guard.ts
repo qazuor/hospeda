@@ -34,6 +34,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 
 /** Shape of the router's `navigate`, kept local to avoid a static virtual-module import. */
 type NavigateFn = (href: string) => void;
@@ -51,6 +52,12 @@ export interface UseUnsavedChangesGuardOptions {
      * string there and ignore anything we pass.
      */
     readonly message: string;
+    /** Dialog title for internal-navigation confirms. */
+    readonly title: string;
+    /** Confirm CTA label for internal-navigation confirms. */
+    readonly confirmLabel: string;
+    /** Cancel CTA label for internal-navigation confirms. */
+    readonly cancelLabel: string;
 }
 
 /**
@@ -115,12 +122,19 @@ function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolea
  * });
  * ```
  */
-export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGuardOptions): void {
+export function useUnsavedChangesGuard({
+    isDirty,
+    message,
+    title,
+    confirmLabel,
+    cancelLabel
+}: UseUnsavedChangesGuardOptions): void {
     // Resolved up front, mirroring `dialog-history.ts`'s `warmRouter()`: the
     // click handler must decide synchronously, so awaiting the import there
     // would let the navigation slip. If it never resolves we fall back to a
     // full load — the user already accepted losing the edits.
     const navigateRef = useRef<NavigateFn | null>(null);
+    const confirmationOpenRef = useRef(false);
 
     useEffect(() => {
         if (!isDirty) {
@@ -158,16 +172,29 @@ export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGu
             // anchor's own navigation. Nothing has been fetched or swapped yet.
             event.preventDefault();
 
-            if (!window.confirm(message)) {
+            if (confirmationOpenRef.current) {
                 return;
             }
 
-            const routerNavigate = navigateRef.current;
-            if (routerNavigate) {
-                routerNavigate(anchor.href);
-            } else {
-                window.location.href = anchor.href;
-            }
+            confirmationOpenRef.current = true;
+            const href = anchor.href;
+
+            void showConfirmationDialog({ message, title, confirmLabel, cancelLabel })
+                .then((confirmed) => {
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    const routerNavigate = navigateRef.current;
+                    if (routerNavigate) {
+                        routerNavigate(href);
+                    } else {
+                        window.location.href = href;
+                    }
+                })
+                .finally(() => {
+                    confirmationOpenRef.current = false;
+                });
         };
 
         window.addEventListener('beforeunload', handleBeforeUnload);
@@ -179,5 +206,5 @@ export function useUnsavedChangesGuard({ isDirty, message }: UseUnsavedChangesGu
             window.removeEventListener('beforeunload', handleBeforeUnload);
             document.removeEventListener('click', handleClickCapture, true);
         };
-    }, [isDirty, message]);
+    }, [isDirty, message, title, confirmLabel, cancelLabel]);
 }

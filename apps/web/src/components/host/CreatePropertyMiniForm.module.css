@@ -117,6 +117,13 @@
     flex-wrap: wrap;
 }
 
+.fieldMetaRow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
 .confidenceBadge {
     display: inline-flex;
     align-items: center;
