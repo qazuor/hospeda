@@ -8,7 +8,9 @@
  * - Renders existing listing rows with toggles and remove button
  * - Add listing: calls POST on submit
  * - Toggle (showLink / showReviews): calls PATCH per listing
- * - Remove: calls DELETE per listing
+ * - Remove: asks for confirmation first (HOS-794), then calls DELETE per
+ *   listing; cancelling sends nothing and a failed DELETE keeps the row and
+ *   explains itself
  * - Refresh: calls POST /refresh
  * - Rate-limit (429): shows rate-limit message with computed minutes
  */
@@ -41,6 +43,25 @@ vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
         get: (_target, prop) => String(prop)
     })
+}));
+
+vi.mock('@/components/shared/ui/ConfirmDeleteDialog.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
+// The shared `Dialog` primitive owns portals, scroll locking and a history
+// entry — none of which this section's behaviour depends on. Stubbing it keeps
+// the assertions on WHAT the dialog asks, not on how it mounts.
+vi.mock('@/components/shared/ui/Dialog.client', () => ({
+    Dialog: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
+        isOpen ? <div role="presentation">{children}</div> : null,
+    DialogHeader: ({ children, titleId }: { children: React.ReactNode; titleId: string }) => (
+        <div id={titleId}>{children}</div>
+    ),
+    DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }));
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
@@ -560,37 +581,71 @@ describe('ExternalReputationSection', () => {
     // ── 6. Remove listing ───────────────────────────────────────────────────
 
     describe('Remove listing', () => {
-        it('calls DELETE /external-listings/:id when remove button is clicked', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'DELETE') {
-                    return Promise.resolve({ ok: true, status: 200 } as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
+        /** Opens the delete confirmation for the Google listing. */
+        const openRemoveDialog = async () => {
             renderSection();
-
             await waitFor(() => {
                 expect(
                     screen.getByRole('button', { name: /Eliminar Google/i })
                 ).toBeInTheDocument();
             });
-
             fireEvent.click(screen.getByRole('button', { name: /Eliminar Google/i }));
+        };
 
-            await waitFor(() => {
-                const fetchCalls = vi.mocked(global.fetch).mock.calls;
-                const deleteCall = fetchCalls.find(
+        /** Finds the DELETE call for the Google listing, if any. */
+        const findDeleteCall = () =>
+            vi
+                .mocked(global.fetch)
+                .mock.calls.find(
                     ([url, opts]) =>
                         typeof url === 'string' &&
                         (url as string).includes(`/external-listings/${LISTING_GOOGLE.id}`) &&
                         (opts as RequestInit)?.method === 'DELETE'
                 );
-                expect(deleteCall).toBeDefined();
-            });
+
+        it('asks for confirmation before deleting anything (HOS-794)', async () => {
+            vi.mocked(global.fetch).mockImplementation(() =>
+                Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]))
+            );
+
+            await openRemoveDialog();
+
+            // The dialog is up and names the platform; nothing was sent yet.
+            expect(
+                screen.getByText(
+                    '¿Eliminás esta plataforma? Se dejan de mostrar sus reseñas en tu ficha.'
+                )
+            ).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Eliminar plataforma' })).toBeInTheDocument();
+            expect(findDeleteCall()).toBeUndefined();
         });
 
-        it('removes the listing from the DOM after successful DELETE', async () => {
+        it('does NOT use the browser-native window.confirm (HOS-794)', async () => {
+            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+            vi.mocked(global.fetch).mockImplementation(() =>
+                Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]))
+            );
+
+            await openRemoveDialog();
+
+            expect(confirmSpy).not.toHaveBeenCalled();
+            confirmSpy.mockRestore();
+        });
+
+        it('sends nothing when the confirmation is cancelled', async () => {
+            vi.mocked(global.fetch).mockImplementation(() =>
+                Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]))
+            );
+
+            await openRemoveDialog();
+            fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+            expect(findDeleteCall()).toBeUndefined();
+            // The row survives.
+            expect(screen.getByRole('button', { name: /Eliminar Google/i })).toBeInTheDocument();
+        });
+
+        it('calls DELETE /external-listings/:id once the deletion is confirmed', async () => {
             vi.mocked(global.fetch).mockImplementation((_url, opts) => {
                 if ((opts as RequestInit)?.method === 'DELETE') {
                     return Promise.resolve({ ok: true, status: 200 } as Response);
@@ -598,16 +653,24 @@ describe('ExternalReputationSection', () => {
                 return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
             });
 
-            renderSection();
+            await openRemoveDialog();
+            fireEvent.click(screen.getByRole('button', { name: 'Eliminar plataforma' }));
 
             await waitFor(() => {
-                // The listing row has a platform span with text "Google"
-                expect(
-                    screen.getByRole('button', { name: /Eliminar Google/i })
-                ).toBeInTheDocument();
+                expect(findDeleteCall()).toBeDefined();
+            });
+        });
+
+        it('removes the listing from the DOM after a successful DELETE', async () => {
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'DELETE') {
+                    return Promise.resolve({ ok: true, status: 200 } as Response);
+                }
+                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
             });
 
-            fireEvent.click(screen.getByRole('button', { name: /Eliminar Google/i }));
+            await openRemoveDialog();
+            fireEvent.click(screen.getByRole('button', { name: 'Eliminar plataforma' }));
 
             await waitFor(() => {
                 // The remove button is gone when the listing is removed from state
@@ -615,6 +678,24 @@ describe('ExternalReputationSection', () => {
                     screen.queryByRole('button', { name: /Eliminar Google/i })
                 ).not.toBeInTheDocument();
             });
+        });
+
+        it('keeps the row and explains itself when the DELETE fails (HOS-794)', async () => {
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'DELETE') {
+                    return Promise.resolve({ ok: false, status: 500 } as Response);
+                }
+                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
+            });
+
+            await openRemoveDialog();
+            fireEvent.click(screen.getByRole('button', { name: 'Eliminar plataforma' }));
+
+            // Used to fail silently: the click looked like a dead button.
+            await waitFor(() => {
+                expect(screen.getByText('No se pudo eliminar la plataforma.')).toBeInTheDocument();
+            });
+            expect(screen.getByRole('button', { name: /Eliminar Google/i })).toBeInTheDocument();
         });
     });
 
