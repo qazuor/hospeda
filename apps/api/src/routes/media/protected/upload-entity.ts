@@ -80,10 +80,17 @@ const buildUploadRateLimitMessage = ({
 /**
  * Burst allowance for one album, uploaded in a single pass.
  *
- * The cap PLUS ONE: `featured` and `gallery` upload through this same route,
- * and `limit-enforcement.ts` counts them together under `state: 'visible'`.
- * Sizing the burst to the gallery cap alone left the featured image as the one
- * request that got refused — a 50-photo Premium album still ended in a 429.
+ * The cap PLUS ONE, because a complete album is `cap + 1` REQUESTS through this
+ * one route: the gallery photos, plus the featured image, which uploads here too
+ * (`role=featured`). Sizing the burst to the gallery cap alone left the featured
+ * image as the one request that got refused — a 50-photo Premium album still
+ * ended the pass on a 429.
+ *
+ * Reviewed under HOS-791 (AC-3) and kept. HOS-785 originally justified this `+1`
+ * by saying the featured image shared the gallery's quota; that is no longer true
+ * — the featured image is excluded from the cap now — but the `+1` never depended
+ * on it. What sizes this limit is the request count of one upload pass, and that
+ * is still `cap` gallery uploads plus one featured upload either way.
  */
 const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
 

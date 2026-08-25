@@ -60,9 +60,13 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         });
 
         expect(count).toBe(5);
-        expect(gastronomyMediaModel.findByGastronomy).toHaveBeenCalledWith(
-            expect.objectContaining({ gastronomyId: ENTITY_ID, state: 'visible' })
-        );
+        // Exact equality, NOT objectContaining: a partial matcher stays green
+        // when a filter is dropped, which is precisely the failure this asserts.
+        expect(gastronomyMediaModel.findByGastronomy).toHaveBeenCalledWith({
+            gastronomyId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false
+        });
     });
 
     it('counts experience photos from experience_media, not from the JSONB blob', async () => {
@@ -73,9 +77,11 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         });
 
         expect(count).toBe(4);
-        expect(experienceMediaModel.findByExperience).toHaveBeenCalledWith(
-            expect.objectContaining({ experienceId: ENTITY_ID, state: 'visible' })
-        );
+        expect(experienceMediaModel.findByExperience).toHaveBeenCalledWith({
+            experienceId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false
+        });
     });
 
     it('counts accommodation photos from accommodation_media', async () => {
@@ -86,6 +92,31 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         });
 
         expect(count).toBe(7);
+        expect(accommodationMediaModel.findByAccommodation).toHaveBeenCalledWith({
+            accommodationId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false
+        });
+    });
+
+    // HOS-791 ------------------------------------------------------------
+    it.each([
+        ['accommodation', () => accommodationMediaModel.findByAccommodation],
+        ['gastronomy', () => gastronomyMediaModel.findByGastronomy],
+        ['experience', () => experienceMediaModel.findByExperience]
+    ])('excludes the featured image from the %s count (HOS-791)', async (entityType, getMock) => {
+        // The featured image is not a gallery item. Counting it charged the
+        // gallery a slot it never used, so an owner's gallery closed one
+        // photo early while the system reported the cap as reached.
+        //
+        // This is the same rule the JSONB branch below has always followed:
+        // `media.gallery` is a SIBLING of `media.featuredImage`, never a
+        // container for it. Before HOS-791 the two branches of this one
+        // function disagreed about what "gallery count" meant.
+        await resolveVisibleGalleryCount({ entityType, entityId: ENTITY_ID, entity: {} });
+
+        const call = getMock().mock.calls[0]?.[0];
+        expect(call?.isFeatured).toBe(false);
     });
 
     it('excludes archived rows by asking only for visible ones', async () => {

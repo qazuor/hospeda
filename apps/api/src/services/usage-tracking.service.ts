@@ -616,9 +616,15 @@ export class UsageTrackingService {
                 return [];
             }
 
+            // GALLERY-ONLY (`isFeatured: false`, HOS-791). This number is what
+            // the owner sees as "photos used", so it has to be measured the same
+            // way enforcement measures it — the featured image consumes no plan
+            // photo slot, and a breakdown that counted it would show 15/15 to an
+            // owner whose next gallery upload is still going to succeed.
             const mediaByAccommodation = await accommodationMediaModel.findByAccommodations({
                 accommodationIds: items.map((item) => item.id),
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
 
             const breakdown: AccommodationPhotoUsage[] = items.map((item) => ({
@@ -708,7 +714,11 @@ export class UsageTrackingService {
                 }
 
                 case LimitKey.MAX_PHOTOS_PER_ACCOMMODATION: {
-                    // Per-accommodation limit, checked in middleware per request
+                    // Per-accommodation, so there is no single owner-wide number
+                    // to report here. The real per-request enforcement lives in
+                    // the `addMedia` route handlers (protected + admin) and in
+                    // `media/admin/upload.ts`; the per-accommodation breakdown an
+                    // owner actually sees comes from `getPerAccommodationUsage()`.
                     return 0;
                 }
 

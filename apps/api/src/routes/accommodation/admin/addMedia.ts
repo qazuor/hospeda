@@ -74,9 +74,11 @@ export const adminAddMediaRoute = createAdminRoute({
         // Only enforces when the actor is the owner. Admins uploading on behalf
         // of an owner bypass the plan limit — this matches `validateEntityMedia
         // Permission` where admins with ACCOMMODATION_UPDATE_ANY skip ownership.
-        // `findByAccommodation({ state: 'visible' })` counts both the featured
-        // row (is_featured=true, state='visible') and every active gallery row,
-        // matching the prior `gallery.length + (featuredImage ? 1 : 0)` semantics.
+        // The count is GALLERY-ONLY (`isFeatured: false`, HOS-791). The featured
+        // image is not a gallery item and does not consume a plan photo slot, so
+        // an owner on a 15-photo plan keeps 15 gallery photos plus their featured
+        // one. Counting them together closed the gallery one photo early and
+        // reported "15/15" while the owner could only see 14.
         const accommodation = await accommodationService.getById(actor, accommodationId);
         if (accommodation.error || !accommodation.data) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
@@ -84,27 +86,32 @@ export const adminAddMediaRoute = createAdminRoute({
 
         const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
         if (ownerId && ownerId === actor.id) {
-            const { total: currentPhotoCount } = await accommodationMediaModel.findByAccommodation({
-                accommodationId,
-                state: 'visible'
-            });
+            const { total: currentGalleryPhotoCount } =
+                await accommodationMediaModel.findByAccommodation({
+                    accommodationId,
+                    state: 'visible',
+                    isFeatured: false
+                });
 
             const planLimitCheck = checkLimit({
                 context: ctx,
                 limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: currentPhotoCount
+                currentCount: currentGalleryPhotoCount
             });
 
-            const threshold = calculateThreshold(currentPhotoCount, planLimitCheck.maxAllowed);
+            const threshold = calculateThreshold(
+                currentGalleryPhotoCount,
+                planLimitCheck.maxAllowed
+            );
             const usagePercent = calculateUsagePercent(
-                currentPhotoCount,
+                currentGalleryPhotoCount,
                 planLimitCheck.maxAllowed
             );
 
             if (threshold === 'warning' || threshold === 'critical') {
                 ctx.header(
                     'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
+                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
                 );
             }
 

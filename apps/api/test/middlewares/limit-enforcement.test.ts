@@ -437,10 +437,12 @@ describe('Limit Enforcement Middleware', () => {
             await middleware(mockContext, mockNext);
 
             expect(mockNext).toHaveBeenCalled();
-            // findByAccommodation must have been called with state:'visible'
+            // findByAccommodation must have been called with BOTH filters:
+            // state:'visible' and isFeatured:false (HOS-791 — gallery-only count).
             expect(mockFindByAccommodation).toHaveBeenCalledWith({
                 accommodationId: 'accommodation-id-123',
-                state: 'visible'
+                state: 'visible',
+                isFeatured: false
             });
         });
 

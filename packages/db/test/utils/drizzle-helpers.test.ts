@@ -133,6 +133,23 @@ describe('buildWhereClause', () => {
         expect(clause).toBeDefined();
     });
 
+    it('keeps a `false` filter — falsy is a value, not an absent filter', () => {
+        // Only `undefined` means "no filter". A filter written as `false` is a
+        // real predicate, and dropping it turns the query into an unfiltered one
+        // that silently returns MORE rows than asked for. `isFeatured: false`
+        // (HOS-791) is exactly such a filter: skipped, the gallery cap would go
+        // back to counting the featured image.
+        //
+        // Asserted alone so the result depends on this key and nothing else.
+        // (A key that is skipped for being an UNKNOWN column throws instead of
+        // returning undefined — so this fails loudly either way, just not always
+        // through the assertion.) It does not distinguish eq(col, false) from
+        // some other predicate on the same column; it pins that a predicate is
+        // produced at all.
+        const clause = buildWhereClause({ active: false }, mockTable);
+        expect(clause).toBeDefined();
+    });
+
     it('does not crash with prototype pollution', () => {
         const obj = Object.create({ evil: 42 });
         obj.id = 1;

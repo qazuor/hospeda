@@ -16,8 +16,9 @@
  *      per accommodation that has archived photos AND is not still planRestricted
  *      after step 2 (n-2: skip photo restore for accommodations that remain
  *      restricted — they are hidden so restoring photos is wasteful and could
- *      over-fill the effective cap). The primitive handles FIFO ordering and
- *      the featuredImage seat reservation (M-3: toCap is the TOTAL cap).
+ *      over-fill the effective cap). The primitive handles FIFO ordering. It
+ *      reserves NO seat for the featured image (HOS-791): `toCap` is the cap
+ *      for the GALLERY alone.
  *   4. Execute all mutations inside a single Drizzle transaction.
  *   5. AFTER the tx commits: schedule batch revalidation for every
  *      accommodation that had accommodations or photos restored. Side effects

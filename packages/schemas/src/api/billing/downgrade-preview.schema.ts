@@ -135,15 +135,19 @@ export const AccommodationPhotoExcessSchema = z.object({
     /** Target photo cap for this plan (-1 = unlimited). */
     cap: PlanCapSchema,
     /**
-     * Total photos currently in this accommodation:
-     * gallery.length + (featuredImage ? 1 : 0).
+     * Gallery photos currently in this accommodation (`gallery.length`).
+     *
+     * The featured image is NOT included (HOS-791): it is not a gallery item and
+     * consumes no plan photo slot, so it is neither counted here nor subtracted
+     * from `cap`.
      */
     totalCount: z.number().int().nonnegative(),
     /** Number of gallery photos that will be moved to `archivedGallery`. */
     excessCount: z.number().int().nonnegative(),
     /**
      * True if this accommodation has a featuredImage.
-     * The featured image is always kept and does NOT appear in the overflow list.
+     * The featured image is always kept, never appears in the overflow list, and
+     * does not count toward `cap` or `totalCount` (HOS-791). Informational only.
      */
     hasFeaturedImage: z.boolean(),
     /**

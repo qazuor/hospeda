@@ -313,7 +313,7 @@ function resolveKeepIds(params: {
  *
  * SPEC-204 direct cutover: previously read from `accommodations.media.gallery`
  * (JSONB blob). Now reads from `accommodation_media` with `state = 'visible'`
- * — the same source used by `enforcePhotoLimit` and `computeDowngradeExcess`.
+ * — the same source used by the `addMedia` route handlers and `computeDowngradeExcess`.
  *
  * Identity key is **URL** (unchanged from the original implementation; the
  * SPEC-167 photo primitive `archiveAccommodationPhotos` partitions the gallery
@@ -341,9 +341,17 @@ async function buildDefaultPhotoKeepIds(params: {
     const { accommodationId, overflowUrls } = params;
     try {
         const { accommodationMediaModel } = await import('@repo/db');
-        // Fetch all visible media rows for this accommodation.
-        // `state: 'visible'` covers featured image + active gallery (same definition
-        // as the excess-computation side). keepIds is the non-overflow subset by URL.
+        // Fetch all visible media rows for this accommodation — featured image
+        // INCLUDED. Filtering it out here would be harmless but pointless:
+        // `archiveAccommodationPhotos` builds its candidate set with its own
+        // `is_featured = false` filter, so the featured URL's membership in
+        // keepIds is inert either way. The read stays unfiltered because keepIds
+        // means "every visible URL that is not overflow", and narrowing it would
+        // make the set say less than its name.
+        //
+        // The cap arithmetic that excludes the featured image (HOS-791) lives in
+        // `computeDowngradeExcess`, not here. keepIds is the non-overflow subset
+        // by URL.
         // pageSize 1000 is well above any realistic gallery size.
         const { items } = await accommodationMediaModel.findByAccommodation({
             accommodationId,
