@@ -223,15 +223,41 @@ export interface BatchTranslateResult {
 // ---------------------------------------------------------------------------
 
 /**
+ * Fields whose value is a proper name rather than translatable prose (HOS-789).
+ *
+ * `name` is the commercial name an accommodation, destination, or event trades
+ * under — what a guest searches for and what is painted on the sign. `title`
+ * (posts) is deliberately NOT here: a blog headline is prose and must be
+ * translated.
+ *
+ * Before HOS-789 the user prompt never said which field it was translating, so
+ * the model had nothing to distinguish "Cheroga Casa Quinta" from a sentence.
+ * It translated the name into English ("Cheroga Country House") and left the
+ * Portuguese one alone — same field, same call, opposite outcomes.
+ */
+const PROPER_NAME_FIELDS: ReadonlySet<string> = new Set(['name']);
+
+/**
  * Builds the user prompt for translating a single field from a source locale to
  * a target locale.
+ *
+ * `fieldType` is what lets the model tell a proper name from prose — the system
+ * prompt forbids translating proper nouns, but only this turn says whether the
+ * text in front of it IS one.
  */
 function buildTranslationPrompt(
     fieldValue: string,
     sourceLocale: ContentLocale,
-    targetLocale: ContentLocale
+    targetLocale: ContentLocale,
+    fieldType: string
 ): string {
-    return `Translate the following ${LOCALE_NAMES[sourceLocale]} text to ${LOCALE_NAMES[targetLocale]}:\n\n${fieldValue}`;
+    const instruction = `Translate the following ${LOCALE_NAMES[sourceLocale]} text to ${LOCALE_NAMES[targetLocale]}:`;
+
+    if (PROPER_NAME_FIELDS.has(fieldType)) {
+        return `${instruction}\n\nThis text is the "${fieldType}" field — the proper name the listing trades under, not prose. Reproduce it EXACTLY as written, character for character, including every descriptive word inside it. Do not translate it, adapt it, reorder it, or expand it. Returning it completely unchanged is the expected outcome.\n\n${fieldValue}`;
+    }
+
+    return `${instruction}\n\n${fieldValue}`;
 }
 
 /**
@@ -242,14 +268,15 @@ async function translateField(
     aiService: Awaited<ReturnType<typeof createConfiguredAiService>>,
     fieldValue: string,
     sourceLocale: ContentLocale,
-    targetLocale: ContentLocale
+    targetLocale: ContentLocale,
+    fieldType: string
 ): Promise<{
     text: string;
     usage: { promptTokens: number; completionTokens: number; totalTokens: number };
     provider: string;
     model: string;
 }> {
-    const prompt = buildTranslationPrompt(fieldValue, sourceLocale, targetLocale);
+    const prompt = buildTranslationPrompt(fieldValue, sourceLocale, targetLocale, fieldType);
 
     const result = await aiService.generateText({
         feature: FEATURE,
@@ -290,7 +317,13 @@ async function translateFieldWithRetry(
     entityId: string
 ): Promise<FieldTranslationOutcome> {
     try {
-        const result = await translateField(aiService, fieldValue, sourceLocale, targetLocale);
+        const result = await translateField(
+            aiService,
+            fieldValue,
+            sourceLocale,
+            targetLocale,
+            fieldType
+        );
         return {
             result: {
                 fieldType,
