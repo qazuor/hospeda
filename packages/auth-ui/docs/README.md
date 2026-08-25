@@ -2,7 +2,7 @@
 
 ## Overview
 
-`@repo/auth-ui` provides pre-built authentication UI components for React, built on top of Better Auth. It delivers ready-to-use sign-in, sign-up, password reset, email verification, and user menu components with consistent styling and behavior across the Hospeda platform.
+`@repo/auth-ui` provides pre-built authentication UI components for React, built on top of Better Auth. It delivers ready-to-use sign-in, password reset, email verification, and user menu components with consistent styling and behavior across the Hospeda platform.
 
 ## Purpose
 
@@ -20,7 +20,6 @@ packages/auth-ui/
 │   ├── types.ts                 # Shared TypeScript interfaces
 │   ├── logger.ts                # Auth-specific logger
 │   ├── sign-in-form.tsx         # Email/password + OAuth sign-in
-│   ├── sign-up-form.tsx         # Registration form + OAuth
 │   ├── sign-out-button.tsx      # Sign-out button
 │   ├── forgot-password-form.tsx # Password reset request
 │   ├── reset-password-form.tsx  # New password form (token-based)

@@ -126,7 +126,7 @@ See [i18n documentation](../../../i18n/docs/guides/adding-translations.md) for d
 
 ## Hiding OAuth Buttons
 
-Both `SignInForm` and `SignUpForm` accept a `showOAuth` prop:
+`SignInForm` accepts a `showOAuth` prop:
 
 ```tsx
 <SignInForm
@@ -141,9 +141,9 @@ You can compose auth-ui components into custom flows:
 
 ```tsx
 import { useState } from 'react';
-import { SignInForm, SignUpForm, ForgotPasswordForm } from '@repo/auth-ui';
+import { SignInForm, ForgotPasswordForm } from '@repo/auth-ui';
 
-type AuthMode = 'signin' | 'signup' | 'forgot';
+type AuthMode = 'signin' | 'forgot';
 
 export function AuthFlow() {
   const [mode, setMode] = useState<AuthMode>('signin');
@@ -157,24 +157,7 @@ export function AuthFlow() {
             <button onClick={() => setMode('forgot')} className="text-cyan-600">
               Forgot password?
             </button>
-            <span className="mx-2">|</span>
-            <button onClick={() => setMode('signup')} className="text-cyan-600">
-              Create account
-            </button>
           </div>
-        </>
-      )}
-
-      {mode === 'signup' && (
-        <>
-          <SignUpForm
-            signUp={authClient.signUp}
-            signIn={authClient.signIn}
-            redirectTo="/onboarding"
-          />
-          <button onClick={() => setMode('signin')} className="mt-4 text-sm text-cyan-600">
-            Already have an account?
-          </button>
         </>
       )}
 
