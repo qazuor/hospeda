@@ -5,8 +5,16 @@
 
 import type { SupportedLocale } from './i18n';
 
-/** Locale the stored SEO overrides are authored in (the platform default). */
-const SEO_SOURCE_LOCALE: SupportedLocale = 'es';
+/**
+ * Locale the stored SEO overrides are authored in (the platform default).
+ *
+ * Exported since HOS-792: the host editor previews the value that will be
+ * published when a field is left empty, and that preview has to be computed
+ * for THIS locale regardless of which language the host is editing in — the
+ * override only ever applies here (see {@link pickLocalizedSeo}). Re-declaring
+ * `'es'` at the call site would be a second definition of the same fact.
+ */
+export const SEO_SOURCE_LOCALE: SupportedLocale = 'es';
 
 /**
  * Preposition (per locale) used to introduce a trailing city/location in an

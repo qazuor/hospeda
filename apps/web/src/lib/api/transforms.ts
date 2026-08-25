@@ -42,6 +42,7 @@ import {
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
+import { SEO_SOURCE_LOCALE } from '../seo';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -1875,6 +1876,24 @@ export function transformAccommodationEdit({
         minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
         seoTitle: String(seoObj?.title ?? ''),
         seoDescription: String(seoObj?.description ?? ''),
+        // The values the PUBLIC page falls back to when the overrides above are
+        // empty, computed with the public page's own rule so the editor cannot
+        // preview one thing and publish another (HOS-792).
+        //
+        // Two deliberate differences from `name`/`summary` a few lines up:
+        // those are the raw columns the host edits, while these resolve
+        // `nameI18n`/`summaryI18n` exactly as `transformAccommodationDetail`
+        // does. And the locale is pinned to `SEO_SOURCE_LOCALE`, not the UI
+        // locale — the override only applies on `es`, so that is the page whose
+        // fallback is being previewed even when the host edits in English.
+        seoTitleDefault: resolveI18nText(
+            (item.nameI18n as I18nTextLike | string) ?? item.name,
+            SEO_SOURCE_LOCALE
+        ).trim(),
+        seoDescriptionDefault: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+            SEO_SOURCE_LOCALE
+        ).trim(),
         videos,
         basePrice:
             priceObj?.price == null

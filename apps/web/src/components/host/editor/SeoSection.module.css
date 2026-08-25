@@ -69,10 +69,23 @@
     margin: var(--space-1, 0.25rem) 0 0;
 }
 
-.charCount {
+/*
+ * The value that gets published while the field is empty (HOS-792). Reads as a
+ * quote rather than as a hint: it is the host's own text being echoed back, so
+ * it is set apart with a rule and italics instead of blending into the grey
+ * hint line directly under it.
+ *
+ * The `used/total` readout that used to live here is gone — the field renders
+ * the shared `CharacterCounter` through `TextField` now, which is where the
+ * minimum-length readout lands (HOS-793) and where the warning threshold is
+ * already defined once.
+ */
+.defaultPreview {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
+    font-style: italic;
     color: var(--core-muted-foreground);
-    text-align: right;
+    border-left: 2px solid var(--border);
+    padding-left: var(--space-2, 0.5rem);
     margin: var(--space-1, 0.25rem) 0 0;
 }
