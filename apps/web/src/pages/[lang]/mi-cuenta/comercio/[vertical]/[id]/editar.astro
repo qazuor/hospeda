@@ -112,12 +112,7 @@ const destinationsLoadFailed = !destinationsResult.ok;
 // does not happen to it. Resolved through `isListingPublished` — the same
 // predicate that gates the slug-refresh opt-in inside the editor (HOS-784), so
 // the sentence above the form and the behaviour below it can never disagree.
-const listingIsPublished = isListingPublished({
-    lifecycleState: (detail as unknown as Record<string, unknown>).lifecycleState as
-        | string
-        | null
-        | undefined
-});
+const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycleState });
 
 const title = t('commerce.owner.list.edit', 'Editar');
 const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
