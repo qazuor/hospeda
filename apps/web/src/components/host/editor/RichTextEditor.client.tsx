@@ -217,10 +217,22 @@ export function RichTextEditor({
             className={`${styles.wrapper} ${hasError ? styles.wrapperError : ''} ${disabled ? styles.disabled : ''}`}
         >
             <Toolbar editor={editor} />
-            <EditorContent editor={editor} />
-            {placeholder && editor.isEmpty && (
-                <div className={styles.placeholderOverlay}>{placeholder}</div>
-            )}
+            {/*
+             * HOS-828: this wrapper exists ONLY to be the containing block for
+             * the absolutely-positioned placeholder overlay below. Without it
+             * the overlay resolves `top: 0 / left: 0` against whatever
+             * positioned ancestor the surrounding PAGE happens to provide —
+             * `.wrapper` itself declares no `position` — so the hint climbed
+             * out of the editor and was drawn on top of the field's own title
+             * (24px of overlap in the commerce editor). Do not flatten this
+             * div, and do not move the overlay out of it.
+             */}
+            <div className={styles.editorArea}>
+                <EditorContent editor={editor} />
+                {placeholder && editor.isEmpty && (
+                    <div className={styles.placeholderOverlay}>{placeholder}</div>
+                )}
+            </div>
             {hasError && errorMessage && (
                 <div
                     className={styles.errorMessage}

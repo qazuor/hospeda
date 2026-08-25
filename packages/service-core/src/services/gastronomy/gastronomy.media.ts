@@ -146,11 +146,26 @@ export async function addGastronomyMedia(
         // — the step that costs a Cloudinary asset. Registering the row was
         // never capped, so anything reaching this function directly with an
         // already-uploaded URL walked past the limit. Same `getGalleryCap`
-        // constant those routes read, and the same `state: 'visible'` filter
-        // `resolveVisibleGalleryCount` applies, reusing the count this function
-        // already fetched for `sortOrder` — no extra query.
+        // constant those routes read, and the same filter
+        // `resolveVisibleGalleryCount` applies: `state: 'visible'` AND
+        // `isFeatured: false` (HOS-791 — the featured image is not a gallery
+        // item and must not consume a gallery slot).
+        //
+        // This is a SECOND query rather than a reuse of `existing.total`:
+        // `existing` stays unfiltered because it also computes the next
+        // `sortOrder`, and skipping the featured row there would hand out a
+        // `sortOrder` already in use whenever that row holds the maximum.
+        const galleryCount = await mediaModel.count(
+            {
+                gastronomyId: validated.gastronomyId,
+                state: 'visible',
+                isFeatured: false,
+                deletedAt: null
+            },
+            { tx: ctx?.tx }
+        );
         const galleryCap = getGalleryCap('gastronomy');
-        if (existing.total >= galleryCap) {
+        if (galleryCount >= galleryCap) {
             return {
                 error: {
                     code: ServiceErrorCode.QUOTA_EXCEEDED,

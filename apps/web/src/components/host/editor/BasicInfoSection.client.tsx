@@ -4,6 +4,8 @@
  * description, type, and destination. Uses native HTML form elements.
  */
 
+import { LockIcon } from '@repo/icons';
+import { CharacterCounter } from '@/components/ui/CharacterCounter';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
@@ -33,6 +35,26 @@ const DESCRIPTION_FIELD = {
 } as const;
 
 const DESCRIPTION_ID = buildFieldId(DESCRIPTION_FIELD);
+const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
+
+/**
+ * Id of the plan notice shown in place of the formatting toolbar. Referenced
+ * from the textarea's `aria-describedby` so a screen-reader user learns WHY
+ * there is no toolbar on focus, rather than only on encountering the notice.
+ */
+const DESCRIPTION_FORMAT_UPSELL_ID = `${DESCRIPTION_ID}-format-upsell`;
+
+/**
+ * Field length limits. Same three fields the publish mini form edits, so the
+ * numbers must match it — a host who fills `name` in one screen and edits it in
+ * the other cannot be told two different maximums.
+ */
+const NAME_MIN_LENGTH = 3;
+const NAME_MAX_LENGTH = 100;
+const SUMMARY_MIN_LENGTH = 10;
+const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MIN_LENGTH = 30;
+const DESCRIPTION_MAX_LENGTH = 2000;
 
 /** Props for BasicInfoSection. */
 export interface BasicInfoSectionProps {
@@ -47,6 +69,9 @@ export interface BasicInfoSectionProps {
         destinationId?: string;
     }>;
     readonly onFieldChange: (field: keyof AccommodationEditData, value: string) => void;
+    readonly shouldOfferSlugRefresh?: boolean;
+    readonly refreshSlugFromName?: boolean;
+    readonly onRefreshSlugFromNameChange?: (value: boolean) => void;
 }
 
 /**
@@ -58,7 +83,10 @@ export function BasicInfoSection({
     data,
     destinations,
     errors,
-    onFieldChange
+    onFieldChange,
+    shouldOfferSlugRefresh = false,
+    refreshSlugFromName = false,
+    onRefreshSlugFromNameChange
 }: BasicInfoSectionProps) {
     const { t } = createTranslations(locale);
 
@@ -80,8 +108,40 @@ export function BasicInfoSection({
                     value={data.name}
                     onChange={(e) => onFieldChange('name', e.target.value)}
                     required
-                    maxLength={100}
+                    maxLength={NAME_MAX_LENGTH}
+                    counter={{ locale, min: NAME_MIN_LENGTH, testId: 'name-char-counter' }}
                 />
+                {shouldOfferSlugRefresh ? (
+                    <div className={styles.slugNotice}>
+                        <p className={styles.fieldHint}>
+                            {t(
+                                'host.properties.editor.slugRefresh.notice',
+                                'Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
+                            )}
+                        </p>
+                        <p className={styles.fieldHint}>
+                            {t(
+                                'host.properties.editor.slugRefresh.warning',
+                                'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                            )}
+                        </p>
+                        <label className={styles.slugCheckbox}>
+                            <input
+                                type="checkbox"
+                                checked={refreshSlugFromName}
+                                onChange={(event) =>
+                                    onRefreshSlugFromNameChange?.(event.target.checked)
+                                }
+                            />
+                            <span>
+                                {t(
+                                    'host.properties.editor.slugRefresh.checkbox',
+                                    'Cambiar igual la dirección web para que siga este nuevo nombre'
+                                )}
+                            </span>
+                        </label>
+                    </div>
+                ) : null}
             </div>
 
             <div className={styles.field}>
@@ -89,15 +149,16 @@ export function BasicInfoSection({
                     as="textarea"
                     prefix={ACCOMMODATION_FIELD_PREFIX}
                     name="summary"
-                    label={`${t('host.properties.editor.field.summary', 'Resumen')} *`}
+                    label={`${t('host.properties.editor.field.summary', 'Descripción corta')} *`}
                     labelClassName={styles.fieldLabel}
                     className={styles.fieldInput}
                     error={errors.summary}
                     value={data.summary}
                     onChange={(e) => onFieldChange('summary', e.target.value)}
                     required
-                    maxLength={300}
+                    maxLength={SUMMARY_MAX_LENGTH}
                     rows={3}
+                    counter={{ locale, min: SUMMARY_MIN_LENGTH, testId: 'summary-char-counter' }}
                 />
                 <PlanEntitlementGate
                     entitlementKey="ai_text_improve"
@@ -133,36 +194,61 @@ export function BasicInfoSection({
                     locale={locale}
                     fallback={
                         <>
+                            {/*
+                             * Sits ABOVE the textarea, in the slot the rich
+                             * editor's formatting toolbar occupies (HOS-800).
+                             * Below it, the notice ended up one element away
+                             * from the AI-improve trigger and was read as
+                             * gating that button — the product owner concluded
+                             * the AI feature was plan-restricted while using
+                             * it. Placement, the boxed treatment and copy that
+                             * leads with the capability instead of the upgrade
+                             * verb all serve the same end: this announces a
+                             * missing toolbar, not a locked button.
+                             */}
+                            <div className={styles.formatUpsell}>
+                                <LockIcon
+                                    className={styles.formatUpsellIcon}
+                                    aria-hidden="true"
+                                />
+                                <p
+                                    id={DESCRIPTION_FORMAT_UPSELL_ID}
+                                    className={styles.formatUpsellText}
+                                >
+                                    {t(
+                                        'host.properties.editor.entitlement.richDescriptionHint',
+                                        'Texto con formato: negritas, listas y más. Disponible en planes superiores.'
+                                    )}{' '}
+                                    <a href={buildUrl({ locale, path: 'suscriptores/planes' })}>
+                                        {t(
+                                            'host.properties.editor.entitlement.upgradeLink',
+                                            'Mejorar plan'
+                                        )}
+                                    </a>
+                                </p>
+                            </div>
                             <textarea
                                 id={DESCRIPTION_ID}
                                 className={styles.fieldInput}
                                 value={data.description}
                                 onChange={(e) => onFieldChange('description', e.target.value)}
                                 rows={6}
-                                maxLength={2000}
+                                maxLength={DESCRIPTION_MAX_LENGTH}
                                 placeholder={t(
                                     'host.properties.editor.richText.placeholder',
                                     'Describí tu propiedad con detalle...'
                                 )}
                                 aria-invalid={Boolean(errors.description)}
-                                aria-describedby={
+                                aria-describedby={[
                                     errors.description
                                         ? buildFieldErrorId(DESCRIPTION_FIELD)
-                                        : undefined
-                                }
+                                        : null,
+                                    DESCRIPTION_COUNTER_ID,
+                                    DESCRIPTION_FORMAT_UPSELL_ID
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')}
                             />
-                            <p className={styles.fieldHint}>
-                                {t(
-                                    'host.properties.editor.entitlement.richDescriptionHint',
-                                    'Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).'
-                                )}{' '}
-                                <a href={buildUrl({ locale, path: 'suscriptores/planes' })}>
-                                    {t(
-                                        'host.properties.editor.entitlement.upgradeLink',
-                                        'Mejorar plan'
-                                    )}
-                                </a>
-                            </p>
                         </>
                     }
                 >
@@ -178,6 +264,14 @@ export function BasicInfoSection({
                         errorMessage={errors.description}
                     />
                 </PlanEntitlementGate>
+                <CharacterCounter
+                    id={DESCRIPTION_COUNTER_ID}
+                    locale={locale}
+                    current={data.description.length}
+                    min={DESCRIPTION_MIN_LENGTH}
+                    max={DESCRIPTION_MAX_LENGTH}
+                    testId="description-char-counter"
+                />
                 <FieldError
                     id={buildFieldErrorId(DESCRIPTION_FIELD)}
                     message={errors.description}

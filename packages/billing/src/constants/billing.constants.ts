@@ -34,8 +34,9 @@ export const COMPLEX_TRIAL_DAYS = 14;
 export const TOURIST_TRIAL_DAYS = 30;
 
 /**
- * Trial period for the sellable per-vertical commerce plans (gastronomy-premium
- * / experience-premium, HOS-688).
+ * Trial period for the sellable per-vertical commerce plans (gastronomy-basico
+ * / experience-basico since HOS-818; gastronomy-premium / experience-premium
+ * before it, HOS-688).
  *
  * Owner decision (HOS-590, 2026-08-19): commerce gets the SAME 30 days as every
  * accommodation-side tier (`OWNER_TRIAL_DAYS` / `TOURIST_TRIAL_DAYS`) — OQ-4 was

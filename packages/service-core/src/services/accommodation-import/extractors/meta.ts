@@ -14,6 +14,8 @@
  * - **{@link stripHtmlToText}** — Strips scripts, styles, and all HTML tags
  *   from raw HTML, collapses whitespace, and truncates to a caller-specified
  *   character limit.  Used by the AI Strategy-B fallback extractor.
+ *   Re-exported from `./html-text.js` since HOS-799, where it lives beside the
+ *   structure-preserving `stripHtmlToParagraphText`.
  *
  * @module services/accommodation-import/extractors/meta
  */
@@ -298,95 +300,12 @@ export function extractOpenGraph(input: { readonly html: string }): OgResult {
 }
 
 // ---------------------------------------------------------------------------
-// stripHtmlToText
+// Re-exports
 // ---------------------------------------------------------------------------
 
 /**
- * Regex to match `<script>` and `<style>` elements (including their content).
- * Using `[\s\S]*?` to avoid greedy catastrophic backtracking.
+ * Re-exported from `./html-text.js`, where it now lives alongside its
+ * structure-preserving sibling {@link stripHtmlToParagraphText} (HOS-799).
+ * Kept exported here so existing importers of this module are unaffected.
  */
-const SCRIPT_STYLE_RE = /<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi;
-
-/**
- * Regex to strip all remaining HTML tags after scripts/styles are removed.
- */
-const HTML_TAG_RE = /<[^>]{0,5000}>/g;
-
-/**
- * Regex to collapse any run of whitespace (spaces, tabs, newlines) into a
- * single space.
- */
-const WHITESPACE_RE = /\s+/g;
-
-/**
- * Converts raw HTML to a plain-text string suitable for AI-assisted
- * extraction (Strategy-B fallback in SPEC-222).
- *
- * **Processing steps:**
- * 1. Remove all `<script>` and `<style>` blocks (including their content).
- * 2. Strip all remaining HTML tags.
- * 3. Decode a small set of common HTML entities (`&amp;`, `&lt;`, `&gt;`,
- *    `&quot;`, `&#39;`, `&nbsp;`).
- * 4. Collapse runs of whitespace (spaces, newlines, tabs) into a single space.
- * 5. Trim leading/trailing whitespace.
- * 6. Truncate to `maxChars` characters.
- *
- * This function never throws.  An empty or whitespace-only input returns an
- * empty string.
- *
- * @param input - Object containing the raw HTML and the character limit.
- * @returns Plain-text representation of the page content, truncated to
- *   `maxChars`.
- *
- * @example
- * ```ts
- * const text = stripHtmlToText({ html: pageHtml, maxChars: 4000 });
- * // text is now suitable for sending to an AI model
- * ```
- */
-export function stripHtmlToText(input: {
-    readonly html: string;
-    readonly maxChars: number;
-}): string {
-    const { html, maxChars } = input;
-
-    if (html.length === 0) {
-        return '';
-    }
-
-    // Step 1 — remove script and style blocks.
-    SCRIPT_STYLE_RE.lastIndex = 0;
-    let text = html.replace(SCRIPT_STYLE_RE, ' ');
-
-    // Step 2 — strip remaining HTML tags.
-    HTML_TAG_RE.lastIndex = 0;
-    text = text.replace(HTML_TAG_RE, ' ');
-
-    // Step 3 — decode common HTML entities in a single pass so that a sequence
-    // like "&amp;lt;" is decoded to "&lt;" (one level) rather than to "<"
-    // (double-decode).  A chained replace with &amp; first would convert
-    // "&amp;lt;" → "&lt;" → "<", which is incorrect (CodeQL double-unescape fix).
-    text = text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (entity) => {
-        switch (entity) {
-            case '&lt;':
-                return '<';
-            case '&gt;':
-                return '>';
-            case '&quot;':
-                return '"';
-            case '&#39;':
-                return "'";
-            case '&nbsp;':
-                return ' ';
-            default:
-                return '&'; // &amp;
-        }
-    });
-
-    // Step 4 & 5 — collapse whitespace and trim.
-    WHITESPACE_RE.lastIndex = 0;
-    text = text.replace(WHITESPACE_RE, ' ').trim();
-
-    // Step 6 — truncate.
-    return text.length <= maxChars ? text : text.slice(0, maxChars);
-}
+export { stripHtmlToText } from './html-text.js';

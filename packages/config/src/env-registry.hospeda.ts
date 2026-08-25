@@ -543,7 +543,7 @@ export const HOSPEDA_ENV_VARS = [
         required: false,
         secret: false,
         defaultValue: '',
-        exampleValue: 'gastronomy:gastronomy-premium,experience:experience-premium',
+        exampleValue: 'gastronomy:gastronomy-basico,experience:experience-basico',
         apps: ['api'],
         category: 'billing',
         howToObtain:

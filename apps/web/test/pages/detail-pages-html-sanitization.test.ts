@@ -75,54 +75,71 @@ describe('detail pages — HTML sanitization (XSS regression)', () => {
     describe('alojamientos/[slug].astro', () => {
         const src = readPage('alojamientos/[slug].astro');
 
-        it('imports renderPlain from the new helper module (FR-2)', () => {
+        /**
+         * HOS-817 SUPERSEDES SPEC-187 FR-2 FOR THIS PAGE.
+         *
+         * FR-2 made `accommodation.description` a PLAIN-TEXT sink (`renderPlain`,
+         * escape-only) back when the admin config had reverted the field from
+         * RICH_TEXT to TEXTAREA. That premise no longer holds: the host editor
+         * binds its `<RichTextEditor>` to `data.description` for owners holding
+         * `CAN_USE_RICH_DESCRIPTION`, so the field legitimately carries markdown
+         * and the escape-only sink published literal `**asterisks**` on a paid
+         * feature.
+         *
+         * The XSS guarantee FR-2 was protecting is NOT relaxed — it moves from
+         * "escape everything" to "sanitize everything" via the same
+         * `renderContent` pipeline (`marked` -> `sanitizeHtml`) the other detail
+         * pages already use. The payload-level proof lives in
+         * `test/pages/accommodation-description-markdown.test.ts`, which executes
+         * that pipeline against `<script>`, `onerror=`, `javascript:` and friends.
+         *
+         * The entitlement is enforced upstream at WRITE time by
+         * `gateRichDescription` (apps/api/src/middlewares/accommodation-entitlements.ts),
+         * so the page needs no entitlement check — and must keep having none.
+         */
+        it('routes accommodation.description through the sanitizing markdown pipeline (HOS-817)', () => {
             expect(src).toMatch(
-                /import\s*\{\s*renderPlain\s*\}\s*from\s*['"]@\/lib\/render-plain['"]/
+                /import\s*\{\s*renderContent\s+as\s+renderRich\s*\}\s*from\s*['"]@\/lib\/render-content['"]/
+            );
+            expect(src).toMatch(
+                /const\s+safeDescriptionHtml\s*=\s*accommodation\.description[\s\S]{0,120}?renderRich\(\{/
             );
         });
 
-        it('builds safeDescriptionText via renderPlain for the description field (FR-2)', () => {
-            // The plain-text path replaces the previous renderContent call.
-            // Variable name may differ but the helper call must use the description
-            // field as input.
-            expect(src).toMatch(/renderPlain\(\{[^}]*raw:\s*accommodation\.description/);
+        it('passes the sanitized HTML to Description as descriptionHtml (HOS-817)', () => {
+            expect(src).toMatch(/descriptionHtml=\{safeDescriptionHtml\}/);
         });
 
-        it('passes the escaped text to Description as descriptionText', () => {
-            expect(src).toMatch(/descriptionText=\{safeDescriptionText\}/);
-        });
-
-        it('does NOT route accommodation.description through renderContent or marked (FR-2)', () => {
-            // Negative test — the entire point of the FR-2 flip. The page must
-            // never pipe the raw description into the markdown pipeline; it goes
-            // through renderPlain (text sink) instead.
-            expect(src).not.toMatch(/renderContent\(\{[^}]*raw:\s*accommodation\.description/);
-            expect(src).not.toMatch(/marked\.parse\([^)]*accommodation\.description/);
+        it('never pipes the raw description field straight into set:html', () => {
+            // The one shape that would actually be a stored-XSS hole: the raw API
+            // field reaching the DOM without passing the sanitizer first.
+            expect(src).not.toMatch(/set:html=\{\s*accommodation\.description/);
+            expect(src).not.toMatch(/set:html=\{\s*accommodation\.richDescription/);
+            expect(src).not.toMatch(/marked\.parse\(/);
         });
     });
 
-    describe('Description.astro (accommodation) — FR-2 plain-text sink', () => {
+    describe('Description.astro (accommodation) — HOS-817 sanitized-HTML sink', () => {
         const descSrc = readFileSync(
             resolve(__dirname, '../../src/components/accommodation/Description.astro'),
             'utf8'
         );
 
-        it('accepts a descriptionText prop (escaped text, not sanitized HTML)', () => {
-            expect(descSrc).toMatch(/descriptionText:\s*string/);
-            // PD-6 invariant: the description is plain text, never raw, never HTML.
-            expect(descSrc).not.toMatch(/descriptionHtml:\s*string/);
-            expect(descSrc).not.toMatch(/description:\s*string/);
+        it('accepts a descriptionHtml prop and no longer a plain-text one', () => {
+            expect(descSrc).toMatch(/descriptionHtml:\s*string/);
+            expect(descSrc).not.toMatch(/readonly\s+descriptionText\s*:/);
         });
 
-        it('renders the escaped text via text interpolation, not set:html (PD-6)', () => {
-            // The output of renderPlain is plain text. It MUST be interpolated as
-            // a text child, never piped into set:html. set:html would re-parse
-            // the escaped entities as HTML and a future migration to a markdown
-            // sink would silently re-introduce XSS.
-            expect(descSrc).not.toMatch(/set:html=\{descriptionText\}/);
-            expect(descSrc).not.toMatch(/set:html=\{descriptionHtml\}/);
-            // The text is interpolated directly — assert the interpolation is present.
-            expect(descSrc).toMatch(/\{descriptionText\}/);
+        it('renders the body via set:html bound to the sanitized prop only', () => {
+            expect(descSrc).toMatch(/set:html=\{descriptionHtml\}/);
+            // Nothing else may reach set:html in this component. Counts real
+            // BINDINGS (`set:html={`) rather than the token, which also appears
+            // in this component's security JSDoc.
+            expect(descSrc.match(/set:html=\{/g) ?? []).toHaveLength(1);
+        });
+
+        it('keeps summary an auto-escaped text child (no write-time gate strips it)', () => {
+            expect(descSrc).toMatch(/<p>\{summary\}<\/p>/);
         });
     });
 

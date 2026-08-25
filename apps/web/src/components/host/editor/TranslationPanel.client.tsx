@@ -31,23 +31,27 @@
  * that from automatic to one deliberate click is where this change stops; warning
  * the host before it happens needs the editor's dirty state and is tracked
  * separately.
+ *
+ * HOS-797 — the cards show the translated TEXT, not just which locales have one.
+ * That half lives in `TranslationFieldRow.client.tsx`; this file is the run, the
+ * buttons and the messages around it. Showing is the whole delivery: the panel
+ * stays read-only by owner decision, and editing a translation is a later one.
  */
 
 import { useCallback, useState } from 'react';
-import type { AccommodationTranslationData, TranslatableFieldStatus } from '@/lib/api/types';
+import type { AccommodationTranslationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { TranslationFieldRow } from './TranslationFieldRow.client';
 import styles from './TranslationPanel.module.css';
-import type { FieldOutcome, GenerationOutcomes, TranslationResultItem } from './translation-status';
+import type { GenerationOutcomes, TranslationResultItem } from './translation-status';
 import {
     anyFieldFailed,
     anyFieldUntouched,
     anyTranslationPersisted,
     applyRunToTranslations,
     fieldsWithMissingTranslations,
-    hasSourceContent,
     pendingOutcomes,
-    SUPPORTED_LOCALES,
     summarizeOutcomes
 } from './translation-status';
 
@@ -61,13 +65,6 @@ export interface TranslationPanelProps {
     readonly accommodationId: string;
     readonly translations: AccommodationTranslationData;
 }
-
-/** Human-readable label for each locale. */
-const LOCALE_LABELS: Record<SupportedLocale, string> = {
-    es: 'ES',
-    en: 'EN',
-    pt: 'PT'
-};
 
 /**
  * The locale the accommodation's content is authored in — always Spanish.
@@ -89,177 +86,6 @@ const CONTENT_SOURCE_LOCALE: SupportedLocale = 'es';
 /** Shape of the translate endpoint's `data` payload. */
 interface TranslateResponse {
     readonly translations?: readonly TranslationResultItem[];
-}
-
-// ---------------------------------------------------------------------------
-// Sub-component: FieldRow
-// ---------------------------------------------------------------------------
-
-interface FieldRowProps {
-    readonly status: TranslatableFieldStatus;
-    readonly sourceLocale: SupportedLocale;
-    readonly fieldLabel: string;
-    readonly outcome?: FieldOutcome;
-    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
-}
-
-/**
- * Renders a single field card: locale presence badges, plus this field's state
- * during and after a generation run.
- */
-function FieldRow({ status, sourceLocale, fieldLabel, outcome, t }: FieldRowProps) {
-    const sourced = hasSourceContent({ status, sourceLocale });
-
-    return (
-        <div className={styles.fieldCard}>
-            <div className={styles.fieldName}>{fieldLabel}</div>
-            <div className={styles.locales}>
-                {SUPPORTED_LOCALES.map((locale) => {
-                    const isSource = locale === sourceLocale;
-                    // Trimmed, to agree with `missingLocalesFor`. Reading it
-                    // raw made a whitespace-only value render a green check on
-                    // the same card whose run counts that locale as missing.
-                    const hasContent = (status.locales[locale] ?? '').trim().length > 0;
-
-                    let badgeClass = styles.localeBadgeMissing;
-                    if (isSource) {
-                        badgeClass = styles.localeBadgeSource;
-                    } else if (hasContent) {
-                        badgeClass = styles.localeBadgePresent;
-                    }
-
-                    return (
-                        <span
-                            key={locale}
-                            className={`${styles.localeBadge} ${badgeClass}`}
-                        >
-                            {isSource ? (
-                                /* Source locale: pencil icon */
-                                <svg
-                                    className={styles.localeIcon}
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.609Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            ) : hasContent ? (
-                                /* Present: check icon */
-                                <svg
-                                    className={styles.localeIcon}
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            ) : (
-                                /* Missing: dash icon */
-                                <svg
-                                    className={styles.localeIcon}
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    aria-hidden="true"
-                                    focusable="false"
-                                >
-                                    <path
-                                        d="M2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            )}
-                            {LOCALE_LABELS[locale]}
-                        </span>
-                    );
-                })}
-            </div>
-            <FieldNote
-                sourced={sourced}
-                outcome={outcome}
-                t={t}
-            />
-        </div>
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Sub-component: FieldNote
-// ---------------------------------------------------------------------------
-
-interface FieldNoteProps {
-    readonly sourced: boolean;
-    readonly outcome?: FieldOutcome;
-    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
-}
-
-/**
- * The per-field line under the badges: run state while a generation is in
- * flight or just finished, otherwise an explanation for a field that has no
- * source text to translate from.
- */
-function FieldNote({ sourced, outcome, t }: FieldNoteProps) {
-    if (outcome) {
-        if (outcome.status === 'pending') {
-            return (
-                <p className={styles.fieldNote}>
-                    {t('host.properties.editor.translation.fieldPending', 'Generando...')}
-                </p>
-            );
-        }
-        if (outcome.status === 'translated') {
-            return (
-                <p className={`${styles.fieldNote} ${styles.fieldNoteSuccess}`}>
-                    {t('host.properties.editor.translation.fieldTranslated', 'Traducido')}
-                </p>
-            );
-        }
-        if (outcome.status === 'failed') {
-            // `failedLocales` can be empty even here: a locale the client cannot
-            // name is dropped from the list but never cancels the failure itself.
-            // Naming no locale beats rendering "... a " with nothing after it.
-            const named = outcome.failedLocales.map((locale) => LOCALE_LABELS[locale]).join(', ');
-            return (
-                <p className={`${styles.fieldNote} ${styles.fieldNoteError}`}>
-                    {named
-                        ? t(
-                              'host.properties.editor.translation.fieldFailed',
-                              'No se pudo traducir a {{locales}}',
-                              { locales: named }
-                          )
-                        : t(
-                              'host.properties.editor.translation.fieldFailedUnknown',
-                              'No se pudo traducir este campo'
-                          )}
-                </p>
-            );
-        }
-        return (
-            <p className={styles.fieldNote}>
-                {t('host.properties.editor.translation.fieldUntouched', 'Sin cambios')}
-            </p>
-        );
-    }
-
-    if (!sourced) {
-        return (
-            <p className={styles.fieldNote}>
-                {t(
-                    'host.properties.editor.translation.fieldNoSource',
-                    'Sin contenido para traducir'
-                )}
-            </p>
-        );
-    }
-
-    return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -413,7 +239,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                 // them already filled — someone else filled them between the page
                 // render and this click. That is not a failure, so it does not go
                 // through the error channel; it goes where the success message
-                // goes, and it sets `staleUnderPanel` because the DB is now AHEAD
+                // goes, and it sets `mayBeStale` because the DB is now AHEAD
                 // of the frozen prop. That is the one case where reloading is the
                 // only remedy, and gating the refresh on `hasPersistedAnything`
                 // alone withheld it precisely there.
@@ -453,14 +279,16 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      * Whether a reload could show the host something the panel cannot.
      *
      * Two independent reasons, and the second is why this is not just the sticky
-     * write flag. `hasPersistedAnything` covers a run that wrote: the fold already
-     * renders the presence a reload would reveal, but only presence — the actual
-     * translated text lives only in the DB. `staleUnderPanel` covers the opposite
-     * case, a run that wrote NOTHING because everything was already filled by
-     * someone else; there the DB is ahead of the frozen prop and a reload is the
-     * only remedy. Gating on the write flag alone withheld the button in exactly
-     * that case, leaving the host with dashes, a message saying there was nothing
-     * to do, and no way to reconcile the two.
+     * write flag. `hasPersistedAnything` covers a run that wrote: since HOS-797 the
+     * fold renders the text the run returned, so a reload mainly re-reads it from
+     * the DB — which still matters, because a reported success is the provider's
+     * and not the database's, and because a locale that came back without text
+     * shows as unreadable until then. `mayBeStale` covers the opposite case, a run
+     * that wrote NOTHING because everything was already filled by someone else;
+     * there the DB is ahead of the frozen prop and a reload is the only remedy.
+     * Gating on the write flag alone withheld the button in exactly that case,
+     * leaving the host with dashes, a message saying there was nothing to do, and
+     * no way to reconcile the two.
      *
      * Hidden during a run, because a refresh mid-flight would abandon it. Note
      * what this button costs: it reloads the page, and the editor form around this
@@ -492,27 +320,35 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                 nothing, and it is not the whole feature — the notes also do not
                 carry their field's name, so "Traducido" arrives without saying
                 what was translated. Both are tracked as follow-ups; neither is
-                claimed to work here. */}
+                claimed to work here.
+
+                HOS-797 put the translated text inside this same region, and it
+                stays inside deliberately. A live region announces what CHANGED,
+                and React only mutates the nodes a run actually filled — so what
+                reaches a screen reader is the new text and nothing else, which
+                is the result itself rather than a claim about it. Suppressing it
+                would tell a screen-reader user "Traducido" and withhold the one
+                thing they would need in order to disagree. */}
             <div
                 className={styles.grid}
                 aria-live="polite"
                 aria-busy={isGenerating}
             >
-                <FieldRow
+                <TranslationFieldRow
                     status={effectiveTranslations.name}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
                     fieldLabel={t('host.properties.editor.field.name', 'Nombre')}
                     outcome={outcomes?.name}
                     t={t}
                 />
-                <FieldRow
+                <TranslationFieldRow
                     status={effectiveTranslations.summary}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
                     fieldLabel={t('host.properties.editor.field.summary', 'Resumen')}
                     outcome={outcomes?.summary}
                     t={t}
                 />
-                <FieldRow
+                <TranslationFieldRow
                     status={effectiveTranslations.description}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
                     fieldLabel={t('host.properties.editor.field.description', 'Descripción')}
@@ -524,7 +360,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                     that can never fill in is what kept the generate button alive
                     forever. */}
                 {effectiveTranslations.richDescription !== null && (
-                    <FieldRow
+                    <TranslationFieldRow
                         status={effectiveTranslations.richDescription}
                         sourceLocale={CONTENT_SOURCE_LOCALE}
                         fieldLabel={t(

@@ -40,8 +40,17 @@ const ownerActor = {
 
 /**
  * Minimal Drizzle stub for `AccommodationMediaModel.findAll` — which issues the
- * paginated row select and a count select in parallel — plus the `insert` that
- * `create` performs. `visibleCount` drives the count query, which is what the
+ * paginated row select and a count select in parallel — plus `count()` (a third
+ * query since HOS-791, which measures the cap on the gallery alone) and the
+ * `insert` that `create` performs.
+ *
+ * NOTE this stub answers every projected select with the same `visibleCount`
+ * regardless of the `where` it was given, so it is structurally BLIND to the
+ * `isFeatured: false` filter — it can assert that the cap fires, never that the
+ * cap counted the right rows. That filter is pinned instead by
+ * `apps/api/test/services/photo-limit-gallery-only.guard.test.ts`; the
+ * gastronomy and experience twins, which mock at the model level, assert it
+ * behaviourally. `visibleCount` drives the count query, which is what the
  * cap reads.
  */
 function makeMediaDbMock({ visibleCount }: { readonly visibleCount: number }) {

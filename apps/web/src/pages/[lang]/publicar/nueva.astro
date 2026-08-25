@@ -3,8 +3,9 @@
  * @file publicar/nueva.astro
  * @description New property creation page. Mounts the CreatePropertyMiniForm
  * island so authenticated hosts can spin up a draft accommodation with the
- * minimum required fields. After the draft is created the host is redirected
- * to the admin panel edit page to complete the rest of the listing.
+ * minimum required fields. After the draft is created the island sends the
+ * host into that listing's editor under `/mi-cuenta/propiedades/{id}/editar/`
+ * to complete the rest of the listing (HOS-801).
  *
  * Auth protection: middleware does NOT auto-protect /publicar/* (it's not in
  * PROTECTED_SEGMENTS), so this page does its own in-page auth guard, same
@@ -32,7 +33,6 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
-import { getAdminUrlOrThrow, getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
@@ -64,30 +64,7 @@ const pageDescription = t(
 
 // Public env vars are safe to send to the client island.
 const apiUrl = import.meta.env.PUBLIC_API_URL as string;
-const adminUrl = getAdminUrlOrThrow();
-
 const cookieHeader = Astro.request.headers.get('cookie');
-
-// Resolve admin panel access server-side so the form can branch the
-// post-create redirect: HOST users without `access.panelAdmin` would
-// otherwise land on /auth/forbidden after being sent to /admin/*.
-let canAccessAdminPanel = false;
-try {
-    if (cookieHeader) {
-        const meResponse = await fetch(`${getApiUrl()}/api/v1/public/auth/me`, {
-            headers: { cookie: cookieHeader }
-        });
-        if (meResponse.ok) {
-            const json = (await meResponse.json()) as {
-                data?: { actor?: { permissions?: ReadonlyArray<string> } };
-            };
-            const permissions = json.data?.actor?.permissions ?? [];
-            canAccessAdminPanel = permissions.includes('access.panelAdmin');
-        }
-    }
-} catch (error) {
-    logger.warn('publicar/nueva: failed to resolve admin panel access', { error });
-}
 
 // BETA-197: precheck the onboarding decision BEFORE rendering the form.
 // Fails OPEN to 'create_direct' on any error — POST /host-onboarding/start
@@ -216,9 +193,6 @@ const trialDays = showForm ? await resolveGenericOwnerTrialDays() : 0;
                     client:load
                     locale={locale}
                     apiUrl={apiUrl}
-                    adminUrl={adminUrl}
-                    accountPropertiesUrl={accountPropertiesUrl}
-                    canAccessAdminPanel={canAccessAdminPanel}
                     trialDays={trialDays}
                 />
             ) : (

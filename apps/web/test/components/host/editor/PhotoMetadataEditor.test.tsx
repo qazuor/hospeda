@@ -75,6 +75,18 @@ describe('PhotoMetadataEditor', () => {
         expect(screen.getByLabelText('¿Qué muestra la foto?')).toBeInTheDocument();
     });
 
+    it('uses the floating wide-panel classes in compact gallery layout', () => {
+        render(<PhotoMetadataEditor {...makeProps({ compactLayout: true })} />);
+        openPanel();
+
+        // Once open, the toggle's aria-label switches to the "close" variant.
+        expect(screen.getByLabelText('Cerrar edición de textos de la foto 1').className).toContain(
+            'metadataToggleCompact'
+        );
+        const panel = screen.getByLabelText('¿Qué muestra la foto?').closest('form');
+        expect(panel?.className).toContain('metadataPanelFloating');
+    });
+
     it('disables the toggle when disabled is true', () => {
         render(<PhotoMetadataEditor {...makeProps({ disabled: true })} />);
         expect(screen.getByLabelText('Editar textos de la foto 1')).toBeDisabled();

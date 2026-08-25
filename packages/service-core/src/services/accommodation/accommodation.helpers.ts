@@ -106,16 +106,25 @@ const ACCOMMODATION_SLUG_MAX_LENGTH = 50;
  *
  * @param type The type of the accommodation (e.g., "hotel", "apartment").
  * @param name The name of the accommodation.
+ * @param currentAccommodationId - Optional accommodation id to exclude from the
+ * uniqueness check while regenerating a slug for an existing draft.
  * @returns A promise that resolves to a unique slug string.
  */
-export async function generateSlug(type: string, name: string): Promise<string> {
+export async function generateSlug(
+    type: string,
+    name: string,
+    currentAccommodationId?: string
+): Promise<string> {
     const baseString = `${type} ${name}`;
     const model = new AccommodationModel();
     return createUniqueSlug(
         baseString,
         async (slug) => {
             const exists = await model.findOne({ slug });
-            return !!exists;
+            return (
+                !!exists &&
+                (currentAccommodationId === undefined || exists.id !== currentAccommodationId)
+            );
         },
         ACCOMMODATION_SLUG_MAX_LENGTH
     );

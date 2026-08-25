@@ -1846,8 +1846,8 @@
         },
         "openingHours": {
             "shift": {
-                "closeBeforeOpen": "La hora de cierre no puede ser anterior a la hora de apertura",
-                "invalidTime": "El formato de hora no es válido"
+                "invalidTime": "The time format is not valid",
+                "sameOpenAndClose": "The closing time cannot be the same as the opening time"
             }
         },
         "options": {
@@ -1895,17 +1895,17 @@
         },
         "seo": {
             "description": {
-                "max": "La descripción no puede superar los {{max}} caracteres",
-                "min": "La descripción debe tener al menos {{min}} caracteres",
-                "required": "La descripción es obligatoria"
+                "max": "The description cannot exceed {{max}} characters",
+                "min": "The description must be at least {{min}} characters, or leave it empty to use the default",
+                "required": "The description is required"
             },
             "keywords": {
-                "required": "El palabras clave es obligatorio"
+                "required": "Keywords are required"
             },
             "title": {
-                "max": "El título no puede superar los {{max}} caracteres",
-                "min": "El título debe tener al menos {{min}} caracteres",
-                "required": "El título es obligatorio"
+                "max": "The title cannot exceed {{max}} characters",
+                "min": "The title must be at least {{min}} characters, or leave it empty to use the default",
+                "required": "The title is required"
             }
         },
         "slug": {

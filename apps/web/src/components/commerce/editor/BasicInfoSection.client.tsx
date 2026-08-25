@@ -17,6 +17,7 @@ import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import { resolveCommerceTypeLabel } from '@/lib/commerce-type-labels';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -67,6 +68,7 @@ export interface BasicInfoSectionProps {
         description?: string;
     }>;
     readonly onFieldChange: CommerceFieldChange;
+    readonly shouldOfferSlugRefresh?: boolean;
 }
 
 export function BasicInfoSection({
@@ -76,7 +78,8 @@ export function BasicInfoSection({
     destinations,
     destinationsLoadFailed,
     errors,
-    onFieldChange
+    onFieldChange,
+    shouldOfferSlugRefresh = false
 }: BasicInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
     const typeOptions =
@@ -102,6 +105,37 @@ export function BasicInfoSection({
                         onFieldChange('name', event.target.value);
                     }}
                 />
+                {shouldOfferSlugRefresh ? (
+                    <div>
+                        <p className={styles.hint}>
+                            {t(
+                                'commerce.owner.editor.slugRefresh.notice',
+                                'Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
+                            )}
+                        </p>
+                        <p className={styles.hint}>
+                            {t(
+                                'commerce.owner.editor.slugRefresh.warning',
+                                'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                            )}
+                        </p>
+                        <label className={styles.checkbox}>
+                            <input
+                                type="checkbox"
+                                checked={data.refreshSlugFromName}
+                                onChange={(event) => {
+                                    onFieldChange('refreshSlugFromName', event.target.checked);
+                                }}
+                            />
+                            <span>
+                                {t(
+                                    'commerce.owner.editor.slugRefresh.checkbox',
+                                    'Cambiar igual la dirección web para que siga este nuevo nombre'
+                                )}
+                            </span>
+                        </label>
+                    </div>
+                ) : null}
             </section>
 
             {/* HOS-166 D-1: destinationId — identity field, now owner-editable.
@@ -191,7 +225,7 @@ export function BasicInfoSection({
                             key={opt}
                             value={opt}
                         >
-                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
+                            {resolveCommerceTypeLabel({ t, vertical, type: opt })}
                         </option>
                     ))}
                 </TextField>
@@ -269,7 +303,14 @@ export function BasicInfoSection({
 
                 The title is a <span>, not a <label htmlFor>: the editing surface
                 is a contenteditable `role="textbox"`, which a <label> cannot
-                name. The accessible name comes from `ariaLabel` instead. */}
+                name. The accessible name comes from `ariaLabel` instead.
+
+                HOS-829: no `placeholder`. The owner asked for the hint to go —
+                the field is self-explanatory next to its own title — so the
+                editor renders no overlay text at all here. Passing one back
+                would restore the copy the owner removed, not a bug fix. The
+                overlay itself is positioned correctly since HOS-828 and is
+                still used by the accommodation / event / post editors. */}
             <section className={styles.section}>
                 <span className={styles.label}>
                     {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
@@ -280,10 +321,6 @@ export function BasicInfoSection({
                     ariaLabel={t(
                         'commerce.owner.editor.sections.richDescription',
                         'Descripción ampliada'
-                    )}
-                    placeholder={t(
-                        'commerce.owner.editor.richDescriptionPlaceholder',
-                        'Contá la historia de tu comercio con detalle...'
                     )}
                     onChange={(value) => {
                         onFieldChange('richDescription', value);

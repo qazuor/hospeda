@@ -94,8 +94,17 @@ export function parseTimeToMinutes(timeStr: string | undefined): number | null {
  * - If the entry for today does not exist → `null` (badge omitted).
  * - If the day is closed or has no shifts → `false`.
  * - Otherwise → `true` when the current local time is inside any shift window.
- *   A shift whose `close` is not strictly after its `open` is treated as an
- *   overnight span (defensive — the schema normally forbids it) and wraps.
+ *   A shift whose `close` is EARLIER than its `open` is an overnight span
+ *   (22:00 → 02:00) and wraps around midnight. Since HOS-813 that is a
+ *   first-class, schema-accepted shape rather than the defensive fallback it
+ *   used to be — it is how a night bar or a dawn excursion states its hours.
+ *
+ *   The wrap is evaluated against TODAY's entry: at 01:00 the listing reads as
+ *   open when TODAY declares an overnight shift, not when yesterday did. That
+ *   approximation predates this change and is left as-is deliberately — every
+ *   real overnight schedule in scope repeats across consecutive days, so the two
+ *   readings agree, and changing it would alter the badge for data that already
+ *   exists.
  *
  * @param openingHours - The full week map from the API response.
  * @param now - Moment to evaluate. Defaults to `new Date()`.
@@ -118,7 +127,7 @@ export function computeOpenNowStatus(
         if (openMinutes === null || closeMinutes === null) continue;
 
         if (closeMinutes <= openMinutes) {
-            // Overnight span: e.g. open=22:00, close=02:00 (defensive).
+            // Overnight span: e.g. open=22:00, close=02:00 (HOS-813).
             if (currentMinutes >= openMinutes || currentMinutes < closeMinutes) return true;
         } else if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
             return true;

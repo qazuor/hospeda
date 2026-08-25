@@ -165,8 +165,15 @@ describe('PriceAlertButton — resolved gate', () => {
 
         render(<PriceAlertButton {...PROPS} />);
 
-        await waitFor(() => expect(screen.getByRole('button')).toBeDisabled());
-        expect(screen.getByRole('button').getAttribute('title')).toMatch(/límite/i);
+        // Wait on the TITLE, not on `toBeDisabled()`. The resolving branch also
+        // renders a disabled button, and it carries no title — so waiting on
+        // "disabled" alone settles while the gate is still resolving, and the
+        // next line reads `null`. That is a race, not a stable pass: locally the
+        // mocked promises settle before waitFor's first poll and it goes green,
+        // while a loaded CI runner opens the window and it fails with
+        // ".toMatch() expects to receive a string, but got object".
+        const button = await screen.findByTitle(/límite/i);
+        expect(button).toBeDisabled();
     });
 
     it('offers cancel when an alert exists for THIS accommodation, even at the limit', async () => {

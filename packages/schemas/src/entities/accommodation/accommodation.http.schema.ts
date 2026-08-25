@@ -571,18 +571,41 @@ export const AccommodationUpdateHttpSchema = z
          * override on the `es` locale (`pickLocalizedSeo` in `apps/web/src/lib/seo.ts`) —
          * `/en/` and `/pt/` never consult it and fall back to the localized name.
          * No write surface existed anywhere (host or admin) before this field.
+         *
+         * `''` is accepted and means "no override" — it is what clearing the
+         * field in the host editor puts on the wire, and rejecting it made a
+         * saved override impossible to remove (HOS-792). See `SeoSchema`.
          */
         seoTitle: z
-            .string()
-            .min(30, { message: 'zodError.common.seo.title.min' })
-            .max(60, { message: 'zodError.common.seo.title.max' })
+            .union([
+                z.literal(''),
+                z
+                    .string()
+                    .min(30, { message: 'zodError.common.seo.title.min' })
+                    .max(60, { message: 'zodError.common.seo.title.max' })
+            ])
             .optional(),
-        /** SEO description override (H-121, G7 smoke). Maps to `seo.description`. */
+        /**
+         * SEO description override (H-121, G7 smoke). Maps to `seo.description`.
+         *
+         * Its default is the accommodation's `summary`, NOT its name — the
+         * public page falls back to `accommodation.summary` here (HOS-792).
+         */
         seoDescription: z
-            .string()
-            .min(70, { message: 'zodError.common.seo.description.min' })
-            .max(160, { message: 'zodError.common.seo.description.max' })
-            .optional()
+            .union([
+                z.literal(''),
+                z
+                    .string()
+                    .min(70, { message: 'zodError.common.seo.description.min' })
+                    .max(160, { message: 'zodError.common.seo.description.max' })
+            ])
+            .optional(),
+        /**
+         * HOS-784 stage 2 — published rename opt-in. The server still derives
+         * the slug; this boolean only authorizes regenerating it from `name`
+         * when the listing is already published.
+         */
+        refreshSlugFromName: z.boolean().optional()
     });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -1211,6 +1234,9 @@ export const httpToDomainAccommodationUpdate = (
     // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
     ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
+    ...(httpData.refreshSlugFromName === undefined
+        ? {}
+        : { refreshSlugFromName: httpData.refreshSlugFromName }),
 
     // Media (HOS-372): the domain update surface has no `media` field — the HTTP
     // `media` object carries videos only, and they land on the top-level column.

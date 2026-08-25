@@ -202,3 +202,101 @@
     font-family: var(--font-sans);
     font-size: 0.875rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Per-locale text (HOS-797)
+
+   The panel used to render badges only, so the one screen called "Traducciones"
+   could report a clean green run over a translation that had quietly renamed the
+   business. These blocks are what the host actually reads.
+   --------------------------------------------------------------------------- */
+
+.localeTexts {
+    list-style: none;
+    margin: var(--space-3, 1rem) 0 0;
+    padding: var(--space-3, 1rem) 0 0;
+    border-top: 1px solid var(--border);
+    display: grid;
+    gap: var(--space-3, 1rem);
+}
+
+.localeText {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.localeTextHead {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+}
+
+.localeTextCode {
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--core-foreground);
+}
+
+.localeTextRole {
+    color: var(--core-muted-foreground);
+}
+
+/* The value itself. `pre-wrap` because the long fields are Markdown source and
+   its line structure is part of what the host is reviewing; `break-word` because
+   an unbroken URL inside a translation must not widen the card. */
+.localeTextBody {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--core-foreground);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+/* Collapsed variant. The full string stays in the DOM — assistive tech reads it
+   and a selection copies it — so this hides nothing, it only bounds the height of
+   a card that can hold three 5000-character values. */
+.localeTextBodyClamped {
+    composes: localeTextBody;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+}
+
+.localeTextToggle {
+    justify-self: start;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.localeTextToggle:hover {
+    text-decoration: underline;
+}
+
+.localeTextToggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-button, 8px);
+}
+
+/* An empty locale is never blank space — it says which kind of empty it is. */
+.localeTextEmpty {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--core-muted-foreground);
+}

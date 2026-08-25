@@ -178,6 +178,7 @@ function buildListing(overrides: Record<string, unknown> = {}): CommerceListingD
         ownerId: 'owner-1',
         name: 'La Parrilla',
         slug: 'la-parrilla',
+        lifecycleState: 'DRAFT',
         destinationId: DESTINATION_1,
         description: 'Descripción original con suficiente longitud para pasar validación.',
         ...overrides
@@ -295,9 +296,39 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
     });
 
+    describe('published slug refresh opt-in (HOS-784 stage 2)', () => {
+        it('does not send refreshSlugFromName by default when a published listing is renamed', async () => {
+            renderEditor('gastronomy', buildListing({ lifecycleState: 'ACTIVE' }));
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'La Parrilla Nueva' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('name', 'La Parrilla Nueva');
+            expect(body).not.toHaveProperty('refreshSlugFromName');
+        });
+
+        it('sends refreshSlugFromName when the owner opts in on a published rename', async () => {
+            renderEditor('gastronomy', buildListing({ lifecycleState: 'ACTIVE' }));
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'La Parrilla Nueva' }
+            });
+            fireEvent.click(screen.getByLabelText(/cambiar igual la dirección web/i));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('name', 'La Parrilla Nueva');
+            expect(body).toHaveProperty('refreshSlugFromName', true);
+        });
+    });
+
     describe('experience price fields omit the key instead of sending null (T-021)', () => {
         it('omits priceFrom from the wire body when cleared', async () => {
-            renderEditor('experience', buildListing({ priceFrom: 500 }));
+            // HOS-809: 50000 centavos on the row, $ 500 in the field.
+            renderEditor('experience', buildListing({ priceFrom: 50000 }));
 
             const input = screen.getByLabelText(/Precio desde/);
             expect(input).toHaveValue(500);
@@ -335,14 +366,33 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(body).toHaveProperty('priceUnit', null);
         });
 
-        it('sends priceFrom as a number when set', async () => {
+        it('sends priceFrom as centavos for a price typed in pesos (HOS-809)', async () => {
             renderEditor('experience');
 
+            // The owner types $ 750. The column is centavos, so the wire body
+            // must carry 75000 — sending 750 published a $ 7,50 experience.
             fireEvent.change(screen.getByLabelText(/Precio desde/), { target: { value: '750' } });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body).toHaveProperty('priceFrom', 750);
+            expect(body).toHaveProperty('priceFrom', 75000);
+        });
+
+        it('loads a persisted price as pesos and saves it back as centavos (HOS-809)', async () => {
+            // Both halves of the round trip on ONE editor instance. A fix that
+            // multiplies on save without dividing on load would show 350000 in
+            // the field here, and every open-and-save would inflate the stored
+            // price by another factor of 100.
+            renderEditor('experience', buildListing({ priceFrom: 350000 }));
+
+            const input = screen.getByLabelText(/Precio desde/);
+            expect(input).toHaveValue(3500);
+
+            fireEvent.change(input, { target: { value: '4000' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('priceFrom', 400000);
         });
 
         it('sends priceUnit as the selected enum value when set', async () => {

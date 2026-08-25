@@ -23,7 +23,14 @@ describe('signin.astro', () => {
         });
 
         it('rejects unsafe return paths (open-redirect guard)', () => {
-            expect(src).toContain('isSafeRelativePath');
+            // HOS-810 lifted the predicate out of this file into
+            // `lib/auth-redirect.ts` so signup.astro could reuse it AND so the
+            // rejection cases could finally be EXECUTED (an Astro page cannot
+            // be rendered here — this assertion only ever proved a spelling).
+            // The behaviour itself is covered by
+            // `test/lib/auth-redirect.test.ts`.
+            expect(src).toContain("import { resolveSafeReturnPath } from '@/lib/auth-redirect';");
+            expect(src).toContain('resolveSafeReturnPath({ rawReturn, locale })');
         });
     });
 

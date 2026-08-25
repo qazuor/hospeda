@@ -83,9 +83,8 @@ describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
     });
 
     it('lets the form fill its column instead of capping it narrower than its own cards', () => {
-        // A 720px cap would inset every card from the page header above and from
-        // the full-width FAQ card below, on the same page, at two visibly
-        // different widths.
+        // A 720px cap would inset every card from the page header above it, on
+        // the same page, at two visibly different widths.
         const editorRule = editorCss.match(/\.editor\s*\{[^}]*\}/)?.[0] ?? '';
         expect(editorRule).not.toMatch(/max-width/);
     });
@@ -178,7 +177,12 @@ describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
         expect(editorPage).not.toMatch(
             /<AccountSectionCard>\s*(\{\s*\/\*[\s\S]*?\*\/\s*\}\s*)?<CommerceListingEditor/
         );
-        // ...while the FAQ block below it legitimately keeps its own card.
-        expect(editorPage).toMatch(/<AccountSectionCard>\s*<CommerceFaqManager/);
+        // HOS-827: nor does it wrap the FAQ manager in one of its own any more.
+        // The manager is a section of the editor now, so it gets the SAME card
+        // recipe as its siblings; a page-level `AccountSectionCard` around it
+        // was what made it 202px wider and 227px further left than every other
+        // card on the page, and put it below the save button.
+        expect(editorPage).not.toContain('<AccountSectionCard');
+        expect(editorPage).not.toContain('<CommerceFaqManager');
     });
 });

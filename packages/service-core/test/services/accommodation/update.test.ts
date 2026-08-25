@@ -1,7 +1,9 @@
 import type { AccommodationModel } from '@repo/db';
 import {
+    AccommodationTypeEnum,
     AccommodationUpdateInputSchema,
     DestinationTypeEnum,
+    LifecycleStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -9,7 +11,10 @@ import type { z } from 'zod';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import { createNewAccommodationInput } from '../../factories/accommodationFactory';
+import {
+    createMockAccommodation,
+    createNewAccommodationInput
+} from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -86,6 +91,117 @@ describe('AccommodationService.update', () => {
         expect(result.error).toBeUndefined();
         expect(model.findById).toHaveBeenCalledWith(id, undefined);
         expect(model.update).toHaveBeenCalled();
+    });
+
+    it('regenerates the slug when an unpublished accommodation is renamed', async () => {
+        const actor = createAdminActor();
+        const id = 'draft-accommodation-id';
+        const existing = createMockAccommodation({
+            id,
+            name: 'Nombre original',
+            slug: 'house-nombre-original',
+            type: AccommodationTypeEnum.HOUSE,
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        const updateInput = { name: 'Nombre nuevo' };
+
+        vi.spyOn(helpers, 'generateSlug').mockResolvedValueOnce('house-nombre-nuevo');
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue({
+            ...existing,
+            ...updateInput,
+            slug: 'house-nombre-nuevo'
+        });
+
+        const result = await service.update(actor, id, updateInput);
+
+        expect(result.error).toBeUndefined();
+        expect(helpers.generateSlug).toHaveBeenCalledWith(
+            AccommodationTypeEnum.HOUSE,
+            'Nombre nuevo',
+            id
+        );
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.objectContaining({ name: 'Nombre nuevo', slug: 'house-nombre-nuevo' }),
+            undefined
+        );
+    });
+
+    it('does not regenerate the slug when a published accommodation is renamed', async () => {
+        const actor = createAdminActor();
+        const id = 'published-accommodation-id';
+        const existing = createMockAccommodation({
+            id,
+            name: 'Publicado original',
+            slug: 'house-publicado-original',
+            type: AccommodationTypeEnum.HOUSE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+        const updateInput = { name: 'Publicado renombrado' };
+
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue({
+            ...existing,
+            ...updateInput,
+            slug: existing.slug
+        });
+
+        const result = await service.update(actor, id, updateInput);
+
+        expect(result.error).toBeUndefined();
+        expect(helpers.generateSlug).not.toHaveBeenCalled();
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.not.objectContaining({ slug: expect.anything() }),
+            undefined
+        );
+    });
+
+    it('regenerates the slug for a published accommodation only when explicitly requested', async () => {
+        const actor = createAdminActor();
+        const id = 'published-accommodation-opt-in-id';
+        const existing = createMockAccommodation({
+            id,
+            name: 'Publicado original',
+            slug: 'house-publicado-original',
+            type: AccommodationTypeEnum.HOUSE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+        const updateInput = {
+            name: 'Publicado renombrado',
+            refreshSlugFromName: true
+        };
+
+        vi.spyOn(helpers, 'generateSlug').mockResolvedValueOnce('house-publicado-renombrado');
+        (model.findById as Mock).mockResolvedValue(existing);
+        (model.update as Mock).mockResolvedValue({
+            ...existing,
+            ...updateInput,
+            slug: 'house-publicado-renombrado'
+        });
+
+        const result = await service.update(actor, id, updateInput);
+
+        expect(result.error).toBeUndefined();
+        expect(helpers.generateSlug).toHaveBeenCalledWith(
+            AccommodationTypeEnum.HOUSE,
+            'Publicado renombrado',
+            id
+        );
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.objectContaining({
+                name: 'Publicado renombrado',
+                slug: 'house-publicado-renombrado'
+            }),
+            undefined
+        );
+        expect(model.update).toHaveBeenCalledWith(
+            { id },
+            expect.not.objectContaining({ refreshSlugFromName: true }),
+            undefined
+        );
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

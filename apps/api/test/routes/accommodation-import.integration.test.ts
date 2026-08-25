@@ -120,7 +120,7 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
         vi.clearAllMocks();
     });
 
-    it('returns 200 with a partial draft carrying confidence + source from JSON-LD', async () => {
+    it('returns 200 with a complete draft carrying confidence + source from JSON-LD', async () => {
         // Arrange
         mockFetch.mockResolvedValue(fetchSuccess(RICH_JSONLD_HTML));
 
@@ -136,13 +136,21 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
         const body = await res.json();
         expect(body.success).toBe(true);
         expect(body.data.source).toBe('generic');
-        expect(body.data.partial).toBe(true);
         expect(body.data.methodsUsed).toContain('jsonld');
         expect(body.data.draft.name).toMatchObject({
             value: 'Hotel Sol del Sur',
             source: 'jsonld'
         });
         expect(typeof body.data.draft.name.confidence).toBe('number');
+
+        // `partial` is `!(name && summary && type)`. This page carries no
+        // `og:description`, so before HOS-799 there was no summary candidate at
+        // all and the draft came back partial — the host was handed a draft
+        // missing a field the creation form requires. The summary is now
+        // DERIVED from the description (the same rule the MercadoLibre adapter
+        // has always used), so all three mandatory fields are present.
+        expect(body.data.draft.summary?.value).toBeTruthy();
+        expect(body.data.partial).toBe(false);
     });
 
     it('never includes reviews or ratings in the response', async () => {

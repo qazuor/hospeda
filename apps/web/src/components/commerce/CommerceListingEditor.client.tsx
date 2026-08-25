@@ -5,8 +5,9 @@
  * HTML form (no TanStack Form, per web conventions) that persists changes
  * through the vertical's protected PATCH endpoint (`updateOwn`).
  *
- * `slug` stays out of this form — it is server-derived at create time and
- * immutable post-create (HOS-166 OQ-3), shown read-only by the hosting page.
+ * `slug` stays out of this form — the owner never edits it directly. The server
+ * keeps it in sync with the name while the listing is still a draft, then stops
+ * auto-changing it once the listing is published (HOS-784 stage 1).
  *
  * Field-group coverage (SPEC-253 additions marked *, HOS-166 D-1 marked †):
  *   † name + destinationId (SPEC-239 decision #5 reversed — the owner now
@@ -24,7 +25,7 @@
 
 import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
-import { type JSX, useCallback, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/commerce/destination-option';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
@@ -36,8 +37,14 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import {
+    buildSlugRefreshPayload,
+    shouldOfferPublishedSlugRefresh
+} from '@/lib/listing-slug-refresh';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
+import type { CommerceFaq } from './CommerceFaqManager.client';
+import { CommerceFaqManager } from './CommerceFaqManager.client';
 import styles from './CommerceListingEditor.module.css';
 import {
     type CommerceI18nValues,
@@ -53,7 +60,12 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
-import { COMMERCE_FIELD_ID_SUFFIXES, COMMERCE_FIELD_PREFIX } from './editor/field-ids';
+import fieldStyles from './editor/editor-fields.module.css';
+import {
+    COMMERCE_FIELD_ID_SUFFIXES,
+    COMMERCE_FIELD_PREFIX,
+    OPENING_HOURS_AGGREGATE_FIELDS
+} from './editor/field-ids';
 import { MediaSection } from './editor/MediaSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
@@ -88,18 +100,34 @@ export interface CommerceListingEditorProps {
      */
     readonly destinationsLoadFailed?: boolean;
     /**
-     * `true` when the hosting page renders the commerce FAQ manager below this
-     * editor AND gives its wrapper `id="editor-faqs"` (H-153). Adds the matching
-     * entry to the section nav, which otherwise cannot advertise a section that
-     * is not part of this component.
+     * `true` to render the commerce FAQ manager as a section of this editor,
+     * with the matching `editor-faqs` entry in the section nav.
      *
-     * Opt-in rather than always-on because the nav's contract is that every link
-     * resolves: a page that embeds the editor WITHOUT the FAQ card would get a
-     * link scrolling nowhere, which reads as a dead control rather than an error
-     * — the same failure the conditional amenities entry exists to avoid.
-     * Defaults to `false`.
+     * HOS-827 changed what this prop DOES, not what it means. It used to be a
+     * promise made by the hosting page — "I render the FAQ card below you and
+     * give it `id='editor-faqs'`" (H-153) — with the card living outside the
+     * form as a sibling of it. That split had two costs, both reported:
+     *
+     * - The card sat outside the form's grid, so it painted 202px wider and
+     *   227px further left than every other card, BELOW the save button
+     *   (HOS-827). It did not read as part of what was being edited.
+     * - It was a SEPARATE `client:idle` island. Anything that kept it from
+     *   hydrating turned the whole section into decoration — an "Agregar
+     *   pregunta" that opens nothing and a Guardar that fires no request, with
+     *   no error anywhere, which is exactly how HOS-811 was reported. Inside
+     *   this editor it shares the `client:load` island the rest of the form
+     *   already depends on, so the section is live whenever the form is.
+     *
+     * Still opt-in rather than always-on: the nav's contract is that every
+     * link resolves, and only a page that supplies `initialFaqs` should get a
+     * FAQ section. Defaults to `false`.
      */
     readonly hasFaqSection?: boolean;
+    /**
+     * FAQs already stored for this listing, pre-fetched SSR from the protected
+     * detail. Only read when {@link hasFaqSection} is `true`.
+     */
+    readonly initialFaqs?: readonly CommerceFaq[];
 }
 
 type SaveStatus =
@@ -176,11 +204,13 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
 function buildPatchPayload({
     current,
     baseline,
-    vertical
+    vertical,
+    lifecycleState
 }: {
     current: CommerceEditData;
     baseline: CommerceEditData;
     vertical: CommerceVertical;
+    lifecycleState?: string | null;
 }): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
@@ -199,6 +229,15 @@ function buildPatchPayload({
     if (current.description !== baseline.description) {
         payload.description = current.description || undefined;
     }
+    Object.assign(
+        payload,
+        buildSlugRefreshPayload({
+            currentLifecycleState: lifecycleState,
+            initialName: baseline.name,
+            currentName: current.name,
+            refreshSlugFromName: current.refreshSlugFromName
+        })
+    );
     if (current.richDescription !== baseline.richDescription) {
         payload.richDescription = current.richDescription;
     }
@@ -280,7 +319,8 @@ export function CommerceListingEditor({
     features = [],
     destinations = [],
     destinationsLoadFailed = false,
-    hasFaqSection = false
+    hasFaqSection = false,
+    initialFaqs = []
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -296,7 +336,7 @@ export function CommerceListingEditor({
         vertical === 'gastronomy'
             ? GastronomyOwnerUpdateInputSchema
             : ExperienceOwnerUpdateInputSchema;
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({
+    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,
         // HOS-373: a failed submit focuses the first invalid field on the page.
@@ -304,7 +344,12 @@ export function CommerceListingEditor({
         // sections render with, so this is a namespace plus the genuine
         // exceptions — not a table that can disagree with the markup.
         fieldIdPrefix: COMMERCE_FIELD_PREFIX,
-        fieldIdSuffixes: COMMERCE_FIELD_ID_SUFFIXES
+        fieldIdSuffixes: COMMERCE_FIELD_ID_SUFFIXES,
+        // HOS-814: `openingHours` is 7 days x N shifts under one Zod key, so
+        // every rejection arrives at a nested path and nothing read the bare
+        // key — the section's <FieldError> and the focus move were both dead.
+        // Rolling the first nested message up revives both.
+        aggregateFields: OPENING_HOURS_AGGREGATE_FIELDS
     });
 
     // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
@@ -361,7 +406,8 @@ export function CommerceListingEditor({
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
-        i18nValues: parseCommerceI18nValues(data)
+        i18nValues: parseCommerceI18nValues(data),
+        refreshSlugFromName: false
     });
 
     const [formData, setFormData] = useState<CommerceEditData>(buildInitialEditData);
@@ -376,6 +422,7 @@ export function CommerceListingEditor({
     // Only the values still read by the orchestrator's own JSX. Everything else
     // reaches its section component through the `data` prop (HOS-258 PR 2).
     const { openingHours, amenityIds, featureIds, i18nValues } = formData;
+    const currentLifecycleState = String(data.lifecycleState ?? 'DRAFT');
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -442,13 +489,43 @@ export function CommerceListingEditor({
      * render.
      */
     const patchPayload = useMemo(
-        () => buildPatchPayload({ current: formData, baseline, vertical }),
-        [formData, baseline, vertical]
+        () =>
+            buildPatchPayload({
+                current: formData,
+                baseline,
+                vertical,
+                lifecycleState: currentLifecycleState
+            }),
+        [formData, baseline, vertical, currentLifecycleState]
     );
+
+    const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
+        currentLifecycleState,
+        initialName: baseline.name,
+        currentName: formData.name
+    });
+
+    useEffect(() => {
+        if (!shouldOfferSlugRefresh && formData.refreshSlugFromName) {
+            setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
+        }
+    }, [formData.refreshSlugFromName, shouldOfferSlugRefresh]);
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
+            // HOS-816: retire the previous attempt's banner as this one STARTS.
+            // Nothing else ever cleared it: `handleApiError` only ever sets a
+            // message, and the success branch below left whatever was on screen
+            // untouched — so a save that failed and then succeeded showed the
+            // green toast and the red banner at the same time, and the banner
+            // is the one a person believes. It has to run before the no-changes
+            // early return too, or the stale banner outlives that path as well.
+            // Every other consumer of `useZodForm` (PostEditor, EventEditor,
+            // ProfileEditForm, PartnerEditForm, HostTradeEditForm,
+            // use-accommodation-section-form) already opens its submit this way;
+            // this editor and `CommerceCreateForm` were the two that did not.
+            setFormError(null);
             if (Object.keys(patchPayload).length === 0) {
                 // Never save silently (HOS-190): "Guardar" always visibly does
                 // something. This used to be a bare `return`, which was
@@ -485,7 +562,8 @@ export function CommerceListingEditor({
             });
 
             if (result.ok) {
-                setBaseline(persisted);
+                setBaseline({ ...persisted, refreshSlugFromName: false });
+                setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
                 setStatus({ kind: 'idle' });
                 addToast({
                     type: 'success',
@@ -503,7 +581,7 @@ export function CommerceListingEditor({
                 setStatus({ kind: 'error' });
             }
         },
-        [patchPayload, formData, vertical, listingId, validate, handleApiError, t]
+        [patchPayload, formData, vertical, listingId, validate, handleApiError, setFormError, t]
     );
 
     const isSaving = status.kind === 'saving';
@@ -569,11 +647,10 @@ export function CommerceListingEditor({
             label: t('commerce.owner.editor.sectionNav.price', 'Precio')
         });
 
-        // H-153: the FAQ manager is a SIBLING card rendered by the page, not a
-        // section of this form, so its anchor is not ours to guarantee — the
-        // page that renders it opts in. Appended last because it sits below the
-        // editor in the DOM, which is what the scrollspy's first-match tie-break
-        // requires.
+        // H-153 added this entry; HOS-827 moved its target INTO this component,
+        // so the anchor and the link are now emitted by the same file and cannot
+        // drift apart. Appended last because the FAQ card renders last among the
+        // sections, which is what the scrollspy's first-match tie-break requires.
         if (hasFaqSection) {
             sections.push({
                 id: 'editor-faqs',
@@ -588,6 +665,9 @@ export function CommerceListingEditor({
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
     useUnsavedChangesGuard({
         isDirty: Object.keys(patchPayload).length > 0,
+        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
+        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
+        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
         message: t(
             'commerce.owner.editor.unsavedChanges',
             'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
@@ -618,6 +698,7 @@ export function CommerceListingEditor({
                         destinationsLoadFailed={destinationsLoadFailed}
                         errors={fieldErrors}
                         onFieldChange={onFieldChange}
+                        shouldOfferSlugRefresh={shouldOfferSlugRefresh}
                     />
 
                     <ContactSection
@@ -637,7 +718,7 @@ export function CommerceListingEditor({
                     <OpeningHoursSection
                         locale={locale}
                         value={openingHours}
-                        error={fieldErrors.openingHours}
+                        errors={fieldErrors}
                         onChange={(next) => {
                             onFieldChange('openingHours', next);
                         }}
@@ -682,6 +763,31 @@ export function CommerceListingEditor({
                         errors={fieldErrors}
                         onFieldChange={onFieldChange}
                     />
+
+                    {/*
+                     * HOS-827: a section of the form, above the save button and
+                     * inside the same column as every other card — not a
+                     * full-width sibling below it. The wrapper carries the card
+                     * recipe (`fieldStyles.section`) and the nav anchor, because
+                     * `CommerceFaqManager` renders a bare <section> with neither:
+                     * it is also mounted standalone elsewhere.
+                     *
+                     * The FAQ endpoints are its own; nothing here reaches the
+                     * form's PATCH payload or its dirty tracking (HOS-811).
+                     */}
+                    {hasFaqSection && (
+                        <div
+                            id="editor-faqs"
+                            className={fieldStyles.section}
+                        >
+                            <CommerceFaqManager
+                                vertical={vertical}
+                                listingId={listingId}
+                                locale={locale}
+                                initialFaqs={initialFaqs}
+                            />
+                        </div>
+                    )}
 
                     {formError && (
                         <p

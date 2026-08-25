@@ -228,6 +228,18 @@ describe('AccommodationSeoSchema (G7 smoke, H-121)', () => {
             false
         );
     });
+
+    // HOS-792: this slice is the gate that actually blocked the reported bug.
+    // The section sends a diff, so clearing a saved override puts `''` in the
+    // payload — and `.min()` rejected it here before the request ever left the
+    // browser. Same contract as `phone` below.
+    it('should accept an empty seoTitle so the host can clear it', () => {
+        expect(AccommodationSeoSchema.safeParse({ seoTitle: '' }).success).toBe(true);
+    });
+
+    it('should accept an empty seoDescription so the host can clear it', () => {
+        expect(AccommodationSeoSchema.safeParse({ seoDescription: '' }).success).toBe(true);
+    });
 });
 
 describe('AccommodationContactSchema', () => {

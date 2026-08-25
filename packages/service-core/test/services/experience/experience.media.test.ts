@@ -23,6 +23,7 @@
 
 const mockMediaModel = {
     findAll: vi.fn(),
+    count: vi.fn(),
     findById: vi.fn(),
     findByExperience: vi.fn(),
     findFeatured: vi.fn(),
@@ -52,7 +53,13 @@ import type {
     ExperienceMediaReorderInput,
     ExperienceMediaSetFeaturedInput
 } from '@repo/schemas';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    getGalleryCap,
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addExperienceMedia,
@@ -121,6 +128,7 @@ beforeEach(() => {
     );
 
     mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+    mockMediaModel.count.mockResolvedValue(0);
     mockMediaModel.findById.mockResolvedValue(null);
     mockMediaModel.findByExperience.mockResolvedValue({ items: [], total: 0 });
     mockMediaModel.findFeatured.mockResolvedValue(null);
@@ -542,6 +550,82 @@ describe('getExperienceMedia', () => {
         expect(result.data?.media).toHaveLength(1);
         expect(mockMediaModel.findByExperience).toHaveBeenCalledWith(
             expect.objectContaining({ state: 'visible' })
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Gallery cap
+//
+// `addExperienceMedia` enforces `getGalleryCap('experience')` itself, so a
+// caller that reaches it directly with an already-uploaded URL cannot walk past
+// the limit the upload routes apply. This describe was added with HOS-791: the
+// gastronomy twin had cap coverage and the experience one had none, so the
+// service-layer cap here was shipping unverified.
+// ---------------------------------------------------------------------------
+
+describe('addExperienceMedia — gallery cap', () => {
+    const CAP = getGalleryCap('experience');
+
+    const input: ExperienceMediaAddInput = {
+        experienceId: EXPERIENCE_ID,
+        media: { url: 'https://cdn.example.com/new.jpg' }
+    };
+
+    it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
+        const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
+        mockMediaModel.count.mockResolvedValue(CAP);
+
+        const result = await addExperienceMedia(
+            model as unknown as Parameters<typeof addExperienceMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
+        // A rejection that still inserts is worse than no cap at all: the caller
+        // is told it failed while the row lands anyway.
+        expect(mockMediaModel.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts the last photo that still fits', async () => {
+        // Boundary: at CAP-1 there is room for exactly one more.
+        const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
+        mockMediaModel.count.mockResolvedValue(CAP - 1);
+        mockMediaModel.create.mockResolvedValue(makeMediaRow());
+
+        const result = await addExperienceMedia(
+            model as unknown as Parameters<typeof addExperienceMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('measures the cap on the GALLERY ONLY, not counting the featured image (HOS-791)', async () => {
+        // The listing holds a featured image plus CAP-1 gallery photos, so there
+        // is still room for one more. The stub answers a DIFFERENT number per
+        // filter: drop `isFeatured: false` from the service and the count comes
+        // back as CAP, the write is refused, and `create` is never called.
+        const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
+        mockMediaModel.count.mockImplementation(async (where: { isFeatured?: boolean }) =>
+            where.isFeatured === false ? CAP - 1 : CAP
+        );
+        mockMediaModel.create.mockResolvedValue(makeMediaRow());
+
+        const result = await addExperienceMedia(
+            model as unknown as Parameters<typeof addExperienceMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
+        expect(mockMediaModel.count).toHaveBeenCalledWith(
+            expect.objectContaining({ state: 'visible', isFeatured: false }),
+            expect.anything()
         );
     });
 });

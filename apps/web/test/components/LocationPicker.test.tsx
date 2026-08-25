@@ -7,8 +7,8 @@
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import { useGeocodingSearch } from '@/hooks/useGeocoding';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 
 // Mock Spinner CSS module
 vi.mock('../../src/components/shared/feedback/Spinner.module.css', () => ({
@@ -65,7 +65,7 @@ describe('LocationPicker', () => {
         render(<LocationPicker {...defaultProps} />);
 
         expect(screen.getByText('Ubicación')).toBeInTheDocument();
-        expect(screen.getByLabelText('Buscar dirección')).toBeInTheDocument();
+        expect(screen.getByLabelText('Buscar en el mapa')).toBeInTheDocument();
     });
 
     it('should render coordinate inputs', () => {
@@ -226,7 +226,7 @@ describe('LocationPicker', () => {
             />
         );
 
-        await user.type(screen.getByLabelText('Buscar dirección'), 'Av. Belgrano');
+        await user.type(screen.getByLabelText('Buscar en el mapa'), 'Av. Belgrano');
         await user.click(screen.getByText('Av. Belgrano 123, Concepción del Uruguay'));
 
         expect(onChange).toHaveBeenCalledWith({ latitude: -32.48, longitude: -58.23 });
@@ -251,9 +251,146 @@ describe('LocationPicker', () => {
             />
         );
 
-        await user.type(screen.getByLabelText('Buscar dirección'), 'Somewhere');
+        await user.type(screen.getByLabelText('Buscar en el mapa'), 'Somewhere');
         await user.click(screen.getByText('Somewhere'));
 
         expect(onAddressChange).not.toHaveBeenCalled();
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-795: the search box moves the map, it is not the address
+    // -----------------------------------------------------------------------
+
+    describe('map search vs stored address (HOS-795)', () => {
+        const PIN_LABEL = 'Concepción del Uruguay, Distrito Molino, Entre Ríos, Argentina';
+        const STORED_COORDS = { latitude: -32.4873, longitude: -58.36 };
+
+        /** Make the reverse geocoder resolve, as it does for any saved accommodation. */
+        function withResolvedPin() {
+            vi.mocked(useGeocodingReverse).mockReturnValue({
+                suggestion: {
+                    label: PIN_LABEL,
+                    lat: STORED_COORDS.latitude,
+                    lng: STORED_COORDS.longitude
+                },
+                isLoading: false,
+                error: null
+            });
+        }
+
+        beforeEach(() => {
+            vi.mocked(useGeocodingSearch).mockReturnValue({
+                suggestions: [],
+                isLoading: false,
+                error: null
+            });
+        });
+
+        afterEach(() => {
+            vi.mocked(useGeocodingReverse).mockReturnValue({
+                suggestion: null,
+                isLoading: false,
+                error: null
+            });
+        });
+
+        it('AC-1: renders the stored address fields BEFORE the map', async () => {
+            render(<LocationPicker {...defaultProps} />);
+
+            const street = screen.getByLabelText('Calle');
+            // `findBy`, not `getBy`: the map is lazy() behind a Suspense, so it
+            // is absent on the first paint. `getByTestId` only passes here when
+            // an earlier test in the file already resolved the chunk — a green
+            // that depends on test order, which is no green at all.
+            const map = await screen.findByTestId('mock-map');
+
+            // Asserted BEFORE the search box is looked up on purpose: neither
+            // query may depend on the renamed label, or a failure here would not
+            // tell us whether the ORDER regressed or only the copy did.
+            // DOCUMENT_POSITION_FOLLOWING (4) is set when the argument comes
+            // after the node it is compared against.
+            expect(street.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+                Node.DOCUMENT_POSITION_FOLLOWING
+            );
+
+            const search = screen.getByLabelText('Buscar en el mapa');
+            expect(street.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+                Node.DOCUMENT_POSITION_FOLLOWING
+            );
+        });
+
+        it('AC-2: the search box says it only moves the map, and says so accessibly', () => {
+            render(<LocationPicker {...defaultProps} />);
+
+            const search = screen.getByLabelText('Buscar en el mapa');
+            const hintId = search.getAttribute('aria-describedby');
+
+            expect(hintId).toBe('location-picker-search-hint');
+            expect(document.getElementById(hintId as string)?.textContent).toContain(
+                'no se guarda'
+            );
+        });
+
+        it('AC-3: does NOT prefill the search box from the reverse geocoder', () => {
+            // The regression this whole issue is about. The reverse hook fires on
+            // mount for every accommodation that already has coordinates; writing
+            // its label into the search box made hosts believe the address was
+            // saved while street/number stayed empty.
+            withResolvedPin();
+
+            render(
+                <LocationPicker
+                    {...defaultProps}
+                    value={STORED_COORDS}
+                />
+            );
+
+            expect((screen.getByLabelText('Buscar en el mapa') as HTMLInputElement).value).toBe('');
+        });
+
+        it('shows the reverse-geocoded label as reference text, never inside a control', () => {
+            withResolvedPin();
+
+            render(
+                <LocationPicker
+                    {...defaultProps}
+                    value={STORED_COORDS}
+                />
+            );
+
+            expect(screen.getByText('El pin está en:')).toBeInTheDocument();
+            expect(screen.getByText(/Distrito Molino/)).toBeInTheDocument();
+            // No input, textarea or select carries it — that is the whole point.
+            expect(screen.queryByDisplayValue(PIN_LABEL)).not.toBeInTheDocument();
+        });
+
+        it('omits the pin reference entirely when the pin has no resolved label', () => {
+            render(<LocationPicker {...defaultProps} />);
+
+            expect(screen.queryByText('El pin está en:')).not.toBeInTheDocument();
+        });
+
+        it('still fills the search box when the host PICKS a suggestion', async () => {
+            // Explicit selection is not the bug: only the silent on-mount
+            // repopulation was. This guards against over-correcting.
+            vi.mocked(useGeocodingSearch).mockReturnValue({
+                suggestions: [
+                    { label: 'Av. Belgrano 123, Concepción del Uruguay', lat: -32.48, lng: -58.23 }
+                ],
+                isLoading: false,
+                error: null
+            });
+
+            const user = userEvent.setup();
+            render(<LocationPicker {...defaultProps} />);
+
+            const search = screen.getByLabelText('Buscar en el mapa');
+            await user.type(search, 'Av. Belgrano');
+            await user.click(screen.getByText('Av. Belgrano 123, Concepción del Uruguay'));
+
+            expect((search as HTMLInputElement).value).toBe(
+                'Av. Belgrano 123, Concepción del Uruguay'
+            );
+        });
     });
 });

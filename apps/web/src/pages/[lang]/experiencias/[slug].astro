@@ -21,6 +21,7 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.astro';
+import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
@@ -247,10 +248,21 @@ const breadcrumbItems = [
         <!-- Description, opening hours, social networks -->
         <ExperienceInfo experience={experience} locale={locale} />
 
-        <!-- WhatsApp contact CTA — DORMANT: `contactInfo` is not in
-             ExperiencePublicSchema's pick(), so this prop is always null
-             (`normalizeExperienceContactInfo` returns null for an absent
-             payload) and the block early-returns. See HOS-363. -->
+        <!-- Phone / email / website the provider filled in (HOS-815). The
+             listing form blocks publication without a phone or an email, but
+             the public tier used to omit `contactInfo` entirely, so the only
+             contact affordance was the site-wide WhatsApp button pointing at
+             HOSPEDA's number — not the provider's. The published subset is
+             narrowed by `ExperiencePublicContactInfoSchema`. -->
+        <ExperienceContactBlock
+            contactInfo={experience.contactInfo}
+            locale={locale}
+        />
+
+        <!-- WhatsApp CTA — still dormant, and deliberately so: HOS-815 did NOT
+             expose `contactInfo.whatsapp`. That number stays gated by the
+             VIEWER's plan on a separate protected endpoint (HOS-19), and this
+             page is shared-cached with no auth in the cache key. -->
         <ExperienceContactCTA
             contactInfo={experience.contactInfo}
             experienceName={experience.name}

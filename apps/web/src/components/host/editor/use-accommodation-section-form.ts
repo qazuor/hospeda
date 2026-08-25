@@ -38,6 +38,7 @@ export type FieldKeyMap = Readonly<Record<string, string>>;
 /** What the hook hands back to a section page. */
 export interface AccommodationSectionForm<TValues> {
     readonly values: TValues;
+    readonly baselineValues: TValues;
     readonly setValue: <K extends keyof TValues>(field: K, value: TValues[K]) => void;
     readonly fieldErrors: Readonly<Record<string, string>>;
     readonly formError: string | null;
@@ -64,7 +65,8 @@ export function useAccommodationSectionForm<TValues extends object>({
     initialValues,
     ownFields,
     schema,
-    fieldKeyMap = {}
+    fieldKeyMap = {},
+    extendPayload
 }: {
     readonly locale: SupportedLocale;
     readonly accommodationId: string;
@@ -82,6 +84,11 @@ export function useAccommodationSectionForm<TValues extends object>({
     readonly ownFields: readonly string[];
     readonly schema: ZodTypeAny;
     readonly fieldKeyMap?: FieldKeyMap;
+    readonly extendPayload?: (input: {
+        readonly payload: Record<string, unknown>;
+        readonly values: TValues;
+        readonly baseline: TValues;
+    }) => Record<string, unknown>;
 }): AccommodationSectionForm<TValues> {
     const { t } = createTranslations(locale);
 
@@ -105,25 +112,35 @@ export function useAccommodationSectionForm<TValues extends object>({
         [clearError, fieldKeyMap]
     );
 
-    const payload = useMemo(
-        () =>
-            buildPartialPayload({
-                // The diff is name-based, so it works on the record view of the
-                // entity. The public signature stays `object` because
-                // `AccommodationEditData` is an interface, and TypeScript does
-                // not consider an interface assignable to an index signature.
-                values: values as Record<string, unknown>,
-                baseline: baseline as Record<string, unknown>,
-                ownFields,
-                fieldKeyMap
-            }),
-        [values, baseline, ownFields, fieldKeyMap]
-    );
+    const payload = useMemo(() => {
+        const basePayload = buildPartialPayload({
+            // The diff is name-based, so it works on the record view of the
+            // entity. The public signature stays `object` because
+            // `AccommodationEditData` is an interface, and TypeScript does
+            // not consider an interface assignable to an index signature.
+            values: values as Record<string, unknown>,
+            baseline: baseline as Record<string, unknown>,
+            ownFields,
+            fieldKeyMap
+        });
+
+        if (!extendPayload) {
+            return basePayload;
+        }
+
+        return {
+            ...basePayload,
+            ...extendPayload({ payload: basePayload, values, baseline })
+        };
+    }, [values, baseline, ownFields, fieldKeyMap, extendPayload]);
 
     const isDirty = Object.keys(payload).length > 0;
 
     useUnsavedChangesGuard({
         isDirty,
+        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
+        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
+        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
         message: t(
             'host.properties.editor.unsavedChanges',
             'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
@@ -186,6 +203,7 @@ export function useAccommodationSectionForm<TValues extends object>({
 
     return {
         values,
+        baselineValues: baseline,
         setValue,
         fieldErrors,
         formError,

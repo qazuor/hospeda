@@ -1,10 +1,10 @@
 {
     "lead": {
         "title": "Add your business",
-        "subtitle": "Fill out the form and we'll get in touch to add your establishment to the platform.",
+        "subtitle": "Create your account, publish your venue and start reaching diners looking for somewhere to eat in the area.",
         "experience": {
             "title": "List your experience",
-            "subtitle": "Tell us about the experiences you offer and we'll reach out to add you to Hospeda."
+            "subtitle": "Create your account, publish your experience and start reaching travelers looking for things to do in the area."
         },
         "fields": {
             "businessName": "Business name",
@@ -121,11 +121,11 @@
                 "openingHours": "Opening hours",
                 "contactInfo": "Contact information",
                 "socialNetworks": "Social networks",
-                "media": "Photo gallery",
+                "media": "Photos",
                 "menuUrl": "Menu link",
                 "priceRange": "Price range",
                 "isPriceOnRequest": "Price on request",
-                "priceFrom": "Price from (cents)",
+                "priceFrom": "Price from",
                 "priceUnit": "Price unit",
                 "richDescription": "Extended description",
                 "amenities": "Amenities",
@@ -142,37 +142,11 @@
                 "mobilePhone": "Phone",
                 "workEmail": "Email"
             },
-            "richDescriptionPlaceholder": "Tell your business story in detail...",
             "validation": {
                 "summaryMin": "Minimum 10 characters.",
                 "summaryMax": "Maximum 300 characters.",
                 "summaryHint": "{{count}}/300",
                 "priceMustBePositive": "Price must be a positive number."
-            },
-            "typeOption": {
-                "RESTAURANT": "Restaurant",
-                "BAR": "Bar",
-                "CAFE": "Café",
-                "PARRILLA": "Parrilla",
-                "CERVECERIA": "Brewery",
-                "HELADERIA": "Ice Cream Shop",
-                "PANADERIA": "Bakery",
-                "ROTISERIA": "Deli",
-                "FOOD_TRUCK": "Food Truck",
-                "CAR_RENTAL": "Car Rental",
-                "BIKE_RENTAL": "Bike Rental",
-                "KAYAK_RENTAL": "Kayak Rental",
-                "QUAD_RENTAL": "Quad Rental",
-                "TOUR_GUIDE": "Tour Guide",
-                "GUIDED_VISIT": "Guided Visit",
-                "EXCURSION": "Excursion",
-                "BOAT_TRIP": "Boat Trip",
-                "FISHING_CHARTER": "Fishing Charter",
-                "BIRD_WATCHING": "Bird Watching",
-                "CULTURAL_TOUR": "Cultural Tour",
-                "WINE_TASTING": "Wine Tasting",
-                "OUTDOOR_ADVENTURE": "Outdoor Adventure",
-                "OTHER": "Other"
             },
             "priceRangeOption": {
                 "BUDGET": "Budget",
@@ -211,6 +185,8 @@
                 "answerLabel": "Answer",
                 "questionPlaceholder": "Write the question...",
                 "answerPlaceholder": "Write the answer...",
+                "questionRequired": "Write the question before saving.",
+                "answerRequired": "Write the answer before saving.",
                 "moveUp": "Move up",
                 "moveDown": "Move down",
                 "deleteConfirm": "Delete this question?",
@@ -232,13 +208,20 @@
                 "tooLarge": "The file cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Error uploading the image",
                 "uploadTimeout": "The upload took too long. Please try again.",
+                "uploadingBatch": "Uploading photo {{current}} of {{total}}…",
                 "capReached_one": "Gallery limit reached (max. {{cap}} photo)",
                 "capReached_other": "Gallery limit reached (max. {{cap}} photos)",
                 "featuredFailed": "No se pudo marcar la imagen como principal",
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugImmutableNotice": "The public URL is generated from the name when the business is created and cannot be changed afterward."
+            "slugFollowsNameNotice": "Your listing's web address (its URL) will follow the name until you publish it.",
+            "slugFixedNotice": "Your listing's web address (its URL) is now fixed: renaming the listing does not change it.",
+            "slugRefresh": {
+                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
+                "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
+                "checkbox": "Change the web address too so it follows this new name"
+            }
         },
         "checklist": {
             "field": {
@@ -275,7 +258,10 @@
             },
             "subtitle": "Fill in the basics now — you'll be able to add photos, hours, and more details afterward.",
             "fields": {
-                "name": "Business name",
+                "name": {
+                    "gastronomy": "Business name",
+                    "experience": "Experience name"
+                },
                 "type": "Category",
                 "summary": "Summary",
                 "description": "Description",
@@ -283,9 +269,15 @@
                 "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
                 "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
             },
-            "submit": "Create business",
+            "submit": {
+                "gastronomy": "Create business",
+                "experience": "Create experience"
+            },
             "submitting": "Creating...",
-            "error": "We couldn't create the business. Please try again."
+            "error": {
+                "gastronomy": "We couldn't create the business. Please try again.",
+                "experience": "We couldn't create the experience. Please try again."
+            }
         }
     },
     "landing": {

@@ -26,6 +26,7 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 
 const mockMediaModel = {
     findAll: vi.fn(),
+    count: vi.fn(),
     findById: vi.fn(),
     findByGastronomy: vi.fn(),
     findFeatured: vi.fn(),
@@ -132,6 +133,7 @@ beforeEach(() => {
     );
 
     mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+    mockMediaModel.count.mockResolvedValue(0);
     mockMediaModel.findById.mockResolvedValue(null);
     mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
     mockMediaModel.findFeatured.mockResolvedValue(null);
@@ -783,7 +785,9 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
 
     it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
-        mockMediaModel.findAll.mockResolvedValue({ items: [], total: CAP });
+        // The cap is measured by a dedicated gallery-only count (HOS-791);
+        // `findAll` still answers the sortOrder probe and sees every visible row.
+        mockMediaModel.count.mockResolvedValue(CAP);
 
         const result = await addGastronomyMedia(
             model as unknown as Parameters<typeof addGastronomyMedia>[0],
@@ -797,11 +801,39 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
         expect(mockMediaModel.create).not.toHaveBeenCalled();
     });
 
+    it('measures the cap on the GALLERY ONLY, not counting the featured image (HOS-791)', async () => {
+        // The listing holds a featured image plus CAP-1 gallery photos. The
+        // featured image is not a gallery item, so there is still room for one
+        // more and the write must go through.
+        //
+        // The stub answers a DIFFERENT number per filter, so this reads which
+        // query the service issued: drop `isFeatured: false` and the count comes
+        // back as CAP, the write is refused, and `create` is never called.
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.count.mockImplementation(async (where: { isFeatured?: boolean }) =>
+            where.isFeatured === false ? CAP - 1 : CAP
+        );
+        mockMediaModel.create.mockResolvedValue(makeMediaRow());
+
+        const result = await addGastronomyMedia(
+            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
+        expect(mockMediaModel.count).toHaveBeenCalledWith(
+            expect.objectContaining({ state: 'visible', isFeatured: false }),
+            expect.anything()
+        );
+    });
+
     it('accepts the last photo that still fits', async () => {
         // Boundary: at CAP-1 there is room for exactly one more. An off-by-one
         // here caps owners one photo below their real allowance.
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
-        mockMediaModel.findAll.mockResolvedValue({ items: [], total: CAP - 1 });
+        mockMediaModel.count.mockResolvedValue(CAP - 1);
         mockMediaModel.create.mockResolvedValue(makeMediaRow());
 
         const result = await addGastronomyMedia(

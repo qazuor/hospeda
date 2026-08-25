@@ -21,8 +21,10 @@ import {
     applyRunToTranslations,
     fieldsWithMissingTranslations,
     hasSourceContent,
+    localeDisplaysFor,
     missingLocalesFor,
     pendingOutcomes,
+    sourceTextFor,
     summarizeOutcomes
 } from '../../../../src/components/host/editor/translation-status';
 import type { AccommodationTranslationData } from '../../../../src/lib/api/types';
@@ -470,5 +472,220 @@ describe('anyTranslationPersisted', () => {
 
     it('is false for an empty run', () => {
         expect(anyTranslationPersisted({ requested: ['name'], results: [] })).toBe(false);
+    });
+});
+
+describe('sourceTextFor', () => {
+    it('reads the plain column when the source is Spanish', () => {
+        // Not `locales.es`. A never-translated accommodation has empty i18n
+        // columns while its Spanish text sits in the plain one, and reading the
+        // i18n side would render every field of it as unwritten.
+        expect(
+            sourceTextFor({
+                status: { locales: { es: null, en: null, pt: null }, plain: 'Cabaña Cheroga' },
+                sourceLocale: 'es'
+            })
+        ).toBe('Cabaña Cheroga');
+    });
+
+    it('reads that locale only when the source is not Spanish', () => {
+        expect(
+            sourceTextFor({
+                status: { locales: { es: null, en: 'English source', pt: null }, plain: 'Plain' },
+                sourceLocale: 'en'
+            })
+        ).toBe('English source');
+    });
+
+    it('treats a whitespace-only source as no source at all', () => {
+        // Same trim every other reader applies. A source the backend will drop
+        // from the run must not render as text the host could review.
+        expect(
+            sourceTextFor({
+                status: { locales: { es: null, en: null, pt: null }, plain: '   ' },
+                sourceLocale: 'es'
+            })
+        ).toBeNull();
+    });
+
+    it('agrees with hasSourceContent on every input', () => {
+        // The two used to be one function with the answer thrown away. Keeping
+        // them in step is what stops the panel rendering a source the run logic
+        // considers absent.
+        const cases = [
+            { locales: { es: null, en: null, pt: null }, plain: 'Texto' },
+            { locales: { es: null, en: null, pt: null }, plain: '   ' },
+            { locales: { es: null, en: null, pt: null }, plain: null },
+            { locales: { es: 'i18n only', en: null, pt: null }, plain: null }
+        ];
+
+        for (const status of cases) {
+            expect(hasSourceContent({ status, sourceLocale: 'es' })).toBe(
+                sourceTextFor({ status, sourceLocale: 'es' }) !== null
+            );
+        }
+    });
+});
+
+describe('localeDisplaysFor', () => {
+    it('returns one entry per supported locale, in order', () => {
+        const displays = localeDisplaysFor({
+            status: { locales: { es: null, en: 'EN', pt: null }, plain: 'ES' },
+            sourceLocale: 'es'
+        });
+
+        expect(displays.map((display) => display.locale)).toEqual(['es', 'en', 'pt']);
+    });
+
+    it('labels the source, the translations and the gaps', () => {
+        const displays = localeDisplaysFor({
+            status: {
+                locales: { es: null, en: 'Cheroga Country House', pt: null },
+                plain: 'Cabaña'
+            },
+            sourceLocale: 'es'
+        });
+
+        expect(displays).toEqual([
+            { locale: 'es', role: 'source', text: 'Cabaña', presenceOnly: false },
+            {
+                locale: 'en',
+                role: 'translated',
+                text: 'Cheroga Country House',
+                presenceOnly: false
+            },
+            { locale: 'pt', role: 'missing', text: null, presenceOnly: false }
+        ]);
+    });
+
+    it('keeps the source role on an empty source', () => {
+        // "You have not written this yet" and "this was not translated yet" are
+        // addressed to different people, so they cannot share a role.
+        const [spanish] = localeDisplaysFor({
+            status: { locales: { es: null, en: null, pt: null }, plain: null },
+            sourceLocale: 'es'
+        });
+
+        expect(spanish).toEqual({ locale: 'es', role: 'source', text: null, presenceOnly: false });
+    });
+
+    it('reads a whitespace-only locale as missing, exactly like the run logic does', () => {
+        // The disagreement this function exists to make unrepresentable: the badge
+        // used to trim inline while `missingLocalesFor` trimmed here, and a value
+        // like this is where the two came apart.
+        const status = { locales: { es: null, en: '   ', pt: null }, plain: 'Cabaña' };
+        const [, english] = localeDisplaysFor({ status, sourceLocale: 'es' });
+
+        expect(english.role).toBe('missing');
+        expect(missingLocalesFor({ status, sourceLocale: 'es' })).toContain('en');
+    });
+
+    it('reports a folded success with no text as present but unreadable', () => {
+        // The marker keeps presence true — without it the generate button never
+        // retires — while `text: null` stops it being rendered as the translation.
+        const folded = applyRunToTranslations({
+            translations: {
+                name: { locales: { es: null, en: null, pt: null }, plain: 'Cabaña' },
+                summary: SPANISH_ONLY,
+                description: SPANISH_ONLY,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true }]
+        });
+
+        const [, english] = localeDisplaysFor({ status: folded.name, sourceLocale: 'es' });
+
+        expect(english).toEqual({
+            locale: 'en',
+            role: 'translated',
+            text: null,
+            presenceOnly: true
+        });
+        expect(missingLocalesFor({ status: folded.name, sourceLocale: 'es' })).not.toContain('en');
+    });
+});
+
+describe('applyRunToTranslations — the text a run returned (HOS-797)', () => {
+    const BLANK = {
+        locales: { es: null, en: null, pt: null },
+        plain: 'Cabaña Cheroga'
+    };
+
+    it('writes the translated text into a blank locale', () => {
+        // The response has always carried it. Folding it in is what lets the host
+        // read what was generated without the reload that costs an unsaved draft.
+        const next = applyRunToTranslations({
+            translations: {
+                name: BLANK,
+                summary: SPANISH_ONLY,
+                description: SPANISH_ONLY,
+                richDescription: null
+            },
+            results: [
+                {
+                    fieldType: 'name',
+                    locale: 'en',
+                    success: true,
+                    translatedText: 'Cheroga Country House'
+                }
+            ]
+        });
+
+        expect(next.name.locales.en).toBe('Cheroga Country House');
+    });
+
+    it('keeps stored text over the text a run reports', () => {
+        // A reported success is the provider's, not the database's:
+        // `persistTranslations` skips a locale flagged `autoTranslated: false`
+        // while the route still returns it as successful. Overwriting here would
+        // put text on screen that is never going to be published.
+        const next = applyRunToTranslations({
+            translations: {
+                name: { locales: { es: null, en: 'Manual EN', pt: null }, plain: 'Cabaña' },
+                summary: SPANISH_ONLY,
+                description: SPANISH_ONLY,
+                richDescription: null
+            },
+            results: [
+                { fieldType: 'name', locale: 'en', success: true, translatedText: 'Provider EN' }
+            ]
+        });
+
+        expect(next.name.locales.en).toBe('Manual EN');
+    });
+
+    it('replaces a whitespace-only locale with the real text', () => {
+        // `'   '` is non-null and absent at once. It must not survive as the value
+        // shown for a locale the same run just filled.
+        const next = applyRunToTranslations({
+            translations: {
+                name: { locales: { es: null, en: '   ', pt: null }, plain: 'Cabaña' },
+                summary: SPANISH_ONLY,
+                description: SPANISH_ONLY,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true, translatedText: 'Real EN' }]
+        });
+
+        expect(next.name.locales.en).toBe('Real EN');
+    });
+
+    it('falls back to presence when a success carries no text', () => {
+        // Dropping the success for want of a string would leave the locale
+        // missing, the button live, and the next run coming back empty — the loop
+        // BETA-199 is about.
+        const next = applyRunToTranslations({
+            translations: {
+                name: BLANK,
+                summary: SPANISH_ONLY,
+                description: SPANISH_ONLY,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true, translatedText: '  ' }]
+        });
+
+        expect(missingLocalesFor({ status: next.name, sourceLocale: 'es' })).not.toContain('en');
+        const [, english] = localeDisplaysFor({ status: next.name, sourceLocale: 'es' });
+        expect(english.presenceOnly).toBe(true);
     });
 });

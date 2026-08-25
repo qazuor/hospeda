@@ -39,6 +39,7 @@ import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
 import { type CommerceMediaRow, commerceMediaApi } from '@/lib/api/endpoints-protected';
+import type { ApiError } from '@/lib/api/types';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -234,6 +235,28 @@ function describeUploadError(err: unknown, t: Translate): string {
 }
 
 /**
+ * Whether an `addMedia` failure is the gallery cap rather than any other
+ * error, for a multi-file batch upload (HOS-832, mirrors the accommodation
+ * editor's `isPlanLimitReached` gate for the same reason — see below).
+ *
+ * Unlike accommodation, commerce has no per-plan photo entitlement: its
+ * gallery cap is the single fixed `getGalleryCap(vertical)` constant, already
+ * checked against the WHOLE batch before any upload starts (see
+ * `handleGallerySelect`). Under normal operation the server can therefore
+ * never reject on this path — but a concurrent edit in another tab can still
+ * fill the remaining slots between that client-side check and this file's
+ * turn in the sequential loop, and the server enforces the same cap with
+ * `ServiceErrorCode.QUOTA_EXCEEDED` (`packages/service-core/src/services/gastronomy/gastronomy.media.ts`,
+ * `packages/service-core/src/services/experience/experience.media.ts`,
+ * mapped to HTTP 429 — `apps/api/src/middlewares/response.ts`). Once that
+ * happens every remaining file in the batch would fail identically, so the
+ * caller stops instead of firing one toast per file.
+ */
+function isGalleryQuotaExceeded(error: ApiError): boolean {
+    return error.status === 429 && error.code === 'QUOTA_EXCEEDED';
+}
+
+/**
  * Featured-image + gallery section for a commerce listing. Hydrates on mount
  * from `commerceMediaApi.listMedia`; every user operation (add, remove,
  * set-featured) is persisted immediately via a granular API call. The parent
@@ -265,11 +288,21 @@ export function MediaSection({
 
     const [isHydrated, setIsHydrated] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    /** "Uploading photo X of Y" marker for a multi-file gallery batch (HOS-832). */
+    const [uploadBatch, setUploadBatch] = useState<{
+        readonly current: number;
+        readonly total: number;
+    } | null>(null);
     const [opLoading, setOpLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const galleryCap = getGalleryCap(vertical);
     const isGalleryFull = galleryItems.length >= galleryCap;
+    // Selecting exactly one remaining slot with `multiple` on would still let
+    // the OS picker offer more than one file, only to reject the whole batch
+    // instantly — so `multiple` is only declared once there is room for more
+    // than one upload (mirrors the accommodation editor, HOS-122).
+    const remainingGallerySlots = Math.max(galleryCap - galleryItems.length, 0);
 
     // --- Hydrate from API on mount ---
 
@@ -446,67 +479,118 @@ export function MediaSection({
     // --- Gallery handlers ---
 
     /**
-     * Upload a new gallery photo and persist it immediately.
+     * Upload a batch of gallery photos and persist each one immediately.
      *
-     * Flow: upload → addMedia (creates a visible, non-featured row) → append
-     * to state.
+     * Ported from the accommodation editor's `processGalleryFiles`
+     * (`apps/web/src/components/host/editor/use-photo-section.ts`, HOS-122):
+     * the cap is checked ONCE against the whole selected batch (checking it
+     * file-by-file is where the accommodation editor's original bug lived —
+     * the last file silently vanishing over the limit), every file is
+     * validated up front so a bad file rejects the whole batch before any
+     * upload starts, and files upload SEQUENTIALLY — one XHR at a time — so
+     * the in-flight state keeps meaning something instead of resolving in an
+     * arbitrary order. `uploadBatch` surfaces "uploading photo X of Y" while
+     * a batch of more than one file is in flight, for the same reason.
+     *
+     * A single file's failure is reported and the loop continues to the next
+     * file — UNLESS the gallery cap itself was hit (`isGalleryQuotaExceeded`),
+     * in which case every remaining file would fail identically, so the loop
+     * stops after ONE toast instead of firing one per remaining file (mirrors
+     * the accommodation editor's `isPlanLimitReached` guard, HOS-724).
+     *
+     * Flow per file: upload → addMedia (creates a visible, non-featured row)
+     * → append to state.
      */
     const handleGallerySelect = useCallback(
         async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
-            if (!file) {
+            const files = Array.from(event.target.files ?? []);
+            if (files.length === 0) {
                 return;
             }
-            if (isGalleryFull) {
+
+            const remainingSlots = galleryCap - galleryItems.length;
+            if (files.length > remainingSlots) {
                 reportError(tPlural('commerce.owner.editor.media.capReached', galleryCap));
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
                 }
                 return;
             }
-            const validationError = validateFile(file);
-            if (validationError) {
-                reportError(validationError);
-                return;
-            }
-            setError(null);
-            setIsUploading(true);
-            try {
-                const uploaded = await uploadEntityImage({
-                    file,
-                    vertical,
-                    listingId,
-                    role: 'gallery'
-                });
 
-                const addResult = await commerceMediaApi.addMedia({
-                    vertical,
-                    id: listingId,
-                    body: {
-                        url: uploaded.url,
-                        publicId: uploaded.publicId,
-                        moderationState: 'APPROVED'
-                    }
-                });
-
-                if (!addResult.ok) {
-                    reportError(
-                        addResult.error.message ?? t('commerce.owner.editor.media.persistFailed')
-                    );
+            for (const file of files) {
+                const validationError = validateFile(file);
+                if (validationError) {
+                    reportError(validationError);
                     return;
                 }
+            }
 
-                setGalleryItems((prev) => [...prev, rowToItem(addResult.data.media)]);
-            } catch (err) {
-                reportError(describeUploadError(err, t));
-            } finally {
-                setIsUploading(false);
-                if (galleryInputRef.current) {
-                    galleryInputRef.current.value = '';
+            setError(null);
+            setIsUploading(true);
+
+            for (let index = 0; index < files.length; index += 1) {
+                const file = files[index];
+                if (!file) {
+                    continue;
+                }
+                setUploadBatch(
+                    files.length > 1 ? { current: index + 1, total: files.length } : null
+                );
+
+                try {
+                    const uploaded = await uploadEntityImage({
+                        file,
+                        vertical,
+                        listingId,
+                        role: 'gallery'
+                    });
+
+                    const addResult = await commerceMediaApi.addMedia({
+                        vertical,
+                        id: listingId,
+                        body: {
+                            url: uploaded.url,
+                            publicId: uploaded.publicId,
+                            moderationState: 'APPROVED'
+                        }
+                    });
+
+                    if (!addResult.ok) {
+                        reportError(
+                            addResult.error.message ??
+                                t('commerce.owner.editor.media.persistFailed')
+                        );
+                        // The cap was hit: every remaining file in the batch
+                        // would fail identically, so stop instead of firing
+                        // one more toast per file.
+                        if (isGalleryQuotaExceeded(addResult.error)) {
+                            break;
+                        }
+                        continue;
+                    }
+
+                    setGalleryItems((prev) => [...prev, rowToItem(addResult.data.media)]);
+                } catch (err) {
+                    reportError(describeUploadError(err, t));
                 }
             }
+
+            setIsUploading(false);
+            setUploadBatch(null);
+            if (galleryInputRef.current) {
+                galleryInputRef.current.value = '';
+            }
         },
-        [isGalleryFull, validateFile, vertical, listingId, t, reportError, galleryCap, tPlural]
+        [
+            galleryItems.length,
+            validateFile,
+            vertical,
+            listingId,
+            t,
+            reportError,
+            galleryCap,
+            tPlural
+        ]
     );
 
     /**
@@ -547,7 +631,7 @@ export function MediaSection({
             id="editor-media"
         >
             <span className={fieldStyles.label}>
-                {t('commerce.owner.editor.sections.media', 'Galería de fotos')}
+                {t('commerce.owner.editor.sections.media', 'Fotos')}
             </span>
             <div className={styles.media}>
                 <div className={styles.mediaGroup}>
@@ -555,7 +639,7 @@ export function MediaSection({
                         {t('commerce.owner.editor.media.featured', 'Imagen principal')}
                     </span>
                     {featuredItem ? (
-                        <div className={styles.mediaThumb}>
+                        <div className={`${styles.mediaThumb} ${styles.mediaThumbFeatured}`}>
                             <img
                                 src={featuredItem.url}
                                 alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
@@ -574,7 +658,7 @@ export function MediaSection({
                     ) : (
                         <button
                             type="button"
-                            className={styles.mediaAdd}
+                            className={`${styles.mediaAdd} ${styles.mediaAddFeatured}`}
                             disabled={isUploading}
                             onClick={() => featuredInputRef.current?.click()}
                         >
@@ -636,6 +720,7 @@ export function MediaSection({
                         ref={galleryInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
+                        multiple={remainingGallerySlots > 1}
                         aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
                         className={styles.mediaFileInput}
                         onChange={handleGallerySelect}
@@ -647,6 +732,15 @@ export function MediaSection({
                             { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                         )}
                     </span>
+                    {isUploading && uploadBatch && uploadBatch.total > 1 && (
+                        <p className={styles.mediaUploadBatchStatus}>
+                            {t(
+                                'commerce.owner.editor.media.uploadingBatch',
+                                'Subiendo foto {{current}} de {{total}}…',
+                                { current: uploadBatch.current, total: uploadBatch.total }
+                            )}
+                        </p>
+                    )}
                 </div>
 
                 {error && (

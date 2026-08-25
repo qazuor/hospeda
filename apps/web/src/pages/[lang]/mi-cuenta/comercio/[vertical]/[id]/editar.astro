@@ -5,20 +5,19 @@
  * by the authenticated COMMERCE_OWNER (SPEC-249 Part A). Mounts the editor
  * island, which now ALSO covers `name`/`destinationId` (HOS-166 D-1 — SPEC-239
  * decision #5 reversed: the owner loads their own identity). `slug` stays
- * shown read-only in the page header — it is server-derived at create time
- * and immutable post-create (HOS-166 OQ-3), the one identity field that did
- * NOT flip owner-editable.
+ * shown read-only in the page header — the owner never edits it directly. The
+ * server keeps it aligned with the name while the listing is still a draft,
+ * then stops auto-changing it after publication (HOS-784 stage 1).
  *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
-import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.client';
 import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.client';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { transformAmenityList } from '@/lib/api/transforms';
+import { isListingPublished } from '@/lib/listing-slug-refresh';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import {
     type CommerceVertical,
@@ -106,6 +105,15 @@ const destinations = destinationsResult.ok
 // `CommerceListingEditor`'s `destinationsLoadFailed` prop doc.
 const destinationsLoadFailed = !destinationsResult.ok;
 
+// HOS-834: the address notice states ONE state, the one this listing is
+// actually in. The previous single line described both at once ("follows the
+// name while unpublished; once published it stops") and never said which
+// applied, so on a published listing its first half described something that
+// does not happen to it. Resolved through `isListingPublished` — the same
+// predicate that gates the slug-refresh opt-in inside the editor (HOS-784), so
+// the sentence above the form and the behaviour below it can never disagree.
+const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycleState });
+
 const title = t('commerce.owner.list.edit', 'Editar');
 const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 
@@ -131,10 +139,15 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         </div>
         <p class="ce-identity__slug"><code>{detail.slug}</code></p>
         <p class="ce-identity__notice">
-            {t(
-                'commerce.owner.editor.slugImmutableNotice',
-                'La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después.'
-            )}
+            {listingIsPublished
+                ? t(
+                      'commerce.owner.editor.slugFixedNotice',
+                      'La dirección web de tu ficha (su URL) ya está fija: cambiar el nombre no la modifica.'
+                  )
+                : t(
+                      'commerce.owner.editor.slugFollowsNameNotice',
+                      'La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.'
+                  )}
         </p>
     </div>
 
@@ -155,40 +168,11 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         destinations={destinations}
         destinationsLoadFailed={destinationsLoadFailed}
         hasFaqSection={true}
+        initialFaqs={initialFaqs}
     />
-
-    {/*
-        H-153: the FAQ card is a sibling of the editor, not one of its sections,
-        so the editor cannot advertise it in the section nav on its own. This
-        page owns both halves — it passes `hasFaqSection` above and supplies the
-        `id="editor-faqs"` the resulting nav link scrolls to. Removing either one
-        without the other leaves a link that scrolls nowhere; the section-nav
-        suite asserts they stay together.
-    */}
-    <div class="ce-faq-gap" id="editor-faqs">
-        <AccountSectionCard>
-            <CommerceFaqManager
-                client:idle
-                vertical={vertical}
-                listingId={id}
-                locale={locale}
-                initialFaqs={initialFaqs}
-            />
-        </AccountSectionCard>
-    </div>
 </AccountLayout>
 
 <style>
-    /* Stacked-card spacing: the card recipe carries no outer margin, so the FAQ
-       card needs an explicit gap from whatever sits above it. Since HOS-371 that
-       is the editor's LAST section card, not an AccountSectionCard — the value
-       matches `.editor`'s own `gap: var(--space-6)` so the FAQ card is spaced
-       from the editor exactly like the editor's cards are spaced from each
-       other. */
-    .ce-faq-gap {
-        margin-top: var(--space-6);
-    }
-
     .ce-identity {
         margin-bottom: var(--space-6);
         padding-bottom: var(--space-4);

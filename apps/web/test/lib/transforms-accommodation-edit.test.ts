@@ -204,6 +204,85 @@ describe('transformAccommodationEdit', () => {
         expect(result.amenityIds).toEqual(['am-1']);
         expect(result.featureIds).toEqual(['ft-1']);
     });
+
+    /**
+     * HOS-792. The SEO section previews what the PUBLIC page will publish while
+     * the override is empty, so these two fields must be computed with the
+     * public page's rule, not with the editor's.
+     *
+     * The editor's own `name`/`summary` are the raw columns;
+     * `transformAccommodationDetail` resolves `nameI18n ?? name` per locale.
+     * Where those disagree — a rename that never re-translated, an i18n object
+     * with no `es` — the editor would otherwise name a value Google never sees.
+     */
+    describe('SEO defaults previewed by the editor', () => {
+        it('should prefer the i18n column over the raw one, like the public page', () => {
+            const result = transformAccommodationEdit({
+                item: {
+                    name: 'Nombre crudo',
+                    summary: 'Resumen crudo',
+                    nameI18n: { es: 'Nombre publicado', en: 'Published name' },
+                    summaryI18n: { es: 'Resumen publicado', en: 'Published summary' }
+                }
+            });
+
+            expect(result.seoTitleDefault).toBe('Nombre publicado');
+            expect(result.seoDescriptionDefault).toBe('Resumen publicado');
+            // The editable columns are untouched — this change adds a preview,
+            // it does not alter what the host edits.
+            expect(result.name).toBe('Nombre crudo');
+            expect(result.summary).toBe('Resumen crudo');
+        });
+
+        it('should fall back to the raw column when there is no i18n object', () => {
+            const result = transformAccommodationEdit({
+                item: { name: 'Solo crudo', summary: 'Resumen solo crudo' }
+            });
+
+            expect(result.seoTitleDefault).toBe('Solo crudo');
+            expect(result.seoDescriptionDefault).toBe('Resumen solo crudo');
+        });
+
+        it('should pin the SOURCE locale, not whatever the host is editing in', () => {
+            // The override only ever applies on `es`, so the preview is of the
+            // Spanish page even for a host working in another language.
+            const result = transformAccommodationEdit({
+                item: {
+                    name: 'crudo',
+                    nameI18n: { es: 'Español', en: 'English', pt: 'Português' }
+                }
+            });
+
+            expect(result.seoTitleDefault).toBe('Español');
+        });
+
+        it('should mirror the public cross-fall when the source locale is missing', () => {
+            // Not the behaviour anyone would design, but it IS what the page
+            // publishes: `resolveI18nText` falls through es → en → pt. Previewing
+            // the Spanish column here would show a title that never ships.
+            const result = transformAccommodationEdit({
+                item: { name: 'Nombre en español', nameI18n: { en: 'Only English' } }
+            });
+
+            expect(result.seoTitleDefault).toBe('Only English');
+        });
+
+        it('should report a whitespace-only value as no default at all', () => {
+            const result = transformAccommodationEdit({
+                item: { name: '   ', summary: '\n\t ' }
+            });
+
+            expect(result.seoTitleDefault).toBe('');
+            expect(result.seoDescriptionDefault).toBe('');
+        });
+
+        it('should report an empty default for a draft with nothing filled in', () => {
+            const result = transformAccommodationEdit({ item: {} });
+
+            expect(result.seoTitleDefault).toBe('');
+            expect(result.seoDescriptionDefault).toBe('');
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------

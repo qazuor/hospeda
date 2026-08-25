@@ -75,6 +75,7 @@ export interface CommerceEditData {
     readonly amenityIds: ReadonlySet<string>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: CommerceI18nValues;
+    readonly refreshSlugFromName: boolean;
 }
 
 /**

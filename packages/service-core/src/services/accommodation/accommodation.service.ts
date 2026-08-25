@@ -128,6 +128,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
+import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
@@ -1137,6 +1138,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
+
         // SPEC-095: when destinationId is being changed, validate it is a CITY.
         if (data.destinationId) {
             await this._assertDestinationIsCity(data.destinationId);
@@ -1156,6 +1159,25 @@ export class AccommodationService extends BaseCrudService<
             const entityId = ctx.hookState.updateId;
             if (entityId) {
                 const current = await this.model.findById(entityId, ctx.tx);
+
+                if (
+                    current &&
+                    shouldRegenerateSlugOnRename({
+                        currentLifecycleState: current.lifecycleState,
+                        currentName: current.name,
+                        nextName: data.name,
+                        slugWasProvided,
+                        refreshSlugFromName: data.refreshSlugFromName
+                    })
+                ) {
+                    const nextType = typeof data.type === 'string' ? data.type : current.type;
+                    ctx.hookState.regeneratedSlug = await generateSlug(
+                        nextType,
+                        data.name as string,
+                        current.id
+                    );
+                }
+
                 ctx.hookState.previousTranslatableFields = {
                     name: current?.name ?? undefined,
                     summary: current?.summary ?? undefined,
@@ -1191,6 +1213,7 @@ export class AccommodationService extends BaseCrudService<
         const cleanData = { ...data } as Record<string, unknown>;
         const aiAssistedFields = cleanData.aiAssistedFields as readonly string[] | undefined;
         cleanData.aiAssistedFields = undefined;
+        cleanData.refreshSlugFromName = undefined;
 
         if (aiAssistedFields !== undefined && ctx.hookState) {
             ctx.hookState.pendingAiAssistedFields = aiAssistedFields;
@@ -1198,6 +1221,10 @@ export class AccommodationService extends BaseCrudService<
                 { aiAssistedFields },
                 '[accommodation] AI-assisted fields detected in update payload'
             );
+        }
+
+        if (ctx.hookState?.regeneratedSlug) {
+            cleanData.slug = ctx.hookState.regeneratedSlug;
         }
 
         return cleanData as Partial<Accommodation>;
@@ -3801,17 +3828,32 @@ export class AccommodationService extends BaseCrudService<
                 // directly with an already-uploaded URL walked straight past it.
                 //
                 // Same `getGalleryCap` constant those routes read, and the same
-                // `state: 'visible'` filter `resolveVisibleGalleryCount` applies
-                // for accommodations — an archived photo does not occupy a slot.
-                // The count is the one this method ALREADY fetched for
-                // `sortOrder`: `findAll` returns a full `total` from its own
-                // count query, independent of `pageSize`. So this costs nothing.
+                // filter `resolveVisibleGalleryCount` applies for accommodations:
+                // `state: 'visible'` (an archived photo does not occupy a slot)
+                // AND `isFeatured: false` (HOS-791 — the featured image is not a
+                // gallery item, so charging it a slot closed the gallery one
+                // photo early).
+                //
+                // This is a SECOND query rather than a reuse of `existing.total`.
+                // `existing` is deliberately left unfiltered because it also
+                // computes the next `sortOrder`, and skipping the featured row
+                // there would hand out a `sortOrder` already in use whenever the
+                // featured row holds the current maximum.
+                const galleryCount = await mediaModel.count(
+                    {
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        isFeatured: false,
+                        deletedAt: null
+                    },
+                    { tx: ctx?.tx }
+                );
                 const galleryCap = getGalleryCap('accommodation');
-                if (existing.total >= galleryCap) {
+                if (galleryCount >= galleryCap) {
                     throw new ServiceError(
                         ServiceErrorCode.QUOTA_EXCEEDED,
                         `Gallery limit of ${galleryCap} photos reached for this accommodation`,
-                        { currentCount: existing.total, maxAllowed: galleryCap }
+                        { currentCount: galleryCount, maxAllowed: galleryCap }
                     );
                 }
 

@@ -1,6 +1,6 @@
 # @repo/auth-ui
 
-Pre-built authentication UI components for React using Better Auth. Provides ready-to-use sign-in, sign-up, and user menu components with consistent styling and behavior across the Hospeda platform.
+Pre-built authentication UI components for React using Better Auth. Provides ready-to-use sign-in and user menu components with consistent styling and behavior across the Hospeda platform.
 
 ## Installation
 
@@ -54,7 +54,6 @@ For detailed setup, see [Better Auth React Documentation](https://better-auth.co
 ### Components
 
 - **SignInForm** - Email/password sign-in form with Better Auth integration
-- **SignUpForm** - User registration form with validation
 - **SignOutButton** - Sign-out button with callback support
 - **SimpleUserMenu** - Basic user menu (name/avatar only)
 - **UserMenu** - Full dropdown user menu with settings/sign-out
@@ -107,43 +106,6 @@ export function LoginPage() {
 - Automatic database sync
 - Form validation
 - Internationalization support
-
-### SignUpForm
-
-User registration form with validation:
-
-```tsx
-import { SignUpForm } from '@repo/auth-ui';
-
-export function RegisterPage() {
-  return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Create Account</h1>
-      <SignUpForm
-        onSynced={(dbUserId) => {
-          console.log('New user created:', dbUserId);
-        }}
-        apiBaseUrl="http://localhost:3000"
-        redirectTo="/onboarding"
-      />
-    </div>
-  );
-}
-```
-
-**Props:**
-
-- `onSynced?: (dbUserId: string) => void` - Callback when user is created in database
-- `apiBaseUrl?: string` - API base URL
-- `redirectTo?: string` - Path to redirect after successful sign-up
-
-**Features:**
-
-- Email, password, and name fields
-- Password strength validation
-- OAuth provider options
-- Email verification
-- Automatic database user creation
 
 ### SignOutButton
 
@@ -306,64 +268,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 ### Authentication Flow
 
 ```tsx
-import { SignInForm, SignUpForm } from '@repo/auth-ui';
-import { useState } from 'react';
+import { SignInForm } from '@repo/auth-ui';
 
 export function AuthPage() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-
   return (
     <div className="max-w-md mx-auto p-6">
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setMode('signin')}
-          className={mode === 'signin' ? 'font-bold' : ''}
-        >
-          Sign In
-        </button>
-        <button
-          onClick={() => setMode('signup')}
-          className={mode === 'signup' ? 'font-bold' : ''}
-        >
-          Sign Up
-        </button>
-      </div>
-
-      {mode === 'signin' ? (
-        <SignInForm redirectTo="/dashboard" />
-      ) : (
-        <SignUpForm redirectTo="/onboarding" />
-      )}
+      <SignInForm redirectTo="/dashboard" />
     </div>
-  );
-}
-```
-
-### Database User Sync
-
-```tsx
-import { SignUpForm } from '@repo/auth-ui';
-import { useNavigate } from 'react-router-dom';
-
-export function RegisterPage() {
-  const navigate = useNavigate();
-
-  return (
-    <SignUpForm
-      onSynced={async (dbUserId) => {
-        // User is now in your database
-        console.log('Database user ID:', dbUserId);
-
-        // Fetch additional user data if needed
-        const userData = await fetch(`/api/users/${dbUserId}`).then(r => r.json());
-
-        // Update local state
-        updateUserContext(userData);
-
-        // Navigate to next step
-        navigate('/onboarding');
-      }}
-    />
   );
 }
 ```

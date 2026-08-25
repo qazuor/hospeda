@@ -3,21 +3,24 @@
  * @description Minimum-viable property creation form for hosts.
  *
  * Asks only for name, summary, type and a CITY destination, POSTs the result
- * to `/api/v1/protected/host-onboarding/start`, and redirects the host to the
- * next step depending on whether they can reach the admin panel.
+ * to `/api/v1/protected/host-onboarding/start`, and drops the host straight
+ * into the editor of the listing that was just created.
  *
- * Post-submit redirect rules:
- *  - HOST users WITHOUT `access.panelAdmin` (the default for the public
- *    onboarding flow) are sent to `accountPropertiesUrl` — the web's own
- *    listing page under `/mi-cuenta/propiedades/`. Sending them to the admin
- *    panel would land them on `/auth/forbidden`.
- *  - Users WITH `access.panelAdmin` (ADMIN / SUPER_ADMIN) are sent to the
- *    admin panel so they can complete the rest of the listing (price,
- *    photos, amenities, contact, etc.).
+ * Post-submit redirect (HOS-801): every actor — plain HOST and ADMIN /
+ * SUPER_ADMIN alike — lands on the web editor at
+ * `/{locale}/mi-cuenta/propiedades/{id}/editar/`. This used to branch on
+ * `access.panelAdmin`, which had it backwards: staff reached an edit page
+ * while the host who had just filled the form was dropped on the generic
+ * `/mi-cuenta/propiedades/` list and left to find their own listing. Nobody
+ * is sent to `/admin/*` any more, so the HOS-152 guarantee (a plain HOST must
+ * never be bounced to `/auth/forbidden`) now holds by construction instead of
+ * depending on a permission flag resolved by the page.
+ *
+ * The URL is built from the accommodation ID, never the slug: the editor
+ * route resolves by ID and silently redirects a slug back to the list.
  *
  * The endpoint can answer with two terminal states:
- *  - `created`     -> a fresh DRAFT was inserted, redirect to its edit page
- *                     (admin) or to the web property list.
+ *  - `created`     -> a fresh DRAFT was inserted, redirect to its editor.
  *  - `resumed`     -> the user already had an active DRAFT, same redirect.
  *
  * On 503 (billing layer unavailable), the form surfaces a retry-friendly
@@ -36,6 +39,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
+import { CharacterCounter } from '@/components/ui/CharacterCounter';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
@@ -50,7 +54,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { rankCitySuggestions } from '@/lib/rank-city-suggestions';
-import { buildUrlWithParams } from '@/lib/urls';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './CreatePropertyMiniForm.module.css';
 
@@ -64,20 +68,6 @@ export type CreatePropertyMiniFormProps = {
     readonly locale: SupportedLocale;
     /** API base URL for the draft create endpoint. */
     readonly apiUrl: string;
-    /** Admin panel base URL — used only when {@link canAccessAdminPanel} is true. */
-    readonly adminUrl: string;
-    /**
-     * Absolute path on the web app to the host's property list
-     * (e.g. `/es/mi-cuenta/propiedades/`). Used as the post-create
-     * fallback for users without admin panel access.
-     */
-    readonly accountPropertiesUrl: string;
-    /**
-     * Whether the current user has `access.panelAdmin`. Plain HOST users
-     * do NOT have this permission, so they are bounced from `/admin/*`
-     * to `/auth/forbidden`. When false we keep the redirect on the web.
-     */
-    readonly canAccessAdminPanel: boolean;
     /**
      * Free-trial length in days, for the publish callout copy. Passed in from
      * the page rather than read from `@repo/billing` here: client components in
@@ -217,6 +207,12 @@ const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
 
 /** Max suggestions surfaced by the city autocomplete dropdown. */
 const CITY_AUTOCOMPLETE_LIMIT = 10;
+const NAME_MIN_LENGTH = 3;
+const NAME_MAX_LENGTH = 100;
+const SUMMARY_MIN_LENGTH = 10;
+const SUMMARY_MAX_LENGTH = 300;
+const DESCRIPTION_MIN_LENGTH = 30;
+const DESCRIPTION_MAX_LENGTH = 2000;
 
 /**
  * Renders a confidence badge matching the inline pattern used for name/summary/type.
@@ -252,14 +248,7 @@ function ConfidenceBadge({
  * SPEC-258 B-web: when import data is present, extra optional fields are
  * rendered in a collapsible section and submitted with the payload.
  */
-export function CreatePropertyMiniForm({
-    locale,
-    apiUrl,
-    adminUrl,
-    accountPropertiesUrl,
-    canAccessAdminPanel,
-    trialDays
-}: CreatePropertyMiniFormProps) {
+export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreatePropertyMiniFormProps) {
     const { t, tPlural } = createTranslations(locale);
 
     const nameId = useId();
@@ -804,16 +793,13 @@ export function CreatePropertyMiniForm({
                 return;
             }
 
-            const adminBase = adminUrl.replace(/\/$/, '');
-
             // `created` / `resumed`: if the actor was a USER they were promoted
             // to HOST atomically with the draft creation (an existing host is
             // left unchanged). Better Auth's cookie cache may still carry the
             // pre-promotion `role=USER` for up to 5 minutes, so we force a
-            // session refresh from the DB before redirecting — regardless of
-            // which destination below is used — so the web (and, when
-            // applicable, the admin guard) recognizes the freshly-promoted
-            // HOST instead of reading a stale `role=USER` cookie.
+            // session refresh from the DB before redirecting, so the web
+            // recognizes the freshly-promoted HOST instead of reading a stale
+            // `role=USER` cookie.
             await refreshSessionFromDatabase(apiUrl);
 
             if (!data.accommodationId) {
@@ -826,13 +812,13 @@ export function CreatePropertyMiniForm({
                 return;
             }
 
-            // Destination depends on canAccessAdminPanel (see the module
-            // docstring's "Post-submit redirect rules"): plain HOST/
-            // COMMERCE_OWNER users do not have `access.panelAdmin`, so sending
-            // them to the admin panel would bounce them to `/auth/forbidden`.
-            window.location.href = canAccessAdminPanel
-                ? `${adminBase}/accommodations/${data.accommodationId}/edit`
-                : accountPropertiesUrl;
+            // HOS-801: straight into the editor of the listing just created,
+            // for every actor. Built from the ID — the editor route resolves
+            // by ID and a slug is silently redirected back to the list.
+            window.location.href = buildUrl({
+                locale,
+                path: `mi-cuenta/propiedades/${data.accommodationId}/editar`
+            });
         } catch {
             setSubmitError(
                 t(
@@ -971,10 +957,23 @@ export function CreatePropertyMiniForm({
                     type="text"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
-                    maxLength={100}
+                    maxLength={NAME_MAX_LENGTH}
                     required
                     aria-invalid={fieldErrors.name ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
+                    aria-describedby={[
+                        `${nameId}-counter`,
+                        fieldErrors.name ? `${nameId}-error` : ''
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
+                />
+                <CharacterCounter
+                    id={`${nameId}-counter`}
+                    locale={locale}
+                    current={name.length}
+                    min={NAME_MIN_LENGTH}
+                    max={NAME_MAX_LENGTH}
+                    testId="name-char-counter"
                 />
                 <FieldError
                     id={`${nameId}-error`}
@@ -1111,17 +1110,36 @@ export function CreatePropertyMiniForm({
                     value={summary}
                     onChange={(event) => setSummary(event.target.value)}
                     rows={3}
-                    maxLength={300}
+                    maxLength={SUMMARY_MAX_LENGTH}
                     required
                     aria-invalid={fieldErrors.summary ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.summary ? `${summaryId}-error` : undefined}
+                    aria-describedby={[
+                        `${summaryId}-hint`,
+                        `${summaryId}-counter`,
+                        fieldErrors.summary ? `${summaryId}-error` : ''
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
                 />
-                <p className="form-hint">
-                    {t(
-                        'host.miniForm.fields.summaryHint',
-                        'Una frase de presentación. Después podés ampliar todo en el panel.'
-                    )}
-                </p>
+                <div className={styles.fieldMetaRow}>
+                    <p
+                        id={`${summaryId}-hint`}
+                        className="form-hint"
+                    >
+                        {t(
+                            'host.miniForm.fields.summaryHint',
+                            'Una frase de presentación. Después podés ampliar todo en el panel.'
+                        )}
+                    </p>
+                    <CharacterCounter
+                        id={`${summaryId}-counter`}
+                        locale={locale}
+                        current={summary.length}
+                        min={SUMMARY_MIN_LENGTH}
+                        max={SUMMARY_MAX_LENGTH}
+                        testId="summary-char-counter"
+                    />
+                </div>
                 <FieldError
                     id={`${summaryId}-error`}
                     message={fieldErrors.summary}
@@ -1186,13 +1204,25 @@ export function CreatePropertyMiniForm({
                                             }))
                                         }
                                         rows={5}
+                                        maxLength={DESCRIPTION_MAX_LENGTH}
                                         aria-invalid={fieldErrors.description ? 'true' : 'false'}
-                                        aria-describedby={
+                                        aria-describedby={[
+                                            `${descriptionId}-counter`,
                                             fieldErrors.description
                                                 ? fieldErrorId('description')
-                                                : undefined
-                                        }
+                                                : ''
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' ')}
                                         data-testid="extras-description"
+                                    />
+                                    <CharacterCounter
+                                        id={`${descriptionId}-counter`}
+                                        locale={locale}
+                                        current={extras.description?.length ?? 0}
+                                        min={DESCRIPTION_MIN_LENGTH}
+                                        max={DESCRIPTION_MAX_LENGTH}
+                                        testId="extras-description-char-counter"
                                     />
                                     <FieldError
                                         id={fieldErrorId('description')}

@@ -31,6 +31,20 @@
     border: 1px solid var(--border);
 }
 
+/*
+ * Featured-image slot only (HOS-824): unlike the gallery thumbs, which sit
+ * inside the `.mediaGallery` grid and are already capped by its
+ * `minmax(8rem, 1fr)` columns, the featured slot is a lone block with no
+ * grid parent — without an explicit cap it stretches to the full form width
+ * (measured 856x642px on an 858px-wide form). 25rem/400px mirrors the
+ * accommodation editor's featured-image preview (`.preview` in
+ * `apps/web/src/components/host/editor/PhotoSection.module.css`) so both
+ * editors read as the same size.
+ */
+.mediaThumbFeatured {
+    max-width: 25rem;
+}
+
 .mediaImage {
     width: 100%;
     height: 100%;
@@ -82,7 +96,24 @@
     cursor: not-allowed;
 }
 
+/* Empty-state counterpart of `.mediaThumbFeatured` (HOS-824): before the
+ * first photo is uploaded, this same "Agregar foto" button occupies the
+ * featured slot, so it needs the same cap or the slot would jump from a
+ * huge dashed box to a small preview the moment the upload finishes. */
+.mediaAddFeatured {
+    max-width: 25rem;
+}
+
 .mediaHint {
+    color: var(--core-muted-foreground, var(--core-foreground));
+    font-size: var(--text-body-xs, 0.8125rem);
+}
+
+/* "Subiendo foto X de Y…" marker for a multi-file gallery batch (HOS-832).
+ * Mirrors `.uploadBatchStatus` in the accommodation editor's
+ * `PhotoSection.module.css`. */
+.mediaUploadBatchStatus {
+    margin: 0;
     color: var(--core-muted-foreground, var(--core-foreground));
     font-size: var(--text-body-xs, 0.8125rem);
 }

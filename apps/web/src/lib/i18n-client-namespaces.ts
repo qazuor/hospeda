@@ -141,6 +141,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.back',
     'common.cancel',
     'common.close',
+    'common.confirmations',
     'common.deleting',
     'common.enums',
     'common.form',
@@ -181,6 +182,13 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'destinations.weather',
     'events.categories',
     'experience.reviews',
+    // HOS-822 — the commerce owner form and the public listing page now name
+    // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
+    // via `resolveCommerceTypeLabel`). The form is a client island, so both
+    // prefixes have to ship: they replace `commerce.owner.editor.typeOption.*`,
+    // the editor-private duplicate that was reachable here under
+    // `commerce.owner` and has been deleted.
+    'experience.type',
     'external-reputation.aggregate',
     'external-reputation.errors',
     'external-reputation.ownerConfig',
@@ -189,6 +197,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.snippets',
     'external-reputation.status',
     'footer.newsletter',
+    // HOS-822 — gastronomy half of the shared listing-type source above.
+    'gastronomy.types',
     'home.featuredDestinations',
     'home.searchBar',
     'host-trades.card',

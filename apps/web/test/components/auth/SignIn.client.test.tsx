@@ -57,7 +57,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
             target: { value: 'Whatever1!' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
@@ -75,7 +75,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         fireEvent.change(screen.getByLabelText('Correo electrónico'), {
             target: { value: 'not-an-email' }
         });
-        fireEvent.change(screen.getByLabelText('Contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
             target: { value: 'Whatever1!' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
@@ -93,7 +93,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         fireEvent.change(screen.getByLabelText('Correo electrónico'), {
             target: { value: '  user@example.com  ' }
         });
-        fireEvent.change(screen.getByLabelText('Contraseña'), {
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
             target: { value: 'Whatever1!' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
@@ -117,6 +117,77 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
 
         expect(screen.getByRole('form', { name: 'Iniciar sesión' })).toBeInTheDocument();
         expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
-        expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Contraseña/)).toBeInTheDocument();
+    });
+});
+
+describe('SignIn password reveal (HOS-796)', () => {
+    beforeEach(() => {
+        // The SSR test above writes straight into document.body, which RTL's
+        // auto-cleanup does not own and therefore leaves behind. Without this
+        // reset, every query here finds two of each control.
+        document.body.innerHTML = '';
+        signInEmailMock.mockReset();
+        signInEmailMock.mockResolvedValue({ error: null });
+    });
+
+    it('offers a reveal control next to the password field', () => {
+        renderIsland();
+
+        expect(screen.getByRole('button', { name: 'Mostrar contraseña' })).toBeInTheDocument();
+    });
+
+    it('unmasks the password when the control is activated, and masks it again', () => {
+        renderIsland();
+
+        const input = screen.getByLabelText(/^Contraseña/);
+        expect(input).toHaveAttribute('type', 'password');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Mostrar contraseña' }));
+        expect(input).toHaveAttribute('type', 'text');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Ocultar contraseña' }));
+        expect(input).toHaveAttribute('type', 'password');
+    });
+
+    it('keeps the typed value intact across a reveal round-trip', () => {
+        renderIsland();
+
+        const input = screen.getByLabelText(/^Contraseña/);
+        fireEvent.change(input, { target: { value: 'Secreta1!' } });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Mostrar contraseña' }));
+        expect(input).toHaveValue('Secreta1!');
+    });
+
+    it('reaches the reveal control with the keyboard (AC-2 — it used to be tabIndex={-1})', () => {
+        renderIsland();
+
+        const toggle = screen.getByRole('button', { name: 'Mostrar contraseña' });
+        expect(toggle).not.toHaveAttribute('tabindex');
+
+        toggle.focus();
+        expect(toggle).toHaveFocus();
+    });
+
+    it('still submits the real password after it was revealed', async () => {
+        renderIsland();
+        await readyForm();
+
+        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+            target: { value: 'user@example.com' }
+        });
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
+            target: { value: 'Secreta1!' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Mostrar contraseña' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+        await waitFor(() => {
+            expect(signInEmailMock).toHaveBeenCalledWith({
+                email: 'user@example.com',
+                password: 'Secreta1!'
+            });
+        });
     });
 });

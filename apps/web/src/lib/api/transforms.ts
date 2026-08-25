@@ -42,6 +42,7 @@ import {
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
+import { SEO_SOURCE_LOCALE } from '../seo';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -1855,6 +1856,8 @@ export function transformAccommodationEdit({
 
     return {
         id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
         name: String(item.name ?? ''),
         summary: String(item.summary ?? ''),
         description: String(item.description ?? ''),
@@ -1873,6 +1876,24 @@ export function transformAccommodationEdit({
         minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
         seoTitle: String(seoObj?.title ?? ''),
         seoDescription: String(seoObj?.description ?? ''),
+        // The values the PUBLIC page falls back to when the overrides above are
+        // empty, computed with the public page's own rule so the editor cannot
+        // preview one thing and publish another (HOS-792).
+        //
+        // Two deliberate differences from `name`/`summary` a few lines up:
+        // those are the raw columns the host edits, while these resolve
+        // `nameI18n`/`summaryI18n` exactly as `transformAccommodationDetail`
+        // does. And the locale is pinned to `SEO_SOURCE_LOCALE`, not the UI
+        // locale — the override only applies on `es`, so that is the page whose
+        // fallback is being previewed even when the host edits in English.
+        seoTitleDefault: resolveI18nText(
+            (item.nameI18n as I18nTextLike | string) ?? item.name,
+            SEO_SOURCE_LOCALE
+        ).trim(),
+        seoDescriptionDefault: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+            SEO_SOURCE_LOCALE
+        ).trim(),
         videos,
         basePrice:
             priceObj?.price == null
@@ -2698,22 +2719,41 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
 }
 
 /**
- * Normalize the contact info this app WOULD read from an experience listing.
+ * Normalize the contact info an experience listing publishes.
  *
- * DORMANT (HOS-363): the public tier surfaces NO `contactInfo` at all —
- * `ExperiencePublicSchema.pick()` omits it entirely
- * (`packages/schemas/src/entities/experience/experience.access.schema.ts`,
- * whose header records "Omits: ... contactInfo (direct)"), so `raw` is always
- * absent here and this returns `null` every time. `whatsapp` is the only key
- * mapped because it is the only one the CTA deep link would need the day the
- * field is exposed.
+ * NO LONGER DORMANT (HOS-815). The public tier now exposes a NARROWED
+ * `contactInfo` — `workEmail`, `workPhone`, `mobilePhone`, `website` — because
+ * the listing form blocks publication without a phone or an email and then the
+ * page showed neither, leaving the traveller with no way to reach the provider.
+ *
+ * `whatsapp` is read but is still absent on the public payload: it is gated by
+ * the VIEWER's plan on a separate protected endpoint (HOS-19) and this response
+ * is shared-cached. It is mapped so `ExperienceContactCTA` keeps working
+ * wherever a payload does carry it.
+ *
+ * Returns `null` when no publishable channel is present, so the caller renders
+ * nothing rather than an empty contact card.
  */
 function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const obj = raw as Record<string, unknown>;
-    const whatsapp = obj.whatsapp ? String(obj.whatsapp) : null;
-    if (!whatsapp) return null;
-    return { whatsapp };
+    const read = (key: string): string | null => {
+        const value = obj[key];
+        if (typeof value !== 'string') return null;
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+    };
+
+    const contact: ExperienceContactInfo = {
+        whatsapp: read('whatsapp'),
+        workEmail: read('workEmail'),
+        workPhone: read('workPhone'),
+        mobilePhone: read('mobilePhone'),
+        website: read('website')
+    };
+
+    const hasAny = Object.values(contact).some((value) => value !== null);
+    return hasAny ? contact : null;
 }
 
 /**

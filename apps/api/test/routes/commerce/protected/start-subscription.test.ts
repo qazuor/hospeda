@@ -18,6 +18,7 @@
  *
  * @module test/routes/commerce/protected/start-subscription
  */
+import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -635,7 +636,10 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledWith(
             expect.objectContaining({
                 customerId: CUSTOMER_ID,
-                planSlug: 'gastronomy-premium',
+                // From the catalogue default rather than a literal: HOS-818 moved
+                // the sellable tier from `gastronomy-premium` to `gastronomy-basico`,
+                // and the real resolver runs here (only `env` is mocked).
+                planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
                 entityType: CommerceEntityTypeEnum.GASTRONOMY,
                 entityId: ENTITY_ID
             })

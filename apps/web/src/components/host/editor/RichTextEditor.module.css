@@ -161,6 +161,20 @@
     text-decoration: none;
 }
 
+/*
+ * Containing block for the placeholder overlay (HOS-828).
+ *
+ * `.placeholderOverlay` is `position: absolute`, so it needs a positioned
+ * ancestor of its own. `.wrapper` does not declare one, and before this rule
+ * existed the overlay resolved `top/left: 0` against some arbitrary positioned
+ * element further up the page — which drew the hint on top of the field's own
+ * title instead of inside the text area. Removing `position: relative` here
+ * reintroduces that bug.
+ */
+.editorArea {
+    position: relative;
+}
+
 /* Placeholder */
 .placeholderOverlay {
     position: absolute;

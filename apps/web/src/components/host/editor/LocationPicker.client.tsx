@@ -5,13 +5,21 @@ import { Spinner } from '@/components/shared/feedback/Spinner';
  * @description Location picker with Leaflet map and address autocomplete (SPEC-208, Phase C PR2).
  *
  * Combines:
- * - Address autocomplete with debounced geocoding search
+ * - The postal address the accommodation actually stores (street/number/floor/apartment)
+ * - A map search box that only recentres the map — its text is never persisted
  * - Interactive Leaflet map with a draggable Marker (raw Leaflet, not react-leaflet)
  * - "Use my current location" button (browser Geolocation API)
- * - Reverse geocoding after the user drops the pin
+ * - Reverse geocoding after the user drops the pin, shown as read-only reference text
  *
  * Controlled via `value`/`onChange` (RO-RO). The host can edit lat/lng manually too.
  * Uses `client:only="react"` for SSR safety (Leaflet touches window at init).
+ *
+ * HOS-795: the address fields come FIRST and the map second, because that is the
+ * order a host fills them in — write the address, then adjust the pin. The search
+ * box used to sit above everything, labelled "Buscar dirección", and was silently
+ * repopulated on mount by the reverse geocoder; hosts read that reconstructed text
+ * as a saved address and left street/number empty. See {@link LocationPicker} for
+ * why the reverse result is now reference text instead of a field value.
  */
 import { TextField } from '@/components/ui/TextField';
 import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
@@ -127,12 +135,15 @@ export function LocationPicker({
         enabled: value.latitude != null && value.longitude != null
     });
 
-    // Apply reverse suggestion — update search input to show resolved address
-    useEffect(() => {
-        if (reverseSuggestion?.label) {
-            setSearchInput(reverseSuggestion.label);
-        }
-    }, [reverseSuggestion]);
+    // HOS-795: the reverse result is NOT written back into the search box.
+    //
+    // It used to be, and that single line is what made the whole section lie: the
+    // hook fires on mount whenever the accommodation already has coordinates, so
+    // reopening the page filled a field labelled "Buscar dirección" with a full
+    // reconstructed address ("Concepción del Uruguay, Distrito Molino, …") while
+    // `street`/`number` — the only address the PATCH body carries — stayed empty.
+    // The label now describes the pin instead of pretending to be a saved value.
+    const pinLabel = reverseSuggestion?.label ?? null;
 
     const lat = value.latitude;
     const lng = value.longitude;
@@ -234,18 +245,111 @@ export function LocationPicker({
                 {t('host.properties.editor.section.location', 'Ubicación')}
             </legend>
 
-            {/* Address search */}
+            {/*
+             * Exact postal address (G7 smoke, H-117). Owner decision 2026-08-14:
+             * the host CAN store the exact address here — only its public
+             * exposure stays gated (visitors only ever see the approximate pin;
+             * SPEC-097 strips `location` from every non-owner reader response).
+             *
+             * HOS-795: this block leads the section. It is the only address that
+             * reaches the PATCH body, so it must be the first thing on screen.
+             */}
+            <p className={styles.hint}>
+                {t(
+                    'host.properties.editor.location.addressHint',
+                    'Dirección exacta. Los turistas solo ven una ubicación aproximada en el mapa público.'
+                )}
+            </p>
+            <div className={styles.coordRow}>
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="street"
+                        label={t('host.properties.editor.field.street', 'Calle')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.street}
+                        type="text"
+                        value={addressValue.street}
+                        onChange={(e) => onAddressChange('street', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="number"
+                        label={t('host.properties.editor.field.number', 'Número')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.number}
+                        type="text"
+                        value={addressValue.number}
+                        onChange={(e) => onAddressChange('number', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+            </div>
+
+            <div className={styles.coordRow}>
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="floor"
+                        label={t('host.properties.editor.field.floor', 'Piso')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.floor}
+                        type="text"
+                        value={addressValue.floor}
+                        onChange={(e) => onAddressChange('floor', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="apartment"
+                        label={t('host.properties.editor.field.apartment', 'Departamento')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.apartment}
+                        type="text"
+                        value={addressValue.apartment}
+                        onChange={(e) => onAddressChange('apartment', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+            </div>
+
+            <h3 className={styles.subsectionTitle}>
+                {t('host.properties.editor.location.mapSubtitle', 'Ubicación en el mapa')}
+            </h3>
+
+            {/* Map search — moves the map only; never persisted (HOS-795) */}
             <div className={styles.searchWrapper}>
                 <label
                     htmlFor="location-picker-search"
                     className={styles.fieldLabel}
                 >
-                    {t('host.properties.editor.location.searchAddress', 'Buscar dirección')}
+                    {t('host.properties.editor.location.searchOnMap', 'Buscar en el mapa')}
                 </label>
+                <p
+                    id="location-picker-search-hint"
+                    className={styles.hint}
+                >
+                    {t(
+                        'host.properties.editor.location.searchHint',
+                        'Este campo sólo mueve el mapa para encontrar el punto. Lo que escribas acá no se guarda. La dirección que se guarda es la de arriba.'
+                    )}
+                </p>
                 <div className={styles.searchInputWrapper}>
                     <input
                         id="location-picker-search"
                         type="text"
+                        aria-describedby="location-picker-search-hint"
                         className={styles.searchInput}
                         value={searchInput}
                         onChange={(e) => {
@@ -341,6 +445,24 @@ export function LocationPicker({
             </p>
 
             {/*
+             * Where the pin currently sits, reverse-geocoded (HOS-795).
+             *
+             * Read-only reference text, deliberately NOT an input: this is the
+             * string that used to be injected into the search box and read as a
+             * saved address. It stays visible because it is genuinely useful for
+             * confirming the pin landed on the right block — it just no longer
+             * wears the costume of a form field.
+             */}
+            {pinLabel && (
+                <p className={styles.pinReference}>
+                    <span className={styles.pinReferenceLabel}>
+                        {t('host.properties.editor.location.pinAt', 'El pin está en:')}
+                    </span>{' '}
+                    {pinLabel}
+                </p>
+            )}
+
+            {/*
              * Coordinate inputs.
              *
              * These take the wrapper; the Leaflet map above does not (HOS-385
@@ -381,82 +503,6 @@ export function LocationPicker({
                         max={180}
                         step="0.000001"
                         onChange={(e) => handleLngChange(e.target.value)}
-                        disabled={disabled}
-                    />
-                </div>
-            </div>
-
-            {/*
-             * Exact postal address (G7 smoke, H-117). Owner decision 2026-08-14:
-             * the host CAN store the exact address here — only its public
-             * exposure stays gated (visitors only ever see the approximate pin;
-             * SPEC-097 strips `location` from every non-owner reader response).
-             */}
-            <p className={styles.hint}>
-                {t(
-                    'host.properties.editor.location.addressHint',
-                    'Dirección exacta. Los turistas solo ven una ubicación aproximada en el mapa público.'
-                )}
-            </p>
-            <div className={styles.coordRow}>
-                <div className={styles.field}>
-                    <TextField
-                        prefix={ACCOMMODATION_FIELD_PREFIX}
-                        name="street"
-                        label={t('host.properties.editor.field.street', 'Calle')}
-                        labelClassName={styles.fieldLabel}
-                        className={styles.fieldInput}
-                        error={errors?.street}
-                        type="text"
-                        value={addressValue.street}
-                        onChange={(e) => onAddressChange('street', e.target.value)}
-                        disabled={disabled}
-                    />
-                </div>
-
-                <div className={styles.field}>
-                    <TextField
-                        prefix={ACCOMMODATION_FIELD_PREFIX}
-                        name="number"
-                        label={t('host.properties.editor.field.number', 'Número')}
-                        labelClassName={styles.fieldLabel}
-                        className={styles.fieldInput}
-                        error={errors?.number}
-                        type="text"
-                        value={addressValue.number}
-                        onChange={(e) => onAddressChange('number', e.target.value)}
-                        disabled={disabled}
-                    />
-                </div>
-            </div>
-
-            <div className={styles.coordRow}>
-                <div className={styles.field}>
-                    <TextField
-                        prefix={ACCOMMODATION_FIELD_PREFIX}
-                        name="floor"
-                        label={t('host.properties.editor.field.floor', 'Piso')}
-                        labelClassName={styles.fieldLabel}
-                        className={styles.fieldInput}
-                        error={errors?.floor}
-                        type="text"
-                        value={addressValue.floor}
-                        onChange={(e) => onAddressChange('floor', e.target.value)}
-                        disabled={disabled}
-                    />
-                </div>
-
-                <div className={styles.field}>
-                    <TextField
-                        prefix={ACCOMMODATION_FIELD_PREFIX}
-                        name="apartment"
-                        label={t('host.properties.editor.field.apartment', 'Departamento')}
-                        labelClassName={styles.fieldLabel}
-                        className={styles.fieldInput}
-                        error={errors?.apartment}
-                        type="text"
-                        value={addressValue.apartment}
-                        onChange={(e) => onAddressChange('apartment', e.target.value)}
                         disabled={disabled}
                     />
                 </div>

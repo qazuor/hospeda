@@ -260,6 +260,20 @@
     outline-offset: 1px;
 }
 
+/* Invalid state (HOS-794) — same treatment as `.fieldInput[aria-invalid]`
+ * in the rest of the editor (BasicInfoSection & co.). */
+.textarea[aria-invalid="true"] {
+    border-color: oklch(0.55 0.22 25);
+}
+
+/* Per-field validation message (HOS-794) */
+.fieldError {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: oklch(0.45 0.2 25);
+    margin: 0;
+}
+
 /* Channel-visibility checkboxes (HOS-393) */
 .channelCheckboxes {
     display: flex;

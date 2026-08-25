@@ -46,11 +46,38 @@ export const DERIVED_SUBJECT_KEYS = [
     'contactType',
     'scope',
     'accessUntil',
-    'effectiveDate'
+    'effectiveDate',
+    'amount'
 ] as const;
 
 /** A subject variable whose value is computed rather than copied. */
 export type DerivedSubjectKey = (typeof DERIVED_SUBJECT_KEYS)[number];
+
+/**
+ * Formats a money amount for a subject line, in es-AR grouping.
+ *
+ * Takes MAJOR units (ARS pesos), which is what
+ * `PaymentNotificationPayload.amount` carries: its only producer,
+ * `sendPaymentSuccessNotification`, types the parameter `Major` precisely
+ * because an unconverted centavo figure once mailed a real $150.00 charge as
+ * $15.000,00 (HOS-713 / HOS-720). It therefore does NOT go through
+ * `formatCurrency`, which divides by 100 on the way in.
+ *
+ * No currency symbol: the subject pattern supplies its own literal `$`.
+ *
+ * @param amount - The amount in pesos.
+ * @returns The grouped amount, e.g. `5000` -> `'5.000'`, `1500.5` -> `'1.500,50'`.
+ */
+function formatSubjectAmount(amount: number): string {
+    if (!Number.isFinite(amount)) {
+        return '';
+    }
+
+    return amount.toLocaleString('es-AR', {
+        minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+        maximumFractionDigits: 2
+    });
+}
 
 /**
  * Computes the subject variables that cannot be read straight off the payload.
@@ -92,6 +119,13 @@ function buildDerivedSubjectData(payload: NotificationPayload): Record<string, s
 
     if (payload.type === 'plan_price_change_notice' && 'effectiveDate' in payload) {
         derived.effectiveDate = formatDate({ dateString: payload.effectiveDate });
+    }
+
+    // Grouped here rather than copied, for the same reason dates are: the
+    // generic pass would `String(5000)` it and publish "Pago recibido - $5000"
+    // (HOS-830). Four digits read fine; an annual plan's does not.
+    if (payload.type === 'payment_success' && 'amount' in payload) {
+        derived.amount = formatSubjectAmount(payload.amount);
     }
 
     return derived;

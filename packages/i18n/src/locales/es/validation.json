@@ -1846,8 +1846,8 @@
         },
         "openingHours": {
             "shift": {
-                "closeBeforeOpen": "La hora de cierre no puede ser anterior a la hora de apertura",
-                "invalidTime": "El formato de hora no es válido"
+                "invalidTime": "El formato de hora no es válido",
+                "sameOpenAndClose": "La hora de cierre no puede ser igual a la de apertura"
             }
         },
         "options": {
@@ -1896,15 +1896,15 @@
         "seo": {
             "description": {
                 "max": "La descripción no puede superar los {{max}} caracteres",
-                "min": "La descripción debe tener al menos {{min}} caracteres",
+                "min": "La descripción debe tener al menos {{min}} caracteres, o dejala vacía para usar el valor por defecto",
                 "required": "La descripción es obligatoria"
             },
             "keywords": {
-                "required": "El palabras clave es obligatorio"
+                "required": "Las palabras clave son obligatorias"
             },
             "title": {
                 "max": "El título no puede superar los {{max}} caracteres",
-                "min": "El título debe tener al menos {{min}} caracteres",
+                "min": "El título debe tener al menos {{min}} caracteres, o dejalo vacío para usar el valor por defecto",
                 "required": "El título es obligatorio"
             }
         },

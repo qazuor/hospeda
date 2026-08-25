@@ -8,6 +8,7 @@
 
 import { buildSentryReportUri } from '@repo/utils';
 import * as Sentry from '@sentry/astro';
+import { ASTRO_RUNTIME_SCRIPT_HASHES } from './csp-astro-runtime-hashes';
 import { DEFAULT_LOCALE, isValidLocale, type SupportedLocale } from './i18n';
 import { webLogger } from './logger';
 import { ALLOWED_REMOTE_HOSTS } from './media';
@@ -734,7 +735,18 @@ export function buildCspHeader({
     // dangling separator in the directive.
     const toSourceList = (hashes: readonly string[]): string =>
         hashes.length > 0 ? ` ${hashes.map((hash) => `'${hash}'`).join(' ')}` : '';
-    const scriptHashSources = toSourceList(scriptHashes);
+    // HOS-798: Astro's own client-runtime snippets are hash-allowed on EVERY
+    // response, not just on the ones whose body happens to carry them. A
+    // `<ClientRouter />` soft navigation keeps the ORIGIN page's policy in force
+    // while injecting the DESTINATION page's inline scripts, so a runtime the
+    // origin never needed is blocked — which left every `client:only` island
+    // (the CTA on /publicar/, every Leaflet map) unrendered until a reload.
+    // Deduplicated because `collectCspHashes` legitimately finds these in the
+    // bodies that do use them. See `csp-astro-runtime-hashes.ts` for why this is
+    // safe, and why it does NOT cover `server:defer`.
+    const scriptHashSources = toSourceList([
+        ...new Set([...scriptHashes, ...ASTRO_RUNTIME_SCRIPT_HASHES])
+    ]);
     const styleHashSources = toSourceList(styleHashes);
 
     // Remote image hosts mirror `ALLOWED_REMOTE_HOSTS` (single source of truth

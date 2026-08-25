@@ -28,6 +28,8 @@ import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { cn } from '@/lib/cn';
 import type { BuildFieldIdParams } from '@/lib/forms/build-field-id';
 import { buildFieldId } from '@/lib/forms/build-field-id';
+import type { SupportedLocale } from '@/lib/i18n';
+import { CharacterCounter } from './CharacterCounter';
 import styles from './TextField.module.css';
 
 /** Attributes the wrapper owns; a caller passing them would defeat the point. */
@@ -68,6 +70,38 @@ interface TextFieldCommonProps {
      * params — never by hand.
      */
     readonly renderError?: boolean;
+    /**
+     * Renders a `used/total` readout under the control and points the field's
+     * `aria-describedby` at it (HOS-783 B5).
+     *
+     * Ignored unless the control also carries a numeric `maxLength` and a
+     * string `value` — a counter without a limit has nothing to count towards,
+     * and an uncontrolled control has no length to read.
+     */
+    /**
+     * Id of an EXTRA element the caller renders below the control and wants
+     * announced with it — a hint that carries information the label, the error
+     * and the counter do not, such as the SEO default preview (HOS-792).
+     *
+     * The caller owns both halves: pass it only while that element is actually
+     * in the tree, since an `aria-describedby` aimed at a missing id is a
+     * dangling reference. Symmetric to `beforeControl`, which is the existing
+     * precedent for caller-supplied content inside this field.
+     */
+    readonly describedByExtraId?: string;
+    readonly counter?: {
+        /** Active UI locale, for the `used/total` string. */
+        readonly locale: SupportedLocale;
+        /** Minimum length enforced for the field, when present. */
+        readonly min?: number;
+        /**
+         * Set when the field may be left empty, so `min` governs only once
+         * there IS content — an empty optional field is valid, not short.
+         */
+        readonly optional?: boolean;
+        /** Optional test hook forwarded to the counter element. */
+        readonly testId?: string;
+    };
 }
 
 /**
@@ -117,6 +151,8 @@ export function TextField(props: TextFieldProps) {
         labelClassName,
         beforeControl,
         renderError = true,
+        describedByExtraId,
+        counter,
         as = 'input',
         className,
         ...controlProps
@@ -129,11 +165,25 @@ export function TextField(props: TextFieldProps) {
     const errorId = fieldErrorId(id);
     const hasError = Boolean(error);
 
+    const maxLength = controlProps.maxLength;
+    const value = controlProps.value;
+    const showCounter =
+        counter !== undefined && typeof maxLength === 'number' && typeof value === 'string';
+    const counterId = `${id}-counter`;
+
+    // Every id here is gated on its element actually being rendered: an
+    // `aria-describedby` aimed at an element that is not in the tree is a
+    // dangling reference. `describedByExtraId` is the caller's to gate.
+    const describedBy =
+        [hasError ? errorId : null, showCounter ? counterId : null, describedByExtraId ?? null]
+            .filter(Boolean)
+            .join(' ') || undefined;
+
     const sharedControlProps = {
         id,
         className,
         'aria-invalid': hasError,
-        'aria-describedby': hasError ? errorId : undefined
+        'aria-describedby': describedBy
     };
 
     return (
@@ -161,6 +211,18 @@ export function TextField(props: TextFieldProps) {
                 <input
                     {...(controlProps as ComponentPropsWithoutRef<'input'>)}
                     {...sharedControlProps}
+                />
+            )}
+
+            {showCounter && (
+                <CharacterCounter
+                    id={counterId}
+                    locale={counter.locale}
+                    current={(value as string).length}
+                    min={counter.min}
+                    optional={counter.optional}
+                    max={maxLength as number}
+                    testId={counter.testId}
                 />
             )}
 

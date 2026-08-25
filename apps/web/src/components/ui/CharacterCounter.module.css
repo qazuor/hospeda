@@ -1,0 +1,22 @@
+/* CharacterCounter.module.css */
+/* CSS Modules only — NO Tailwind. ALL values use CSS custom properties. */
+
+.counter {
+    margin: var(--space-1, 0.25rem) 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+.counter--under-minimum {
+    color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.counter--warning {
+    color: var(--brand-accent);
+}
+
+.counter--danger {
+    color: var(--destructive, oklch(0.6 0.22 25));
+}

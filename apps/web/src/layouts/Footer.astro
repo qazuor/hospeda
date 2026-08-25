@@ -103,9 +103,28 @@ const exploreLinks = [
     { label: t("footer.publications"), href: buildUrl({ locale, path: "/publicaciones/" }) },
 ] as const;
 
-/** PARA VOS column — owner + tourist value props */
+/** PARA VOS column — owner + tourist value props.
+ *
+ *  HOS-826: the column used to offer one vertical. The platform sells three,
+ *  and the header's "Publicar" chooser has offered all three since HOS-691, so
+ *  a restaurant or tour owner who reached the footer was told the only thing
+ *  they could publish was the one thing they do not have.
+ *
+ *  The two destinations added here are the chooser's own, verbatim — no new
+ *  route was invented. They are literals rather than an import of
+ *  `PUBLISH_CTA_OPTIONS` because this component renders on every page and has
+ *  no other reason to pull in that module's icon + PermissionEnum graph; a
+ *  static guard (`test/layouts/footer-publish-parity.guard.test.ts`) reads both
+ *  files and fails if they ever disagree, which is the drift the import would
+ *  have prevented.
+ *
+ *  `footer.listProperty` deliberately keeps its own
+ *  `/suscriptores/propietarios/` destination: it predates the chooser, and
+ *  re-pointing an existing link is not what HOS-826 asked for. */
 const forYouLinks = [
     { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
+    { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: "/publicar-restaurante/" }) },
+    { label: t("footer.listExperience"), href: buildUrl({ locale, path: "/publicar-experiencia/" }) },
     { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
     { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
     { label: t("footer.benefits"), href: buildUrl({ locale, path: "/beneficios/" }) },

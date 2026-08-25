@@ -34,7 +34,17 @@ import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.clie
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
+        // Interpolates `{{token}}` when params are supplied. Without this the
+        // character counters below would read back the raw template and every
+        // assertion on their text would be vacuous.
+        t: (_key: string, fallback?: string, params?: Record<string, string>) => {
+            const template = fallback ?? _key;
+            if (!params) return template;
+            return Object.entries(params).reduce(
+                (acc, [token, value]) => acc.replaceAll(`{{${token}}}`, value),
+                template
+            );
+        },
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
     })
 }));
@@ -88,6 +98,8 @@ vi.mock('@/components/host/editor/RichTextEditor.module.css', () => ({
 
 const MOCK_DATA = {
     id: 'acc-1',
+    slug: 'test-hotel',
+    lifecycleState: 'DRAFT',
     name: 'Test Hotel',
     summary: 'Test summary for accommodation',
     description: 'Test description with content',
@@ -179,7 +191,7 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         render(<BasicInfoSection {...buildProps({ onFieldChange })} />);
 
         // Confirm the plain textarea (not TipTap) is the active branch.
-        expect(screen.getByLabelText(/descripción/i).tagName).toBe('TEXTAREA');
+        expect(screen.getByLabelText(/^descripción$/i).tagName).toBe('TEXTAREA');
 
         fireEvent.click(screen.getByTestId('ai-mock-trigger-description'));
 
@@ -216,6 +228,47 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         // No interaction with the AI trigger — onFieldChange should not fire
         // from the AI-improve wiring path.
         expect(onFieldChange).not.toHaveBeenCalled();
+    });
+});
+
+describe('BasicInfoSection — summary label consistency (HOS-783 B6)', () => {
+    it('should label the summary field as short description', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.getByLabelText(/descripción corta/i)).toBeInTheDocument();
+        expect(screen.queryByLabelText(/^resumen\b/i)).not.toBeInTheDocument();
+    });
+});
+
+describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)', () => {
+    it('renders the warning and checkbox when the published-rename choice is offered', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefresh={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText(/tu ficha ya está publicada/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('forwards the checkbox toggle through onRefreshSlugFromNameChange', () => {
+        const onRefreshSlugFromNameChange = vi.fn();
+        render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefresh={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+            />
+        );
+
+        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección web/i));
+
+        expect(onRefreshSlugFromNameChange).toHaveBeenCalledWith(true);
     });
 });
 
@@ -265,5 +318,178 @@ describe('BasicInfoSection — AI text-improve (summary field, SPEC-321 T-004)',
         // No interaction with the AI trigger — onFieldChange should not fire
         // from the AI-improve wiring path.
         expect(onFieldChange).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-783 B5 — character counters
+// ---------------------------------------------------------------------------
+
+/**
+ * These three fields are the SAME three the publish mini form edits. B5 first
+ * shipped on the mini form only, so a host saw `47/100` while creating and
+ * nothing at all while editing. The counters are asserted here per field AND
+ * per severity, because the amber/red states are the half of B5 that a
+ * presence-only check would let regress silently.
+ */
+describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
+    beforeEach(() => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: false };
+    });
+
+    it.each([
+        ['name-char-counter', 'Test Hotel'.length, 3, 100, 'normal'],
+        ['summary-char-counter', 'Test summary for accommodation'.length, 10, 300, 'normal'],
+        [
+            'description-char-counter',
+            'Test description with content'.length,
+            30,
+            2000,
+            'under-minimum'
+        ]
+    ])('renders %s with its range', (testId, used, min, max, state) => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.getByTestId(testId)).toHaveTextContent(`${used}/${max} · mín. ${min}`);
+        expect(screen.getByTestId(testId)).toHaveAttribute('data-state', state);
+    });
+
+    it('turns amber once the name is within 20% of its limit', () => {
+        render(
+            <BasicInfoSection {...buildProps({ data: { ...MOCK_DATA, name: 'x'.repeat(80) } })} />
+        );
+
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('80/100 · mín. 3');
+        expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'warning');
+    });
+
+    it('turns red once the summary reaches its limit', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps({ data: { ...MOCK_DATA, summary: 'x'.repeat(300) } })}
+            />
+        );
+
+        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300 · mín. 10');
+        expect(screen.getByTestId('summary-char-counter')).toHaveAttribute('data-state', 'danger');
+    });
+
+    it('turns red once the description reaches its limit', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps({ data: { ...MOCK_DATA, description: 'x'.repeat(2000) } })}
+            />
+        );
+
+        expect(screen.getByTestId('description-char-counter')).toHaveTextContent(
+            '2000/2000 · mín. 30'
+        );
+        expect(screen.getByTestId('description-char-counter')).toHaveAttribute(
+            'data-state',
+            'danger'
+        );
+    });
+
+    // The description counter sits below the entitlement gate because both
+    // branches edit the same `data.description` — the rich-text owner must not
+    // lose it.
+    it('keeps the description counter on the rich-text branch', () => {
+        entitlements = { can_use_rich_description: true, ai_text_improve: false };
+
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.getByTestId('description-char-counter')).toBeInTheDocument();
+    });
+
+    it('points each field at its counter through aria-describedby', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const name = screen.getByLabelText(/^nombre/i);
+        expect(name.getAttribute('aria-describedby')).toContain(
+            screen.getByTestId('name-char-counter').id
+        );
+    });
+});
+
+/**
+ * HOS-800. The plan notice for rich text used to render BELOW the textarea, as
+ * a plain `.fieldHint`, one element away from the AI-improve trigger — so a
+ * restriction and an available action sat adjacent, in the same muted grey,
+ * both opening with the same verb. The product owner read his own screen and
+ * concluded the AI feature was plan-gated while actively using it.
+ *
+ * These assert the structural half of the fix (the copy half is held by the
+ * i18n inline-fallback guard): the notice occupies the slot where the rich
+ * editor's formatting toolbar would be, and it is not typographically a hint.
+ */
+describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () => {
+    beforeEach(() => {
+        entitlements = { can_use_rich_description: false, ai_text_improve: true };
+    });
+
+    /** The notice element, located by the id the textarea points at. */
+    const getFormatNotice = (): HTMLElement => {
+        const textarea = screen.getByLabelText(/^descripción$/i);
+        const noticeId = (textarea.getAttribute('aria-describedby') ?? '')
+            .split(' ')
+            .find((id) => id.endsWith('-format-upsell'));
+
+        expect(noticeId).toBeDefined();
+        const notice = document.getElementById(noticeId as string);
+        expect(notice).not.toBeNull();
+
+        return notice as HTMLElement;
+    };
+
+    it('renders the plan notice, then the textarea, then the AI trigger — in that order', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const labelled: ReadonlyArray<readonly [string, HTMLElement]> = [
+            ['notice', getFormatNotice()],
+            ['textarea', screen.getByLabelText(/^descripción$/i)],
+            ['ai-trigger', screen.getByTestId('ai-mock-trigger-description')]
+        ];
+
+        // Sorting by document position and comparing the WHOLE sequence is what
+        // makes this bite. Asserting "notice precedes trigger" on its own was
+        // already true of the buggy layout (notice → counter → trigger); only
+        // the textarea landing BETWEEN them distinguishes the two.
+        const domOrder = [...labelled]
+            .sort(([, a], [, b]) =>
+                a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+            )
+            .map(([name]) => name);
+
+        expect(domOrder).toEqual(['notice', 'textarea', 'ai-trigger']);
+    });
+
+    it('styles the plan notice as a restriction, not as an ordinary field hint', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        // The CSS module is proxied to identity, so the class name IS the key.
+        const notice = getFormatNotice();
+        const box = notice.parentElement;
+
+        expect(box).not.toBeNull();
+        expect(box).toHaveClass('formatUpsell');
+        expect(notice).not.toHaveClass('fieldHint');
+    });
+
+    it('describes the textarea with the plan notice as well as the counter', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        const textarea = screen.getByLabelText(/^descripción$/i);
+        const described = (textarea.getAttribute('aria-describedby') ?? '').split(' ');
+
+        expect(described).toContain(getFormatNotice().id);
+        expect(described).toContain(screen.getByTestId('description-char-counter').id);
+    });
+
+    it('drops the plan notice entirely once rich text is entitled', () => {
+        entitlements = { can_use_rich_description: true, ai_text_improve: true };
+
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(document.querySelector('[id$="-format-upsell"]')).toBeNull();
     });
 });

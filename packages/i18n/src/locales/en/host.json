@@ -252,21 +252,28 @@
                 "contact": "Contact",
                 "socialNetworks": "Social networks",
                 "photos": "Photos",
-                "photosDescription": "Upload photos of your property to attract more guests",
+                "photosDescription": "Upload up to {{cap}} photos of your property to attract more guests",
+                "photosDescription_one": "Upload up to {{cap}} photo of your property to attract more guests",
+                "photosDescription_other": "Upload up to {{cap}} photos of your property to attract more guests",
                 "externalReputation": "External reputation",
                 "featuredToggle": "Destacado",
                 "calendar": "Calendar",
                 "capacityPricing": "Capacity and price",
                 "contactSocial": "Contact and social",
                 "seo": "Search engines (Google)",
-                "seoDescription": "Choose how your property shows up when someone finds it on Google. Leave these fields blank to use your property's name."
+                "seoDescription": "Choose how your property appears when someone finds it on Google. Both fields are optional: leave them empty and we publish your property's name and summary."
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
             },
+            "slugRefresh": {
+                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
+                "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
+                "checkbox": "Change the web address too so it follows this new name"
+            },
             "field": {
                 "name": "Name",
-                "summary": "Summary",
+                "summary": "Short description",
                 "description": "Description",
                 "type": "Type",
                 "destination": "Destination",
@@ -305,7 +312,8 @@
                 "seoTitle": "Google title",
                 "seoTitleHint": "The bold title shown in the search result. For now it only applies in Spanish — English and Portuguese still show your property's name.",
                 "seoDescription": "Google description",
-                "seoDescriptionHint": "The text shown below the title in the search result. Like the title, it only applies in Spanish for now."
+                "seoDescriptionHint": "The text shown below the title in the search result. Like the title, it only applies in Spanish for now.",
+                "seoDefaultPreview": "Leave it empty and this is published: \"{{value}}\""
             },
             "photo": {
                 "addToGallery": "Add photos to the gallery",
@@ -335,7 +343,7 @@
                 "featuredAlt": "Featured image",
                 "featuredFailed": "The photo could not be set as the cover",
                 "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
-                "gallery": "Photo gallery",
+                "gallery": "Photo gallery (max {{cap}})",
                 "galleryAlt": "Photo {{index}}",
                 "galleryCapExceededOnSelect": "You picked {{pickedPhrase}} but only {{remainingPhrase}} free (max. {{cap}} in total)",
                 "galleryCapLabel": "Gallery full",
@@ -397,6 +405,9 @@
                 "editAria": "Edit \"{{question}}\"",
                 "deleteAria": "Delete \"{{question}}\"",
                 "deleteConfirm": "Delete this question?",
+                "deleteDialogTitle": "Delete question",
+                "deleteConfirmButton": "Delete question",
+                "deleting": "Deleting...",
                 "saveError": "Could not save the question.",
                 "deleteError": "Could not delete the question.",
                 "reorderError": "Could not reorder.",
@@ -438,7 +449,7 @@
             "entitlement": {
                 "premiumFeature": "Premium feature",
                 "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
-                "richDescriptionHint": "Upgrade your plan to format your description (bold, lists and more).",
+                "richDescriptionHint": "Formatted text: bold, lists and more. Available on higher plans.",
                 "videoNudge": "Upgrade your plan to embed videos in your property.",
                 "genericNudge": "This feature is available on a higher plan.",
                 "upgradeLink": "Upgrade plan"
@@ -481,9 +492,12 @@
                 "toolbarLink": "Link"
             },
             "location": {
-                "searchAddress": "Search address",
+                "searchOnMap": "Search on the map",
+                "searchHint": "This field only moves the map to find the spot. What you type here is not saved. The address that gets saved is the one above.",
                 "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
                 "useMyLocation": "Use my current location",
+                "mapSubtitle": "Location on the map",
+                "pinAt": "The pin is at:",
                 "mapHint": "Drag the pin to adjust the exact location.",
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",
@@ -509,7 +523,15 @@
                 "nothingGenerated": "There were no pending translations to generate.",
                 "allFailed": "No translation could be generated. Check the per-field detail and try again.",
                 "partialFailure": "Some translations were not generated. Check the per-field detail.",
-                "refresh": "Refresh the page"
+                "refresh": "Refresh the page",
+                "roleSource": "Original",
+                "roleTranslated": "AI-generated",
+                "roleMissing": "Not translated",
+                "sourceEmpty": "You have not written this content yet.",
+                "translationEmpty": "This translation has not been generated yet.",
+                "textUnavailable": "Just generated. Refresh the page to read it.",
+                "expandText": "Show full text",
+                "collapseText": "Show less"
             },
             "featuredToggle": {
                 "label": "Destacar mi alojamiento",

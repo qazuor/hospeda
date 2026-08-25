@@ -31,6 +31,7 @@ import { toExperienceCardProps } from '@/lib/api/transforms';
 import { getExperienceTypeIcon } from '@/lib/experience-type-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { hasActiveExperienceListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
@@ -128,6 +129,14 @@ const baseCards = items.map((item) =>
 // here — the hearts resolve it themselves after hydration, once per page load
 // for the whole grid (`store/favorites-store`).
 const cards = baseCards;
+
+const hasActiveFilters = hasActiveExperienceListingFilters({
+	q,
+	destinationId,
+	type,
+	isFeatured,
+	minRating,
+});
 
 // --- Experience types for filter (from the confirmed enum) ---
 const EXPERIENCE_TYPES = [
@@ -331,7 +340,7 @@ const itemListEntries = cards.map((card) => ({
         />
     )}
 
-    {!hasError && cards.length === 0 && (
+    {!hasError && cards.length === 0 && hasActiveFilters && (
         <EmptyState
             locale={locale}
             variant="no-results"
@@ -342,6 +351,17 @@ const itemListEntries = cards.map((card) => ({
             )}
         />
     )}
+
+	{!hasError && cards.length === 0 && !hasActiveFilters && (
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			message={t(
+				'experience.listing.emptyCatalog',
+				'Todavía no hay experiencias publicadas.'
+			)}
+		/>
+	)}
 
     {!hasError && cards.length > 0 && (
         <ExperienceGrid>

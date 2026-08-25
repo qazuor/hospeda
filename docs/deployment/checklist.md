@@ -101,20 +101,49 @@ hops redeploy admin
 
 Or the equivalent: open `https://coolify.hospeda.com.ar`, pick the app, hit Redeploy.
 
-> ⚠️ **The promotion to `main` is a safety precondition for the seed data-migrations,
-> not just the release step.**
+> ⚠️ **`hops` runs the migration code from a checkout that tracks `staging`, for
+> BOTH targets.**
 >
-> `hops db-seed-migrate` runs the migration code from the VPS checkout, which tracks
-> `main`. If a data-migration was corrected on `staging` and that correction has not
-> been promoted, the run executes the **old, uncorrected** version against production.
+> `hops` uses a single clone of the repo at `/home/qazuor/hospeda`, and that clone
+> sits on **`staging`** — a deliberate choice, so changes to the `hops` tooling reach
+> the VPS without waiting for a promotion.
 >
-> This is not hypothetical: on 2026-08-23 `main`'s copy of
+> The catch is that the clone does not hold only tooling. `hops db-seed-migrate`
+> applies by running `tsx ./src/cli.ts --data-migrate` with `cwd:
+> /home/qazuor/hospeda`, so the `packages/seed/src/data-migrations/*.ts` files it
+> executes are the ones in **that** checkout. `--target` switches the database and
+> `NODE_ENV`; it does **not** switch the code. Verified on 2026-08-23:
+>
+> ```
+> --target=prod     Repo: /home/qazuor/hospeda   DB: postgres@yhhqnorqbtw2aslbxy64kjzd → postgres   NODE_ENV: production
+> --target=staging  Repo: /home/qazuor/hospeda   DB: …@qqwydyilhgifup0wsb2v27uq → hospeda_staging   NODE_ENV: development
+> ```
+>
+> **The practical consequence**: a data-migration merged to `staging` and not yet
+> promoted CAN run against the production database, skipping the promotion gate —
+> which is exactly where a destructive migration is supposed to soak.
+>
+> It is not silent, which is what keeps this moderate rather than critical:
+> `--status` is read-only and lists the pending migrations **by name** before
+> anything is applied, so an unexpected one is visible. Tracked as HOS-782, to be
+> resolved after the 2026-08-25 launch.
+>
+> **Before any prod seed-migration run, confirm the two branches agree:**
+>
+> ```bash
+> [ "$(git rev-parse origin/main^{tree})" = "$(git rev-parse origin/staging^{tree})" ] \
+>   && echo "identical — safe" || echo "DIVERGED — inspect before migrating"
+> ```
+>
+> If they are identical, the checkout's branch does not matter. If they diverge, read
+> the `--status` output and confirm every pending migration is one you intend to run.
+>
+> Promoting first is still the right habit, but note the rationale runs the OTHER way
+> from what this document previously claimed. On 2026-08-23, `main`'s copy of
 > `0068-hos-749-prod-billing-cleanup` was missing `PRESERVED_CUSTOMER_IDS` (added on
-> `staging` by PR #2987), so running it then would have soft-deleted the billing
-> records of six real people plus the staff account.
->
-> **Always promote first, then migrate.** Before any prod seed-migration run, diff the
-> pending migration files between `main` and `staging` and confirm they are identical.
+> `staging` by PR #2987). Because the checkout tracks `staging`, a run at that moment
+> would have picked up the **corrected** file — the danger is running code that has
+> not been through the promotion gate, not running a stale copy of it.
 
 ---
 

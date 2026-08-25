@@ -26,9 +26,18 @@ const overrides = readFileSync(
     'utf8'
 );
 
-// Strip JS/CSS comments so doc-comments mentioning `oklch`/`--core-` for
-// historical context don't trip the guards below.
-const withoutComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+/*
+ * Strip JS/CSS comments so doc-comments mentioning `oklch`/`--core-` for
+ * historical context don't trip the guards below.
+ *
+ * Line comments go FIRST, and the order is load-bearing. Stripping blocks
+ * first made the `/*` inside this file's own `// ... /_astro/*.webp` comment
+ * open a phantom block that only closed 80 lines later, swallowing the imports
+ * and the entire markup — so every guard reading `withoutComments` was
+ * silently scanning a truncated file and could not have failed on anything in
+ * the body.
+ */
+const withoutComments = src.replace(/^\s*\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
 
 describe('feedback/index.astro (BETA-45)', () => {
     it('defines no raw oklch() tokens (breaks on Chrome 109 and older)', () => {
@@ -49,6 +58,72 @@ describe('feedback/index.astro (BETA-45)', () => {
         // FeedbackForm styles + --fb-* tokens cascade from a `.feedback-root`
         // ancestor (same mechanism the modal uses via the <dialog>).
         expect(src).toContain('feedback-standalone__form feedback-root');
+    });
+});
+
+describe('feedback/index.astro — logo aspect ratio', () => {
+    // The asset is 200x216. The page used to hardcode width="120" height="32"
+    // on it, imposing a 3.75 ratio on a near-square image, and nothing failed
+    // because both numbers were plausible on their own.
+    it("emits the asset's own intrinsic dimensions", () => {
+        expect(src).toContain('width={logoSrc.width}');
+        expect(src).toContain('height={logoSrc.height}');
+    });
+
+    it('hardcodes no literal dimensions on the logo', () => {
+        const logoTag = withoutComments.match(/<img[^>]*alt="Hospeda"[^>]*>/);
+        expect(logoTag, 'logo <img> not found').not.toBeNull();
+        expect(logoTag?.[0]).not.toMatch(/width="\d+"/);
+        expect(logoTag?.[0]).not.toMatch(/height="\d+"/);
+    });
+
+    it('constrains the rendered height in CSS instead', () => {
+        expect(withoutComments).toMatch(/\.feedback-standalone__logo img\s*{[^}]*width:\s*auto/);
+    });
+});
+
+describe('feedback/index.astro — widget surface tokens', () => {
+    /*
+     * The page pins data-theme="light" on <html>, but the widget package
+     * themes itself from `@media (prefers-color-scheme: dark)` in
+     * packages/feedback/src/styles/tokens.css — it never reads data-theme. A
+     * visitor whose OS was set to dark therefore got a dark form inside a
+     * light page: near-black inputs, and labels at ~1.03:1 against the page
+     * background. Overriding only --fb-primary (as this page did) leaves the
+     * media query in charge of every surface.
+     *
+     * Every other page is spared because BaseLayout loads
+     * feedback-overrides.css; this standalone page cannot import that sheet,
+     * since it maps --fb-* onto global brand tokens that only exist under
+     * BaseLayout.
+     */
+    const SURFACE_TOKENS = [
+        '--fb-background',
+        '--fb-foreground',
+        '--fb-foreground-muted',
+        '--fb-card',
+        '--fb-border',
+        '--fb-input-bg',
+        '--fb-input-border'
+    ] as const;
+
+    const rootBlock = withoutComments.match(/\.feedback-root\s*{([^}]*)}/)?.[1] ?? '';
+
+    it('overrides every surface token, not just the brand color', () => {
+        expect(rootBlock, '.feedback-root block not found').not.toBe('');
+        for (const token of SURFACE_TOKENS) {
+            expect(rootBlock, `${token} left to the package default`).toContain(`${token}:`);
+        }
+    });
+
+    it("points them at this page's own tokens rather than repeating hex codes", () => {
+        // Repeating the literals is what drifts when the palette moves.
+        for (const token of SURFACE_TOKENS) {
+            const declaration = rootBlock.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1] ?? '';
+            expect(declaration.trim(), `${token} should reference a :root token`).toMatch(
+                /^var\(--[a-z-]+\)$/
+            );
+        }
     });
 });
 

@@ -47,6 +47,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
@@ -248,6 +249,143 @@ export abstract class BaseCommerceListingService<
      */
     protected get _viewOwnPermission(): PermissionEnum {
         return this._viewAllPermission;
+    }
+
+    /**
+     * Whether a write payload carries junction IDs, i.e. whether the after-hook
+     * will fan out into `syncCommerceAmenityJunction` / `syncCommerceFeatureJunction`
+     * and therefore REQUIRES an active transaction (HOS-808).
+     *
+     * Read off the raw payload rather than the validated one on purpose: the
+     * decision to open a boundary has to be made before `super.create` /
+     * `super.update` runs the schema, and the three-way junction contract keys
+     * off presence (`undefined` → no-op), which survives validation unchanged.
+     *
+     * @param data - The raw create/update payload.
+     * @returns `true` when `amenityIds` or `featureIds` is present (even as `[]`).
+     */
+    private static _carriesJunctionIds(data: unknown): boolean {
+        const payload = data as { amenityIds?: unknown; featureIds?: unknown } | null | undefined;
+        if (!payload || typeof payload !== 'object') return false;
+        return payload.amenityIds !== undefined || payload.featureIds !== undefined;
+    }
+
+    /**
+     * Runs a write inside its own transaction boundary and converts a thrown
+     * `ServiceError` back into the `ServiceOutput` envelope (HOS-808).
+     *
+     * The conversion is not cosmetic. `runWithLoggingAndValidation` RE-THROWS
+     * instead of returning `{ error }` whenever `ctx.tx` is set — that is what
+     * makes a failed junction sync roll the row write back. Without catching it
+     * here, opening a boundary would silently change this method's contract from
+     * "resolves with an error envelope" to "rejects", and every caller that
+     * checks `result.error` (including `updateOwn`, whose `return this.update(…)`
+     * inside a `try` does NOT catch a rejection) would turn a 400-class refusal —
+     * an unknown amenity ID, a non-CITY destination — into an unhandled 500.
+     *
+     * @param params.ctx - Base context to merge into the transaction context.
+     * @param params.run - The write to execute with the transactional context.
+     * @returns The write's `ServiceOutput`, or the rolled-back error as an envelope.
+     */
+    private async _runInJunctionTransaction({
+        ctx,
+        run
+    }: {
+        readonly ctx: ServiceContext<CommerceListingHookState>;
+        readonly run: (
+            execCtx: ServiceContext<CommerceListingHookState>
+        ) => Promise<ServiceOutput<TEntity>>;
+    }): Promise<ServiceOutput<TEntity>> {
+        try {
+            return await withServiceTransaction(
+                async (txCtx) => run(txCtx as ServiceContext<CommerceListingHookState>),
+                ctx,
+                { timeoutMs: 10_000 }
+            );
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                return { error };
+            }
+            return {
+                error: new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to write ${this.entityName}: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`,
+                    error
+                )
+            };
+        }
+    }
+
+    /**
+     * Creates a listing, opening a transaction when the payload carries
+     * `amenityIds` / `featureIds` (HOS-808).
+     *
+     * `_afterCreate` syncs the junction tables and hard-refuses to run without
+     * `ctx.tx`, so an admin create carrying amenities used to fail with
+     * `INTERNAL_ERROR` after the row had already been written. Mirrors
+     * `AccommodationService.create`: a transparent pass-through when no junction
+     * IDs are present, and a no-op when the caller already supplied a `tx`
+     * (`createForOwner` does — `withServiceTransaction` always opens a NEW
+     * boundary, so re-entering here would split one unit of work in two).
+     *
+     * @param actor - The actor performing the create.
+     * @param data - Create payload, optionally carrying `amenityIds` / `featureIds`.
+     * @param ctx - Optional context; when it carries a `tx`, this enlists in it.
+     * @returns The created listing, or a `ServiceError` envelope.
+     */
+    public override async create(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        if (ctx?.tx || !BaseCommerceListingService._carriesJunctionIds(data)) {
+            return super.create(actor, data, ctx);
+        }
+
+        return this._runInJunctionTransaction({
+            ctx: (ctx ?? {}) as ServiceContext<CommerceListingHookState>,
+            run: (txCtx) => super.create(actor, data, txCtx)
+        });
+    }
+
+    /**
+     * Updates a listing, opening a transaction when the payload carries
+     * `amenityIds` / `featureIds` (HOS-808).
+     *
+     * Without this, ticking ANY service or feature checkbox in the owner editor
+     * answered 500: `_afterUpdate` throws `INTERNAL_ERROR` ("Junction sync
+     * requires an active transaction") when `ctx.tx` is absent, and no caller on
+     * the owner path — `updateOwn` ← `PATCH /protected/{gastronomies,experiences}/:id`
+     * — ever opened one. The junction tables stayed empty, so no listing could
+     * ever record a service.
+     *
+     * @param actor - The actor performing the update.
+     * @param id - UUID of the listing to update.
+     * @param data - Update payload, optionally carrying `amenityIds` / `featureIds`.
+     * @param ctx - Optional context; when it carries a `tx`, this enlists in it.
+     * @returns The updated listing, or a `ServiceError` envelope.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<TUpdateSchema>,
+        ctx?: ServiceContext<CommerceListingHookState>
+    ): Promise<ServiceOutput<TEntity>> {
+        const resolvedCtx: ServiceContext<CommerceListingHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
+
+        if (!resolvedCtx.tx && BaseCommerceListingService._carriesJunctionIds(data)) {
+            return this._runInJunctionTransaction({
+                ctx: resolvedCtx,
+                run: (txCtx) => super.update(actor, id, data, txCtx)
+            });
+        }
+
+        return super.update(actor, id, data, resolvedCtx);
     }
 
     // -----------------------------------------------------------------------
@@ -659,10 +797,35 @@ export abstract class BaseCommerceListingService<
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
         const typedCtx = ctx as ServiceContext<CommerceListingHookState>;
+        const slugWasProvided = Object.hasOwn(payload, 'slug');
 
         // (a) Destination CITY-type validation on re-assignment
         if (payload.destinationId) {
             await this._assertDestinationIsCity(payload.destinationId as string, ctx.tx);
+        }
+
+        const updateId = typedCtx.hookState?.updateId;
+        if (updateId) {
+            const current = await this.model.findById(updateId, ctx.tx);
+            if (
+                current &&
+                shouldRegenerateSlugOnRename({
+                    currentLifecycleState: current.lifecycleState as string | null | undefined,
+                    currentName: current.name as string | null | undefined,
+                    nextName: typeof payload.name === 'string' ? payload.name : undefined,
+                    slugWasProvided,
+                    refreshSlugFromName: payload.refreshSlugFromName === true
+                })
+            ) {
+                typedCtx.hookState = typedCtx.hookState ?? {};
+                typedCtx.hookState.regeneratedSlug = await createUniqueSlug(
+                    payload.name as string,
+                    async (candidate) => {
+                        const existing = await this.model.findOne({ slug: candidate });
+                        return !!existing && existing.id !== current.id;
+                    }
+                );
+            }
         }
 
         // (c) Capture junction IDs into hookState
@@ -676,7 +839,15 @@ export abstract class BaseCommerceListingService<
         }
 
         // Strip write-only junction fields from the DB write payload
-        const { amenityIds: _a, featureIds: _f, ...rest } = payload;
+        const {
+            amenityIds: _a,
+            featureIds: _f,
+            refreshSlugFromName: _refreshSlugFromName,
+            ...rest
+        } = payload;
+        if (typedCtx.hookState?.regeneratedSlug) {
+            rest.slug = typedCtx.hookState.regeneratedSlug;
+        }
         return rest as Partial<TEntity>;
     }
 

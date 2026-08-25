@@ -127,7 +127,12 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     featureIds: 'checkbox group in AmenitiesSection',
     // A bare toggle with no id: it gates priceFrom/priceUnit rather than
     // carrying its own validation message.
-    isPriceOnRequest: 'unlabelled toggle, carries no error of its own'
+    isPriceOnRequest: 'unlabelled toggle, carries no error of its own',
+    // An intent flag, not a field: it only appears once a PUBLISHED listing is
+    // renamed (HOS-784 stage 2), carries no validation of its own, and is never
+    // persisted. There is no invalid state to focus, and the control does not
+    // exist at all in the state this suite renders.
+    refreshSlugFromName: 'conditional opt-in, carries no error of its own'
 };
 
 const SCHEMA_BY_VERTICAL = {

@@ -25,6 +25,15 @@
  * blank now, which was already its behaviour for the common case
  * (AC-10/AC-11 predate this and still hold).
  *
+ * HOS-809: the price field asks for PESOS and converts to the centavos the
+ * schema and the column store, via `@/lib/commerce/price-units`. It used to
+ * pass the typed number straight through under a label reading "Precio desde
+ * (centavos)", so an owner who typed 15000 meaning pesos published $ 150.
+ *
+ * HOS-820: the copy that NAMES what is being created (the name field, the
+ * submit button, the create-failed message) follows the vertical instead of
+ * the shared module — an excursion is not a "comercio".
+ *
  * Hydration: caller MUST use `client:load` (the primary interactive surface
  * of the create page).
  */
@@ -43,6 +52,8 @@ import type { DestinationOption } from '@/components/commerce/destination-option
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { createOwnerListing } from '@/lib/commerce/owner-listings';
+import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/commerce/price-units';
+import { resolveCommerceTypeLabel } from '@/lib/commerce-type-labels';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -115,14 +126,19 @@ export function CommerceCreateForm({
     const { t } = createTranslations(locale);
 
     const schema = vertical === 'gastronomy' ? GASTRONOMY_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({ schema, t });
+    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
+        schema,
+        t
+    });
 
     const [name, setName] = useState('');
     const [listingType, setListingType] = useState('');
     const [summary, setSummary] = useState('');
     const [description, setDescription] = useState('');
     const [destinationId, setDestinationId] = useState('');
-    const [priceFrom, setPriceFrom] = useState<number | null>(null);
+    // HOS-809: held in CENTAVOS, the unit `ExperienceOwnerCreateInputSchema`
+    // and the column both use. The field below shows and reads PESOS.
+    const [priceFromCents, setPriceFromCents] = useState<number | null>(null);
     const [priceUnit, setPriceUnit] = useState('');
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -130,8 +146,40 @@ export function CommerceCreateForm({
     const typeOptions =
         vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
+    // HOS-820: "comercio" is the name of the internal module gastronomy and
+    // experience share — not a word an excursion, a boat trip or a tour guide
+    // recognises itself in. The page already knows which vertical it is
+    // creating (the route carries it), so the three strings that NAME the thing
+    // being created follow the vertical instead of the module. Deliberately out
+    // of scope: the account sidebar's "Mi comercio", which is one shared entry
+    // across both verticals and needs a neutral term rather than a branch.
+    const nameLabel =
+        vertical === 'gastronomy'
+            ? t('commerce.owner.create.fields.name.gastronomy', 'Nombre del comercio')
+            : t('commerce.owner.create.fields.name.experience', 'Nombre de la experiencia');
+    const submitLabel =
+        vertical === 'gastronomy'
+            ? t('commerce.owner.create.submit.gastronomy', 'Crear comercio')
+            : t('commerce.owner.create.submit.experience', 'Crear experiencia');
+    const createErrorMessage =
+        vertical === 'gastronomy'
+            ? t(
+                  'commerce.owner.create.error.gastronomy',
+                  'No pudimos crear el comercio. Probá de nuevo.'
+              )
+            : t(
+                  'commerce.owner.create.error.experience',
+                  'No pudimos crear la experiencia. Probá de nuevo.'
+              );
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
+        // HOS-816: the previous attempt's banner belongs to the previous
+        // attempt. `handleApiError` only ever sets one, so without this a
+        // rejected submit left its message on screen through every later
+        // attempt — including one still in flight, which reads as "this failed
+        // again" before the server has answered anything.
+        setFormError(null);
 
         const basePayload: Record<string, unknown> = {
             name,
@@ -142,7 +190,7 @@ export function CommerceCreateForm({
         };
 
         if (vertical === 'experience') {
-            basePayload.priceFrom = isPriceOnRequest ? 0 : (priceFrom ?? undefined);
+            basePayload.priceFrom = isPriceOnRequest ? 0 : (priceFromCents ?? undefined);
             // H-156: an experience with no price has no billing unit. Send an
             // explicit null rather than whatever the select happened to hold, so
             // the row does not end up asserting "price on request", "price 0"
@@ -185,10 +233,7 @@ export function CommerceCreateForm({
             return;
         }
 
-        handleApiError(
-            created.error,
-            t('commerce.owner.create.error', 'No pudimos crear el comercio. Probá de nuevo.')
-        );
+        handleApiError(created.error, createErrorMessage);
         setIsSubmitting(false);
     }
 
@@ -203,7 +248,7 @@ export function CommerceCreateForm({
                     className={styles.label}
                     htmlFor="cc-name"
                 >
-                    {t('commerce.owner.create.fields.name', 'Nombre del comercio')}
+                    {nameLabel}
                 </label>
                 <input
                     id="cc-name"
@@ -243,7 +288,7 @@ export function CommerceCreateForm({
                             key={opt}
                             value={opt}
                         >
-                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
+                            {resolveCommerceTypeLabel({ t, vertical, type: opt })}
                         </option>
                     ))}
                 </select>
@@ -383,8 +428,9 @@ export function CommerceCreateForm({
                         className={styles.label}
                         htmlFor="cc-priceFrom"
                     >
-                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
+                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde')}
                     </label>
+                    {/* HOS-809: the owner types PESOS; the state holds centavos. */}
                     <input
                         id="cc-priceFrom"
                         type="number"
@@ -392,10 +438,9 @@ export function CommerceCreateForm({
                         step={1}
                         className={styles.input}
                         disabled={isPriceOnRequest}
-                        value={priceFrom ?? ''}
+                        value={centsToPesosInputValue({ cents: priceFromCents })}
                         onChange={(event) => {
-                            const raw = event.target.value;
-                            setPriceFrom(raw === '' ? null : Math.floor(Number(raw)));
+                            setPriceFromCents(parsePesosInputToCents({ raw: event.target.value }));
                         }}
                         aria-invalid={fieldErrors.priceFrom ? 'true' : 'false'}
                         aria-describedby={
@@ -466,9 +511,7 @@ export function CommerceCreateForm({
                 aria-busy={isSubmitting}
                 data-testid="commerce-create-submit"
             >
-                {isSubmitting
-                    ? t('commerce.owner.create.submitting', 'Creando...')
-                    : t('commerce.owner.create.submit', 'Crear comercio')}
+                {isSubmitting ? t('commerce.owner.create.submitting', 'Creando...') : submitLabel}
             </button>
         </form>
     );

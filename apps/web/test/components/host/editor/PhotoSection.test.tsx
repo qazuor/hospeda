@@ -62,6 +62,11 @@ const {
 // (BETA-98 regression: galleryAlt must interpolate {{index}} via params, not
 // via a pre-interpolated fallback string).
 const MOCK_TRANSLATIONS: Record<string, string> = {
+    'host.properties.editor.section.photosDescription_one':
+        'Subí hasta {{cap}} foto de tu propiedad para atraer más huéspedes',
+    'host.properties.editor.section.photosDescription_other':
+        'Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes',
+    'host.properties.editor.photo.gallery': 'Galería de fotos (máx. {{cap}})',
     'host.properties.editor.photo.galleryAlt': 'Foto {{index}}',
     'host.properties.editor.photo.galleryCapReached_one':
         'Límite de galería alcanzado (máx {{cap}} foto)',
@@ -255,8 +260,17 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => {
                 expect(
-                    screen.getByText('Subí fotos de tu propiedad para atraer más huéspedes')
+                    screen.getByText(
+                        'Subí hasta 50 fotos de tu propiedad para atraer más huéspedes'
+                    )
                 ).toBeInTheDocument();
+            });
+        });
+
+        it('renders the gallery title with the cap read from the shared constant', async () => {
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => {
+                expect(screen.getByText('Galería de fotos (máx. 50)')).toBeInTheDocument();
             });
         });
 
@@ -687,7 +701,9 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
-            const hint = screen.getByText((content) => content.includes('máx.'));
+            const hint = screen.getByText(
+                (content) => content.includes('máx.') && content.includes('MB')
+            );
             expect(hint.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
             expect(hint.textContent).not.toContain('{{');
         });
@@ -782,6 +798,23 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
             expect(mockUploadEntityImage).not.toHaveBeenCalled();
             expect(mockAddMedia).not.toHaveBeenCalled();
+        });
+
+        it('switches the native picker back to single-file mode when only one slot remains', async () => {
+            const cap = ENTITY_GALLERY_CAPS.accommodation;
+            const nearFullGallery = Array.from({ length: cap - 1 }, (_, i) => ({
+                ...GALLERY_ROW_1,
+                id: `g-${i}`,
+                url: `https://cdn.example.com/g${i}.jpg`,
+                publicId: `gallery/g${i}`
+            }));
+            mockListMedia.mockReturnValue(makeListOk(nearFullGallery));
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(cap - 1));
+
+            const galleryInput = document.querySelector('#gallery-image-input') as HTMLInputElement;
+            expect(galleryInput).not.toHaveAttribute('multiple');
         });
     });
 

@@ -21,7 +21,6 @@ import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
 import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
-import { renderPlain } from '@/lib/render-plain';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
@@ -412,10 +411,25 @@ const ogSubtitle = accommodation.destination?.name || undefined;
 // presence of `accommodation.richDescription` is the ONLY signal that the
 // page may render rich HTML. Do not evaluate entitlements here — the API
 // gate already omitted the field when the owner is not entitled.
-const safeDescriptionText = renderPlain({
-    raw: accommodation.description ?? ''
-});
 const richDescriptionSiteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+// HOS-817: `description` is rendered as MARKDOWN, not as escaped plain text.
+// The host editor binds its RichTextEditor to `description` (not to
+// `richDescription`), so an entitled host's bold/italic/lists land here — and
+// `renderPlain` published them as literal `**asterisks**`.
+//
+// No entitlement check here, by design: `gateRichDescription`
+// (apps/api/src/middlewares/accommodation-entitlements.ts) already neutralizes
+// markdown in `description` at WRITE time for owners lacking
+// CAN_USE_RICH_DESCRIPTION, so markdown reaching this page implies an entitled
+// owner. Both branches now go through `renderRich` (marked -> sanitizeHtml),
+// which is what keeps host-authored `<script>` / `onerror=` / `javascript:`
+// out of the DOM.
+const safeDescriptionHtml = accommodation.description
+    ? renderRich({
+          raw: accommodation.description,
+          siteOrigin: richDescriptionSiteOrigin
+      })
+    : '';
 const safeRichDescriptionHtml = accommodation.richDescription
     ? renderRich({
           raw: accommodation.richDescription,
@@ -552,7 +566,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                 <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
             </section>
         ) : (
-            <Description summary={accommodation.summary} descriptionText={safeDescriptionText} />
+            <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
         )}
 
         <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram

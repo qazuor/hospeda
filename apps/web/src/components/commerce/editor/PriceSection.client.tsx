@@ -14,12 +14,24 @@
  *
  * The `null`-vs-omitted asymmetry between the two branches is NOT visible here
  * — it lives in `buildPatchPayload`. See the spec's §7.1 table.
+ *
+ * ## Price unit (HOS-809)
+ *
+ * `CommerceEditData.priceFrom` stays in CENTAVOS end to end — it is loaded from
+ * the API, diffed against the baseline and PATCHed back by
+ * `CommerceListingEditor` without ever being interpreted, so changing its unit
+ * would have meant auditing all three. The peso ↔ centavo conversion happens
+ * HERE instead, at the one place the number is shown to and typed by a person.
+ * Both directions come from `@/lib/commerce/price-units`; a display that
+ * divides without an input that multiplies would multiply the stored price by
+ * 100 on every save.
  */
 
 import { ExperiencePriceUnitEnum, PriceRangeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
 import { TextField } from '@/components/ui/TextField';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/commerce/price-units';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { CommerceEditData, CommerceFieldChange } from './commerce-edit-data';
@@ -115,10 +127,11 @@ export function PriceSection({
             </label>
 
             {/* T-021: priceFrom — disabled when isPriceOnRequest */}
+            {/* HOS-809: the owner types PESOS; the field value is centavos. */}
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="priceFrom"
-                label={t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
+                label={t('commerce.owner.editor.sections.priceFrom', 'Precio desde')}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.priceFrom}
@@ -126,11 +139,9 @@ export function PriceSection({
                 min={0}
                 step={1}
                 disabled={data.isPriceOnRequest}
-                value={data.priceFrom ?? ''}
+                value={centsToPesosInputValue({ cents: data.priceFrom })}
                 onChange={(event) => {
-                    const raw = event.target.value;
-                    const parsed = raw === '' ? null : Math.floor(Number(raw));
-                    onFieldChange('priceFrom', parsed);
+                    onFieldChange('priceFrom', parsePesosInputToCents({ raw: event.target.value }));
                 }}
             />
 

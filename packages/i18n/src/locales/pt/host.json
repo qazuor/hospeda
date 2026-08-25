@@ -252,21 +252,28 @@
                 "contact": "Contato",
                 "socialNetworks": "Redes sociais",
                 "photos": "Fotos",
-                "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
+                "photosDescription": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
+                "photosDescription_one": "Envie até {{cap}} foto do seu imóvel para atrair mais hóspedes",
+                "photosDescription_other": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
                 "externalReputation": "Reputação externa",
                 "featuredToggle": "Destacado",
                 "calendar": "Calendário",
                 "capacityPricing": "Capacidade e preço",
                 "contactSocial": "Contato e redes",
                 "seo": "Buscadores (Google)",
-                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Se deixar estes campos vazios, é usado o nome da sua propriedade."
+                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Os dois campos são opcionais: se ficarem vazios, publicamos o nome e o resumo da sua propriedade."
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
             },
+            "slugRefresh": {
+                "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
+                "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
+                "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+            },
             "field": {
                 "name": "Nome",
-                "summary": "Resumo",
+                "summary": "Descrição curta",
                 "description": "Descrição",
                 "type": "Tipo",
                 "destination": "Destino",
@@ -305,7 +312,8 @@
                 "seoTitle": "Título para o Google",
                 "seoTitleHint": "O título em negrito exibido no resultado de busca. Por enquanto só se aplica em espanhol — em inglês e português ainda é exibido o nome da sua propriedade.",
                 "seoDescription": "Descrição para o Google",
-                "seoDescriptionHint": "O texto exibido abaixo do título no resultado de busca. Assim como o título, por enquanto só se aplica em espanhol."
+                "seoDescriptionHint": "O texto exibido abaixo do título no resultado de busca. Assim como o título, por enquanto só se aplica em espanhol.",
+                "seoDefaultPreview": "Se ficar vazio, publicamos: «{{value}}»"
             },
             "photo": {
                 "addToGallery": "Adicionar fotos à galeria",
@@ -335,7 +343,7 @@
                 "featuredAlt": "Imagem principal",
                 "featuredFailed": "Não foi possível definir a imagem como capa",
                 "formats": "JPG, PNG ou WebP — máx. {{maxSize}}MB",
-                "gallery": "Galeria de fotos",
+                "gallery": "Galeria de fotos (máx. {{cap}})",
                 "galleryAlt": "Foto {{index}}",
                 "galleryCapExceededOnSelect": "Você escolheu {{pickedPhrase}}, mas resta(m) apenas {{remainingPhrase}} (máx. {{cap}} no total)",
                 "galleryCapLabel": "Galeria cheia",
@@ -397,6 +405,9 @@
                 "editAria": "Editar \"{{question}}\"",
                 "deleteAria": "Excluir \"{{question}}\"",
                 "deleteConfirm": "Excluir esta pergunta?",
+                "deleteDialogTitle": "Excluir pergunta",
+                "deleteConfirmButton": "Excluir pergunta",
+                "deleting": "Excluindo...",
                 "saveError": "Não foi possível salvar a pergunta.",
                 "deleteError": "Não foi possível excluir a pergunta.",
                 "reorderError": "Não foi possível reordenar.",
@@ -438,7 +449,7 @@
             "entitlement": {
                 "premiumFeature": "Recurso premium",
                 "richDescriptionNudge": "Faça upgrade no seu plano para usar descrições enriquecidas com formatação.",
-                "richDescriptionHint": "Atualize seu plano para formatar sua descrição (negrito, listas e mais).",
+                "richDescriptionHint": "Texto com formatação: negrito, listas e mais. Disponível em planos superiores.",
                 "videoNudge": "Faça upgrade no seu plano para incorporar vídeos na sua propriedade.",
                 "genericNudge": "Este recurso está disponível em um plano superior.",
                 "upgradeLink": "Melhorar plano"
@@ -481,9 +492,12 @@
                 "toolbarLink": "Link"
             },
             "location": {
-                "searchAddress": "Buscar endereço",
+                "searchOnMap": "Buscar no mapa",
+                "searchHint": "Este campo apenas move o mapa para encontrar o ponto. O que você digitar aqui não é salvo. O endereço salvo é o de cima.",
                 "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
                 "useMyLocation": "Usar minha localização atual",
+                "mapSubtitle": "Localização no mapa",
+                "pinAt": "O pin está em:",
                 "mapHint": "Arraste o pin para ajustar a localização exata.",
                 "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
                 "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
@@ -509,7 +523,15 @@
                 "nothingGenerated": "Não havia traduções pendentes para gerar.",
                 "allFailed": "Não foi possível gerar nenhuma tradução. Revise o detalhe por campo e tente novamente.",
                 "partialFailure": "Algumas traduções não foram geradas. Revise o detalhe por campo.",
-                "refresh": "Atualizar a página"
+                "refresh": "Atualizar a página",
+                "roleSource": "Original",
+                "roleTranslated": "Gerado com IA",
+                "roleMissing": "Sem tradução",
+                "sourceEmpty": "Você ainda não escreveu este conteúdo.",
+                "translationEmpty": "Esta tradução ainda não foi gerada.",
+                "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
+                "expandText": "Ver completo",
+                "collapseText": "Ver menos"
             },
             "featuredToggle": {
                 "label": "Destacar mi alojamiento",
