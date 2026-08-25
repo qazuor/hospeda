@@ -215,12 +215,12 @@
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
-            "slugFollowsNameNotice": "La dirección pública va a seguir al nombre hasta que publiques la ficha.",
-            "slugFixedNotice": "La dirección pública ya está fija: cambiar el nombre no la modifica.",
+            "slugFollowsNameNotice": "La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.",
+            "slugFixedNotice": "La dirección web de tu ficha (su URL) ya está fija: cambiar el nombre no la modifica.",
             "slugRefresh": {
-                "notice": "Esta ficha ya está publicada. Por defecto la dirección actual se mantiene aunque cambies el nombre.",
-                "warning": "Si cambiás la dirección pública, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
-                "checkbox": "Cambiar igual la dirección pública para que siga este nuevo nombre"
+                "notice": "Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.",
+                "warning": "Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
+                "checkbox": "Cambiar igual la dirección web para que siga este nuevo nombre"
             }
         },
         "checklist": {

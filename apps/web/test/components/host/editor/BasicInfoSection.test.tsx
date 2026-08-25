@@ -252,7 +252,7 @@ describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)',
         );
 
         expect(screen.getByText(/tu ficha ya está publicada/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/cambiar igual la dirección pública/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
     });
 
     it('forwards the checkbox toggle through onRefreshSlugFromNameChange', () => {
@@ -266,7 +266,7 @@ describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)',
             />
         );
 
-        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección pública/i));
+        fireEvent.click(screen.getByLabelText(/cambiar igual la dirección web/i));
 
         expect(onRefreshSlugFromNameChange).toHaveBeenCalledWith(true);
     });

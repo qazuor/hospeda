@@ -316,7 +316,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Parrilla Nueva' }
             });
-            fireEvent.click(screen.getByLabelText(/cambiar igual la dirección pública/i));
+            fireEvent.click(screen.getByLabelText(/cambiar igual la dirección web/i));
             fireEvent.click(saveButton());
 
             const body = await wireBody();
