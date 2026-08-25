@@ -30,19 +30,27 @@ export type CharacterCounterState = 'under-minimum' | 'normal' | 'warning' | 'da
  * `>` so a field pinned at its `maxLength` — which is what the browser does,
  * silently — still reads as at the limit instead of merely near it.
  *
- * @param params - Current length plus the field's bounds.
+ * @param params - Current length, the field's bounds, and whether it may be
+ * left empty (in which case an empty value is valid rather than short).
  * @returns The severity to render.
  */
 export function getCharacterCounterState({
     current,
     max,
-    min
+    min,
+    optional = false
 }: {
     readonly current: number;
     readonly max: number;
     readonly min?: number;
+    readonly optional?: boolean;
 }): CharacterCounterState {
-    if (typeof min === 'number' && current < min) return 'under-minimum';
+    // An empty optional field is VALID, not short. `seoTitle` is
+    // `union([literal(''), string().min(30)])`: clearing it removes the
+    // override, which is the whole point of HOS-792. Flagging it would tell
+    // the host to fix something that is already correct.
+    const minApplies = typeof min === 'number' && !(optional && current === 0);
+    if (minApplies && current < (min as number)) return 'under-minimum';
     if (current >= max) return 'danger';
     if (current >= Math.ceil(max * WARNING_RATIO)) return 'warning';
     return 'normal';
@@ -58,6 +66,12 @@ export interface CharacterCounterProps {
     readonly current: number;
     /** Minimum length enforced for the field, when present. */
     readonly min?: number;
+    /**
+     * Marks the field as leave-able empty, so `min` governs only once there
+     * IS content. Set it wherever the schema accepts `''` alongside a bounded
+     * string — the SEO overrides are the current case.
+     */
+    readonly optional?: boolean;
     /** The field's `maxLength`. */
     readonly max: number;
     /** Optional extra class for layout-specific positioning. */
@@ -81,12 +95,13 @@ export function CharacterCounter({
     locale,
     current,
     min,
+    optional,
     max,
     className,
     testId
 }: CharacterCounterProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const state = getCharacterCounterState({ current, max, min });
+    const state = getCharacterCounterState({ current, max, min, optional });
 
     return (
         <p

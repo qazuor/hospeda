@@ -52,6 +52,23 @@ describe('getCharacterCounterState', () => {
         expect(getCharacterCounterState({ current: 2, min: 3, max: 100 })).toBe('under-minimum');
         expect(getCharacterCounterState({ current: 3, min: 3, max: 100 })).toBe('normal');
     });
+
+    it('leaves an empty optional field alone, but holds it to the floor once typed in', () => {
+        // `seoTitle` is `union([literal(''), string().min(30).max(60)])`:
+        // empty is a valid "no override", one character is not.
+        expect(getCharacterCounterState({ current: 0, min: 30, max: 60, optional: true })).toBe(
+            'normal'
+        );
+        expect(getCharacterCounterState({ current: 1, min: 30, max: 60, optional: true })).toBe(
+            'under-minimum'
+        );
+        expect(getCharacterCounterState({ current: 30, min: 30, max: 60, optional: true })).toBe(
+            'normal'
+        );
+
+        // A required field with the same numbers still flags the empty case.
+        expect(getCharacterCounterState({ current: 0, min: 30, max: 60 })).toBe('under-minimum');
+    });
 });
 
 describe('CharacterCounter', () => {

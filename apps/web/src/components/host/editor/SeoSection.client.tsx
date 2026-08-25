@@ -45,7 +45,15 @@ import { createTranslations } from '@/lib/i18n';
 import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 import styles from './SeoSection.module.css';
 
+/**
+ * Both SEO fields are `union([literal(''), string().min(N).max(M)])` in
+ * `AccommodationUpdateHttpSchema`: leaving them empty is a valid way to say
+ * "no override", but ONCE typed in they must clear the floor. The counters
+ * carry `optional` for exactly that reason.
+ */
+const SEO_TITLE_MIN = 30;
 const SEO_TITLE_MAX = 60;
+const SEO_DESCRIPTION_MIN = 70;
 const SEO_DESCRIPTION_MAX = 160;
 
 /** Props for SeoSection. */
@@ -97,7 +105,12 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     value={data.seoTitle}
                     placeholder={titleDefault || undefined}
                     maxLength={SEO_TITLE_MAX}
-                    counter={{ locale }}
+                    counter={{
+                        locale,
+                        min: SEO_TITLE_MIN,
+                        optional: true,
+                        testId: 'seo-title-char-counter'
+                    }}
                     onChange={(e) => onFieldChange('seoTitle', e.target.value)}
                 />
                 {data.seoTitle === '' && titleDefault !== '' && (
@@ -133,7 +146,12 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     placeholder={descriptionDefault || undefined}
                     maxLength={SEO_DESCRIPTION_MAX}
                     rows={3}
-                    counter={{ locale }}
+                    counter={{
+                        locale,
+                        min: SEO_DESCRIPTION_MIN,
+                        optional: true,
+                        testId: 'seo-description-char-counter'
+                    }}
                     onChange={(e) => onFieldChange('seoDescription', e.target.value)}
                 />
                 {data.seoDescription === '' && descriptionDefault !== '' && (

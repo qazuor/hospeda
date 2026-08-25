@@ -21,6 +21,10 @@
  *   rather than an empty one.
  * - The counter is the shared `CharacterCounter`, so the minimum-length readout
  *   HOS-793 adds to it reaches this section too.
+ * - Both fields are `union([literal(''), string().min(N)])`, so an EMPTY one is
+ *   valid rather than short. The empty-field assertions below are what stops
+ *   the counter from painting a correct field as a problem — the exact state
+ *   HOS-792 made reachable by accepting `''` again.
  *
  * The `t` mock interpolates. A mock that returned the raw fallback would leave
  * `{{value}}` unexpanded, and every assertion about WHICH default is shown
@@ -263,18 +267,55 @@ describe('SeoSection', () => {
     });
 
     describe('the character counter', () => {
-        it('should render the shared counter for both fields', () => {
+        it('should render the shared counter for both fields, minimum included', () => {
             render(<SeoSection {...buildProps()} />);
 
-            expect(screen.getByText('0/60')).toBeInTheDocument();
-            expect(screen.getByText('0/160')).toBeInTheDocument();
+            expect(screen.getByTestId('seo-title-char-counter')).toHaveTextContent(
+                '0/60 · mín. 30'
+            );
+            expect(screen.getByTestId('seo-description-char-counter')).toHaveTextContent(
+                '0/160 · mín. 70'
+            );
         });
 
         it('should count the authored value, never the default behind it', () => {
             render(<SeoSection {...buildProps({ data: { ...MOCK_DATA, seoTitle: 'Hola' } })} />);
 
-            expect(screen.getByText('4/60')).toBeInTheDocument();
-            expect(screen.queryByText(`${NAME.length}/60`)).not.toBeInTheDocument();
+            expect(screen.getByTestId('seo-title-char-counter')).toHaveTextContent('4/60');
+            expect(screen.queryByText(new RegExp(`${NAME.length}/60`))).not.toBeInTheDocument();
+        });
+
+        it('should leave an empty field unflagged — empty is a valid "no override"', () => {
+            render(<SeoSection {...buildProps()} />);
+
+            expect(screen.getByTestId('seo-title-char-counter')).toHaveAttribute(
+                'data-state',
+                'normal'
+            );
+            expect(screen.getByTestId('seo-description-char-counter')).toHaveAttribute(
+                'data-state',
+                'normal'
+            );
+        });
+
+        it('should flag a field that has content but has not cleared its floor', () => {
+            render(
+                <SeoSection
+                    {...buildProps({
+                        data: { ...MOCK_DATA, seoTitle: 'Hola', seoDescription: 'x'.repeat(70) }
+                    })}
+                />
+            );
+
+            expect(screen.getByTestId('seo-title-char-counter')).toHaveAttribute(
+                'data-state',
+                'under-minimum'
+            );
+            // 70 is exactly the floor, so the description is already valid.
+            expect(screen.getByTestId('seo-description-char-counter')).toHaveAttribute(
+                'data-state',
+                'normal'
+            );
         });
     });
 

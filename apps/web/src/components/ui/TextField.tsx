@@ -83,6 +83,11 @@ interface TextFieldCommonProps {
         readonly locale: SupportedLocale;
         /** Minimum length enforced for the field, when present. */
         readonly min?: number;
+        /**
+         * Set when the field may be left empty, so `min` governs only once
+         * there IS content — an empty optional field is valid, not short.
+         */
+        readonly optional?: boolean;
         /** Optional test hook forwarded to the counter element. */
         readonly testId?: string;
     };
@@ -201,6 +206,7 @@ export function TextField(props: TextFieldProps) {
                     locale={counter.locale}
                     current={(value as string).length}
                     min={counter.min}
+                    optional={counter.optional}
                     max={maxLength as number}
                     testId={counter.testId}
                 />
