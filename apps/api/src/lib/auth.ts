@@ -26,12 +26,7 @@ import {
     users,
     verifications
 } from '@repo/db';
-import {
-    createEmailClient,
-    ResetPasswordTemplate,
-    sendEmail,
-    VerifyEmailTemplate
-} from '@repo/email';
+import { createEmailClient, ResetPasswordTemplate, VerifyEmailTemplate } from '@repo/email';
 import { createLogger } from '@repo/logger';
 import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
@@ -41,6 +36,7 @@ import { APIError } from 'better-auth/api';
 import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
+import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
@@ -325,7 +321,7 @@ function buildAuth() {
                         // straight to the web page.
                         const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
                         const resetUrl = `${siteOrigin}/es/auth/reset-password?token=${encodeURIComponent(token)}`;
-                        const result = await sendEmail({
+                        const result = await sendAppEmail({
                             client,
                             to: user.email,
                             subject: 'Restablece tu contraseña de Hospeda',
@@ -400,7 +396,7 @@ function buildAuth() {
                         const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
                         const callbackURL = `${siteOrigin}/es/auth/signin?verified=1`;
                         const verificationUrl = `${apiOrigin}/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callbackURL)}`;
-                        const result = await sendEmail({
+                        const result = await sendAppEmail({
                             client,
                             to: user.email,
                             subject: 'Verifica tu cuenta de Hospeda',

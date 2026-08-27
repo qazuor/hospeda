@@ -36,6 +36,7 @@ import type { ConnectionOptions } from 'bullmq';
 import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
 import IORedis from 'ioredis';
+import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 
@@ -126,13 +127,11 @@ export function getNewsletterDeliveryService(): NewsletterDeliveryService | null
     }
 
     const emailClient = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
-    const senderEmail = env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar';
-    const senderName = env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda';
+    const sender = getEmailSender();
+    const senderEmail = sender.fromEmail;
+    const senderName = sender.fromName;
 
-    const emailTransport = new BrevoEmailTransport(emailClient, {
-        fromEmail: senderEmail,
-        fromName: senderName
-    });
+    const emailTransport = new BrevoEmailTransport(emailClient, sender);
 
     cachedService = new NewsletterDeliveryService(
         { logger: apiLogger },

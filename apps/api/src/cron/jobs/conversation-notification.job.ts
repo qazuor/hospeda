@@ -17,7 +17,7 @@
  *
  * ## Why email dispatch never shares a transaction with the DB write (HOS-112)
  *
- * `sendEmail` makes an HTTP call to Brevo per due schedule. An earlier
+ * `sendAppEmail` makes an HTTP call to Brevo per due schedule. An earlier
  * implementation ran that call INSIDE a `pg_try_advisory_xact_lock(43020)`
  * transaction that also persisted every schedule's streak advance in one
  * batch at the end — so a slow/unresponsive provider held a DB connection
@@ -37,7 +37,7 @@
  *       600`. This is what actually prevents a double-send across
  *       overlapping runs/ticks — NOT a Postgres advisory lock. A schedule
  *       already claimed by another run is skipped silently.
- *     - `await sendEmail(...)` — no transaction open, no lock held.
+ *     - `await sendAppEmail(...)` — no transaction open, no lock held.
  *     - On failure: release the claim (`DEL`) so the schedule retries next
  *       tick instead of waiting out the full TTL. No advance is persisted.
  *     - On success: IMMEDIATELY persist that one schedule's streak advance
@@ -69,7 +69,7 @@
  *
  * ## Residual risk (accepted, no retry queue — NG-2)
  *
- * A hard process crash between a successful `sendEmail` and that SAME
+ * A hard process crash between a successful `sendAppEmail` and that SAME
  * schedule's advance-transaction commit orphans exactly that ONE schedule:
  * its Redis claim is set (so it won't re-send until the ~10-minute TTL
  * expires) but its `pendingNotificationAt` never moved, so once the claim
@@ -83,9 +83,10 @@
  */
 
 import { AccommodationModel, getDb, UserModel, withTransaction } from '@repo/db';
-import { createEmailClient, sendEmail } from '@repo/email';
+import { createEmailClient } from '@repo/email';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { NotificationScheduleService } from '@repo/service-core';
+import { sendAppEmail } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { getRedisClient } from '../../utils/redis.js';
@@ -334,7 +335,7 @@ export const conversationNotificationJob: CronJobDefinition = {
                         continue;
                     }
 
-                    const emailResult = await sendEmail({
+                    const emailResult = await sendAppEmail({
                         client: emailClient,
                         to: item.recipientEmail,
                         subject: item.subject,
