@@ -3,7 +3,6 @@ import { billingNotificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
-import { NOTIFICATION_CONSTANTS } from '../constants/notification.constants.js';
 import {
     AccommodationCalendarFeedBroken,
     AddonCancellation,
@@ -226,7 +225,6 @@ export class NotificationService {
                 to: recipientEmail,
                 subject,
                 react: emailTemplate,
-                from: `${NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME} <${NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL}>`,
                 tags: [
                     { name: 'notification_type', value: type },
                     { name: 'category', value: NOTIFICATION_CATEGORY_MAP[type] }
