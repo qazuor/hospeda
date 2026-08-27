@@ -3,7 +3,7 @@
  *
  * Implements `ConversationMailer` from `@repo/service-core`, bridging the
  * backend-pure service layer with the React email templates in
- * `@repo/notifications`. The actual `sendEmail` call (which depends on React
+ * `@repo/notifications`. The actual `sendAppEmail` call (which depends on React
  * JSX compilation) lives here in `apps/api` to preserve the architectural
  * boundary: `@repo/service-core` contains no JSX, no React, no templates.
  *
@@ -26,13 +26,14 @@
  * @module lib/conversation-mailer
  */
 
-import { createEmailClient, sendEmail } from '@repo/email';
+import { createEmailClient } from '@repo/email';
 import { ConversationVerify } from '@repo/notifications';
 import type {
     AccessLinkEmailPayload,
     ConversationMailer,
     VerificationEmailPayload
 } from '@repo/service-core';
+import { sendAppEmail } from '../utils/email-sender.js';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 
@@ -74,7 +75,7 @@ export function createConversationMailer(): ConversationMailer | undefined {
          * @param payload - Verification context provided by `ConversationService`
          */
         async sendVerificationEmail(payload: VerificationEmailPayload): Promise<void> {
-            const result = await sendEmail({
+            const result = await sendAppEmail({
                 client,
                 to: payload.recipientEmail,
                 subject: 'Verificá tu email para continuar la conversación — Hospeda',
@@ -107,7 +108,7 @@ export function createConversationMailer(): ConversationMailer | undefined {
          * improvement; the service interface already models it as distinct.
          */
         async sendAccessLinkEmail(payload: AccessLinkEmailPayload): Promise<void> {
-            const result = await sendEmail({
+            const result = await sendAppEmail({
                 client,
                 to: payload.recipientEmail,
                 subject: 'Tu enlace de acceso a la conversación — Hospeda',

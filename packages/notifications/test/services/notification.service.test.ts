@@ -118,10 +118,19 @@ describe('NotificationService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: expect.any(String),
-                    react: expect.any(Object),
-                    from: expect.stringContaining('Hospeda')
+                    react: expect.any(Object)
                 })
             );
+
+            // The service must NOT set `from`: the transport owns the sender,
+            // resolved from env by the app, and a `from` here silently
+            // overrides it — which is how every notification used to ignore the
+            // configured sender name. `objectContaining` above cannot express
+            // this, since it is blind to a field that should be absent.
+            const [sendInput] = (mockEmailTransport.send as Mock).mock.calls[0] as [
+                Record<string, unknown>
+            ];
+            expect(sendInput).not.toHaveProperty('from');
 
             // Verify database logging
             expect(mockDb.insert).toHaveBeenCalledTimes(1);

@@ -41,6 +41,7 @@ import {
 } from '@repo/notifications';
 import { PriceDropEvaluatorService, PromoOfferEvaluatorService } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
+import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
@@ -179,10 +180,7 @@ export const alertsDigestJob: CronJobDefinition = {
             }
 
             const emailClient = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
-            const emailTransport = new BrevoEmailTransport(emailClient, {
-                fromEmail: env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar',
-                fromName: env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda'
-            });
+            const emailTransport = new BrevoEmailTransport(emailClient, getEmailSender());
             const emailAlertChannel = new EmailAlertChannel({ emailTransport, logger: apiLogger });
             const deliveryService = new AlertDigestDeliveryService({
                 channels: [emailAlertChannel],

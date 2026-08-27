@@ -40,6 +40,7 @@ export class BrevoEmailTransport implements EmailTransport {
     private readonly client: EmailClient;
     private readonly defaultFromEmail: string;
     private readonly defaultFromName: string;
+    private readonly subjectPrefix: string | undefined;
 
     /**
      * Creates a new Brevo email transport.
@@ -48,17 +49,22 @@ export class BrevoEmailTransport implements EmailTransport {
      * @param options - Transport configuration options
      * @param options.fromEmail - Default sender email address (required)
      * @param options.fromName - Default sender display name (required)
+     * @param options.subjectPrefix - Optional marker prepended to every subject
+     *   (including its trailing space). Used to make the originating
+     *   deployment visible in the inbox; omitted on production.
      */
     constructor(
         client: EmailClient,
         options: {
             fromEmail: string;
             fromName: string;
+            subjectPrefix?: string | undefined;
         }
     ) {
         this.client = client;
         this.defaultFromEmail = options.fromEmail;
         this.defaultFromName = options.fromName;
+        this.subjectPrefix = options.subjectPrefix;
     }
 
     /**
@@ -75,7 +81,9 @@ export class BrevoEmailTransport implements EmailTransport {
             const body: Record<string, unknown> = {
                 sender: parseSender(input.from, this.defaultFromEmail, this.defaultFromName),
                 to: [{ email: input.to }],
-                subject: input.subject,
+                subject: this.subjectPrefix
+                    ? `${this.subjectPrefix}${input.subject}`
+                    : input.subject,
                 htmlContent
             };
 

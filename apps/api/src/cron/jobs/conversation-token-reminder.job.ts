@@ -16,7 +16,7 @@
  *
  * ## Why email dispatch never shares a transaction with the DB write (HOS-129)
  *
- * `sendEmail` makes an HTTP call to Brevo per due token. An earlier
+ * `sendAppEmail` makes an HTTP call to Brevo per due token. An earlier
  * implementation ran BOTH `findDueReminders` queries AND both per-window send
  * loops inside a single `withTransaction` callback whose first statement was
  * `pg_try_advisory_xact_lock(43021)` — so a slow/unresponsive email provider
@@ -30,7 +30,7 @@
  *     `resolveTokenContext`) — no transaction, no lock. Builds an in-memory
  *     list of tokens due for each window.
  *  2. **Dispatch + persist** — for each due token, sequentially:
- *     - `await sendEmail(...)` — no transaction open, no lock held.
+ *     - `await sendAppEmail(...)` — no transaction open, no lock held.
  *     - On failure: count an error, log it, and move to the next token. No
  *       stamp is written, so the token remains due and is retried on the next
  *       daily run.
@@ -59,7 +59,7 @@
  *
  * ## Residual risk (accepted, no retry queue)
  *
- * A hard process crash between a successful `sendEmail` and that SAME
+ * A hard process crash between a successful `sendAppEmail` and that SAME
  * token's stamp-transaction commit leaves the token un-stamped, so it is
  * "due" again on the next daily run — one duplicate email. This is accepted
  * (same tradeoff HOS-112 made for the notification job): a rare duplicate is
@@ -78,13 +78,14 @@ import {
     type SelectConversationAccessToken,
     withTransaction
 } from '@repo/db';
-import { createEmailClient, sendEmail } from '@repo/email';
+import { createEmailClient } from '@repo/email';
 import {
     ConversationTokenExpiringDay15,
     ConversationTokenExpiringDay25
 } from '@repo/notifications';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccessTokenService } from '@repo/service-core';
+import { sendAppEmail } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobContext, CronJobDefinition } from '../types.js';
@@ -131,7 +132,7 @@ const SYSTEM_ACTOR = {
 
 /** Outcome of one token's dispatch-and-persist attempt. */
 interface DispatchOutcome {
-    /** Whether `sendEmail` reported success for this token. */
+    /** Whether `sendAppEmail` reported success for this token. */
     readonly sent: boolean;
     /** Whether persisting the `*_reminder_sent_at` stamp failed AFTER a successful send. */
     readonly markFailed: boolean;
@@ -177,7 +178,7 @@ async function dispatchTokenReminder(input: DispatchTokenReminderInput): Promise
         logger
     } = input;
 
-    const emailResult = await sendEmail({
+    const emailResult = await sendAppEmail({
         client: emailClient,
         to: recipientEmail,
         subject,
@@ -338,7 +339,7 @@ export const conversationTokenReminderJob: CronJobDefinition = {
             // -----------------------------------------------------------
             // Phase 1 — resolve + dispatch + persist, per token. No
             // transaction, no advisory lock is ever open while
-            // `sendEmail` runs — see module doc-comment for the HOS-129
+            // `sendAppEmail` runs — see module doc-comment for the HOS-129
             // rationale.
             // -----------------------------------------------------------
             const processWindow = async (
