@@ -45,6 +45,78 @@ import type { CronJobContext, CronJobDefinition } from '../types.js';
  */
 const RENEWAL_REMINDER_DAYS: readonly number[] = [7, 3, 1] as const;
 
+/** Milliseconds in a day, used to turn a remaining span into whole days. */
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/**
+ * Subscription statuses that may legitimately receive a renewal reminder.
+ *
+ * The billing listing is already asked to filter this
+ * (`subscriptions.list({ filters: { status: 'active' } })`), but that filter was
+ * silently ignored: the Drizzle storage adapter read only `limit`/`offset` and
+ * dropped `options.filters` entirely, so `abandoned` and `pending_provider` rows
+ * reached this job (HOS-854). Re-checking here is defence in depth — the same
+ * stance `trial-expiry.ts` already takes — and it stays even after the adapter
+ * is fixed, because this job must never depend on the listing being clean.
+ */
+const RENEWAL_ELIGIBLE_STATUSES: ReadonlySet<string> = new Set(['active']);
+
+/** Minimal shape this job needs from a listed subscription. */
+type RenewalReminderCandidate = {
+    readonly status?: string | null;
+    readonly currentPeriodEnd?: string | Date | null;
+};
+
+/**
+ * Verdict for a single subscription: either no reminder, or one due in N days.
+ *
+ * `renewalDate` is the parsed `currentPeriodEnd`, returned so the caller can put
+ * it in the notification payload without parsing the value a second time.
+ */
+type RenewalReminderVerdict =
+    | { readonly due: false }
+    | { readonly due: true; readonly daysRemaining: number; readonly renewalDate: Date };
+
+/**
+ * Decides whether a subscription is owed a renewal reminder at `now`.
+ *
+ * Shared by the real and the `dryRun` branches so the two can never drift.
+ * Before HOS-854 each branch carried its own copy of this arithmetic, which is
+ * why fixing one would have left the other reporting inflated counts.
+ *
+ * @param params.subscription - Subscription as returned by the billing listing.
+ * @param params.now - Reference instant, injected so callers and tests are deterministic.
+ * @param params.reminderDays - Day offsets that trigger a reminder (7, 3, 1).
+ * @returns `{ due: false }`, or `{ due: true, daysRemaining, renewalDate }` when one is owed.
+ */
+export function evaluateRenewalReminder(params: {
+    subscription: RenewalReminderCandidate;
+    now: Date;
+    reminderDays: ReadonlySet<number>;
+}): RenewalReminderVerdict {
+    const { subscription, now, reminderDays } = params;
+
+    if (!subscription.currentPeriodEnd) return { due: false };
+    if (!RENEWAL_ELIGIBLE_STATUSES.has(String(subscription.status ?? ''))) return { due: false };
+
+    const renewalDate = new Date(subscription.currentPeriodEnd);
+    const msRemaining = renewalDate.getTime() - now.getTime();
+    if (Number.isNaN(msRemaining)) return { due: false };
+
+    // An elapsed period is not an upcoming renewal — it is a subscription that
+    // already ended. The previous `Math.max(..., 1)` folded every negative span
+    // onto 1, the exact value that triggers the "renews tomorrow" reminder, so
+    // expired rows qualified forever and were re-sent daily (HOS-854).
+    if (msRemaining < 0) return { due: false };
+
+    // The clamp survives only for the boundary case it was actually written
+    // for: `Math.ceil(0)` is 0, and 0 is not a reminder day.
+    const daysRemaining = Math.max(Math.ceil(msRemaining / MS_PER_DAY), 1);
+    if (!reminderDays.has(daysRemaining)) return { due: false };
+
+    return { due: true, daysRemaining, renewalDate };
+}
+
 /**
  * In-memory fallback for idempotency keys when Redis is unavailable.
  * Maps key to timestamp (ms) of when the notification was sent.
@@ -511,17 +583,14 @@ export const notificationScheduleJob: CronJobDefinition = {
                         const now = new Date();
                         const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
 
-                        const renewingSoon = (activeSubscriptions?.data || []).filter((sub) => {
-                            if (!sub.currentPeriodEnd) return false;
-                            const endDate = new Date(sub.currentPeriodEnd);
-                            const msRemaining = endDate.getTime() - now.getTime();
-                            // Use Math.max to guard against Math.ceil(0) returning 0 at exact midnight
-                            const daysRemaining = Math.max(
-                                Math.ceil(msRemaining / (1000 * 60 * 60 * 24)),
-                                1
-                            );
-                            return reminderDaysSet.has(daysRemaining);
-                        });
+                        const renewingSoon = (activeSubscriptions?.data || []).filter(
+                            (sub) =>
+                                evaluateRenewalReminder({
+                                    subscription: sub,
+                                    now,
+                                    reminderDays: reminderDaysSet
+                                }).due
+                        );
 
                         logger.info('Dry run mode - would send renewal reminders', {
                             count: renewingSoon.length
@@ -545,17 +614,15 @@ export const notificationScheduleJob: CronJobDefinition = {
                         const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
 
                         for (const subscription of activeSubscriptions?.data || []) {
-                            if (!subscription.currentPeriodEnd) continue;
+                            const verdict = evaluateRenewalReminder({
+                                subscription,
+                                now,
+                                reminderDays: reminderDaysSet
+                            });
 
-                            const endDate = new Date(subscription.currentPeriodEnd);
-                            const msRemaining = endDate.getTime() - now.getTime();
-                            // Use Math.max to guard against Math.ceil(0) returning 0 at exact midnight
-                            const daysRemaining = Math.max(
-                                Math.ceil(msRemaining / (1000 * 60 * 60 * 24)),
-                                1
-                            );
+                            if (!verdict.due) continue;
 
-                            if (!reminderDaysSet.has(daysRemaining)) continue;
+                            const { daysRemaining, renewalDate: endDate } = verdict;
 
                             try {
                                 // Check idempotency

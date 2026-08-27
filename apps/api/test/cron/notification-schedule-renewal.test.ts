@@ -1223,4 +1223,203 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             expect(notifCall).not.toHaveProperty('currency');
         });
     });
+
+    /**
+     * HOS-854 regression suite.
+     *
+     * The renewal window used to be computed as
+     * `Math.max(Math.ceil(msRemaining / ONE_DAY_MS), 1)`. The clamp existed to
+     * stop `Math.ceil(0)` from yielding `0` at an exact period boundary, but it
+     * also folded every NEGATIVE value onto `1` — the very value that triggers
+     * the "renews tomorrow" reminder. Any subscription whose period had already
+     * ended therefore qualified forever, and because the idempotency key is
+     * scoped to the calendar day, it re-qualified every single day.
+     *
+     * Observed in staging: four customers received "Tu suscripción se renueva
+     * pronto" daily for subscriptions that were `abandoned` and long expired.
+     */
+    describe('HOS-854: expired subscriptions must never trigger renewal reminders', () => {
+        /**
+         * Builds a subscription whose period ended `daysAgo` days in the past.
+         * Mirrors `createMockSubscription` but keeps the intent explicit at the
+         * call site — a negative argument there reads as an accident.
+         */
+        function createExpiredSubscription(daysAgo: number, status = 'abandoned') {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() - daysAgo);
+            subscriptionCounter++;
+            return {
+                id: `sub-expired-${subscriptionCounter}`,
+                customerId: `cust-expired-${subscriptionCounter}`,
+                planId: 'plan-owner-basico',
+                status,
+                interval: 'month',
+                currentPeriodEnd: endDate.toISOString()
+            };
+        }
+
+        /** Wires the standard happy-path mocks so only the subject under test varies. */
+        function armBilling(subscriptions: unknown[]) {
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: subscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
+                }
+            };
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return { findTrialsEndingSoon: vi.fn().mockResolvedValue([]) } as any;
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
+            return mockBilling;
+        }
+
+        it.each([
+            ['ended yesterday', 1],
+            ['ended two days ago (the staging case)', 2],
+            ['ended a month ago', 30],
+            ['ended a year ago', 365]
+        ])('should NOT send a renewal reminder for a subscription that %s', async (_label, daysAgo) => {
+            // Arrange
+            const ctx = createMockContext();
+            armBilling([createExpiredSubscription(daysAgo as number)]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(0);
+            expect(sendNotification).not.toHaveBeenCalled();
+        });
+
+        it('should NOT count expired subscriptions in dry-run mode', async () => {
+            // The dry-run branch carries a twin copy of the window calculation,
+            // so a fix applied only to the real branch leaves the reported count lying.
+            // Arrange
+            const ctx = createMockContext({ dryRun: true });
+            armBilling([
+                createExpiredSubscription(2),
+                createExpiredSubscription(9),
+                createExpiredSubscription(400)
+            ]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(0);
+            expect(sendNotification).not.toHaveBeenCalled();
+        });
+
+        it('should still send when the period ends at the exact boundary (msRemaining === 0)', async () => {
+            // This is what the original `Math.max(..., 1)` clamp was protecting:
+            // `Math.ceil(0)` is `0`, and `0` is not in RENEWAL_REMINDER_DAYS.
+            // The fix drops the clamp for negatives but must NOT lose this case.
+            // Only `Date` is faked so real timers keep working inside the job.
+            vi.useFakeTimers({ toFake: ['Date'] });
+            try {
+                const frozenNow = new Date('2026-08-27T08:00:00.000Z');
+                vi.setSystemTime(frozenNow);
+
+                // Arrange
+                const ctx = createMockContext();
+                armBilling([
+                    {
+                        id: 'sub-boundary',
+                        customerId: 'cust-boundary',
+                        planId: 'plan-owner-basico',
+                        status: 'active',
+                        interval: 'month',
+                        currentPeriodEnd: frozenNow.toISOString()
+                    }
+                ]);
+
+                // Act
+                const result = await notificationScheduleJob.handler(ctx);
+
+                // Assert
+                expect(result.details?.renewalsSent).toBe(1);
+                expect(sendNotification).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: NotificationType.RENEWAL_REMINDER,
+                        customerId: 'cust-boundary'
+                    })
+                );
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it.each([
+            ['abandoned'],
+            ['pending_provider'],
+            ['incomplete'],
+            ['canceled'],
+            ['past_due']
+        ])('should NOT send a renewal reminder for a %s subscription even when the listing returns it', async (status) => {
+            // Defence in depth: the storage filter is expected to exclude these,
+            // but it silently ignored `filters` (the adapter never read them), so
+            // the job must not rely on the listing being clean. The period here is
+            // deliberately INSIDE the reminder window to isolate the status check
+            // from the expiry check.
+            // Arrange
+            const ctx = createMockContext();
+            const renewsIn3Days = new Date();
+            renewsIn3Days.setDate(renewsIn3Days.getDate() + 3);
+            armBilling([
+                {
+                    id: `sub-${status}`,
+                    customerId: `cust-${status}`,
+                    planId: 'plan-owner-basico',
+                    status,
+                    interval: 'month',
+                    currentPeriodEnd: renewsIn3Days.toISOString()
+                }
+            ]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.details?.renewalsSent).toBe(0);
+            expect(sendNotification).not.toHaveBeenCalled();
+        });
+
+        it('should still send for an active subscription sharing the batch with expired ones', async () => {
+            // Guards against an over-broad fix that drops the whole batch.
+            // Arrange
+            const ctx = createMockContext();
+            armBilling([
+                createExpiredSubscription(2),
+                createMockSubscription(3),
+                createExpiredSubscription(45)
+            ]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+        });
+    });
 });
