@@ -108,6 +108,38 @@ describe('BrevoEmailTransport', () => {
             });
         });
 
+        it('prepends the configured subject prefix to the outbound subject', async () => {
+            // Arrange — the prefix marks which deployment sent the email, and
+            // it is applied here so no call site can forget it.
+            const transport = new BrevoEmailTransport(TEST_CLIENT, {
+                ...DEFAULT_TRANSPORT_OPTIONS,
+                subjectPrefix: '[STAGING] '
+            });
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput({ subject: 'Tu plan se renueva' }));
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.subject).toBe('[STAGING] Tu plan se renueva');
+        });
+
+        it('leaves the subject untouched when no prefix is configured', async () => {
+            // Arrange — production configures no prefix.
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput({ subject: 'Tu plan se renueva' }));
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.subject).toBe('Tu plan se renueva');
+        });
+
         it('should accept Resend-style "Name <email>" override and split it', async () => {
             // Arrange
             const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
