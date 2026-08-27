@@ -1237,6 +1237,19 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
      *
      * Observed in staging: four customers received "Tu suscripción se renueva
      * pronto" daily for subscriptions that were `abandoned` and long expired.
+     *
+     * Two rules keep these cases honest, and both were learned the hard way:
+     *
+     * 1. The expired subscription under test is **`active`**. The real staging
+     *    rows were `abandoned`, but using that status here would let the
+     *    (separate) status gate keep every case green even with the arithmetic
+     *    fully regressed — which is exactly what an earlier draft of this suite
+     *    did.
+     * 2. Every negative case ships a **healthy sibling in the same batch** whose
+     *    delivery is asserted. The job wraps the whole renewal pass in a
+     *    try/catch that logs and abandons the batch, so a thrown error also
+     *    produces "zero sent" — the sibling is what separates "correctly
+     *    filtered" from "blew up and was swallowed".
      */
     describe('HOS-854: expired subscriptions must never trigger renewal reminders', () => {
         /**
@@ -1244,7 +1257,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
          * Mirrors `createMockSubscription` but keeps the intent explicit at the
          * call site — a negative argument there reads as an accident.
          */
-        function createExpiredSubscription(daysAgo: number, status = 'abandoned') {
+        function createExpiredSubscription(daysAgo: number, status = 'active') {
             const endDate = new Date();
             endDate.setDate(endDate.getDate() - daysAgo);
             subscriptionCounter++;
@@ -1296,18 +1309,23 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             ['ended two days ago (the staging case)', 2],
             ['ended a month ago', 30],
             ['ended a year ago', 365]
-        ])('should NOT send a renewal reminder for a subscription that %s', async (_label, daysAgo) => {
+        ])('should NOT send a renewal reminder for an active subscription that %s', async (_label, daysAgo) => {
             // Arrange
             const ctx = createMockContext();
-            armBilling([createExpiredSubscription(daysAgo as number)]);
+            const expired = createExpiredSubscription(daysAgo as number);
+            const healthy = createMockSubscription(3);
+            armBilling([expired, healthy]);
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
 
-            // Assert
+            // Assert — the healthy sibling went out, the expired one did not.
             expect(result.success).toBe(true);
-            expect(result.details?.renewalsSent).toBe(0);
-            expect(sendNotification).not.toHaveBeenCalled();
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: healthy.customerId })
+            );
         });
 
         it('should NOT count expired subscriptions in dry-run mode', async () => {
@@ -1318,15 +1336,16 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             armBilling([
                 createExpiredSubscription(2),
                 createExpiredSubscription(9),
-                createExpiredSubscription(400)
+                createExpiredSubscription(400),
+                createMockSubscription(7)
             ]);
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
 
-            // Assert
+            // Assert — only the one genuinely renewing subscription is counted.
             expect(result.success).toBe(true);
-            expect(result.details?.renewalsSent).toBe(0);
+            expect(result.details?.renewalsSent).toBe(1);
             expect(sendNotification).not.toHaveBeenCalled();
         });
 
@@ -1369,12 +1388,18 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             }
         });
 
+        // Both spellings of "cancelled" are live in `billing_subscriptions.status`:
+        // qzpay writes the American `canceled`, Hospeda's own code writes the
+        // British `cancelled`. Cover both rather than picking one.
         it.each([
             ['abandoned'],
             ['pending_provider'],
             ['incomplete'],
             ['canceled'],
-            ['past_due']
+            ['cancelled'],
+            ['past_due'],
+            ['paused'],
+            ['trialing']
         ])('should NOT send a renewal reminder for a %s subscription even when the listing returns it', async (status) => {
             // Defence in depth: the storage filter is expected to exclude these,
             // but it silently ignored `filters` (the adapter never read them), so
@@ -1385,6 +1410,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             const ctx = createMockContext();
             const renewsIn3Days = new Date();
             renewsIn3Days.setDate(renewsIn3Days.getDate() + 3);
+            const healthy = createMockSubscription(7);
             armBilling([
                 {
                     id: `sub-${status}`,
@@ -1393,26 +1419,27 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
                     status,
                     interval: 'month',
                     currentPeriodEnd: renewsIn3Days.toISOString()
-                }
+                },
+                healthy
             ]);
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
 
-            // Assert
-            expect(result.details?.renewalsSent).toBe(0);
-            expect(sendNotification).not.toHaveBeenCalled();
+            // Assert — only the active sibling was notified.
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: healthy.customerId })
+            );
         });
 
         it('should still send for an active subscription sharing the batch with expired ones', async () => {
             // Guards against an over-broad fix that drops the whole batch.
             // Arrange
             const ctx = createMockContext();
-            armBilling([
-                createExpiredSubscription(2),
-                createMockSubscription(3),
-                createExpiredSubscription(45)
-            ]);
+            const healthy = createMockSubscription(3);
+            armBilling([createExpiredSubscription(2), healthy, createExpiredSubscription(45)]);
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -1420,6 +1447,9 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             // Assert
             expect(result.details?.renewalsSent).toBe(1);
             expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: healthy.customerId })
+            );
         });
     });
 });

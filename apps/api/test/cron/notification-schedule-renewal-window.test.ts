@@ -12,7 +12,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { evaluateRenewalReminder } from '../../src/cron/jobs/notification-schedule.job';
+import { evaluateRenewalReminder } from '../../src/cron/jobs/notification-schedule-renewal-window';
 
 const REMINDER_DAYS: ReadonlySet<number> = new Set([7, 3, 1]);
 const NOW = new Date('2026-08-27T08:00:00.000Z');
