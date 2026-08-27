@@ -58,6 +58,14 @@ const FOREIGN_CUSTOMER_ID = 'cus-foreign-0001';
 /** The billing customer the test actor actually owns. */
 const OWN_CUSTOMER_ID = 'cus-own-0001';
 
+/**
+ * A coupon code served by the mocked catalog listing. Deliberately not a real
+ * promo code: the assertion here is that NO coupon name reaches a non-admin
+ * response, so binding the fixture to a live code would make this test decay
+ * the day that code is retired — which is what happened to its predecessor.
+ */
+const CATALOG_PROMO_CODE = 'CUPON_DE_CATALOGO_FIXTURE';
+
 // Mock @qazuor/qzpay-hono with a router carrying the real pre-built shape:
 // bare-collection listings that return EVERY row (the upstream behaviour), plus
 // one resource-scoped route used as the instrument check.
@@ -98,7 +106,7 @@ vi.mock('@qazuor/qzpay-hono', async () => {
             router.get('/promo-codes', (c) =>
                 c.json({
                     success: true,
-                    data: [{ code: 'GRUPO_WHATSAPP', effectKind: 'discount' }],
+                    data: [{ code: CATALOG_PROMO_CODE, effectKind: 'discount' }],
                     pagination: { total: 1 }
                 })
             );
@@ -309,7 +317,7 @@ describe('Billing collection listings are not exposed at the protected tier (H-6
             const raw = await (await app.request(`${BILLING_BASE}/promo-codes`)).text();
 
             // Assert.
-            expect(raw).not.toContain('GRUPO_WHATSAPP');
+            expect(raw).not.toContain(CATALOG_PROMO_CODE);
         });
     });
 
