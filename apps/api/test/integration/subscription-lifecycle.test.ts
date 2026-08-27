@@ -244,9 +244,9 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'upgrade-basico-pro@hospeda.com',
@@ -358,9 +358,9 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'upgrade-metadata@hospeda.com',
@@ -425,9 +425,9 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
-            const premiumPlan = plans.data.find((p: any) => p.slug === 'owner-premium');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
+            const premiumPlan = plans.find((p: any) => p.slug === 'owner-premium');
 
             const customer = await billing.customers.create({
                 email: 'upgrade-pro-premium@hospeda.com',
@@ -522,9 +522,9 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const premiumPlan = plans.data.find((p: any) => p.slug === 'owner-premium');
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const premiumPlan = plans.find((p: any) => p.slug === 'owner-premium');
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'downgrade-premium-pro@hospeda.com',
@@ -626,9 +626,9 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const customer = await billing.customers.create({
                 email: 'downgrade-pro-basico@hospeda.com',
@@ -715,8 +715,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'cancel-subscription@hospeda.com',
@@ -754,8 +754,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'cancel-period-end@hospeda.com',
@@ -796,8 +796,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'preserve-data@hospeda.com',
@@ -848,8 +848,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const customer = await billing.customers.create({
                 email: 'cancel-trial@hospeda.com',
@@ -898,8 +898,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'resubscribe@hospeda.com',
@@ -1022,8 +1022,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'monthly-cycle@hospeda.com',
@@ -1063,8 +1063,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'annual-cycle@hospeda.com',
@@ -1123,8 +1123,8 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'multiple-subs@hospeda.com',

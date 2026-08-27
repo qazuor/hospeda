@@ -1510,12 +1510,13 @@ export class TrialService {
         try {
             apiLogger.info({ daysAhead }, 'Finding trials ending soon');
 
-            // Get all active trialing subscriptions
-            const allSubscriptionsResult = await this.billing.subscriptions.list({
+            // `listAll` so the reminder pass sees every trialing subscription
+            // rather than the first page (HOS-854).
+            const allSubscriptions = await this.billing.subscriptions.listAll({
                 filters: { status: 'trialing' }
             });
 
-            if (!allSubscriptionsResult || allSubscriptionsResult.data.length === 0) {
+            if (allSubscriptions.length === 0) {
                 apiLogger.info('No trialing subscriptions found');
                 return [];
             }
@@ -1527,7 +1528,7 @@ export class TrialService {
             const endingSoon: TrialEndingSubscription[] = [];
 
             // Check each subscription for expiry within timeframe
-            for (const subscription of allSubscriptionsResult.data) {
+            for (const subscription of allSubscriptions) {
                 const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
 
                 if (!trialEnd) {

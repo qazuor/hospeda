@@ -502,14 +502,19 @@ export const notificationScheduleJob: CronJobDefinition = {
                 if (dryRun) {
                     // In dry run, still count what would be sent
                     try {
-                        const activeSubscriptions = await billing.subscriptions.list({
+                        // `listAll` paginates: `list` would silently cap this at one
+                        // page, and the reminder pass must see every active
+                        // subscription. The status filter is applied by the storage
+                        // layer as of qzpay-drizzle 2.0.0 — before that it was
+                        // accepted and discarded (HOS-854).
+                        const activeSubscriptions = await billing.subscriptions.listAll({
                             filters: { status: 'active' }
                         });
 
                         const now = new Date();
                         const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
 
-                        const renewingSoon = (activeSubscriptions?.data || []).filter(
+                        const renewingSoon = (activeSubscriptions ?? []).filter(
                             (sub) =>
                                 evaluateRenewalReminder({
                                     subscription: sub,
@@ -532,14 +537,17 @@ export const notificationScheduleJob: CronJobDefinition = {
                     }
                 } else {
                     try {
-                        const activeSubscriptions = await billing.subscriptions.list({
+                        // See the dry-run branch above: `listAll` so the pass is not
+                        // capped at one page, and the status filter is now honoured
+                        // by storage rather than silently dropped.
+                        const activeSubscriptions = await billing.subscriptions.listAll({
                             filters: { status: 'active' }
                         });
 
                         const now = new Date();
                         const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
 
-                        for (const subscription of activeSubscriptions?.data || []) {
+                        for (const subscription of activeSubscriptions ?? []) {
                             const verdict = evaluateRenewalReminder({
                                 subscription,
                                 now,

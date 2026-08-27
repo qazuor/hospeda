@@ -171,22 +171,22 @@ function mockRenewalBilling(daysAhead = 7): void {
 
     const mockBilling = {
         subscriptions: {
-            list: vi.fn().mockResolvedValue({
-                data: [
-                    {
-                        customerId: 'cust-renewal',
-                        planId: 'plan-1',
-                        // Required since HOS-854: the job re-checks status itself
-                        // rather than trusting the listing's (silently ignored)
-                        // `filters: { status: 'active' }`. A fixture without a
-                        // status is not a stand-in for a real row — qzpay always
-                        // returns one — and the gate must not fail open on it.
-                        status: 'active',
-                        interval: 'monthly',
-                        currentPeriodEnd: currentPeriodEnd.toISOString()
-                    }
-                ]
-            })
+            // `listAll`, matching what the job calls since the qzpay 2.x bump —
+            // it returns a plain array, not a paginated envelope.
+            listAll: vi.fn().mockResolvedValue([
+                {
+                    customerId: 'cust-renewal',
+                    planId: 'plan-1',
+                    // Required since HOS-854: the job re-checks status itself
+                    // rather than trusting the listing's (silently ignored)
+                    // `filters: { status: 'active' }`. A fixture without a
+                    // status is not a stand-in for a real row — qzpay always
+                    // returns one — and the gate must not fail open on it.
+                    status: 'active',
+                    interval: 'monthly',
+                    currentPeriodEnd: currentPeriodEnd.toISOString()
+                }
+            ])
         },
         plans: {
             get: vi.fn().mockResolvedValue({

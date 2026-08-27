@@ -92,7 +92,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
             // Get available plans
             const plans = await withRetry({
-                fn: async () => billing.plans.list(),
+                fn: async () => billing.plans.listAll(),
                 ...retryConfig,
                 description: 'List available plans'
             });
@@ -164,7 +164,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
             cleanup.track('customer', customer.id);
 
-            const plans = await billing.plans.list();
+            const plans = await billing.plans.listAll();
             if (plans.length === 0) {
                 console.warn('⚠️  No plans available - skipping');
                 return;
@@ -225,7 +225,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
             cleanup.track('customer', customer.id);
 
-            const plans = await billing.plans.list();
+            const plans = await billing.plans.listAll();
             if (plans.length === 0) {
                 console.warn('⚠️  No plans available - skipping');
                 return;
@@ -409,7 +409,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
             // Get available plans
             const plans = await withRetry({
-                fn: async () => billing.plans.list(),
+                fn: async () => billing.plans.listAll(),
                 ...retryConfig,
                 description: 'List plans'
             });
@@ -493,7 +493,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
             cleanup.track('customer', customer.id);
 
-            const plans = await billing.plans.list();
+            const plans = await billing.plans.listAll();
             if (plans.length === 0 || !plans[0].prices || plans[0].prices.length === 0) {
                 console.warn('⚠️  No valid plans available - skipping');
                 return;
@@ -554,7 +554,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
             cleanup.track('customer', customer.id);
 
-            const plans = await billing.plans.list();
+            const plans = await billing.plans.listAll();
             if (plans.length === 0 || !plans[0].prices || plans[0].prices.length === 0) {
                 console.warn('⚠️  No valid plans available - skipping');
                 return;

@@ -560,10 +560,18 @@ export const dunningJob: CronJobDefinition = {
                     // Dry-run: load all past-due subscriptions to report counts without mutating
                     logger.info('Running in dry-run mode - loading past-due subscriptions');
 
-                    const allSubscriptions = await billing.subscriptions.list();
-                    const pastDue = (allSubscriptions?.data ?? []).filter(
-                        (sub) => sub.status === 'past_due'
-                    );
+                    // Was `list()` with no arguments, which took the storage default
+                    // of 20 rows — the count reported below was wrong whenever more
+                    // than 20 subscriptions existed, silently (HOS-854). `listAll`
+                    // paginates, and the status filter is now applied in SQL.
+                    //
+                    // The JS check stays as defence in depth, the same stance
+                    // `notification-schedule.job.ts` and `trial-expiry.ts` take: this
+                    // job must not depend on the listing being clean, which is
+                    // precisely the assumption that broke.
+                    const pastDue = (
+                        await billing.subscriptions.listAll({ filters: { status: 'past_due' } })
+                    ).filter((sub) => sub.status === 'past_due');
 
                     logger.info('Dry run complete - would process past-due subscriptions', {
                         pastDueCount: pastDue.length,
@@ -596,10 +604,13 @@ export const dunningJob: CronJobDefinition = {
                         'Running in production mode - HOS-191 F5: dunning mutations disabled, observe-only pass (MercadoPago native recycling is authoritative)'
                     );
 
-                    const allSubscriptions = await billing.subscriptions.list();
-                    const pastDueCount = (allSubscriptions?.data ?? []).filter(
-                        (sub) => sub.status === 'past_due'
-                    ).length;
+                    // Same fix as the dry-run branch: this is the PRODUCTION
+                    // observe-only pass, so its past-due count was the one being
+                    // under-reported. The JS check is likewise kept as defence in
+                    // depth.
+                    const pastDueCount = (
+                        await billing.subscriptions.listAll({ filters: { status: 'past_due' } })
+                    ).filter((sub) => sub.status === 'past_due').length;
                     const durationMs = Date.now() - startedAt.getTime();
 
                     logger.info('Dunning job completed (observe-only, HOS-191 F5)', {

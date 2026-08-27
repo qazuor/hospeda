@@ -178,7 +178,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
@@ -239,7 +239,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
@@ -296,7 +296,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Pro' })
@@ -355,7 +355,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -409,7 +409,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -458,7 +458,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -501,7 +501,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             // Same subscription returned twice (simulating multiple checks)
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription, mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription, mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -557,7 +557,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 }
             };
 
@@ -603,7 +603,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Premium Plan' })
@@ -659,7 +659,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Custom Plan Name' })
@@ -711,7 +711,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({
@@ -756,7 +756,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockRejectedValue(new Error('Plan not found'))
@@ -813,7 +813,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -850,7 +850,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -880,7 +880,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockRejectedValue(new Error('API error'))
+                    listAll: vi.fn().mockRejectedValue(new Error('API error'))
                 }
             };
 
@@ -925,7 +925,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -989,7 +989,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -1052,7 +1052,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue(mockPlan)
@@ -1117,7 +1117,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue(mockPlan)
@@ -1174,7 +1174,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockRejectedValue(new Error('Plan not found'))
@@ -1275,7 +1275,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
         function armBilling(subscriptions: unknown[]) {
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: subscriptions })
+                    listAll: vi.fn().mockResolvedValue(subscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })

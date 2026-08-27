@@ -90,8 +90,10 @@ async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
     if (planSlug === TEST_DAILY_PLAN.slug && !env.HOSPEDA_SHOW_TEST_BILLING_PLAN) {
         return null;
     }
-    const plansResult = await billing.plans.list();
-    return plansResult.data.find((p) => p.name === planSlug) ?? null;
+    // `listAll`: resolving a plan by slug must search the whole catalogue, not
+    // the first page (HOS-854).
+    const plans = await billing.plans.listAll();
+    return plans.find((p) => p.name === planSlug) ?? null;
 }
 
 interface PriceShape {
