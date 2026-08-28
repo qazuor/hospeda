@@ -70,9 +70,26 @@ export type SubscriptionStatusFull = `${SubscriptionStatusEnum}`;
  *     │ └────► cancelled
  *     └──────► expired
  *
- * active ──────► paused ──► active (resume)
- * trialing ─────┘
+ * active ──────► paused ──┬──► active   (resume: trial elapsed, or never had one)
+ * trialing ─────┘         └──► trialing (resume while the trial is STILL running)
+ *
+ * past_due ───────────────┬──► active   (retry succeeded)
+ *                         └──► trialing (retry succeeded, trial window still open)
  * ```
+ *
+ * The two `→ trialing` edges above exist because `deriveTrialingStatus` rewrites
+ * a provider-reported ACTIVE into TRIALING while the local `trial_end` is in the
+ * future, and it runs BEFORE this guard on the webhook path. Any source that can
+ * reach ACTIVE therefore has to accept TRIALING as well, or a subscription whose
+ * trial is still running can never leave that state — it stays put with no
+ * entitlements while the provider keeps charging (HOS-913).
+ *
+ * Two sources are deliberately exempt from that rule:
+ * - `ACTIVE` — an `active` row with a future `trial_end` is corrupt data from a
+ *   pre-HOS-211 bug; by owner decision the state machine does NOT self-heal it.
+ * - `CANCELLED` — no demonstrated path reaches it with an open trial window.
+ * Both exemptions are pinned by the structural test in
+ * `test/billing/subscription-status-transitions.test.ts`.
  */
 const VALID_TRANSITIONS: ReadonlyMap<
     SubscriptionStatusFull,
@@ -110,6 +127,7 @@ const VALID_TRANSITIONS: ReadonlyMap<
         SubscriptionStatusEnum.PAST_DUE,
         new Set<SubscriptionStatusFull>([
             SubscriptionStatusEnum.ACTIVE, // payment retry succeeded (subscription-logic.ts: past_due → active recovery)
+            SubscriptionStatusEnum.TRIALING, // same recovery, but the trial window is still open so deriveTrialingStatus resolves TRIALING instead of ACTIVE — reachable whenever `trial_end` sits in the future while the row is past_due (HOS-913)
             SubscriptionStatusEnum.CANCELLED // dunning: non-payment cancellation (dunning.job.ts subscription.canceled_nonpayment)
         ])
     ],
@@ -117,6 +135,7 @@ const VALID_TRANSITIONS: ReadonlyMap<
         SubscriptionStatusEnum.PAUSED,
         new Set<SubscriptionStatusFull>([
             SubscriptionStatusEnum.ACTIVE, // self-serve resume (subscription-pause.ts handleSelfServeResume, subscription-logic.ts webhook)
+            SubscriptionStatusEnum.TRIALING, // resume while the trial is STILL running: MP reports the preapproval `authorized`, deriveTrialingStatus resolves TRIALING off the future `trial_end`, and without this edge the row stays paused forever with no entitlements (HOS-913)
             SubscriptionStatusEnum.CANCELLED // admin cancel while paused (qzpay-admin-hooks.ts)
         ])
     ],

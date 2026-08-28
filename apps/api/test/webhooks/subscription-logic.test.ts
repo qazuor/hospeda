@@ -898,6 +898,58 @@ describe('processSubscriptionUpdated', () => {
         );
     });
 
+    // HOS-913: resuming a preapproval that was paused DURING the trial.
+    //
+    // MercadoPago reports the reactivated preapproval as `active`, but the local
+    // `trial_end` is still in the future, so `deriveTrialingStatus` resolves
+    // TRIALING — a different target than TC-09's plain reactivation. Before the
+    // fix the state machine had no `paused → trialing` edge, the guard rejected
+    // the write, and the webhook answered 200 having changed nothing: the row
+    // stayed `paused` forever, with no entitlements, while MP kept the
+    // subscription live. Asserting only the 200 is what let this through, so
+    // this test asserts the persisted status AND the audit event.
+    it('should resume a subscription paused mid-trial back to TRIALING, with an audit event (HOS-913)', async () => {
+        // Arrange
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const futureTrialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const localSub = makeLocalSubscription({
+            status: SubscriptionStatusEnum.PAUSED,
+            trialEnd: futureTrialEnd
+        });
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-913'
+        });
+
+        // Assert — the row actually moved, not just a 200 on the webhook
+        expect(result).toEqual({
+            success: true,
+            statusChanged: true,
+            newStatus: SubscriptionStatusEnum.TRIALING
+        });
+        expect(dbMock.tx.update).toHaveBeenCalled();
+
+        // Assert — the audit trail recorded it (0 events was the bug's signature)
+        const txInsertChain = dbMock.tx.insert({});
+        expect(txInsertChain.values).toHaveBeenCalledWith(
+            expect.objectContaining({
+                previousStatus: SubscriptionStatusEnum.PAUSED,
+                newStatus: SubscriptionStatusEnum.TRIALING
+            })
+        );
+    });
+
     // TC-09: Status change to ACTIVE (reactivation from paused) - resets cancelAtPeriodEnd
     it('should reset cancelAtPeriodEnd when reactivating from paused', async () => {
         // Arrange
