@@ -94,24 +94,22 @@ const EXPECTED_SHARE_LINK =
 function createBillingMock(planMetadata: Record<string, unknown> = PLAN_METADATA) {
     return {
         plans: {
-            list: vi.fn().mockResolvedValue({
-                data: [
-                    {
-                        id: PLAN_ID,
-                        name: 'owner-premium',
-                        metadata: planMetadata,
-                        prices: [
-                            {
-                                id: ANNUAL_PRICE_ID,
-                                billingInterval: 'year',
-                                intervalCount: 1,
-                                active: true,
-                                unitAmount: 35_000_000
-                            }
-                        ]
-                    }
-                ]
-            })
+            listAll: vi.fn().mockResolvedValue([
+                {
+                    id: PLAN_ID,
+                    name: 'owner-premium',
+                    metadata: planMetadata,
+                    prices: [
+                        {
+                            id: ANNUAL_PRICE_ID,
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 35_000_000
+                        }
+                    ]
+                }
+            ])
         },
         subscriptions: {
             // Only reached if a trial is in play; a prior subscription would

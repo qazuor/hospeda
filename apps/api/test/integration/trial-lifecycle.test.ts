@@ -159,15 +159,13 @@ function buildExpiredSubscription(): Record<string, unknown> {
 function buildMockBilling() {
     return {
         plans: {
-            list: vi.fn().mockResolvedValue({
-                data: [{ id: PLAN_ID, name: 'owner-basico' }]
-            }),
+            listAll: vi.fn().mockResolvedValue([{ id: PLAN_ID, name: 'owner-basico' }]),
             get: vi.fn().mockResolvedValue({ id: PLAN_ID, name: 'owner-basico' })
         },
         subscriptions: {
             create: vi.fn().mockResolvedValue({ id: SUBSCRIPTION_ID }),
             getByCustomerId: vi.fn().mockResolvedValue([]),
-            list: vi.fn().mockResolvedValue({ data: [] }),
+            listAll: vi.fn().mockResolvedValue([]),
             update: vi.fn().mockResolvedValue({}),
             cancel: vi.fn().mockResolvedValue(undefined),
             get: vi.fn().mockResolvedValue(buildTrialingSubscription())
@@ -391,7 +389,7 @@ describe('Trial Lifecycle Integration', () => {
             // plan with an active monthly price row.
             const trialSub = buildTrialingSubscription();
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([trialSub]);
-            mockBilling.plans.list.mockResolvedValue({ data: [buildPaidMonthlyPlanFixture()] });
+            mockBilling.plans.listAll.mockResolvedValue([buildPaidMonthlyPlanFixture()]);
             mockBilling.subscriptions.create.mockResolvedValue(buildPaidPreapprovalResult());
 
             // Act
@@ -435,7 +433,7 @@ describe('Trial Lifecycle Integration', () => {
         it('should create a paid preapproval even when no prior trial exists', async () => {
             // Arrange: no existing subscriptions
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([]);
-            mockBilling.plans.list.mockResolvedValue({ data: [buildPaidMonthlyPlanFixture()] });
+            mockBilling.plans.listAll.mockResolvedValue([buildPaidMonthlyPlanFixture()]);
             mockBilling.subscriptions.create.mockResolvedValue(buildPaidPreapprovalResult());
 
             // Act
@@ -453,7 +451,7 @@ describe('Trial Lifecycle Integration', () => {
 
         it('should reject an unknown planId and create no subscription (plan guard, fail-closed)', async () => {
             // Arrange
-            mockBilling.plans.list.mockResolvedValue({ data: [] });
+            mockBilling.plans.listAll.mockResolvedValue([]);
 
             // Act & Assert
             await expect(

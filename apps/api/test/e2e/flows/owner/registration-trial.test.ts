@@ -297,8 +297,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
             }
 
             // Get owner-basico plan
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan).toBeDefined();
@@ -314,8 +314,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan).toBeDefined();
@@ -334,8 +334,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             const maxPhotosLimit = basicoPlan?.limits?.[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION];
@@ -351,8 +351,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan?.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
@@ -367,8 +367,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan?.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
@@ -383,8 +383,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan?.entitlements).toContain(EntitlementKey.RESPOND_REVIEWS);
@@ -399,8 +399,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             // Assert - Basico plan should NOT have advanced stats
             expect(basicoPlan?.entitlements).not.toContain(EntitlementKey.VIEW_ADVANCED_STATS);
@@ -561,8 +561,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
             });
 
             // Create subscription with expired trial (trialEnd in the past)
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             if (!basicoPlan) {
                 throw new Error('owner-basico plan not found');
@@ -735,8 +735,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 externalId: 'user_zero_days_123'
             });
 
-            const plansResult = await billing.plans.list();
-            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
+            const plansResult = await billing.plans.listAll();
+            const basicoPlan = plansResult.find((p: any) => p.slug === 'owner-basico');
 
             if (!basicoPlan) {
                 throw new Error('owner-basico plan not found');
@@ -788,8 +788,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 externalId: 'user_paid_sub_123'
             });
 
-            const plansResult = await billing.plans.list();
-            const proPlan = plansResult.data.find((p: any) => p.slug === 'owner-pro');
+            const plansResult = await billing.plans.listAll();
+            const proPlan = plansResult.find((p: any) => p.slug === 'owner-pro');
 
             if (!proPlan) {
                 throw new Error('owner-pro plan not found');

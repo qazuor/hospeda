@@ -48,11 +48,11 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
- * Plan object shape as returned by `billing.plans.list()`, inferred directly
+ * Plan object shape as returned by `billing.plans.listAll()`, inferred directly
  * from the QZPay client type so this module can never fall out of sync with
  * the SDK's real return shape.
  */
-type ReactivationBillingPlan = Awaited<ReturnType<QZPayBilling['plans']['list']>>['data'][number];
+type ReactivationBillingPlan = Awaited<ReturnType<QZPayBilling['plans']['listAll']>>[number];
 
 /**
  * A single price row on a {@link ReactivationBillingPlan} (`plan.prices[]`).
@@ -139,7 +139,7 @@ export interface ResolveReactivationPlanResult {
  *
  * Validation order — **monthly** (`billingInterval` omitted or `'monthly'`,
  * unchanged since HOS-114):
- * 1. Unknown `planId` (no match in `billing.plans.list()`) → throws
+ * 1. Unknown `planId` (no match in `billing.plans.listAll()`) → throws
  *    `PLAN_NOT_FOUND`.
  * 2. Plan has no active monthly price (annual-only plan, e.g. a plan whose
  *    only recurring price is `billingInterval: 'year'`, requested without
@@ -195,8 +195,11 @@ export async function resolveReactivationPlan(
 ): Promise<ResolveReactivationPlanResult> {
     const { billing, planId, billingInterval = 'monthly' } = input;
 
-    const plansResult = await billing.plans.list();
-    const plan = plansResult.data.find((candidate) => candidate.id === planId) ?? null;
+    // `listAll`, not `list`: an unknown planId makes this guard THROW, so a plan
+    // sitting past the old 20-row default would have been rejected as unknown
+    // rather than merely missed (HOS-854).
+    const plans = await billing.plans.listAll();
+    const plan = plans.find((candidate) => candidate.id === planId) ?? null;
 
     if (!plan) {
         throw new SubscriptionCheckoutError(

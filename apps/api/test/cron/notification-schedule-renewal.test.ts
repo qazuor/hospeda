@@ -178,7 +178,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
@@ -239,7 +239,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
@@ -296,7 +296,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Plan Owner Pro' })
@@ -355,7 +355,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -409,7 +409,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -458,7 +458,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -501,7 +501,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             // Same subscription returned twice (simulating multiple checks)
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription, mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription, mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -557,7 +557,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 }
             };
 
@@ -603,7 +603,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Premium Plan' })
@@ -659,7 +659,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Custom Plan Name' })
@@ -711,7 +711,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({
@@ -756,7 +756,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                    listAll: vi.fn().mockResolvedValue([mockSubscription])
                 },
                 plans: {
                     get: vi.fn().mockRejectedValue(new Error('Plan not found'))
@@ -813,7 +813,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -850,7 +850,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 }
             };
 
@@ -880,7 +880,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockRejectedValue(new Error('API error'))
+                    listAll: vi.fn().mockRejectedValue(new Error('API error'))
                 }
             };
 
@@ -925,7 +925,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -989,7 +989,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
@@ -1052,7 +1052,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue(mockPlan)
@@ -1117,7 +1117,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockResolvedValue(mockPlan)
@@ -1174,7 +1174,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
                 },
                 plans: {
                     get: vi.fn().mockRejectedValue(new Error('Plan not found'))
@@ -1221,6 +1221,235 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             expect(notifCall.planName).toBe('Unknown Plan');
             expect(notifCall).not.toHaveProperty('amount');
             expect(notifCall).not.toHaveProperty('currency');
+        });
+    });
+
+    /**
+     * HOS-854 regression suite.
+     *
+     * The renewal window used to be computed as
+     * `Math.max(Math.ceil(msRemaining / ONE_DAY_MS), 1)`. The clamp existed to
+     * stop `Math.ceil(0)` from yielding `0` at an exact period boundary, but it
+     * also folded every NEGATIVE value onto `1` — the very value that triggers
+     * the "renews tomorrow" reminder. Any subscription whose period had already
+     * ended therefore qualified forever, and because the idempotency key is
+     * scoped to the calendar day, it re-qualified every single day.
+     *
+     * Observed in staging: four customers received "Tu suscripción se renueva
+     * pronto" daily for subscriptions that were `abandoned` and long expired.
+     *
+     * Two rules keep these cases honest, and both were learned the hard way:
+     *
+     * 1. The expired subscription under test is **`active`**. The real staging
+     *    rows were `abandoned`, but using that status here would let the
+     *    (separate) status gate keep every case green even with the arithmetic
+     *    fully regressed — which is exactly what an earlier draft of this suite
+     *    did.
+     * 2. Every negative case ships a **healthy sibling in the same batch** whose
+     *    delivery is asserted. The job wraps the whole renewal pass in a
+     *    try/catch that logs and abandons the batch, so a thrown error also
+     *    produces "zero sent" — the sibling is what separates "correctly
+     *    filtered" from "blew up and was swallowed".
+     */
+    describe('HOS-854: expired subscriptions must never trigger renewal reminders', () => {
+        /**
+         * Builds a subscription whose period ended `daysAgo` days in the past.
+         * Mirrors `createMockSubscription` but keeps the intent explicit at the
+         * call site — a negative argument there reads as an accident.
+         */
+        function createExpiredSubscription(daysAgo: number, status = 'active') {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() - daysAgo);
+            subscriptionCounter++;
+            return {
+                id: `sub-expired-${subscriptionCounter}`,
+                customerId: `cust-expired-${subscriptionCounter}`,
+                planId: 'plan-owner-basico',
+                status,
+                interval: 'month',
+                currentPeriodEnd: endDate.toISOString()
+            };
+        }
+
+        /** Wires the standard happy-path mocks so only the subject under test varies. */
+        function armBilling(subscriptions: unknown[]) {
+            const mockBilling = {
+                subscriptions: {
+                    listAll: vi.fn().mockResolvedValue(subscriptions)
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
+                }
+            };
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return { findTrialsEndingSoon: vi.fn().mockResolvedValue([]) } as any;
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
+            return mockBilling;
+        }
+
+        it.each([
+            ['ended yesterday', 1],
+            ['ended two days ago (the staging case)', 2],
+            ['ended a month ago', 30],
+            ['ended a year ago', 365]
+        ])('should NOT send a renewal reminder for an active subscription that %s', async (_label, daysAgo) => {
+            // Arrange
+            const ctx = createMockContext();
+            const expired = createExpiredSubscription(daysAgo as number);
+            const healthy = createMockSubscription(3);
+            armBilling([expired, healthy]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert — the healthy sibling went out, the expired one did not.
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: healthy.customerId })
+            );
+        });
+
+        it('should NOT count expired subscriptions in dry-run mode', async () => {
+            // The dry-run branch carries a twin copy of the window calculation,
+            // so a fix applied only to the real branch leaves the reported count lying.
+            // Arrange
+            const ctx = createMockContext({ dryRun: true });
+            armBilling([
+                createExpiredSubscription(2),
+                createExpiredSubscription(9),
+                createExpiredSubscription(400),
+                createMockSubscription(7)
+            ]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert — only the one genuinely renewing subscription is counted.
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).not.toHaveBeenCalled();
+        });
+
+        it('should still send when the period ends at the exact boundary (msRemaining === 0)', async () => {
+            // This is what the original `Math.max(..., 1)` clamp was protecting:
+            // `Math.ceil(0)` is `0`, and `0` is not in RENEWAL_REMINDER_DAYS.
+            // The fix drops the clamp for negatives but must NOT lose this case.
+            // Only `Date` is faked so real timers keep working inside the job.
+            vi.useFakeTimers({ toFake: ['Date'] });
+            try {
+                const frozenNow = new Date('2026-08-27T08:00:00.000Z');
+                vi.setSystemTime(frozenNow);
+
+                // Arrange
+                const ctx = createMockContext();
+                armBilling([
+                    {
+                        id: 'sub-boundary',
+                        customerId: 'cust-boundary',
+                        planId: 'plan-owner-basico',
+                        status: 'active',
+                        interval: 'month',
+                        currentPeriodEnd: frozenNow.toISOString()
+                    }
+                ]);
+
+                // Act
+                const result = await notificationScheduleJob.handler(ctx);
+
+                // Assert
+                expect(result.details?.renewalsSent).toBe(1);
+                expect(sendNotification).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: NotificationType.RENEWAL_REMINDER,
+                        customerId: 'cust-boundary'
+                    })
+                );
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        // Both spellings of "cancelled" are live in `billing_subscriptions.status`:
+        // qzpay writes the American `canceled`, Hospeda's own code writes the
+        // British `cancelled`. Cover both rather than picking one.
+        it.each([
+            ['abandoned'],
+            ['pending_provider'],
+            ['incomplete'],
+            ['canceled'],
+            ['cancelled'],
+            ['past_due'],
+            ['paused'],
+            ['trialing']
+        ])('should NOT send a renewal reminder for a %s subscription even when the listing returns it', async (status) => {
+            // Defence in depth: the storage filter is expected to exclude these,
+            // but it silently ignored `filters` (the adapter never read them), so
+            // the job must not rely on the listing being clean. The period here is
+            // deliberately INSIDE the reminder window to isolate the status check
+            // from the expiry check.
+            // Arrange
+            const ctx = createMockContext();
+            const renewsIn3Days = new Date();
+            renewsIn3Days.setDate(renewsIn3Days.getDate() + 3);
+            const healthy = createMockSubscription(7);
+            armBilling([
+                {
+                    id: `sub-${status}`,
+                    customerId: `cust-${status}`,
+                    planId: 'plan-owner-basico',
+                    status,
+                    interval: 'month',
+                    currentPeriodEnd: renewsIn3Days.toISOString()
+                },
+                healthy
+            ]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert — only the active sibling was notified.
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: healthy.customerId })
+            );
+        });
+
+        it('should still send for an active subscription sharing the batch with expired ones', async () => {
+            // Guards against an over-broad fix that drops the whole batch.
+            // Arrange
+            const ctx = createMockContext();
+            const healthy = createMockSubscription(3);
+            armBilling([createExpiredSubscription(2), healthy, createExpiredSubscription(45)]);
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: healthy.customerId })
+            );
         });
     });
 });

@@ -76,7 +76,7 @@ const FREE_ANNUAL_PLAN = createPlan(FREE_ANNUAL_PLAN_ID, 'tourist-free-annual', 
 function createBillingMock(plans: ReturnType<typeof createPlan>[]) {
     return {
         plans: {
-            list: vi.fn().mockResolvedValue({ data: plans })
+            listAll: vi.fn().mockResolvedValue(plans)
         }
     };
 }
@@ -218,7 +218,7 @@ describe('resolveReactivationPlan', () => {
             });
         });
 
-        it('should not create any subscription (no side effects beyond plans.list)', async () => {
+        it('should not create any subscription (no side effects beyond plans.listAll)', async () => {
             // Arrange
             const billing = createBillingMock([ANNUAL_ONLY_PLAN]);
 
@@ -229,7 +229,7 @@ describe('resolveReactivationPlan', () => {
             }).catch(() => undefined);
 
             // Assert
-            expect(billing.plans.list).toHaveBeenCalledTimes(1);
+            expect(billing.plans.listAll).toHaveBeenCalledTimes(1);
         });
     });
 

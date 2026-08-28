@@ -132,8 +132,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             // Create active subscription (required for add-on purchase)
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
             expect(basicoPlan).toBeDefined();
 
             const now = new Date();
@@ -214,8 +214,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_entitlement_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -284,8 +284,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_limit_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -367,8 +367,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_list_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -419,8 +419,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_active_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -603,8 +603,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_invalid_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -657,8 +657,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_manual_expire_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -740,8 +740,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_verify_inactive_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -818,8 +818,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_cron_test_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -903,8 +903,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_warn_3days_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -976,8 +976,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_warn_1day_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1057,8 +1057,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_notif_log_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1187,8 +1187,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_idempotent_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1271,8 +1271,8 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 externalId: 'user_addon_skip_expired_001'
             } as any);
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);

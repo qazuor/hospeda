@@ -168,7 +168,7 @@ function createBillingMock(opts: BillingMockOpts = {}) {
 
     return {
         plans: {
-            list: vi.fn().mockResolvedValue({ data: plans })
+            listAll: vi.fn().mockResolvedValue(plans)
         },
         customers: {
             get: vi.fn().mockResolvedValue(customer)
@@ -691,7 +691,7 @@ function createAnnualBillingMock(
     const customer = opts.customer === undefined ? CUSTOMER_FIXTURE : opts.customer;
 
     return {
-        plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
+        plans: { listAll: vi.fn().mockResolvedValue(plans) },
         customers: { get: vi.fn().mockResolvedValue(customer) },
         subscriptions: {
             getByCustomerId: vi.fn().mockResolvedValue(opts.priorSubscriptions ?? [])
