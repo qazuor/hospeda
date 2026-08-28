@@ -52,7 +52,7 @@ import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
  * from the QZPay client type so this module can never fall out of sync with
  * the SDK's real return shape.
  */
-type ReactivationBillingPlan = Awaited<ReturnType<QZPayBilling['plans']['list']>>['data'][number];
+type ReactivationBillingPlan = Awaited<ReturnType<QZPayBilling['plans']['listAll']>>[number];
 
 /**
  * A single price row on a {@link ReactivationBillingPlan} (`plan.prices[]`).

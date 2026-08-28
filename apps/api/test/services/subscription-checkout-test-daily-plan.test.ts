@@ -93,7 +93,7 @@ const CUSTOMER_FIXTURE = {
 function createBillingMock() {
     return {
         plans: {
-            list: vi.fn().mockResolvedValue({ data: [TEST_DAILY_QZPAY_PLAN] })
+            listAll: vi.fn().mockResolvedValue([TEST_DAILY_QZPAY_PLAN])
         },
         customers: {
             get: vi.fn().mockResolvedValue(CUSTOMER_FIXTURE)
@@ -138,8 +138,8 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
 
             // Assert — treated as not-found, same as any unresolvable slug.
             expect(resolved).toBeNull();
-            // The gate short-circuits before ever calling plans.list().
-            expect(billing.plans.list).not.toHaveBeenCalled();
+            // The gate short-circuits before ever calling plans.listAll().
+            expect(billing.plans.listAll).not.toHaveBeenCalled();
         });
 
         it('returns null for owner-test-daily when the flag is unset', async () => {
@@ -170,7 +170,7 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
 
             // Assert
             expect(resolved).toEqual(TEST_DAILY_QZPAY_PLAN);
-            expect(billing.plans.list).toHaveBeenCalledTimes(1);
+            expect(billing.plans.listAll).toHaveBeenCalledTimes(1);
         });
 
         it('never gates a different slug (e.g. owner-premium) regardless of the flag', async () => {
@@ -178,7 +178,7 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
             env.HOSPEDA_SHOW_TEST_BILLING_PLAN = false;
             const otherPlan = { id: 'plan-other', name: 'owner-premium', prices: [] };
             const billing = createBillingMock();
-            billing.plans.list.mockResolvedValue({ data: [otherPlan] });
+            billing.plans.listAll.mockResolvedValue([otherPlan]);
 
             // Act
             const resolved = await _internals.resolvePlanBySlug(billing as never, 'owner-premium');

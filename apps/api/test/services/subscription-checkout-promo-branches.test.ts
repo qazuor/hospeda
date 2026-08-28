@@ -202,7 +202,7 @@ const DEFAULT_PENDING_RESULT = {
 
 function makeBilling(opts: { checkout?: Record<string, unknown> } = {}) {
     return {
-        plans: { list: vi.fn().mockResolvedValue({ data: [PLAN] }) },
+        plans: { listAll: vi.fn().mockResolvedValue([PLAN]) },
         customers: {
             get: vi.fn().mockResolvedValue({
                 id: 'cust-1',
@@ -285,7 +285,7 @@ const TRIAL_PLAN = {
  */
 function makeTrialBilling(opts: { existingSubscriptions?: readonly unknown[] } = {}) {
     return {
-        plans: { list: vi.fn().mockResolvedValue({ data: [TRIAL_PLAN] }) },
+        plans: { listAll: vi.fn().mockResolvedValue([TRIAL_PLAN]) },
         customers: {
             get: vi.fn().mockResolvedValue({
                 id: 'cust-1',

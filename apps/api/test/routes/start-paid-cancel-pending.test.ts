@@ -156,22 +156,20 @@ function makeBillingMock(opts: {
             })
         },
         plans: {
-            list: vi.fn().mockResolvedValue({
-                data: [
-                    {
-                        id: PLAN_ID,
-                        name: PLAN_SLUG,
-                        prices: [
-                            {
-                                id: PRICE_ID,
-                                billingInterval: 'month',
-                                intervalCount: 1,
-                                active: true
-                            }
-                        ]
-                    }
-                ]
-            })
+            listAll: vi.fn().mockResolvedValue([
+                {
+                    id: PLAN_ID,
+                    name: PLAN_SLUG,
+                    prices: [
+                        {
+                            id: PRICE_ID,
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true
+                        }
+                    ]
+                }
+            ])
         }
     };
 }

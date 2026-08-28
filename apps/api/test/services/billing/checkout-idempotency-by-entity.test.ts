@@ -336,7 +336,7 @@ function createBillingMock() {
     };
     const billing = {
         plans: {
-            list: vi.fn().mockResolvedValue({ data: [plan] }),
+            listAll: vi.fn().mockResolvedValue([plan]),
             get: vi.fn().mockResolvedValue(plan)
         },
         customers: {

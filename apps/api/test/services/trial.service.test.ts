@@ -147,7 +147,7 @@ const mockPaymentAdapter = {
 const createMockBilling = () => {
     return {
         plans: {
-            list: vi.fn(),
+            listAll: vi.fn(),
             get: vi.fn()
         },
         subscriptions: {
@@ -1422,9 +1422,7 @@ describe('TrialService', () => {
         }
 
         function mockPaidCreateHappyPath(customerId: string) {
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
                 id: customerId,
                 email: 'owner@example.com'
@@ -1542,7 +1540,7 @@ describe('TrialService', () => {
         it('should propagate the plan guard rejection (unknown planId) and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-789';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({ data: [] } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
 
             // Act & Assert
@@ -1560,22 +1558,20 @@ describe('TrialService', () => {
         it('should propagate the plan guard rejection (free plan) and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-free';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [
-                    paidMonthlyPlan({
-                        id: 'plan-free',
-                        prices: [
-                            {
-                                id: 'price-free',
-                                billingInterval: 'month',
-                                intervalCount: 1,
-                                active: true,
-                                unitAmount: 0
-                            }
-                        ]
-                    })
-                ]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                paidMonthlyPlan({
+                    id: 'plan-free',
+                    prices: [
+                        {
+                            id: 'price-free',
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 0
+                        }
+                    ]
+                })
+            ] as never);
 
             // Act & Assert
             await expect(
@@ -1595,22 +1591,20 @@ describe('TrialService', () => {
         it('should propagate the plan guard rejection (annual-only plan) and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-annual';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [
-                    paidMonthlyPlan({
-                        id: 'plan-annual-only',
-                        prices: [
-                            {
-                                id: 'price-annual',
-                                billingInterval: 'year',
-                                intervalCount: 1,
-                                active: true,
-                                unitAmount: 35_000_000
-                            }
-                        ]
-                    })
-                ]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                paidMonthlyPlan({
+                    id: 'plan-annual-only',
+                    prices: [
+                        {
+                            id: 'price-annual',
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 35_000_000
+                        }
+                    ]
+                })
+            ] as never);
 
             // Act & Assert
             await expect(
@@ -1630,9 +1624,7 @@ describe('TrialService', () => {
         it('should throw CUSTOMER_NOT_FOUND and create no subscription when the billing customer is missing', async () => {
             // Arrange
             const customerId = 'customer-missing';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.customers, 'get').mockResolvedValue(null as never);
 
             // Act & Assert
@@ -1653,9 +1645,7 @@ describe('TrialService', () => {
         it('should propagate MISSING_INIT_POINT and never return a checkoutUrl-less success', async () => {
             // Arrange
             const customerId = 'customer-no-init-point';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
                 id: customerId,
                 email: 'owner@example.com'
@@ -1723,9 +1713,9 @@ describe('TrialService', () => {
             }
 
             function mockAnnualCreateHappyPath(customerId: string) {
-                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                    data: [paidPlanWithAnnual()]
-                } as never);
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidPlanWithAnnual()
+                ] as never);
                 vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
                     id: customerId,
                     email: 'owner@example.com'
@@ -1848,9 +1838,9 @@ describe('TrialService', () => {
             it('propagates NO_ANNUAL_PRICE from the guard when the plan has no active annual price, and creates no subscription', async () => {
                 // Arrange — plan only has a monthly price.
                 const customerId = 'customer-no-annual-price';
-                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                    data: [paidMonthlyPlan()]
-                } as never);
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
                 vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue(
                     [] as never
                 );
@@ -1906,9 +1896,7 @@ describe('TrialService', () => {
         }
 
         function mockPaidCreateHappyPath(customerId: string) {
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
                 id: customerId,
                 email: 'owner@example.com'
@@ -1991,9 +1979,7 @@ describe('TrialService', () => {
         it('should reject when an active subscription already exists, and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-has-active';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 { id: 'sub-active', customerId, status: 'active', planId: PAID_PLAN_ID }
             ] as never);
@@ -2013,9 +1999,7 @@ describe('TrialService', () => {
         it('HOS-114 T-015b regression: rejects with SubscriptionCheckoutError(ACTIVE_SUBSCRIPTION_EXISTS), not a plain Error (HTTP 500)', async () => {
             // Arrange
             const customerId = 'customer-has-active-typed';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 { id: 'sub-active', customerId, status: 'active', planId: PAID_PLAN_ID }
             ] as never);
@@ -2036,9 +2020,7 @@ describe('TrialService', () => {
         it('should reject when no canceled subscription exists, and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-no-canceled';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
 
             // Act & Assert
@@ -2056,9 +2038,7 @@ describe('TrialService', () => {
         it('HOS-114 T-015b regression: rejects with SubscriptionCheckoutError(NO_CANCELED_SUBSCRIPTION), not a plain Error (HTTP 500)', async () => {
             // Arrange
             const customerId = 'customer-no-canceled-typed';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
 
             // Act & Assert
@@ -2080,9 +2060,7 @@ describe('TrialService', () => {
             // found) — distinct from the `subscriptions.length === 0` guard
             // above.
             const customerId = 'customer-only-expired-no-canceled';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 { id: 'sub-expired', customerId, status: 'expired', planId: 'plan-old' }
             ] as never);
@@ -2105,9 +2083,7 @@ describe('TrialService', () => {
         it('should throw CUSTOMER_NOT_FOUND and create no subscription when the billing customer is missing', async () => {
             // Arrange
             const customerId = 'customer-missing-sub';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 { id: 'sub-canceled-2', customerId, status: 'canceled', planId: 'plan-old' }
             ] as never);
@@ -2131,9 +2107,7 @@ describe('TrialService', () => {
         it('should propagate MISSING_INIT_POINT and never return a checkoutUrl-less success', async () => {
             // Arrange
             const customerId = 'customer-no-init-point-sub';
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [paidMonthlyPlan()]
-            } as never);
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 { id: 'sub-canceled-3', customerId, status: 'canceled', planId: 'plan-old' }
             ] as never);
@@ -2204,9 +2178,9 @@ describe('TrialService', () => {
             }
 
             function mockAnnualCreateHappyPath(customerId: string) {
-                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                    data: [paidPlanWithAnnual()]
-                } as never);
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidPlanWithAnnual()
+                ] as never);
                 vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
                     id: customerId,
                     email: 'owner@example.com'
@@ -2347,9 +2321,9 @@ describe('TrialService', () => {
                     status: 'canceled',
                     planId: 'plan-old'
                 };
-                vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                    data: [paidMonthlyPlan()]
-                } as never);
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
                 vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                     canceledSub
                 ] as never);

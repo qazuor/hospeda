@@ -407,7 +407,7 @@ function createBillingMock(opts: BillingMockOptions = {}) {
 
     return {
         plans: {
-            list: vi.fn().mockResolvedValue({ data: plans })
+            listAll: vi.fn().mockResolvedValue(plans)
         },
         customers: {
             get: vi.fn().mockResolvedValue(customer)
@@ -820,7 +820,7 @@ function createAnnualBillingMock(opts: AnnualBillingMockOptions = {}) {
     }
 
     return {
-        plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
+        plans: { listAll: vi.fn().mockResolvedValue(plans) },
         customers: { get: vi.fn().mockResolvedValue(customer) },
         subscriptions: {
             // SPEC-147 T-008: getByCustomerId is called by the cancel-pending guard.
@@ -1519,7 +1519,7 @@ describe('handleStartPaidSubscription — checkout_started analytics on the ANNU
         };
 
         return {
-            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            plans: { listAll: vi.fn().mockResolvedValue([trialPlan]) },
             customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
             subscriptions: {
                 // No prior subscriptions -> trial-eligible.
@@ -1636,7 +1636,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         };
 
         return {
-            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            plans: { listAll: vi.fn().mockResolvedValue([trialPlan]) },
             customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
             subscriptions: {
                 getByCustomerId: vi.fn().mockResolvedValue([]),
@@ -1668,7 +1668,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         };
 
         return {
-            plans: { list: vi.fn().mockResolvedValue({ data: [trialPlan] }) },
+            plans: { listAll: vi.fn().mockResolvedValue([trialPlan]) },
             customers: { get: vi.fn().mockResolvedValue(ANNUAL_CUSTOMER_FIXTURE) },
             subscriptions: {
                 getByCustomerId: vi.fn().mockResolvedValue([]),
