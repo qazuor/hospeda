@@ -39,8 +39,8 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
-        "cloudinary": "^2.10.0",
-        "file-type": "^22.0.1",
+        "cloudinary": "^2.10.1",
+        "file-type": "^22.0.2",
         "image-size": "^2.0.0",
         "nanoid": "^6.0.1",
         "p-retry": "^8.0.0"
