@@ -229,7 +229,7 @@ function makeBillingMock(subscriptionListData: unknown[] = []) {
             }
         }),
         subscriptions: {
-            list: vi.fn().mockResolvedValue({ data: subscriptionListData })
+            listAll: vi.fn().mockResolvedValue(subscriptionListData)
         },
         payments: {
             process: vi.fn().mockResolvedValue({ id: 'pay_1', status: 'succeeded' })
@@ -370,10 +370,14 @@ describe('dunningJob', () => {
             expect(result.processed).toBe(0);
         });
 
-        it('should handle null data from subscriptions.list()', async () => {
+        it('should handle an empty result from subscriptions.listAll()', async () => {
+            // Was "null data from list()": `listAll` returns a plain array, so the
+            // degenerate case is an empty one rather than a `{ data: null }`
+            // envelope. Kept as its own case because reporting zero is the correct
+            // outcome and must not be reached by throwing.
             // Arrange
             const billing = makeBillingMock();
-            billing.subscriptions.list.mockResolvedValue({ data: null });
+            billing.subscriptions.listAll.mockResolvedValue([]);
             mockGetQZPayBilling.mockReturnValue(billing);
             mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
 
@@ -677,7 +681,7 @@ describe('dunningJob', () => {
         it('should handle a failure while counting past_due subscriptions (observe-only pass)', async () => {
             // Arrange
             const billing = makeBillingMock();
-            billing.subscriptions.list.mockRejectedValue(new Error('MP list endpoint down'));
+            billing.subscriptions.listAll.mockRejectedValue(new Error('MP list endpoint down'));
             mockGetQZPayBilling.mockReturnValue(billing);
             mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
 

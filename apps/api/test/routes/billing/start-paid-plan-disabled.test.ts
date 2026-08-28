@@ -187,7 +187,7 @@ function makeBillingMock(opts: { planActive: boolean; planSlug: string }) {
             })
         },
         plans: {
-            list: vi.fn().mockResolvedValue({ data: [plan] })
+            listAll: vi.fn().mockResolvedValue([plan])
         }
     };
 }
@@ -409,7 +409,7 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
                     })
                 },
                 plans: {
-                    list: vi.fn().mockResolvedValue({ data: [plan] })
+                    listAll: vi.fn().mockResolvedValue([plan])
                 }
             };
         }

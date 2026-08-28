@@ -16,6 +16,7 @@ import {
     PreferenceService,
     RetryService
 } from '@repo/notifications';
+import { getEmailSender } from './email-sender';
 import { env } from './env';
 import { apiLogger } from './logger';
 import { getRedisClient } from './redis';
@@ -70,10 +71,7 @@ async function getNotificationService(): Promise<NotificationService | null> {
         const emailClient = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
 
         // Create email transport with validated env config
-        const emailTransport = new BrevoEmailTransport(emailClient, {
-            fromEmail: env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar',
-            fromName: env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda'
-        });
+        const emailTransport = new BrevoEmailTransport(emailClient, getEmailSender());
 
         // Create preference service with mock functions
         const preferenceService = new PreferenceService({

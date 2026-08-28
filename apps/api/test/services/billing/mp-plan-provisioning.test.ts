@@ -448,8 +448,14 @@ describe('H-83: the MP plan reason never exceeds MercadoPago’s 60-character li
     });
 
     // The whole live catalogue crossed with the live promo shapes. `trialDays`
-    // covers 0 (no trial), the 30-day base, and 76 (base + GRUPO_WHATSAPP's 46
-    // extra days) — the longest trial actually reachable in production today.
+    // covers 0 (no trial), the 30-day base, and 60 (base + FREEMONTH's 30 extra
+    // days) — the longest trial actually reachable in production today.
+    //
+    // The 60 is derived, not chosen: every plan that grants a trial declares 30
+    // (`OWNER_TRIAL_DAYS` / `TOURIST_TRIAL_DAYS` / `COMMERCE_TRIAL_DAYS`), the
+    // 14-day `COMPLEX_TRIAL_DAYS` plans are deactivated, and `FREEMONTH` is the
+    // only live `trial_extension` left. `resolveCheckoutFreeTrialDays` sums the
+    // plan base and the extension once, at checkout.
     const PROD_PLAN_NAMES = [
         'Test Daily (internal)',
         'Complex Professional',
@@ -468,7 +474,7 @@ describe('H-83: the MP plan reason never exceeds MercadoPago’s 60-character li
     ] as const;
 
     const INTERVALS = ['monthly', 'annual', 'daily'] as const;
-    const TRIAL_DAYS = [0, 30, 76] as const;
+    const TRIAL_DAYS = [0, 30, 60] as const;
 
     it.each(
         PROD_PLAN_NAMES
@@ -549,7 +555,7 @@ describe('H-83: the MP plan reason never exceeds MercadoPago’s 60-character li
         // and unbounded, so the builder must degrade instead of failing checkout.
         const reason = await reasonFor({
             planName: 'A'.repeat(120),
-            trialDays: 76,
+            trialDays: 60,
             discountCycle1AmountCentavos: 1_050_000
         });
 

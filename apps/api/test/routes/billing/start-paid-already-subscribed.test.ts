@@ -118,7 +118,7 @@ function makeBillingMock(existingSubs: { status: string; cancelAtPeriodEnd?: boo
             getByCustomerId: vi.fn().mockResolvedValue(existingSubs),
             create: vi.fn()
         },
-        plans: { list: vi.fn().mockResolvedValue({ data: [plan] }) }
+        plans: { listAll: vi.fn().mockResolvedValue([plan]) }
     };
 }
 

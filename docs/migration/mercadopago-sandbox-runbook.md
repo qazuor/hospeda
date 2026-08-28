@@ -125,10 +125,100 @@ When a smoke flow reaches the MP checkout page (after `/start-paid` redirects):
 1. Log into the MP sandbox checkout using the **buyer** test account credentials.
 2. Enter a test card from the [SPEC-143 cards reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md).
 3. Set the cardholder name to the outcome code you want (`APRO`, `OTHE`, `CONT`, etc.).
+4. **Use a card the buyer has not used before.** If MP offers a saved card, decline
+   it and enter a different number — see §3.3, which is the single most expensive
+   failure mode in this whole document.
 
 See the [SPEC-143 staging checklist](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md)
 section "Pre-flight: MP test buyer browser session" for the full pre-condition steps
 required before any flow that authorizes a payment.
+
+### 3.3 A saved card makes every subscription checkout fail (2026-08-28)
+
+**Symptom.** The MP checkout ends on *"No pudimos procesar tu pago"*. On our side the
+row stays `pending_provider` forever and no `mp_subscription_id` is ever linked. In
+MercadoPago the preapproval **is created and then cancelled under a second**, with
+`payment_method_id: null` and no `card_id`:
+
+```
+12:42:49.796  preapproval created
+12:42:49      $0 validation payment → approved / accredited
+12:42:50.555  preapproval cancelled     ← 0.76s later
+              payment_method_id: null · card_id: null · external_reference: null
+```
+
+The $0 validation charge being **approved** while the subscription dies anyway is the
+signature. It is what makes this so hard to diagnose: every card-level check passes.
+
+**Cause.** Once the test buyer has any saved card, MP's subscription checkout takes the
+saved-card path instead of asking for the number. It tokenises with **ESC** (the stored,
+encrypted security code) rather than a freshly entered CVV, and that path raises an
+**authentication challenge** that never completes in the sandbox. MP approves the $0
+validation, the challenge hangs, and MP aborts the subscription.
+
+Visible in the browser console on the MP checkout page:
+
+```json
+"review_context_flow": "subscription_saved_card",
+"tokenization_info": { "has_esc": true, "tokenization_type": "with_esc", "has_cvv": false,
+                       "tokenization_card_id": "9813074735" }
+"Challenge display processing"
+"Challenge processing via step next"
+```
+
+`review_context_flow: subscription_saved_card` and `has_cvv: false` are the tell. A
+healthy attempt does not show them.
+
+**Fix.** Use a card number the buyer has never used, so MP asks for the CVV and skips
+the ESC path entirely. The [cards reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md)
+lists five; rotate to one that is not saved yet. Verified on 2026-08-28: seven consecutive
+failures on the saved Mastercard `…0604`, then an immediate `authorized` on a fresh Visa
+(`card_id 9834888704`), local row `trialing`, whole webhook chain intact.
+
+**What this is NOT.** Ruled out by measurement on 2026-08-28 before finding the cause —
+do not spend time re-testing any of these:
+
+| Suspected | Verdict |
+|---|---|
+| Card number / brand / cardholder code | ✗ the $0 validation is approved |
+| Amount, or MP's ARS 15 floor | ✗ $15, $100 and $18.000 all fail the same way, all succeed via API |
+| Daily vs monthly cadence | ✗ both fail through the checkout, both work via API |
+| A specific plan, or its config in MP | ✗ 4 different plans, identical failure; plans are byte-identical bar cadence |
+| The buyer already having a live subscription | ✗ a preapproval created via API succeeded while two were live |
+| A previous failed attempt poisoning the next | ✗ the first-ever attempt on a brand-new plan failed too |
+| Our code, qzpay, or a recent deploy | ✗ 86 commits reviewed; qzpay pinned to releases predating a known-good run |
+
+**Why the API is immune.** `POST /v1/card_tokens` + `POST /preapproval` always carries an
+explicit CVV and never enters the saved-card flow, so it works even when the checkout does
+not. That is also the escape hatch when you need a live subscription and the browser
+refuses to cooperate — see §3.4.
+
+### 3.4 Creating a subscription without the browser (API-only)
+
+Useful when the checkout is fighting you (§3.3), or when you need a preapproval with a
+cadence the hosted checkout will not produce.
+
+```bash
+# 1. tokenise a card (tokens are single-use)
+curl -sS -X POST https://api.mercadopago.com/v1/card_tokens \
+  -H "Authorization: Bearer $MP_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"card_number":"5031755734530604","expiration_month":11,"expiration_year":2030,
+       "security_code":"123",
+       "cardholder":{"name":"APRO","identification":{"type":"DNI","number":"12345678"}}}'
+
+# 2. create the subscription, already authorized
+curl -sS -X POST https://api.mercadopago.com/preapproval \
+  -H "Authorization: Bearer $MP_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"reason":"<what this is for>","external_reference":"<your ref>",
+       "payer_email":"<test buyer email>","card_token_id":"<token from step 1>",
+       "status":"authorized","back_url":"https://staging.hospeda.com.ar/",
+       "auto_recurring":{"frequency":1,"frequency_type":"days",
+                         "transaction_amount":100,"currency_id":"ARS"}}'
+```
+
+Pass `preapproval_plan_id` instead of `auto_recurring` to attach it to an existing plan.
+Confirm success by reading back `payment_method_id` and `card_id` — both non-null means the
+card really attached. **Always cancel these when done**; a daily preapproval keeps charging.
 
 ---
 

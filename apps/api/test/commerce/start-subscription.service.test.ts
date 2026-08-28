@@ -159,25 +159,23 @@ function createBillingMock(input?: {
     });
     const billing = {
         plans: {
-            list: vi.fn().mockResolvedValue({
-                data: [
-                    {
-                        id: PLAN_ID,
-                        name: PLAN_SLUG,
-                        metadata: input?.planMetadata ?? { displayName: PLAN_DISPLAY_NAME },
-                        prices: [
-                            {
-                                id: PRICE_ID,
-                                billingInterval: 'month',
-                                intervalCount: 1,
-                                active: true,
-                                unitAmount: 1_500_000,
-                                currency: 'ARS'
-                            }
-                        ]
-                    }
-                ]
-            })
+            listAll: vi.fn().mockResolvedValue([
+                {
+                    id: PLAN_ID,
+                    name: PLAN_SLUG,
+                    metadata: input?.planMetadata ?? { displayName: PLAN_DISPLAY_NAME },
+                    prices: [
+                        {
+                            id: PRICE_ID,
+                            billingInterval: 'month',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 1_500_000,
+                            currency: 'ARS'
+                        }
+                    ]
+                }
+            ])
         },
         customers: {
             get: vi.fn().mockResolvedValue({
@@ -475,7 +473,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
 
     it('throws PLAN_NOT_FOUND when the plan slug is unknown', async () => {
         const { billing } = createBillingMock();
-        billing.plans.list = vi.fn().mockResolvedValue({ data: [] });
+        billing.plans.listAll = vi.fn().mockResolvedValue([]);
 
         await expect(
             initiateCommerceMonthlySubscription({
@@ -488,9 +486,9 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
 
     it('throws NO_MONTHLY_PRICE when the plan has no active monthly price', async () => {
         const { billing } = createBillingMock();
-        billing.plans.list = vi.fn().mockResolvedValue({
-            data: [{ id: PLAN_ID, name: PLAN_SLUG, metadata: {}, prices: [] }]
-        });
+        billing.plans.listAll = vi
+            .fn()
+            .mockResolvedValue([{ id: PLAN_ID, name: PLAN_SLUG, metadata: {}, prices: [] }]);
 
         await expect(
             initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing })

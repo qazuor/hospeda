@@ -103,9 +103,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {
@@ -142,9 +140,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {
@@ -177,7 +173,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({ data: [] })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {
@@ -212,34 +208,32 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
 
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: [
-                            {
-                                id: 'sub-1',
-                                status: 'trialing',
-                                customerId: 'cust-1',
-                                trialEnd: expiredTrialEnd
-                            },
-                            {
-                                id: 'sub-2',
-                                status: 'trialing',
-                                customerId: 'cust-2',
-                                trialEnd: expiredTrialEnd
-                            },
-                            {
-                                id: 'sub-3',
-                                status: 'trialing',
-                                customerId: 'cust-3',
-                                trialEnd: activeTrialEnd
-                            },
-                            {
-                                id: 'sub-4',
-                                status: 'active',
-                                customerId: 'cust-4',
-                                trialEnd: expiredTrialEnd
-                            }
-                        ]
-                    })
+                    listAll: vi.fn().mockResolvedValue([
+                        {
+                            id: 'sub-1',
+                            status: 'trialing',
+                            customerId: 'cust-1',
+                            trialEnd: expiredTrialEnd
+                        },
+                        {
+                            id: 'sub-2',
+                            status: 'trialing',
+                            customerId: 'cust-2',
+                            trialEnd: expiredTrialEnd
+                        },
+                        {
+                            id: 'sub-3',
+                            status: 'trialing',
+                            customerId: 'cust-3',
+                            trialEnd: activeTrialEnd
+                        },
+                        {
+                            id: 'sub-4',
+                            status: 'active',
+                            customerId: 'cust-4',
+                            trialEnd: expiredTrialEnd
+                        }
+                    ])
                 }
             };
 
@@ -269,9 +263,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext({ dryRun: true });
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
 
@@ -294,9 +286,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {
@@ -327,9 +317,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {
@@ -377,9 +365,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {
@@ -417,9 +403,7 @@ describe('Trial Reconciliation Cron Job (HOS-171)', () => {
             const ctx = createMockContext();
             const mockBilling = {
                 subscriptions: {
-                    list: vi.fn().mockResolvedValue({
-                        data: []
-                    })
+                    listAll: vi.fn().mockResolvedValue([])
                 }
             };
             const mockTrialService = {

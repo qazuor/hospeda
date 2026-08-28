@@ -306,8 +306,38 @@ still present, so `Done` can never coexist with an outstanding smoke gate.
 three labels is still present** — their whole purpose is to make "waiting on
 smoke" visible on the board instead of an issue silently sitting in
 `In Progress`/`In Review` with no signal of what it's actually blocked on.
-Removing a label (once the smoke sign-off is filed) stays a manual, human step —
-never automated, since that would defeat the guarantee the label exists to give.
+**Removing a label requires a sign-off comment on the issue, and nothing else
+removes it.** The gate used to have automatic entry and manual exit, which
+stranded 220 issues in In Review carrying a label nobody was going to retire; the
+sign-offs that did exist died in artifacts and `localStorage`. So the act of
+recording the smoke is now the act that retires the label — one gesture, not two —
+and the record lives as a `<!-- smoke-signoff v1 -->` comment **on the Linear
+issue**, never only in an artifact or in engram.
+
+Two paths, and no others:
+
+- **`/smoke HOS-N`** — one issue. Asks for environment, result and grade, writes
+  the comment, retires that environment's label, closes the issue when no required
+  environment is left.
+- **The `smoke-tanda` skill** (`.claude/skills/smoke-tanda/SKILL.md`) — a batch:
+  a user journey, a whole feature, or a set of merged PRs verified over several
+  days. The owner approves the step→issue contract ONCE when the tanda opens, and
+  from there the sign-offs are written the moment each step is observed.
+
+This does not weaken the guarantee. The label still means "implemented but
+unverified", and it still cannot be removed without a nominal, recorded
+observation — what changed is that removing it now *requires* leaving that record,
+where before it required nothing. Four invariants hold in both paths: a PR that is
+not deployed on the target environment cannot be smoked there; a step must be bound
+to an issue before its result is observed; an issue with any unverified criterion
+does not close; and a failed write halts the batch instead of being queued.
+
+An issue may require more than one environment. **prod ⊇ staging ⊇ local** by
+default (a prod sign-off satisfies a staging or local label; never the inverse),
+but when the environments cover genuinely distinct concerns — local for migrations
+from scratch, staging for the MercadoPago sandbox, prod for Cloudflare and real
+cron timing — each needs its own sign-off and the issue stays open until all are
+signed.
 
 ### Git Conventions
 

@@ -62,6 +62,21 @@ Use these for **Flow 1.1 / 1.2 / 1.7** of the staging checklist
   outcome (`EXPI`) is triggered by the cardholder code, not by an
   expired card number — entering a real past date typically causes a
   form-validation error before MP sees it.
+- **Never reuse a card the buyer already has saved — for SUBSCRIPTION
+  checkouts this breaks everything.** Once a card is stored on the test
+  buyer, MP's subscription checkout takes the saved-card path and
+  tokenises with ESC instead of a freshly typed CVV. That path raises an
+  authentication challenge that never completes in the sandbox: MP
+  approves the $0 validation charge, then cancels the preapproval under
+  a second with `payment_method_id: null`, and the user is left staring
+  at *"No pudimos procesar tu pago"*. **Every card-level check passes**,
+  which is exactly what makes it so expensive to diagnose — it cost two
+  people five hours on 2026-08-28. Rotate to a number the buyer has never
+  used and the same flow succeeds on the first try. Full symptom,
+  console evidence and the ruled-out list:
+  [sandbox runbook §3.3](../../../../docs/migration/mercadopago-sandbox-runbook.md).
+  This is also why the table below matters more than it looks: **you need
+  several distinct numbers precisely so you can rotate off a saved one.**
 
 ## Payment status outcome codes (cardholder name)
 
@@ -111,8 +126,8 @@ sub-cases, the table lists each separately.
 | 3.9.b D2 failure-redirect | Visa credit `4509…3704` | `OTHE` | DNI 12345678 |
 | 3.9.c D3 pending-redirect | Visa credit `4509…3704` | `CONT` | (any) |
 
-For any sub-flow not listed above, default to **Visa credit `4509…3704`
-+ `APRO`** unless you are specifically testing a rejection path.
+For any sub-flow not listed above, default to **Visa credit `4509…3704` +
+`APRO`** unless you are specifically testing a rejection path.
 
 ### Production smoke (`prod-smoke-checklist.md`)
 
@@ -128,8 +143,8 @@ are two ways to exercise the dispute flow:
 
 ### Manual dispute via MP merchant dashboard
 
-1. Complete a successful payment with the `APRO` card (any test card
-   + cardholder `APRO` + DNI 12345678).
+1. Complete a successful payment with the `APRO` card (any test card +
+   cardholder `APRO` + DNI 12345678).
 2. Log into the MP sandbox merchant dashboard.
 3. Navigate to the payment detail.
 4. Trigger the "Initiate dispute" or "Force chargeback" action (the

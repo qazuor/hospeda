@@ -139,8 +139,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'webhook-success@hospeda.com',
@@ -213,8 +213,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'idempotency@hospeda.com',
@@ -277,8 +277,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert - Pro plan should have rich description entitlement
             // Note: This is configuration-level validation
@@ -298,8 +298,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             expect(proPlan?.entitlements).toContain(EntitlementKey.RESPOND_REVIEWS);
@@ -314,8 +314,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert - Calendar feature should be available in Pro
             expect(proPlan?.entitlements).toBeDefined();
@@ -331,8 +331,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             expect(proPlan?.entitlements).toContain(EntitlementKey.VIEW_ADVANCED_STATS);
@@ -347,8 +347,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             expect(proPlan?.entitlements).toContain(EntitlementKey.PRIORITY_SUPPORT);
@@ -363,8 +363,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             expect(proPlan?.entitlements).toContain(EntitlementKey.FEATURED_LISTING);
@@ -379,8 +379,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             expect(proPlan?.entitlements).toContain(EntitlementKey.CREATE_PROMOTIONS);
@@ -405,8 +405,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             expect(proPlan).toBeDefined();
@@ -425,8 +425,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             const maxPhotosLimit = proPlan?.limits?.[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION];
@@ -442,8 +442,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             // Assert
             const maxPromotionsLimit = proPlan?.limits?.[LimitKey.MAX_ACTIVE_PROMOTIONS];
@@ -459,9 +459,9 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(proPlan).toBeDefined();
@@ -497,8 +497,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'subscription-details@hospeda.com',
@@ -538,8 +538,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'active-subscription@hospeda.com',
@@ -573,8 +573,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'period-dates@hospeda.com',
@@ -666,8 +666,8 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'duplicate-sub@hospeda.com',
@@ -706,9 +706,9 @@ describe('Subscription Purchase and Plan Activation E2E', () => {
                 return;
             }
 
-            const plans = await billing.plans.list();
-            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
-            const proPlan = plans.data.find((p: any) => p.slug === 'owner-pro');
+            const plans = await billing.plans.listAll();
+            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
 
             const customer = await billing.customers.create({
                 email: 'upgrade-plan@hospeda.com',

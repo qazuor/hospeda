@@ -176,3 +176,6 @@ docs/marketing/escenas/
 docs/marketing/capturas/
 docs/marketing/personaje/
 docs/marketing/placas/
+
+# Smoke tanda working state (canonical record lives in Linear comments)
+.smoke/

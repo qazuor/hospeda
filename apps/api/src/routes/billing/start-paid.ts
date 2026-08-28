@@ -254,8 +254,11 @@ export const handleStartPaidSubscription = async (
         // is off. Exempting the active-check here does NOT make the plan
         // subscribable when the flag is off — it only stops this earlier
         // guard from short-circuiting BEFORE that real gate runs.
-        const plansResult = await billing.plans.list();
-        const targetPlan = plansResult.data.find((p) => p.name === body.planSlug) ?? null;
+        // `listAll`: this searches the whole catalogue for one plan, and `list`
+        // capped it at the storage default of 20 — a plan past that boundary
+        // read as "does not exist" (HOS-854).
+        const plans = await billing.plans.listAll();
+        const targetPlan = plans.find((p) => p.name === body.planSlug) ?? null;
         if (
             targetPlan !== null &&
             targetPlan.active === false &&

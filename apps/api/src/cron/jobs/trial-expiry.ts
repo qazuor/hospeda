@@ -76,12 +76,14 @@ export const trialExpiryJob: CronJobDefinition = {
                 // Dry run mode - count how many trials would be expired
                 logger.info('Running in dry-run mode');
 
-                // Get all trialing subscriptions using pagination
-                const allSubscriptionsResult = await billing.subscriptions.list({
+                // `listAll` genuinely paginates — the previous `list` call took the
+                // storage default of 20 rows despite the comment claiming otherwise,
+                // and its status filter was accepted and discarded (HOS-854).
+                const allSubscriptions = await billing.subscriptions.listAll({
                     filters: { status: 'trialing' }
                 });
 
-                if (!allSubscriptionsResult?.data || allSubscriptionsResult.data.length === 0) {
+                if (allSubscriptions.length === 0) {
                     logger.info('No subscriptions found');
                     return {
                         success: true,
@@ -96,7 +98,7 @@ export const trialExpiryJob: CronJobDefinition = {
                 let elapsedCount = 0;
 
                 // Filter for trialing subscriptions
-                for (const subscription of allSubscriptionsResult.data) {
+                for (const subscription of allSubscriptions) {
                     // Skip if not trialing
                     if (subscription.status !== 'trialing') {
                         continue;
@@ -122,7 +124,7 @@ export const trialExpiryJob: CronJobDefinition = {
                     durationMs: Date.now() - startedAt.getTime(),
                     details: {
                         dryRun: true,
-                        totalSubscriptions: allSubscriptionsResult.data.length
+                        totalSubscriptions: allSubscriptions.length
                     }
                 };
             }
