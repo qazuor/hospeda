@@ -75,11 +75,19 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
     ],
     [
         SubscriptionStatusEnum.PAST_DUE,
-        new Set([SubscriptionStatusEnum.ACTIVE, SubscriptionStatusEnum.CANCELLED])
+        new Set([
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.TRIALING,
+            SubscriptionStatusEnum.CANCELLED
+        ])
     ],
     [
         SubscriptionStatusEnum.PAUSED,
-        new Set([SubscriptionStatusEnum.ACTIVE, SubscriptionStatusEnum.CANCELLED])
+        new Set([
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.TRIALING,
+            SubscriptionStatusEnum.CANCELLED
+        ])
     ],
     [SubscriptionStatusEnum.CANCELLED, new Set([SubscriptionStatusEnum.ACTIVE])],
     [SubscriptionStatusEnum.EXPIRED, new Set<SubscriptionStatusEnum>()],
@@ -444,8 +452,10 @@ describe('getAllowedTransitions — utility', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result?.has(SubscriptionStatusEnum.ACTIVE)).toBe(true);
+        // HOS-913: the same recovery lands on TRIALING while the trial is open
+        expect(result?.has(SubscriptionStatusEnum.TRIALING)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.CANCELLED)).toBe(true);
-        expect(result?.size).toBe(2);
+        expect(result?.size).toBe(3);
     });
 
     it('returns the correct set for paused', () => {
@@ -454,8 +464,10 @@ describe('getAllowedTransitions — utility', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result?.has(SubscriptionStatusEnum.ACTIVE)).toBe(true);
+        // HOS-913: resuming while the trial is still running lands on TRIALING
+        expect(result?.has(SubscriptionStatusEnum.TRIALING)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.CANCELLED)).toBe(true);
-        expect(result?.size).toBe(2);
+        expect(result?.size).toBe(3);
     });
 
     it('returns the correct set for cancelled (reactivation path)', () => {
@@ -738,5 +750,95 @@ describe('getAllowedTransitions — qzpay-vocabulary source status (H-147)', () 
     it('returns undefined for a genuinely unknown status', () => {
         // Arrange & Act & Assert
         expect(getAllowedTransitions('bogus_status' as SubscriptionStatusEnum)).toBeUndefined();
+    });
+});
+
+// ─── Resuming into an ONGOING trial (HOS-913) ────────────────────────────────
+
+/**
+ * Regression coverage for HOS-913.
+ *
+ * `deriveTrialingStatus` rewrites a provider-reported ACTIVE into TRIALING
+ * whenever the local `trial_end` is still in the future, and it runs BEFORE the
+ * transition guard on the webhook path (`subscription-logic.ts`). So a source
+ * status that can legally reach ACTIVE must ALSO accept TRIALING — otherwise a
+ * subscription whose trial is still running can never leave that state.
+ *
+ * Measured on staging 2026-08-28: a `paused` subscription with a future
+ * `trial_end` stayed `paused` after its preapproval was reactivated in
+ * MercadoPago, while an otherwise identical subscription with `trial_end = NULL`
+ * returned to `active` normally. The webhook answered 200 both times and wrote
+ * nothing for the trialing one.
+ */
+describe('checkSubscriptionStatusTransition — resuming into an ongoing trial (HOS-913)', () => {
+    it('paused → trialing is legal: the preapproval was reactivated while the trial still runs', () => {
+        // Arrange
+        const from = SubscriptionStatusEnum.PAUSED;
+        const to = SubscriptionStatusEnum.TRIALING;
+        // Act
+        const result = checkSubscriptionStatusTransition({ from, to });
+        // Assert
+        expect(result.valid).toBe(true);
+    });
+
+    it('past_due → trialing is legal: a retry succeeded while the trial window is still open', () => {
+        // Arrange
+        const from = SubscriptionStatusEnum.PAST_DUE;
+        const to = SubscriptionStatusEnum.TRIALING;
+        // Act
+        const result = checkSubscriptionStatusTransition({ from, to });
+        // Assert
+        expect(result.valid).toBe(true);
+    });
+});
+
+/**
+ * Structural guard for the rule the two edges above encode.
+ *
+ * Every source that allows ACTIVE must also allow TRIALING, because the webhook
+ * can derive TRIALING from the very same provider report that would otherwise
+ * land on ACTIVE. Two exemptions are deliberate and documented below; any NEW
+ * source that allows ACTIVE without TRIALING fails here, which is the point —
+ * it forces a conscious decision instead of another silent dead end.
+ */
+describe('Structural rule — a source that reaches ACTIVE must also reach TRIALING (HOS-913)', () => {
+    /**
+     * ACTIVE — HOS-211 owner decision: an `active` row carrying a future
+     *   `trial_end` is corrupt data from a pre-HOS-211 bug, and the state
+     *   machine is deliberately NOT the place to self-heal it. The webhook
+     *   downgrades that specific rejection to a warn instead.
+     * CANCELLED — no demonstrated path reaches it with an open trial window.
+     *   `subscription-uncancel` only covers soft-cancelled `active`/`trialing`/
+     *   `past_due` rows and never changes status. Add the edge with its own
+     *   failing test if a real path shows up — never pre-emptively.
+     */
+    const EXEMPT_SOURCES = new Set<SubscriptionStatusEnum>([
+        SubscriptionStatusEnum.ACTIVE,
+        SubscriptionStatusEnum.CANCELLED
+    ]);
+
+    for (const from of ALL_STATUSES) {
+        const allowed = getAllowedTransitions(from);
+        if (!allowed?.has(SubscriptionStatusEnum.ACTIVE)) continue;
+        if (EXEMPT_SOURCES.has(from)) continue;
+        // TRIALING → TRIALING is a self-transition, not a missing edge: the
+        // webhook short-circuits on `previousStatus === mappedStatus` (Step 6)
+        // and never reaches the guard, so the state machine needs no self-loop.
+        if (from === SubscriptionStatusEnum.TRIALING) continue;
+
+        it(`${from} allows ACTIVE, so it must allow TRIALING too`, () => {
+            // Arrange & Act — `allowed` resolved from the module under test
+            // Assert
+            expect(allowed.has(SubscriptionStatusEnum.TRIALING)).toBe(true);
+        });
+    }
+
+    it('every exempt source is genuinely exempt (the exemption list is not stale)', () => {
+        // Arrange & Act & Assert — an exempt source that GAINED the trialing
+        // edge must be dropped from the list, or the exemption silently lies.
+        for (const from of EXEMPT_SOURCES) {
+            const allowed = getAllowedTransitions(from);
+            expect(allowed?.has(SubscriptionStatusEnum.TRIALING)).toBe(false);
+        }
     });
 });
