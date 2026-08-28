@@ -84,9 +84,57 @@ To prevent this, set up the browser session deliberately:
    The hospeda user's `billing_customers.email` MUST match the MP test
    buyer's email format described in the **Email format gotcha** below.
 4. Proceed with the smoke flow normally. When MP redirects to the
-   authorise page, it will use the test-buyer session and show only
-   the option to add a new card. Pay with one of the test cards listed
-   in [`mp-test-cards-reference.md`](mp-test-cards-reference.md).
+   authorise page, it will use the test-buyer session. Pay with one of
+   the test cards listed in
+   [`mp-test-cards-reference.md`](mp-test-cards-reference.md).
+5. **If MP offers a saved card, do not take it.** Choose "use another
+   card" and enter a number this buyer has never used. On a fresh buyer
+   MP only offers to add a new card, but as soon as one card is stored
+   the subscription checkout starts failing every single time — see the
+   **Saved-card gotcha** below. This is not optional: it is the
+   difference between the smoke working and burning an afternoon.
+
+#### Saved-card gotcha
+
+**Symptom.** MP ends on *"No pudimos procesar tu pago"*. The hospeda row
+stays `pending_provider` and never gets an `mp_subscription_id`. In MP the
+preapproval is created and cancelled **under a second**, with
+`payment_method_id: null` and no `card_id` — while the $0 validation charge
+comes back **approved**. Every card-level check passes, so it reads like a
+random platform failure and invites retrying forever. On 2026-08-28 it
+produced seven consecutive failures across four different plans; on
+2026-08-25 it produced ten in forty minutes.
+
+**Cause.** With a card saved on the buyer, MP's subscription checkout takes
+the saved-card path and tokenises with ESC (the stored security code)
+instead of a typed CVV. That path raises an authentication challenge that
+never completes in the sandbox, so MP aborts the subscription after
+approving the validation charge.
+
+**How to confirm it in ten seconds.** Open the browser console on the MP
+checkout page and look for:
+
+```json
+"review_context_flow": "subscription_saved_card",
+"tokenization_info": { "has_esc": true, "has_cvv": false, ... }
+"Challenge display processing"
+```
+
+`subscription_saved_card` together with `has_cvv: false` is the diagnosis.
+
+**Fix.** Enter a card number the buyer has never used. Verified the same
+day: immediate `authorized` on a fresh Visa after seven failures on the
+saved Mastercard, with the local row landing on `trialing` and the whole
+webhook chain intact.
+
+**Do not re-investigate** the amount, the cadence, the plan, the cardholder
+code, previous failed attempts, our code or the qzpay version — all of them
+were measured and ruled out before the cause was found. The full ruled-out
+table is in
+[sandbox runbook §3.3](../../../../docs/migration/mercadopago-sandbox-runbook.md).
+If you need a live subscription and the checkout will not cooperate, create
+the preapproval straight from the API (runbook §3.4) — that path carries an
+explicit CVV and is immune to this.
 
 #### Email format gotcha
 
