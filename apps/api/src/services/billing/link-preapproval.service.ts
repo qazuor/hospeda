@@ -104,7 +104,14 @@ const RECONCILE_WINDOW_MS = 24 * 60 * 60 * 1000;
  *   A). Never overwrites someone else's linking.
  * - `'reconcile_assisted'` — the heuristic (Tier 3) path found zero or
  *   multiple candidates (`resolvePendingCheckout`'s `candidates.length !== 1`
- *   guard — unchanged). Since HOS-191 FIX #5, a Tier 1 (`ownership`, back_url)
+ *   guard — unchanged). NOTE the outcome name is the caller-facing HTTP
+ *   semantics ("could not disambiguate, will reconcile"); the STATUS persisted
+ *   on the refused rows is `reconcile_ambiguous`, deliberately different from
+ *   the `reconcile_assisted` status a SUCCESSFUL heuristic link writes. Rival
+ *   candidates are now expected to be rare in the first place: a new checkout
+ *   supersedes the same customer's earlier in-flight rows for the same MP plan
+ *   (`supersedePendingForCustomerPlan`), so multiple candidates mean DIFFERENT
+ *   customers on one plan — the case where refusing really is correct. Since HOS-191 FIX #5, a Tier 1 (`ownership`, back_url)
  *   attempt with an absent live/snapshot payer email no longer downgrades
  *   here — ownership is already proven upstream and email is defense-in-depth
  *   only there, so it resolves to `'linked'` instead. Since HOS-191 FIX #6, a
@@ -308,8 +315,16 @@ async function resolvePendingCheckout(params: {
                 }
             }
         );
+        // HOS-276 follow-up: mark the refusal as `reconcile_ambiguous`, NOT
+        // `reconcile_assisted`. Nothing was linked here — writing the SUCCESS
+        // status on a refusal is what made the original bug unrecoverable: it
+        // dropped every rival row out of `findReconcileCandidates` and out of
+        // `findByLocalSubscriptionId`, so no webhook redelivery and no manual
+        // link could ever reach the charge again (the manual endpoint answered
+        // 422 `not_found`). `reconcile_ambiguous` stays resolvable while still
+        // telling the reaper real money may be involved.
         for (const candidate of candidates) {
-            await billingPendingCheckoutModel.markReconcileAssisted({ id: candidate.id });
+            await billingPendingCheckoutModel.markReconcileAmbiguous({ id: candidate.id });
         }
         return { kind: 'reconcile_assisted' };
     }

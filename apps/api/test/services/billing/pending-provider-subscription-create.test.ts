@@ -52,11 +52,13 @@ const withTransactionMock = vi.fn(
 );
 
 const pendingCheckoutCreateMock = vi.fn();
+const supersedePendingMock = vi.fn().mockResolvedValue([]);
 
 vi.mock('@repo/db', () => ({
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     billingPendingCheckoutModel: {
-        create: (...args: unknown[]) => pendingCheckoutCreateMock(...args)
+        create: (...args: unknown[]) => pendingCheckoutCreateMock(...args),
+        supersedePendingForCustomerPlan: (...args: unknown[]) => supersedePendingMock(...args)
     },
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
     withTransaction: (...args: unknown[]) =>
@@ -358,5 +360,50 @@ describe('createPendingProviderSubscription', () => {
 
         const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
         expect(correlationArg).not.toHaveProperty('pendingTrialExtension');
+    });
+    /**
+     * REGRESSION (HOS-276 follow-up).
+     *
+     * A customer who retries checkout after a declined card used to leave TWO
+     * live correlation rows for the same customer + MercadoPago plan. The
+     * webhook fallback (Tier 3) can only tell candidates apart by
+     * `mp_preapproval_plan_id` + payer email + a 24h window, on which the two
+     * rows are identical — so it refused to link, and the approved payment had
+     * nowhere to land. Measured in staging on 2026-08-29 ($35.000 unrecorded).
+     *
+     * Retiring the earlier attempt at creation time is what keeps the candidate
+     * set unambiguous, so this must happen on EVERY checkout, inside the same
+     * transaction, and BEFORE the new row exists (otherwise it would supersede
+     * itself).
+     */
+    it('supersedes the customer earlier in-flight checkouts for the same MP plan, in the same tx', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        expect(supersedePendingMock).toHaveBeenCalledOnce();
+        const [args, txArg] = supersedePendingMock.mock.calls[0] ?? [];
+        expect(args).toEqual({ customerId: 'cust-1', mpPreapprovalPlanId: 'mp-plan-1' });
+        expect(txArg).toBe(txStub);
+    });
+
+    it('supersedes BEFORE inserting the new correlation row (never supersedes itself)', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        const supersedeOrder = supersedePendingMock.mock.invocationCallOrder[0];
+        const createOrder = pendingCheckoutCreateMock.mock.invocationCallOrder[0];
+        expect(supersedeOrder).toBeDefined();
+        expect(createOrder).toBeDefined();
+        expect(supersedeOrder as number).toBeLessThan(createOrder as number);
+    });
+
+    it('scopes the supersede to the MP plan actually being checked out', async () => {
+        await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            mpPreapprovalPlanId: 'mp-plan-other'
+        });
+
+        expect(supersedePendingMock).toHaveBeenCalledWith(
+            { customerId: 'cust-1', mpPreapprovalPlanId: 'mp-plan-other' },
+            txStub
+        );
     });
 });

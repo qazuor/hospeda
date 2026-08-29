@@ -88,7 +88,19 @@ export const billingPendingCheckouts = pgTable(
             code: string;
         }>(),
         /**
-         * Correlation lifecycle: `pending` | `linked` | `reconcile_assisted`.
+         * Correlation lifecycle: `pending` | `linked` | `reconcile_assisted` |
+         * `reconcile_ambiguous` | `superseded`.
+         *
+         * The last two were split out by the HOS-276 follow-up, and the split
+         * matters more than it looks:
+         * - `reconcile_assisted` — the webhook fallback LINKED this row. Success.
+         * - `reconcile_ambiguous` — the webhook fallback REFUSED it (several
+         *   indistinguishable candidates). Nothing linked, so the row stays
+         *   resolvable; conflating it with the success status above is what left
+         *   a real approved payment permanently unrecoverable.
+         * - `superseded` — the customer started a newer checkout for the same
+         *   MercadoPago plan, so this attempt was retired to keep the webhook
+         *   fallback's candidate set unambiguous.
          * There is no `'expired'` status value written anywhere — expiry is
          * enforced by comparing `expiresAt` against "now" at read time (see
          * `findByLocalSubscriptionId`), not by a status transition. A row

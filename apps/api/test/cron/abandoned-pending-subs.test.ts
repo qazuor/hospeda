@@ -35,7 +35,7 @@ const {
     mockSentryCapture,
     mockGetDb,
     mockFindByLocalSubscriptionId,
-    mockFindReconcileAssistedByLocalSubscriptionId
+    mockFindUnlinkedChargeByLocalSubscriptionId
 } = vi.hoisted(() => ({
     mockBillingCustomersGet: vi.fn(),
     mockBillingPlansGet: vi.fn(),
@@ -46,7 +46,7 @@ const {
     mockSentryCapture: vi.fn(),
     mockGetDb: vi.fn(),
     mockFindByLocalSubscriptionId: vi.fn(),
-    mockFindReconcileAssistedByLocalSubscriptionId: vi.fn()
+    mockFindUnlinkedChargeByLocalSubscriptionId: vi.fn()
 }));
 
 // ─── DB mock ──────────────────────────────────────────────────────────────────
@@ -79,8 +79,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
         billingPendingCheckoutModel: {
             findByLocalSubscriptionId: mockFindByLocalSubscriptionId,
-            findReconcileAssistedByLocalSubscriptionId:
-                mockFindReconcileAssistedByLocalSubscriptionId
+            findUnlinkedChargeByLocalSubscriptionId: mockFindUnlinkedChargeByLocalSubscriptionId
         }
     };
 });
@@ -215,7 +214,7 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
         mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
         // HOS-276: no reconcile_assisted correlation row by default — tests that
         // exercise it override this explicitly.
-        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue(null);
+        mockFindUnlinkedChargeByLocalSubscriptionId.mockResolvedValue(null);
     });
 
     it('abandons a row directly when it has NO preapproval id (nothing to cancel)', async () => {
@@ -346,7 +345,7 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
         // auto-resolve it — the row must be left for manual reconciliation,
         // never silently abandoned.
         mockFindByLocalSubscriptionId.mockResolvedValue(null);
-        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue({
+        mockFindUnlinkedChargeByLocalSubscriptionId.mockResolvedValue({
             id: 'pc-1',
             localSubscriptionId: 'sub-1',
             status: 'reconcile_assisted'
@@ -545,7 +544,7 @@ describe('abandonedPendingSubsJob handler', () => {
         // Default getDb: abandon UPDATE echoes one row.
         mockGetDb.mockReturnValue(makeDbMock([ABANDONED_ROW]).db);
         // HOS-276: no reconcile_assisted correlation row by default.
-        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue(null);
+        mockFindUnlinkedChargeByLocalSubscriptionId.mockResolvedValue(null);
     });
 
     /** Configure the candidate SELECT to resolve `rows`. */
@@ -692,7 +691,7 @@ describe('abandonedPendingSubsJob handler', () => {
             }
         ]);
         mockFindByLocalSubscriptionId.mockResolvedValue(null);
-        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue({
+        mockFindUnlinkedChargeByLocalSubscriptionId.mockResolvedValue({
             id: 'pc-1',
             localSubscriptionId: 'sub-reconcile',
             status: 'reconcile_assisted'
