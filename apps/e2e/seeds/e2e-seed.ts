@@ -78,7 +78,7 @@ const seedRequire = createRequire(import.meta.url);
 const seedPackageRoot = resolve(dirname(seedRequire.resolve('@repo/seed')), '..');
 process.chdir(seedPackageRoot);
 
-const { runSeed } = await import('@repo/seed');
+const { describeError, runSeed } = await import('@repo/seed');
 
 async function main(): Promise<void> {
     console.info(`[e2e-seed] Resetting + seeding ${dbUrl}`);
@@ -96,6 +96,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-    console.error('[e2e-seed] FAILED:', error);
+    // Never interpolate a thrown value directly: a plain object, or an Error
+    // whose `message` is not a string, renders as `[object Object]` and makes
+    // the failure impossible to diagnose from CI logs alone (HOS-922).
+    const { message, stack, cause } = describeError(error);
+    console.error(`[e2e-seed] FAILED: ${message}`);
+    if (cause) console.error(`[e2e-seed] Cause: ${cause}`);
+    if (stack) console.error(stack);
     exit(1);
 });

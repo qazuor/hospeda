@@ -1,3 +1,4 @@
+import { describeError } from '../utils/errorSerialization.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -120,7 +121,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         logger.success({ msg: `${STATUS_ICONS.Success} Example data load completed.` });
     } catch (error) {
         logger.error(`${STATUS_ICONS.Error} Example data load interrupted`);
-        logger.error(`   Error: ${(error as Error).message}`);
+        logger.error(`   Error: ${describeError(error).message}`);
 
         // If we shouldn't continue on error, re-throw the exception
         if (!context.continueOnError) {

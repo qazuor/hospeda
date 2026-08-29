@@ -21,6 +21,11 @@ export {
     createRetryErrorHandler,
     defaultErrorHandler
 } from './errorHandlers.js';
+export {
+    describeError,
+    type ErrorDescription,
+    toError
+} from './errorSerialization.js';
 export * from './icons';
 // Core utilities
 export { IdMapper } from './idMapper.js';

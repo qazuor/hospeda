@@ -96,6 +96,13 @@ type SeedOptions = {
  *
  * @throws {Error} When seeding fails and continueOnError is false
  */
+/**
+ * Re-exported so consumers outside this package (notably the E2E seed runner)
+ * can report a thrown value without falling back to a bare `console.error`,
+ * which renders any non-Error as `[object Object]` — see HOS-922.
+ */
+export { describeError, type ErrorDescription, toError } from './utils/errorSerialization.js';
+
 export async function runSeed(options: SeedOptions): Promise<void> {
     const {
         required,
