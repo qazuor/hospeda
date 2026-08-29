@@ -3,12 +3,19 @@
  * docker logs for a Hospeda app with sensible defaults and optional
  * grep filtering. One command for api / web / admin so the surface
  * area stays small.
+ *
+ * Both the captured path (no `-f`/`-g`) and the streaming path (`-f` or
+ * `-g`) merge the container's stderr into stdout at the source, via
+ * `buildDockerLogsInvocation` (see `../lib/docker.ts`). This is required
+ * because the API logger sends WARN/ERROR to stderr, and any redirection
+ * of this command's output (`> file`, `| grep`) only keeps stdout unless
+ * the two are merged BEFORE they reach this process — see HOS-916.
  */
 
 import { spawn } from 'node:child_process';
 import * as readline from 'node:readline';
 import { type ContainerKind, findContainer } from '../lib/container-lookup.ts';
-import { dockerLogs, dockerPrefix } from '../lib/docker.ts';
+import { buildDockerLogsInvocation, dockerLogs, dockerPrefix } from '../lib/docker.ts';
 import { die } from '../lib/log.ts';
 
 const KINDS: ReadonlyArray<ContainerKind> = ['api', 'web', 'admin'];
@@ -28,11 +35,18 @@ Flags:
   --since <D>     Only lines newer than <D> — Docker syntax (5m, 30s, 1h).
   --help, -h      Show this help.
 
+stdout/stderr are merged at the source (in the container's shell) before
+this command sees them, so redirecting output (\`> file\`, \`| grep\`)
+keeps WARN/ERROR lines in the same chronological order as everything
+else — it does not lose them the way capturing the two streams
+separately would.
+
 Examples:
   hops logs api
   hops logs api -n 1000
   hops logs api -f -g 'billing|qzpay|mercadopago'
   hops logs web --since 5m
+  hops logs api --since 24h > api-24h.log
 `.trim();
 
 function isKind(value: string): value is ContainerKind {
@@ -96,6 +110,13 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
     const useStream = follow || pattern !== undefined;
 
     if (!useStream) {
+        // dockerLogs() merges the container's stderr into stdout at the
+        // source (see buildDockerLogsInvocation in ../lib/docker.ts), so
+        // ERROR/WARN lines survive a plain `>` redirect or pipe instead
+        // of silently disappearing (HOS-916). `result.stderr` is now
+        // effectively just a safety net for failures of the wrapping
+        // shell itself (e.g. `sh`/`docker` not found), not for anything
+        // the container logged.
         const result = await dockerLogs({ container, tail, since });
         // Normalise to CRLF per line for the same reason the streaming
         // path does — bun's pipe stdout is not always a TTY, so the
@@ -108,20 +129,15 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
         return;
     }
 
-    // Streaming mode — spawn `docker logs` directly so we can pipe its
-    // stdout/stderr into grep without loading them into memory.
+    // Streaming mode — spawn the docker invocation directly so we can
+    // match its output against -g without loading the whole log into
+    // memory.
     //
     // Resolve the same sudo prefix the rest of the toolkit uses so we
     // don't silently fail when the operator is not in the docker group.
     const prefix = await dockerPrefix();
-    const dockerArgs: string[] = ['logs'];
-    if (follow) dockerArgs.push('-f');
-    if (since) dockerArgs.push('--since', since);
-    else dockerArgs.push('--tail', String(tail));
-    dockerArgs.push(container);
-
-    const [program, ...programArgs] =
-        prefix.length > 0 ? [...prefix, 'docker', ...dockerArgs] : ['docker', ...dockerArgs];
+    const invocation = buildDockerLogsInvocation({ prefix, container, tail, since, follow });
+    const [program, ...programArgs] = invocation;
     if (!program) {
         die('Could not resolve a docker invocation prefix.');
     }
@@ -149,6 +165,12 @@ export async function logs(argv: ReadonlyArray<string>): Promise<void> {
         target.write(`${cleaned}\r\n`);
     };
 
+    // buildDockerLogsInvocation wraps docker in `sh -c '... 2>&1'`, so the
+    // container's own stderr (where the API logger sends WARN/ERROR) is
+    // already merged into dockerProc.stdout in true chronological order —
+    // see HOS-916. dockerProc.stderr is kept only as a safety net for
+    // failures of the wrapper itself (e.g. `sh`/`docker` missing from
+    // PATH, or a sudo prompt); it carries no container log lines.
     const rlOut = readline.createInterface({
         input: dockerProc.stdout,
         crlfDelay: Number.POSITIVE_INFINITY
