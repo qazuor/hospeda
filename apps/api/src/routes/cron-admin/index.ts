@@ -12,7 +12,12 @@
  * @module routes/cron-admin
  */
 
-import { type CronCategory, CronJobsAdminListSchema, PermissionEnum } from '@repo/schemas';
+import {
+    type CronCategory,
+    CronJobsAdminListSchema,
+    type CronRunStatus,
+    PermissionEnum
+} from '@repo/schemas';
 import { CronRunService } from '@repo/service-core';
 import { CronExpressionParser } from 'cron-parser';
 import cronstrue from 'cronstrue/i18n.js';
@@ -96,10 +101,7 @@ export const listCronJobsHandler = async (
     const actor = getActorFromContext(c);
 
     // Last run per job (best-effort: a failure here must not break the listing).
-    let lastRunByJob = new Map<
-        string,
-        { status: 'success' | 'failed' | 'timeout'; finishedAt: Date }
-    >();
+    let lastRunByJob = new Map<string, { status: CronRunStatus; finishedAt: Date }>();
     const summary = await cronRunService().getSummary({ actor });
     if (summary.data) {
         lastRunByJob = new Map(

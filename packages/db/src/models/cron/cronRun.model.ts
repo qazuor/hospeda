@@ -83,18 +83,22 @@ export class CronRunModel extends BaseModelImpl<CronRun> {
     }
 
     /**
-     * Returns the most recent failed/timeout runs across all jobs, newest first.
+     * Returns the most recent failed/partial/timeout runs across all jobs, newest first.
+     *
+     * `partial` (completed but reported errors — HOS-918) is included alongside the
+     * hard-failure statuses: a soft failure is exactly the kind of thing this list
+     * exists to surface, and omitting it would hide half of production's real failures.
      *
      * @param limit - Maximum number of failures to return (default 20).
      * @param tx - Optional transaction client.
-     * @returns Recent failed/timeout runs.
+     * @returns Recent failed/partial/timeout runs.
      */
     async getRecentFailures(limit = 20, tx?: DrizzleClient): Promise<CronRun[]> {
         const db = this.getClient(tx);
         const rows = await db
             .select()
             .from(cronRuns)
-            .where(inArray(cronRuns.status, ['failed', 'timeout']))
+            .where(inArray(cronRuns.status, ['failed', 'partial', 'timeout']))
             .orderBy(desc(cronRuns.createdAt))
             .limit(limit);
         return rows as CronRun[];
@@ -103,9 +107,12 @@ export class CronRunModel extends BaseModelImpl<CronRun> {
     /**
      * Hard-deletes run records past their retention window.
      * Differentiated retention: successes are kept shorter than failures/timeouts.
+     * `partial` runs (HOS-918) are diagnostic information about a soft failure, so they
+     * share the longer failure-retention window, not the short success window — a row
+     * that never matches either branch would never be purged at all.
      *
      * @param input.successBefore - Delete `success` runs created strictly before this date.
-     * @param input.failedBefore - Delete `failed`/`timeout` runs created strictly before this date.
+     * @param input.failedBefore - Delete `failed`/`partial`/`timeout` runs created strictly before this date.
      * @param tx - Optional transaction client.
      * @returns The number of deleted rows.
      */
@@ -123,7 +130,7 @@ export class CronRunModel extends BaseModelImpl<CronRun> {
                         lt(cronRuns.createdAt, input.successBefore)
                     ),
                     and(
-                        inArray(cronRuns.status, ['failed', 'timeout']),
+                        inArray(cronRuns.status, ['failed', 'partial', 'timeout']),
                         lt(cronRuns.createdAt, input.failedBefore)
                     )
                 )

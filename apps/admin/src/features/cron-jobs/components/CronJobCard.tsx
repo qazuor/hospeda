@@ -7,12 +7,14 @@
 
 import {
     AlertCircleIcon,
+    AlertTriangleIcon,
     CheckCircleIcon,
     ClockIcon,
     LoaderIcon,
     PlayIcon,
     XCircleIcon
 } from '@repo/icons';
+import type { CronRunStatus } from '@repo/schemas';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,7 +33,7 @@ interface CronJobCardProps {
 /**
  * Badge variant + label for a last-run status.
  */
-function LastRunBadge({ status }: { readonly status: 'success' | 'failed' | 'timeout' }) {
+function LastRunBadge({ status }: { readonly status: CronRunStatus }) {
     const { t } = useTranslations();
 
     if (status === 'success') {
@@ -42,6 +44,17 @@ function LastRunBadge({ status }: { readonly status: 'success' | 'failed' | 'tim
             >
                 <CheckCircleIcon className="h-3 w-3" />
                 {t('admin-billing.cron.card.lastRunSuccess')}
+            </Badge>
+        );
+    }
+    if (status === 'partial') {
+        return (
+            <Badge
+                variant="secondary"
+                className="gap-1 border-warning/30 bg-warning/15 text-warning"
+            >
+                <AlertTriangleIcon className="h-3 w-3" />
+                {t('admin-billing.cron.card.lastRunPartial')}
             </Badge>
         );
     }

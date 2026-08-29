@@ -92,6 +92,7 @@
             "neverRun": "Sin corridas",
             "noNextRun": "—",
             "lastRunSuccess": "OK",
+            "lastRunPartial": "Parcial",
             "lastRunFailed": "Falló",
             "lastRunTimeout": "Timeout"
         },

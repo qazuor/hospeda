@@ -92,6 +92,7 @@
             "neverRun": "No runs",
             "noNextRun": "—",
             "lastRunSuccess": "OK",
+            "lastRunPartial": "Partial",
             "lastRunFailed": "Failed",
             "lastRunTimeout": "Timeout"
         },
