@@ -105,8 +105,59 @@ export async function runInContainer(params: {
 }
 
 /**
+ * Build the argv for a `docker logs` invocation that merges the
+ * container's stderr into its stdout via a `sh -c 'exec docker "$@" 2>&1'`
+ * wrapper, instead of running `docker <args>` directly.
+ *
+ * Why: the API logger sends WARN/ERROR to `console.warn`/`console.error`,
+ * which land on the container's stderr. `docker logs` (and this toolkit,
+ * before this fix) exposes stdout and stderr as two separate streams —
+ * fine for an interactive terminal (both render), but any redirection
+ * (`> file`, `| grep`) or non-TTY capture keeps only stdout, silently
+ * dropping every WARN/ERROR. Measured on prod: `> file` captured 39,707
+ * lines with 0 ERROR/0 WARN; `2>&1 > file` captured 42,931 lines with 3
+ * ERROR/3,196 WARN — 3,224 records lost, and the empty-error result reads
+ * as "nothing failed" instead of "half the stream was discarded".
+ *
+ * Concatenating captured stdout + stderr after the fact does not fix
+ * this: it would put all of stderr after all of stdout, destroying
+ * chronological order. Instead, `2>&1` runs INSIDE the child shell
+ * before either stream reaches Node, so the kernel/pipe layer merges
+ * them in true write order. `exec` replaces the shell with `docker`,
+ * so the wrapper's own exit code IS docker's exit code — no separate
+ * propagation logic needed.
+ *
+ * Security: user-controlled values (container name, `--since` duration,
+ * `--tail` count) are passed as trailing positional arguments consumed
+ * by the script via `"$@"`, never interpolated into the `-c` string
+ * itself. execa/child_process runs `sh` with an explicit argv (no shell
+ * parsing on the parent side), so a value like `since: '5m; rm -rf /'`
+ * is handed to `docker logs --since` as one opaque argument, not
+ * re-parsed as shell source.
+ */
+export function buildDockerLogsInvocation(params: {
+    readonly prefix: ReadonlyArray<string>;
+    readonly container: string;
+    readonly tail?: number;
+    readonly since?: string;
+    readonly follow?: boolean;
+}): ReadonlyArray<string> {
+    const dockerArgs: string[] = ['logs'];
+    if (params.follow) dockerArgs.push('-f');
+    if (params.since) dockerArgs.push('--since', params.since);
+    else if (params.tail !== undefined) dockerArgs.push('--tail', String(params.tail));
+    dockerArgs.push(params.container);
+
+    // `sh` after the script string is the $0 sentinel; everything past
+    // it becomes "$@" inside the script, per POSIX `sh -c script $0 args...`.
+    return [...params.prefix, 'sh', '-c', 'exec docker "$@" 2>&1', 'sh', ...dockerArgs];
+}
+
+/**
  * Run `docker logs` with the given options. Streams stdout when
- * `inherit: true` (used by follow mode); otherwise captures.
+ * `inherit: true` (used by follow mode); otherwise captures. Merges the
+ * container's stderr into stdout (see `buildDockerLogsInvocation`) so
+ * captured output never silently drops WARN/ERROR lines.
  */
 export async function dockerLogs(params: {
     readonly container: string;
@@ -115,10 +166,13 @@ export async function dockerLogs(params: {
     readonly follow?: boolean;
     readonly inherit?: boolean;
 }): ReturnType<typeof runner.run> {
-    const args = ['logs'];
-    if (params.follow) args.push('-f');
-    if (params.since) args.push('--since', params.since);
-    else if (params.tail !== undefined) args.push('--tail', String(params.tail));
-    args.push(params.container);
-    return docker(args, { inherit: params.inherit });
+    const prefix = await dockerPrefix();
+    const argv = buildDockerLogsInvocation({
+        prefix,
+        container: params.container,
+        tail: params.tail,
+        since: params.since,
+        follow: params.follow
+    });
+    return runner.run(argv, { inherit: params.inherit });
 }
