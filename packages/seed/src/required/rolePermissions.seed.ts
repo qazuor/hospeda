@@ -1,5 +1,6 @@
 import { RRolePermissionModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { describeError } from '../utils/errorSerialization.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
@@ -1365,16 +1366,11 @@ export async function seedRolePermissions(): Promise<void> {
                     // Track in summary
                     summaryTracker.trackSuccess('Role Permissions');
                 } catch (error) {
+                    const { message } = describeError(error);
                     logger.error(
-                        `Failed to create role permission ${role} → ${permission}: ${
-                            (error as Error).message
-                        }`
+                        `Failed to create role permission ${role} → ${permission}: ${message}`
                     );
-                    summaryTracker.trackError(
-                        'Role Permissions',
-                        `${role}-${permission}`,
-                        (error as Error).message
-                    );
+                    summaryTracker.trackError('Role Permissions', `${role}-${permission}`, message);
                 }
             }
         }
@@ -1385,7 +1381,7 @@ export async function seedRolePermissions(): Promise<void> {
         });
     } catch (error) {
         logger.error(
-            `${STATUS_ICONS.Error}  ERROR IN ROLE PERMISSION ASSIGNMENT: ${(error as Error).message}`
+            `${STATUS_ICONS.Error}  ERROR IN ROLE PERMISSION ASSIGNMENT: ${describeError(error).message}`
         );
         throw error;
     }

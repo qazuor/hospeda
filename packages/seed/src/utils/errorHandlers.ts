@@ -1,3 +1,4 @@
+import { describeError } from './errorSerialization.js';
 import { STATUS_ICONS } from './icons.js';
 import type { SeedContext } from './seedContext.js';
 import { summaryTracker } from './summaryTracker.js';
@@ -66,17 +67,18 @@ export const createDetailedErrorHandler = (entityName: string) => {
         );
 
         const fileName = `item-${index}`;
+        const described = describeError(error);
 
         console.error(`${STATUS_ICONS.Error} Detailed error for ${entityName} (${fileName}):`);
-        console.error(`Error: ${(error as Error).message}`);
-        console.error(`Stack: ${(error as Error).stack}`);
+        console.error(`Error: ${described.message}`);
+        console.error(`Stack: ${described.stack ?? 'undefined'}`);
 
         if (item) {
             console.error(`Input data: ${JSON.stringify(item, null, 2)}`);
         }
 
-        if ((error as Error).cause) {
-            console.error(`Cause: ${(error as Error).cause}`);
+        if (described.cause) {
+            console.error(`Cause: ${described.cause}`);
         }
     };
 };
@@ -88,8 +90,8 @@ export const createGroupedErrorHandler = () => {
     const errorGroups = new Map<string, { count: number; examples: string[] }>();
 
     return (error: unknown, item: unknown, context: SeedContext) => {
-        const err = error as Error;
-        const errorKey = err.message?.split(':')[0] || 'Unknown Error';
+        const { message } = describeError(error);
+        const errorKey = message.split(':')[0] || 'Unknown Error';
 
         if (!errorGroups.has(errorKey)) {
             errorGroups.set(errorKey, { count: 0, examples: [] });
@@ -121,15 +123,16 @@ export const createGroupedErrorHandler = () => {
 export const defaultErrorHandler = (error: unknown, _item: unknown, context: SeedContext) => {
     const entityName = context.currentEntity || 'Unknown';
     const fileName = context.currentFile || 'unknown';
+    const described = describeError(error);
 
     console.error(`${STATUS_ICONS.Error} Error details for ${fileName}:`);
-    console.error(`Message: ${(error as Error).message}`);
-    console.error(`Stack: ${(error as Error).stack}`);
-    if ((error as Error).cause) {
-        console.error(`Cause: ${(error as Error).cause}`);
+    console.error(`Message: ${described.message}`);
+    console.error(`Stack: ${described.stack ?? 'undefined'}`);
+    if (described.cause) {
+        console.error(`Cause: ${described.cause}`);
     }
 
-    summaryTracker.trackError(entityName, fileName, (error as Error).message);
+    summaryTracker.trackError(entityName, fileName, described.message);
 };
 
 /**
@@ -171,13 +174,14 @@ export const createBasicErrorHandler = () => {
         console.error(`${STATUS_ICONS.Debug} [BASIC_ERROR_HANDLER] Reportando error básico`);
 
         const fileName = `item-${index}`;
+        const described = describeError(error);
 
         console.error(`${STATUS_ICONS.Error} Error details for ${fileName}:`);
-        console.error(`Message: ${(error as Error).message}`);
-        console.error(`Stack: ${(error as Error).stack}`);
+        console.error(`Message: ${described.message}`);
+        console.error(`Stack: ${described.stack ?? 'undefined'}`);
 
-        if ((error as Error).cause) {
-            console.error(`Cause: ${(error as Error).cause}`);
+        if (described.cause) {
+            console.error(`Cause: ${described.cause}`);
         }
     };
 };

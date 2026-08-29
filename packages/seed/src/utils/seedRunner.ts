@@ -1,4 +1,5 @@
 import { errorHistory } from './errorHistory.js';
+import { describeError, toError } from './errorSerialization.js';
 import { getEntityIcon, STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
@@ -89,7 +90,8 @@ export async function seedRunner<T>({
                 successCount++;
             }
         } catch (err) {
-            const error = err as Error;
+            const { message } = describeError(err);
+            const error = toError(err);
             errorCount++;
 
             // Record error in error history
@@ -102,12 +104,12 @@ export async function seedRunner<T>({
             errorHistory.recordError(
                 entityName,
                 fileName,
-                `Failed to process ${entityInfo}: ${error.message}`,
+                `Failed to process ${entityInfo}: ${message}`,
                 error
             );
 
             // Error information
-            logger.error(`   ${STATUS_ICONS.Error} Error in ${entityInfo}: ${error.message}`);
+            logger.error(`   ${STATUS_ICONS.Error} Error in ${entityInfo}: ${message}`);
 
             // Call error handler first if available
             if (item !== undefined && onError) {
