@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 /**
  * Outcome of a single cron job execution.
- * - `success`: The job handler completed without raising.
+ * - `success`: The job handler completed without raising and reported zero errors.
+ * - `partial`: The job handler completed (`success: true`) but reported `errors > 0` —
+ *   a soft failure. Distinct from `success` so `WHERE status <> 'success'` surfaces it.
  * - `failed`: The job handler raised, or reported `success: false`.
  * - `timeout`: The job exceeded its configured `timeoutMs` and was aborted.
  */
-export const CronRunStatusEnum = z.enum(['success', 'failed', 'timeout']);
+export const CronRunStatusEnum = z.enum(['success', 'partial', 'failed', 'timeout']);
 
 /** Union type of all supported cron run statuses */
 export type CronRunStatus = z.infer<typeof CronRunStatusEnum>;

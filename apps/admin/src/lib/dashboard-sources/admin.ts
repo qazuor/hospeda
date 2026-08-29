@@ -34,7 +34,7 @@
  * @see SPEC-155 T-020
  */
 
-import type { CronCategory } from '@repo/schemas';
+import type { CronCategory, CronRunStatus } from '@repo/schemas';
 import { fetchApi } from '@/lib/api/client';
 import {
     CRON_CATEGORY_LABELS,
@@ -138,7 +138,7 @@ interface CronJobApiItem {
     readonly enabled: boolean;
     readonly nextRunAt: string | null;
     readonly lastRun: {
-        readonly status: 'success' | 'failed' | 'timeout';
+        readonly status: CronRunStatus;
         readonly finishedAt: string;
     } | null;
 }
@@ -387,7 +387,7 @@ registerDataSource('admin.editorial.summary', (ctx) => ({
 
 /** Maps a cron run status to a ListItem statusBadge (label + colour variant). */
 const cronRunStatusBadge = (
-    status?: 'success' | 'failed' | 'timeout'
+    status?: CronRunStatus
 ): {
     readonly label: string;
     readonly variant: 'success' | 'warning' | 'destructive' | 'neutral';
@@ -395,6 +395,8 @@ const cronRunStatusBadge = (
     switch (status) {
         case 'success':
             return { label: 'OK', variant: 'success' };
+        case 'partial':
+            return { label: 'Parcial', variant: 'warning' };
         case 'failed':
             return { label: 'Falló', variant: 'destructive' };
         case 'timeout':
@@ -404,12 +406,13 @@ const cronRunStatusBadge = (
     }
 };
 
-/** Within a category, surface problems first: failed → timeout → no-run → success. */
-const cronStatusRank = (status?: 'success' | 'failed' | 'timeout'): number => {
+/** Within a category, surface problems first: failed → timeout → partial → no-run → success. */
+const cronStatusRank = (status?: CronRunStatus): number => {
     if (status === 'failed') return 0;
     if (status === 'timeout') return 1;
-    if (status === undefined) return 2;
-    return 3;
+    if (status === 'partial') return 2;
+    if (status === undefined) return 3;
+    return 4;
 };
 
 /**

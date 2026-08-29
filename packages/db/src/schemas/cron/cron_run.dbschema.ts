@@ -17,7 +17,7 @@ import {
  *
  * Append-only by design: there is NO soft-delete (`deletedAt`). Rows are hard-deleted
  * exclusively by the `cron-run-purge` job per the retention policy
- * (success > 60 days, failed/timeout > 180 days).
+ * (success > 60 days, failed/partial/timeout > 180 days).
  *
  * Recording is fire-and-forget at the two execution sites (the cron bootstrap and the
  * cron-admin manual trigger); a write failure here never alters the job's own result.
@@ -28,7 +28,7 @@ export const cronRuns = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         /** Job identifier, matches CronJobDefinition.name (e.g. 'dunning', 'subscription-poll') */
         jobName: varchar('job_name', { length: 100 }).notNull(),
-        /** Outcome of the run: 'success' | 'failed' | 'timeout' */
+        /** Outcome of the run: 'success' | 'partial' | 'failed' | 'timeout' (see CronRunStatusEnum) */
         status: varchar('status', { length: 20 }).notNull(),
         /** When the job handler started */
         startedAt: timestamp('started_at', { withTimezone: true }).notNull(),

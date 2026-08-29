@@ -9,7 +9,7 @@
  * @module cron/record-run
  */
 
-import type { CronRunExecutionMode } from '@repo/schemas';
+import type { CronRunExecutionMode, CronRunStatus } from '@repo/schemas';
 import { CronRunService } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { apiLogger } from '../utils/logger';
@@ -27,8 +27,14 @@ const TIMEOUT_MARKER = 'execution timeout';
  * Exactly one of `result` (handler resolved) or `error` (handler threw / timed out)
  * is expected. The status is derived as:
  * - `error` whose message contains the timeout marker → `timeout`
- * - any other `error`, or a `result` with `success: false` → `failed`
- * - a `result` with `success: true` → `success`
+ * - any other `error` → `failed`
+ * - a `result` with `success: false` → `failed`
+ * - a `result` with `success: true` and `errors > 0` → `partial` (soft failure)
+ * - a `result` with `success: true` and `errors === 0` → `success`
+ *
+ * When no exception was thrown and the derived status is not `success`, the job's
+ * own `result.message` is persisted as `errorMessage` — otherwise a `failed`/`partial`
+ * run has nothing to investigate (HOS-918). `success` runs keep `errorMessage: null`.
  *
  * @param input.jobName - Registered job name.
  * @param input.executionMode - `scheduled` (bootstrap tick) or `manual` (admin trigger).
@@ -51,11 +57,21 @@ export const recordCronRun = async (input: {
         const finishedAt = input.finishedAt ?? new Date();
         const durationMs = Math.max(0, finishedAt.getTime() - input.startedAt.getTime());
 
-        let status: 'success' | 'failed' | 'timeout';
+        let status: CronRunStatus;
         let errorMessage: string | null = null;
 
         if (input.error === undefined) {
-            status = input.result?.success ? 'success' : 'failed';
+            if (input.result?.success) {
+                status = (input.result.errors ?? 0) > 0 ? 'partial' : 'success';
+            } else {
+                status = 'failed';
+            }
+            // A failed/partial run without a thrown exception still needs something
+            // to investigate — persist the job's own message (HOS-918). Success runs
+            // keep errorMessage: null so the column isn't cluttered with noise.
+            if (status !== 'success') {
+                errorMessage = input.result?.message ?? null;
+            }
         } else {
             const message =
                 input.error instanceof Error ? input.error.message : String(input.error);
