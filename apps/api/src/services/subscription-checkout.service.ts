@@ -362,6 +362,20 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
+    // HOS-917: reject a checkout onto a free plan (e.g. TOURIST_FREE_PLAN,
+    // `unitAmount === 0`) BEFORE any promo/trial/MP work. Mirrors the
+    // equivalent guard in `reactivation-plan-guard.ts` — a free plan is
+    // granted at signup, never purchased through checkout, and letting a
+    // 0-amount price reach `resolveCheckoutMpPlanId` surfaces as a bare 502
+    // (MP's `prices.create` rejects `transaction_amount: 0` outright) instead
+    // of a clear 422.
+    if (monthlyPrice.unitAmount === 0) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_PURCHASABLE',
+            `Plan '${planSlug}' is a free plan and cannot be purchased through checkout`
+        );
+    }
+
     // Resolve the promo code with FULL validation (SPEC-262 C1+H1), BEFORE
     // deciding trial vs paid (HOS-110 W1 fix). Adversarial review of the
     // original HOS-110 trial branch found it ran before promo resolution,
@@ -706,6 +720,18 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
+    // HOS-917: same free-plan guard as the accommodation paths (see
+    // `initiatePaidMonthlySubscription`'s comment for the full rationale). No
+    // commerce plan is priced at 0 today, but the guard is defensive: it
+    // closes the "amount 0 reaches MP" bug class for this catalog too, not
+    // just the one plan that tripped it.
+    if (monthlyPrice.unitAmount === 0) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_PURCHASABLE',
+            `Plan '${planSlug}' is a free plan and cannot be purchased through checkout`
+        );
+    }
+
     // HOS-590: commerce now routes through the SAME canonical trial resolver
     // the accommodation paths use (`resolvePlanTrialConfig` ->
     // `resolveCheckoutFreeTrialDays`) instead of hardcoding `trialDays: 0`
@@ -952,6 +978,18 @@ export async function initiatePartnerMonthlySubscription(
         );
     }
 
+    // HOS-917: same free-plan guard as the accommodation paths (see
+    // `initiatePaidMonthlySubscription`'s comment for the full rationale). No
+    // partner plan is priced at 0 today, but the guard is defensive: it
+    // closes the "amount 0 reaches MP" bug class for this catalog too, not
+    // just the one plan that tripped it.
+    if (monthlyPrice.unitAmount === 0) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_PURCHASABLE',
+            `Plan '${planId}' is a free plan and cannot be purchased through checkout`
+        );
+    }
+
     // HOS-191: partner directory subscriptions are no-trial (trialDays: 0);
     // subscribe against the no-trial MP preapproval_plan. `planName` is the
     // buyer-visible display name and becomes the MP plan's `reason` — now the
@@ -1184,6 +1222,15 @@ export async function initiatePaidAnnualSubscription(
         throw new SubscriptionCheckoutError(
             'NO_ANNUAL_PRICE',
             `Plan '${planSlug}' has no active annual price`
+        );
+    }
+
+    // HOS-917: same free-plan guard as the monthly path above — see its
+    // comment for the full rationale.
+    if (annualPrice.unitAmount === 0) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_PURCHASABLE',
+            `Plan '${planSlug}' is a free plan and cannot be purchased through checkout`
         );
     }
 
