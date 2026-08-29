@@ -53,6 +53,12 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
         // supported (HOS-123 T-003) via that flag.
         case 'INVALID_REACTIVATION_PLAN':
         case 'ANNUAL_REACTIVATION_UNSUPPORTED':
+        // HOS-917: the initial-checkout free-plan price guard (mirrors
+        // INVALID_REACTIVATION_PLAN above) — a well-formed request naming a
+        // real, active plan that simply cannot be purchased (its resolved
+        // price is $0). Well-formed but unprocessable -> 422, same family as
+        // the reactivation codes it mirrors.
+        case 'PLAN_NOT_PURCHASABLE':
             return new HTTPException(422, { message: err.message });
         // HOS-114 T-015b: `reactivateSubscription` rejects the request
         // because the customer already has a live (active/trialing)

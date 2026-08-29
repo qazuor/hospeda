@@ -236,7 +236,9 @@
             "unauthCta": "Sign in to subscribe",
             "currentPlan": "Current plan",
             "currentPlanAriaLabel": "This is your current plan",
-            "changePlan": "Switch to this plan"
+            "changePlan": "Switch to this plan",
+            "freeRegisterCta": "Sign up for free",
+            "freePlanLegend": "You already have this plan"
         },
         "promoApply": {
             "toggle": "Have a discount code?",

@@ -236,7 +236,9 @@
             "unauthCta": "Faça login para contratar",
             "currentPlan": "Plano atual",
             "currentPlanAriaLabel": "Este é o seu plano atual",
-            "changePlan": "Mudar para este plano"
+            "changePlan": "Mudar para este plano",
+            "freeRegisterCta": "Cadastre-se grátis",
+            "freePlanLegend": "Você já tem este plano"
         },
         "promoApply": {
             "toggle": "Tem um código de desconto?",

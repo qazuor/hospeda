@@ -294,12 +294,25 @@ export function PlanPurchaseButton({
 
     const isAuthenticated = !sessionPending && Boolean(session?.user);
     const hasAnnual = annualPrice !== null && annualPrice > 0;
-    const isAnnualUnavailable = billingInterval === 'annual' && !hasAnnual;
     // Convert cents to major units for the display formatter (the formatter
     // takes a number that it prefixes with the currency symbol; passing
     // cents would render "$ 12000000" for a $120000 plan).
     const displayPriceCents =
         billingInterval === 'annual' && hasAnnual ? (annualPrice as number) : monthlyPrice;
+    // HOS-917: a plan whose EFFECTIVE price for the currently active interval
+    // is 0 is never purchasable — `createCheckout` would send
+    // `transaction_amount: 0` to MercadoPago's start-paid, which rejects it
+    // with a 502 (the real-money incident this fixes). Deliberately reads
+    // `displayPriceCents` (pre-promo) — a promo has no semantics against an
+    // already-$0 price and the promo section is already hidden for it below.
+    const isFreePlan = displayPriceCents === 0;
+    // A free plan has no "this plan has no annual price" state to render:
+    // price and billing cadence are orthogonal once price is already 0 in
+    // every interval (today's only $0 plan, tourist-free, has no annual
+    // price at all — `hasAnnual` is always false for it — so without this
+    // exclusion the annual toggle would show "Solo plan mensual" instead of
+    // the free-plan states below).
+    const isAnnualUnavailable = billingInterval === 'annual' && !hasAnnual && !isFreePlan;
     const formattedPrice = formatPrice({
         amount: displayPriceCents / 100,
         currency
@@ -349,6 +362,13 @@ export function PlanPurchaseButton({
         'Este es tu plan actual'
     );
     const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
+    // HOS-917: a $0 plan is never purchased — an anonymous visitor gets the
+    // registration-funnel CTA (their click still redirects through the same
+    // sign-in path every other unauthenticated click uses); an authenticated
+    // visitor (with or without a subscription row) already has it by default,
+    // so the card shows a legend instead of a clickable checkout button.
+    const freeRegisterCtaLabel = t('billing.checkout.button.freeRegisterCta', 'Registrate gratis');
+    const freePlanLegendLabel = t('billing.checkout.button.freePlanLegend', 'Ya tenés este plan');
 
     // Promo i18n strings
     const promoToggleLabel = t(
@@ -528,6 +548,21 @@ export function PlanPurchaseButton({
     }, [billingInterval]);
 
     const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
+
+    // HOS-917: for a $0 plan, whether this specific card's slug matches
+    // `currentPlanSlug` is irrelevant — every authenticated account already
+    // has free-tier access by default (with or without a `billing_subscriptions`
+    // row for it), so the card must never offer a checkout button regardless
+    // of `currentPlanSlug`. This deliberately takes priority over `isCurrentPlan`
+    // and `isPlanChange` below in the render/aria-label logic. The previous bug:
+    // `currentPlanSlug === null` (no subscription row at all) made `isCurrentPlan`
+    // false, so an authenticated user with no subscription history saw a live
+    // "Empezar — $ 0" button that fired `createCheckout` and 502'd against MP.
+    const isFreePlanUnpurchasable = isFreePlan && isAuthenticated;
+    // Anonymous visitor on a $0 plan: the button is the registration funnel,
+    // not a checkout trigger — `handleClick`'s existing unauthenticated branch
+    // already redirects to sign-in, so this only changes the label shown.
+    const isFreePlanRegisterCta = isFreePlan && !isAuthenticated;
 
     // BETA-195: the user already has an active subscription on a DIFFERENT plan.
     // There is one subscription per customer, so firing start-paid for a second
@@ -816,6 +851,16 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // HOS-917: an authenticated visitor already has any $0 plan by
+        // default. The button renders no clickable state for this case (see
+        // `buttonDisabled` below), but guard here too — belt-and-suspenders
+        // against `createCheckout` ever firing with a $0 plan, which is
+        // exactly the real-money incident this fixes (MercadoPago's
+        // start-paid rejects `transaction_amount: 0` with a 502).
+        if (isFreePlanUnpurchasable) {
+            return;
+        }
+
         if (!isAuthenticated) {
             const plansPath = buildUrl({ locale, path: 'suscriptores/planes' });
             const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(plansPath)}`;
@@ -936,17 +981,22 @@ export function PlanPurchaseButton({
         setShowTrialWarning(false);
     }
 
-    const buttonAriaLabel = isCurrentPlan
-        ? currentPlanAriaLabel
-        : isPlanChange
-          ? changePlanCtaLabel
-          : isAnnualUnavailable
-            ? monthlyOnlyLabel
-            : loading
-              ? processingAriaLabel
-              : `${ctaText} — ${formattedPrice}`;
+    const buttonAriaLabel = isFreePlanUnpurchasable
+        ? freePlanLegendLabel
+        : isFreePlanRegisterCta
+          ? freeRegisterCtaLabel
+          : isCurrentPlan
+            ? currentPlanAriaLabel
+            : isPlanChange
+              ? changePlanCtaLabel
+              : isAnnualUnavailable
+                ? monthlyOnlyLabel
+                : loading
+                  ? processingAriaLabel
+                  : `${ctaText} — ${formattedPrice}`;
 
-    const buttonDisabled = loading || isCurrentPlan || isAnnualUnavailable;
+    const buttonDisabled =
+        loading || isCurrentPlan || isAnnualUnavailable || isFreePlanUnpurchasable;
 
     return (
         <div className={styles.wrapper}>
@@ -957,11 +1007,11 @@ export function PlanPurchaseButton({
                 disabled={buttonDisabled}
                 aria-label={buttonAriaLabel}
                 aria-busy={loading}
-                aria-disabled={isCurrentPlan || isAnnualUnavailable}
+                aria-disabled={isCurrentPlan || isAnnualUnavailable || isFreePlanUnpurchasable}
                 onClick={buttonDisabled ? undefined : () => void handleClick()}
-                className={`${styles.button}${isCurrentPlan ? ` ${styles.buttonCurrent}` : ''}`}
+                className={`${styles.button}${isCurrentPlan || isFreePlanUnpurchasable ? ` ${styles.buttonCurrent}` : ''}`}
             >
-                {isCurrentPlan ? (
+                {isCurrentPlan || isFreePlanUnpurchasable ? (
                     <span className={styles.currentContent}>
                         <svg
                             className={styles.currentIcon}
@@ -980,7 +1030,9 @@ export function PlanPurchaseButton({
                                 stroke-linejoin="round"
                             />
                         </svg>
-                        <span>{currentPlanLabel}</span>
+                        <span>
+                            {isFreePlanUnpurchasable ? freePlanLegendLabel : currentPlanLabel}
+                        </span>
                     </span>
                 ) : loading ? (
                     <span className={styles.loadingContent}>
@@ -997,6 +1049,10 @@ export function PlanPurchaseButton({
                 ) : isPlanChange ? (
                     <span className={styles.idleContent}>
                         <span className={styles.ctaText}>{changePlanCtaLabel}</span>
+                    </span>
+                ) : isFreePlanRegisterCta ? (
+                    <span className={styles.idleContent}>
+                        <span className={styles.ctaText}>{freeRegisterCtaLabel}</span>
                     </span>
                 ) : (
                     <span className={styles.idleContent}>

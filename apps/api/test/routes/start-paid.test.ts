@@ -342,6 +342,12 @@ interface PriceFixture {
     billingInterval: 'month' | 'year' | 'day' | 'week';
     intervalCount: number;
     active: boolean;
+    /**
+     * Centavos. Optional and omitted by default so existing fixtures read as
+     * `undefined` (never `=== 0`) and are unaffected by the HOS-917
+     * free-plan guard.
+     */
+    unitAmount?: number;
 }
 
 /** The trial length declared by the plan fixtures that have one. */
@@ -604,6 +610,33 @@ describe('handleStartPaidSubscription (monthly)', () => {
                 promoCode: 'NOT_A_REAL_CODE'
             })
         ).rejects.toMatchObject({ status: 422 });
+    });
+
+    // HOS-917 regression: production measured `POST /start-paid` against a
+    // free plan (`tourist-free`, unitAmount 0) returning a bare 502 —
+    // MercadoPago's `prices.create` rejected `transaction_amount: 0` inside
+    // `resolveCheckoutMpPlanId`, and that provider failure was mapped to
+    // `MP_PLAN_PROVISIONING_FAILED` -> HTTP 502. The
+    // `subscription-checkout.service.ts` guard added for this issue must
+    // reject the request BEFORE the MP provisioning call, surfacing as a
+    // client-actionable 422 instead.
+    it('returns 422 (not 502) when the plan has a $0 monthly price, without calling resolveCheckoutMpPlanId', async () => {
+        mockBilling(
+            createBillingMock({
+                plans: [createPlan([{ ...MONTHLY_PRICE, unitAmount: 0 }])]
+            })
+        );
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toMatchObject({ status: 422 });
+
+        expect(resolveCheckoutMpPlanId).not.toHaveBeenCalled();
+        expect(mockCreatePendingProviderSubscription).not.toHaveBeenCalled();
     });
 
     it('returns 503 when billing is disabled', async () => {

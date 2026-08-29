@@ -52,6 +52,16 @@ export type SubscriptionCheckoutErrorCode =
     // to a free plan (e.g. TOURIST_FREE_PLAN) — reactivation is only
     // meaningful onto a paid plan.
     | 'INVALID_REACTIVATION_PLAN'
+    // HOS-917: the initial-checkout price guards in
+    // `subscription-checkout.service.ts` (monthly, annual, commerce, partner)
+    // reject a checkout whose resolved price is `unitAmount === 0` (e.g.
+    // TOURIST_FREE_PLAN) BEFORE any MercadoPago provisioning is attempted.
+    // Mirrors `INVALID_REACTIVATION_PLAN` below, which closes the same gap
+    // for the reactivation flows — a free plan is granted at signup, never
+    // purchased through checkout, and MP's `prices.create` rejects a
+    // `transaction_amount` of 0 outright (previously surfaced as a bare 502
+    // `MP_PLAN_PROVISIONING_FAILED` instead of a clear validation error).
+    | 'PLAN_NOT_PURCHASABLE'
     // HOS-114 T-004: the reactivation plan-resolution guard rejects a
     // monthly reactivation request (`billingInterval` omitted or `'monthly'`)
     // against a plan with no active monthly price (e.g. an annual-only

@@ -76,6 +76,13 @@ interface PriceFixture {
     billingInterval: 'month' | 'year' | 'day' | 'week';
     intervalCount: number;
     active: boolean;
+    /**
+     * Centavos. Optional and omitted by default (reads as `undefined`, never
+     * `=== 0`) so every existing fixture is unaffected by the HOS-917
+     * free-plan guard — only tests that explicitly opt in via
+     * `{ ...MONTHLY_PRICE, unitAmount: 0 }` exercise it.
+     */
+    unitAmount?: number;
 }
 
 const MONTHLY_PRICE: PriceFixture = {
@@ -356,6 +363,32 @@ describe('initiatePaidMonthlySubscription', () => {
                 urls: URLS
             })
         ).rejects.toMatchObject({ code: 'NO_MONTHLY_PRICE' });
+    });
+
+    // HOS-917 regression: a real MP sandbox 502 traced back to `tourist-free`
+    // (unitAmount 0) reaching `resolveCheckoutMpPlanId` -> MP's
+    // `prices.create` -> "Invalid value for transaction amount, must be a
+    // positive number". The guard must reject BEFORE that call is ever made.
+    it('throws PLAN_NOT_PURCHASABLE when the resolved monthly price is 0, without calling resolveCheckoutMpPlanId', async () => {
+        const billing = createBillingMock({
+            plans: [createPlan([{ ...MONTHLY_PRICE, unitAmount: 0 }])]
+        });
+
+        await expect(
+            initiatePaidMonthlySubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                billing: billing as any,
+                urls: URLS
+            })
+        ).rejects.toMatchObject({
+            name: 'SubscriptionCheckoutError',
+            code: 'PLAN_NOT_PURCHASABLE'
+        });
+        // The whole point of the guard is failing BEFORE the provider call —
+        // asserting only the thrown error would also pass if the guard ran
+        // AFTER a (mocked) MP call that happened to succeed.
+        expect(resolveCheckoutMpPlanId).not.toHaveBeenCalled();
     });
 
     it('throws CUSTOMER_NOT_FOUND when the qzpay customer lookup returns null', async () => {
@@ -838,6 +871,33 @@ describe('initiatePaidAnnualSubscription', () => {
                 urls: ANNUAL_URLS
             })
         ).rejects.toMatchObject({ code: 'NO_ANNUAL_PRICE' });
+    });
+
+    // HOS-917 regression, annual side of the same guard as the monthly test
+    // above.
+    it('throws PLAN_NOT_PURCHASABLE when the resolved annual price is 0, without calling resolveCheckoutMpPlanId', async () => {
+        const billing = createAnnualBillingMock({
+            plans: [
+                {
+                    id: PLAN_ID,
+                    name: 'owner-premium',
+                    prices: [{ ...ANNUAL_PRICE_WITH_AMOUNT, unitAmount: 0 }]
+                }
+            ]
+        });
+
+        await expect(
+            initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                billing: billing as any,
+                urls: ANNUAL_URLS
+            })
+        ).rejects.toMatchObject({
+            name: 'SubscriptionCheckoutError',
+            code: 'PLAN_NOT_PURCHASABLE'
+        });
+        expect(resolveCheckoutMpPlanId).not.toHaveBeenCalled();
     });
 
     it('throws CUSTOMER_NOT_FOUND when the qzpay customer lookup returns null', async () => {
