@@ -196,14 +196,30 @@ For MP sandbox setup, webhook configuration, sandbox test-user creation, and rol
 Commerce listings use a **separate billing domain** that must never pollute the
 accommodation entitlement engine:
 
-- `billing_subscriptions.product_domain` — `'accommodation'` for host subscriptions,
-  `'commerce'` for commerce-listing subscriptions. `loadEntitlements()` filters to
-  `product_domain = 'accommodation'` only, so a user who is both a host and a
-  commerce owner retains correct accommodation entitlements regardless of their
-  commerce subscription state.
-- The commerce plan in `billing_plans` has `product_domain = 'commerce'` and is
-  intentionally kept OUT of `ALL_PLANS` so that `GET /api/v1/public/plans` does
-  not expose it to accommodation hosts.
+- `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
+  `'commerce'` bucket. `ProductDomainEnum` holds exactly four values:
+  `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'` and
+  `'partner'`. The entitlement engine only ever counts `'accommodation'`, so a user
+  who is at once a host, a restaurant owner and a partner keeps correct
+  accommodation entitlements regardless of the other subscriptions' state.
+- **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
+  legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
+  `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
+  goes dark rather than silently matching a vertical it was never resolved to. Do
+  not "fix" that by widening the comparison — a dark listing is the intended
+  failure mode.
+- `subscriptionMatchesDomain()`
+  (`packages/service-core/src/services/billing/subscription/subscription-product-domain.ts`)
+  is the ONLY place in the codebase that compares a subscription's domain, and it
+  reads asymmetrically by design: **`accommodation` fails open** (a missing object,
+  or a `null`/`undefined` column, counts as accommodation, because the column
+  post-dates most rows), while **every other domain fails closed**. To test
+  membership across all commerce verticals at once use `isCommerceSubscription()`
+  instead of re-deriving that union at the call site.
+- The commerce-vertical plans in `billing_plans` carry their own
+  `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
+  accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
+  snapshot tests all stay accommodation-only.
 - `commerce_listing_subscriptions` — a link table (one row per listing, UNIQUE on
   `(entity_type, entity_id)`) that ties an active commerce subscription to its
   concrete listing. The commerce-visibility reconciler reads this table to decide
