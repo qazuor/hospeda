@@ -256,7 +256,7 @@ async function reapPendingCandidate(params: {
         // since `reconcile_assisted` is a terminal outcome the row's TTL is
         // irrelevant to.
         const reconcileAssisted =
-            await billingPendingCheckoutModel.findReconcileAssistedByLocalSubscriptionId({
+            await billingPendingCheckoutModel.findUnlinkedChargeByLocalSubscriptionId({
                 localSubscriptionId: candidate.id
             });
         if (reconcileAssisted) {

@@ -182,6 +182,7 @@ const findByLocalSubscriptionIdMock = vi.fn();
 const findReconcileCandidatesMock = vi.fn();
 const markLinkedMock = vi.fn();
 const markReconcileAssistedMock = vi.fn();
+const markReconcileAmbiguousMock = vi.fn();
 
 vi.mock('@repo/db', () => ({
     billingSubscriptions: {
@@ -196,7 +197,8 @@ vi.mock('@repo/db', () => ({
         findByLocalSubscriptionId: (...args: unknown[]) => findByLocalSubscriptionIdMock(...args),
         findReconcileCandidates: (...args: unknown[]) => findReconcileCandidatesMock(...args),
         markLinked: (...args: unknown[]) => markLinkedMock(...args),
-        markReconcileAssisted: (...args: unknown[]) => markReconcileAssistedMock(...args)
+        markReconcileAssisted: (...args: unknown[]) => markReconcileAssistedMock(...args),
+        markReconcileAmbiguous: (...args: unknown[]) => markReconcileAmbiguousMock(...args)
     },
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
     and: vi.fn((...conds: unknown[]) => ({ op: 'and', conds })),
@@ -283,6 +285,7 @@ describe('linkPreapprovalToLocalSub', () => {
         findReconcileCandidatesMock.mockResolvedValue([]);
         markLinkedMock.mockResolvedValue(undefined);
         markReconcileAssistedMock.mockResolvedValue(undefined);
+        markReconcileAmbiguousMock.mockResolvedValue(undefined);
         // HOS-240 defaults: a resolvable trial_extension code + a successful redeem.
         getPromoCodeByIdMock.mockResolvedValue({
             success: true,
@@ -618,7 +621,18 @@ describe('linkPreapprovalToLocalSub', () => {
         expect(Sentry.captureException).toHaveBeenCalled();
     });
 
-    it('returns "reconcile_assisted" and marks every candidate when multiple candidates match', async () => {
+    /**
+     * REGRESSION (HOS-276 follow-up). Measured in staging on 2026-08-29: two
+     * rival checkouts for one customer+plan were both stamped
+     * `reconcile_assisted` 6ms apart by this very loop, which dropped them out
+     * of every candidate query AND out of `findByLocalSubscriptionId` — so the
+     * approved $35.000 payment could never be linked again, not even by the
+     * manual endpoint (it answered 422 `not_found`).
+     *
+     * The previous version of this test asserted `markReconcileAssisted` was
+     * called twice — it froze the bug in place as expected behaviour.
+     */
+    it('marks every candidate AMBIGUOUS (never assisted) when multiple candidates match, keeping them resolvable', async () => {
         queueSelectResult([]);
         fetchPreapprovalPlanIdMock.mockResolvedValue({
             kind: 'ok',
@@ -638,9 +652,12 @@ describe('linkPreapprovalToLocalSub', () => {
         });
 
         expect(result).toEqual({ outcome: 'reconcile_assisted' });
-        expect(markReconcileAssistedMock).toHaveBeenCalledTimes(2);
-        expect(markReconcileAssistedMock).toHaveBeenCalledWith({ id: 'pc-1' });
-        expect(markReconcileAssistedMock).toHaveBeenCalledWith({ id: 'pc-2' });
+        expect(markReconcileAmbiguousMock).toHaveBeenCalledTimes(2);
+        expect(markReconcileAmbiguousMock).toHaveBeenCalledWith({ id: 'pc-1' });
+        expect(markReconcileAmbiguousMock).toHaveBeenCalledWith({ id: 'pc-2' });
+        // The success status must NEVER be written on a refusal: that is the
+        // exact write that made the original charge unrecoverable.
+        expect(markReconcileAssistedMock).not.toHaveBeenCalled();
     });
 
     it('returns "not_found" (no heuristic attempt) when the access token is not configured', async () => {

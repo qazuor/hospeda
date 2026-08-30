@@ -338,7 +338,45 @@ export async function createPendingProviderSubscription(
             .set({ productDomain })
             .where(eq(billingSubscriptions.id, localSubscriptionId));
 
-        // 3. Insert the correlation row, INSIDE the same transaction so the
+        // 3. Retire this customer's earlier in-flight checkouts for the SAME
+        //    MercadoPago plan (HOS-276 follow-up), inside the same transaction
+        //    so two live correlation rows for one pair can never coexist.
+        //
+        //    Why here and not in the linker: the webhook fallback (Tier 3) can
+        //    only tell candidates apart by `mp_preapproval_plan_id` + payer
+        //    email + a 24h window, and a customer who retries after a declined
+        //    card produces rows identical on all three. Tier 3 then refuses to
+        //    guess and a genuinely approved payment is left with nowhere to
+        //    land — measured in staging on 2026-08-29, where two rival rows
+        //    were refused 6ms apart and a $35.000 charge went unrecorded. The
+        //    ambiguity is removed at the source instead of taught to the
+        //    heuristic.
+        //
+        //    TRADEOFF, deliberate: if the superseded attempt had ALREADY been
+        //    paid and its webhook is still in flight, that payment now links to
+        //    this newer subscription (same customer, same plan, same price)
+        //    rather than to the attempt it was made against. Cross-customer
+        //    mislinking remains impossible — the ownership guard still checks
+        //    plan and payer. Landing a real payment on the customer's current
+        //    subscription is strictly better than the previous behaviour, which
+        //    dropped it entirely.
+        const superseded = await billingPendingCheckoutModel.supersedePendingForCustomerPlan(
+            { customerId, mpPreapprovalPlanId },
+            tx
+        );
+        if (superseded.length > 0) {
+            apiLogger.info(
+                {
+                    customerId,
+                    mpPreapprovalPlanId,
+                    localSubscriptionId,
+                    supersededCheckoutIds: superseded.map((row) => row.id)
+                },
+                'HOS-276: superseded earlier in-flight checkouts for this customer+plan so the webhook fallback keeps a single candidate'
+            );
+        }
+
+        // 4. Insert the correlation row, INSIDE the same transaction so the
         //    pending_provider subscription can never exist without a way to
         //    link it (or vice versa). Both `pendingDiscount` and
         //    `pendingTrialExtension` (HOS-240) are SNAPSHOTTED here — their
@@ -359,7 +397,7 @@ export async function createPendingProviderSubscription(
             tx
         );
 
-        // 4. Domain-specific link row (commerce listing / partner), inside the
+        // 5. Domain-specific link row (commerce listing / partner), inside the
         //    SAME transaction — see `writeDomainLinkRow`'s JSDoc for why it
         //    cannot be written after this function returns.
         await writeDomainLinkRow?.({ tx, localSubscriptionId });
