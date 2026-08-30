@@ -36,6 +36,7 @@ import StripCheckoutReturnParams from '@/components/billing/StripCheckoutReturnP
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { setCheckoutReturnNoStore } from '@/lib/billing/checkout-cache';
 import { createTranslations } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -75,6 +76,25 @@ const preapprovalId = Astro.url.searchParams.get('preapproval_id');
 // trial_extension code with no trial to lengthen. It is NOT "a discount was
 // discarded in favour of the trial" — a discount and a trial now coexist.
 const promoIgnored = Astro.url.searchParams.get('promoIgnored') === '1';
+
+// HOS-276 follow-up: this redirect is the one step of the paid checkout nobody
+// can observe after the fact. `preapproval_id` is what the polling island needs
+// to run the ownership-verified (Tier 1) link, and `StripCheckoutReturnParams`
+// below scrubs every provider parameter off the URL before anything else reads
+// it — so when a checkout goes wrong there is no record of what MercadoPago
+// actually sent back. Two staging incidents (2026-08-29) had to be diagnosed by
+// elimination, from the ABSENCE of link-preapproval calls in the API log, for
+// want of this one line. MercadoPago documents `preapproval_id` for no return
+// flow, so whether it arrives at all is still an open question (HOS-174).
+//
+// Only parameter NAMES are recorded, never values: `preapproval_id` is a weak
+// second ownership factor (see StripCheckoutReturnParams' docstring) and
+// `external_reference` would carry the anti-IDOR nonce. The names alone answer
+// the question — whether MercadoPago returns anything the linker can use.
+webLogger.warn('checkout return: provider params received', {
+	params: [...Astro.url.searchParams.keys()].sort(),
+	hasPreapprovalId: preapprovalId !== null
+});
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
 
