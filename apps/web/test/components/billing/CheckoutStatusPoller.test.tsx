@@ -36,6 +36,10 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+vi.mock('../../../src/lib/logger', () => ({
+    webLogger: { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
 vi.mock('../../../src/components/billing/CheckoutStatusPoller.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
@@ -54,6 +58,7 @@ import {
     CHECKOUT_POLL_MAX_ATTEMPTS,
     totalPollBudgetMs
 } from '../../../src/lib/billing/checkout-poll-schedule';
+import { webLogger } from '../../../src/lib/logger';
 
 const mockGetStatus = billingApi.getSubscriptionStatus as ReturnType<typeof vi.fn>;
 const mockLinkPreapproval = billingApi.linkPreapproval as ReturnType<typeof vi.fn>;
@@ -353,6 +358,89 @@ describe('CheckoutStatusPoller (HOS-151 Bug A)', () => {
                 expect(screen.getByRole('heading')).toHaveTextContent(SUCCESS_TITLE);
             });
             expect(mockGetStatus).toHaveBeenCalledWith({ localId: 'sub-uuid' });
+        });
+    });
+    /**
+     * HOS-276 follow-up. The Tier-1 link is skipped whenever either half is
+     * missing, and it used to be skipped SILENTLY — which is why two staging
+     * incidents (2026-08-29) had to be diagnosed by elimination, inferring the
+     * skip from the ABSENCE of link-preapproval calls in the API log.
+     *
+     * The two halves fail for opposite reasons and need opposite fixes: no
+     * `preapprovalId` means MercadoPago returned nothing usable (it documents
+     * that parameter for no return flow — HOS-174), while no `localId` means
+     * this browser lost the stashed id. A log that does not say WHICH is no
+     * better than the silence it replaced, so these assert the exact payload.
+     */
+    describe('HOS-276 — the skipped Tier-1 link must say which half was missing', () => {
+        const warnMock = webLogger.warn as ReturnType<typeof vi.fn>;
+
+        it('reports the missing preapprovalId (the staging case) without blaming the stashed id', async () => {
+            mockReadId.mockReturnValue('sub-uuid');
+            mockGetStatus.mockResolvedValue(statusResult('active'));
+            mockGetMySubscription.mockResolvedValue(noSubscription());
+
+            render(
+                <CheckoutStatusPoller
+                    {...props}
+                    preapprovalId={null}
+                />
+            );
+
+            await waitFor(() => {
+                expect(warnMock).toHaveBeenCalled();
+            });
+            // Asserted OUTSIDE the waitFor, and with the exact payload rather
+            // than objectContaining: a report that omits one half is the very
+            // ambiguity this exists to remove.
+            expect(warnMock).toHaveBeenCalledWith('checkout return: skipped the Tier-1 link', {
+                hasPreapprovalId: false,
+                hasLocalId: true
+            });
+            expect(mockLinkPreapproval).not.toHaveBeenCalled();
+        });
+
+        it('reports the missing stashed id when MercadoPago did return a preapproval', async () => {
+            mockReadId.mockReturnValue(null);
+            mockGetMySubscription.mockResolvedValue(noSubscription());
+
+            render(
+                <CheckoutStatusPoller
+                    {...props}
+                    preapprovalId="mp-preapproval-1"
+                />
+            );
+
+            await waitFor(() => {
+                expect(warnMock).toHaveBeenCalled();
+            });
+            expect(warnMock).toHaveBeenCalledWith('checkout return: skipped the Tier-1 link', {
+                hasPreapprovalId: true,
+                hasLocalId: false
+            });
+            expect(mockLinkPreapproval).not.toHaveBeenCalled();
+        });
+
+        it('stays quiet when both halves are present and the link actually runs', async () => {
+            mockReadId.mockReturnValue('sub-uuid');
+            mockLinkPreapproval.mockResolvedValue({ ok: true, data: { outcome: 'linked' } });
+            mockGetStatus.mockResolvedValue(statusResult('active'));
+            mockGetMySubscription.mockResolvedValue(noSubscription());
+
+            render(
+                <CheckoutStatusPoller
+                    {...props}
+                    preapprovalId="mp-preapproval-1"
+                />
+            );
+
+            await waitFor(() => {
+                expect(mockLinkPreapproval).toHaveBeenCalled();
+            });
+            expect(warnMock).not.toHaveBeenCalledWith(
+                'checkout return: skipped the Tier-1 link',
+                expect.anything()
+            );
         });
     });
 });
