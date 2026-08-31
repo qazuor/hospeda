@@ -1,0 +1,47 @@
+-- =============================================================================
+-- 037-billing-customers-mp-payer-email.column.sql
+-- Adds `billing_customers.mp_payer_email` (HOS-937 §6.3/§7.4).
+--
+-- Why this file exists:
+--   `billing_customers` is owned by `@qazuor/qzpay-drizzle`
+--   (`packages/db/src/billing/schemas.ts:14` re-exports the package's whole
+--   table set), so it cannot be extended through the structural carril
+--   (`pnpm db:generate`) — that carril only sees tables Drizzle-generates
+--   from THIS repo's own schema files. This column goes through the extras
+--   carril instead, same as `036-billing-customers-external-id-unique.index.sql`
+--   before it.
+--
+-- What the column is:
+--   The last `payer_email` MercadoPago actually ACCEPTED for a checkout —
+--   i.e. the email whose preapproval reached `authorized`. `payer_email` is
+--   binding: MercadoPago only lets whoever types that exact email pay, and
+--   never tells the user which email it expects (it just says "contact the
+--   seller"). Persisting the email that worked lets the NEXT checkout attempt
+--   default to it instead of guessing again (HOS-937 §6.3 resolution order:
+--   `mp_payer_email` → `billing_customers.email` → whatever the user types on
+--   the pre-redirect screen).
+--
+--   It is written ONLY once a preapproval reaches `authorized`, never at
+--   creation time — an email that did NOT work must not be stored as if it
+--   did.
+--
+-- Why this is NOT the same column as `billing_customers.email` (HOS-581):
+--   `email` is the real address Hospeda writes to — eight of our own sends
+--   read that column directly (password reset, billing receipts, dunning
+--   notices, etc. — see `apps/api/src/services/billing-customer-sync.ts` and
+--   `apps/api/src/utils/mp-email.ts`). `email` must NEVER be overwritten by
+--   whatever MercadoPago happened to accept, or those sends silently start
+--   going to the wrong inbox. `mp_payer_email` is a SEPARATE, purely
+--   MercadoPago-facing field with no notification consumer of its own.
+--
+-- Nullable by design:
+--   Every existing row and every row created before its first successful
+--   checkout has no known-working payer email yet.
+--
+-- Idempotency:
+--   `ADD COLUMN IF NOT EXISTS` — safe to re-run, matches the style of every
+--   other extras file in this directory.
+-- =============================================================================
+
+ALTER TABLE billing_customers
+    ADD COLUMN IF NOT EXISTS mp_payer_email varchar;
