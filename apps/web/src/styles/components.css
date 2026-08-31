@@ -1217,3 +1217,55 @@ select[aria-invalid="true"] {
 .combobox__helper-link:hover {
     color: var(--brand-primary);
 }
+
+/* === Auth pages: secondary links (signin.astro / signup.astro) ===
+   HOS-959: single source for what used to be byte-identical `<style>`
+   blocks duplicated in both pages. Astro scoped styles cannot reach
+   markup rendered by a sibling page, so this lives in the shared
+   global stylesheet instead. `.auth-page` / `.auth-page__card` (an
+   older wrapper superseded by AuthLayout's own `.auth-card`) were
+   dropped here — grep confirmed neither class is referenced by any
+   markup, so carrying them forward would just be a THIRD dead copy. */
+.auth-page__links {
+    margin-top: var(--space-4, 1rem);
+    text-align: center;
+}
+
+.auth-page__footer {
+    margin-top: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+/* signin.astro's footer follows `.auth-page__links` (the forgot-password
+   link), which already carries its own margin-top — the extra top margin
+   the bare signup.astro footer needs would double up there. Preserves the
+   pre-HOS-959 per-page spacing (signin used var(--space-4), signup used
+   var(--space-6)) without duplicating the whole block. */
+.auth-page__footer--tight {
+    margin-top: var(--space-4, 1rem);
+}
+
+.auth-page__footer-text {
+    font-size: var(--text-body-sm);
+    color: var(--core-muted-foreground);
+}
+
+.auth-page__link {
+    font-size: var(--text-body-sm);
+    color: var(--brand-primary);
+    text-decoration: none;
+    transition: color var(--duration-fast) ease;
+}
+
+.auth-page__link:hover {
+    color: var(--brand-primary-l85);
+}
+
+.auth-page__link:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.auth-page__link--strong {
+    font-weight: 600;
+}

@@ -1,55 +1,80 @@
 ---
 /**
  * @file signup.astro
- * @description Sign-up page — allows users to create a new account.
+ * @description Sign-up page — thin wrapper around the unified `AuthTabs`
+ * island with the sign-up tab active (HOS-959). `signin.astro` renders the
+ * SAME island with `initialTab="signin"`; the two pages differ only in
+ * `initialTab` and their own SEO title/description/decoratives. The tab
+ * switch inside `AuthTabs` is client-side only (no navigation), so this page
+ * computes redirect configuration for BOTH tabs via the shared
+ * `resolveAuthTabsRedirectConfig` helper — see that file's header doc for
+ * why a single-tab computation would not be enough.
  *
- * Authenticated users are immediately redirected — to the destination carried
- * by a safe `returnUrl` / `redirect` query param when one is present, otherwise
- * to /mi-cuenta/ (HOS-810). That param is what lets an edge-cached marketing
+ * Authenticated users are immediately redirected — to a validated
+ * `callbackUrl` (SPEC-182) when present, otherwise to the destination
+ * carried by a safe `returnUrl`/`redirect` query param, otherwise to
+ * /mi-cuenta/ (HOS-810). That param is what lets an edge-cached marketing
  * landing point one constant CTA at "create your account OR, if you already
- * have one, go straight to the thing you came here to do": the landing itself
- * cannot branch on the session without losing its cache, this page already
- * parses it. See `src/lib/commerce/start-url.ts` for the full rationale.
+ * have one, go straight to the thing you came here to do": the landing
+ * itself cannot branch on the session without losing its cache, this page
+ * already parses it. See `src/lib/commerce/start-url.ts` for the full
+ * rationale.
  *
- * The param does NOT survive a brand-new registration, and that is a known
- * gap, not an oversight: the API does NOT auto sign-in the user (email
- * verification is required), so registration continues to verify-email-sent
- * and the destination is lost at the verification hop. The "already have an
- * account" link below forwards the param, so the existing-user path keeps it.
+ * The password-REGISTRATION path does NOT honor `returnUrl`/`callbackUrl` —
+ * that is a known gap (HOS-838), not an oversight: the API does not
+ * auto-sign-in the user (email verification is required), so registration
+ * always lands on `/auth/verify-email-sent/` and the destination is lost at
+ * the verification hop. OAuth registration DOES authenticate immediately, so
+ * it honors both params exactly like sign-in (HOS-959 — this is a
+ * deliberate, owner-approved behavior ADDITION: previously `signup.astro`
+ * ignored `callbackUrl` entirely, even for OAuth).
  *
  * Both `returnUrl` and `redirect` are accepted, mirroring `signin.astro`;
  * `returnUrl` wins when both are present. The value is attacker-controlled, so
  * it goes through the shared `resolveSafeReturnPath` open-redirect guard.
  *
  * @route    /[lang]/auth/signup/
- * @rendering SSR (auth state from locals; reads `returnUrl`/`redirect` query params)
+ * @rendering SSR (auth state from locals; reads query params from `Astro.url`)
  */
 
-import { resolveSafeReturnPath } from '@/lib/auth-redirect';
+import { AuthTabs } from '@/components/auth/AuthTabs.client';
+import { resolveAuthTabsRedirectConfig } from '@/lib/auth-tabs-config';
+import { getAdminUrl, getSiteUrl, isProduction } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
-import { SignUp } from '@/components/auth/SignUp.client';
 import { SparkleIcon, UsersIcon } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
 
-// Post-auth destination carried by `returnUrl` (canonical) or `redirect`
-// (legacy alias); `returnUrl` wins when both are present. Validated against the
-// same open-redirect guard signin.astro uses — the raw value is query input.
-const rawReturn =
-    Astro.url.searchParams.get('returnUrl') ?? Astro.url.searchParams.get('redirect') ?? '';
-const returnPath = resolveSafeReturnPath({ rawReturn, locale });
+// SECURITY: `returnUrl`/`redirect`/`callbackUrl` are attacker-controlled
+// query input. `resolveAuthTabsRedirectConfig` runs them through the shared
+// open-redirect guard (`resolveSafeReturnPath`) and the `callbackUrl`
+// allowlist (`validateCallbackUrl`, SPEC-182) — see that file for the full
+// rationale. `signInConfig`/`signUpConfig` are handed straight to the
+// island; `returnPath`/`validatedCallbackUrl` are only needed here for the
+// already-authenticated redirect below and the "already have an account"
+// footer link.
+const { returnPath, validatedCallbackUrl, signInConfig, signUpConfig } = resolveAuthTabsRedirectConfig(
+    {
+        astroUrl: Astro.url,
+        locale,
+        siteUrl: getSiteUrl(),
+        adminUrl: getAdminUrl(),
+        isProduction: isProduction()
+    }
+);
 
-// Redirect authenticated users to that destination (the account dashboard when
-// no safe one was provided). Honouring the param HERE is the whole mechanism
-// behind HOS-810: a signed-in visitor who clicks "Empezar ahora" on a cached
-// commerce landing arrives at this page and is forwarded to the create form,
-// instead of being dumped on /mi-cuenta/ with no link onward.
+// Redirect authenticated users to that destination (the account dashboard
+// when no safe one was provided; a validated callbackUrl takes precedence,
+// mirroring signin.astro — HOS-959). Honouring the param HERE is the whole
+// mechanism behind HOS-810: a signed-in visitor who clicks "Empezar ahora" on
+// a cached commerce landing arrives at this page and is forwarded to the
+// create form, instead of being dumped on /mi-cuenta/ with no link onward.
 if (Astro.locals.user) {
-    return Astro.redirect(returnPath);
+    return Astro.redirect(validatedCallbackUrl ?? returnPath);
 }
 
 const t = createT(locale);
@@ -59,35 +84,39 @@ const description = t('auth-ui.pages.signup.description', 'Creá tu cuenta en Ho
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-// After registration, redirect user to a "check your email" page since
-// the account is created without an active session (email verification is
-// required before sign-in). The verify-email-sent page reassures the user
-// and offers to resend the verification email.
-//
-// Anchor on `Astro.url.origin` (the actual request host) so users
-// signing up from staging.hospeda.com.ar don't get bounced to the
-// canonical apex post-registration.
-const redirectTo = new URL(
-    buildUrl({ locale, path: 'auth/verify-email-sent' }),
-    Astro.url.origin
-).href;
+// SPEC-120: pick up OAuth failure signal from the API redirect. Mirrors
+// signin.astro exactly (HOS-959) — the shared OAuth block in `AuthTabs` can
+// be reached from either URL, so a failure returning to `/auth/signup` must
+// surface the same banner.
+const rawErrorCode = Astro.url.searchParams.get('error');
+const oauthErrorCode = rawErrorCode
+    ? /^[a-z_]{1,64}$/.test(rawErrorCode)
+        ? rawErrorCode
+        : 'unknown'
+    : undefined;
 
-// OAuth providers (Google, Facebook) verify email themselves, so the
-// user is fully authenticated when the callback returns. Sending them
-// to /auth/verify-email-sent/ would be confusing ("check your inbox"
-// when there's no email to check). Land them on the account dashboard
-// instead — or on the requested destination, when one was carried in
-// (HOS-810).
-//
-// This is the ONE registration path where the return destination CAN
-// survive, and it survives for the same reason the confusing page does not
-// apply: the provider vouches for the address, so a session exists the
-// moment the callback returns. The password path has no session to redirect
-// with until the verification e-mail is opened, which is why it keeps going
-// to verify-email-sent. `returnPath` is already through the open-redirect
-// guard and is relative, so anchoring it on the request origin cannot leave
-// this host.
-const oauthRedirectTo = new URL(returnPath, Astro.url.origin).href;
+const rawErrorDescription = Astro.url.searchParams.get('error_description');
+const oauthErrorDescription = rawErrorDescription
+    ? rawErrorDescription.slice(0, 200)
+    : undefined;
+
+const rawProvider = Astro.url.searchParams.get('provider');
+const oauthProvider =
+    rawProvider && /^[a-z]{1,32}$/.test(rawProvider) ? rawProvider : undefined;
+
+const initialOAuthError = oauthErrorCode
+    ? {
+          code: oauthErrorCode,
+          description: oauthErrorDescription,
+          provider: oauthProvider
+      }
+    : undefined;
+
+// Pathnames the island rewrites into the URL bar on a client-side tab
+// switch (`AuthTabs` builds these itself, never by string-editing
+// `window.location.pathname`).
+const signInPath = buildUrl({ locale, path: 'auth/signin' });
+const signUpPath = buildUrl({ locale, path: 'auth/signup' });
 
 // Localized secondary link labels via i18n
 const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');
@@ -97,6 +126,8 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
 // account keeps it end to end (signin.astro reads the same param). Only when a
 // destination was actually requested — a bare link stays bare, so nothing
 // changes for the ordinary "I came here to sign up" visitor.
+const rawReturn =
+    Astro.url.searchParams.get('returnUrl') ?? Astro.url.searchParams.get('redirect') ?? '';
 const signInHref =
     rawReturn === ''
         ? buildUrl({ locale, path: 'auth/signin' })
@@ -117,12 +148,15 @@ const signInHref =
         <span class="signup-deco__dot signup-deco__dot--3"></span>
     </div>
 
-    <SignUp
+    <AuthTabs
         client:load
         locale={locale}
-        redirectTo={redirectTo}
-        oauthRedirectTo={oauthRedirectTo}
-        showOAuth={true}
+        initialTab="signup"
+        signInPath={signInPath}
+        signUpPath={signUpPath}
+        signInConfig={signInConfig}
+        signUpConfig={signUpConfig}
+        initialOAuthError={initialOAuthError}
     />
 
     <div class="auth-page__footer">
@@ -225,55 +259,5 @@ const signInHref =
         .signup-deco__badge {
             display: none;
         }
-    }
-</style>
-
-<style>
-    .auth-page {
-        display: flex;
-        min-height: calc(100vh - var(--navbar-height, 5rem));
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-8, 2rem) var(--space-4, 1rem);
-    }
-
-    .auth-page__card {
-        width: 100%;
-        max-width: 28rem;
-        border-radius: var(--radius-card);
-        border: 1px solid var(--border);
-        background-color: var(--core-card);
-        padding: var(--space-8, 2rem);
-        box-shadow: var(--shadow-card);
-    }
-
-    .auth-page__footer {
-        margin-top: var(--space-6, 1.5rem);
-        text-align: center;
-    }
-
-    .auth-page__footer-text {
-        font-size: var(--text-body-sm);
-        color: var(--core-muted-foreground);
-    }
-
-    .auth-page__link {
-        font-size: var(--text-body-sm);
-        color: var(--brand-primary);
-        text-decoration: none;
-        transition: color var(--duration-fast) ease;
-    }
-
-    .auth-page__link:hover {
-        color: var(--brand-primary-l85);
-    }
-
-    .auth-page__link:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
-    }
-
-    .auth-page__link--strong {
-        font-weight: 600;
     }
 </style>

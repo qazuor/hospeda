@@ -73,33 +73,6 @@
     cursor: not-allowed;
 }
 
-.oauthButton {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    font-size: var(--text-body-sm);
-    font-weight: 500;
-    font-family: var(--font-sans);
-    cursor: pointer;
-    transition: background-color var(--duration-fast) ease;
-}
-
-.oauthButton:hover:not(:disabled) {
-    background-color: var(--muted, var(--core-card-l97));
-}
-
-.oauthButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
 .error {
     padding: 0.75rem;
     border-radius: var(--radius-button);
@@ -107,21 +80,6 @@
     color: var(--destructive);
     font-size: var(--text-body-sm);
     font-family: var(--font-sans);
-}
-
-.divider {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--core-muted-foreground);
-    font-size: var(--text-body-sm);
-    font-family: var(--font-sans);
-}
-
-.dividerLine {
-    flex: 1;
-    height: 1px;
-    background-color: var(--border);
 }
 
 /* Skeleton loading state */
