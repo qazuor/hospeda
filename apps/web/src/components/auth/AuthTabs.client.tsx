@@ -310,7 +310,7 @@ export function AuthTabs({
 
     const headingText =
         activeTab === 'signin'
-            ? t('auth-ui.pages.signin.title', 'Iniciar sesión')
+            ? t('auth-ui.pages.signin.title', 'Ingresar')
             : t('auth-ui.pages.signup.title', 'Registrarse');
 
     return (
@@ -334,7 +334,7 @@ export function AuthTabs({
 
             <div
                 role="tablist"
-                aria-label={t('auth.tabs.label', 'Entrar o crear una cuenta')}
+                aria-label={t('auth.tabs.label', 'Ingresar o registrarse')}
                 className={styles.tablist}
             >
                 <button
@@ -349,7 +349,7 @@ export function AuthTabs({
                     onClick={() => switchTab('signin')}
                     onKeyDown={handleTabKeyDown}
                 >
-                    {t('auth.tabs.signIn', 'Entrar')}
+                    {t('auth.tabs.signIn', 'Ingresar')}
                 </button>
                 <button
                     ref={signUpTabRef}
@@ -363,7 +363,7 @@ export function AuthTabs({
                     onClick={() => switchTab('signup')}
                     onKeyDown={handleTabKeyDown}
                 >
-                    {t('auth.tabs.signUp', 'Crear cuenta')}
+                    {t('auth.tabs.signUp', 'Registrarse')}
                 </button>
             </div>
 

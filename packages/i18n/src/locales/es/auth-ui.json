@@ -138,7 +138,7 @@
     },
     "pages": {
         "signin": {
-            "title": "Iniciar sesión",
+            "title": "Ingresar",
             "description": "Iniciá sesión en tu cuenta de Hospeda para acceder a tus reservas y favoritos"
         },
         "signup": {

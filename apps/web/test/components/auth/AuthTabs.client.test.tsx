@@ -82,18 +82,18 @@ describe('AuthTabs — tab structure and ARIA', () => {
     it('renders both tabs on arrival', () => {
         renderAuthTabs();
 
-        expect(screen.getByRole('tab', { name: 'Entrar' })).toBeInTheDocument();
-        expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Ingresar' })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Registrarse' })).toBeInTheDocument();
     });
 
     it('honors initialTab="signin" — sign-in form mounted, aria-selected on the right tab', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
-        expect(screen.getByRole('tab', { name: 'Entrar' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Ingresar' })).toHaveAttribute(
             'aria-selected',
             'true'
         );
-        expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Registrarse' })).toHaveAttribute(
             'aria-selected',
             'false'
         );
@@ -105,11 +105,11 @@ describe('AuthTabs — tab structure and ARIA', () => {
     it('honors initialTab="signup" — sign-up form mounted, aria-selected on the right tab', () => {
         renderAuthTabs({ initialTab: 'signup' });
 
-        expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Registrarse' })).toHaveAttribute(
             'aria-selected',
             'true'
         );
-        expect(screen.getByRole('tab', { name: 'Entrar' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Ingresar' })).toHaveAttribute(
             'aria-selected',
             'false'
         );
@@ -125,16 +125,16 @@ describe('AuthTabs — tab structure and ARIA', () => {
 
         const panel = screen.getByRole('tabpanel');
         expect(panel).toBeInTheDocument();
-        const signInTab = screen.getByRole('tab', { name: 'Entrar' });
+        const signInTab = screen.getByRole('tab', { name: 'Ingresar' });
         expect(panel).toHaveAttribute('aria-labelledby', signInTab.id);
     });
 
     it('switching tabs swaps the mounted form (conditional render, not CSS hiding)', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
-        fireEvent.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Registrarse' }));
 
-        expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Registrarse' })).toHaveAttribute(
             'aria-selected',
             'true'
         );
@@ -146,8 +146,8 @@ describe('AuthTabs — tab structure and ARIA', () => {
     it('keyboard navigation (ArrowRight/ArrowLeft) moves focus and activates the other tab', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
-        const signInTab = screen.getByRole('tab', { name: 'Entrar' });
-        const signUpTab = screen.getByRole('tab', { name: 'Crear cuenta' });
+        const signInTab = screen.getByRole('tab', { name: 'Ingresar' });
+        const signUpTab = screen.getByRole('tab', { name: 'Registrarse' });
         signInTab.focus();
 
         fireEvent.keyDown(signInTab, { key: 'ArrowRight' });
@@ -162,17 +162,17 @@ describe('AuthTabs — tab structure and ARIA', () => {
     it('keyboard Home/End jump directly to sign-in/sign-up', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
-        const signInTab = screen.getByRole('tab', { name: 'Entrar' });
+        const signInTab = screen.getByRole('tab', { name: 'Ingresar' });
         signInTab.focus();
 
         fireEvent.keyDown(signInTab, { key: 'End' });
-        expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Registrarse' })).toHaveAttribute(
             'aria-selected',
             'true'
         );
 
-        fireEvent.keyDown(screen.getByRole('tab', { name: 'Crear cuenta' }), { key: 'Home' });
-        expect(screen.getByRole('tab', { name: 'Entrar' })).toHaveAttribute(
+        fireEvent.keyDown(screen.getByRole('tab', { name: 'Registrarse' }), { key: 'Home' });
+        expect(screen.getByRole('tab', { name: 'Ingresar' })).toHaveAttribute(
             'aria-selected',
             'true'
         );
@@ -191,7 +191,7 @@ describe('AuthTabs — email survives a tab switch (HOS-959 core requirement)', 
             target: { value: 'visitor@example.com' }
         });
 
-        fireEvent.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Registrarse' }));
 
         expect(screen.getByLabelText(/Correo electrónico/)).toHaveValue('visitor@example.com');
     });
@@ -203,7 +203,7 @@ describe('AuthTabs — email survives a tab switch (HOS-959 core requirement)', 
             target: { value: 'newcomer@example.com' }
         });
 
-        fireEvent.click(screen.getByRole('tab', { name: 'Entrar' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Ingresar' }));
 
         expect(screen.getByLabelText('Correo electrónico')).toHaveValue('newcomer@example.com');
     });
@@ -229,7 +229,7 @@ describe('AuthTabs — shared OAuth block', () => {
 
     it('stays the single instance when switching tabs (not duplicated per form)', () => {
         renderAuthTabs({ initialTab: 'signin' });
-        fireEvent.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Registrarse' }));
 
         expect(screen.getAllByRole('button', { name: /Continuar con Google/ })).toHaveLength(1);
     });
@@ -321,7 +321,7 @@ describe('AuthTabs — tab-switch URL rewrite (history.replaceState)', () => {
     it('rewrites the pathname to signUpPath while preserving the entire query string', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
-        fireEvent.click(screen.getByRole('tab', { name: 'Crear cuenta' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Registrarse' }));
 
         expect(window.location.pathname).toBe(SIGN_UP_PATH);
         expect(window.location.search).toBe('?returnUrl=/es/mi-cuenta/&foo=bar');
@@ -330,7 +330,7 @@ describe('AuthTabs — tab-switch URL rewrite (history.replaceState)', () => {
     it('rewrites back to signInPath, still preserving the query string', () => {
         renderAuthTabs({ initialTab: 'signup' });
 
-        fireEvent.click(screen.getByRole('tab', { name: 'Entrar' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Ingresar' }));
 
         expect(window.location.pathname).toBe(SIGN_IN_PATH);
         expect(window.location.search).toBe('?returnUrl=/es/mi-cuenta/&foo=bar');
@@ -347,10 +347,10 @@ describe('AuthTabs — tab-switch URL rewrite (history.replaceState)', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
         expect(() =>
-            fireEvent.click(screen.getByRole('tab', { name: 'Crear cuenta' }))
+            fireEvent.click(screen.getByRole('tab', { name: 'Registrarse' }))
         ).not.toThrow();
         // The tab still switches even though the URL cosmetic failed.
-        expect(screen.getByRole('tab', { name: 'Crear cuenta' })).toHaveAttribute(
+        expect(screen.getByRole('tab', { name: 'Registrarse' })).toHaveAttribute(
             'aria-selected',
             'true'
         );
