@@ -577,15 +577,16 @@ export async function initiatePaidMonthlySubscription(
     // Accommodation monthly ONLY — annual, commerce and partner checkouts
     // are untouched by this flag and keep using Path C regardless.
     //
-    // Deferred-redemption bookkeeping (`pendingDiscount` / promo
-    // `trialExtension` stamping, normally applied at F2/F3 link time — see
-    // `link-preapproval.service.ts`) is NOT wired into this path yet: the
-    // discounted amount is already baked into the MP plan itself
-    // (`discountCycle1AmountCentavos` above, HOS-244), so pricing is correct
-    // either way, but promo-usage bookkeeping (redemption recording,
-    // `promo_effect_remaining_cycles` seeding) does not run for a checkout
-    // created through this flag. Out of scope for step 1 — tracked as a
-    // follow-up, not silently ignored.
+    // Deferred-redemption bookkeeping (`pendingDiscount` / trial-extension
+    // stamping) is wired into this path too, same snapshot-now / redeem-later
+    // shape as the old flow — just relocated: there is no
+    // `billing_pending_checkouts` row to snapshot onto here, so
+    // `createOwnPreapprovalSubscription` snapshots it on the row's own
+    // `metadata` instead, and the webhook (`subscription-logic.ts`, not this
+    // file) redeems it on the `pending_provider -> active/trialing`
+    // transition — never at creation, since the preapproval may never be
+    // authorized and redeeming a capped code for an abandoned checkout would
+    // make it effectively uncapped.
     if (env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED) {
         const ownPreapproval = await createOwnPreapprovalSubscription({
             billing,
@@ -597,6 +598,18 @@ export async function initiatePaidMonthlySubscription(
             notificationUrl: urls.notificationUrl,
             providerPriceId,
             ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            ...(pendingDiscount ? { pendingDiscount } : {}),
+            ...(promoPlan.kind === 'trial' &&
+            promoPlan.promoCodeId &&
+            promoPlan.code &&
+            !promoExtensionIgnored
+                ? {
+                      pendingTrialExtension: {
+                          promoCodeId: promoPlan.promoCodeId,
+                          code: promoPlan.code
+                      }
+                  }
+                : {}),
             ...(input.db ? { db: input.db } : {})
         });
 
