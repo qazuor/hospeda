@@ -141,10 +141,18 @@ export interface IsUniqueConstraintViolationInput {
  * @returns `true` when the error (or one of its causes) is a `23505` whose
  *   `constraint` matches `constraintName` (when given), otherwise `false`.
  *
+ * The example below deliberately elides the Drizzle write call itself. The
+ * `BILLING_SUBSCRIPTIONS_WRITERS` guard in
+ * `test/services/inv1-cache-invalidation.guard.test.ts` discovers writers by
+ * scanning source text and cannot tell a real call from one inside a docblock.
+ * Spelling the call out here would enrol this module — a pure predicate that
+ * writes nothing — into an inventory of writers, and make that inventory mean
+ * less.
+ *
  * @example
  * ```ts
  * try {
- *   await tx.update(billingSubscriptions).set({ mpSubscriptionId }).where(...);
+ *   await writeTheMpSubscriptionId(tx); // the compare-and-set write
  * } catch (err) {
  *   if (isUniqueConstraintViolation({ error: err, constraintName: 'billing_subscriptions_mp_id_uniq' })) {
  *     return { outcome: 'already' };
