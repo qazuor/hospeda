@@ -932,6 +932,28 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // Own-preapproval checkout (HOS-937 step 1)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED',
+        description:
+            'Feature flag for the own-preapproval accommodation-monthly checkout (HOS-937 step 1). Ships dark (default false): while false, initiatePaidMonthlySubscription keeps redirecting to the shared MercadoPago preapproval_plan share link (Path C, HOS-191), whose external_reference MercadoPago silently discards. Set to "true" to create a per-user POST /preapproval instead, whose external_reference (the local subscription id) survives in the body of the server-to-server call and closes the orphan class this issue targets.',
+        descriptionEs:
+            'Feature flag del checkout de preapproval propio para accommodation mensual (HOS-937 paso 1). Se entrega apagado (default false): mientras esté en false, initiatePaidMonthlySubscription sigue redirigiendo al share link compartido del preapproval_plan de MercadoPago (Path C, HOS-191), cuyo external_reference MercadoPago descarta en silencio. Poné "true" para crear en su lugar un POST /preapproval propio por usuario, cuyo external_reference (el id de suscripción local) sobrevive en el body de la llamada servidor-a-servidor y cierra la clase de huérfanos que este issue ataca.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Leave unset or "false" to keep the shared share-link checkout (safe default, unchanged behavior). Set "true" ONLY after a staging smoke of the accommodation-monthly checkout against the real MP sandbox has passed. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it. Scoped to accommodation monthly only (HOS-937 step 1) — annual, commerce and partner checkouts are unaffected regardless of this flag.',
+        howToObtainEs:
+            'Dejalo sin setear o en "false" para mantener el checkout con share link compartido (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que un smoke en staging del checkout de accommodation mensual contra el sandbox real de MP haya pasado. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa. Alcanza sólo a accommodation mensual (HOS-937 paso 1) — anual, commerce y partner no se ven afectados por este flag.'
+    },
+
+    // -------------------------------------------------------------------------
     // Auth lockout (brute-force protection)
     // -------------------------------------------------------------------------
     {
