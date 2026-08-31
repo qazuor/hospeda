@@ -15,6 +15,7 @@ import { signIn } from '@/lib/auth-client';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildOAuthErrorCallbackUrl, resolvePostAuthRedirectUrl } from '@/lib/post-auth-redirect';
 import styles from './SignIn.module.css';
 
 /** Props for the SignIn component. */
@@ -190,33 +191,22 @@ export function SignIn({
                         fallback: t('auth.signIn.error', 'Error al iniciar sesión')
                     })
                 );
-            } else if (externalRedirect) {
-                // SPEC-182: redirectTo is a server-allowlisted absolute URL
-                // (e.g. the admin panel). The host-strip below would rewrite
-                // it onto the web origin and break the cross-app hand-off —
-                // use it verbatim.
-                window.location.replace(redirectTo);
             } else {
-                // Mirror the OAuth host-strip+re-attach below. The
-                // server-built `redirectTo` can carry `https://localhost`
-                // when Astro Node runs behind a reverse proxy that does
-                // not forward the original Host header — and the browser
-                // then can't navigate to that URL. Strip the host (if
-                // any) and reattach the browser's real origin.
-                const origin = window.location.origin;
-                let path = redirectTo || '/';
-                if (path.startsWith('http')) {
-                    try {
-                        const parsed = new URL(path);
-                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                    } catch {
-                        path = '/';
-                    }
-                }
-                if (!path.startsWith('/')) {
-                    path = `/${path}`;
-                }
-                window.location.replace(`${origin}${path}`);
+                // SPEC-182: when externalRedirect, redirectTo is a
+                // server-allowlisted absolute URL (e.g. the admin panel) and
+                // is used verbatim — the host-strip+reattach workaround below
+                // would otherwise rewrite it onto the web origin and break
+                // the cross-app hand-off. Otherwise, mirror the OAuth
+                // host-strip+re-attach below (see
+                // resolvePostAuthRedirectUrl for why: a reverse-proxy bug
+                // that can hand back `https://localhost`).
+                window.location.replace(
+                    resolvePostAuthRedirectUrl({
+                        target: redirectTo,
+                        currentOrigin: window.location.origin,
+                        externalRedirect
+                    })
+                );
             }
         } catch {
             setError(t('auth.signIn.error', 'Error al iniciar sesión'));
@@ -237,36 +227,31 @@ export function SignIn({
             // 'https://localhost' because the reverse proxy doesn't always
             // forward the original Host header. Any absolute URL built on
             // top of that gets rejected by Better Auth as
-            // INVALID_CALLBACKURL. We strip the host (if any) from
-            // redirectTo and reattach the browser's origin so the resulting
-            // URL matches whatever host the user opened (staging.* in
-            // pre-launch, hospeda.com.ar post-launch, etc.).
+            // INVALID_CALLBACKURL — resolvePostAuthRedirectUrl strips the
+            // host (if any) from redirectTo and reattaches the browser's
+            // origin so the resulting URL matches whatever host the user
+            // opened (staging.* in pre-launch, hospeda.com.ar post-launch,
+            // etc.).
+            //
+            // SPEC-182: when externalRedirect, redirectTo is a
+            // server-allowlisted cross-app callbackUrl (e.g. the admin
+            // panel). Better Auth validates it against its trustedOrigins
+            // (the admin URL is trusted), so it is used verbatim —
+            // stripping it onto the web origin would break the post-OAuth
+            // hand-off.
             const origin = window.location.origin;
-            let callbackURL: string;
-            if (externalRedirect) {
-                // SPEC-182: server-allowlisted cross-app callbackUrl (e.g. the
-                // admin panel). Better Auth validates it against its
-                // trustedOrigins (the admin URL is trusted), so it can be used
-                // verbatim — stripping it onto the web origin would break the
-                // post-OAuth hand-off.
-                callbackURL = redirectTo;
-            } else {
-                const rawTarget = redirectTo || window.location.pathname || '/';
-                let path = rawTarget;
-                if (path.startsWith('http')) {
-                    try {
-                        const parsed = new URL(path);
-                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                    } catch {
-                        path = '/';
-                    }
-                }
-                if (!path.startsWith('/')) {
-                    path = `/${path}`;
-                }
-                callbackURL = `${origin}${path}`;
-            }
-            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            const rawTarget = externalRedirect
+                ? redirectTo
+                : redirectTo || window.location.pathname || '/';
+            const callbackURL = resolvePostAuthRedirectUrl({
+                target: rawTarget,
+                currentOrigin: origin,
+                externalRedirect
+            });
+            const errorCallbackURL = buildOAuthErrorCallbackUrl({
+                currentOrigin: origin,
+                currentPathname: window.location.pathname
+            });
             await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {
             // Surface the actual Better Auth error to console so the

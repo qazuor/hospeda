@@ -120,14 +120,24 @@ describe('SignIn.client.tsx', () => {
             expect(src).toMatch(/readonly externalRedirect\?: boolean/);
         });
 
-        it('honors redirectTo verbatim on credential success when externalRedirect', () => {
+        // HOS-959 step 1: the verbatim-on-externalRedirect behavior itself now
+        // lives in the shared `resolvePostAuthRedirectUrl` helper (see
+        // apps/web/test/lib/post-auth-redirect.test.ts for the actual
+        // verbatim-vs-host-strip behavior under test). What this file can
+        // still assert, being a source-string test, is that both call sites
+        // forward `redirectTo` and `externalRedirect` into that helper rather
+        // than re-implementing the host-strip locally.
+        it('forwards redirectTo and externalRedirect to the shared redirect resolver on credential success', () => {
             expect(src).toMatch(
-                /externalRedirect[\s\S]{0,300}window\.location\.replace\(redirectTo\)/
+                /window\.location\.replace\(\s*resolvePostAuthRedirectUrl\(\{\s*target: redirectTo,\s*currentOrigin: window\.location\.origin,\s*externalRedirect\s*\}\)\s*\)/
             );
         });
 
-        it('uses redirectTo verbatim as the OAuth callbackURL when externalRedirect', () => {
-            expect(src).toMatch(/externalRedirect[\s\S]{0,500}callbackURL = redirectTo/);
+        it('uses redirectTo verbatim as the OAuth rawTarget when externalRedirect, then forwards externalRedirect to the shared redirect resolver', () => {
+            expect(src).toMatch(/externalRedirect\s*\?\s*redirectTo\s*:/);
+            expect(src).toMatch(
+                /callbackURL = resolvePostAuthRedirectUrl\(\{\s*target: rawTarget,\s*currentOrigin: origin,\s*externalRedirect\s*\}\)/
+            );
         });
     });
 });

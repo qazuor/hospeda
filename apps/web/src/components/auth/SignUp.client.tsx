@@ -22,6 +22,7 @@ import { signIn, signUp } from '@/lib/auth-client';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildOAuthErrorCallbackUrl, resolvePostAuthRedirectUrl } from '@/lib/post-auth-redirect';
 import styles from './SignUp.module.css';
 
 /** Props for the SignUp component. */
@@ -180,34 +181,22 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                     })
                 );
             } else {
-                // Mirror the OAuth host-strip+re-attach below. The
-                // server-built `redirectTo` can carry `https://localhost`
-                // when Astro Node runs behind a reverse proxy that does
-                // not forward the original Host header (observed
-                // 2026-05-14 during SPEC-103 T-012 smoke: POST /sign-up
+                // Mirror the OAuth host-strip+re-attach below (see
+                // resolvePostAuthRedirectUrl for why: a reverse-proxy bug
+                // that can hand back `https://localhost`, observed
+                // 2026-05-14 during SPEC-103 T-012 smoke — POST /sign-up
                 // returned 200 but the subsequent navigation went to
-                // https://localhost/es/auth/verify-email-sent and
-                // failed). Strip the host (if any) and reattach the
-                // browser's real origin so the navigation always lands
-                // on whatever host the user opened.
-                const origin = window.location.origin;
-                let path = redirectTo || '/';
-                if (path.startsWith('http')) {
-                    try {
-                        const parsed = new URL(path);
-                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                    } catch {
-                        path = '/';
-                    }
-                }
-                if (!path.startsWith('/')) {
-                    path = `/${path}`;
-                }
+                // https://localhost/es/auth/verify-email-sent and failed).
                 // NOTE: signup_completed is captured SERVER-SIDE in the Better
                 // Auth `databaseHooks.user.create.after` hook (apps/api) so it
                 // covers email AND OAuth signups uniformly and fires exactly once
                 // per new user. Do NOT re-emit it here or it double-counts.
-                window.location.replace(`${origin}${path}`);
+                window.location.replace(
+                    resolvePostAuthRedirectUrl({
+                        target: redirectTo,
+                        currentOrigin: window.location.origin
+                    })
+                );
             }
         } catch {
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
@@ -227,12 +216,10 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
 
         try {
             // Build the absolute callbackURL on the client so the host
-            // matches the browser's real origin. The server-built
-            // redirectTo can carry 'https://localhost' when Astro Node
-            // runs behind a reverse proxy that doesn't forward the
-            // original Host header — and Better Auth rejects any
-            // callbackURL whose origin isn't in trustedOrigins. Strip
-            // the host (if any) and reattach window.location.origin.
+            // matches the browser's real origin — see
+            // resolvePostAuthRedirectUrl for why (reverse-proxy localhost
+            // bug; Better Auth rejects any callbackURL whose origin isn't
+            // in trustedOrigins).
             //
             // For OAuth, prefer `oauthRedirectTo` over `redirectTo`:
             // OAuth providers verify the email themselves, so the
@@ -241,20 +228,14 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
             // the email signup path uses (`verify-email-sent`).
             const origin = window.location.origin;
             const rawTarget = oauthRedirectTo ?? redirectTo ?? window.location.pathname ?? '/';
-            let path = rawTarget;
-            if (path.startsWith('http')) {
-                try {
-                    const parsed = new URL(path);
-                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                } catch {
-                    path = '/';
-                }
-            }
-            if (!path.startsWith('/')) {
-                path = `/${path}`;
-            }
-            const callbackURL = `${origin}${path}`;
-            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
+            const callbackURL = resolvePostAuthRedirectUrl({
+                target: rawTarget,
+                currentOrigin: origin
+            });
+            const errorCallbackURL = buildOAuthErrorCallbackUrl({
+                currentOrigin: origin,
+                currentPathname: window.location.pathname
+            });
             await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {
             // Surface the actual Better Auth error to console so the
