@@ -6,10 +6,12 @@ import { usePlansQuery } from '@/features/billing-plans/hooks';
 import { CancelSubscriptionDialog } from '@/features/billing-subscriptions/CancelSubscriptionDialog';
 import { ChangePlanDialog } from '@/features/billing-subscriptions/ChangePlanDialog';
 import { ExtendTrialDialog } from '@/features/billing-subscriptions/ExtendTrialDialog';
+import { GrantCourtesyDialog } from '@/features/billing-subscriptions/GrantCourtesyDialog';
 import {
     useCancelSubscriptionMutation,
     useChangePlanMutation,
     useExtendTrialMutation,
+    useGrantCourtesyMutation,
     usePauseSubscriptionMutation,
     useResumeSubscriptionMutation,
     useSubscriptionsQuery
@@ -49,6 +51,7 @@ function BillingSubscriptionsPage() {
     const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
     const [extendTrialDialogOpen, setExtendTrialDialogOpen] = useState(false);
     const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
+    const [courtesyDialogOpen, setCourtesyDialogOpen] = useState(false);
     const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
 
     // Data fetching
@@ -87,6 +90,7 @@ function BillingSubscriptionsPage() {
     const changePlanMutation = useChangePlanMutation();
     const extendTrialMutation = useExtendTrialMutation();
     const pauseMutation = usePauseSubscriptionMutation();
+    const grantCourtesyMutation = useGrantCourtesyMutation();
     const resumeMutation = useResumeSubscriptionMutation();
 
     // Handlers: navigation between dialogs
@@ -111,6 +115,43 @@ function BillingSubscriptionsPage() {
         setSelectedSubscription(subscription);
         setExtendTrialDialogOpen(true);
         setDetailsDialogOpen(false);
+    };
+
+    const handleGrantCourtesyClick = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setCourtesyDialogOpen(true);
+        setDetailsDialogOpen(false);
+    };
+
+    /**
+     * Confirms a courtesy grant.
+     *
+     * The endpoint's refusals are surfaced verbatim rather than replaced with a
+     * generic message: a grant rejected for being under three days from the next
+     * charge comes back naming that date, which is exactly what tells the admin
+     * to come back earlier in the period (HOS-180 R-6).
+     */
+    const handleConfirmGrantCourtesy = (cycles: number) => {
+        if (!selectedSubscription) return;
+        grantCourtesyMutation.mutate(
+            { subscriptionId: selectedSubscription.id, cycles },
+            {
+                onSuccess: () => {
+                    addToast({
+                        message: t('admin-billing.subscriptions.toasts.courtesyGranted'),
+                        variant: 'success'
+                    });
+                    setCourtesyDialogOpen(false);
+                    setSelectedSubscription(null);
+                },
+                onError: (error) => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.courtesyError')} ${error.message}`,
+                        variant: 'error'
+                    });
+                }
+            }
+        );
     };
 
     const handlePauseClick = (subscription: Subscription) => {
@@ -305,6 +346,7 @@ function BillingSubscriptionsPage() {
                 onChangePlan={handleChangePlanClick}
                 onExtendTrial={handleExtendTrialClick}
                 onPause={handlePauseClick}
+                onGrantCourtesy={handleGrantCourtesyClick}
                 onResume={handleResumeClick}
             />
 
@@ -330,6 +372,13 @@ function BillingSubscriptionsPage() {
                         onClose={() => setExtendTrialDialogOpen(false)}
                         onConfirm={handleConfirmExtendTrial}
                         isPending={extendTrialMutation.isPending}
+                    />
+
+                    <GrantCourtesyDialog
+                        subscription={selectedSubscription}
+                        isOpen={courtesyDialogOpen}
+                        onClose={() => setCourtesyDialogOpen(false)}
+                        onConfirm={handleConfirmGrantCourtesy}
                     />
 
                     <PauseSubscriptionDialog

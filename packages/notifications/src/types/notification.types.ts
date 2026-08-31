@@ -34,6 +34,12 @@ export enum NotificationType {
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
     SUBSCRIPTION_PAUSED = 'subscription_paused',
     SUBSCRIPTION_REACTIVATED = 'subscription_reactivated',
+    /** A courtesy was granted: N cycles gifted, starting when the paid period ends (HOS-180). */
+    COURTESY_GRANTED = 'courtesy_granted',
+    /** The gifted window began — the paid period ran out and the free cycles start now. */
+    COURTESY_STARTED = 'courtesy_started',
+    /** The gifted window closed and normal billing resumed. */
+    COURTESY_ENDED = 'courtesy_ended',
     PLAN_DOWNGRADE_LIMIT_WARNING = 'plan_downgrade_limit_warning',
     PAYMENT_RETRY_WARNING = 'payment_retry_warning',
     ADDON_CANCELLATION = 'addon_cancellation',
@@ -483,6 +489,30 @@ export interface ContactSubmissionPayload extends BaseNotificationPayload {
     readonly accommodationId?: string;
     /** ISO 8601 timestamp of when the form was submitted */
     readonly submittedAt: string;
+}
+
+/**
+ * Payload for the three courtesy-cycle notifications (HOS-180).
+ *
+ * Kept separate from {@link SubscriptionLifecyclePayload} on purpose: a gift is
+ * not a lifecycle event, and sharing the payload would make it far too easy for
+ * a courtesy to be routed to `subscription-paused.tsx`, whose copy blames the
+ * subscriber's payment method (HOS-926).
+ */
+export interface CourtesyPayload extends BaseNotificationPayload {
+    readonly type:
+        | NotificationType.COURTESY_GRANTED
+        | NotificationType.COURTESY_STARTED
+        | NotificationType.COURTESY_ENDED;
+    readonly planName: string;
+    /** Cycles gifted. Only meaningful on COURTESY_GRANTED. */
+    readonly cycles?: number;
+    /** Localised date the gift begins. Only meaningful on COURTESY_GRANTED. */
+    readonly startsAt?: string;
+    /** Localised date the gift ends. Absent on COURTESY_ENDED. */
+    readonly endsAt?: string;
+    /** Localised date of the next charge. Only meaningful on COURTESY_ENDED. */
+    readonly nextBillingDate?: string;
 }
 
 /** Payload for subscription lifecycle notifications (cancellation, pause, reactivation) */
@@ -1196,6 +1226,7 @@ export type NotificationPayload =
     | PaymentNotificationPayload
     | SubscriptionEventPayload
     | SubscriptionLifecyclePayload
+    | CourtesyPayload
     | AddonEventPayload
     | TrialEventPayload
     | AdminNotificationPayload

@@ -1066,7 +1066,8 @@
             "extendTrialButton": "Extender prueba",
             "cancelSubscriptionButton": "Cancelar suscripción",
             "pauseButton": "Pausar",
-            "resumeButton": "Reanudar"
+            "resumeButton": "Reanudar",
+            "grantCourtesyButton": "Regalar períodos"
         },
         "paymentHistory": {
             "title": "Historial de pagos",
@@ -1155,7 +1156,9 @@
             "paused": "Suscripción pausada",
             "resumed": "Suscripción reanudada",
             "pauseError": "Error al pausar suscripción:",
-            "resumeError": "Error al reanudar suscripción:"
+            "resumeError": "Error al reanudar suscripción:",
+            "courtesyGranted": "Períodos regalados",
+            "courtesyError": "No se pudo regalar:"
         },
         "unknownUser": "Usuario no identificado",
         "unknownPlan": "Plan no identificado",
@@ -1168,6 +1171,15 @@
             "experience": "Experiencia",
             "partner": "Partner",
             "unknown": "Otro"
+        },
+        "courtesyDialog": {
+            "title": "Regalar períodos",
+            "description": "Regalar períodos sin cargo a",
+            "cyclesLabel": "¿Cuántos períodos querés regalar?",
+            "startsAtNotice": "El regalo empieza cuando termina el período que ya pagó, no hoy. Hasta entonces no cambia nada para el suscriptor.",
+            "leadTimeWarning": "Si faltan menos de 3 días para el próximo cobro, el regalo se rechaza: pausar tan cerca puede no frenar ese cobro y le terminaríamos cobrando justo el período regalado.",
+            "confirmButton": "Regalar",
+            "backButton": "Volver"
         }
     },
     "exchangeRates": {
