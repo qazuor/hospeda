@@ -31,6 +31,42 @@
         "year": "/año"
     },
     "monthlyOnly": "Solo plan mensual",
+    "index": {
+        "title": "Planes de Hospeda",
+        "description": "Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.",
+        "tagline": "Planes y precios",
+        "heading": "Un plan para cada audiencia",
+        "subtitle": "Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá los precios.",
+        "cardsHeading": "Elegí tu audiencia",
+        "from": "Desde {{price}}",
+        "cards": {
+            "host": {
+                "title": "Alquilar mi alojamiento",
+                "audience": "Para anfitriones con casas, cabañas, departamentos u hoteles para alquilar.",
+                "cta": "Ver planes para anfitriones"
+            },
+            "tourist": {
+                "title": "Beneficios para viajar",
+                "audience": "Para viajeros que quieren comparar alojamientos, guardar favoritos y recibir alertas de precio.",
+                "cta": "Ver planes para viajeros"
+            },
+            "gastronomy": {
+                "title": "Publicar mi restaurante",
+                "audience": "Para restaurantes, bares y cafés que quieren aparecer en la guía gastronómica.",
+                "cta": "Ver planes de gastronomía"
+            },
+            "experience": {
+                "title": "Publicar mis experiencias",
+                "audience": "Para guías y operadores de excursiones, paseos y actividades.",
+                "cta": "Ver planes de experiencias"
+            },
+            "partner": {
+                "title": "Ser partner de Hospeda",
+                "audience": "Para marcas y comercios que quieren visibilidad en toda la plataforma.",
+                "cta": "Conocer el programa de partners"
+            }
+        }
+    },
     "owner": {
         "title": "Planes para propietarios",
         "description": "Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.",

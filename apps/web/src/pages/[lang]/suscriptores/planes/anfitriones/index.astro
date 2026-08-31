@@ -1,9 +1,15 @@
 ---
 /**
- * @file suscriptores/turistas/index.astro
- * @description Tourist pricing page. Thin wrapper around <PricingCardsGrid>;
+ * @file suscriptores/planes/anfitriones/index.astro
+ * @description Owner pricing page. Thin wrapper around <PricingCardsGrid>;
  * page-specific copy, metadata, and JSON-LD live here, the card UI itself
- * is shared with /suscriptores/planes/.
+ * is shared with /suscriptores/planes/turistas/.
+ *
+ * HOS-942 moved this page down one level, from /suscriptores/planes/ to
+ * /suscriptores/planes/anfitriones/. The parent path is now the five-audience
+ * INDEX, not owner pricing — it changed content, not location, so it carries
+ * no redirect (AC-5). This page's content is byte-for-byte what the parent
+ * used to serve (AC-3).
  *
  * Fetches pricing from the public API at runtime (SSR) so that operator
  * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
@@ -11,7 +17,7 @@
  * cache class (`lib/cache/cache-classes.ts`), and a plan write purges it via
  * `PlanService.triggerPricingRevalidation`.
  *
- * @route /{lang}/suscriptores/turistas/
+ * @route /{lang}/suscriptores/planes/anfitriones/
  * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
  *   time; edge-cacheable, TTL from the `pricing` cache class.
  */
@@ -28,7 +34,7 @@ import { buildUrl } from '@/lib/urls';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { BeachUmbrellaIcon, CompassIcon, SunIcon } from '@repo/icons';
+import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -54,28 +60,29 @@ applyCacheHeaders({
 
 // Fetch active plans from the public API endpoint at runtime.
 const fetchResult = await fetchPublicPlans();
-const touristPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'tourist')
+const ownerPlans = fetchResult.ok
+	? filterPlansByCategory(fetchResult.plans, 'owner')
 	: [];
 
 const intlLocale = getIntlLocale(locale);
-const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';
-const hasPlans = touristPlans.length > 0;
+const highlightedSlug = ownerPlans[1]?.slug ?? 'owner-pro';
+const hasPlans = ownerPlans.length > 0;
 
 // Build absolute URL for each plan (used by JSON-LD Offer entries).
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/turistas' })}`;
+const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes/anfitriones' })}`;
 
-const jsonLdPlans = touristPlans.map((plan) => ({
+const jsonLdPlans = ownerPlans.map((plan) => ({
 	name: plan.name,
 	description: plan.description,
 	priceCurrency: 'ARS',
+	// schema.org `price` expects major currency units (pesos), not cents.
 	price: plan.monthlyPriceArs / 100,
 	url: planPageUrl,
 }));
 
 // Split heading to underline the last word with a handwritten accent.
-const headingFull = t('pricing.tourist.heading', 'Planes para turistas');
+const headingFull = t('pricing.owner.heading', 'Planes para propietarios');
 const headingWords = headingFull.trim().split(/\s+/);
 const headingAccent = headingWords.pop() ?? headingFull;
 const headingMain = headingWords.join(' ');
@@ -83,40 +90,40 @@ const headingMain = headingWords.join(' ');
 
 <MarketingLayout
 	locale={locale}
-	title={t('pricing.tourist.title', 'Planes para turistas')}
+	title={t('pricing.owner.title', 'Planes para propietarios')}
 	description={t(
-		'pricing.tourist.description',
-		'Suscribite y disfrutá de beneficios exclusivos en tus viajes por el litoral.'
+		'pricing.owner.description',
+		'Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.'
 	)}
 >
 	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
 
 	<MarketingHero
-		tagline={t('pricing.tourist.tagline', 'Planes y precios')}
+		tagline={t('pricing.owner.tagline', 'Planes y precios')}
 		titleMain={headingMain}
 		titleAccent={headingAccent}
 		subtitle={t(
-			'pricing.tourist.subtitle',
-			'Elegí el plan que mejor se adapte a tu forma de viajar.'
+			'pricing.owner.subtitle',
+			'Elegí el plan que mejor se adapte a tu propiedad y objetivos.'
 		)}
 	>
-		<Fragment slot="icon-1"><BeachUmbrellaIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-2"><CompassIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-3"><SunIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
 	</MarketingHero>
 
 	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
 		<PricingCardsGrid
 			locale={locale}
-			plans={touristPlans}
+			plans={ownerPlans}
 			highlightedSlug={highlightedSlug}
 			intlLocale={intlLocale}
-			audience="tourist"
+			audience="owner"
 			sectionHeading={t(
-				'pricing.tourist.cardsHeading',
-				'Comparativa de planes para turistas'
+				'pricing.owner.cardsHeading',
+				'Comparativa de planes para propietarios'
 			)}
-			emptyMessage={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
+			emptyMessage={t('pricing.owner.empty', 'Planes no disponibles en este momento.')}
 			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
 			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
 			ctaText={t('pricing.cta', 'Empezar')}
@@ -127,7 +134,7 @@ const headingMain = headingWords.join(' ');
 		<section class="comparison-link section">
 			<ComparisonLinkTeaser
 				locale={locale}
-				href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
+				href={buildUrl({ locale, path: 'suscriptores/planes/comparar' })}
 			/>
 		</section>
 	)}

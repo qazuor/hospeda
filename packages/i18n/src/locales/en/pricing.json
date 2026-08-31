@@ -31,6 +31,42 @@
         "year": "/year"
     },
     "monthlyOnly": "Monthly plan only",
+    "index": {
+        "title": "Hospeda plans",
+        "description": "Pick the audience you belong to and see the plans built for you.",
+        "tagline": "Plans and pricing",
+        "heading": "A plan for every audience",
+        "subtitle": "There are five ways to join Hospeda. Pick yours and see the pricing.",
+        "cardsHeading": "Choose your audience",
+        "from": "From {{price}}",
+        "cards": {
+            "host": {
+                "title": "List my property",
+                "audience": "For hosts with houses, cabins, apartments or hotels to rent.",
+                "cta": "See host plans"
+            },
+            "tourist": {
+                "title": "Travel benefits",
+                "audience": "For travellers who want to compare stays, save favourites and get price alerts.",
+                "cta": "See traveller plans"
+            },
+            "gastronomy": {
+                "title": "List my restaurant",
+                "audience": "For restaurants, bars and cafes that want to appear in the food guide.",
+                "cta": "See gastronomy plans"
+            },
+            "experience": {
+                "title": "List my experiences",
+                "audience": "For guides and operators running tours, trips and activities.",
+                "cta": "See experience plans"
+            },
+            "partner": {
+                "title": "Become a Hospeda partner",
+                "audience": "For brands and businesses that want visibility across the platform.",
+                "cta": "Explore the partner programme"
+            }
+        }
+    },
     "owner": {
         "title": "Plans for owners",
         "description": "Publish your accommodation with the plan that best fits your business.",
