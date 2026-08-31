@@ -51,11 +51,17 @@ import type {
     PendingTrialExtension
 } from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
+import { recoverCancelledPreapproval } from '../../../services/billing/preapproval-recovery.service.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
+import {
+    buildNotificationUrl,
+    buildPaymentMethodReturnUrl,
+    DEFAULT_RETURN_URL_LOCALE
+} from '../../billing/checkout-return-urls.js';
 
 /**
  * Safety margin timeout before MercadoPago's 22s webhook deadline.
@@ -1651,6 +1657,93 @@ export async function processSubscriptionUpdated({
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription cancelled notification failed');
         });
+    }
+
+    // HOS-937 step 3: PENDING_PROVIDER -> CANCELLED means MercadoPago
+    // cancelled a preapproval that never activated (typically a card
+    // rejection during checkout, spec §8.3). Left alone, MP keeps offering
+    // the user a "pay with another method" button that can never work
+    // (`cancelled -> authorized` is a forbidden MP transition) — an
+    // infinite loop with no way out. Recover it: confirm the cancellation
+    // is real (R-3, deferred re-read), mint a fresh preapproval on the
+    // same terms, and send the user its link. This is deliberately its own
+    // `if`, NOT an `else` on `shouldSendCancelledEmail` above — that guard
+    // explicitly EXCLUDES this exact transition (a checkout that never
+    // activated is not "your subscription was cancelled"), which is why
+    // this transition has never sent the user anything until now.
+    //
+    // Non-blocking: a failure here must never fail the webhook — the
+    // status write already committed above, and MercadoPago must not
+    // retry this event over a recovery-only failure.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        mappedStatus === SubscriptionStatusEnum.CANCELLED
+    ) {
+        try {
+            const recoveryOutcome = await recoverCancelledPreapproval({
+                billing,
+                paymentAdapter,
+                localSubscription: {
+                    id: localSubscription.id,
+                    customerId: localSubscription.customerId,
+                    planId: localSubscription.planId,
+                    productDomain:
+                        (localSubscription as { productDomain?: string | null }).productDomain ??
+                        null,
+                    metadata: localSubscription.metadata,
+                    mpSubscriptionId: mpPreapprovalId
+                },
+                paymentMethodReturnUrl: buildPaymentMethodReturnUrl(DEFAULT_RETURN_URL_LOCALE),
+                notificationUrl: buildNotificationUrl()
+            });
+
+            if (recoveryOutcome.kind === 'minted' || recoveryOutcome.kind === 'already_minted') {
+                if (customer?.email) {
+                    sendNotification({
+                        type: NotificationType.PAYMENT_FAILURE,
+                        recipientEmail: customer.email,
+                        recipientName: customerName,
+                        userId,
+                        customerId: localSubscription.customerId,
+                        planName: planDisplayName,
+                        amount: 0,
+                        currency: 'ARS',
+                        failureReason: 'card_rejected',
+                        retryUrl: recoveryOutcome.checkoutUrl
+                    }).catch((notifErr) => {
+                        apiLogger.debug(
+                            { error: notifErr, subscriptionId: localSubscription.id },
+                            'HOS-937 step 3: retry-checkout notification failed'
+                        );
+                    });
+                }
+            } else {
+                apiLogger.info(
+                    {
+                        subscriptionId: localSubscription.id,
+                        outcome: recoveryOutcome.kind,
+                        ...(recoveryOutcome.kind === 'not_confirmed'
+                            ? { classification: recoveryOutcome.classification }
+                            : {}),
+                        ...(recoveryOutcome.kind === 'unsupported'
+                            ? { reason: recoveryOutcome.reason }
+                            : {})
+                    },
+                    'HOS-937 step 3: cancellation recovery did not mint a fresh preapproval'
+                );
+            }
+        } catch (recoveryError) {
+            apiLogger.warn(
+                {
+                    subscriptionId: localSubscription.id,
+                    error:
+                        recoveryError instanceof Error
+                            ? recoveryError.message
+                            : String(recoveryError)
+                },
+                'HOS-937 step 3: cancellation recovery failed (non-blocking)'
+            );
+        }
     }
 
     if (shouldSendPausedEmail(previousStatus, mappedStatus)) {

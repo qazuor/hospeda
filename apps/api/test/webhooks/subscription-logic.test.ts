@@ -90,6 +90,19 @@ vi.mock('../../src/services/billing/link-preapproval.service.js', () => ({
         mockApplyPendingTrialExtension(...args)
 }));
 
+// HOS-937 step 3: the cancellation-recovery orchestration, mocked so these
+// tests stay scoped to `processSubscriptionUpdated`'s own gating (does it
+// call the recovery, on the right transition, with the right data, and does
+// it send the retry-link notification only when minted). The recovery
+// module's OWN behavior (confirm/claim/mint) is unit-tested separately in
+// `preapproval-recovery.service.test.ts`. Defaults to `not_confirmed` so
+// every PRE-EXISTING test (none of which transitions PENDING_PROVIDER ->
+// CANCELLED) is unaffected even if it happened to reach this branch.
+const mockRecoverCancelledPreapproval = vi.fn();
+vi.mock('../../src/services/billing/preapproval-recovery.service.js', () => ({
+    recoverCancelledPreapproval: (...args: unknown[]) => mockRecoverCancelledPreapproval(...args)
+}));
+
 // Hoisted mock stubs for notification functions - declared before any imports are resolved.
 const { mockSendCancelled, mockSendPaused, mockSendReactivated } = vi.hoisted(() => ({
     mockSendCancelled: vi.fn().mockResolvedValue(undefined),
@@ -548,6 +561,9 @@ describe('processSubscriptionUpdated', () => {
         mockLinkPreapproval.mockReset().mockResolvedValue({ outcome: 'not_found' });
         mockApplyPendingDiscount.mockReset().mockResolvedValue(undefined);
         mockApplyPendingTrialExtension.mockReset().mockResolvedValue(undefined);
+        mockRecoverCancelledPreapproval
+            .mockReset()
+            .mockResolvedValue({ kind: 'not_confirmed', classification: 'other' });
 
         // Spy on notificationsModule exports to ensure they return Promises even if the
         // vi.mock for the module doesn't intercept the import inside subscription-logic.ts.
@@ -869,6 +885,136 @@ describe('processSubscriptionUpdated', () => {
                 newStatus: SubscriptionStatusEnum.CANCELLED
             })
         );
+    });
+
+    // HOS-937 step 3: PENDING_PROVIDER -> CANCELLED is a checkout that never
+    // activated (card rejection, spec §8.3) — replaces the infinite
+    // "pay with another method" loop with a recovered checkout link.
+    describe('HOS-937 step 3: cancellation recovery (PENDING_PROVIDER -> CANCELLED)', () => {
+        it('calls recoverCancelledPreapproval with the local row data and sends a PAYMENT_FAILURE notification carrying retryUrl when a fresh preapproval was minted', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            mockRecoverCancelledPreapproval.mockResolvedValue({
+                kind: 'minted',
+                localSubscriptionId: 'sub-local-002',
+                checkoutUrl: 'https://mp.test/checkout/fresh'
+            });
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-a'
+            });
+
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.CANCELLED
+            });
+
+            expect(mockRecoverCancelledPreapproval).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    billing: mockBilling,
+                    paymentAdapter: mockPaymentAdapter,
+                    localSubscription: expect.objectContaining({
+                        id: localSub.id,
+                        customerId: localSub.customerId,
+                        planId: localSub.planId,
+                        mpSubscriptionId: mpPreapprovalId
+                    })
+                })
+            );
+
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.PAYMENT_FAILURE,
+                    retryUrl: 'https://mp.test/checkout/fresh'
+                })
+            );
+        });
+
+        it('does NOT send any notification when the cancellation is not yet confirmed (R-3)', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            mockRecoverCancelledPreapproval.mockResolvedValue({
+                kind: 'not_confirmed',
+                classification: 'authorized'
+            });
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-b'
+            });
+
+            expect(sendNotification).not.toHaveBeenCalledWith(
+                expect.objectContaining({ type: NotificationType.PAYMENT_FAILURE })
+            );
+        });
+
+        it('never fails the webhook when the recovery orchestration itself throws (non-blocking)', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            mockRecoverCancelledPreapproval.mockRejectedValue(new Error('MP unreachable'));
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-c'
+            });
+
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.CANCELLED
+            });
+        });
+
+        it('does NOT call recoverCancelledPreapproval for an ordinary ACTIVE -> CANCELLED transition (shouldSendCancelledEmail`s territory, unaffected)', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-d'
+            });
+
+            expect(mockRecoverCancelledPreapproval).not.toHaveBeenCalled();
+        });
     });
 
     // TC-08: Status change to PAUSED - DB update, event log, and correct result
