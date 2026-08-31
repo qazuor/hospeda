@@ -91,7 +91,7 @@ const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
  * {@link DEFAULT_TRIAL_PLAN_SLUG}), so the owner pricing page is the correct,
  * single nudge target for every trial regardless of which plan it started on.
  */
-const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/';
+const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/anfitriones/';
 
 /**
  * Builds the trial→paid conversion nudge URL sent on the `TRIAL_ENDING_REMINDER`
