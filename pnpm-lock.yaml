@@ -444,8 +444,8 @@ importers:
         specifier: ^1.5.2
         version: 1.5.2(hono@4.13.0)(zod@4.3.6)
       '@linear/sdk':
-        specifier: ^89.0.0
-        version: 89.0.0(graphql@16.14.2)
+        specifier: ^91.0.0
+        version: 91.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
         specifier: ^5.0.0
         version: 5.0.0
@@ -3820,8 +3820,8 @@ packages:
   '@lhci/utils@0.15.1':
     resolution: {integrity: sha512-WclJnUQJeOMY271JSuaOjCv/aA0pgvuHZS29NFNdIeI14id8eiFsjith85EGKYhljgoQhJ2SiW4PsVfFiakNNw==}
 
-  '@linear/sdk@89.0.0':
-    resolution: {integrity: sha512-LiV2wsIg1Wym4GgaAUMrALo953WEgIAAceyK8qL91q75Ws8+lqwAkPW252MHtwktZCR7exMBd5wCAdct3yLU7w==}
+  '@linear/sdk@91.0.0':
+    resolution: {integrity: sha512-H0pa8J6D4OSL89wZK7xtM7g/JcOjGWfZgeLyvl0RcUfY+arvWVimjMz+XVRxmu2yMLov0eeuRB1z0qIWIrCd9w==}
     engines: {node: '>=18.x'}
 
   '@marsidev/react-turnstile@1.5.5':
@@ -14773,7 +14773,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@linear/sdk@89.0.0(graphql@16.14.2)':
+  '@linear/sdk@91.0.0(graphql@16.14.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
     transitivePeerDependencies:
