@@ -232,6 +232,40 @@ export const useChangePlanMutation = () => {
 };
 
 /**
+ * Grant N free billing cycles to a paying subscriber (HOS-180).
+ *
+ * The endpoint refuses a grant made under three days before the next charge:
+ * pausing the preapproval that close may not stop it, and the subscriber would
+ * be charged for exactly the cycle being gifted. That refusal comes back as a
+ * 422 whose message names the next charge date, so it is worth surfacing
+ * verbatim rather than replacing with a generic error.
+ */
+async function grantCourtesy(payload: { subscriptionId: string; cycles: number }) {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/billing/subscriptions/${payload.subscriptionId}/grant-courtesy`,
+        method: 'POST',
+        body: { cycles: payload.cycles }
+    });
+    return result.data.data;
+}
+
+/**
+ * Hook to gift free billing cycles to a paying subscriber (HOS-180).
+ */
+export const useGrantCourtesyMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: { subscriptionId: string; cycles: number }) => grantCourtesy(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: subscriptionQueryKeys.subscriptions.lists()
+            });
+        }
+    });
+};
+
+/**
  * Extend a trial subscription via the admin tier endpoint (qzpay-hono v1.3).
  */
 async function extendTrial(payload: { subscriptionId: string; additionalDays: number }) {

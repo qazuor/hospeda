@@ -1066,7 +1066,8 @@
             "extendTrialButton": "Extend trial",
             "cancelSubscriptionButton": "Cancel subscription",
             "pauseButton": "Pause",
-            "resumeButton": "Resume"
+            "resumeButton": "Resume",
+            "grantCourtesyButton": "Gift cycles"
         },
         "paymentHistory": {
             "title": "Payment History",
@@ -1155,7 +1156,9 @@
             "paused": "Subscription paused",
             "resumed": "Subscription resumed",
             "pauseError": "Error pausing subscription:",
-            "resumeError": "Error resuming subscription:"
+            "resumeError": "Error resuming subscription:",
+            "courtesyGranted": "Cycles gifted",
+            "courtesyError": "Could not gift cycles:"
         },
         "unknownUser": "Unknown user",
         "unknownPlan": "Unknown plan",
@@ -1168,6 +1171,15 @@
             "experience": "Experience",
             "partner": "Partner",
             "unknown": "Other"
+        },
+        "courtesyDialog": {
+            "title": "Gift billing cycles",
+            "description": "Gift free cycles to",
+            "cyclesLabel": "How many cycles do you want to gift?",
+            "startsAtNotice": "The gift starts when the period they already paid for ends, not today. Nothing changes for the subscriber until then.",
+            "leadTimeWarning": "If the next charge is under 3 days away the grant is refused: pausing that close may not stop it, and they would be charged for exactly the cycle being gifted.",
+            "confirmButton": "Gift",
+            "backButton": "Back"
         }
     },
     "exchangeRates": {
