@@ -13,10 +13,19 @@
  * tweaks land in both places at once.
  */
 
-import { CheckIcon, SparkleIcon, StarIcon } from '@repo/icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
+import { computePlanDelta, computePlanDeltas } from '@/components/billing/plan-card-delta';
+import type { PlanDelta } from '@/components/billing/plan-card-delta';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { getDisplayFeatures, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
+import {
+	formatLimitValue,
+	getDisplayFeatures,
+	getLimitHelp,
+	getLimitName,
+	getPlanDescription,
+	getPlanName,
+	getPlanRecommendedFor,
+} from '@/lib/billing-i18n';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -24,10 +33,16 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 /**
  * Minimal plan shape required by this component. Decoupled from PlanDefinition
- * so the component works with both the static @repo/billing config and the
- * runtime endpoint response (PublicPlanData from @/lib/billing/fetch-plans).
- * The `limits` field from PlanDefinition is intentionally excluded because this
- * component does not render limits — only entitlements are shown as feature bullets.
+ * so the component works with the runtime endpoint response (PublicPlanData
+ * from @/lib/billing/fetch-plans).
+ *
+ * `limits` is REQUIRED (HOS-943). It used to be excluded with the note that
+ * this component "does not render limits — only entitlements", and that
+ * omission is exactly what the cumulative delta could not survive: several
+ * tiers in this catalogue differ ONLY in their numeric caps, so a card built
+ * from entitlements alone renders "everything in Basic, plus:" followed by
+ * nothing. The shape is `Record<key, value>` — QZPay's storage format, which is
+ * what the public endpoint returns — not `LimitDefinition[]`.
  */
 export interface PricingPlan {
 	readonly slug: string;
@@ -41,12 +56,18 @@ export interface PricingPlan {
 	readonly isActive: boolean;
 	/** Entitlement keys (string values matching EntitlementKey). */
 	readonly entitlements: readonly string[];
+	/** Numeric caps as a key -> value map; `-1` is the unlimited sentinel. */
+	readonly limits: Readonly<Record<string, number>>;
 }
 
 interface Props {
 	readonly locale: SupportedLocale;
+	/**
+	 * Tiers to render, ALREADY ordered by `sortOrder` — which is what
+	 * `filterPlansByCategory` returns. The order is load-bearing here, not
+	 * cosmetic: each card is diffed against the one before it.
+	 */
 	readonly plans: ReadonlyArray<PricingPlan>;
-	readonly highlightedSlug: string;
 	readonly intlLocale: string;
 	/** Audience of the page — owner cards collapse the inherited tourist tier
 	    and the AI entitlements into grouped bullets to keep the list short. */
@@ -66,7 +87,6 @@ interface Props {
 const {
 	locale,
 	plans,
-	highlightedSlug,
 	intlLocale,
 	audience,
 	sectionHeading,
@@ -86,17 +106,15 @@ const hasAnyAnnualPrice = plans.some(
 	(plan) => plan.annualPriceArs !== null && plan.annualPriceArs > 0
 );
 
-const recommendedLabel = t('pricing.recommended', 'Recomendado');
 const featuresLabel = t('pricing.features.label', 'Incluye');
 const includesEverythingTemplate = t(
 	'pricing.includesEverything',
 	'Todo lo del plan {plan}, más:'
 );
-const baseHighlightTitle = t('pricing.baseHighlightTitle', 'Ideal para empezar');
-const baseHighlightText = t(
-	'pricing.baseHighlightText',
-	'Todo lo esencial para arrancar, sin compromiso.'
-);
+const includesAllLabel = t('pricing.includesAll', 'Este plan incluye:');
+const limitsLabel = t('pricing.limitsLabel', 'Límites de este plan');
+const limitLineTemplate = t('pricing.limitLine', '{label}: {value}');
+const recommendedForLabel = t('pricing.recommendedFor.label', 'Recomendado para');
 const toggleMonthlyLabel = t('pricing.toggle.monthly', 'Mensual');
 const toggleAnnualLabel = t('pricing.toggle.annual', 'Anual');
 const toggleAriaLabel = t(
@@ -124,26 +142,6 @@ function computeAnnualSavingPercent(plan: PricingPlan): number | null {
 }
 
 /**
- * Compute the entitlements that this plan adds on top of the previous tier.
- * The first plan in the grid lists every entitlement; subsequent plans show
- * only what they introduce, with a leading "everything in <previous>" line.
- * This keeps cards visually balanced (no card with 18 bullets next to a card
- * with 4) without losing information — users can still see the upgrade story.
- */
-function computeAddedEntitlements(input: {
-	plan: PricingPlan;
-	previous: PricingPlan | undefined;
-}): ReadonlyArray<string> {
-	const { plan, previous } = input;
-	if (!previous) return plan.entitlements;
-	const previousSet = new Set<string>(previous.entitlements as ReadonlyArray<string>);
-	const added = plan.entitlements.filter((e) => !previousSet.has(e as string));
-	// Defensive fallback: if the upper plan introduces nothing on top of the
-	// previous one (config error), show its full list instead of an empty bullets.
-	return added.length > 0 ? added : plan.entitlements;
-}
-
-/**
  * Format ARS cents to a locale-aware currency string. Mirrors the helper that
  * was previously inlined in each pricing page; keeping it here so both pages
  * share the same formatting logic.
@@ -161,6 +159,95 @@ function formatPriceArs(cents: number): string {
 		return `$${pesos.toLocaleString('es-AR')}`;
 	}
 }
+
+/** One numeric cap as it is rendered: the value line plus its explanation. */
+interface CardLimitLine {
+	readonly key: string;
+	/** "Photos per listing: 30" — built from `pricing.limitLine`. */
+	readonly text: string;
+	/** What the cap means and what happens at it (AC-13). */
+	readonly help: string;
+}
+
+/**
+ * The cumulative delta for every card, computed ONCE from the plan payloads.
+ *
+ * Nothing about this list is curated: `computePlanDeltas` diffs consecutive
+ * tiers, so a plan re-priced or re-scoped in admin changes what these cards say
+ * with no edit here and no edit in the locale files (AC-11).
+ */
+const deltas = computePlanDeltas({ plans });
+
+/**
+ * Everything one card renders, resolved in the frontmatter rather than inline
+ * in the markup.
+ *
+ * Two reasons, and the second is the load-bearing one. It keeps the template
+ * readable; and it puts the "is there a previous tier?" decision in one typed
+ * place, so the "everything in <previous>, plus:" header can only be built from
+ * a plan object that exists. That is what makes "Todo lo del plan undefined,
+ * más:" unrepresentable rather than merely unlikely (AC-17).
+ */
+const cards = plans.map((plan, index) => {
+	const rawDelta = deltas[index] as PlanDelta;
+	const previousPlan = index > 0 ? plans[index - 1] : undefined;
+
+	/**
+	 * A non-first tier that adds NOTHING on top of the one below it is a
+	 * catalogue misconfiguration, and "everything in Basic, plus:" over an
+	 * empty list is the worst possible way to surface it. Fall back to the full
+	 * offer — literally the first-tier delta, recomputed with no predecessor —
+	 * so the card keeps selling the plan while the config is wrong.
+	 */
+	const showsDelta = !rawDelta.isFirstTier && !rawDelta.isEmpty && previousPlan !== undefined;
+	const delta = showsDelta ? rawDelta : computePlanDelta({ plan });
+
+	const features = getDisplayFeatures({ keys: delta.addedEntitlements, audience, t });
+	const limitLines: CardLimitLine[] = delta.limitChanges.map((change) => ({
+		key: change.key,
+		text: limitLineTemplate
+			.replace('{label}', getLimitName({ key: change.key, t }))
+			.replace(
+				'{value}',
+				formatLimitValue({
+					value: change.value,
+					isUnlimited: change.isUnlimited,
+					intlLocale,
+					t,
+				})
+			),
+		help: getLimitHelp({ key: change.key, t }),
+	}));
+
+	const monthlyFormatted =
+		plan.monthlyPriceArs === 0 ? t('pricing.free', 'Gratis') : formatPriceArs(plan.monthlyPriceArs);
+	const hasAnnualPrice = plan.annualPriceArs !== null && plan.annualPriceArs > 0;
+	const savingPercent = computeAnnualSavingPercent(plan);
+
+	return {
+		plan,
+		name: getPlanName({ plan, t }),
+		description: getPlanDescription({ plan, t }),
+		recommendedFor: getPlanRecommendedFor({ plan, audience, t }),
+		monthlyFormatted,
+		hasAnnualPrice,
+		annualFormatted: hasAnnualPrice ? formatPriceArs(plan.annualPriceArs as number) : '',
+		savingLabel:
+			savingPercent !== null
+				? annualSavingTemplate.replace('{percent}', String(savingPercent))
+				: '',
+		// Only a real previous plan can produce this header; when there is none
+		// the card falls back to the neutral "this plan includes:" line.
+		deltaHeading: showsDelta
+			? includesEverythingTemplate.replace(
+					'{plan}',
+					getPlanName({ plan: previousPlan as PricingPlan, t })
+				)
+			: includesAllLabel,
+		features,
+		limitLines,
+	};
+});
 ---
 
 <div
@@ -202,161 +289,135 @@ function formatPriceArs(cents: number): string {
 			actionLabel={emptyActionLabel}
 		/>
 	) : (
-		<div class="pricing-cards__grid">
-			{plans.map((plan, i) => {
-				const isHighlighted = plan.slug === highlightedSlug;
-				const monthlyFormatted =
-					plan.monthlyPriceArs === 0
-						? t('pricing.free', 'Gratis')
-						: formatPriceArs(plan.monthlyPriceArs);
-				const hasAnnualPrice =
-					plan.annualPriceArs !== null && plan.annualPriceArs > 0;
-				const annualFormatted = hasAnnualPrice
-					? formatPriceArs(plan.annualPriceArs as number)
-					: '';
-				const savingPercent = computeAnnualSavingPercent(plan);
-				const savingLabel =
-					savingPercent !== null
-						? annualSavingTemplate.replace('{percent}', String(savingPercent))
-						: '';
-				const previousPlan = i > 0 ? plans[i - 1] : undefined;
-				const visibleEntitlements = computeAddedEntitlements({ plan, previous: previousPlan });
-				const showsIncremental = i > 0 && visibleEntitlements !== plan.entitlements;
-					// Curate bullets per audience: owner cards collapse the inherited
-					// tourist tier + AI suite into grouped bullets to keep lists short.
-					const visibleFeatures = getDisplayFeatures({ keys: visibleEntitlements, audience, t });
-					const inheritedFeatures = previousPlan
-						? getDisplayFeatures({ keys: previousPlan.entitlements, audience, t })
-						: [];
-				const includesEverythingLabel = previousPlan
-					? includesEverythingTemplate.replace('{plan}', getPlanName({ plan: previousPlan, t }))
-					: '';
-				const inheritedSummaryLabel = previousPlan
-					? tPlural('pricing.inheritedSummary', previousPlan.entitlements.length, {
-							plan: getPlanName({ plan: previousPlan, t }),
-					  })
-					: '';
-
-				return (
-					<div
-						class:list={['pricing-card', { 'pricing-card--highlighted': isHighlighted }]}
-						data-reveal="up"
-						data-recommended-label={isHighlighted ? recommendedLabel : null}
-						data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
-					>
-						<h3 class="pricing-card__name">{getPlanName({ plan, t })}</h3>
-						<p class="pricing-card__desc">{getPlanDescription({ plan, t })}</p>
-						<div class="pricing-card__price">
-							{/*
-								Render both prices in the markup and let CSS toggle visibility
-								based on the ancestor's data-billing attribute. Avoids shipping
-								an island for the price display; the React PlanPurchaseButton
-								below reads the same data attribute when forming the checkout
-								payload.
-							*/}
-							<span class="pricing-card__amount pricing-card__amount--monthly">
-								{monthlyFormatted}
+		<div class="pricing-cards__grid" data-count={Math.min(cards.length, 3)}>
+			{cards.map((card, i) => (
+				<div
+					class="pricing-card"
+					data-reveal="up"
+					data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
+				>
+					<h3 class="pricing-card__name">{card.name}</h3>
+					<p class="pricing-card__desc">{card.description}</p>
+					{/*
+						Every card carries a "recommended for" profile — no card wears a
+						"most popular" badge (HOS-943 AC-12). A single highlighted tier
+						needs conversion data Hospeda does not have, and it turns the
+						other two into losers; naming the reader each tier is for lets
+						them self-select instead.
+					*/}
+					<p class="pricing-card__audience">
+						<span class="pricing-card__audience-label">{recommendedForLabel}:</span>{' '}
+						<span class="pricing-card__audience-text">{card.recommendedFor}</span>
+					</p>
+					<div class="pricing-card__price">
+						{/*
+							Render both prices in the markup and let CSS toggle visibility
+							based on the ancestor's data-billing attribute. Avoids shipping
+							an island for the price display; the React PlanPurchaseButton
+							below reads the same data attribute when forming the checkout
+							payload.
+						*/}
+						<span class="pricing-card__amount pricing-card__amount--monthly">
+							{card.monthlyFormatted}
+						</span>
+						{card.plan.monthlyPriceArs > 0 && (
+							<span class="pricing-card__period pricing-card__period--monthly">
+								{periodMonthLabel}
 							</span>
-							{plan.monthlyPriceArs > 0 && (
-								<span class="pricing-card__period pricing-card__period--monthly">
-									{periodMonthLabel}
-								</span>
-							)}
-							{hasAnnualPrice ? (
-								<>
-									<span class="pricing-card__amount pricing-card__amount--annual">
-										{annualFormatted}
-									</span>
-									<span class="pricing-card__period pricing-card__period--annual">
-										{periodYearLabel}
-									</span>
-									{savingLabel && (
-										<span class="pricing-card__saving pricing-card__saving--annual">
-											{savingLabel}
-										</span>
-									)}
-								</>
-							) : (
-								<span class="pricing-card__amount pricing-card__amount--annual pricing-card__monthly-only">
-									{monthlyOnlyLabel}
-								</span>
-							)}
-						</div>
-						{plan.hasTrial && plan.trialDays > 0 && (
-							<p class="pricing-card__trial">
-								{tPlural('pricing.trial', plan.trialDays)}
-							</p>
 						)}
-						{visibleFeatures.length > 0 && (
-							<ul class="pricing-card__features" aria-label={featuresLabel}>
-								{visibleFeatures.map((feature) => (
-									<li class="pricing-card__feature">
-										<svg
-											class="pricing-card__feature-icon"
-											xmlns="http://www.w3.org/2000/svg"
-											width="18"
-											height="18"
-											viewBox="0 0 24 24"
-											fill="none"
-											aria-hidden="true"
-										>
-											<path
-												d="M5 12.5l4.5 4.5L19 7"
-												stroke="currentColor"
-												stroke-width="2.5"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											/>
-										</svg>
-										<span>{feature.label}</span>
-									</li>
-								))}
-							</ul>
-						)}
-						{showsIncremental && previousPlan ? (
-							<div class="pricing-card__inherited">
-								<p class="pricing-card__inherited-header">
-									<span class="pricing-card__inherited-icon" aria-hidden="true">
-										<StarIcon size="xs" weight="fill" color="currentColor" />
+						{card.hasAnnualPrice ? (
+							<>
+								<span class="pricing-card__amount pricing-card__amount--annual">
+									{card.annualFormatted}
+								</span>
+								<span class="pricing-card__period pricing-card__period--annual">
+									{periodYearLabel}
+								</span>
+								{card.savingLabel && (
+									<span class="pricing-card__saving pricing-card__saving--annual">
+										{card.savingLabel}
 									</span>
-									<span>{inheritedSummaryLabel}</span>
-								</p>
-								<ul class="pricing-card__inherited-list" aria-label={includesEverythingLabel}>
-									{inheritedFeatures.map((feature) => (
-										<li class="pricing-card__inherited-item">
-											<span class="pricing-card__inherited-check" aria-hidden="true">
-												<CheckIcon size="xs" weight="bold" color="currentColor" />
-											</span>
-											<span>{feature.label}</span>
-										</li>
-									))}
-								</ul>
-							</div>
+								)}
+							</>
 						) : (
-							<div class="pricing-card__base-highlight">
-								<span class="pricing-card__base-highlight-icon" aria-hidden="true">
-									<SparkleIcon size="md" weight="fill" color="currentColor" />
-								</span>
-								<p class="pricing-card__base-highlight-title">{baseHighlightTitle}</p>
-								<p class="pricing-card__base-highlight-text">{baseHighlightText}</p>
-							</div>
+							<span class="pricing-card__amount pricing-card__amount--annual pricing-card__monthly-only">
+								{monthlyOnlyLabel}
+							</span>
 						)}
-						<div class="pricing-card__btn-wrapper">
-							<PlanPurchaseButton
-								client:load
-								planSlug={plan.slug}
-								monthlyPrice={plan.monthlyPriceArs}
-								annualPrice={plan.annualPriceArs ?? null}
-								currency="ARS"
-								ctaText={ctaText}
-								locale={locale}
-								plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
-								trialDays={plan.hasTrial ? plan.trialDays : 0}
-							/>
-						</div>
 					</div>
-				);
-			})}
+					{card.plan.hasTrial && card.plan.trialDays > 0 && (
+						<p class="pricing-card__trial">
+							{tPlural('pricing.trial', card.plan.trialDays)}
+						</p>
+					)}
+					{/*
+						The delta heading. `card.deltaHeading` was resolved in the
+						frontmatter from a plan object that exists, so this can never
+						render "everything in plan undefined, plus:" — on the first tier
+						(or a single-tier audience) it is the neutral "this plan
+						includes:" line instead (AC-17).
+					*/}
+					<p class="pricing-card__delta-heading">{card.deltaHeading}</p>
+					{card.features.length > 0 && (
+						<ul class="pricing-card__features" aria-label={featuresLabel}>
+							{card.features.map((feature) => (
+								<li class="pricing-card__feature">
+									<svg
+										class="pricing-card__feature-icon"
+										xmlns="http://www.w3.org/2000/svg"
+										width="18"
+										height="18"
+										viewBox="0 0 24 24"
+										fill="none"
+										aria-hidden="true"
+									>
+										<path
+											d="M5 12.5l4.5 4.5L19 7"
+											stroke="currentColor"
+											stroke-width="2.5"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+									<span>{feature.label}</span>
+								</li>
+							))}
+						</ul>
+					)}
+					{/*
+						Numeric caps. Each one carries its explanation as a VISIBLE
+						sibling line inside the same <li>, not a tooltip (AC-13): a
+						tooltip has to be re-solved for keyboard and for screen readers,
+						and a number nobody can interpret is worse than a slightly
+						longer card. Being inside the list item is what makes the
+						explanation part of what a screen reader announces with the
+						value.
+					*/}
+					{card.limitLines.length > 0 && (
+						<ul class="pricing-card__limits" aria-label={limitsLabel}>
+							{card.limitLines.map((line) => (
+								<li class="pricing-card__limit">
+									<span class="pricing-card__limit-value">{line.text}</span>
+									<span class="pricing-card__limit-help">{line.help}</span>
+								</li>
+							))}
+						</ul>
+					)}
+					<div class="pricing-card__btn-wrapper">
+						<PlanPurchaseButton
+							client:load
+							planSlug={card.plan.slug}
+							monthlyPrice={card.plan.monthlyPriceArs}
+							annualPrice={card.plan.annualPriceArs ?? null}
+							currency="ARS"
+							ctaText={ctaText}
+							locale={locale}
+							plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
+							trialDays={card.plan.hasTrial ? card.plan.trialDays : 0}
+						/>
+					</div>
+				</div>
+			))}
 		</div>
 	)}
 </div>
@@ -368,16 +429,33 @@ function formatPriceArs(cents: number): string {
 		padding: 0 var(--space-container-x);
 	}
 
+	/* The grid is sized to the number of cards it actually has (HOS-943 AC-14,
+	   absorbing HOS-891). A fixed `repeat(3, …)` left one or two cards pinned to
+	   the left of a three-column track with dead space beside them — which is
+	   what deactivating a tourist tier produced the day it happened. Each count
+	   gets its own column template plus a matching `max-width`, so `margin: 0
+	   auto` centres the whole track instead of centring a track that is wider
+	   than its contents. `data-count` is clamped to 3 by the template, so a
+	   fourth tier falls back to the three-column rule rather than to no rule. */
 	.pricing-cards__grid {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-card-gap);
 		align-items: stretch;
+		justify-content: center;
 		max-width: 1140px;
 		margin: 0 auto;
-		/* Headroom so the highlighted card's "Recomendado" badge, which sits
-		   above the card's top edge, is never clipped (no scale anymore). */
 		padding-top: var(--space-4);
+	}
+
+	.pricing-cards__grid[data-count='2'] {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		max-width: 760px;
+	}
+
+	.pricing-cards__grid[data-count='1'] {
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 400px;
 	}
 
 	.pricing-card {
@@ -399,33 +477,11 @@ function formatPriceArs(cents: number): string {
 		box-shadow: var(--shadow-card-hover);
 	}
 
-	.pricing-card--highlighted {
-		border-color: var(--brand-accent);
-		background-color: var(--surface-warm);
-		position: relative;
-	}
-
-	.pricing-card--highlighted:hover {
-		transform: translateY(-4px);
-	}
-
-	.pricing-card--highlighted::before {
-		content: attr(data-recommended-label);
-		position: absolute;
-		top: calc(var(--space-3) * -1);
-		left: 50%;
-		transform: translateX(-50%);
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		font-size: var(--text-caption);
-		padding: var(--space-1) var(--space-3);
-		border-radius: var(--radius-pill);
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		white-space: nowrap;
-	}
+	/* There is deliberately no `.pricing-card--highlighted` rule and no
+	   "Recomendado" badge (HOS-943 AC-12). Singling out one tier needs
+	   conversion data Hospeda does not have, and it labels the other two as
+	   second-best. `.pricing-card__audience` below is what replaced it: every
+	   card names the reader it is for. */
 
 	.pricing-card__name {
 		font-family: var(--font-heading);
@@ -440,6 +496,27 @@ function formatPriceArs(cents: number): string {
 		font-size: var(--text-body-sm);
 		color: var(--core-muted-foreground);
 		margin: 0 0 var(--space-4);
+	}
+
+	/* "Recomendado para: …" — present on EVERY card. Bordered rather than
+	   badged: it identifies the reader, it does not rank the tier. */
+	.pricing-card__audience {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		line-height: 1.45;
+		color: var(--core-foreground);
+		background-color: var(--surface-warm);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		padding: var(--space-3);
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-card__audience-label {
+		font-weight: 700;
+		/* `--brand-primary` is ~3.5:1 on a light card and fails WCAG AA as body
+		   text; `--brand-primary-link` is the accessible step of the same hue. */
+		color: var(--brand-primary-link);
 	}
 
 	.pricing-card__price {
@@ -477,101 +554,53 @@ function formatPriceArs(cents: number): string {
 		gap: var(--space-2);
 	}
 
-	/* Inherited-tier block (OQ-2): on incremental cards, list the tier the plan
-	   builds on — the new entitlements show above with a solid check; the
-	   inherited ones repeat here in a muted, compact style. This fills the
-	   vertical space the delta-only list would otherwise leave empty (keeping
-	   stretched cards visually balanced) while preserving the "what's new vs
-	   what carries over" hierarchy. A dashed outline keeps it legible on both
-	   the plain and warm-tinted highlighted card. */
-	.pricing-card__inherited {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		margin: 0 0 var(--space-4);
-		padding: var(--space-3);
-		border: 1px dashed var(--core-foreground-a15);
-		border-radius: var(--radius-card);
+	/* Delta heading — either "Todo lo del plan X, más:" or, on the first tier,
+	   the neutral "Este plan incluye:". The block that used to sit here (the
+	   inherited-tier list, plus a "value highlight" filler for the base card)
+	   is gone: it re-enumerated the whole previous tier under a header that
+	   says "only the differences follow", which is the opposite of AC-10. */
+	.pricing-card__delta-heading {
 		font-family: var(--font-sans);
-	}
-
-	.pricing-card__inherited-header {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin: 0;
 		font-size: var(--text-body-sm);
-		font-weight: 600;
-		color: var(--core-muted-foreground);
+		font-weight: 700;
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-2);
 	}
 
-	.pricing-card__inherited-icon {
-		display: inline-flex;
-		align-items: center;
-		flex-shrink: 0;
-		color: var(--brand-accent);
-	}
-
-	.pricing-card__inherited-list {
+	/* Numeric caps. Each item is a value line plus a muted explanation line;
+	   both live in the same <li>, which is what makes the explanation part of
+	   what a screen reader announces with the number (AC-13). No tooltip: a
+	   tooltip has to be re-solved for keyboard and for assistive tech, and this
+	   costs nothing but vertical space. */
+	.pricing-card__limits {
 		list-style: none;
 		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.pricing-card__inherited-item {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-2);
-		font-size: var(--text-body-sm);
-		line-height: 1.4;
-		color: var(--core-muted-foreground);
-	}
-
-	.pricing-card__inherited-check {
-		display: inline-flex;
-		align-items: center;
-		flex-shrink: 0;
-		margin-top: 2px;
-		color: var(--core-muted-foreground);
-		opacity: 0.6;
-	}
-
-	/* Value highlight (OQ-2 follow-up): the base plan has no inherited tier to
-	   list, so it would leave empty space under its feature list once cards are
-	   stretched to the tallest column. This block grows to fill that space with
-	   a centered value message, keeping the base card balanced with the rest. */
-	.pricing-card__base-highlight {
-		flex-grow: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		text-align: center;
-		gap: var(--space-2);
 		margin: 0 0 var(--space-4);
-		padding: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
 	}
 
-	.pricing-card__base-highlight-icon {
-		display: inline-flex;
-		color: var(--brand-accent);
+	.pricing-card__limit {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-family: var(--font-sans);
+		padding-left: var(--space-3);
+		border-left: 2px solid var(--border);
 	}
 
-	.pricing-card__base-highlight-title {
-		margin: 0;
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-body-lg);
-		color: var(--core-foreground);
-	}
-
-	.pricing-card__base-highlight-text {
-		margin: 0;
+	.pricing-card__limit-value {
 		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--core-foreground);
+		line-height: 1.4;
+	}
+
+	.pricing-card__limit-help {
+		font-size: var(--text-caption);
 		color: var(--core-muted-foreground);
+		line-height: 1.45;
 	}
 
 	.pricing-card__feature {
@@ -596,17 +625,16 @@ function formatPriceArs(cents: number): string {
 		margin-top: auto;
 	}
 
+	/* Below 768px every count collapses to one centred column, which is why the
+	   `[data-count]` rules above need no mobile variants — this rule wins on
+	   specificity ties by source order and applies to all three. */
 	@media (max-width: 768px) {
-		.pricing-cards__grid {
-			grid-template-columns: 1fr;
+		.pricing-cards__grid,
+		.pricing-cards__grid[data-count='1'],
+		.pricing-cards__grid[data-count='2'] {
+			grid-template-columns: minmax(0, 1fr);
 			max-width: 400px;
 			margin: 0 auto;
-		}
-		.pricing-card--highlighted {
-			transform: none;
-		}
-		.pricing-card--highlighted:hover {
-			transform: translateY(-4px);
 		}
 	}
 

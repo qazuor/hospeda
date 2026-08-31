@@ -64,7 +64,6 @@ const touristPlans = fetchResult.ok
 	: [];
 
 const intlLocale = getIntlLocale(locale);
-const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';
 const hasPlans = touristPlans.length > 0;
 
 // Build absolute URL for each plan (used by JSON-LD Offer entries).
@@ -114,7 +113,6 @@ const headingMain = headingWords.join(' ');
 		<PricingCardsGrid
 			locale={locale}
 			plans={touristPlans}
-			highlightedSlug={highlightedSlug}
 			intlLocale={intlLocale}
 			audience="tourist"
 			sectionHeading={t(
