@@ -1,0 +1,562 @@
+---
+/**
+ * @file presentacion/aliados/index.astro
+ * @description Commercial presentation for partners (aliados) (HOS-978). A verbatim
+ * migration of the owner-approved artifact "Presentación Aliados"; the copy and the
+ * stylesheet below are the artifact's own and must not be rewritten here —
+ * the artifact is the source of truth for both.
+ *
+ * WHY IT IS NOT THE PUBLIC LANDING (/sumate/partner/). That landing sells and is
+ * optimized to rank. This page is what the owner sends personally to one
+ * prospect over WhatsApp, or dictates by phone, and it carries things a public
+ * landing must not: negotiable pricing, comparisons against competitors, and
+ * operational detail. That is why `noindex, nofollow` is a requirement here
+ * rather than a precaution, and why the page is excluded from the sitemap (see
+ * `lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS, which also drives the
+ * robots.txt `Disallow`).
+ *
+ * WHY IT IS NOT TRANSLATED. The audience is local (owner decision, HOS-978).
+ * The page lives under `[lang]/` anyway so the short, dictable URL works:
+ * `hospeda.com.ar/presentacion/aliados` is 301-redirected to
+ * `/es/presentacion/aliados/` by the middleware's locale step, so no middleware
+ * exemption was needed. It therefore serves the same Spanish copy under
+ * `/en/` and `/pt/` BY DESIGN — unlike HOS-908, where that was a defect.
+ *
+ * WHY `StandaloneLayout`. The page owns 100% of its chrome, exactly like the
+ * `/funcionalidades/` brochure (HOS-119) it follows. No Header, no Footer, no
+ * site nav — it must look like the artifact it came from.
+ *
+ * WHY THE STYLESHEET IS A PLAIN `<style>` BLOCK. Astro extracts it to a real
+ * stylesheet. An `is:inline` block would be dropped in production: the CSP
+ * omits `'unsafe-inline'` from `style-src` outside dev (see
+ * `lib/middleware-helpers.ts`), so the page would render unstyled in prod
+ * while looking perfect locally. Do not add `is:inline` here.
+ *
+ * @route /{lang}/presentacion/aliados/
+ * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: the content is hardcoded copy, so it only
+// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/aliados/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentación Aliados"
+		description="Acompañá al turismo del Litoral. Presencia estable en el portal donde se planifican los viajes al Litoral: dónde dormir, dónde comer, qué hacer."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+	<link
+		slot="head"
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
+	/>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Hospeda &middot; Aliados</p>
+    <h1>Acompañá al turismo del Litoral</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      Hospeda es el portal donde se planifican los viajes al Litoral: dónde dormir, dónde comer,
+      qué hacer. Los aliados acompañan ese momento — no con un banner que la gente esquiva,
+      sino con presencia estable en el lugar donde se toma la decisión.
+    </p>
+    <div class="factsheet">
+      <div class="fact">
+        <span class="fact__k">Dos niveles</span>
+        <span class="fact__v">Plata y oro</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Cuota</span>
+        <span class="fact__v">Mensual o anual</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Alta</span>
+        <span class="fact__v">Caso por caso</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Quiénes entran</p>
+      <h2>Seis maneras de ser aliado</h2>
+    </div>
+    <p>
+      El programa no es sólo para negocios. Es para <strong>cualquiera que tenga algo que ver con
+      que al Litoral le vaya bien</strong>:
+    </p>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span><strong>Comercios y empresas</strong> — de la región o de afuera, que quieran estar donde se decide el viaje.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Municipios y secretarías de turismo</strong> — la difusión del destino es, literalmente, su trabajo.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Instituciones y organismos</strong> — cámaras, entes, entidades mixtas.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>ONGs y asociaciones</strong> — ambientales, culturales, deportivas, vecinales.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Medios</strong> — radios, portales, revistas y programas que cubren la zona.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Personas</strong> — quien tenga trayectoria, presencia o ganas de empujar el turismo del Litoral.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Sin vueltas</p>
+      <h2>Qué se puede medir y qué no</h2>
+    </div>
+    <p>Conviene decirlo antes de firmar, porque es la pregunta que llega siempre.</p>
+    <div class="split">
+      <div class="panel panel--yes">
+        <h3>Sí te damos números</h3>
+        <ul class="plain">
+          <li><span class="tick">&check;</span><span><strong>De adentro de la plataforma</strong>: cuánta gente vio tu página y cuántos entraron desde tu logo.</span></li>
+          <li><span class="tick">&check;</span><span><strong>De nuestro newsletter</strong>: a cuántas personas salió el envío donde apareciste, cuántos lo abrieron y cuántos hicieron clic.</span></li>
+        </ul>
+      </div>
+      <div class="panel panel--no">
+        <h3>De las redes, sólo constancia</h3>
+        <ul class="plain">
+          <li><span class="tick tick--no">&times;</span><span><strong>No te informamos cuánta gente la vio ni cuántos hicieron clic.</strong> Esos números quedan del lado de Instagram o Facebook, no del nuestro.</span></li>
+          <li><span class="tick">&check;</span><span><strong>Sí te informamos cuándo se publicó, con el enlace a la publicación</strong>, para que entres y la veas vos mismo.</span></li>
+        </ul>
+      </div>
+    </div>
+    <p>
+      Dicho de una vez: <strong>todas las estadísticas que te mostramos son de lo que pasa dentro
+      de Hospeda</strong> — nuestras páginas y nuestro newsletter. De lo que publicamos afuera te
+      damos constancia, no medición.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Los dos niveles</p>
+      <h2>Qué incluye cada uno</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">&nbsp;</th><th scope="col">Plata</th><th scope="col">Oro</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Tu logo en el carrusel de aliados de la portada</td><td>sí</td><td>sí, y un poco más grande</td></tr>
+          <tr><td>Se puede hacer clic en tu logo</td><td>—</td><td><strong>sí</strong></td></tr>
+          <tr><td>Adónde lleva ese clic</td><td>—</td><td>A tu página propia o a tu sitio, como prefieras</td></tr>
+          <tr><td><strong>Página propia</strong> con logo, textos, contacto y redes</td><td>—</td><td><strong>sí</strong></td></tr>
+          <tr><td>Entrás en las publicaciones de nuestras redes</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Entrás en el newsletter</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Prioridad y frecuencia en esas apariciones</td><td>Normal</td><td>Preferente</td></tr>
+          <tr><td>Registro con enlace de cada aparición</td><td>sí</td><td>sí</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="subhead">
+      <strong>La página propia es la diferencia entre un nivel y el otro.</strong> Vive en
+      <strong>hospeda.com.ar/es/partners/tu-nombre</strong> y es tuya para contar quién sos con
+      espacio de verdad.
+    </p>
+    <p>
+      En oro elegís vos adónde manda tu logo: <strong>a esa página propia</strong>, o
+      <strong>directo a tu sitio</strong> si lo que querés es que lleguen ahí. Conviene pensarlo:
+      la página dentro de Hospeda <strong>la indexan los buscadores como Google</strong>, así que
+      te suma un lugar más donde te encuentren. Mandar afuera, no.
+    </p>
+    <p>
+      <strong>El nivel nunca se muestra en público.</strong> Nadie que visite el sitio ve si sos
+      plata u oro: es un acuerdo entre vos y nosotros, no una etiqueta que te colgamos.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Qué hacemos por vos</p>
+      <h2>La difusión</h2>
+    </div>
+    <p>
+      Ser aliado no es sólo estar en la portada. Entrás en lo que Hospeda comunica hacia afuera:
+    </p>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span><strong>Las redes de Hospeda.</strong> Menciones y publicaciones donde aparecés, con la frecuencia que corresponda a tu nivel.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>El newsletter.</strong> Los envíos a nuestra base de suscriptores te incluyen, y de esos sí tenemos números para pasarte.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Todo queda anotado.</strong> Cada aparición se registra en tu panel con fecha y con el enlace para que la compruebes vos mismo.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">La inversión</p>
+      <h2>Cómo se paga</h2>
+    </div>
+    <p>
+      Hay <strong>dos niveles</strong>, plata y oro, y cada uno se puede tomar
+      <strong>por mes o por año</strong>. Los valores vigentes te los pasamos en la charla, junto
+      con qué incluye cada uno en tu caso concreto.
+    </p>
+    <p class="subhead">Dos formas de abonar, la que le sirva a tu administración:</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Forma</th><th scope="col">Cómo funciona</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Suscripción por Mercado Pago</td>
+            <td>Te mandamos un enlace, lo autorizás una vez y <strong>los cobros salen solos</strong> cada período. Sin trámite mes a mes ni año a año. Se da de baja cuando quieras.</td>
+          </tr>
+          <tr>
+            <td>Efectivo o cheque</td>
+            <td>Lo arreglamos directo, sin plataforma de por medio. Útil si tenés que rendir el gasto de otra forma o preferís no dejar una tarjeta cargada.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Paso a paso</p>
+      <h2>Cómo se suma un aliado</h2>
+    </div>
+    <p>
+      No es autoservicio y es a propósito: elegimos con quién nos asociamos, porque quien aparece
+      en la portada dice algo del portal.
+    </p>
+    <ol class="steps">
+      <li>
+        <span class="num">01</span>
+        <div class="step__body">
+          <h3>Nos contactás, por donde te quede cómodo</h3>
+          <p>
+            <strong>Por el formulario del sitio</strong>, en
+            hospeda.com.ar/es/sumate/partner: te pide quién sos, cómo contactarte y qué tenés en
+            mente.
+          </p>
+          <p>
+            <strong>O directamente por teléfono o WhatsApp</strong>, si preferís hablar con
+            alguien antes de llenar nada.
+          </p>
+          <p class="step__meta">3442 453797</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="step__body">
+          <h3>Conversamos y definimos el acuerdo</h3>
+          <p>
+            El nivel <strong>lo acordamos juntos</strong>, no lo elegís en un formulario: depende
+            de qué buscás y de qué podemos comprometer. En esa charla salen también los valores y
+            la forma de pago que te sirva.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="step__body">
+          <h3>Se carga tu material</h3>
+          <p>
+            <strong>Lo cargás vos</strong> desde tu panel — logo, textos, contacto y redes —
+            <strong>o nos lo pasás y lo cargamos nosotros</strong>. Muchos prefieren mandar el
+            logo y un par de párrafos por correo y despreocuparse; es igual de válido.
+          </p>
+          <p>
+            En cualquiera de los dos casos lo revisamos con vos antes de que salga: es tu
+            identidad en nuestra portada, y queremos que se vea como corresponde.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="num">04</span>
+        <div class="step__body">
+          <h3>Se activa</h3>
+          <p>
+            Con el material listo se pone en marcha el pago acordado: te llega el enlace de
+            suscripción, o coordinamos el efectivo o el cheque. Una vez saldado, tu logo entra en
+            la portada y, si es nivel oro, tu página queda publicada.
+          </p>
+          <p class="step__meta">Desde ahí ya entrás en las publicaciones y en el newsletter</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Durante el acuerdo</p>
+      <h2>Qué manejás vos</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span><strong>Todo el contenido de tu ficha</strong>: el logo, los textos, el contacto, las redes y tu sitio web. Lo cambiás desde tu panel cuando quieras, las veces que quieras.</span></li>
+      <li><span class="tick">&check;</span><span><strong>O nos lo pedís y lo hacemos nosotros.</strong> Si preferís no entrar al panel, mandanos el cambio y lo dejamos hecho.</span></li>
+      <li><span class="tick">&check;</span><span>Mientras se actualiza algo, <strong>sigue en línea lo que había</strong>: tu presencia nunca se cae por una edición.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Tus números y tu registro de difusión</strong>, en el mismo panel: las visitas a tu página, y cada aparición con su fecha y su enlace.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Para ser justos</p>
+      <h2>Lo que conviene saber antes de firmar</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick tick--no">!</span><span><strong>Lo que pasa en redes no lo medimos nosotros.</strong> Te mostramos la publicación y su enlace, pero el alcance y las impresiones quedan del lado de Instagram o Facebook.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>No existe un directorio de aliados</strong> donde la gente los busque por rubro. La presencia es el carrusel de la portada, la difusión, y —en oro— tu página propia.</span></li>
+      <li><span class="tick tick--no">!</span><span>En nivel <strong>plata no hay página propia</strong>: tu logo está en la portada pero no lleva a ningún lado. Si querés que quien lo vea pueda entrar a conocerte, debés elegir nivel oro.</span></li>
+      <li><span class="tick tick--no">!</span><span>Si el acuerdo termina, tu presencia sale de la portada y tu página deja de estar disponible. <strong>Nada se borra</strong>: si volvés, vuelve como estaba.</span></li>
+    </ul>
+  </section>
+
+  <footer class="close">
+    <h2>Hablemos</h2>
+    <p>
+      Si te interesa, escribinos y coordinamos una charla. Te contamos qué estamos haciendo, qué
+      podemos ofrecer y qué no, y de ahí definimos si tiene sentido en tu caso.
+    </p>
+    <a class="cta" href="https://hospeda.com.ar/es/sumate/partner">hospeda.com.ar/es/sumate/partner</a>
+    <div class="phone">
+      <span class="fact__k">O directamente</span>
+      <strong>Llamanos o escribinos por WhatsApp al 3442 453797</strong>
+      <span class="finelines">Coordinamos una reunión, presencial o por videollamada.</span>
+    </div>
+    <div class="finelines">
+      Las condiciones, los valores y el alcance de cada nivel son los vigentes al día de hoy y se
+      confirman por escrito al momento del acuerdo. La difusión que Hospeda realiza es una acción
+      de comunicación propia: se deja registro verificable de cada una, y se informan las métricas
+      que la plataforma y el newsletter permiten medir, sin garantía de resultados de audiencia ni
+      de conversión.
+    </div>
+  </footer>
+
+</div>
+
+</StandaloneLayout>
+
+<style>
+  :root{
+    --ground:#FBFBFA;
+    --surface:#FFFFFF;
+    --surface-2:#F2F2EF;
+    --ink:#16181A;
+    --ink-soft:#3A3E40;
+    --muted:#5D6164;
+    --line:#DFDFDA;
+    --line-strong:#C6C6BF;
+    --accent:#7A5418;
+    --accent-soft:#F3EDE0;
+    --on-accent:#FFFFFF;
+    --warm:#8A6410;
+    --warm-soft:#FBEEE0;
+    --good:#3F6B12;
+    --good-soft:#ECF3E1;
+    --stop:#962E24;
+    --stop-soft:#F8E9E7;
+    --shadow:0 1px 2px rgba(14,25,32,.05), 0 8px 24px -16px rgba(14,25,32,.28);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#111213;
+      --surface:#1B1D1E;
+      --surface-2:#232527;
+      --ink:#EEEFEC;
+      --ink-soft:#D2D4D1;
+      --muted:#ABADA9;
+      --line:#2F3133;
+      --line-strong:#474A4C;
+      --accent:#D8B173;
+      --accent-soft:#2A2418;
+      --on-accent:#0C1319;
+      --warm:#DCB768;
+      --warm-soft:#2E2113;
+      --good:#A6D563;
+      --good-soft:#1B2716;
+      --stop:#EF9A8E;
+      --stop-soft:#2E1A18;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#111213;
+    --surface:#1B1D1E;
+    --surface-2:#232527;
+    --ink:#EEEFEC;
+    --ink-soft:#D2D4D1;
+    --muted:#ABADA9;
+    --line:#2F3133;
+    --line-strong:#474A4C;
+    --accent:#D8B173;
+    --accent-soft:#2A2418;
+    --on-accent:#0C1319;
+    --warm:#DCB768;
+    --warm-soft:#2E2113;
+    --good:#A6D563;
+    --good-soft:#1B2716;
+    --stop:#EF9A8E;
+    --stop-soft:#2E1A18;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:1.1875rem;
+    line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:44rem;margin-inline:auto;padding:0 1.5rem 5rem}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size:.8rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--muted);margin:0;
+  }
+  h1,h2,h3{font-family:"Archivo", system-ui, -apple-system, sans-serif;text-wrap:balance;margin:0}
+  h1{font-size:clamp(2.1rem,6vw,3.1rem);font-weight:800;line-height:1.06;letter-spacing:-.02em}
+  h2{font-size:clamp(1.5rem,3.6vw,1.95rem);font-weight:700;line-height:1.2;letter-spacing:-.01em}
+  h3{font-size:1.15rem;font-weight:700;line-height:1.35}
+  p{margin:0}
+  strong{font-weight:600;color:var(--ink)}
+  a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  /* --- Encabezado --- */
+  .masthead{padding:3rem 0 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+  .masthead__lede{font-size:1.28rem;line-height:1.6;color:var(--ink-soft);max-width:33em}
+  .rule{height:3px;background:var(--ink);width:3.5rem;border-radius:2px}
+
+  .factsheet{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));
+    border:1px solid var(--line);border-radius:6px;background:var(--surface);
+    overflow:hidden;box-shadow:var(--shadow);margin-top:.75rem;
+  }
+  .fact{padding:1rem 1.15rem;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+  .fact:last-child{border-right:0}
+  .fact__k{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;font-size:.78rem;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1.4;
+  }
+  .fact__v{font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:1.2rem;line-height:1.25}
+  .fact__v--free{color:var(--warm)}
+
+  /* --- Secciones --- */
+  section{padding-top:2.5rem;display:flex;flex-direction:column;gap:1rem}
+  .sec-head{display:flex;flex-direction:column;gap:.5rem}
+  .sec-head .eyebrow{display:flex;align-items:center;gap:.6rem}
+  .sec-head .eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* --- Aviso honesto --- */
+  .notice{
+    border:1px solid var(--line-strong);border-left:4px solid var(--warm);
+    background:var(--warm-soft);border-radius:0 6px 6px 0;padding:1.2rem 1.4rem;
+    display:flex;flex-direction:column;gap:.6rem;
+  }
+  .notice h3{color:var(--ink)}
+
+  /* --- Listas --- */
+  ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.8rem}
+  ul.plain li{display:flex;gap:.75rem;align-items:baseline}
+  .tick{
+    flex:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.95rem;
+    color:var(--good);line-height:1.72;
+  }
+  .tick--no{color:var(--stop)}
+
+  /* --- Pasos --- */
+  ol.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0}
+  ol.steps li{display:grid;grid-template-columns:2.6rem 1fr;gap:1rem;padding:1.2rem 0;border-top:1px solid var(--line)}
+  ol.steps li:last-child{border-bottom:1px solid var(--line)}
+  .num{
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.92rem;color:var(--accent);
+    padding-top:.35rem;letter-spacing:.03em;
+  }
+  .step__body{display:flex;flex-direction:column;gap:.4rem}
+  .step__meta{
+    font-family:"IBM Plex Mono",monospace;font-size:.82rem;letter-spacing:.04em;
+    line-height:1.5;color:var(--muted);
+  }
+
+  /* --- Circuito --- */
+  .circuit{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem}
+  .node{
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1rem 1.1rem;
+    display:flex;flex-direction:column;gap:.4rem;
+  }
+  .node__who{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--accent);
+  }
+  .node__what{font-size:1.05rem;line-height:1.5;color:var(--ink-soft)}
+  .node--end{background:var(--good-soft);border-color:var(--good)}
+  .node--end .node__who{color:var(--good)}
+
+  /* --- Tablas --- */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:1.05rem}
+  th,td{text-align:left;padding:.85rem 1rem;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+  tr:last-child td{border-bottom:0}
+  th{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--muted);background:var(--surface-2);white-space:nowrap;
+  }
+  td.mono{font-family:"IBM Plex Mono",monospace;font-size:.95rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .subhead{margin-top:.4rem;color:var(--ink-soft)}
+
+  /* --- Chips de rubros --- */
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem}
+  .chip{
+    font-size:.95rem;font-weight:600;
+    border:1px solid var(--line-strong);border-radius:999px;padding:.35rem .85rem;color:var(--ink-soft);
+    background:var(--surface);
+  }
+
+  /* --- Dos columnas --- */
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem}
+  .panel{
+    border:1px solid var(--line);border-radius:6px;padding:1.2rem 1.35rem;background:var(--surface);
+    display:flex;flex-direction:column;gap:.85rem;
+  }
+  .panel--yes{border-top:3px solid var(--good)}
+  .panel--no{border-top:3px solid var(--stop)}
+
+  /* --- Cierre --- */
+  .close{
+    margin-top:2.75rem;border-top:3px solid var(--ink);padding-top:1.75rem;
+    display:flex;flex-direction:column;gap:1.1rem;
+  }
+  .cta{
+    display:inline-flex;align-items:center;gap:.6rem;align-self:flex-start;
+    background:var(--accent);color:var(--on-accent);text-decoration:none;
+    font-family:"Archivo",sans-serif;font-weight:700;font-size:1.05rem;
+    padding:.85rem 1.5rem;border-radius:5px;
+  }
+  .cta:hover{filter:brightness(1.08)}
+  .phone{
+    border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);
+    padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.25rem;
+  }
+  .phone strong{font-family:"Archivo",sans-serif;font-size:1.15rem}
+  .finelines{font-size:1rem;color:var(--muted);line-height:1.65}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>

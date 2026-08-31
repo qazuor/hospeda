@@ -1,0 +1,581 @@
+---
+/**
+ * @file presentacion/proveedores/index.astro
+ * @description Commercial presentation for service providers (HOS-978). A verbatim
+ * migration of the owner-approved artifact "Presentación Proveedores"; the copy and the
+ * stylesheet below are the artifact's own and must not be rewritten here —
+ * the artifact is the source of truth for both.
+ *
+ * WHY IT IS NOT THE PUBLIC LANDING (/sumate/proveedor/). That landing sells and is
+ * optimized to rank. This page is what the owner sends personally to one
+ * prospect over WhatsApp, or dictates by phone, and it carries things a public
+ * landing must not: negotiable pricing, comparisons against competitors, and
+ * operational detail. That is why `noindex, nofollow` is a requirement here
+ * rather than a precaution, and why the page is excluded from the sitemap (see
+ * `lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS, which also drives the
+ * robots.txt `Disallow`).
+ *
+ * WHY IT IS NOT TRANSLATED. The audience is local (owner decision, HOS-978).
+ * The page lives under `[lang]/` anyway so the short, dictable URL works:
+ * `hospeda.com.ar/presentacion/proveedores` is 301-redirected to
+ * `/es/presentacion/proveedores/` by the middleware's locale step, so no middleware
+ * exemption was needed. It therefore serves the same Spanish copy under
+ * `/en/` and `/pt/` BY DESIGN — unlike HOS-908, where that was a defect.
+ *
+ * WHY `StandaloneLayout`. The page owns 100% of its chrome, exactly like the
+ * `/funcionalidades/` brochure (HOS-119) it follows. No Header, no Footer, no
+ * site nav — it must look like the artifact it came from.
+ *
+ * WHY THE STYLESHEET IS A PLAIN `<style>` BLOCK. Astro extracts it to a real
+ * stylesheet. An `is:inline` block would be dropped in production: the CSP
+ * omits `'unsafe-inline'` from `style-src` outside dev (see
+ * `lib/middleware-helpers.ts`), so the page would render unstyled in prod
+ * while looking perfect locally. Do not add `is:inline` here.
+ *
+ * @route /{lang}/presentacion/proveedores/
+ * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: the content is hardcoded copy, so it only
+// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/proveedores/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentación Proveedores"
+		description="Sumate como proveedor de servicios. Cuando a un dueño que alquila por temporada se le rompe algo del alojamiento y necesita una solución rápida, hoy pregunta en un grupo de WhatsApp."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+	<link
+		slot="head"
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
+	/>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Hospeda &middot; Directorio de oficios</p>
+    <h1>Sumate como proveedor de servicios</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      Cuando a un dueño que alquila su casa o departamento por temporada se le rompe algo de su
+      alojamiento y necesita una solución rápida, hoy pregunta en el grupo de WhatsApp que
+      comparte con otros propietarios. En
+      Hospeda a esos dueños les decimos <strong>anfitriones</strong>, y este directorio es una
+      forma más ordenada de resolver lo mismo: pueden usarlo en lugar de ese grupo, o además
+      de ese grupo. Vos ofrecés un beneficio para ellos, te encuentran, y cada trabajo queda
+      registrado con la firma de los dos.
+    </p>
+    <div class="factsheet">
+      <div class="fact">
+        <span class="fact__k">Costo de estar</span>
+        <span class="fact__v fact__v--free">$0</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Comisión</span>
+        <span class="fact__v">Ninguna</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Cómo se entra</span>
+        <span class="fact__v">Te anotás vos</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Antes que nada</p>
+      <h2>No te cuesta nada</h2>
+    </div>
+    <p>
+      Estar en el directorio <strong>no tiene costo, no exige contratar ningún plan y no genera
+      comisión</strong> sobre lo que cobres. No hay letra chica ahí: no se paga por entrar, ni por
+      mes, ni por trabajo conseguido.
+    </p>
+    <p>
+      Hospeda tampoco se mete en el medio. <strong>No interviene en el presupuesto ni participa
+      del pago</strong>: eso lo arreglás directo con el anfitrión, como lo hacés hoy con cualquier
+      cliente.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo segundo, sin vueltas</p>
+      <h2>Quién te va a ver</h2>
+    </div>
+    <div class="notice">
+      <h3>El directorio no está abierto en internet para cualquiera.</h3>
+      <p>
+        No salís en Google ni te encuentra un turista: <strong>sólo lo ve un anfitrión cuando
+        entra a Hospeda con su usuario y su contraseña</strong>. Lo decimos de entrada porque es
+        la diferencia entre una promesa que se cumple y una que no.
+      </p>
+      <p>
+        <strong>No es publicidad masiva. Es un grupo selecto:</strong> gente que administra
+        propiedades en tu zona, con urgencias reales y ya pagando por administrarlas.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">El trato</p>
+      <h2>Qué pone cada uno</h2>
+    </div>
+    <div class="split">
+      <div class="panel panel--yes">
+        <h3>Vos</h3>
+        <ul class="plain">
+          <li><span class="tick">+</span><span>Un beneficio para anfitriones que no le des al público general.</span></li>
+          <li><span class="tick">+</span><span>Respetarlo cuando te lo pidan.</span></li>
+          <li><span class="tick">+</span><span>Confirmar o rechazar los trabajos que se registran a tu nombre.</span></li>
+        </ul>
+      </div>
+      <div class="panel panel--yes">
+        <h3>Nosotros</h3>
+        <ul class="plain">
+          <li><span class="tick">+</span><span>Tu ficha en el directorio, sin costo y sin plan que pagar.</span></li>
+          <li><span class="tick">+</span><span>Contacto <strong>directo</strong> a tu WhatsApp. Sin intermediarios ni comisión.</span></li>
+          <li><span class="tick">+</span><span>Una reputación que <strong>sólo califica quien te contrató</strong>.</span></li>
+          <li><span class="tick">+</span><span>Un código QR propio para que los anfitriones registrados en Hospeda lleguen a vos.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Tu oferta</p>
+      <h2>El beneficio lo elegís vos</h2>
+    </div>
+    <p>
+      <strong>No ponemos mínimos ni condiciones</strong>: decidís la forma, el tamaño y la letra
+      chica en tus palabras (&ldquo;no incluye materiales&rdquo;, &ldquo;dentro del ejido urbano&rdquo;, etc.).
+      Sólo elegís una de estas cuatro formas.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Tipo</th><th scope="col">Qué significa</th><th scope="col">Ejemplo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">Porcentaje</td><td>Descuento en porcentaje sobre tu precio.</td><td>15&nbsp;% en mano de obra</td></tr>
+          <tr><td class="mono">Monto fijo</td><td>Una rebaja de un importe fijo.</td><td>$8.000 menos en la visita</td></tr>
+          <tr><td class="mono">2 x 1</td><td>Dos servicios al precio de uno.</td><td>Dos limpiezas, pagás una</td></tr>
+          <tr><td class="mono">Otra ventaja</td><td>Algo diferente pero que igual vale como beneficio.</td><td>&ldquo;Te atiendo dentro de las 24 horas&rdquo;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      ¿Lo que querés ofrecer no entra en ninguna de las cuatro? <strong>Contanos cuál sería</strong>
+      en el mensaje y lo agregamos a la lista.
+    </p>
+    <p class="subhead">Y elegís un rubro. Estos son los de hoy, y la lista sigue creciendo:</p>
+    <div class="chips">
+      <span class="chip">Plomería</span>
+      <span class="chip">Instalación de gas</span>
+      <span class="chip">Venta de gas</span>
+      <span class="chip">Electricidad</span>
+      <span class="chip">Cerrajería</span>
+      <span class="chip">Climatización</span>
+      <span class="chip">Albañilería</span>
+      <span class="chip">Techista</span>
+      <span class="chip">Herrería</span>
+      <span class="chip">Electrodomésticos</span>
+      <span class="chip">Carpintería</span>
+      <span class="chip">Vidriería</span>
+      <span class="chip">Limpieza</span>
+      <span class="chip">Pileta y jardín</span>
+      <span class="chip">Control de plagas</span>
+      <span class="chip">Fletes</span>
+      <span class="chip">Internet</span>
+    </div>
+    <p>
+      Si tu oficio no está en esa lista, <strong>escribilo igual en el mensaje</strong> y lo sumamos.
+      Y ojo, que no todo es arreglar la casa: al anfitrión también le sirve tener a quién mandarle
+      un huésped que se quedó a pie — <strong>auxilio en la ruta, gomería, taller mecánico,
+      remisería</strong>. Si eso es lo tuyo, escribinos igual.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Paso a paso</p>
+      <h2>Cómo te das de alta</h2>
+    </div>
+    <ol class="steps">
+      <li>
+        <span class="num">01</span>
+        <div class="step__body">
+          <h3>Completás el formulario</h3>
+          <p>Nombre, email, negocio, rubro, ciudad, qué beneficio ofrecés y un mensaje sobre tu servicio. Teléfono y página web son opcionales.</p>
+          <p>El formulario pide <strong>una sola ciudad</strong>, la tuya. Si atendés en más de una — por ejemplo estás en Concepción del Uruguay y también vas hasta San Justo — <strong>aclaralo en el mensaje</strong> y lo dejamos anotado.</p>
+          <p class="step__meta">Todo se hace desde el celular &middot; No hace falta computadora &middot; No se te pide ningún dato de pago</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="step__body">
+          <h3>Lo revisa una persona</h3>
+          <p>No es automático y no entra cualquiera: los miramos uno por uno. Por eso el anfitrión confía en la lista, y estar adentro dice algo de vos.</p>
+          <p class="step__meta">Te avisamos por email, apruebe o no</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="step__body">
+          <h3>Reclamás tu ficha</h3>
+          <p>Si no tenías cuenta, te llega un email con un enlace para tomar el control de tu ficha y elegir tu contraseña. Si se te pasa, escribinos y lo mandamos de nuevo.</p>
+          <p class="step__meta">El enlace vence a los 7 días</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">04</span>
+        <div class="step__body">
+          <h3>Ya estás publicado</h3>
+          <p>Aparecés en el directorio en el momento de la aprobación, sin segunda revisión. Desde tu cuenta en Hospeda manejás tu ficha y tu código QR.</p>
+          <p>Ahí mismo vas viendo <strong>los trabajos que te registraron</strong>, cuáles están esperando tu confirmación y <strong>las valoraciones que te dejaron</strong>. Y en tu ficha del directorio los anfitriones ven cuántos trabajos confirmados llevás y tu puntaje.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">El día a día</p>
+      <h2>Cómo se registra un trabajo</h2>
+    </div>
+    <p>
+      Un trabajo no cuenta porque alguien lo escribió:
+      <strong>uno de los dos lo anota y el otro tiene que confirmarlo</strong>.
+    </p>
+    <p>
+      Para eso tenés un <strong>código QR</strong> propio: el mismo tipo de código que se usa
+      para pagar con Mercado Pago o MODO, sólo que este lleva directo a tu espacio en Hospeda. Lo imprimís en tus remitos, lo tenés impreso en
+      un cartón, en una calco en tu vehículo, o simplemente se lo mostrás desde tu celular. El
+      anfitrión le apunta con la cámara y el trabajo queda registrado.
+    </p>
+    <div class="circuit">
+      <div class="node">
+        <span class="node__who">1 &middot; Cualquiera</span>
+        <span class="node__what">El anfitrión apunta la cámara a tu código, o vos lo anotás desde tu cuenta.</span>
+      </div>
+      <div class="node">
+        <span class="node__who">2 &middot; El otro</span>
+        <span class="node__what">Le llega un email para confirmar o rechazar.</span>
+      </div>
+      <div class="node node--end">
+        <span class="node__who">3 &middot; Confirmado</span>
+        <span class="node__what">Suma a tu cuenta de trabajos hechos y lo habilita a valorarte.</span>
+      </div>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span>Hay <strong>30 días</strong> para responder, con un recordatorio a los 10.</span></li>
+      <li><span class="tick">&rarr;</span><span>Si nadie responde, se borra solo y no pasa nada: no queda en tu historial.</span></li>
+      <li><span class="tick">&rarr;</span><span>Rechazar no exige explicación. Es lo único que mantiene honestos los números.</span></li>
+      <li><span class="tick">&rarr;</span><span>Quien rechazó puede deshacerlo; la otra parte, no. Y va un trabajo pendiente por vez con cada anfitrión.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Tu reputación</p>
+      <h2>Cómo funcionan las valoraciones</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span><strong>Sólo te valora un anfitrión con un trabajo confirmado con vos.</strong> Nadie más puede tocarte el puntaje.</span></li>
+      <li><span class="tick">&check;</span><span>De 1 a 5 estrellas, más calidad, puntualidad y trato (opcionales).</span></li>
+      <li><span class="tick">&check;</span><span>Una pregunta que no es opcional: <strong>&ldquo;¿respetó el beneficio que ofrece en Hospeda a los anfitriones?&rdquo;</strong>.</span></li>
+      <li><span class="tick">&check;</span><span>Una por anfitrión, y él puede cambiarla más adelante.</span></li>
+      <li><span class="tick">&check;</span><span>El promedio aparece recién con <strong>3 valoraciones</strong>. Con menos se ve la cantidad, sin estrella: nadie queda marcado por una sola opinión.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Podés responder</strong> cada una, una vez. Tu respuesta la revisamos antes de publicarla.</span></li>
+      <li><span class="tick tick--no">&times;</span><span>No podés pedir que borren una valoración. Tu herramienta es la respuesta pública.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Tu ficha</p>
+      <h2>Qué cambiás solo y qué no</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Dato</th><th scope="col">Quién lo cambia</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Teléfono, WhatsApp o dirección de tu página web</td><td><strong>Vos, al instante</strong></td></tr>
+          <tr><td>Horarios / si atendés 24&nbsp;h</td><td><strong>Vos, al instante</strong></td></tr>
+          <tr><td>El beneficio y su letra chica</td><td>Vos, pero <strong>lo revisamos antes de publicarlo</strong>. Mientras tanto sigue vigente el anterior: tu ficha nunca deja de verse.</td></tr>
+          <tr><td>Nombre del negocio, rubro y ciudad</td><td>El equipo. Escribinos y lo cambiamos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Las reglas</p>
+      <h2>Qué te puede dejar afuera</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick tick--no">!</span><span><strong>Tres rechazos en 90 días</strong> suspenden tu posibilidad de anotar trabajos nuevos. Tu ficha sigue publicada y tus valoraciones quedan intactas, pero para volver a anotar tiene que levantarla el equipo. Es la defensa contra el que se anota trabajos que no hizo.</span></li>
+      <li><span class="tick tick--no">!</span><span>No podés anotar un trabajo con vos mismo ni valorarte. Si sos anfitrión <em>y</em> proveedor (se puede), hacés las dos cosas pero nunca cruzadas.</span></li>
+      <li><span class="tick tick--no">!</span><span>El equipo puede dar de baja una ficha, siempre con un motivo que vas a ver escrito en tu cuenta.</span></li>
+    </ul>
+  </section>
+
+  <footer class="close">
+    <h2>Sumate</h2>
+    <p>
+      El formulario tarda cinco minutos y se hace desde el celular. Lo peor que puede pasar es
+      que te digamos que no, por email, sin que hayas puesto un peso.
+    </p>
+    <a class="cta" href="https://hospeda.com.ar/es/sumate/proveedor">hospeda.com.ar/es/sumate/proveedor</a>
+    <div class="phone">
+      <span class="fact__k">¿Preferís hablar con alguien?</span>
+      <strong>Llamanos o escribinos por WhatsApp al 3442 453797</strong>
+      <span class="finelines">Te lo explicamos por teléfono y, si querés, te anotamos nosotros.</span>
+    </div>
+    <div class="finelines">
+      El beneficio que ofrezcas es un compromiso tuyo con el anfitrión: Hospeda no lo garantiza
+      ni lo cubre, pero deja constancia de si se respetó.
+    </div>
+  </footer>
+
+</div>
+
+</StandaloneLayout>
+
+<style>
+  :root{
+    --ground:#FAFBFC;
+    --surface:#FFFFFF;
+    --surface-2:#F1F4F7;
+    --ink:#0E1920;
+    --ink-soft:#2C3E49;
+    --muted:#4C5F6D;
+    --line:#D7E0E7;
+    --line-strong:#BBCAD4;
+    --accent:#0F6484;
+    --accent-soft:#E4F0F5;
+    --on-accent:#FFFFFF;
+    --warm:#A94E00;
+    --warm-soft:#FBEEE0;
+    --good:#3F6B12;
+    --good-soft:#ECF3E1;
+    --stop:#962E24;
+    --stop-soft:#F8E9E7;
+    --shadow:0 1px 2px rgba(14,25,32,.05), 0 8px 24px -16px rgba(14,25,32,.28);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0C1319;
+      --surface:#131E26;
+      --surface-2:#1A272F;
+      --ink:#EAF1F6;
+      --ink-soft:#CBD9E2;
+      --muted:#A3B5C1;
+      --line:#27353F;
+      --line-strong:#3A4C57;
+      --accent:#6BC2E6;
+      --accent-soft:#132A35;
+      --on-accent:#0C1319;
+      --warm:#F3AA5F;
+      --warm-soft:#2E2113;
+      --good:#A6D563;
+      --good-soft:#1B2716;
+      --stop:#EF9A8E;
+      --stop-soft:#2E1A18;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0C1319;
+    --surface:#131E26;
+    --surface-2:#1A272F;
+    --ink:#EAF1F6;
+    --ink-soft:#CBD9E2;
+    --muted:#A3B5C1;
+    --line:#27353F;
+    --line-strong:#3A4C57;
+    --accent:#6BC2E6;
+    --accent-soft:#132A35;
+    --on-accent:#0C1319;
+    --warm:#F3AA5F;
+    --warm-soft:#2E2113;
+    --good:#A6D563;
+    --good-soft:#1B2716;
+    --stop:#EF9A8E;
+    --stop-soft:#2E1A18;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:1.1875rem;
+    line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:44rem;margin-inline:auto;padding:0 1.5rem 5rem}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size:.8rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--muted);margin:0;
+  }
+  h1,h2,h3{font-family:"Archivo", system-ui, -apple-system, sans-serif;text-wrap:balance;margin:0}
+  h1{font-size:clamp(2.1rem,6vw,3.1rem);font-weight:800;line-height:1.06;letter-spacing:-.02em}
+  h2{font-size:clamp(1.5rem,3.6vw,1.95rem);font-weight:700;line-height:1.2;letter-spacing:-.01em}
+  h3{font-size:1.15rem;font-weight:700;line-height:1.35}
+  p{margin:0}
+  strong{font-weight:600;color:var(--ink)}
+  a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  /* --- Encabezado --- */
+  .masthead{padding:3rem 0 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+  .masthead__lede{font-size:1.28rem;line-height:1.6;color:var(--ink-soft);max-width:33em}
+  .rule{height:3px;background:var(--ink);width:3.5rem;border-radius:2px}
+
+  .factsheet{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));
+    border:1px solid var(--line);border-radius:6px;background:var(--surface);
+    overflow:hidden;box-shadow:var(--shadow);margin-top:.75rem;
+  }
+  .fact{padding:1rem 1.15rem;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+  .fact:last-child{border-right:0}
+  .fact__k{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;font-size:.78rem;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1.4;
+  }
+  .fact__v{font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:1.2rem;line-height:1.25}
+  .fact__v--free{color:var(--warm)}
+
+  /* --- Secciones --- */
+  section{padding-top:2.5rem;display:flex;flex-direction:column;gap:1rem}
+  .sec-head{display:flex;flex-direction:column;gap:.5rem}
+  .sec-head .eyebrow{display:flex;align-items:center;gap:.6rem}
+  .sec-head .eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* --- Aviso honesto --- */
+  .notice{
+    border:1px solid var(--line-strong);border-left:4px solid var(--warm);
+    background:var(--warm-soft);border-radius:0 6px 6px 0;padding:1.2rem 1.4rem;
+    display:flex;flex-direction:column;gap:.6rem;
+  }
+  .notice h3{color:var(--ink)}
+
+  /* --- Listas --- */
+  ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.8rem}
+  ul.plain li{display:flex;gap:.75rem;align-items:baseline}
+  .tick{
+    flex:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.95rem;
+    color:var(--good);line-height:1.72;
+  }
+  .tick--no{color:var(--stop)}
+
+  /* --- Pasos --- */
+  ol.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0}
+  ol.steps li{display:grid;grid-template-columns:2.6rem 1fr;gap:1rem;padding:1.2rem 0;border-top:1px solid var(--line)}
+  ol.steps li:last-child{border-bottom:1px solid var(--line)}
+  .num{
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.92rem;color:var(--accent);
+    padding-top:.35rem;letter-spacing:.03em;
+  }
+  .step__body{display:flex;flex-direction:column;gap:.4rem}
+  .step__meta{
+    font-family:"IBM Plex Mono",monospace;font-size:.82rem;letter-spacing:.04em;
+    line-height:1.5;color:var(--muted);
+  }
+
+  /* --- Circuito --- */
+  .circuit{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem}
+  .node{
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1rem 1.1rem;
+    display:flex;flex-direction:column;gap:.4rem;
+  }
+  .node__who{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--accent);
+  }
+  .node__what{font-size:1.05rem;line-height:1.5;color:var(--ink-soft)}
+  .node--end{background:var(--good-soft);border-color:var(--good)}
+  .node--end .node__who{color:var(--good)}
+
+  /* --- Tablas --- */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:1.05rem}
+  th,td{text-align:left;padding:.85rem 1rem;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+  tr:last-child td{border-bottom:0}
+  th{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--muted);background:var(--surface-2);white-space:nowrap;
+  }
+  td.mono{font-family:"IBM Plex Mono",monospace;font-size:.95rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .subhead{margin-top:.4rem;color:var(--ink-soft)}
+
+  /* --- Chips de rubros --- */
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem}
+  .chip{
+    font-size:.95rem;font-weight:600;
+    border:1px solid var(--line-strong);border-radius:999px;padding:.35rem .85rem;color:var(--ink-soft);
+    background:var(--surface);
+  }
+
+  /* --- Dos columnas --- */
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem}
+  .panel{
+    border:1px solid var(--line);border-radius:6px;padding:1.2rem 1.35rem;background:var(--surface);
+    display:flex;flex-direction:column;gap:.85rem;
+  }
+  .panel--yes{border-top:3px solid var(--good)}
+
+  /* --- Cierre --- */
+  .close{
+    margin-top:2.75rem;border-top:3px solid var(--ink);padding-top:1.75rem;
+    display:flex;flex-direction:column;gap:1.1rem;
+  }
+  .cta{
+    display:inline-flex;align-items:center;gap:.6rem;align-self:flex-start;
+    background:var(--accent);color:var(--on-accent);text-decoration:none;
+    font-family:"Archivo",sans-serif;font-weight:700;font-size:1.05rem;
+    padding:.85rem 1.5rem;border-radius:5px;
+  }
+  .cta:hover{filter:brightness(1.08)}
+  .phone{
+    border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);
+    padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.25rem;
+  }
+  .phone strong{font-family:"Archivo",sans-serif;font-size:1.15rem}
+  .finelines{font-size:1rem;color:var(--muted);line-height:1.65}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>

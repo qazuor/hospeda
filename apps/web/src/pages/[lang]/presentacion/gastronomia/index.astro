@@ -1,0 +1,478 @@
+---
+/**
+ * @file presentacion/gastronomia/index.astro
+ * @description Commercial presentation for the gastronomy vertical (HOS-978).
+ * A verbatim migration of the owner-approved artifact "Presentación
+ * Gastronomía"; the copy and the stylesheet below are the artifact's own and
+ * must not be rewritten here — the artifact is the source of truth for both.
+ *
+ * WHY IT IS NOT THE `/publicar-restaurante/` LANDING. That landing sells and
+ * is optimized to rank. This page is what the owner sends personally to a
+ * prospective restaurant over WhatsApp, or dictates by phone, and it carries
+ * things a public landing must not: negotiable pricing, comparisons against
+ * competitors, and operational detail. That is why `noindex, nofollow` is a
+ * requirement here rather than a precaution, and why the page is deliberately
+ * excluded from the sitemap (see `lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS
+ * and the exclusion list in `lib/seo/static-sitemap-pages.ts`).
+ *
+ * WHY IT IS NOT TRANSLATED. The audience is local (owner decision, HOS-978).
+ * The page lives under `[lang]/` anyway so the short, dictable URL works:
+ * `hospeda.com.ar/presentacion/gastronomia` is 301-redirected to
+ * `/es/presentacion/gastronomia/` by the middleware's locale step, which means
+ * no middleware exemption was needed to get the dictable slug. It therefore
+ * serves the same Spanish copy under `/en/` and `/pt/` BY DESIGN — unlike
+ * HOS-908, where that was a defect.
+ *
+ * WHY `StandaloneLayout`. The page owns 100% of its chrome, exactly like the
+ * `/funcionalidades/` brochure (HOS-119) it follows. No Header, no Footer, no
+ * site nav — it must look like the artifact it came from.
+ *
+ * WHY THE STYLESHEET IS A PLAIN `<style>` BLOCK. Astro extracts it to a real
+ * stylesheet. An `is:inline` block would be dropped in production: the CSP
+ * omits `'unsafe-inline'` from `style-src` outside dev (see
+ * `lib/middleware-helpers.ts`), so the page would render unstyled in prod while
+ * looking perfect locally. Do not add `is:inline` here.
+ *
+ * @route /{lang}/presentacion/gastronomia/
+ * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: the content is hardcoded copy, so it only
+// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gastronomia/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentación Gastronomía"
+		description="Tu restaurante donde se planea el viaje. Qué es Hospeda para tu restaurante, bar, parrilla o café: cómo publicás, qué mostrás y cuánto cuesta."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+	<link
+		slot="head"
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
+	/>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Hospeda &middot; Gastronomía</p>
+    <h1>Tu restaurante donde se planea el viaje</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      El turista que viene al Litoral primero busca dónde dormir, y en la misma vuelta decide
+      dónde va a comer. Hospeda es el portal donde hace las dos cosas. Tu restaurante, bar,
+      parrilla o café tiene su propia página, la cargás vos, y el que quiere reservar mesa
+      <strong>te llama directo</strong>.
+    </p>
+    <div class="factsheet">
+      <div class="fact">
+        <span class="fact__k">Comisión</span>
+        <span class="fact__v fact__v--free">Ninguna</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Prueba</span>
+        <span class="fact__v">30 días</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Cómo se entra</span>
+        <span class="fact__v">Solo, en el momento</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo primero, sin vueltas</p>
+      <h2>Qué es y qué no es</h2>
+    </div>
+    <div class="notice">
+      <h3>No es una app de pedidos ni de reservas de mesa.</h3>
+      <p>
+        No tomamos pedidos, no cobramos delivery y <strong>no nos llevamos un porcentaje de lo
+        que facturás</strong>. Nadie reserva una mesa desde acá.
+      </p>
+      <p>
+        Es <strong>tu página</strong> dentro del portal donde el turista está armando el viaje:
+        con tus fotos, tu carta, tus horarios y tu teléfono. Lo que hace es que te encuentren y
+        te llamen. Se paga una cuota fija por mes, y punto.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Paso a paso</p>
+      <h2>Cómo publicás</h2>
+    </div>
+    <ol class="steps">
+      <li>
+        <span class="num">01</span>
+        <div class="step__body">
+          <h3>Creás tu cuenta y armás la ficha</h3>
+          <p>
+            No hay que esperar que nadie te apruebe ni que te llamen: entrás, creás la cuenta y
+            cargás tu local vos mismo, en el momento.
+          </p>
+          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se hace desde el celular</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="step__body">
+          <h3>La completás con tiempo</h3>
+          <p>
+            Queda guardada y sin que nadie la vea hasta que vos digas. Cargás las fotos, la
+            descripción, los horarios de cada día, el rango de precios, tu carta, el teléfono y
+            las redes.
+          </p>
+          <p class="step__meta">Para publicar hacen falta: nombre, resumen, descripción, ciudad, tipo de local, foto principal, un contacto, horarios y rango de precios</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="step__body">
+          <h3>Le das publicar</h3>
+          <p>
+            Ahí elegís el plan y cargás la tarjeta, y arrancan los <strong>30 días de prueba</strong>.
+            Tu página sale al aire en ese momento. Si en el mes decidís que no, cancelás y no se
+            te cobra nada.
+          </p>
+          <p class="step__meta">Se paga con Mercado Pago &middot; El primer cobro es al día 31</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">El costo</p>
+      <h2>Una cuota fija, sin sorpresas</h2>
+    </div>
+    <p>
+      <strong>Está en el orden de los quince mil pesos por mes</strong> — lo que sale un par de
+      cubiertos. Es lo mismo si te llaman dos personas o doscientas: no hay comisión ni cargo
+      por consulta. El valor exacto está siempre publicado en el sitio.
+    </p>
+    <p class="subhead">
+      Con eso tenés <strong>una ficha publicada</strong>. Si manejás más de un local, se suma
+      una ficha extra por el mismo valor.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Tu página</p>
+      <h2>Qué podés mostrar</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span>Fotos del local y de los platos, con una principal destacada.</span></li>
+      <li><span class="tick">&check;</span><span>Descripción con formato, y videos si tenés.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Horarios día por día</strong>, con más de un turno si cerrás al mediodía.</span></li>
+      <li><span class="tick">&check;</span><span>El <strong>enlace a tu carta</strong> y el rango de precios, para que el que llega sepa a qué atenerse.</span></li>
+      <li><span class="tick">&check;</span><span>Teléfono, WhatsApp, email, redes y tu ubicación en el mapa.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Preguntas frecuentes propias</strong>: si aceptás tarjeta, si hay estacionamiento, si se puede ir con perro, si tenés opciones sin gluten.</span></li>
+      <li><span class="tick">&check;</span><span>Tu página en español, inglés y portugués.</span></li>
+    </ul>
+    <p class="subhead">
+      Tu página vive en <strong>hospeda.com.ar/es/gastronomia/tu-local</strong>, entra en el mapa
+      del sitio y está escrita para que Google la encuentre.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Quién manda sobre qué</p>
+      <h2>Lo que cambiás solo y lo que no</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Dato</th><th scope="col">Quién lo cambia</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fotos, descripción, horarios, carta, rango de precios, contacto y redes</td><td><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td>Tus preguntas frecuentes</td><td><strong>Vos</strong></td></tr>
+          <tr><td>Nombre del local, tipo (restaurante, bar, café&hellip;) y ciudad</td><td>El equipo. Escribinos y lo cambiamos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Reseñas</p>
+      <h2>Cómo funcionan, para que no te agarre de sorpresa</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span>Las puede dejar cualquier persona con cuenta en Hospeda. Una por persona.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Ninguna se publica sola:</strong> las revisamos antes de que aparezcan. Eso frena al que escribe caliente o al que nunca pisó tu local.</span></li>
+      <li><span class="tick tick--no">&times;</span><span><strong>Todavía no podés responder una reseña.</strong> Está pendiente. Mientras tanto, si aparece una que te parece injusta, escribinos y la miramos.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Para ser justos</p>
+      <h2>Lo que conviene que sepas antes</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick tick--no">!</span><span><strong>Todavía no hay estadísticas.</strong> No vas a ver cuánta gente miró tu página. Lo sabemos y está en la lista, pero hoy no existe y preferimos decírtelo.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>La tarjeta se pide para publicar</strong>, antes de los 30 días de prueba. Crear la cuenta y armar la ficha no cuesta nada; publicarla exige dejarla cargada.</span></li>
+      <li><span class="tick tick--no">!</span><span>Si dejás de pagar, tu página <strong>deja de verse pero no se borra</strong>: fotos, textos y reseñas quedan, y vuelve a estar en línea cuando reactivás.</span></li>
+      <li><span class="tick tick--no">!</span><span>Una ficha incompleta no se publica. Sin foto principal, horarios y rango de precios, el sistema no te deja — porque una página a medias no la elige nadie.</span></li>
+    </ul>
+  </section>
+
+  <footer class="close">
+    <h2>Probalo</h2>
+    <p>
+      Armar la ficha es gratis y no te compromete. Recién decidís cuando la querés publicar, y aun
+      ahí tenés 30 días para arrepentirte sin que se te cobre un peso.
+    </p>
+    <a class="cta" href="https://hospeda.com.ar/es/publicar-restaurante">hospeda.com.ar/es/publicar-restaurante</a>
+    <div class="phone">
+      <span class="fact__k">¿Preferís que te acompañemos?</span>
+      <strong>Llamanos o escribinos por WhatsApp al 3442 453797</strong>
+      <span class="finelines">Te ayudamos a cargar la ficha la primera vez, si querés.</span>
+    </div>
+    <div class="finelines">
+      Hospeda cobra una suscripción por tener la ficha publicada, nunca un porcentaje de lo que
+      facturás, y no interviene entre el comensal y tu local. Los valores y las condiciones son
+      los vigentes al día de hoy y pueden cambiar; los del momento están siempre publicados en el sitio.
+    </div>
+  </footer>
+
+</div>
+</StandaloneLayout>
+
+<style>
+  :root{
+    --ground:#FCFAFA;
+    --surface:#FFFFFF;
+    --surface-2:#F6F1F1;
+    --ink:#1C1315;
+    --ink-soft:#43302F;
+    --muted:#6A5350;
+    --line:#E6DBDA;
+    --line-strong:#D0BEBC;
+    --accent:#8C2F39;
+    --accent-soft:#F6E9EA;
+    --on-accent:#FFFFFF;
+    --warm:#93590A;
+    --warm-soft:#FBEEE0;
+    --good:#3F6B12;
+    --good-soft:#ECF3E1;
+    --stop:#962E24;
+    --stop-soft:#F8E9E7;
+    --shadow:0 1px 2px rgba(14,25,32,.05), 0 8px 24px -16px rgba(14,25,32,.28);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#150F10;
+      --surface:#211719;
+      --surface-2:#2A1E20;
+      --ink:#F3EAEA;
+      --ink-soft:#DCCBCA;
+      --muted:#BCA5A3;
+      --line:#38292B;
+      --line-strong:#533D3F;
+      --accent:#E88E97;
+      --accent-soft:#2C1A1D;
+      --on-accent:#0C1319;
+      --warm:#E0A860;
+      --warm-soft:#2E2113;
+      --good:#A6D563;
+      --good-soft:#1B2716;
+      --stop:#EF9A8E;
+      --stop-soft:#2E1A18;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#150F10;
+    --surface:#211719;
+    --surface-2:#2A1E20;
+    --ink:#F3EAEA;
+    --ink-soft:#DCCBCA;
+    --muted:#BCA5A3;
+    --line:#38292B;
+    --line-strong:#533D3F;
+    --accent:#E88E97;
+    --accent-soft:#2C1A1D;
+    --on-accent:#0C1319;
+    --warm:#E0A860;
+    --warm-soft:#2E2113;
+    --good:#A6D563;
+    --good-soft:#1B2716;
+    --stop:#EF9A8E;
+    --stop-soft:#2E1A18;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:1.1875rem;
+    line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:44rem;margin-inline:auto;padding:0 1.5rem 5rem}
+  .eyebrow{
+    font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size:.8rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--muted);margin:0;
+  }
+  h1,h2,h3{font-family:"Archivo", system-ui, -apple-system, sans-serif;text-wrap:balance;margin:0}
+  h1{font-size:clamp(2.1rem,6vw,3.1rem);font-weight:800;line-height:1.06;letter-spacing:-.02em}
+  h2{font-size:clamp(1.5rem,3.6vw,1.95rem);font-weight:700;line-height:1.2;letter-spacing:-.01em}
+  h3{font-size:1.15rem;font-weight:700;line-height:1.35}
+  p{margin:0}
+  strong{font-weight:600;color:var(--ink)}
+  a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  /* --- Encabezado --- */
+  .masthead{padding:3rem 0 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+  .masthead__lede{font-size:1.28rem;line-height:1.6;color:var(--ink-soft);max-width:33em}
+  .rule{height:3px;background:var(--ink);width:3.5rem;border-radius:2px}
+
+  .factsheet{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));
+    border:1px solid var(--line);border-radius:6px;background:var(--surface);
+    overflow:hidden;box-shadow:var(--shadow);margin-top:.75rem;
+  }
+  .fact{padding:1rem 1.15rem;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.25rem}
+  .fact:last-child{border-right:0}
+  .fact__k{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;font-size:.78rem;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1.4;
+  }
+  .fact__v{font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:1.2rem;line-height:1.25}
+  .fact__v--free{color:var(--warm)}
+
+  /* --- Secciones --- */
+  section{padding-top:2.5rem;display:flex;flex-direction:column;gap:1rem}
+  .sec-head{display:flex;flex-direction:column;gap:.5rem}
+  .sec-head .eyebrow{display:flex;align-items:center;gap:.6rem}
+  .sec-head .eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* --- Aviso honesto --- */
+  .notice{
+    border:1px solid var(--line-strong);border-left:4px solid var(--warm);
+    background:var(--warm-soft);border-radius:0 6px 6px 0;padding:1.2rem 1.4rem;
+    display:flex;flex-direction:column;gap:.6rem;
+  }
+  .notice h3{color:var(--ink)}
+
+  /* --- Listas --- */
+  ul.plain{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.8rem}
+  ul.plain li{display:flex;gap:.75rem;align-items:baseline}
+  .tick{
+    flex:none;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.95rem;
+    color:var(--good);line-height:1.72;
+  }
+  .tick--no{color:var(--stop)}
+
+  /* --- Pasos --- */
+  ol.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0}
+  ol.steps li{display:grid;grid-template-columns:2.6rem 1fr;gap:1rem;padding:1.2rem 0;border-top:1px solid var(--line)}
+  ol.steps li:last-child{border-bottom:1px solid var(--line)}
+  .num{
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.92rem;color:var(--accent);
+    padding-top:.35rem;letter-spacing:.03em;
+  }
+  .step__body{display:flex;flex-direction:column;gap:.4rem}
+  .step__meta{
+    font-family:"IBM Plex Mono",monospace;font-size:.82rem;letter-spacing:.04em;
+    line-height:1.5;color:var(--muted);
+  }
+
+  /* --- Circuito --- */
+  .circuit{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem}
+  .node{
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1rem 1.1rem;
+    display:flex;flex-direction:column;gap:.4rem;
+  }
+  .node__who{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--accent);
+  }
+  .node__what{font-size:1.05rem;line-height:1.5;color:var(--ink-soft)}
+  .node--end{background:var(--good-soft);border-color:var(--good)}
+  .node--end .node__who{color:var(--good)}
+
+  /* --- Tablas --- */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:1.05rem}
+  th,td{text-align:left;padding:.85rem 1rem;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+  tr:last-child td{border-bottom:0}
+  th{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--muted);background:var(--surface-2);white-space:nowrap;
+  }
+  td.mono{font-family:"IBM Plex Mono",monospace;font-size:.95rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .subhead{margin-top:.4rem;color:var(--ink-soft)}
+
+  /* --- Chips de rubros --- */
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem}
+  .chip{
+    font-size:.95rem;font-weight:600;
+    border:1px solid var(--line-strong);border-radius:999px;padding:.35rem .85rem;color:var(--ink-soft);
+    background:var(--surface);
+  }
+
+  /* --- Dos columnas --- */
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem}
+  .panel{
+    border:1px solid var(--line);border-radius:6px;padding:1.2rem 1.35rem;background:var(--surface);
+    display:flex;flex-direction:column;gap:.85rem;
+  }
+  .panel--yes{border-top:3px solid var(--good)}
+
+  /* --- Cierre --- */
+  .close{
+    margin-top:2.75rem;border-top:3px solid var(--ink);padding-top:1.75rem;
+    display:flex;flex-direction:column;gap:1.1rem;
+  }
+  .cta{
+    display:inline-flex;align-items:center;gap:.6rem;align-self:flex-start;
+    background:var(--accent);color:var(--on-accent);text-decoration:none;
+    font-family:"Archivo",sans-serif;font-weight:700;font-size:1.05rem;
+    padding:.85rem 1.5rem;border-radius:5px;
+  }
+  .cta:hover{filter:brightness(1.08)}
+  .phone{
+    border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);
+    padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.25rem;
+  }
+  .phone strong{font-family:"Archivo",sans-serif;font-size:1.15rem}
+  .finelines{font-size:1rem;color:var(--muted);line-height:1.65}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
