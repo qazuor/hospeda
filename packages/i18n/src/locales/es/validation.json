@@ -1179,6 +1179,11 @@
                 "invalid": "El ID de suscripción local no es válido",
                 "invalidType": "El ID de suscripción local tiene un tipo de dato inválido"
             },
+            "payerEmail": {
+                "invalid": "El email de pago no es válido",
+                "invalidType": "El email de pago tiene un tipo de dato inválido",
+                "max": "El email de pago no puede superar los {{max}} caracteres"
+            },
             "planSlug": {
                 "invalidType": "El slug del plan tiene un tipo de dato inválido",
                 "max": "El slug del plan no puede superar los {{max}} caracteres",
