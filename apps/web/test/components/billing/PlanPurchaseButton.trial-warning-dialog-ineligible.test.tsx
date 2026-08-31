@@ -67,6 +67,10 @@ const SSR_TRIAL_TEXT = '14 días gratis';
 const INELIGIBLE_NOTE = 'Sin período de prueba';
 const CHECKOUT_URL = 'https://mp.com/checkout/trial-warning-ineligible-test';
 
+// `ownPreapprovalMonthlyEnabled: true` — this file's one test clicks through
+// the payer-email confirm dialog (HOS-937 review fix gate must be on for it
+// to appear). The gate's OFF behavior is covered separately in
+// `PlanPurchaseButton.own-preapproval-gate.test.tsx`.
 const defaultProps = {
     planSlug: 'owner-basico',
     monthlyPrice: 120000,
@@ -74,7 +78,8 @@ const defaultProps = {
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const,
-    trialDays: 14
+    trialDays: 14,
+    ownPreapprovalMonthlyEnabled: true
 };
 
 function mockAuthenticated() {

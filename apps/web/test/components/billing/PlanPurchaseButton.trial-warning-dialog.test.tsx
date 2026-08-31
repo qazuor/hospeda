@@ -88,13 +88,19 @@ const CONFIRM_LABEL = 'Entendido, continuar';
 const CANCEL_LABEL = 'Cancelar';
 const CHECKOUT_URL = 'https://mp.com/checkout/trial-warning-test';
 
+// `ownPreapprovalMonthlyEnabled: true` — two tests in this file (the no-trial
+// path and the trial-confirm path) click through the payer-email confirm
+// dialog after the trial-warning gate; the gate (HOS-937 review fix) must be
+// on for that dialog to appear. The gate's OFF behavior is covered separately
+// in `PlanPurchaseButton.own-preapproval-gate.test.tsx`.
 const defaultProps = {
     planSlug: 'owner-basico',
     monthlyPrice: 120000,
     annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
-    locale: 'es' as const
+    locale: 'es' as const,
+    ownPreapprovalMonthlyEnabled: true
 };
 
 function mockAuthenticated() {
