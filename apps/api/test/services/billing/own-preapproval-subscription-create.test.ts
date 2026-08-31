@@ -141,8 +141,16 @@ describe('createOwnPreapprovalSubscription', () => {
 
         expect(result.subscription.id).toBe(LOCAL_SUB_ID);
         expect(result.subscription.providerSubscriptionIds?.mercadopago).toBe(MP_SUBSCRIPTION_ID);
+        // HOS-937 step 3: checkoutUrl + billingInterval are now ALWAYS stamped
+        // on metadata (not just the commerce/partner branch) so the retry
+        // recovery flow can resolve the SAME object's init_point for every
+        // flow, not just commerce/partner.
         expect(db.__setMock).toHaveBeenCalledWith({
-            status: SubscriptionStatusEnum.PENDING_PROVIDER
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
         expect(db.__whereMock).toHaveBeenCalledTimes(1);
         expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
@@ -271,7 +279,11 @@ describe('createOwnPreapprovalSubscription', () => {
         });
 
         expect(db.__setMock).toHaveBeenCalledWith({
-            status: SubscriptionStatusEnum.PENDING_PROVIDER
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
     });
 
@@ -292,7 +304,11 @@ describe('createOwnPreapprovalSubscription', () => {
 
         expect(db.__setMock).toHaveBeenCalledWith({
             status: SubscriptionStatusEnum.PENDING_PROVIDER,
-            productDomain: 'gastronomy'
+            productDomain: 'gastronomy',
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
     });
 
@@ -320,6 +336,7 @@ describe('createOwnPreapprovalSubscription', () => {
             productDomain: 'partner',
             metadata: {
                 checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
                 partnerId: 'partner-123'
             }
         });
@@ -354,6 +371,7 @@ describe('createOwnPreapprovalSubscription', () => {
             productDomain: 'gastronomy',
             metadata: {
                 checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
                 mpPreapprovalPlanId: 'mp_plan_gastronomy',
                 commerceEntityType: 'gastronomy',
                 commerceEntityId: 'ent-1'
