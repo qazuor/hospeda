@@ -112,7 +112,10 @@ vi.mock('@repo/service-core', async () => {
     };
 });
 
-const dbExecuteMock = vi.fn();
+// HOS-937 step 2: `getMpPayerEmail` reads `billing_customers.mp_payer_email`
+// via `db.execute(sql\`...\`)` before the checkout decision logic this suite
+// exercises. Default to the real `{ rows: [...] }` shape.
+const dbExecuteMock = vi.fn().mockResolvedValue({ rows: [] });
 const dbInsertValuesMock = vi.fn();
 // HOS-110: importActual (not a full replace) for the same reason as the
 // @repo/service-core mock above — the real @repo/service-core module graph

@@ -29,7 +29,12 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { TEST_DAILY_PLAN } from '@repo/billing';
-import { commerceListingSubscriptions, type DrizzleClient, partnerSubscriptions } from '@repo/db';
+import {
+    commerceListingSubscriptions,
+    type DrizzleClient,
+    getDb,
+    partnerSubscriptions
+} from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
@@ -47,6 +52,7 @@ import {
     resolveCheckoutMpPlanId
 } from './billing/mp-plan-provisioning.service.js';
 import { createOwnPreapprovalSubscription } from './billing/own-preapproval-subscription-create.js';
+import { getMpPayerEmail, resolvePayerEmail } from './billing/payer-email.js';
 import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
@@ -250,6 +256,15 @@ export interface InitiatePaidMonthlySubscriptionInput {
     readonly promoCode?: string;
     /** Drizzle client override for tests (comp insert path). */
     readonly db?: DrizzleClient;
+    /**
+     * HOS-937 step 2: the email the user explicitly typed on the
+     * pre-redirect screen (spec §8.1), if any. Wins over both
+     * `billing_customers.mp_payer_email` and `.email` in
+     * {@link resolvePayerEmail}'s precedence (spec §6.3). Already
+     * format-validated by Zod (`StartPaidSubscriptionRequestSchema`) before
+     * it reaches here.
+     */
+    readonly payerEmail?: string;
 }
 
 /**
@@ -316,6 +331,13 @@ export interface InitiatePaidMonthlySubscriptionResult {
      * "absent" and "false" identically.
      */
     readonly promoCodeIgnored?: true;
+    /**
+     * HOS-937 step 2: the resolved MercadoPago payer email (spec §6.3) —
+     * the email whoever authorizes this checkout at MercadoPago must use or
+     * type. The front-end shows this on the pre-redirect screen (spec §8.1),
+     * pre-filled and editable.
+     */
+    readonly payerEmail: string;
 }
 
 /**
@@ -416,6 +438,14 @@ export async function initiatePaidMonthlySubscription(
                 `Customer '${customerId}' not found`
             );
         }
+        // HOS-937 step 2: resolved for response-shape symmetry with the paid
+        // branches below, even though a comp subscription never reaches
+        // MercadoPago — see `resolvePayerEmail`'s JSDoc for precedence.
+        const { payerEmail } = resolvePayerEmail({
+            requestedPayerEmail: input.payerEmail,
+            mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
+            customerEmail: customer.email
+        });
         const comp = await createCompSubscription({
             customerId,
             planId: plan.id,
@@ -429,7 +459,8 @@ export async function initiatePaidMonthlySubscription(
             checkoutUrl: urls.paymentMethodReturnUrl,
             localSubscriptionId: comp.localSubscriptionId,
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
-            appliedEffect: 'comp'
+            appliedEffect: 'comp',
+            payerEmail
         };
     }
 
@@ -566,6 +597,17 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
+    // HOS-937 step 2: resolve which email binds the preapproval MercadoPago
+    // is about to create — see `resolvePayerEmail`'s JSDoc for the
+    // precedence (spec §6.3). Throws `PAYER_EMAIL_UNSUPPORTED_CHARACTER`
+    // (mapped to HTTP 400) before any MercadoPago resource is provisioned
+    // when the resolved email contains a `+` (spec §11 OQ-1).
+    const { payerEmail } = resolvePayerEmail({
+        requestedPayerEmail: input.payerEmail,
+        mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
+        customerEmail: customer.email
+    });
+
     // ── HOS-937 step 1: own-preapproval checkout, behind a dark-by-default
     // flag ─────────────────────────────────────────────────────────────────
     // MercadoPago silently discards the `external_reference` carried on a
@@ -597,6 +639,11 @@ export async function initiatePaidMonthlySubscription(
             paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
             notificationUrl: urls.notificationUrl,
             providerPriceId,
+            // HOS-937 step 2: bind the preapproval to the resolved payer
+            // email. Forwarded to qzpay-core's `billing.subscriptions.create`
+            // (see `paid-subscription-create.ts`), which uses it in place of
+            // `customer.email`.
+            payerEmail,
             ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
             ...(pendingDiscount ? { pendingDiscount } : {}),
             ...(promoPlan.kind === 'trial' &&
@@ -624,7 +671,8 @@ export async function initiatePaidMonthlySubscription(
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
             ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
             ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
-            ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+            ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
+            payerEmail
         };
     }
 
@@ -634,7 +682,12 @@ export async function initiatePaidMonthlySubscription(
         priceId: monthlyPrice.id,
         billingInterval: 'monthly',
         mpPreapprovalPlanId: providerPriceId,
-        payerEmail: customer.email,
+        // HOS-937 step 2: Path C creates no MercadoPago resource
+        // server-side, so this is informational only — stored on the
+        // correlation row for display/reference, not sent to MercadoPago as
+        // a binding `payer_email` (that only happens on the own-preapproval
+        // branch above).
+        payerEmail,
         trialGranted: freeTrialDays !== undefined,
         freeTrialDays,
         ...(pendingDiscount ? { pendingDiscount } : {}),
@@ -676,7 +729,8 @@ export async function initiatePaidMonthlySubscription(
         expiresAt,
         ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
         ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
-        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
+        payerEmail
     };
 }
 
@@ -1213,6 +1267,12 @@ export interface InitiatePaidAnnualSubscriptionInput {
      * and `getDb()` resolves the runtime client.
      */
     readonly db?: DrizzleClient;
+    /**
+     * HOS-937 step 2: the email the user explicitly typed on the
+     * pre-redirect screen (spec §8.1), if any. Same precedence and
+     * resolution as {@link InitiatePaidMonthlySubscriptionInput.payerEmail}.
+     */
+    readonly payerEmail?: string;
 }
 
 /**
@@ -1249,6 +1309,13 @@ export interface InitiatePaidAnnualSubscriptionResult {
      * "absent" and "false" identically.
      */
     readonly promoCodeIgnored?: true;
+    /**
+     * HOS-937 step 2: the resolved MercadoPago payer email (spec §6.3) —
+     * the email whoever authorizes this checkout at MercadoPago must use or
+     * type. The front-end shows this on the pre-redirect screen (spec §8.1),
+     * pre-filled and editable.
+     */
+    readonly payerEmail: string;
 }
 
 /**
@@ -1320,6 +1387,13 @@ export async function initiatePaidAnnualSubscription(
                 `Customer '${customerId}' not found`
             );
         }
+        // HOS-937 step 2: resolved for response-shape symmetry — see the
+        // monthly comp branch's identical comment.
+        const { payerEmail: compPayerEmail } = resolvePayerEmail({
+            requestedPayerEmail: input.payerEmail,
+            mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
+            customerEmail: compCustomer.email
+        });
         const comp = await createCompSubscription({
             customerId,
             planId: plan.id,
@@ -1333,7 +1407,8 @@ export async function initiatePaidAnnualSubscription(
             checkoutUrl: urls.successUrl,
             localSubscriptionId: comp.localSubscriptionId,
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
-            appliedEffect: 'comp'
+            appliedEffect: 'comp',
+            payerEmail: compPayerEmail
         };
     }
 
@@ -1427,13 +1502,24 @@ export async function initiatePaidAnnualSubscription(
         );
     }
 
+    // HOS-937 step 2: resolve which email to record for this checkout — see
+    // the monthly path's identical resolution for the full rationale.
+    // Annual has no own-preapproval branch (Path C only), so this is
+    // informational (stored on the correlation row), not binding at
+    // MercadoPago.
+    const { payerEmail } = resolvePayerEmail({
+        requestedPayerEmail: input.payerEmail,
+        mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
+        customerEmail: customer.email
+    });
+
     const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: annualPrice.id,
         billingInterval: 'annual',
         mpPreapprovalPlanId: providerPriceId,
-        payerEmail: customer.email,
+        payerEmail,
         trialGranted: freeTrialDays !== undefined,
         freeTrialDays,
         // HOS-240: snapshot the trial_extension promo so its redemption is
@@ -1470,7 +1556,8 @@ export async function initiatePaidAnnualSubscription(
         ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
         // No `appliedEffect: 'discount'` for annual — discount codes are blocked
         // on annual checkout (HOS-244, born-discounted is monthly-only for now).
-        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
+        payerEmail
     };
 }
 

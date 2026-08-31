@@ -20,6 +20,21 @@
 
 import { TEST_DAILY_PLAN } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-937 step 2: `initiatePaidMonthlySubscription` now reads
+// `billing_customers.mp_payer_email` via raw SQL (`getMpPayerEmail`,
+// `db.execute(sql\`...\`)`) before resolving the checkout. The GLOBAL
+// `@repo/db` mock's `execute()` resolves to a bare `[]` (not `{ rows: [] }`),
+// which breaks that new read. Not what this suite tests — override locally
+// with the real shape.
+vi.mock('@repo/db', async () => {
+    const actual = await vi.importActual<typeof import('@repo/db')>('@repo/db');
+    return {
+        ...actual,
+        getDb: vi.fn(() => ({ execute: vi.fn().mockResolvedValue({ rows: [] }) }))
+    };
+});
+
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import {
