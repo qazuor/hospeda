@@ -44,6 +44,7 @@ import {
     PENDING_DISCOUNT_METADATA_KEY,
     PENDING_TRIAL_EXTENSION_METADATA_KEY
 } from '../../../services/billing/own-preapproval-subscription-create.js';
+import { persistMpPayerEmailBestEffort } from '../../../services/billing/payer-email.js';
 import type {
     PendingCheckoutDiscount,
     PendingTrialExtension
@@ -1257,6 +1258,28 @@ export async function processSubscriptionUpdated({
                 customerId: localSubscription.customerId,
                 pendingTrialExtension,
                 livemode: localSubscription.livemode
+            });
+        }
+
+        // HOS-937 step 2 (spec §6.3/AC-9): the preapproval just reached
+        // `authorized` — this IS the moment MercadoPago confirmed the payer
+        // email it was created with actually worked. Persist it onto
+        // `billing_customers.mp_payer_email` so the customer's NEXT checkout
+        // defaults to it instead of guessing again. `mpSubscription` is the
+        // SAME provider read from Step 2 above (`mpSubscription.payerEmail`
+        // is also how the OLD Path C fallback link at the top of this
+        // function correlates a checkout — see `payerEmail:
+        // mpSubscription.payerEmail ?? null` a few hundred lines up).
+        // `persistMpPayerEmailBestEffort` writes ONLY `mp_payer_email` — it
+        // never touches `billing_customers.email` (AC-9, HOS-581) — and is
+        // itself best-effort: a failure here must never break webhook
+        // processing or the activation it is reporting, same contract as
+        // `applyPendingDiscountBestEffort` / `applyPendingTrialExtensionBestEffort`
+        // above.
+        if (mpSubscription.payerEmail) {
+            await persistMpPayerEmailBestEffort({
+                customerId: localSubscription.customerId,
+                payerEmail: mpSubscription.payerEmail
             });
         }
     }
