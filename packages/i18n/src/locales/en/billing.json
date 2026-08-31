@@ -598,5 +598,26 @@
             "max_search_history_entries": "Search history entries",
             "max_collections": "Favorites collections"
         }
+    },
+    "limitHelp": {
+        "max_accommodations": "How many places you can have published at once. At the cap you need to unpublish one, or move up a plan, to add another.",
+        "max_photos_per_accommodation": "How many photos you can upload to each place. At the cap you have to delete one to upload another.",
+        "max_active_promotions": "How many promotions you can run at the same time. At the cap you need to end one to launch another.",
+        "max_favorites": "How many places you can save as favourites. At the cap you have to remove one to save another.",
+        "max_properties": "How many properties you can manage inside a complex. At the cap you need a higher plan to add another.",
+        "max_staff_accounts": "How many team accounts can manage the complex. At the cap you have to remove one to invite someone else.",
+        "max_active_alerts": "How many price alerts you can keep active at once. At the cap you have to turn one off to create another.",
+        "max_compare_items": "How many places you can compare on one screen. At the cap you have to drop one to add another.",
+        "max_ai_text_improve_per_month": "How many times a month you can ask the AI to improve your texts. The quota resets at the start of each month.",
+        "max_ai_chat_per_month": "How many questions the AI can answer about your places each month. Once spent, it comes back the following month.",
+        "max_ai_chat_consumer_per_month": "How many questions you can ask the AI assistant each month. Once spent, the quota resets the following month.",
+        "max_ai_search_per_month": "How many AI searches you can run each month. Once spent, you keep using the regular search until the following month.",
+        "max_ai_support_per_month": "How many questions a month you can ask the AI support assistant. The quota resets at the start of each month.",
+        "max_ai_translate_per_month": "How many automatic translations of your content you can request each month. The quota resets at the start of each month.",
+        "max_ai_accommodation_import_per_month": "How many places you can import from another platform each month with AI help. The quota resets at the start of each month.",
+        "max_search_history_entries": "How many past searches are kept in your history. Beyond the cap, the oldest ones are removed.",
+        "max_collections": "How many favourite lists you can keep. At the cap you have to delete one to create another.",
+        "max_gastronomies": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
+        "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another."
     }
 }

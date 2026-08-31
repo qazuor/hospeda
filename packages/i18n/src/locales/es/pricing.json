@@ -6,6 +6,24 @@
     "trial_other": "{{count}} días gratis",
     "trialNotEligible": "Sin período de prueba",
     "includesEverything": "Todo lo del plan {plan}, más:",
+    "includesAll": "Este plan incluye:",
+    "limitsLabel": "Límites de este plan",
+    "limitLine": "{label}: {value}",
+    "recommendedFor": {
+        "label": "Recomendado para",
+        "default": {
+            "owner": "quien publica su alojamiento en Hospeda",
+            "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma"
+        },
+        "plan": {
+            "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
+            "owner-pro": "quien maneja varias propiedades y ya recibe reservas seguido",
+            "owner-premium": "quien vive de alquilar y necesita todas las herramientas y el mayor alcance",
+            "tourist-free": "quien está empezando a mirar alojamientos y quiere guardar algunos favoritos",
+            "tourist-plus": "quien viaja seguido y compara varias opciones antes de decidir",
+            "tourist-vip": "quien viaja seguido y quiere todos los beneficios y el contacto directo con el anfitrión"
+        }
+    },
     "inheritedSummary_one": "+{{count}} función del plan {{plan}}",
     "inheritedSummary_other": "+{{count}} funciones del plan {{plan}}",
     "baseHighlightTitle": "Ideal para empezar",

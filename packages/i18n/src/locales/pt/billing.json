@@ -600,5 +600,26 @@
             "max_search_history_entries": "Entradas do histórico de buscas",
             "max_collections": "Coleções de favoritos"
         }
+    },
+    "limitHelp": {
+        "max_accommodations": "Quantas hospedagens você pode ter publicadas ao mesmo tempo. Ao chegar ao limite, precisa despublicar uma ou mudar para um plano maior para somar outra.",
+        "max_photos_per_accommodation": "Quantas fotos você pode enviar para cada hospedagem. Ao chegar ao limite, precisa apagar uma para enviar outra.",
+        "max_active_promotions": "Quantas promoções você pode ter ativas ao mesmo tempo. Ao chegar ao limite, precisa encerrar uma para lançar outra.",
+        "max_favorites": "Quantas hospedagens você pode salvar como favoritas. Ao chegar ao limite, precisa tirar uma para salvar outra.",
+        "max_properties": "Quantas propriedades você pode administrar dentro de um complexo. Ao chegar ao limite, precisa de um plano maior para somar outra.",
+        "max_staff_accounts": "Quantas contas da sua equipe podem administrar o complexo. Ao chegar ao limite, precisa remover uma para convidar outra pessoa.",
+        "max_active_alerts": "Quantos alertas de preço você pode manter ativos ao mesmo tempo. Ao chegar ao limite, precisa desativar um para criar outro.",
+        "max_compare_items": "Quantas hospedagens você pode comparar em uma mesma tela. Ao chegar ao limite, precisa tirar uma para adicionar outra.",
+        "max_ai_text_improve_per_month": "Quantas vezes por mês você pode pedir à IA que melhore seus textos. A cota é renovada no início de cada mês.",
+        "max_ai_chat_per_month": "Quantas perguntas por mês a IA pode responder sobre suas hospedagens. Ao esgotar, volta a ficar disponível no mês seguinte.",
+        "max_ai_chat_consumer_per_month": "Quantas perguntas você pode fazer por mês ao assistente de IA. Ao esgotar, a cota é renovada no mês seguinte.",
+        "max_ai_search_per_month": "Quantas buscas com IA você pode fazer por mês. Ao esgotar, segue usando a busca tradicional até o mês seguinte.",
+        "max_ai_support_per_month": "Quantas perguntas por mês você pode fazer ao assistente de suporte com IA. A cota é renovada no início de cada mês.",
+        "max_ai_translate_per_month": "Quantas traduções automáticas do seu conteúdo você pode pedir por mês. A cota é renovada no início de cada mês.",
+        "max_ai_accommodation_import_per_month": "Quantas hospedagens você pode importar por mês de outra plataforma com ajuda da IA. A cota é renovada no início de cada mês.",
+        "max_search_history_entries": "Quantas buscas anteriores ficam salvas no seu histórico. Acima do limite, as mais antigas são apagadas.",
+        "max_collections": "Quantas listas de favoritos você pode ter criadas. Ao chegar ao limite, precisa apagar uma para criar outra.",
+        "max_gastronomies": "Quantos estabelecimentos gastronômicos você pode ter publicados ao mesmo tempo. Ao chegar ao limite, precisa de um plano maior para somar outro.",
+        "max_experiences": "Quantas experiências você pode ter publicadas ao mesmo tempo. Ao chegar ao limite, precisa de um plano maior para somar outra."
     }
 }

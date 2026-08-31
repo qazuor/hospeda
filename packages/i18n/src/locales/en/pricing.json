@@ -6,6 +6,24 @@
     "trial_other": "{{count}} days free",
     "trialNotEligible": "No trial period",
     "includesEverything": "Everything in {plan}, plus:",
+    "includesAll": "This plan includes:",
+    "limitsLabel": "This plan's limits",
+    "limitLine": "{label}: {value}",
+    "recommendedFor": {
+        "label": "Recommended for",
+        "default": {
+            "owner": "anyone listing their place on Hospeda",
+            "tourist": "anyone travelling around the Litoral who wants more out of the platform"
+        },
+        "plan": {
+            "owner-basico": "someone renting out a single property who is just getting started",
+            "owner-pro": "someone managing several properties who already gets bookings regularly",
+            "owner-premium": "someone who makes a living from renting and needs every tool and the widest reach",
+            "tourist-free": "someone starting to browse places to stay who wants to save a few favourites",
+            "tourist-plus": "someone who travels often and compares several options before deciding",
+            "tourist-vip": "someone who travels often and wants every benefit plus direct contact with the host"
+        }
+    },
     "inheritedSummary_one": "+{{count}} feature from the {{plan}} plan",
     "inheritedSummary_other": "+{{count}} features from the {{plan}} plan",
     "baseHighlightTitle": "Perfect to get started",
