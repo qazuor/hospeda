@@ -78,30 +78,40 @@ them because the model makes the owner tier inherit the tourist VIP tier. A
 commerce owner inherits nothing. That single decision moves the floor of all
 three tiers before a single new feature is discussed. See **OQ-1**.
 
-### F-2 · Four gates are phantom — they do not exist for accommodation either
+### F-2 · Three entitlements are phantom — they are enforced nowhere, for anyone
 
-Four entitlement middlewares are written, tested, and wired to **no route**. They
-carry an explicit marker in the source:
+Measured by counting the routes that actually enforce each key with
+`requireEntitlement(EntitlementKey.X)` under `apps/api/src/routes/`:
 
-| Middleware | File:line | Entitlement |
+| Entitlement | Routes enforcing it | Verdict |
 |---|---|---|
-| `gateCalendarAccess` | `apps/api/src/middlewares/accommodation-entitlements.ts:264` | `CAN_USE_CALENDAR` |
-| `gateExternalCalendarSync` | `apps/api/src/middlewares/accommodation-entitlements.ts:321` | external calendar sync |
-| `gateReviewResponse` | `apps/api/src/middlewares/accommodation-entitlements.ts:546` | `RESPOND_REVIEWS` |
-| `gateReviewPhotos` | `apps/api/src/middlewares/tourist-entitlements.ts:289` | `CAN_ATTACH_REVIEW_PHOTOS` |
+| `CAN_USE_CALENDAR` | 4 (`addOccupancy`, `removeOccupancy`, `batchOccupancy`, `updateOccupancyEvent`) | real, enforced |
+| `CAN_SYNC_EXTERNAL_CALENDAR` | 3 (`calendarSync`, `calendarConnectIcal`, `calendarConnectGoogle`) | real, enforced |
+| `RESPOND_REVIEWS` | **0** | **phantom** |
+| `CAN_ATTACH_REVIEW_PHOTOS` | **0** | **phantom** |
+| `CUSTOM_BRANDING` | **0** | **phantom** |
 
-Two further `PHANTOM-GATE` markers sit inside the WhatsApp path
-(`accommodation-entitlements.ts:377,460`), noting the gate is still not wired to
-any route after HOS-19 shipped the WhatsApp fields.
+**A caveat that cost a wrong finding, recorded so nobody repeats it.** Four
+middlewares carry an explicit `// PHANTOM-GATE (SPEC-145)` marker and are wired to
+no route: `gateCalendarAccess` (`accommodation-entitlements.ts:264`),
+`gateExternalCalendarSync` (`:321`), `gateReviewResponse` (`:546`) and
+`gateReviewPhotos` (`tourist-entitlements.ts:289`). **An unmounted middleware is
+not an unprotected feature.** Two of those four guard entitlements that *are*
+enforced — the routes call the generic `requireEntitlement` directly instead of
+the named helper, so the helper went stale while the gate stayed real. The only
+way to tell a phantom from a stale helper is to count the routes that enforce the
+**key**, never to grep for the helper.
 
-Separately, `CUSTOM_BRANDING` appears in billing config, the **public plan
-comparison** (`apps/web/src/components/billing/plan-comparison-rows.ts`), the
-admin entitlement groups, docs and tests — and in **zero middlewares and zero
-routes**.
+`CUSTOM_BRANDING` is the cleanest case: it appears in billing config, the
+**public plan comparison** (`apps/web/src/components/billing/plan-comparison-rows.ts`),
+the admin entitlement groups, docs and tests — and in zero middlewares and zero
+routes.
 
-**Consequence for this audit**: some of what would be "ported to commerce" does
-not exist anywhere. Porting nothing yields nothing. Every feature this audit
-marks as applicable must state whether it is real *for accommodation first*.
+**Consequence for this audit**: three of the features that might be "ported to
+commerce" do not exist for accommodation either. Porting nothing yields nothing.
+Every feature this audit marks as applicable must state whether it is real *for
+accommodation first*, and that judgement must come from counting enforcing
+routes.
 
 ### F-3 · The coupling is in consumption, not in resolution
 
@@ -235,10 +245,11 @@ because each one changes what the tiers can contain.
   Answering "yes" raises the floor of every commerce tier by 15 keys before any
   new feature is discussed; answering "no" means commerce owners are, as
   customers of the site, worth less than a free tourist.
-- **OQ-2 · What happens to the four phantom gates?** Calendar, external calendar
-  sync, respond-to-reviews and review photos are sold in the comparison table and
-  enforced nowhere. Do they get built before being promised to a second set of
-  verticals, or do they get pulled from the comparison?
+- **OQ-2 · What happens to the three phantom entitlements?** `RESPOND_REVIEWS`,
+  `CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING` are sold in the public plan
+  comparison and enforced by zero routes (F-2). Do they get built before being
+  promised to a second set of verticals, do they get pulled from the comparison,
+  or are they simply out of scope for commerce tiers?
 - **OQ-3 · Does `PlanCategory` need per-vertical values?** Today all six commerce
   plans are `category: 'owner'`, so the addon category filter is not a real
   barrier (F-4).
