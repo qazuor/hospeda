@@ -46,10 +46,16 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/', changefreq: 'daily', priority: 1.0 },
 
     // Conversion funnel: plans and publishing.
+    //
+    // HOS-942 turned `/suscriptores/planes/` into the five-audience INDEX and
+    // moved the two pricing pages under it. The index keeps the highest priority
+    // of the three because it is the entry point that reaches every vertical;
+    // the two audience pages carry the priority their old URLs had.
     { path: '/suscriptores/planes/', changefreq: 'weekly', priority: 0.8 },
+    { path: '/suscriptores/planes/anfitriones/', changefreq: 'weekly', priority: 0.8 },
+    { path: '/suscriptores/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
     { path: '/suscriptores/planes/comparar/', changefreq: 'monthly', priority: 0.7 },
     { path: '/suscriptores/propietarios/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/suscriptores/turistas/', changefreq: 'monthly', priority: 0.8 },
     { path: '/suscriptores/turistas/comparar/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
     { path: '/publicar-restaurante/', changefreq: 'monthly', priority: 0.7 },
@@ -127,6 +133,13 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
 
     // Host-only draft creation form; redirects anonymous visitors to login.
     '/publicar/nueva/': 'auth-guarded',
+
+    // Redirect-only since HOS-942: the tourist pricing page moved to
+    // `/suscriptores/planes/turistas/` and this URL 301s there. It must leave
+    // the sitemap in the SAME change that turns it into a redirect — a sitemap
+    // that keeps advertising it would be handing crawlers a URL that never
+    // serves content again.
+    '/suscriptores/turistas/': 'transactional',
 
     // MercadoPago return targets and the redirect-only checkout root.
     '/suscriptores/checkout/': 'transactional',

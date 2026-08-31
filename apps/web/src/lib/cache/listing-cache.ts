@@ -14,7 +14,7 @@
  * server-side per load and never loops).
  *
  * The fix mirrors the pricing pages' proven pattern
- * (`suscriptores/planes|turistas/*`): emit
+ * (`suscriptores/planes/**`): emit
  * `Cache-Control: public, s-maxage, stale-while-revalidate` on the SSR response
  * so Cloudflare edge-caches the HTML — but ONLY for responses that are safe to
  * share from a single cache entry:

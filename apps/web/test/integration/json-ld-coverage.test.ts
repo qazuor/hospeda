@@ -84,8 +84,8 @@ const ABOUT_PAGES: ReadonlyArray<{ name: string; file: string }> = [
 
 /** Pages that emit Offer / PriceSpecification JSON-LD. */
 const PRICING_PAGES: ReadonlyArray<{ name: string; file: string }> = [
-    { name: 'tourist pricing', file: 'suscriptores/turistas/index.astro' },
-    { name: 'owner pricing', file: 'suscriptores/planes/index.astro' }
+    { name: 'tourist pricing', file: 'suscriptores/planes/turistas/index.astro' },
+    { name: 'owner pricing', file: 'suscriptores/planes/anfitriones/index.astro' }
 ];
 
 describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {

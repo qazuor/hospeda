@@ -1,0 +1,309 @@
+---
+/**
+ * @file suscriptores/planes/index.astro
+ * @description The plan INDEX: one card per audience Hospeda sells to
+ * (HOS-942, H1 of the HOS-941 epic).
+ *
+ * This URL used to BE the owner pricing page. HOS-942 moved that page down one
+ * level to `/suscriptores/planes/anfitriones/` and gave this path the job of
+ * routing a visitor to the right vertical instead. It therefore carries NO
+ * redirect (AC-5): the URL changed content, not location — anyone who lands
+ * here still gets a page, and it is the one that now covers their case whatever
+ * that case is. `/suscriptores/turistas/`, by contrast, really did move, and
+ * 301s to its new home.
+ *
+ * ## All five cards, always, with no interaction
+ *
+ * There are no tabs, no accordion and no carousel — every card is in the
+ * initial HTML (AC-1). A visitor who does not yet know Hospeda sells to five
+ * audiences cannot be expected to discover the other four behind a control, and
+ * an interaction is exactly what hides them from a crawler too.
+ *
+ * Gastronomy and experience are two separate cards (AC-9), never a single
+ * "commerce" one: `'commerce'` is a RETIRED `ProductDomainEnum` value and
+ * regrouping the verticals under it in the UI would resurrect the vocabulary the
+ * domain split removed.
+ *
+ * ## Prices are fetched, never written down
+ *
+ * Each "from $X" comes from `GET /api/v1/public/plans` at request time (AC-8),
+ * so an operator's price edit in admin shows up here without a redeploy — same
+ * contract the two pricing pages have had since SPEC-168 D3. When a domain's
+ * fetch fails, `fetchAudienceStartingPrices` yields `null` for that audience and
+ * the card renders WITHOUT a price line, keeping its copy and its CTA. A card
+ * that vanished, or one showing a stale hardcoded figure, would both be worse
+ * than a card with no number on it.
+ *
+ * @route /{lang}/suscriptores/planes/
+ * @rendering SSR (prerender=false) — fetches the public plan catalogue per
+ *   domain at request time; edge-cacheable, TTL from the `pricing` cache class.
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import { createTranslations } from '@/lib/i18n';
+import { getIntlLocale } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
+import {
+	AUDIENCE_CARD_ORDER,
+	AUDIENCE_CARD_PATHS,
+	fetchAudienceStartingPrices,
+	formatStartingPriceArs
+} from '@/lib/billing/audience-plans';
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { ArrowRightIcon, BuildingIcon, CompassIcon, StarIcon } from '@repo/icons';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+const { t } = createTranslations(locale);
+
+// Cache at the edge, tagged so a plan write purges this page along with the two
+// pricing pages instead of flushing the whole zone (HOS-369 W1-1).
+//
+// Routed through `applyCacheHeaders` rather than by setting `Cache-Control`
+// directly (HOS-426): the helper is fail-CLOSED, demoting the response to
+// `private` when the tag namespace cannot be resolved. Setting the header and
+// declaring the tags as two independent statements would instead produce a
+// cacheable response with NO purge tag — cached content nothing can evict.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'pricing',
+	tags: [CACHE_TAG_PRICING]
+});
+
+const startingPrices = await fetchAudienceStartingPrices();
+const intlLocale = getIntlLocale(locale);
+
+/** Resolve one card's price line, or `null` when the catalogue did not load. */
+function priceLabelFor(id: (typeof AUDIENCE_CARD_ORDER)[number]): string | null {
+	const price = startingPrices[id];
+	if (price === null) return null;
+	if (price.kind === 'free') return t('pricing.free', 'Gratis');
+	return t('pricing.index.from', 'Desde {{price}}', {
+		price: formatStartingPriceArs({ cents: price.monthlyPriceArs, intlLocale })
+	});
+}
+
+const cards = AUDIENCE_CARD_ORDER.map((id) => ({
+	id,
+	href: buildUrl({ locale, path: AUDIENCE_CARD_PATHS[id] }),
+	title: t(`pricing.index.cards.${id}.title`),
+	audience: t(`pricing.index.cards.${id}.audience`),
+	cta: t(`pricing.index.cards.${id}.cta`),
+	priceLabel: priceLabelFor(id),
+	/** `/mes` only makes sense next to an amount, not next to the free label. */
+	showPeriod: startingPrices[id]?.kind === 'from'
+}));
+
+// Split the heading so the hero can underline its last word, exactly as the two
+// pricing pages do.
+const headingFull = t('pricing.index.heading', 'Un plan para cada audiencia');
+const headingWords = headingFull.trim().split(/\s+/);
+const headingAccent = headingWords.pop() ?? headingFull;
+const headingMain = headingWords.join(' ');
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('pricing.index.title', 'Planes de Hospeda')}
+	description={t(
+		'pricing.index.description',
+		'Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.'
+	)}
+>
+	<MarketingHero
+		tagline={t('pricing.index.tagline', 'Planes y precios')}
+		titleMain={headingMain}
+		titleAccent={headingAccent}
+		subtitle={t(
+			'pricing.index.subtitle',
+			'Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá los precios.'
+		)}
+	>
+		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><CompassIcon size="md" weight="duotone" /></Fragment>
+	</MarketingHero>
+
+	<section class="audiences section" aria-labelledby="audiences-heading">
+		<div class="audiences__container">
+			<h2 class="audiences__heading" id="audiences-heading">
+				{t('pricing.index.cardsHeading', 'Elegí tu audiencia')}
+			</h2>
+
+			<ul class="audiences__grid" data-audience-count={cards.length}>
+				{cards.map((card) => (
+					<li class="audiences__item" data-audience={card.id}>
+						<a class="audiences__card" href={card.href}>
+							<h3 class="audiences__card-title">{card.title}</h3>
+							<p class="audiences__card-audience">{card.audience}</p>
+
+							{card.priceLabel && (
+								<p class="audiences__card-price">
+									<span class="audiences__card-price-amount">{card.priceLabel}</span>
+									{card.showPeriod && (
+										<span class="audiences__card-price-period">
+											{t('pricing.period.month', '/mes')}
+										</span>
+									)}
+								</p>
+							)}
+
+							<span class="audiences__card-cta">
+								{card.cta}
+								<ArrowRightIcon size="sm" weight="bold" />
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	.audiences {
+		padding-block: clamp(2.5rem, 6vw, 4.5rem);
+		background-color: var(--core-background);
+	}
+
+	.audiences__container {
+		max-width: var(--container-max, 1350px);
+		margin-inline: auto;
+		padding-inline: var(--space-5, 1.25rem);
+	}
+
+	.audiences__heading {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.5rem, 3.5vw, 2rem);
+		color: var(--core-foreground);
+		text-align: center;
+		margin: 0 0 var(--space-8, 2rem);
+		line-height: 1.2;
+	}
+
+	/* Mobile-first single column (AC-2). The wider layouts are additive, so a
+	   375px viewport never has more than one card per row and nothing can push
+	   the body wider than the viewport. */
+	.audiences__grid {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-4, 1rem);
+	}
+
+	@media (min-width: 640px) {
+		.audiences__grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.audiences__grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	.audiences__item {
+		/* Without this a long unbroken word in a card would set the track's
+		   minimum width and overflow the row. */
+		min-width: 0;
+		display: flex;
+	}
+
+	.audiences__card {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		width: 100%;
+		min-width: 0;
+		padding: var(--space-5, 1.25rem);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-card);
+		background-color: var(--core-card);
+		color: var(--core-foreground);
+		text-decoration: none;
+		transition:
+			border-color 0.2s ease,
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+
+	.audiences__card:hover,
+	.audiences__card:focus-visible {
+		border-color: var(--brand-primary);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.audiences__card-title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-body-lg, 1.0625rem);
+		color: var(--core-foreground);
+		margin: 0;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
+	}
+
+	.audiences__card-audience {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-muted-foreground);
+		margin: 0;
+		line-height: 1.55;
+		overflow-wrap: anywhere;
+	}
+
+	.audiences__card-price {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		margin: var(--space-2, 0.5rem) 0 0;
+		font-family: var(--font-sans);
+	}
+
+	.audiences__card-price-amount {
+		font-weight: 700;
+		font-size: var(--text-body-lg, 1.0625rem);
+		color: var(--core-foreground);
+	}
+
+	.audiences__card-price-period {
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-muted-foreground);
+	}
+
+	.audiences__card-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		margin-top: auto;
+		padding-top: var(--space-3, 0.75rem);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		font-weight: 600;
+		/* `-link` rather than `brand-primary`: this is normal-size text, and the
+		   vibrant brand blue only reaches ~3.5:1 on a light card (SPEC-308). */
+		color: var(--brand-primary-link);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.audiences__card {
+			transition: none;
+		}
+
+		.audiences__card:hover,
+		.audiences__card:focus-visible {
+			transform: none;
+		}
+	}
+</style>

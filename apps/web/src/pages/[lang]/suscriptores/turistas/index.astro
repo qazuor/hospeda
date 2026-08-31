@@ -1,0 +1,31 @@
+---
+/**
+ * @file suscriptores/turistas/index.astro
+ * @description Permanent redirect to the tourist pricing page's new home,
+ * `/suscriptores/planes/turistas/` (HOS-942 AC-4).
+ *
+ * The page itself moved under `/suscriptores/planes/` when that path became the
+ * five-audience index. This URL has been the tourist pricing page since
+ * SPEC-096 and is linked from a dozen in-product upsells plus whatever is
+ * bookmarked or indexed, so it changes LOCATION — hence 301, the status that
+ * transfers the ranking signal, rather than a 302 or a 404.
+ *
+ * Contrast `/suscriptores/planes/` itself, which deliberately carries NO
+ * redirect (AC-5): that URL changed CONTENT, not location — it still serves a
+ * page, just the audience index instead of owner pricing.
+ *
+ * `/suscriptores/turistas/comparar/` is untouched and still serves the tourist
+ * comparison table; only this index moved.
+ *
+ * @route /{lang}/suscriptores/turistas/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
+ */
+
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+
+return Astro.redirect(buildUrl({ locale, path: 'suscriptores/planes/turistas' }), 301);
+---

@@ -44,7 +44,7 @@ describe('Owner comparison page (suscriptores/planes/comparar/index.astro)', () 
 
     it('should have CTA linking back to pricing cards page', () => {
         expect(ownerSrc).toContain('GradientButton');
-        expect(ownerSrc).toContain('suscriptores/planes');
+        expect(ownerSrc).toContain('suscriptores/planes/anfitriones');
     });
 
     it('should use EmptyState for graceful degradation', () => {
@@ -88,7 +88,7 @@ describe('Tourist comparison page (suscriptores/turistas/comparar/index.astro)',
 
     it('should have CTA linking back to tourist pricing cards page', () => {
         expect(touristSrc).toContain('GradientButton');
-        expect(touristSrc).toContain('suscriptores/turistas');
+        expect(touristSrc).toContain('suscriptores/planes/turistas');
     });
 
     it('should use EmptyState for graceful degradation', () => {
@@ -102,12 +102,12 @@ describe('Tourist comparison page (suscriptores/turistas/comparar/index.astro)',
 
 describe('Pricing pages comparison links', () => {
     const ownerPricingSrc = readFileSync(
-        resolve(__dirname, '../../../src/pages/[lang]/suscriptores/planes/index.astro'),
+        resolve(__dirname, '../../../src/pages/[lang]/suscriptores/planes/anfitriones/index.astro'),
         'utf8'
     );
 
     const touristPricingSrc = readFileSync(
-        resolve(__dirname, '../../../src/pages/[lang]/suscriptores/turistas/index.astro'),
+        resolve(__dirname, '../../../src/pages/[lang]/suscriptores/planes/turistas/index.astro'),
         'utf8'
     );
 
