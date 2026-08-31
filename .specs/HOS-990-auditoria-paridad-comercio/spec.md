@@ -78,40 +78,51 @@ them because the model makes the owner tier inherit the tourist VIP tier. A
 commerce owner inherits nothing. That single decision moves the floor of all
 three tiers before a single new feature is discussed. See **OQ-1**.
 
-### F-2 · Three entitlements are phantom — they are enforced nowhere, for anyone
+### F-2 · Three entitlements are enforced by no route — and the UI already says so
 
-Measured by counting the routes that actually enforce each key with
-`requireEntitlement(EntitlementKey.X)` under `apps/api/src/routes/`:
+Measured by counting the routes that enforce each key with
+`requireEntitlement(EntitlementKey.X)` under `apps/api/src/routes/`, cross-checked
+against how the public plan comparison presents them:
 
-| Entitlement | Routes enforcing it | Verdict |
+| Entitlement | Routes enforcing it | In the public comparison |
 |---|---|---|
-| `CAN_USE_CALENDAR` | 4 (`addOccupancy`, `removeOccupancy`, `batchOccupancy`, `updateOccupancyEvent`) | real, enforced |
-| `CAN_SYNC_EXTERNAL_CALENDAR` | 3 (`calendarSync`, `calendarConnectIcal`, `calendarConnectGoogle`) | real, enforced |
-| `RESPOND_REVIEWS` | **0** | **phantom** |
-| `CAN_ATTACH_REVIEW_PHOTOS` | **0** | **phantom** |
-| `CUSTOM_BRANDING` | **0** | **phantom** |
+| `CAN_USE_CALENDAR` | 4 (`addOccupancy`, `removeOccupancy`, `batchOccupancy`, `updateOccupancyEvent`) | — (real, enforced) |
+| `CAN_SYNC_EXTERNAL_CALENDAR` | 3 (`calendarSync`, `calendarConnectIcal`, `calendarConnectGoogle`) | — (real, enforced) |
+| `RESPOND_REVIEWS` | **0** | `status: 'upcoming'` |
+| `CAN_ATTACH_REVIEW_PHOTOS` | **0** | absent |
+| `CUSTOM_BRANDING` | **0** | `status: 'upcoming'` |
 
-**A caveat that cost a wrong finding, recorded so nobody repeats it.** Four
-middlewares carry an explicit `// PHANTOM-GATE (SPEC-145)` marker and are wired to
-no route: `gateCalendarAccess` (`accommodation-entitlements.ts:264`),
-`gateExternalCalendarSync` (`:321`), `gateReviewResponse` (`:546`) and
-`gateReviewPhotos` (`tourist-entitlements.ts:289`). **An unmounted middleware is
-not an unprotected feature.** Two of those four guard entitlements that *are*
-enforced — the routes call the generic `requireEntitlement` directly instead of
-the named helper, so the helper went stale while the gate stayed real. The only
-way to tell a phantom from a stale helper is to count the routes that enforce the
-**key**, never to grep for the helper.
+**Nothing is being mis-sold.** The two unenforced entitlements that appear in the
+comparison are already flagged `status: 'upcoming'`
+(`apps/web/src/components/billing/plan-comparison-rows.ts:199,264`), and the third
+is not shown at all. The comparison table already carries the vocabulary to
+distinguish shipped from planned, and it is being used correctly.
 
-`CUSTOM_BRANDING` is the cleanest case: it appears in billing config, the
-**public plan comparison** (`apps/web/src/components/billing/plan-comparison-rows.ts`),
-the admin entitlement groups, docs and tests — and in zero middlewares and zero
-routes.
+What remains true, and is what matters here: **these three cannot carry real value
+in a commerce tier**, because no route enforces them. A tier cannot be built on
+them until they exist.
 
-**Consequence for this audit**: three of the features that might be "ported to
-commerce" do not exist for accommodation either. Porting nothing yields nothing.
-Every feature this audit marks as applicable must state whether it is real *for
-accommodation first*, and that judgement must come from counting enforcing
-routes.
+**Owner decision (2026-08-31)**: when these are eventually built, they are built
+**domain-agnostic from day one** — serving accommodation, gastronomy and
+experiences at once, rather than built for accommodation and ported later. They
+are **not** being built now; they stay `upcoming` in the comparison. H2/H3 may
+therefore plan around them as committed future work, but no tier may depend on
+them today.
+
+**Two method caveats, recorded because each one cost a wrong finding.**
+
+1. **An unmounted middleware is not an unprotected feature.** Four middlewares
+   carry an explicit `// PHANTOM-GATE (SPEC-145)` marker and are wired to no
+   route: `gateCalendarAccess` (`accommodation-entitlements.ts:264`),
+   `gateExternalCalendarSync` (`:321`), `gateReviewResponse` (`:546`),
+   `gateReviewPhotos` (`tourist-entitlements.ts:289`). Two of the four guard
+   entitlements that *are* enforced — the routes call the generic
+   `requireEntitlement` directly instead of the named helper, so the helper went
+   stale while the gate stayed real. Count the routes enforcing the **key**, never
+   grep for the helper.
+2. **"Unenforced" is not "mis-sold".** Checking the entitlement engine alone says
+   nothing about what the product actually promises. The claim only holds if the
+   surface that shows it is checked too.
 
 ### F-3 · The coupling is in consumption, not in resolution
 
@@ -245,11 +256,11 @@ because each one changes what the tiers can contain.
   Answering "yes" raises the floor of every commerce tier by 15 keys before any
   new feature is discussed; answering "no" means commerce owners are, as
   customers of the site, worth less than a free tourist.
-- **OQ-2 · What happens to the three phantom entitlements?** `RESPOND_REVIEWS`,
-  `CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING` are sold in the public plan
-  comparison and enforced by zero routes (F-2). Do they get built before being
-  promised to a second set of verticals, do they get pulled from the comparison,
-  or are they simply out of scope for commerce tiers?
+- **OQ-2 · ANSWERED (2026-08-31).** `RESPOND_REVIEWS`,
+  `CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING` are enforced by no route
+  (F-2). They will be built **domain-agnostic from day one**, but **not now** —
+  they stay `upcoming` in the plan comparison, which already presents them
+  correctly. No commerce tier may depend on them until they exist.
 - **OQ-3 · Does `PlanCategory` need per-vertical values?** Today all six commerce
   plans are `category: 'owner'`, so the addon category filter is not a real
   barrier (F-4).
