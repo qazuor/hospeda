@@ -246,27 +246,64 @@ Every statement about the state of the code is labelled **MEASURED** (read in th
 code, with file:line) or **INFERRED**. Before asserting an absence, at least two
 naming conventions must be searched, and both stated.
 
-## 7. Open questions for the owner
+## 7. Owner decisions (2026-08-31)
 
-These block the audit's conclusions, not its research. They are surfaced early
-because each one changes what the tiers can contain.
+All four questions that gated this audit's conclusions are answered. They are
+recorded here as decisions, not as open items.
 
-- **OQ-1 · Does a commerce owner inherit the tourist VIP tier?** Accommodation
-  owners inherit 15 tourist-side entitlements. Commerce owners inherit nothing.
-  Answering "yes" raises the floor of every commerce tier by 15 keys before any
-  new feature is discussed; answering "no" means commerce owners are, as
-  customers of the site, worth less than a free tourist.
-- **OQ-2 · ANSWERED (2026-08-31).** `RESPOND_REVIEWS`,
-  `CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING` are enforced by no route
-  (F-2). They will be built **domain-agnostic from day one**, but **not now** —
-  they stay `upcoming` in the plan comparison, which already presents them
-  correctly. No commerce tier may depend on them until they exist.
-- **OQ-3 · Does `PlanCategory` need per-vertical values?** Today all six commerce
-  plans are `category: 'owner'`, so the addon category filter is not a real
-  barrier (F-4).
-- **OQ-4 · What shape does `HOSPEDA_COMMERCE_PLAN_SLUGS` take with tiers?** It is
-  validated by Zod today (`apps/api/src/utils/env.ts:220-228`, inside the
-  `.superRefine`). With tiers, resolution stops being a value and becomes a map.
+### D-A · A commerce owner inherits the full tourist VIP tier
+
+Commerce plans start from `dedupe([...TOURIST_VIP_ENTITLEMENTS, ...])`, exactly
+like accommodation plans. A commerce plan therefore stops having a floor of zero,
+and the 15 tourist-side keys stop being an accidental privilege of accommodation
+owners.
+
+Reusing the existing constant means no third list to maintain. Two consequences
+to carry forward:
+
+- `VIP_SUPPORT` is the only inherited key that costs real money (human support).
+  It is flagged for review when tiers are defined in H2/H3 — not here.
+- `CAN_ATTACH_REVIEW_PHOTOS` is inherited but enforced by no route (F-2), so
+  commerce owners inherit one key that currently does nothing. Harmless, and it
+  resolves itself when that entitlement is built.
+
+### D-B · The three unenforced entitlements are not built now
+
+`RESPOND_REVIEWS`, `CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING` stay
+`upcoming` in the plan comparison, which already presents them honestly (F-2).
+When they are eventually built they are built **domain-agnostic from day one** —
+serving accommodation, gastronomy and experiences at once, rather than built for
+accommodation and ported afterwards.
+
+No commerce tier may depend on them today. H2/H3 may reference them as committed
+future work.
+
+### D-C · Addons declare their vertical via `productDomain`
+
+An addon gains a `productDomain` field and the checkout gate filters on it in
+addition to `targetCategories`. This reuses `ProductDomainEnum`, already the
+canonical vertical separation in the repo (R-1, ADR-035) and already present on
+`billing_plans` and `billing_subscriptions`.
+
+**Rejected**: adding `'gastronomy'`/`'experience'` to `PlanCategory`. That type
+carries an ordinal rank documented as the single source of truth for tier weight
+(`tourist` < `owner` < `complex`, `plan.types.ts:79-87`), and a vertical has no
+position in that ordering — it is a different axis. Keeping the two axes
+orthogonal is deliberate: **category answers what kind of customer, domain
+answers which vertical.**
+
+This closes the latent hole in F-4 without migrating a single plan row.
+
+### D-D · The tier travels in the checkout, not in the environment
+
+The user picks a tier, its slug travels in the checkout body, and it is validated
+against the active plans of that vertical — exactly what `start-paid` already does
+for accommodation (`plans.find((p) => p.name === body.planSlug)`,
+`apps/api/src/routes/billing/start-paid.ts:261`).
+
+`HOSPEDA_COMMERCE_PLAN_SLUGS` is retired, or kept only as the default basic tier.
+Adding a tier stops requiring an edit and a redeploy in all three environments,
+and one source of drift between local, staging and production disappears.
 
 ## 8. Acceptance criteria
 
@@ -303,10 +340,15 @@ because each one changes what the tiers can contain.
   `plans.test.ts`, `commerce-plan.test.ts` and `addons.test.ts`. Breaking is
   correct — running them before pushing is mandatory. Note F-5: two counts in
   `packages/billing/CLAUDE.md` are already stale.
-- **R-5 · Plan resolution is env-driven.** `resolveCommercePlanSlug`
-  (`apps/api/src/services/commerce-plan-resolver.ts`) returns 503 when the value
-  is missing. HOS-688 states that file was written explicitly for the day a
-  second plan exists, and that the branch belongs there and nowhere else.
+- **R-5 · Plan resolution is already a per-vertical map — HOS-973's wording is
+  stale.** HOS-973 states the resolver reads `HOSPEDA_COMMERCE_PLAN_ID` and that
+  the variable is registered but not Zod-validated. Both are out of date.
+  Measured: the variable is `HOSPEDA_COMMERCE_PLAN_SLUGS`, it already parses as
+  `gastronomy:<slug>,experience:<slug>`, `resolveCommercePlanSlug` already returns
+  from a `Record<vertical, slug>` (`commerce-plan-resolver.ts:111-117`), and it
+  **is** validated at startup inside the env `.superRefine`
+  (`apps/api/src/utils/env.ts:220-228`). What tiers change is not the validation —
+  it is whether the variable should exist at all. See **D-D**.
 
 ## 10. Deliverables
 
