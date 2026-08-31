@@ -311,6 +311,13 @@ export async function createPendingProviderSubscription(
             // intentionally stays `pending_provider` above — a set `trialEnd` on
             // a pending row grants nothing until the webhook flips status, per
             // the HOS-171 guard (entitlements gate on status, never trial_end).
+            //
+            // HOS-936: this is Hospeda's PROMISE, not MercadoPago's answer —
+            // no preapproval exists yet at this point, so nothing here can be
+            // verified. The provider gets to contradict it the moment one does:
+            // `link-preapproval.service.ts` reconciles this window against the
+            // real `next_payment_date` and clears it when the provider turns out
+            // to be charging immediately (`trial-window-reconcile.ts`).
             trialStart: freeTrialDays === undefined ? null : now,
             trialEnd:
                 freeTrialDays === undefined
