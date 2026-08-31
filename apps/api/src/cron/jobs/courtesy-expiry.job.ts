@@ -34,6 +34,7 @@ import { BILLING_EVENT_TYPES, clearCourtesyFields, readCourtesyFields } from '@r
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
+import { hardCancelPreapprovalBestEffort } from '../../services/billing/preapproval-hard-cancel.js';
 import {
     sendCourtesyEndedNotification,
     sendCourtesyStartedNotification
@@ -109,6 +110,19 @@ async function sweepCourtesyWindows(now: Date): Promise<{
                 // the transition table — and that write is discarded silently
                 // with a 200. Exactly the HOS-913 failure mode.
                 if (row.cancelAtPeriodEnd === true) {
+                    // Cancel the preapproval for real before writing a terminal
+                    // status. A local row that says `cancelled` while its
+                    // MercadoPago preapproval still exists is HOS-751: nothing
+                    // local explains the provider-side subscription any more, and
+                    // `finalize-cancelled-subs` cannot recover it — its filter is
+                    // status IN (active, past_due, trialing), which the terminal
+                    // status just written excludes.
+                    await hardCancelPreapprovalBestEffort({
+                        subscriptionId: row.id,
+                        mpSubscriptionId: row.mpSubscriptionId,
+                        source: 'courtesy-expiry'
+                    });
+
                     await db
                         .update(billingSubscriptions)
                         .set({
