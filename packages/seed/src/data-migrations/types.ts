@@ -20,6 +20,24 @@ import type { SQL, Table } from 'drizzle-orm';
 export type SeedMigrationGroup = 'required' | 'example';
 
 /**
+ * A single `(table, column)` pair a data-migration depends on being readable.
+ *
+ * Names are raw PostgreSQL identifiers in the `public` schema — the physical
+ * table and column, not the Drizzle camelCase property — because the runner
+ * resolves them against `information_schema.columns`, and because the whole
+ * point is to name a column the TypeScript schema may no longer describe.
+ *
+ * @see SeedMigrationMeta.requiresColumns
+ */
+export interface RequiredColumn {
+    /** Physical table name in the `public` schema (e.g. `'gastronomies'`). */
+    readonly table: string;
+
+    /** Physical column name on that table (e.g. `'media'`). */
+    readonly column: string;
+}
+
+/**
  * Static metadata every data-migration module must export as `meta`,
  * declared `as const` so the discovery/runner layer (T-008, T-009) can read
  * a migration's identity and routing without importing (and therefore
@@ -89,6 +107,59 @@ export interface SeedMigrationMeta {
      * @see .specs/HOS-375-author-page-unification/spec.md §6.11 (G-10)
      */
     readonly contentOnly?: boolean;
+
+    /**
+     * Columns this migration must be able to READ for its work to mean
+     * anything. The runner verifies every entry against `information_schema`
+     * before calling `up()`, and aborts the whole run if one is missing.
+     *
+     * ## The failure this prevents
+     *
+     * A migration that moves data OUT of a column being dropped has a
+     * dependency the documented run order does not express. `db:migrate`
+     * applies schema changes ahead of `db:seed:migrate`, so a structural
+     * migration that CREATES the destination and one that DROPS the source
+     * land in the same run — and by the time the data-migration executes, the
+     * source column is already gone.
+     *
+     * Such a migration then reads nothing, writes nothing, returns a summary
+     * saying it moved zero rows, and the ledger records it `ok`. Nothing is
+     * retried, because the ledger considers it applied. HOS-433 is that
+     * failure, observed in production: `0034` ran in 18 ms against a dropped
+     * column while its sibling `0037`, whose source column was still live,
+     * took 94 ms doing real work.
+     *
+     * An in-migration existence check cannot fix this on its own, because from
+     * inside `up()` "the column is gone because everything already migrated"
+     * and "the column is gone because the run order was wrong" look identical.
+     * Declaring the dependency moves the question to where the answer is
+     * knowable: the runner refuses to start rather than succeed emptily.
+     *
+     * ## Why this is declared here
+     *
+     * Same reasoning as {@link SeedMigrationMeta.contentOnly}: a runbook
+     * listing which migrations are order-sensitive drifts away from the set it
+     * names. A flag cannot drift, and it travels with the migration into every
+     * environment that runs it.
+     *
+     * Omit it and the runner behaves exactly as before — this gate is opt-in
+     * per migration, so it can never change how an existing migration runs.
+     *
+     * @example
+     * ```ts
+     * export const meta = {
+     *   name: '0034-hos-372-commerce-media-to-relational',
+     *   group: 'required',
+     *   requiresColumns: [
+     *     { table: 'gastronomies', column: 'media' },
+     *     { table: 'experiences', column: 'media' }
+     *   ]
+     * } as const satisfies SeedMigrationMeta;
+     * ```
+     *
+     * @see HOS-433
+     */
+    readonly requiresColumns?: readonly RequiredColumn[];
 }
 
 /**
