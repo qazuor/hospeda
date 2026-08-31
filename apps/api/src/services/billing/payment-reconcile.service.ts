@@ -55,6 +55,7 @@ import {
 import type { BackfillPaymentResponse, ForceLinkPreapprovalResponse } from '@repo/schemas';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
+import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { AuditEventType, auditLog } from '../../utils/audit-logger.js';
 import { apiLogger } from '../../utils/logger.js';
 import {
@@ -232,7 +233,19 @@ export async function forceLinkPreapproval(
         });
     }
 
-    // 5. Retire the correlation row, best-effort. A failure here leaves a stale
+    // 5. Drop the customer's cached entitlement set.
+    //
+    //    Both the statuses this link can write ONTO (`abandoned`,
+    //    `pending_provider`) and the status it writes are non-entitling, so on
+    //    paper nothing cached changed. The call is here anyway, and deliberately:
+    //    it is one cache eviction against the failure mode where an operator
+    //    rescues a subscription and the customer still cannot use their account
+    //    until a 5-minute TTL lapses. The HOS-453 guard exists precisely because
+    //    writers to this table shipped without anyone MAKING this decision, so
+    //    making it in the safe direction is the point rather than a shortcut.
+    clearEntitlementCache(target.customerId);
+
+    // 6. Retire the correlation row, best-effort. A failure here leaves a stale
     //    pending checkout, which the reaper handles; it must not fail a link that
     //    has already been written.
     try {
