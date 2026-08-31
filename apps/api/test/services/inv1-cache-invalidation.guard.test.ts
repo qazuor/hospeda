@@ -406,6 +406,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Expires an active/trialing subscription that has no MercadoPago preapproval and whose period elapsed (H-21). The row WAS granting entitlements, so the cached set must be dropped or the user keeps the old plan gates until the 5-minute TTL lapses — already calls clearEntitlementCache.'
     },
     {
+        file: 'services/billing/payment-reconcile.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-765 operator force-link binds a MercadoPago preapproval to a local subscription and flips its status to pending_provider. Both the statuses it writes onto (abandoned, pending_provider) and the status it writes are non-entitling, so on paper nothing cached changed — the clear is deliberate anyway, because the alternative failure mode is an operator rescuing a subscription and the customer still not being able to use their account until the TTL lapses. Already calls clearEntitlementCache.'
+    },
+    {
         file: 'routes/webhooks/mercadopago/payment-logic.ts',
         requiresCacheClear: true,
         reason: 'Activation/upgrade via MP payment webhook — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'

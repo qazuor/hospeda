@@ -701,6 +701,13 @@
       "when": 1788174028352,
       "tag": "0099_kind_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1788215504589,
+      "tag": "0100_white_calypso",
+      "breakpoints": true
     }
   ]
 }

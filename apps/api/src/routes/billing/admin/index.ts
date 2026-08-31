@@ -53,6 +53,7 @@ import {
 import { adminCustomerEntitlementsRouter } from './customer-entitlements';
 import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
+import { adminBillingReconciliationRouter } from './payment-reconciliation';
 import { adminPaymentsViewRouter } from './payments-view';
 import { adminPlanPriceIncreaseRouter } from './plan-price-increase';
 import { adminPlansRouter } from './plans';
@@ -99,6 +100,13 @@ app.route('/metrics', adminMetricsRouter);
 // Shadows the qzpay tier's raw `GET /payments` ONLY; /payments/:id and
 // /payments/:id/refund still fall through to qzpay.
 app.route('/payments', adminPaymentsViewRouter);
+
+// GET /reconciliation/divergences, POST /reconciliation/force-link,
+// POST /reconciliation/backfill-payment - orphan-payment rescue tool (HOS-765).
+// Gated on BILLING_RECONCILIATION_MANAGE, its own permission: these verbs write
+// money into the ledger, so the grant that opens them is not the one that also
+// expires an add-on.
+app.route('/reconciliation', adminBillingReconciliationRouter);
 
 // GET /subscriptions - Hospeda subscriptions list view (enriched + normalised
 // vocabulary). Shadows the qzpay tier's raw `GET /subscriptions` ONLY; every

@@ -11,6 +11,7 @@ export * from './billing-settings.schema.js';
 export * from './customer-addons.schema.js';
 export * from './downgrade-preview.schema.js';
 export * from './link-preapproval.schema.js';
+export * from './payment-reconciliation.schema.js';
 export * from './plan-change.schema.js';
 export * from './promo-code.schema.js';
 export * from './start-paid.schema.js';
