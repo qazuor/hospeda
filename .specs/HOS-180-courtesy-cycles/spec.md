@@ -253,8 +253,20 @@ R-1.
 ### New status
 
 `SubscriptionStatusEnum.COURTESY = 'courtesy'`
-(`packages/schemas/src/enums/subscription-status.enum.ts`). **No DB migration** —
-the column is `varchar(50)` with no CHECK.
+(`packages/schemas/src/enums/subscription-status.enum.ts`).
+
+**This DOES need a structural migration**, contrary to what this section said
+while it was being written. `billing_subscriptions.status` is indeed a
+`varchar(50)` with no CHECK — but `packages/db/src/schemas/enums.dbschema.ts`
+also derives a Postgres enum, `subscription_status_enum`, from this same TS enum
+via `enumToTuple`. Adding a member therefore requires
+`ALTER TYPE ... ADD VALUE 'courtesy'`, and `scripts/check-schema-drift.sh`
+fails the build without it. Shipped as `0099_kind_toro.sql`; purely additive,
+so it carries no data risk and needs no release-gap split.
+
+Worth stating because the wrong version of this claim is exactly the kind of
+"verified" detail that survives review: the column really is a varchar, and the
+conclusion still did not follow.
 
 ### New fields
 
