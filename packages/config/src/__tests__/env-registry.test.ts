@@ -257,8 +257,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * search-engine change notification with. Optional because an unset key IS the
  * feature's hard kill switch: with no key the emitter cannot run, whatever the
  * admin toggle says. 276 + 1 = 277.
+ *
+ * +1 = HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED (HOS-937, billing category,
+ * optional, api only) — feature flag for the own-preapproval accommodation-
+ * monthly checkout, ships dark (default false). 277 + 1 = 278.
  */
-const EXPECTED_VAR_COUNT = 277;
+const EXPECTED_VAR_COUNT = 278;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

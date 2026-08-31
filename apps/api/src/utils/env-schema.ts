@@ -498,6 +498,22 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v === 'true'),
     /**
+     * Feature flag for the own-preapproval accommodation-monthly checkout
+     * (HOS-937 step 1). Ships dark (default false): while unset/false,
+     * `initiatePaidMonthlySubscription` keeps redirecting to the shared
+     * MercadoPago `preapproval_plan` share link (Path C, HOS-191), whose
+     * `external_reference` MercadoPago silently discards. Set to the literal
+     * string `'true'` to create a per-user `POST /preapproval` instead, whose
+     * `external_reference` (the local subscription id) survives in the body
+     * of the server-to-server call. Scoped to accommodation monthly only —
+     * annual, commerce and partner checkouts are unaffected regardless of
+     * this flag.
+     */
+    HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
      * Statement descriptor that appears on the cardholder's bank statement
      * after a MercadoPago payment. MP rejects descriptors longer than 11
      * characters and recommends uppercase ASCII (letters, digits, spaces) so
