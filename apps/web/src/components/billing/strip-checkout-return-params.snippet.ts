@@ -60,11 +60,18 @@
  *
  * - `preapproval_id` — the MercadoPago share-link (HOS-191 Path C) preapproval
  *   identifier that doubles as the Tier-1 link-preapproval second factor.
+ * - `retryCheckoutId` (HOS-937 step 4) — the local subscription id carried by
+ *   the card-rejection notification link
+ *   (`{siteUrl}/{lang}/mi-cuenta/suscripcion/?retryCheckoutId=<id>`, built by
+ *   `buildCheckoutRetryLandingUrl`). The subscription page reads it
+ *   SERVER-SIDE and passes it to `CheckoutRetryBanner` as a prop, so the
+ *   island never reads it back off `window.location` — safe to strip
+ *   immediately, same reasoning as `preapproval_id` above.
  *
  * Add future provider return-secrets here; the snippet iterates this list, so
  * no other code changes are needed to cover a new parameter.
  */
-export const CHECKOUT_RETURN_PARAMS_TO_STRIP = ['preapproval_id'] as const;
+export const CHECKOUT_RETURN_PARAMS_TO_STRIP = ['preapproval_id', 'retryCheckoutId'] as const;
 
 /**
  * Self-contained, dependency-free JavaScript embedded as an `is:inline`
