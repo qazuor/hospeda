@@ -13,13 +13,22 @@
  * - Hueco A (design doc §3): when that DB write fails, the just-created MP
  *   preapproval is cancelled best-effort before the error propagates, so no
  *   untracked orphan survives.
+ * - HOS-937 step 1 follow-up: `pendingDiscount` / `pendingTrialExtension`
+ *   are snapshotted onto the row's own `metadata` (JSON-stringified) when
+ *   supplied, and left off entirely when not — this is the ONLY write this
+ *   flow does at creation time; the actual redemption is deferred to the
+ *   webhook (`subscription-logic.ts`, tested separately).
  *
  * @module test/services/billing/own-preapproval-subscription-create
  */
 
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import { createOwnPreapprovalSubscription } from '../../../src/services/billing/own-preapproval-subscription-create';
+import {
+    createOwnPreapprovalSubscription,
+    PENDING_DISCOUNT_METADATA_KEY,
+    PENDING_TRIAL_EXTENSION_METADATA_KEY
+} from '../../../src/services/billing/own-preapproval-subscription-create';
 
 const CUSTOMER_ID = 'cust_owner';
 const PLAN_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -139,5 +148,73 @@ describe('createOwnPreapprovalSubscription', () => {
         ).rejects.toThrow('connection reset');
 
         expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('HOS-937 follow-up: snapshots pendingDiscount onto the row metadata as JSON, redeems nothing itself', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+        const pendingDiscount = {
+            promoCodeId: 'promo-1',
+            finalAmountCentavos: 7500,
+            durationCycles: 3
+        };
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            pendingDiscount,
+            db: db as any
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = call.metadata as Record<string, string>;
+        expect(metadata[PENDING_DISCOUNT_METADATA_KEY]).toBe(JSON.stringify(pendingDiscount));
+        expect(metadata[PENDING_TRIAL_EXTENSION_METADATA_KEY]).toBeUndefined();
+    });
+
+    it('HOS-937 follow-up: snapshots pendingTrialExtension onto the row metadata as JSON', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+        const pendingTrialExtension = { promoCodeId: 'promo-2', code: 'EXTRA7' };
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            pendingTrialExtension,
+            db: db as any
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = call.metadata as Record<string, string>;
+        expect(metadata[PENDING_TRIAL_EXTENSION_METADATA_KEY]).toBe(
+            JSON.stringify(pendingTrialExtension)
+        );
+        expect(metadata[PENDING_DISCOUNT_METADATA_KEY]).toBeUndefined();
+    });
+
+    it('HOS-937 follow-up: writes no metadata at all when neither snapshot is supplied', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            db: db as any
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call).not.toHaveProperty('metadata');
     });
 });
