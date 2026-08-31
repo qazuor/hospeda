@@ -266,6 +266,8 @@ jobs:
         run: bash scripts/check-commerce-plan-resolution.sh
       - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
         run: pnpm check:locale-resolution-single-source
+      - name: Check the trial window is not derived from free_trial (HOS-936)
+        run: bash scripts/check-trial-not-derived-from-free-trial.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

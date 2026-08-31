@@ -143,10 +143,11 @@ const MIN_DEFERRAL_MS_FOR_A_GRANTED_TRIAL = 60 * 60 * 1000;
  * @example
  * ```ts
  * // HOS-936, 1st preapproval: MercadoPago deferred the charge by 30 days.
+ * // (The finding writes that date as 2026-09-29, its Argentina `-04:00` form.)
  * deriveTrialWindowFromPreapproval({
  *   dateCreated: new Date('2026-08-31T03:28:02Z'),
- *   nextPaymentDate: new Date('2026-09-29T03:28:02Z')
- * }); // → { outcome: 'granted', trialEnd: 2026-09-29T03:28:02Z, ... }
+ *   nextPaymentDate: new Date('2026-09-30T03:28:02Z')
+ * }); // → { outcome: 'granted', trialEnd: 2026-09-30T03:28:02Z, ... }
  *
  * // HOS-936, 2nd preapproval: same payer, same plan, two seconds later.
  * // `free_trial` is IDENTICAL to the one above; `next_payment_date` is not.
