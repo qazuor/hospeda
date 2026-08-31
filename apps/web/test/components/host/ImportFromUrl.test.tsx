@@ -805,7 +805,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+        expect(cta.getAttribute('href')).toContain('suscriptores/planes/anfitriones');
     });
 
     it('targets the tourist plans page when the server says so', async () => {
@@ -819,7 +819,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/turistas');
+        expect(cta.getAttribute('href')).toContain('suscriptores/planes/turistas');
     });
 
     it('falls back to the owner plans page when the audience is missing', async () => {
@@ -828,7 +828,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+        expect(cta.getAttribute('href')).toContain('suscriptores/planes/anfitriones');
     });
 
     it('renders NO CTA for an overdue payment', async () => {

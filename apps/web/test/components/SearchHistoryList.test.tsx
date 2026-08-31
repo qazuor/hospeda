@@ -295,7 +295,7 @@ describe('SearchHistoryList', () => {
             renderComponent();
             await waitFor(() => {
                 const link = screen.getByRole('link', { name: /ver planes/i });
-                expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+                expect(link).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
             });
         });
     });

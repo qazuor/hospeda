@@ -3,7 +3,8 @@
  * @file PricingCardsGrid.astro
  * @description Renders a grid of subscription plan cards (name, description,
  * price, entitlements, CTA). Shared between the owner pricing page
- * (/suscriptores/planes/) and the tourist pricing page (/suscriptores/turistas/).
+ * (/suscriptores/planes/anfitriones/) and the tourist pricing page
+ * (/suscriptores/planes/turistas/).
  *
  * The two pricing pages target completely different audiences with separate
  * URLs (intentional, for SEO and conversion-focused copy), but the visual
@@ -19,6 +20,7 @@ import { getDisplayFeatures, getPlanDescription, getPlanName } from '@/lib/billi
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 /**
  * Minimal plan shape required by this component. Decoupled from PlanDefinition
@@ -348,6 +350,7 @@ function formatPriceArs(cents: number): string {
 								currency="ARS"
 								ctaText={ctaText}
 								locale={locale}
+								plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
 								trialDays={plan.hasTrial ? plan.trialDays : 0}
 							/>
 						</div>

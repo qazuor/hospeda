@@ -255,7 +255,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     }, []);
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
-    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
 
     function handleChange(
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

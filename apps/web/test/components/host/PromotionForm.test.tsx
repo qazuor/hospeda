@@ -367,7 +367,7 @@ describe('PromotionForm — create mode', () => {
         });
         expect(screen.getByText(/Mejorá tu plan para crear promociones/i)).toBeInTheDocument();
         const plansLink = screen.getByRole('link', { name: /ver planes/i });
-        expect(plansLink).toHaveAttribute('href', '/es/suscriptores/planes/');
+        expect(plansLink).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
         expect(
             screen.queryByText(/requires the 'create_promotions' entitlement/i)
         ).not.toBeInTheDocument();

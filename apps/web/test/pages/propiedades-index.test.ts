@@ -82,7 +82,7 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
             // The add-on is an addition, not a replacement: a host whose real
             // problem is the plan must still find the upgrade here.
             expect(propiedadesIndexSource).toContain('props-page__usage-upgrade');
-            expect(propiedadesIndexSource).toContain("path: 'suscriptores/planes'");
+            expect(propiedadesIndexSource).toContain("path: 'suscriptores/planes/anfitriones'");
         });
 
         it('should include CSS classes for all threshold variants', () => {

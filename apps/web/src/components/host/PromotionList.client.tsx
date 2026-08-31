@@ -273,7 +273,7 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
     // ── Render: ready ─────────────────────────────────────────────────────
     const { items, canCreate } = state;
     const freeNightLabel = t('host.promotions.discountTypes.free_night', 'Noche gratis');
-    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
 
     return (
         <div className={styles.container}>

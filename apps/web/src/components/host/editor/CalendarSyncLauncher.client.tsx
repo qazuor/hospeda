@@ -78,7 +78,7 @@ export function CalendarSyncLauncher({ locale, accommodationId }: CalendarSyncLa
     }, []);
 
     const closeLabel = t('host.properties.editor.calendarSync.close', 'Cerrar');
-    const plansUrl = buildUrl({ locale, path: '/suscriptores/planes' });
+    const plansUrl = buildUrl({ locale, path: '/suscriptores/planes/anfitriones' });
 
     return (
         <div className={styles.launcher}>

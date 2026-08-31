@@ -125,7 +125,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', c
         : t('accommodations.comparison.mode.off', 'Modo comparación desactivado');
 
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/turistas/`;
+    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
 
     /**
      * Safely resolves the current page URL for the auth return-redirect.
