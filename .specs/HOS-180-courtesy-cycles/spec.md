@@ -487,7 +487,19 @@ waiting on it.
   mitigated by the grant being an audited admin action on a named subscription, and
   by `courtesyCyclesGranted` recording exactly what was given.
 
-### OQ-1 — where the three columns live (STILL OPEN)
+### OQ-1 — where the three columns live ✅ RESOLVED (owner, 2026-08-31)
+
+**Option (a): typed columns in `@qazuor/qzpay-drizzle`.** The owner's call is to
+touch qzpay, publish the release, and bump the version in Hospeda — the same
+route `product_domain` (HOS-73) and `promo_effect_remaining_cycles` took. The
+`metadata` jsonb backing shipped in this PR is explicitly provisional, and the
+migration to real columns is tracked as its own issue.
+
+Note for whoever does it: `pnpm-workspace.yaml:13-45` warns the five qzpay
+siblings pin core to an EXACT version and ship in coordinated waves. Bumping
+`-drizzle` alone is the documented way to break the workspace.
+
+The reasoning that kept it open until now:
 
 `billing_subscriptions` is **not defined by Hospeda**: it comes from
 `@qazuor/qzpay-drizzle` (`^2.0.0`), consumed from npm with no local override. So
