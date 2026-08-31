@@ -407,15 +407,18 @@ function makeLocalSubscription(overrides: Record<string, unknown> = {}): Record<
  * Builds a minimal QZPayProviderSubscription stub returned by retrieve().
  *
  * This mirrors `@qazuor/qzpay-mercadopago@2.6.0`'s `mapToProviderSubscription()`
- * REAL return shape — a closed camelCase object with NO `auto_recurring` key
- * (`trialStart`/`trialEnd` are hardcoded `null` by qzpay itself). Do NOT spread
- * an `auto_recurring` object onto the default return of this factory to
- * simulate a trial — that shape is never actually returned by qzpay's
- * `subscriptions.retrieve()` (HOS-211 follow-up: the original tests did
- * exactly this and it is why the bug shipped). Only the small set of tests
- * that deliberately exercise `livePreapprovalHasFreeTrial`'s defensive
- * fallback (unreachable in prod today) should pass an `auto_recurring`
- * override, and they must say so in a comment.
+ * REAL return shape — a closed camelCase object with NO `auto_recurring` key and
+ * no `date_created`/`next_payment_date` either (`trialStart`/`trialEnd` are
+ * hardcoded `null` by qzpay itself). Do NOT spread provider trial fields onto
+ * the default return of this factory to simulate a trial — that shape is never
+ * actually returned by qzpay's `subscriptions.retrieve()` (HOS-211 follow-up:
+ * the original tests did exactly this and it is why the bug shipped).
+ *
+ * HOS-936: the small set of tests that deliberately exercise the defensive
+ * fallback must override `date_created` + `next_payment_date`, never
+ * `auto_recurring.free_trial` — the latter is no longer read anywhere, because
+ * it describes the plan's terms and reads identically on a preapproval
+ * MercadoPago is charging immediately. Those tests must say so in a comment.
  */
 function makeMpSubscription(
     status: string,
@@ -2235,13 +2238,14 @@ describe('processSubscriptionUpdated', () => {
         // from the live preapproval's free trial, hits that guard forever, and
         // must NOT page Sentry on every webhook — owner decision: warn only.
         //
-        // NOTE: this is the ONE scenario where `auto_recurring` on the fixture
-        // is legitimate — a genuinely legacy row (predates HOS-211 Option B) has
-        // NO pre-populated local `trialEnd` to fall back on, so the only way to
-        // derive a future trialEnd at all is `livePreapprovalHasFreeTrial`'s
-        // defensive fallback. This exercises that fallback deliberately, not the
-        // primary Option-B path — it does not represent real qzpay traffic today
-        // (see the fallback's own JSDoc), only a hypothetical/legacy-data case.
+        // NOTE: this is the ONE scenario where the provider-derived trial window
+        // on the fixture is legitimate — a genuinely legacy row (predates
+        // HOS-211 Option B) has NO pre-populated local `trialEnd` to fall back
+        // on, so the only way to derive a future trialEnd at all is the
+        // defensive fallback. HOS-936: that fallback now reads
+        // `next_payment_date - date_created`, never `auto_recurring.free_trial`,
+        // so the fixture carries the honest fields. It does not represent real
+        // qzpay traffic today (which carries neither), only a legacy-data case.
         it('should warn (not error/capture) and no-op on the expected legacy ACTIVE→TRIALING no-op case', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2250,8 +2254,10 @@ describe('processSubscriptionUpdated', () => {
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
                 currentPeriodEnd: livePeriodEnd,
-                // Defensive-fallback-only shape — see note above.
-                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+                // Defensive-fallback-only shape — see note above. The charge is
+                // deferred by 10 days, which is what makes it a real trial.
+                date_created: new Date(),
+                next_payment_date: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
@@ -2304,9 +2310,9 @@ describe('processSubscriptionUpdated', () => {
         // NOTE: like the sibling legacy carve-out test above, this row has NO
         // pre-populated local `trialEnd` (a pending_provider row created without
         // `freeTrialDays`, or a pre-Option-B legacy row), so deriving a future
-        // trialEnd at all requires the defensive `livePreapprovalHasFreeTrial`
-        // fallback — hence the `auto_recurring` override here is intentional,
-        // not a stand-in for the primary Option-B path.
+        // trialEnd at all requires the defensive fallback — hence the
+        // provider-date override here is intentional, not a stand-in for the
+        // primary Option-B path.
         it('should warn (not error/capture) and no-op when the IN-TX guard catches the same ACTIVE→TRIALING case (concurrent mis-activation race)', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2316,7 +2322,8 @@ describe('processSubscriptionUpdated', () => {
             const mpSubscription = makeMpSubscription('active', {
                 currentPeriodEnd: livePeriodEnd,
                 // Defensive-fallback-only shape — see note above.
-                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+                date_created: new Date(),
+                next_payment_date: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
@@ -2363,21 +2370,35 @@ describe('processSubscriptionUpdated', () => {
             expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
         });
 
-        // Malformed / absent `auto_recurring.free_trial` payloads must all be
-        // treated as "no trial" — none of these should derive TRIALING or write
-        // a trialEnd. This exercises `livePreapprovalHasFreeTrial`'s own edge
-        // cases directly (its defensive fallback role, not the primary
-        // Option-B path) — the local row also carries no pre-populated
-        // trialEnd, matching the only scenario where this fallback is
-        // reachable at all.
+        // Payloads that cannot support a trial verdict must all be treated as
+        // "no trial" — none of these should derive TRIALING or write a trialEnd.
+        //
+        // HOS-936: the last case is the measured one, and it is the reason this
+        // list exists in this shape. The provider advertises a 30-day
+        // `free_trial` while `next_payment_date` equals `date_created` — i.e. it
+        // is charging at the creation instant. Believing `auto_recurring` writes
+        // a 30-day trial onto a subscription being charged right now; the honest
+        // fields refuse it. The `auto_recurring` key is left ON that fixture on
+        // purpose: it is what a regression would read.
         it.each([
-            ['free_trial explicitly null', { free_trial: null }],
-            ['free_trial is a non-object (string)', { free_trial: 'yes' }],
+            ['no provider dates at all (qzpay’s real mapped shape)', {}],
+            ['next_payment_date absent', { date_created: new Date() }],
             [
-                'free_trial object with frequency <= 0',
-                { free_trial: { frequency: 0, frequency_type: 'days' } }
+                'next_payment_date is unparseable',
+                { date_created: new Date(), next_payment_date: 'tomorrow' }
+            ],
+            [
+                'next_payment_date EQUALS date_created while free_trial claims 30 days',
+                (() => {
+                    const created = new Date();
+                    return {
+                        date_created: created,
+                        next_payment_date: created,
+                        auto_recurring: { free_trial: { frequency: 30, frequency_type: 'days' } }
+                    };
+                })()
             ]
-        ])('should treat %s as no trial', async (_label, autoRecurring) => {
+        ])('should treat %s as no trial', async (_label, providerFields) => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
@@ -2385,7 +2406,7 @@ describe('processSubscriptionUpdated', () => {
             const livePeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
                 currentPeriodEnd: livePeriodEnd,
-                auto_recurring: autoRecurring
+                ...providerFields
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
