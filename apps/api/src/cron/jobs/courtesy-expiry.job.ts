@@ -96,14 +96,27 @@ async function sweepCourtesyWindows(now: Date): Promise<{
             }
 
             try {
-                // A subscriber who cancelled mid-gift asked to stop paying. The
-                // cancel path already handles their preapproval; resuming it here
-                // would restart billing on somebody who is leaving.
+                // A subscriber who cancelled mid-gift asked to stop paying. Do
+                // NOT resume — that would restart billing on somebody who is
+                // leaving — and settle the row as `cancelled`, which is both
+                // legal (COURTESY → CANCELLED) and true: they asked to go, the
+                // gift is over, and there is nothing left to come back to.
+                //
+                // Writing the status here is not optional bookkeeping. Clearing
+                // the window while leaving the row `courtesy` would strand it:
+                // `deriveCourtesyStatus` no longer matches, so the next webhook
+                // would try COURTESY → PAUSED — an edge deliberately absent from
+                // the transition table — and that write is discarded silently
+                // with a 200. Exactly the HOS-913 failure mode.
                 if (row.cancelAtPeriodEnd === true) {
                     await db
                         .update(billingSubscriptions)
-                        .set({ metadata: clearCourtesyFields(row.metadata) })
+                        .set({
+                            status: SubscriptionStatusEnum.CANCELLED,
+                            metadata: clearCourtesyFields(row.metadata)
+                        })
                         .where(eq(billingSubscriptions.id, row.id));
+                    clearEntitlementCache(row.customerId);
                     ended++;
                     continue;
                 }
