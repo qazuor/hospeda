@@ -260,10 +260,17 @@ the column is `varchar(50)` with no CHECK.
 
 | field | type | meaning |
 |---|---|---|
+| `courtesyStartsAt` | timestamptz, nullable | when the gift begins — the end of the period the subscriber already paid for. Drives the "your gift is now active" notification. |
 | `courtesyEndsAt` | timestamptz, nullable | when the gift expires. Drives the derivation and the cron. |
 | `courtesyCyclesGranted` | integer, nullable | how many cycles were gifted. For display and audit. |
 
-Where these live is **OQ-1** — they cannot reuse an existing column.
+`courtesyStartsAt` exists because granting and starting are **two different
+moments** (OQ-4): the admin grants it today, but the gift only begins when the
+already-paid period runs out. Without the column there is no way to tell the
+subscriber "it starts now" — see §8.
+
+Per **OQ-1**, all three live as typed columns in `@qazuor/qzpay-drizzle`, the route
+`product_domain` (HOS-73) and `promo_effect_remaining_cycles` took.
 
 ### Predicates
 
@@ -277,9 +284,12 @@ Where these live is **OQ-1** — they cannot reuse an existing column.
 |---|---|
 | `ACTIVE → COURTESY` | the grant |
 | `COURTESY → ACTIVE` | the cron resumes and the webhook confirms |
-| `COURTESY → CANCELLED` | the subscriber or an admin cancels mid-gift |
-| `COURTESY → PAUSED` | see OQ-2 |
+| `COURTESY → CANCELLED` | the subscriber or an admin cancels mid-gift — the one self-service billing action allowed during a gift (OQ-2) |
 | `COURTESY → PAST_DUE` | the first charge after the gift fails |
+
+`COURTESY → PAUSED` is deliberately **absent**. OQ-2 resolved to blocking
+self-service pause during a gift, so the edge must not exist: adding it would
+legitimise a state the API refuses to produce.
 
 Enumerating these wrong reintroduces the HOS-913 failure mode — silent, 200, no
 write. Every edge needs its own test (AC-10).
@@ -304,8 +314,26 @@ over `currentPeriodEnd` while trialing, guarding against the date having elapsed
 **Admin panel** — the grant action on a concrete subscription, plus the courtesy
 state and its end date on the subscription view.
 
-**Email** — its own template. The gift must not receive
-`subscription-paused.tsx`, whose copy blames the payment method.
+**Email — three moments, three notifications** (owner decision, 2026-08-31).
+Granting and starting are not the same event, so the subscriber hears about the
+gift three times:
+
+| # | When | Trigger | Says |
+|---|---|---|---|
+| 1 | **Granted** | the admin's `grant-courtesy` call succeeds | "we gifted you N cycles; they start on `courtesyStartsAt`, when your current period ends" |
+| 2 | **Started** | the cron crosses `courtesyStartsAt` | "your gift is running; you will not be charged until `courtesyEndsAt`" |
+| 3 | **Ended** | the cron crosses `courtesyEndsAt` and resumes the preapproval | "the gift is over; normal billing resumes on <next charge date>" |
+
+Notification #3 must go out **before or with** the resume, never after a charge
+lands: a subscriber who sees a charge they were not expecting reads it as a bug.
+
+New `NotificationType` members and their own templates under
+`packages/notifications/src/templates/subscription/`. Registering the type is not
+enough — the dispatch switch in `notification.service.ts` routes type → template,
+and a template that is not wired there is silently never sent.
+
+The gift must never receive `subscription-paused.tsx`, whose copy blames the
+payment method (HOS-926). See R-7.
 
 ## 9. Acceptance criteria
 
@@ -332,6 +360,16 @@ state and its end date on the subscription view.
   rejected transition, asserting the row is **not** written.
 - **AC-11** — The subscriber's panel shows the courtesy end date, never a
   "paused"/"suspended" wording.
+- **AC-12** — The grant is rejected with **422** when the next MercadoPago charge
+  is less than `COURTESY_MIN_LEAD_DAYS` (3) away, naming the next charge date in
+  the error. See R-6.
+- **AC-13** — Three notifications fire, once each: on grant, on start, on end.
+  Re-running the cron over an already-notified boundary sends nothing further.
+- **AC-14** — A subscriber in `courtesy` **can cancel** (soft-cancel succeeds) and
+  **cannot** pause, change plan, or buy an addon — each rejected by its existing
+  status gate, not by a new one.
+- **AC-15** — `courtesyStartsAt` is the end of the already-paid period, not the
+  grant instant, and `courtesyEndsAt` is N cycles after `courtesyStartsAt`.
 
 ## 10. Risks
 
@@ -352,28 +390,81 @@ state and its end date on the subscription view.
   copies the provider's verdict without the derivation would knock every courtesy
   subscriber out of their gift. HOS-914 must be written knowing this — it now has
   **two** derived states to respect, not one.
-- **R-5 — A plan change or cancellation mid-gift** is undefined territory. See OQ-2.
+- **R-5 — A plan change or cancellation mid-gift.** Resolved by OQ-2: cancelling is
+  allowed, everything else is refused by the status gates that already demand
+  `active`/`trialing`. No longer open.
+- **R-6 — The gift can lose a race against MercadoPago's charge.** Pausing the
+  preapproval is what stops the next charge, so a grant issued shortly before the
+  due date may land after MP has already begun collecting — and the subscriber pays
+  precisely the cycle they were given. Owner decision (2026-08-31): require a lead
+  time of a few days (3) and reject the grant otherwise (AC-12). This is a
+  guardrail, not a proof: **how far ahead MercadoPago actually commits a charge was
+  never measured**, and 3 days is a judgement call. The sandbox experiment that
+  validated pause/resume should be extended to measure it.
+- **R-7 — The worst possible email at the worst possible moment.** Courtesy pauses
+  the preapproval in MercadoPago, and `subscription-paused.tsx` blames the payment
+  method (HOS-926). If `deriveCourtesyStatus` does not run — or runs after the
+  notification decision — a subscriber who was just given a free month is told their
+  card failed. `shouldSendPausedEmail` keys off the *derived* status
+  (`subscription-logic.ts:177`), so the ordering in §6.2 is what prevents it. AC-9
+  is the regression test; it is not optional.
 
-## 11. Open questions
+## 11. Decisions (owner, 2026-08-31)
 
-- **OQ-1 — Where do `courtesyEndsAt` and `courtesyCyclesGranted` live?** No existing
-  column is free. Three options: (a) new typed columns in `@qazuor/qzpay-drizzle`,
-  bumping the external package — the route `product_domain` and
-  `promo_effect_remaining_cycles` took (HOS-73); (b) Hospeda-side columns via the
-  structural migration carril; (c) inside `metadata` jsonb — cheapest and worst,
-  since a load-bearing field stops being typed or queryable. **Recommended: (a)**,
-  for consistency with the two precedents, accepting the external bump.
-- **OQ-2 — What happens if the subscriber cancels, pauses or changes plan during the
-  gift?** Cancelling should presumably be allowed (it is their subscription). A
-  self-serve pause on top of a courtesy is ambiguous: it is already paused in
-  MercadoPago, so the local status is all that would change. Owner decision.
-- **OQ-3 — Is the gift interrupted by a downgrade?** If they move to a cheaper plan
-  mid-gift, does the courtesy carry over to the new plan or end?
-- **OQ-4 — Cycle boundary.** Does `courtesyEndsAt` count from the grant, or from the
-  end of the current paid period? The second is fairer (they already paid for the
-  running cycle) and matches "the next month is on us".
-- **OQ-5 — Is there a cap on N?** An admin gifting 999 cycles is a permanent `comp`
-  through the back door, without the audit trail `comp` has.
+Four of the five open questions were answered by the owner. **OQ-1 is the only one
+still open, and it blocks nothing** — see below for how the implementation avoids
+waiting on it.
+
+- **OQ-2 — Cancelling, pausing or changing plan during the gift.** ✅
+  **Cancelling is allowed; everything else is blocked.** The block costs no code:
+  every other billing gate already demands `active`/`trialing` explicitly, so a new
+  status is refused by omission — `subscription-pause.ts:76`, `plan-change.ts:235`,
+  `qzpay-admin-hooks.ts:874`. Only cancelling needs a change: adding `courtesy` to
+  `SOFT_CANCELLABLE_STATUSES` (`subscription-cancel.service.ts:110`), one line.
+
+  Cancelling is deliberately NOT blocked. A subscriber who is not being charged and
+  cannot leave is trapped for no benefit to anyone, and Argentine consumer law
+  (Resolución 424/2020) requires unsubscribing to be as easy as subscribing.
+
+- **OQ-3 — Does a downgrade interrupt the gift?** ✅ **The question no longer
+  exists.** Plan changes are blocked during a gift (OQ-2), so there is no mid-gift
+  downgrade to define behaviour for.
+
+- **OQ-4 — Cycle boundary.** ✅ **From the end of the current period**, not from the
+  grant. They already paid for the running cycle. This is what makes granting and
+  starting two distinct moments, hence `courtesyStartsAt` (§7) and the three
+  notifications (§8).
+
+  The owner added the constraint that produced **R-6**: the grant has to be applied
+  in time to stop the upcoming charge. Resolved with a lead-time requirement of 3
+  days (AC-12).
+
+- **OQ-5 — Cap on N?** ✅ **No cap for now.** The original concern — that an admin
+  gifting 999 cycles is a back-door permanent `comp` without the audit trail — is
+  mitigated by the grant being an audited admin action on a named subscription, and
+  by `courtesyCyclesGranted` recording exactly what was given.
+
+### OQ-1 — where the three columns live (STILL OPEN)
+
+`billing_subscriptions` is **not defined by Hospeda**: it comes from
+`@qazuor/qzpay-drizzle` (`^2.0.0`), consumed from npm with no local override. So
+option (a) — typed columns in the external package, the route `product_domain`
+(HOS-73) took — requires **publishing a new qzpay release**, and
+`pnpm-workspace.yaml:13-45` warns that the five qzpay siblings ship in coordinated
+waves rather than one at a time. That is an owner call, not an implementation
+detail.
+
+**So the implementation does not wait on it.** The three fields are read and written
+exclusively through `courtesy-fields.ts`, a small module with a typed accessor pair.
+Every other layer — derivation, transitions, predicates, endpoint, cron,
+notifications, UI — is written against that interface and never touches storage
+directly. The provisional backing is `metadata` jsonb, which needs no migration and
+no package release.
+
+Moving to (a) later changes **that one file**. The cost of the provisional choice is
+that the cron's `courtesyEndsAt <= now` sweep reads a jsonb path instead of an
+indexed column — irrelevant at the current subscription volume, and the reason this
+is provisional rather than final.
 
 ## 12. Implementation notes
 
