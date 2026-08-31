@@ -122,7 +122,7 @@ export const adminBillingDivergencesRoute = createAdminRoute({
         // here is a multi-second paced sweep of a third party.
         customRateLimit: { requests: 6, windowMs: 60_000 }
     },
-    handler: async (c: Context, _params: unknown, _body: unknown, query: unknown) => {
+    handler: async (_c: Context, _params: unknown, _body: unknown, query: unknown) => {
         const filters = BillingDivergenceSearchSchema.parse(query ?? {});
         const client = requireMpClient();
 

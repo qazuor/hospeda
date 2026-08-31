@@ -54,6 +54,7 @@ import {
 } from '@repo/db';
 import type { BackfillPaymentResponse, ForceLinkPreapprovalResponse } from '@repo/schemas';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { sql } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { AuditEventType, auditLog } from '../../utils/audit-logger.js';
@@ -301,11 +302,11 @@ export async function forceLinkPreapproval(
  * moved money, so recording it would put a liability in the ledger that does not
  * exist — the opposite of the hole this closes.
  *
- * Idempotent on the MercadoPago payment id: a second call reports
- * `'already-recorded'` and writes nothing. That check reads across ALL
- * `billing_payments` rows including soft-deleted ones, because a row that was
- * written and later soft-deleted is still a payment the system knows about, and
- * backfilling over it would duplicate the charge.
+ * Idempotent on the MercadoPago payment id, and on nothing narrower: a second
+ * call reports `'already-recorded'` and writes nothing. The check reads across
+ * ALL `billing_payments` rows — every subscription, soft-deleted rows included —
+ * because a charge already recorded anywhere is a charge the system knows about,
+ * and backfilling over it would duplicate it.
  *
  * @param input - MercadoPago payment, target subscription, operator context.
  * @returns What the call did, plus the amount actually recorded.
@@ -353,22 +354,28 @@ export async function backfillPayment(
 
     const amountInCents = toCentavos(payment.transactionAmount as Major);
 
-    // Idempotency across every row, soft-deleted included — see the JSDoc.
-    const existing = await db
-        .select({
-            id: billingPayments.id,
-            providerPaymentIds: billingPayments.providerPaymentIds
-        })
+    // Idempotency, scoped to the MercadoPago payment id and NOTHING else.
+    //
+    // Deliberately NOT filtered by `subscriptionId`: a narrower predicate would
+    // only notice a duplicate that happened to hang off the SAME subscription,
+    // so a charge already recorded against a different one would be written a
+    // second time — while the JSDoc promised idempotency on the payment id. The
+    // predicate now proves exactly what the promise says.
+    //
+    // Also NOT filtered by `deleted_at`: a row that was written and later
+    // soft-deleted is still a payment the system knows about, and backfilling
+    // over it would duplicate the charge.
+    //
+    // Matched with JSONB containment rather than by reading every row into
+    // memory, and with a single scalar parameter rather than an array — a JS
+    // array interpolated into a Drizzle `sql` template is not a Postgres array,
+    // and the `= ANY(...)` form that looks right fails at runtime.
+    const containment = JSON.stringify({ [MP_PROVIDER_KEY]: mpPaymentId });
+    const [alreadyRecorded] = await db
+        .select({ id: billingPayments.id })
         .from(billingPayments)
-        .where(eq(billingPayments.subscriptionId, localSubscriptionId));
-
-    const alreadyRecorded = existing.find((row) => {
-        const ids = row.providerPaymentIds;
-        if (!ids || typeof ids !== 'object' || Array.isArray(ids)) {
-            return false;
-        }
-        return Object.values(ids as Record<string, unknown>).includes(mpPaymentId);
-    });
+        .where(sql`${billingPayments.providerPaymentIds} @> ${containment}::jsonb`)
+        .limit(1);
 
     if (alreadyRecorded) {
         return {
