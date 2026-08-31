@@ -46,6 +46,7 @@ import {
     buildPreapprovalPlanShareLink,
     resolveCheckoutMpPlanId
 } from './billing/mp-plan-provisioning.service.js';
+import { createOwnPreapprovalSubscription } from './billing/own-preapproval-subscription-create.js';
 import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
@@ -563,6 +564,68 @@ export async function initiatePaidMonthlySubscription(
             'CUSTOMER_NOT_FOUND',
             `Customer '${customerId}' not found`
         );
+    }
+
+    // ── HOS-937 step 1: own-preapproval checkout, behind a dark-by-default
+    // flag ─────────────────────────────────────────────────────────────────
+    // MercadoPago silently discards the `external_reference` carried on a
+    // shared `preapproval_plan` share link, which is what makes the Path C
+    // checkout above unable to reliably correlate its own hosted checkouts
+    // back to a local row (the root cause HOS-937 targets). Creating a
+    // per-user `POST /preapproval` instead puts `external_reference` in the
+    // body of a server-to-server call, where MercadoPago DOES preserve it.
+    // Accommodation monthly ONLY — annual, commerce and partner checkouts
+    // are untouched by this flag and keep using Path C regardless.
+    //
+    // Deferred-redemption bookkeeping (`pendingDiscount` / trial-extension
+    // stamping) is wired into this path too, same snapshot-now / redeem-later
+    // shape as the old flow — just relocated: there is no
+    // `billing_pending_checkouts` row to snapshot onto here, so
+    // `createOwnPreapprovalSubscription` snapshots it on the row's own
+    // `metadata` instead, and the webhook (`subscription-logic.ts`, not this
+    // file) redeems it on the `pending_provider -> active/trialing`
+    // transition — never at creation, since the preapproval may never be
+    // authorized and redeeming a capped code for an abandoned checkout would
+    // make it effectively uncapped.
+    if (env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED) {
+        const ownPreapproval = await createOwnPreapprovalSubscription({
+            billing,
+            customerId,
+            planId: plan.id,
+            priceId: monthlyPrice.id,
+            billingInterval: 'monthly',
+            paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+            notificationUrl: urls.notificationUrl,
+            providerPriceId,
+            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            ...(pendingDiscount ? { pendingDiscount } : {}),
+            ...(promoPlan.kind === 'trial' &&
+            promoPlan.promoCodeId &&
+            promoPlan.code &&
+            !promoExtensionIgnored
+                ? {
+                      pendingTrialExtension: {
+                          promoCodeId: promoPlan.promoCodeId,
+                          code: promoPlan.code
+                      }
+                  }
+                : {}),
+            ...(input.db ? { db: input.db } : {})
+        });
+
+        return {
+            checkoutUrl: ownPreapproval.checkoutUrl,
+            localSubscriptionId: ownPreapproval.subscription.id,
+            // No `billing_pending_checkouts` correlation row exists in this
+            // flow (the local row already carries `mp_subscription_id` from
+            // creation), so there is no real TTL row to read an expiry from.
+            // Reuses the same window the `comp` branch above already
+            // synthesizes for the same reason.
+            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+            ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
+            ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
+            ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
+        };
     }
 
     const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({

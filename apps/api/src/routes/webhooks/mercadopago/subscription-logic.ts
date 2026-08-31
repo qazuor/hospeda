@@ -35,7 +35,19 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
-import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import {
+    applyPendingDiscountBestEffort,
+    applyPendingTrialExtensionBestEffort,
+    linkPreapprovalToLocalSub
+} from '../../../services/billing/link-preapproval.service.js';
+import {
+    PENDING_DISCOUNT_METADATA_KEY,
+    PENDING_TRIAL_EXTENSION_METADATA_KEY
+} from '../../../services/billing/own-preapproval-subscription-create.js';
+import type {
+    PendingCheckoutDiscount,
+    PendingTrialExtension
+} from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
@@ -390,6 +402,80 @@ function livePreapprovalHasFreeTrial(livePreapproval: unknown): boolean {
         return false;
     }
     return typeof freeTrial.frequency === 'number' && freeTrial.frequency > 0;
+}
+
+/**
+ * Result of {@link extractPendingPromoFromRowMetadata}.
+ */
+interface ExtractedPendingPromo {
+    readonly pendingDiscount?: PendingCheckoutDiscount;
+    readonly pendingTrialExtension?: PendingTrialExtension;
+}
+
+/**
+ * Read back the deferred-redemption promo snapshot HOS-937's own-preapproval
+ * flow stores on `billing_subscriptions.metadata` (see
+ * `own-preapproval-subscription-create.ts` — there is no
+ * `billing_pending_checkouts` row for that flow to snapshot it on instead).
+ *
+ * Absence of both keys is the ordinary case for every OLD Path C row (which
+ * snapshots on the correlation row and never writes these keys on the
+ * subscription's own metadata) as well as an own-preapproval row with no
+ * promo applied — this function returns an empty object for both, and the
+ * caller no-ops. Malformed JSON (should never happen; only this module ever
+ * writes these keys) is treated the same as absent rather than throwing,
+ * since a webhook must never fail processing a status transition over
+ * promo-bookkeeping metadata.
+ *
+ * @param metadata - `billing_subscriptions.metadata` as read off the row.
+ */
+function extractPendingPromoFromRowMetadata(metadata: unknown): ExtractedPendingPromo {
+    if (typeof metadata !== 'object' || metadata === null) {
+        return {};
+    }
+    const record = metadata as Record<string, unknown>;
+    const result: {
+        pendingDiscount?: PendingCheckoutDiscount;
+        pendingTrialExtension?: PendingTrialExtension;
+    } = {};
+
+    const discountJson = record[PENDING_DISCOUNT_METADATA_KEY];
+    if (typeof discountJson === 'string') {
+        try {
+            const parsed = JSON.parse(discountJson) as Partial<PendingCheckoutDiscount>;
+            if (
+                typeof parsed.promoCodeId === 'string' &&
+                typeof parsed.finalAmountCentavos === 'number'
+            ) {
+                result.pendingDiscount = {
+                    promoCodeId: parsed.promoCodeId,
+                    finalAmountCentavos: parsed.finalAmountCentavos,
+                    ...(parsed.durationCycles === undefined
+                        ? {}
+                        : { durationCycles: parsed.durationCycles })
+                };
+            }
+        } catch {
+            // Malformed — treat as absent, see docblock.
+        }
+    }
+
+    const trialExtensionJson = record[PENDING_TRIAL_EXTENSION_METADATA_KEY];
+    if (typeof trialExtensionJson === 'string') {
+        try {
+            const parsed = JSON.parse(trialExtensionJson) as Partial<PendingTrialExtension>;
+            if (typeof parsed.promoCodeId === 'string' && typeof parsed.code === 'string') {
+                result.pendingTrialExtension = {
+                    promoCodeId: parsed.promoCodeId,
+                    code: parsed.code
+                };
+            }
+        } catch {
+            // Malformed — treat as absent, see docblock.
+        }
+    }
+
+    return result;
 }
 
 /**
@@ -1123,6 +1209,56 @@ export async function processSubscriptionUpdated({
             providerEventId,
             source
         });
+    }
+
+    // HOS-937 step 1: redeem any deferred-redemption promo bookkeeping the
+    // own-preapproval checkout flow snapshotted on THIS row's own metadata
+    // (`own-preapproval-subscription-create.ts` — that flow has no
+    // `billing_pending_checkouts` correlation row to snapshot on instead, and
+    // therefore no `linkPreapprovalToLocalSub` "link" event to redeem at; the
+    // row already carried `mp_subscription_id` from creation, so it was found
+    // directly in Step 5 above and the `!localSubscription` / F3 fallback
+    // branch — the OLD flow's redemption call site — never ran for it).
+    //
+    // Gated on the SAME pending_provider -> active/trialing transition as the
+    // reactivation-supersession block above, but broader: TRIALING is
+    // included (not just ACTIVE) because a trial_extension code is most often
+    // exactly what put the row in trialing in the first place. Reused
+    // verbatim from `link-preapproval.service.ts` (`applyPendingDiscountBestEffort`
+    // / `applyPendingTrialExtensionBestEffort`) rather than reimplemented —
+    // same fail-closed-stamp / best-effort-record split, same Sentry
+    // reporting. Never runs for an OLD Path C row: those never carry either
+    // metadata key (see `extractPendingPromoFromRowMetadata`'s docblock), so
+    // this is a pure no-op for them, not a second redemption on top of the
+    // one `linkPreapprovalToLocalSub` already recorded at link time.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        (mappedStatus === SubscriptionStatusEnum.ACTIVE ||
+            mappedStatus === SubscriptionStatusEnum.TRIALING)
+    ) {
+        const { pendingDiscount, pendingTrialExtension } = extractPendingPromoFromRowMetadata(
+            localSubscription.metadata
+        );
+        if (pendingDiscount) {
+            await applyPendingDiscountBestEffort({
+                billing,
+                localSubscriptionId: localSubscription.id,
+                preapprovalId: mpPreapprovalId,
+                customerId: localSubscription.customerId,
+                planId: localSubscription.planId,
+                pendingDiscount,
+                livemode: localSubscription.livemode
+            });
+        }
+        if (pendingTrialExtension) {
+            await applyPendingTrialExtensionBestEffort({
+                localSubscriptionId: localSubscription.id,
+                preapprovalId: mpPreapprovalId,
+                customerId: localSubscription.customerId,
+                pendingTrialExtension,
+                livemode: localSubscription.livemode
+            });
+        }
     }
 
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
