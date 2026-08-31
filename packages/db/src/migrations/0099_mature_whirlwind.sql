@@ -1,0 +1,1 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.reconciliation.manage' BEFORE 'revalidation.trigger';

@@ -694,6 +694,13 @@
       "when": 1787346904306,
       "tag": "0098_graceful_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1788169098988,
+      "tag": "0099_mature_whirlwind",
+      "breakpoints": true
     }
   ]
 }

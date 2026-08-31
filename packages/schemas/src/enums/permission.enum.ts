@@ -853,6 +853,7 @@ export enum PermissionEnum {
     BILLING_PROMO_CODE_MANAGE = 'billing.promoCode.manage', // Allows creating, updating, and deleting promo codes.
     BILLING_METRICS_READ = 'billing.metrics.read', // Allows viewing billing metrics and analytics.
     BILLING_MANAGE = 'billing.manage', // Allows managing billing records (expire, activate add-ons, etc.).
+    BILLING_RECONCILIATION_MANAGE = 'billing.reconciliation.manage', // Allows using the orphan-payment rescue tool (HOS-765): reading the MercadoPago<->local divergence report, force-linking a preapproval to a local subscription, and backfilling a billing_payments row for a charge that already settled. Deliberately NOT folded into BILLING_MANAGE: those two verbs write MONEY into the ledger and bind a real payer's charge to a subscription, so the gate that opens them is its own, auditable grant. SUPER_ADMIN-only.
 
     // REVALIDATION: Permissions related to on-demand ISR revalidation management
     REVALIDATION_TRIGGER = 'revalidation.trigger', // Allows triggering on-demand revalidation of cached pages.
