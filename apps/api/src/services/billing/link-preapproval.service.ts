@@ -61,6 +61,7 @@ import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchPreapprovalPlanId } from '../../utils/mp-preapproval-plan-lookup.js';
 import { computeSignupDiscountCycleSeed } from '../subscription-discount-signup.service.js';
+import { reconcileTrialWindowAgainstProvider } from './trial-window-reconcile.js';
 
 /**
  * How far back (from "now") the heuristic (Tier 3) reconciliation path
@@ -1200,6 +1201,21 @@ export async function linkPreapprovalToLocalSub(
             livemode: subRow?.livemode ?? false
         });
     }
+
+    // Step 8: reconcile the promised trial window against the one MercadoPago
+    // actually granted (HOS-936), best-effort, non-blocking.
+    //
+    // The share-link row was written before any preapproval existed, so its
+    // `trial_end` is purely the checkout-time promise. This is the first moment a
+    // real preapproval is in hand, and its `next_payment_date` is what decides
+    // whether that promise survives. Runs AFTER the deferred trial extension
+    // above so an extension recorded in the same pass is reconciled too, and
+    // last overall because it may clear the window entirely.
+    await reconcileTrialWindowAgainstProvider({
+        localSubscriptionId: checkout.localSubscriptionId,
+        mpPreapprovalId: preapprovalId,
+        db: client
+    });
 
     apiLogger.info(
         { preapprovalId, localSubscriptionId: checkout.localSubscriptionId, viaHeuristic },
