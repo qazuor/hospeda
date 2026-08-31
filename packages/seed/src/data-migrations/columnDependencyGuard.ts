@@ -58,19 +58,58 @@ async function columnExists(
 }
 
 /**
+ * Counts rows in a table, returning 0 when the table itself does not exist.
+ *
+ * A missing table is not an error here: the migration may predate it, or run
+ * against a database where it was never created. Either way there is nothing to
+ * lose, which is the only question this module is asking.
+ */
+async function countRows(db: AssertRequiredColumnsArgs['db'], table: string): Promise<number> {
+    const exists = await db.execute(
+        sql`SELECT to_regclass(${`public.${table}`}) IS NOT NULL AS present`
+    );
+    if (!(exists.rows?.[0] as { present?: boolean } | undefined)?.present) {
+        return 0;
+    }
+    // `sql.raw` is safe: `table` comes from a migration's own `meta`, which is
+    // source code, never caller-supplied text.
+    const result = await db.execute(sql`SELECT count(*)::int AS n FROM ${sql.raw(`"${table}"`)}`);
+    return Number((result.rows?.[0] as { n?: number } | undefined)?.n ?? 0);
+}
+
+/**
  * Verifies every column a migration declared via
  * `SeedMigrationMeta.requiresColumns` before its `up()` is allowed to run.
  *
- * Throws when any declaration is unsatisfied, naming the migration, every
- * missing column, and the run-order cause — the runner turns that into an
- * aborted run with no ledger row, so the migration stays pending and can be
- * re-run once the environment is fixed.
+ * Throws when a declaration is unsatisfied **and there is data at stake**,
+ * naming the migration, the missing columns and the run-order cause. The runner
+ * turns that into an aborted run with no ledger row, so the migration stays
+ * pending and can be re-run once the environment is fixed.
+ *
+ * ## Why an empty table is not an error
+ *
+ * A missing column means one of two things, and the difference is the row count
+ * of the table it belongs to:
+ *
+ * - **The table has rows.** Data exists that this migration was written to move
+ *   and can no longer read. That is the HOS-433 failure — abort.
+ * - **The table is empty.** Nothing was lost, because there was nothing there.
+ *   This is an ordinary, legitimate state: a database built from scratch runs
+ *   every migration in sequence against the CURRENT schema, where a column
+ *   dropped by a later structural migration never existed at all. Refusing here
+ *   would break `--data-migrate` on any fresh database, which is exactly what
+ *   `cli-data-migrate.integration.test.ts` caught.
+ *
+ * The first version of this guard checked only for the column's absence, on the
+ * reasoning that a fresh environment stamps migrations rather than running
+ * them. That reasoning was wrong: the day-1 bootstrap and the integration suite
+ * both run them for real.
  *
  * A migration that declares nothing is not touched: this gate is opt-in per
  * migration and cannot change how an existing one behaves.
  *
  * @param args - See {@link AssertRequiredColumnsArgs}.
- * @throws {Error} When any declared column is absent from the `public` schema.
+ * @throws {Error} When a declared column is absent AND its table holds rows.
  */
 export async function assertRequiredColumns({
     db,
@@ -81,9 +120,11 @@ export async function assertRequiredColumns({
 
     const missing: RequiredColumn[] = [];
     for (const dependency of required) {
-        if (!(await columnExists(db, dependency))) {
-            missing.push(dependency);
-        }
+        if (await columnExists(db, dependency)) continue;
+        // The column is gone. Whether that matters depends entirely on whether
+        // there is anything in the table to have lost.
+        if ((await countRows(db, dependency.table)) === 0) continue;
+        missing.push(dependency);
     }
 
     if (missing.length === 0) return;
@@ -92,7 +133,8 @@ export async function assertRequiredColumns({
 
     throw new Error(
         `Data-migration "${meta.name}" declares a dependency on ${columnList}, ` +
-            `which ${missing.length === 1 ? 'does' : 'do'} not exist. ` +
+            `which ${missing.length === 1 ? 'does' : 'do'} not exist, ` +
+            'while the table(s) still hold rows this migration was written to move. ' +
             'This almost always means the run order was wrong: a schema migration ' +
             'dropped the source column before this data-migration could read it. ' +
             'Running anyway would move zero rows, record the migration as applied, ' +

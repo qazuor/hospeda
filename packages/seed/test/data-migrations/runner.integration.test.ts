@@ -217,7 +217,34 @@ describe('HOS-25 T-009: runMigrations (integration, real worktree DB)', () => {
     // ledger forever. These assert the runner now refuses instead.
 
     describe('meta.requiresColumns (HOS-433)', () => {
+        /**
+         * The gate only fires when there is DATA at stake, so a declared-missing
+         * column over an EMPTY table is legitimate and must pass. These tests
+         * therefore have to seed a row first.
+         */
+        async function seedScratchRow(): Promise<void> {
+            await getDb().execute(
+                sql`INSERT INTO ${sql.identifier(SCRATCH_TABLE)} (name) VALUES ('pre-existing')`
+            );
+        }
+
+        it('lets the run through when the column is missing but the table is EMPTY', async () => {
+            // The case CI caught. A database built from scratch runs every
+            // migration against the CURRENT schema, where a column dropped by a
+            // later structural migration never existed — and nothing was lost,
+            // because there was nothing there. Refusing here breaks
+            // `--data-migrate` on every fresh database.
+            const result = await runMigrations({
+                db: getDb(),
+                dir: REQUIRES_MISSING_DIR,
+                actor: STUB_ACTOR
+            });
+
+            expect(result.applied).toEqual(['0001-zzz-test-runner-requires-missing']);
+        });
+
         it('aborts the run when a declared column is missing, without executing up()', async () => {
+            await seedScratchRow();
             await expect(
                 runMigrations({
                     db: getDb(),
@@ -226,9 +253,10 @@ describe('HOS-25 T-009: runMigrations (integration, real worktree DB)', () => {
                 })
             ).rejects.toThrow(/zzz_test_runner_scratch\.zzz_column_that_never_existed/);
 
-            // up() must never have run: no scratch row, and no ledger row that
-            // would close the migration out as applied.
-            expect(await readScratchNames()).toEqual([]);
+            // up() must never have run: only the row we seeded is present (the
+            // migration's own insert never happened), and no ledger row closed
+            // it out as applied.
+            expect(await readScratchNames()).toEqual(['pre-existing']);
 
             const rows = await getDb()
                 .select()
@@ -238,6 +266,7 @@ describe('HOS-25 T-009: runMigrations (integration, real worktree DB)', () => {
         });
 
         it('names the migration and the run-order cause in the error', async () => {
+            await seedScratchRow();
             await expect(
                 runMigrations({
                     db: getDb(),
@@ -248,6 +277,7 @@ describe('HOS-25 T-009: runMigrations (integration, real worktree DB)', () => {
         });
 
         it('runs a migration whose declared column exists', async () => {
+            await seedScratchRow();
             const result = await runMigrations({
                 db: getDb(),
                 dir: REQUIRES_PRESENT_DIR,
@@ -255,7 +285,10 @@ describe('HOS-25 T-009: runMigrations (integration, real worktree DB)', () => {
             });
 
             expect(result.applied).toEqual(['0001-zzz-test-runner-requires-present']);
-            expect(await readScratchNames()).toEqual(['0001-zzz-test-runner-requires-present']);
+            expect(await readScratchNames()).toEqual([
+                'pre-existing',
+                '0001-zzz-test-runner-requires-present'
+            ]);
         });
     });
 });
