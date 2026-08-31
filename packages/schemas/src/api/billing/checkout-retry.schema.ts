@@ -43,9 +43,15 @@ export type CheckoutRetryParams = z.infer<typeof CheckoutRetryParamsSchema>;
  * - `'cancelled'` — a FRESH preapproval was minted (or reused from an
  *   earlier call — this endpoint never mints twice for the same cancelled
  *   checkout).
- * - `'confirming'` — the read looked cancelled but has not yet been
- *   confirmed by the deferred re-read (spec §10 R-3); the client should
- *   poll again shortly rather than treat this as final.
+ * - `'confirming'` — a concurrent call (e.g. the same link opened twice)
+ *   has already claimed the right to mint and has not finished yet, OR
+ *   the deferred re-read (spec §10 R-3) came back genuinely ambiguous.
+ *   The client should try again shortly rather than treat this as final.
+ *   A preapproval that RESURRECTED during the deferred re-read (six were
+ *   observed in staging: `cancelled` on the PUT and an immediate GET,
+ *   then `authorized`/`pending` hours later) is reported as
+ *   `authorized`/`pending` directly, never as `confirming` — the endpoint
+ *   already knows the real answer in that case.
  */
 export const CheckoutRetryResponseSchema = z.object({
     recovery: z.enum(['authorized', 'pending', 'cancelled', 'confirming'], {

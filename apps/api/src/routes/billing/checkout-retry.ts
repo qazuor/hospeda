@@ -16,6 +16,20 @@
  * another method" button that can never work (`cancelled -> authorized` is
  * a forbidden MP transition). This endpoint is the deterministic exit.
  *
+ * **This is the ONLY place in the codebase that mints a fresh preapproval
+ * for a cancelled checkout.** The cancellation webhook
+ * (`routes/webhooks/mercadopago/subscription-logic.ts`) deliberately does
+ * NOT mint — it only records the terminal state and emails the user a link
+ * to this endpoint (via `mi-cuenta/suscripcion`). That redesign is what
+ * makes the R-3 deferred confirmation real: a click on that link happens
+ * naturally minutes-to-hours after the cancellation, not 350ms after it, so
+ * the fresh `GET` this handler performs sees MercadoPago's SETTLED state —
+ * including the case where a preapproval that looked `cancelled` actually
+ * resurrected to `authorized`/`pending` (see the `not_confirmed` branch
+ * below). Minting from the webhook risked exactly that: a second live
+ * preapproval for a user whose original one comes back — a double
+ * subscription, which is worse than the infinite loop this replaces.
+ *
  * @module routes/billing/checkout-retry
  */
 
@@ -146,7 +160,12 @@ export const handleCheckoutRetry = async (
         return { recovery: 'pending', checkoutUrl: null };
     }
 
-    // classification === 'cancelled' — confirm (R-3), claim, mint.
+    // classification === 'cancelled' — this endpoint is the ONLY place
+    // that mints a fresh preapproval (the cancellation webhook only
+    // notifies, per the R-3 redesign — see checkout-return-urls.ts's
+    // buildCheckoutRetryLandingUrl docblock). Confirm with a deferred
+    // re-read (R-3), claim the exclusive right to mint (idempotency
+    // guard against a double click on the same link), then mint.
     const locale = resolveReturnUrlLocale(c);
     const outcome = await recoverCancelledPreapproval({
         billing,
@@ -167,7 +186,31 @@ export const handleCheckoutRetry = async (
     if (outcome.kind === 'minted' || outcome.kind === 'already_minted') {
         return { recovery: 'cancelled', checkoutUrl: outcome.checkoutUrl };
     }
-    if (outcome.kind === 'not_confirmed' || outcome.kind === 'claim_lost') {
+
+    if (outcome.kind === 'not_confirmed') {
+        // R-4 (adversarial review): the deferred re-read did NOT confirm
+        // `cancelled` — the preapproval RESURRECTED. Surface what it
+        // actually is now instead of a generic "keep waiting": if it
+        // resurrected to `authorized`, tell the caller the checkout already
+        // succeeded (never mint); if it resurrected to `pending`, hand back
+        // the SAME object's stored init_point (never mint a second one for
+        // a preapproval that is still perfectly usable).
+        if (outcome.classification === 'authorized') {
+            return { recovery: 'authorized', checkoutUrl: null };
+        }
+        if (outcome.classification === 'pending') {
+            const checkoutUrl =
+                typeof metadata.checkoutUrl === 'string' ? metadata.checkoutUrl : null;
+            return { recovery: 'pending', checkoutUrl };
+        }
+        // classification === 'other' — genuinely ambiguous, ask the caller
+        // to check again rather than guess.
+        return { recovery: 'confirming', checkoutUrl: null };
+    }
+
+    if (outcome.kind === 'claim_lost') {
+        // A concurrent call (double click, or the same link opened twice)
+        // already claimed the right to mint and has not finished yet.
         return { recovery: 'confirming', checkoutUrl: null };
     }
 

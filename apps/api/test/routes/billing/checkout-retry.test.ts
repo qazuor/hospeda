@@ -234,13 +234,52 @@ describe('handleCheckoutRetry', () => {
         expect(result.checkoutUrl).not.toBe('https://mp.test/checkout/old');
     });
 
-    it('classification=cancelled but NOT YET confirmed (R-3): returns confirming, not cancelled', async () => {
-        mockRow(baseRow());
+    // R-4 (adversarial review): the deferred re-read inside
+    // recoverCancelledPreapproval sometimes finds the preapproval
+    // RESURRECTED (spec R-3: six preapprovals read `cancelled` on the PUT
+    // AND an immediate GET, then read `authorized`/`pending` hours later).
+    // This is the case that did not exist before the redesign and is the
+    // entire point of it — dedicated coverage for both resurrection shapes.
+    it('RESURRECTION (authorized): the deferred re-read finds it authorized after all — returns authorized, mints NOTHING', async () => {
+        mockRow(baseRow({ metadata: { checkoutUrl: 'https://mp.test/checkout/old' } }));
+        mockRetrieve.mockResolvedValue({ status: 'canceled' });
+        mockClassifyPreapprovalStatus.mockReturnValue('cancelled');
+        mockRecoverCancelledPreapproval.mockResolvedValue({
+            kind: 'not_confirmed',
+            classification: 'authorized'
+        });
+        const ctx = createMockContext();
+
+        const result = await handleCheckoutRetry(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result).toEqual({ recovery: 'authorized', checkoutUrl: null });
+    });
+
+    it('RESURRECTION (pending): the deferred re-read finds it pending after all — reuses the SAME stored init_point, mints NOTHING', async () => {
+        mockRow(baseRow({ metadata: { checkoutUrl: 'https://mp.test/checkout/same-object' } }));
         mockRetrieve.mockResolvedValue({ status: 'canceled' });
         mockClassifyPreapprovalStatus.mockReturnValue('cancelled');
         mockRecoverCancelledPreapproval.mockResolvedValue({
             kind: 'not_confirmed',
             classification: 'pending'
+        });
+        const ctx = createMockContext();
+
+        const result = await handleCheckoutRetry(ctx as never, { localId: LOCAL_SUB_ID });
+
+        expect(result).toEqual({
+            recovery: 'pending',
+            checkoutUrl: 'https://mp.test/checkout/same-object'
+        });
+    });
+
+    it('classification=cancelled but the deferred re-read is genuinely ambiguous (other): returns confirming', async () => {
+        mockRow(baseRow());
+        mockRetrieve.mockResolvedValue({ status: 'canceled' });
+        mockClassifyPreapprovalStatus.mockReturnValue('cancelled');
+        mockRecoverCancelledPreapproval.mockResolvedValue({
+            kind: 'not_confirmed',
+            classification: 'other'
         });
         const ctx = createMockContext();
 
