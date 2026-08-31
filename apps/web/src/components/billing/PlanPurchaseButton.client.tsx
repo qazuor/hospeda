@@ -21,6 +21,7 @@ import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
+import { PayerEmailConfirmDialog } from './PayerEmailConfirmDialog.client';
 import styles from './PlanPurchaseButton.module.css';
 import { TrialWarningDialog } from './TrialWarningDialog.client';
 
@@ -260,6 +261,10 @@ export function PlanPurchaseButton({
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
     // Controls the MercadoPago trial-warning dialog (see `promisesTrial` below).
     const [showTrialWarning, setShowTrialWarning] = useState(false);
+    // HOS-937 step 2: controls the pre-redirect payer-email confirmation
+    // dialog (spec §8.1) — shown right before `runCheckout` fires, after any
+    // trial warning has already been accepted (or skipped).
+    const [showPayerEmailConfirm, setShowPayerEmailConfirm] = useState(false);
     // HOS-226: `null` = unknown (unauthenticated, still loading, or the lookup
     // failed) — the SSR "N days free" badge stays untouched in that case.
     // `false` is the only value that triggers badge suppression below.
@@ -884,29 +889,38 @@ export function PlanPurchaseButton({
 
         // MercadoPago-vs-Hospeda trial-eligibility mismatch (real-money incident
         // in prod): stop here and require explicit confirmation instead of
-        // going straight to MercadoPago. `handleTrialWarningConfirm` re-invokes
-        // `runCheckout` directly once the user accepts.
+        // going straight to MercadoPago. `handleTrialWarningConfirm` opens the
+        // payer-email confirm dialog once the user accepts, same as below.
         if (promisesTrial) {
             setShowTrialWarning(true);
             return;
         }
 
-        await runCheckout();
+        // HOS-937 step 2 (spec §8.1): show the payer-email confirm dialog
+        // right before actually creating the MercadoPago preapproval. Zero
+        // extra fields for whoever's email already matches — the dialog
+        // pre-fills from the session and one click (Continue) proceeds.
+        setShowPayerEmailConfirm(true);
     }
 
     /**
      * Fires the actual checkout POST and follows the returned URL. Split out
      * of `handleClick` so the trial-warning dialog's "continue" action can
      * invoke it directly, without re-running the trial-warning gate.
+     *
+     * @param payerEmail - HOS-937 step 2: the email confirmed (or edited) on
+     *   the pre-redirect dialog. Forwarded to `/start-paid` so it wins over
+     *   the server's own default resolution (spec §6.3).
      */
-    async function runCheckout(): Promise<void> {
+    async function runCheckout(payerEmail: string): Promise<void> {
         setLoading(true);
 
         try {
             const result = await billingApi.createCheckout({
                 planSlug,
                 billingInterval,
-                ...(promo.appliedCode ? { promoCode: promo.appliedCode } : {})
+                ...(promo.appliedCode ? { promoCode: promo.appliedCode } : {}),
+                payerEmail
             });
 
             if (!result.ok || !result.data.checkoutUrl) {
@@ -965,12 +979,13 @@ export function PlanPurchaseButton({
     }
 
     /**
-     * User accepted the trial-warning dialog — close it and proceed to the
-     * checkout that was held back.
+     * User accepted the trial-warning dialog — close it and continue to the
+     * payer-email confirm dialog that was held back (HOS-937 step 2, same
+     * gate `handleClick` applies when no trial warning is needed).
      */
     function handleTrialWarningConfirm(): void {
         setShowTrialWarning(false);
-        void runCheckout();
+        setShowPayerEmailConfirm(true);
     }
 
     /**
@@ -979,6 +994,23 @@ export function PlanPurchaseButton({
      */
     function handleTrialWarningCancel(): void {
         setShowTrialWarning(false);
+    }
+
+    /**
+     * User confirmed (or edited) the payer email — close the dialog and fire
+     * the actual checkout with that email (HOS-937 step 2).
+     */
+    function handlePayerEmailConfirm(confirmedEmail: string): void {
+        setShowPayerEmailConfirm(false);
+        void runCheckout(confirmedEmail);
+    }
+
+    /**
+     * User dismissed the payer-email confirm dialog (Cancel, Escape, or
+     * overlay click) — close it without starting a checkout.
+     */
+    function handlePayerEmailCancel(): void {
+        setShowPayerEmailConfirm(false);
     }
 
     const buttonAriaLabel = isFreePlanUnpurchasable
@@ -1182,6 +1214,14 @@ export function PlanPurchaseButton({
                 locale={locale}
                 onCancel={handleTrialWarningCancel}
                 onConfirm={handleTrialWarningConfirm}
+            />
+
+            <PayerEmailConfirmDialog
+                isOpen={showPayerEmailConfirm}
+                locale={locale}
+                defaultEmail={session?.user?.email ?? ''}
+                onCancel={handlePayerEmailCancel}
+                onConfirm={handlePayerEmailConfirm}
             />
         </div>
     );

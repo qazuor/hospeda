@@ -273,6 +273,14 @@
             "body": "O Mercado Pago concede o período de teste apenas uma vez por conta e por plano. Se você já usou um teste deste plano com a mesma conta do Mercado Pago, o Mercado Pago vai cobrar o primeiro período imediatamente em vez de aplicar o teste.",
             "confirm": "Entendi, continuar",
             "cancel": "Cancelar"
+        },
+        "payerEmailConfirm": {
+            "title": "Com qual email você vai poder pagar",
+            "body": "O Mercado Pago só vai deixar você pagar com este email exato. Se quiser usar outra conta do Mercado Pago, altere antes de continuar.",
+            "label": "Email de pagamento",
+            "invalidError": "Digite um email válido",
+            "confirm": "Continuar",
+            "cancel": "Cancelar"
         }
     },
     "limit": {

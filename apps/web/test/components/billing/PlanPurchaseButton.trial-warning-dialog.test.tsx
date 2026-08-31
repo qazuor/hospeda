@@ -174,7 +174,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('PlanPurchaseButton — trial-warning dialog gate', () => {
-    it('does NOT show the dialog and goes straight to checkout when the plan has no trial (trialDays omitted / 0)', async () => {
+    it('does NOT show the trial-warning dialog when the plan has no trial (trialDays omitted / 0) — only the payer-email confirm (HOS-937 step 2)', async () => {
         const fetchMock = buildFetchMock(true);
         vi.stubGlobal('fetch', fetchMock);
         const user = userEvent.setup();
@@ -182,7 +182,14 @@ describe('PlanPurchaseButton — trial-warning dialog gate', () => {
 
         await user.click(getMainButton());
 
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        // The trial-warning dialog specifically must NOT appear — but the
+        // payer-email confirm dialog (HOS-937 step 2, spec §8.1) now always
+        // does, right before every paid checkout. One click through it and
+        // the checkout still proceeds exactly as before.
+        const dialog = await screen.findByRole('dialog');
+        expect(dialog).not.toHaveTextContent(DIALOG_TITLE);
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
         await waitFor(() => {
             expect(window.location.href).toBe(CHECKOUT_URL);
         });
@@ -235,16 +242,24 @@ describe('PlanPurchaseButton — trial-warning dialog gate', () => {
         expect(window.location.href).toBe('');
     });
 
-    it('Confirm closes the dialog and fires the same checkout the plain click would have', async () => {
+    it('Confirm closes the dialog and continues to the payer-email confirm before firing the same checkout the plain click would have', async () => {
         const fetchMock = buildFetchMock(true);
         vi.stubGlobal('fetch', fetchMock);
         const user = userEvent.setup();
         renderInPricingCard({ trialDays: 14 });
 
         await user.click(getMainButton());
-        await screen.findByRole('dialog');
+        const trialDialog = await screen.findByRole('dialog');
+        expect(trialDialog).toHaveTextContent(DIALOG_TITLE);
 
         await user.click(screen.getByRole('button', { name: CONFIRM_LABEL }));
+
+        // HOS-937 step 2: accepting the trial warning does NOT go straight to
+        // checkout any more — it opens the payer-email confirm dialog first
+        // (spec §8.1), same as the no-trial path.
+        const payerEmailDialog = await screen.findByRole('dialog');
+        expect(payerEmailDialog).not.toHaveTextContent(DIALOG_TITLE);
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
 
         await waitFor(() => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
