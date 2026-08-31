@@ -421,6 +421,19 @@ payment method (HOS-926). See R-7.
   (`subscription-logic.ts:177`), so the ordering in §6.2 is what prevents it. AC-9
   is the regression test; it is not optional.
 
+- **R-8 — a stale `paused` webhook can land after the resume.** The expiry cron
+  resumes the preapproval, writes `active` and clears the window in the same
+  pass. A `preapproval.updated` event still in flight from before the resume
+  would then arrive carrying `paused`, find no window to derive against, and
+  settle the row as a genuine pause — cutting the entitlements of somebody whose
+  gift just ended normally. `ACTIVE → PAUSED` is a legal edge, so nothing rejects
+  it.
+
+  Narrow but real: it needs a webhook delayed past the resume. Not mitigated in
+  this implementation, and deliberately recorded rather than left implicit. The
+  natural fix belongs with HOS-914 (the state reconciler), which has to
+  understand both derived states anyway — see R-4.
+
 ## 11. Decisions (owner, 2026-08-31)
 
 Four of the five open questions were answered by the owner. **OQ-1 is the only one
