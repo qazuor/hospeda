@@ -18,10 +18,21 @@ export interface PaymentFailureProps {
     /**
      * HOS-937 step 3 — when set, this failure is a checkout that never
      * activated (MercadoPago cancelled the preapproval over a card
-     * rejection). The email switches to a fresh-attempt CTA instead of the
+     * rejection). The email switches to a "go retry" CTA instead of the
      * "we'll retry automatically" copy, which does not apply here: nothing
      * ever activated, so there is no recurring charge for MercadoPago to
      * retry.
+     *
+     * NOT a MercadoPago `init_point` — a link into Hospeda's own account
+     * page (`mi-cuenta/suscripcion`). No fresh preapproval exists yet at
+     * send time; minting one only happens later, through the
+     * checkout-retry endpoint (spec §6.5 redesign — the webhook that sends
+     * this email never mints). The front-end wiring that calls that
+     * endpoint automatically from this landing page is a separate,
+     * pending piece of work; today the link is honest about WHERE to go,
+     * not a claim that clicking it instantly completes anything. The copy
+     * below must stay truthful to that: it offers to GENERATE a new
+     * attempt, not to complete one that already exists.
      */
     retryUrl?: string;
 }
@@ -71,8 +82,8 @@ export function PaymentFailure({
 
             {isCancelledCheckoutRetry ? (
                 <Text style={styles.paragraph}>
-                    Tu suscripción no llegó a activarse porque MercadoPago rechazó la tarjeta. Ya
-                    generamos un nuevo intento de pago — hacé clic abajo para completarlo.
+                    Tu suscripción no llegó a activarse porque MercadoPago rechazó la tarjeta. Entrá
+                    a tu cuenta para generar un nuevo intento de pago.
                 </Text>
             ) : (
                 <Text style={styles.paragraph}>
@@ -83,7 +94,7 @@ export function PaymentFailure({
 
             <Section style={styles.buttonContainer}>
                 {isCancelledCheckoutRetry && retryUrl ? (
-                    <Button href={retryUrl}>Completar el pago</Button>
+                    <Button href={retryUrl}>Ir a mi cuenta</Button>
                 ) : (
                     <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>
                         Actualizar método de pago

@@ -90,19 +90,6 @@ vi.mock('../../src/services/billing/link-preapproval.service.js', () => ({
         mockApplyPendingTrialExtension(...args)
 }));
 
-// HOS-937 step 3: the cancellation-recovery orchestration, mocked so these
-// tests stay scoped to `processSubscriptionUpdated`'s own gating (does it
-// call the recovery, on the right transition, with the right data, and does
-// it send the retry-link notification only when minted). The recovery
-// module's OWN behavior (confirm/claim/mint) is unit-tested separately in
-// `preapproval-recovery.service.test.ts`. Defaults to `not_confirmed` so
-// every PRE-EXISTING test (none of which transitions PENDING_PROVIDER ->
-// CANCELLED) is unaffected even if it happened to reach this branch.
-const mockRecoverCancelledPreapproval = vi.fn();
-vi.mock('../../src/services/billing/preapproval-recovery.service.js', () => ({
-    recoverCancelledPreapproval: (...args: unknown[]) => mockRecoverCancelledPreapproval(...args)
-}));
-
 // Hoisted mock stubs for notification functions - declared before any imports are resolved.
 const { mockSendCancelled, mockSendPaused, mockSendReactivated } = vi.hoisted(() => ({
     mockSendCancelled: vi.fn().mockResolvedValue(undefined),
@@ -537,12 +524,21 @@ describe('processSubscriptionUpdated', () => {
     let mockRetrieve: ReturnType<typeof vi.fn>;
     let mockPaymentAdapter: { subscriptions: { retrieve: ReturnType<typeof vi.fn> } };
 
-    /** Reusable fake billing object (only customers.get and plans.get are needed) */
+    /**
+     * Reusable fake billing object. `subscriptions.create` is included
+     * (and defaults to a rejecting stub — see beforeEach) purely as a
+     * mutation-detection guard for HOS-937 step 3: the cancellation
+     * webhook must NEVER call it (minting moved entirely to the
+     * checkout-retry endpoint). It is not needed by any other test in this
+     * file.
+     */
     let mockCustomerGet: ReturnType<typeof vi.fn>;
     let mockPlanGet: ReturnType<typeof vi.fn>;
+    let mockSubscriptionsCreate: ReturnType<typeof vi.fn>;
     let mockBilling: {
         customers: { get: ReturnType<typeof vi.fn> };
         plans: { get: ReturnType<typeof vi.fn> };
+        subscriptions: { create: ReturnType<typeof vi.fn> };
     };
 
     beforeEach(() => {
@@ -561,9 +557,6 @@ describe('processSubscriptionUpdated', () => {
         mockLinkPreapproval.mockReset().mockResolvedValue({ outcome: 'not_found' });
         mockApplyPendingDiscount.mockReset().mockResolvedValue(undefined);
         mockApplyPendingTrialExtension.mockReset().mockResolvedValue(undefined);
-        mockRecoverCancelledPreapproval
-            .mockReset()
-            .mockResolvedValue({ kind: 'not_confirmed', classification: 'other' });
 
         // Spy on notificationsModule exports to ensure they return Promises even if the
         // vi.mock for the module doesn't intercept the import inside subscription-logic.ts.
@@ -590,9 +583,15 @@ describe('processSubscriptionUpdated', () => {
             id: 'plan-001',
             name: 'Pro Plan'
         });
+        mockSubscriptionsCreate = vi.fn().mockResolvedValue({
+            id: 'sub-should-never-be-created',
+            providerInitPoint: 'https://mp.test/checkout/should-never-exist',
+            providerSubscriptionIds: { mercadopago: 'mp-should-never-exist' }
+        });
         mockBilling = {
             customers: { get: mockCustomerGet },
-            plans: { get: mockPlanGet }
+            plans: { get: mockPlanGet },
+            subscriptions: { create: mockSubscriptionsCreate }
         };
     });
 
@@ -890,8 +889,17 @@ describe('processSubscriptionUpdated', () => {
     // HOS-937 step 3: PENDING_PROVIDER -> CANCELLED is a checkout that never
     // activated (card rejection, spec §8.3) — replaces the infinite
     // "pay with another method" loop with a recovered checkout link.
-    describe('HOS-937 step 3: cancellation recovery (PENDING_PROVIDER -> CANCELLED)', () => {
-        it('calls recoverCancelledPreapproval with the local row data and sends a PAYMENT_FAILURE notification carrying retryUrl when a fresh preapproval was minted', async () => {
+    // HOS-937 step 3 (redesigned per adversarial review): PENDING_PROVIDER ->
+    // CANCELLED is a checkout that never activated (card rejection, spec
+    // §8.3). The webhook does NOT mint a fresh preapproval anymore — it
+    // ONLY notifies the user with a link into Hospeda's own domain. Minting
+    // happens exclusively in the checkout-retry endpoint, triggered by the
+    // user's own click (naturally deferred by minutes/hours, which is what
+    // makes R-3's confirmation real — see checkout-return-urls.ts's
+    // buildCheckoutRetryLandingUrl docblock and checkout-retry.ts's module
+    // docblock for the full rationale).
+    describe('HOS-937 step 3: cancellation notification (PENDING_PROVIDER -> CANCELLED)', () => {
+        it('sends a PAYMENT_FAILURE notification with retryUrl pointing at OUR domain (never a MercadoPago URL), and mints NOTHING', async () => {
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
             mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
@@ -901,12 +909,6 @@ describe('processSubscriptionUpdated', () => {
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
-
-            mockRecoverCancelledPreapproval.mockResolvedValue({
-                kind: 'minted',
-                localSubscriptionId: 'sub-local-002',
-                checkoutUrl: 'https://mp.test/checkout/fresh'
-            });
 
             const result = await processSubscriptionUpdated({
                 event: makeWebhookEvent() as never,
@@ -921,67 +923,69 @@ describe('processSubscriptionUpdated', () => {
                 newStatus: SubscriptionStatusEnum.CANCELLED
             });
 
-            expect(mockRecoverCancelledPreapproval).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    billing: mockBilling,
-                    paymentAdapter: mockPaymentAdapter,
-                    localSubscription: expect.objectContaining({
-                        id: localSub.id,
-                        customerId: localSub.customerId,
-                        planId: localSub.planId,
-                        mpSubscriptionId: mpPreapprovalId
-                    })
-                })
-            );
-
             expect(sendNotification).toHaveBeenCalledWith(
                 expect.objectContaining({
                     type: NotificationType.PAYMENT_FAILURE,
-                    retryUrl: 'https://mp.test/checkout/fresh'
+                    retryUrl: expect.stringContaining('mi-cuenta/suscripcion')
                 })
             );
+            const notifyCall = vi
+                .mocked(sendNotification)
+                .mock.calls.find(
+                    (call) =>
+                        (call[0] as { type: unknown }).type === NotificationType.PAYMENT_FAILURE
+                );
+            expect(notifyCall?.[0]).toMatchObject({
+                retryUrl: expect.not.stringContaining('mp.test')
+            });
+
+            // MUTATION GUARD: this is the assertion the review specifically
+            // asked to prove — the webhook mints nothing. A regression that
+            // re-adds minting to the webhook (through ANY path that
+            // ultimately reaches billing.subscriptions.create) fails here.
+            expect(mockSubscriptionsCreate).not.toHaveBeenCalled();
         });
 
-        it('does NOT send any notification when the cancellation is not yet confirmed (R-3)', async () => {
+        it('does not send the notification (and mints nothing) when the customer has no email on file', async () => {
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
             mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+            mockCustomerGet.mockResolvedValue({
+                id: 'cust-001',
+                email: '',
+                metadata: { name: 'Test User', userId: 'user-001' }
+            });
 
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.PENDING_PROVIDER
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
-
-            mockRecoverCancelledPreapproval.mockResolvedValue({
-                kind: 'not_confirmed',
-                classification: 'authorized'
-            });
 
             await processSubscriptionUpdated({
                 event: makeWebhookEvent() as never,
                 billing: mockBilling as never,
                 paymentAdapter: mockPaymentAdapter as never,
-                providerEventId: 'evt-hos937-b'
+                providerEventId: 'evt-hos937-noemail'
             });
 
             expect(sendNotification).not.toHaveBeenCalledWith(
                 expect.objectContaining({ type: NotificationType.PAYMENT_FAILURE })
             );
+            expect(mockSubscriptionsCreate).not.toHaveBeenCalled();
         });
 
-        it('never fails the webhook when the recovery orchestration itself throws (non-blocking)', async () => {
+        it('does not fail the webhook when the retry notification itself rejects (non-blocking)', async () => {
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
             mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+            vi.mocked(sendNotification).mockRejectedValueOnce(new Error('email provider down'));
 
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.PENDING_PROVIDER
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
-
-            mockRecoverCancelledPreapproval.mockRejectedValue(new Error('MP unreachable'));
 
             const result = await processSubscriptionUpdated({
                 event: makeWebhookEvent() as never,
@@ -997,7 +1001,7 @@ describe('processSubscriptionUpdated', () => {
             });
         });
 
-        it('does NOT call recoverCancelledPreapproval for an ordinary ACTIVE -> CANCELLED transition (shouldSendCancelledEmail`s territory, unaffected)', async () => {
+        it('does NOT send the HOS-937 retry notification for an ordinary ACTIVE -> CANCELLED transition (shouldSendCancelledEmail`s territory, unaffected)', async () => {
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
             mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
@@ -1013,7 +1017,10 @@ describe('processSubscriptionUpdated', () => {
                 providerEventId: 'evt-hos937-d'
             });
 
-            expect(mockRecoverCancelledPreapproval).not.toHaveBeenCalled();
+            expect(sendNotification).not.toHaveBeenCalledWith(
+                expect.objectContaining({ type: NotificationType.PAYMENT_FAILURE })
+            );
+            expect(mockSubscriptionsCreate).not.toHaveBeenCalled();
         });
     });
 

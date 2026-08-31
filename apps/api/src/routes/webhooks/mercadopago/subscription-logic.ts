@@ -51,15 +51,13 @@ import type {
     PendingTrialExtension
 } from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
-import { recoverCancelledPreapproval } from '../../../services/billing/preapproval-recovery.service.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
 import {
-    buildNotificationUrl,
-    buildPaymentMethodReturnUrl,
+    buildCheckoutRetryLandingUrl,
     DEFAULT_RETURN_URL_LOCALE
 } from '../../billing/checkout-return-urls.js';
 
@@ -1664,86 +1662,48 @@ export async function processSubscriptionUpdated({
     // rejection during checkout, spec §8.3). Left alone, MP keeps offering
     // the user a "pay with another method" button that can never work
     // (`cancelled -> authorized` is a forbidden MP transition) — an
-    // infinite loop with no way out. Recover it: confirm the cancellation
-    // is real (R-3, deferred re-read), mint a fresh preapproval on the
-    // same terms, and send the user its link. This is deliberately its own
-    // `if`, NOT an `else` on `shouldSendCancelledEmail` above — that guard
-    // explicitly EXCLUDES this exact transition (a checkout that never
-    // activated is not "your subscription was cancelled"), which is why
-    // this transition has never sent the user anything until now.
+    // infinite loop with no way out.
     //
-    // Non-blocking: a failure here must never fail the webhook — the
-    // status write already committed above, and MercadoPago must not
-    // retry this event over a recovery-only failure.
+    // Redesigned per adversarial review: the webhook does NOT mint a fresh
+    // preapproval here. R-3 measured cancellations that read `cancelled` on
+    // BOTH the `PUT` and an immediate `GET`, then read `authorized`/
+    // `pending` HOURS later — a 350ms deferred re-read (what this used to
+    // do) does not cover that gap, and minting here risks a second live MP
+    // preapproval for a user whose original one resurrects. Minting is
+    // deferred all the way to the checkout-retry endpoint
+    // (`routes/billing/checkout-retry.ts`), which the user reaches by
+    // clicking the link below — naturally minutes-to-hours later, which
+    // covers R-3 for real, with no new mechanism. That endpoint does its
+    // own fresh `GET` and only mints if MercadoPago STILL reports
+    // cancelled at click time.
+    //
+    // This is deliberately its own `if`, NOT an `else` on
+    // `shouldSendCancelledEmail` above — that guard explicitly EXCLUDES
+    // this exact transition (a checkout that never activated is not "your
+    // subscription was cancelled"), which is why this transition has never
+    // sent the user anything until now.
     if (
         previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
-        mappedStatus === SubscriptionStatusEnum.CANCELLED
+        mappedStatus === SubscriptionStatusEnum.CANCELLED &&
+        customer?.email
     ) {
-        try {
-            const recoveryOutcome = await recoverCancelledPreapproval({
-                billing,
-                paymentAdapter,
-                localSubscription: {
-                    id: localSubscription.id,
-                    customerId: localSubscription.customerId,
-                    planId: localSubscription.planId,
-                    productDomain:
-                        (localSubscription as { productDomain?: string | null }).productDomain ??
-                        null,
-                    metadata: localSubscription.metadata,
-                    mpSubscriptionId: mpPreapprovalId
-                },
-                paymentMethodReturnUrl: buildPaymentMethodReturnUrl(DEFAULT_RETURN_URL_LOCALE),
-                notificationUrl: buildNotificationUrl()
-            });
-
-            if (recoveryOutcome.kind === 'minted' || recoveryOutcome.kind === 'already_minted') {
-                if (customer?.email) {
-                    sendNotification({
-                        type: NotificationType.PAYMENT_FAILURE,
-                        recipientEmail: customer.email,
-                        recipientName: customerName,
-                        userId,
-                        customerId: localSubscription.customerId,
-                        planName: planDisplayName,
-                        amount: 0,
-                        currency: 'ARS',
-                        failureReason: 'card_rejected',
-                        retryUrl: recoveryOutcome.checkoutUrl
-                    }).catch((notifErr) => {
-                        apiLogger.debug(
-                            { error: notifErr, subscriptionId: localSubscription.id },
-                            'HOS-937 step 3: retry-checkout notification failed'
-                        );
-                    });
-                }
-            } else {
-                apiLogger.info(
-                    {
-                        subscriptionId: localSubscription.id,
-                        outcome: recoveryOutcome.kind,
-                        ...(recoveryOutcome.kind === 'not_confirmed'
-                            ? { classification: recoveryOutcome.classification }
-                            : {}),
-                        ...(recoveryOutcome.kind === 'unsupported'
-                            ? { reason: recoveryOutcome.reason }
-                            : {})
-                    },
-                    'HOS-937 step 3: cancellation recovery did not mint a fresh preapproval'
-                );
-            }
-        } catch (recoveryError) {
-            apiLogger.warn(
-                {
-                    subscriptionId: localSubscription.id,
-                    error:
-                        recoveryError instanceof Error
-                            ? recoveryError.message
-                            : String(recoveryError)
-                },
-                'HOS-937 step 3: cancellation recovery failed (non-blocking)'
+        sendNotification({
+            type: NotificationType.PAYMENT_FAILURE,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: localSubscription.customerId,
+            planName: planDisplayName,
+            amount: 0,
+            currency: 'ARS',
+            failureReason: 'card_rejected',
+            retryUrl: buildCheckoutRetryLandingUrl(DEFAULT_RETURN_URL_LOCALE, localSubscription.id)
+        }).catch((notifErr) => {
+            apiLogger.debug(
+                { error: notifErr, subscriptionId: localSubscription.id },
+                'HOS-937 step 3: retry-checkout notification failed'
             );
-        }
+        });
     }
 
     if (shouldSendPausedEmail(previousStatus, mappedStatus)) {
