@@ -13,9 +13,9 @@
         "test:coverage": "vitest run --coverage --passWithNoTests"
     },
     "devDependencies": {
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.11",
         "postcss": "^8.5.26",
         "tailwindcss": "^4.3.3",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     }
 }

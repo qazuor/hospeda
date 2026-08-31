@@ -45,8 +45,8 @@
         "@repo/biome-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/react": "19.2.18",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^4.1.11",
         "typescript": "6.0.3",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     }
 }

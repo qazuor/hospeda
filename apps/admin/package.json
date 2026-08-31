@@ -103,21 +103,21 @@
         "@testing-library/dom": "10.4.1",
         "@testing-library/jest-dom": "^7.0.1",
         "@testing-library/react": "16.3.2",
-        "@testing-library/user-event": "^14.6.3",
+        "@testing-library/user-event": "^14.6.6",
         "@types/dompurify": "^3.2.0",
         "@types/leaflet": "^1.9.22",
         "@types/react": "19.2.18",
         "@types/react-dom": "19.2.4",
-        "@vitejs/plugin-react": "^6.0.5",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitejs/plugin-react": "^6.1.0",
+        "@vitest/coverage-v8": "^4.1.11",
         "jsdom": "26.0.0",
         "msw": "2",
         "nitro": "^3.0.260610-beta",
         "nodemon": "3.1.14",
-        "rollup-plugin-visualizer": "^7.0.1",
+        "rollup-plugin-visualizer": "^7.1.1",
         "typescript": "6.0.3",
-        "vite": "^8.2.1",
+        "vite": "^8.2.2",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     }
 }
