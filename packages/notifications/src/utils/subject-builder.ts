@@ -39,6 +39,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.SUBSCRIPTION_PAUSED]:
         'Tu suscripción {planName} ha sido pausada - Acción requerida',
     [NotificationType.SUBSCRIPTION_REACTIVATED]: 'Tu suscripción {planName} ha sido reactivada',
+    // Never phrase these as an action the subscriber has to take: nothing is
+    // required of them, which is the entire point of a gift.
+    [NotificationType.COURTESY_GRANTED]: 'Te regalamos tu plan {planName} por un tiempo',
+    [NotificationType.COURTESY_STARTED]: 'Tu regalo ya está activo - plan {planName}',
+    [NotificationType.COURTESY_ENDED]: 'Tu regalo terminó - vuelve la facturación de {planName}',
     [NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING]:
         'Límite reducido en tu plan {planName} - Revisá tu contenido',
     [NotificationType.PAYMENT_RETRY_WARNING]:

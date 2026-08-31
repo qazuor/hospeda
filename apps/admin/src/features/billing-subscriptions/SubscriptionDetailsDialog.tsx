@@ -1,5 +1,12 @@
 import type { TranslationKey } from '@repo/i18n';
-import { CalendarIcon, CreditCardIcon, PlayIcon, PowerOffIcon, XCircleIcon } from '@repo/icons';
+import {
+    CalendarIcon,
+    CreditCardIcon,
+    PlayIcon,
+    PowerOffIcon,
+    SparkleIcon,
+    XCircleIcon
+} from '@repo/icons';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +47,8 @@ export interface SubscriptionDetailsDialogProps {
     readonly onChangePlan: (sub: Subscription) => void;
     readonly onExtendTrial: (sub: Subscription) => void;
     readonly onPause: (sub: Subscription) => void;
+    /** Opens the courtesy-grant dialog (HOS-180). Only offered on an `active` subscription. */
+    readonly onGrantCourtesy: (sub: Subscription) => void;
     readonly onResume: (sub: Subscription) => void;
 }
 
@@ -56,6 +65,7 @@ export function SubscriptionDetailsDialog({
     onChangePlan,
     onExtendTrial,
     onPause,
+    onGrantCourtesy,
     onResume
 }: SubscriptionDetailsDialogProps) {
     const { t, locale } = useTranslations();
@@ -311,6 +321,21 @@ export function SubscriptionDetailsDialog({
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {t(
                                             'admin-billing.subscriptions.detailsDialog.extendTrialButton'
+                                        )}
+                                    </Button>
+                                )}
+                                {/* HOS-180: only on `active`. A trialing subscriber is not
+                                    being charged yet, so gifting them cycles is a trial
+                                    extension — the button right above this one. */}
+                                {subscription.status === 'active' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onGrantCourtesy(subscription)}
+                                    >
+                                        <SparkleIcon className="mr-2 h-4 w-4" />
+                                        {t(
+                                            'admin-billing.subscriptions.detailsDialog.grantCourtesyButton'
                                         )}
                                     </Button>
                                 )}

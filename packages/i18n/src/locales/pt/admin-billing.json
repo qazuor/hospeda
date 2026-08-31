@@ -1170,7 +1170,8 @@
             "extendTrialButton": "Estender teste",
             "cancelSubscriptionButton": "Cancelar assinatura",
             "pauseButton": "Pausar",
-            "resumeButton": "Retomar"
+            "resumeButton": "Retomar",
+            "grantCourtesyButton": "Presentear períodos"
         },
         "paymentHistory": {
             "title": "Histórico de pagamentos",
@@ -1259,7 +1260,9 @@
             "paused": "Assinatura pausada",
             "resumed": "Assinatura retomada",
             "pauseError": "Erro ao pausar assinatura:",
-            "resumeError": "Erro ao retomar assinatura:"
+            "resumeError": "Erro ao retomar assinatura:",
+            "courtesyGranted": "Períodos presenteados",
+            "courtesyError": "Não foi possível presentear:"
         },
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Plano não identificado",
@@ -1272,6 +1275,15 @@
             "experience": "Experiência",
             "partner": "Parceiro",
             "unknown": "Outro"
+        },
+        "courtesyDialog": {
+            "title": "Presentear períodos",
+            "description": "Presentear períodos sem cobrança a",
+            "cyclesLabel": "Quantos períodos você quer presentear?",
+            "startsAtNotice": "O presente começa quando termina o período já pago, não hoje. Até lá nada muda para o assinante.",
+            "leadTimeWarning": "Se faltarem menos de 3 dias para a próxima cobrança, o presente é recusado: pausar tão perto pode não impedi-la, e ele seria cobrado justamente pelo período presenteado.",
+            "confirmButton": "Presentear",
+            "backButton": "Voltar"
         }
     },
     "exchangeRates": {

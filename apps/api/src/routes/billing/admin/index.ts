@@ -58,6 +58,7 @@ import { adminPaymentsViewRouter } from './payments-view';
 import { adminPlanPriceIncreaseRouter } from './plan-price-increase';
 import { adminPlansRouter } from './plans';
 import { adminBillingHooks } from './qzpay-admin-hooks';
+import { adminSubscriptionCourtesyRouter } from './subscription-courtesy';
 import { subscriptionEventsRoute } from './subscription-events';
 import { subscriptionPromoEffectRoute } from './subscription-promo-effect';
 import { adminSubscriptionTrialExtensionRouter } from './subscription-trial-extension';
@@ -120,6 +121,8 @@ app.route('/subscriptions', subscriptionPromoEffectRoute);
 
 // POST /subscriptions/:subscriptionId/apply-trial-extension - Apply a trial_extension promo to a subscription (admin, BILLING_PROMO_CODE_MANAGE)
 app.route('/subscriptions', adminSubscriptionTrialExtensionRouter);
+// POST /subscriptions/:subscriptionId/grant-courtesy - Gift N free billing cycles to a paying subscriber (admin, BILLING_MANAGE) — HOS-180
+app.route('/subscriptions', adminSubscriptionCourtesyRouter);
 
 // GET /addons, /addons/:slug - Hospeda add-on catalog (admin only)
 app.route('/addons', adminAddonsRouter);

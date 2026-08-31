@@ -23,9 +23,11 @@ import {
     BILLING_EVENT_TYPES,
     type BillingEventType,
     checkSubscriptionStatusTransition,
+    deriveCourtesyStatus,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
+    readCourtesyFields,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -668,9 +670,21 @@ export async function processSubscriptionUpdated({
     // planId safety net, the Step 6 fast-path guard and the in-transaction guard
     // must all observe the SAME target status, or the row is written with one
     // value while the guards reason about another.
-    const mappedStatus = deriveTrialingStatus({
-        mappedStatus: providerStatus,
-        trialEnd: resolvedTrialEnd,
+    // HOS-180: courtesy is the SECOND local derivation, chained after trialing.
+    // The two can never both fire — trialing keys off ACTIVE, courtesy off
+    // PAUSED — so the order between them is irrelevant, but their position
+    // relative to everything below is not (see the comment above).
+    //
+    // This is also what keeps a gifted subscriber from being told their card
+    // failed: `shouldSendPausedEmail` reads the DERIVED status, so a courtesy
+    // never looks like a pause to the notification decision (HOS-926, R-7).
+    const mappedStatus = deriveCourtesyStatus({
+        mappedStatus: deriveTrialingStatus({
+            mappedStatus: providerStatus,
+            trialEnd: resolvedTrialEnd,
+            now
+        }),
+        courtesyEndsAt: readCourtesyFields(localSubscription.metadata).courtesyEndsAt,
         now
     });
 

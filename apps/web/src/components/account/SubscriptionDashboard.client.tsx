@@ -53,7 +53,8 @@ type SubscriptionStatus =
     | 'expired'
     | 'past_due'
     | 'pending'
-    | 'paused';
+    | 'paused'
+    | 'courtesy';
 
 /** User shape passed from the Astro page */
 export interface SubscriptionDashboardUser {
@@ -110,6 +111,12 @@ function getBadgeClass(status: SubscriptionStatus): string {
             return styles.badgePending ?? '';
         case 'paused':
             return styles.badgePaused ?? '';
+        // HOS-180: a courtesy sits on a PAUSED MercadoPago preapproval, but
+        // nothing is suspended for the subscriber. It must never borrow the
+        // paused badge — AC-11 forbids "paused"/"suspended" wording anywhere on
+        // this screen for a gifted subscription.
+        case 'courtesy':
+            return styles.badgeActive ?? '';
         default:
             return styles.badgePending ?? '';
     }
@@ -879,17 +886,28 @@ export function SubscriptionDashboard({
 
     // HOS-242: a comp has a ~100-year sentinel `currentPeriodEnd` and is never
     // charged — surface "no renewal" instead of a bogus far-future billing date.
-    const nextBillingLabel = isComplimentary
-        ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
-        : isCancelScheduled
-          ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
-          : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+    // HOS-180: during a gifted window the honest field is "you are not being
+    // charged until X", not "next billing". `courtesyEndsAt` is when billing
+    // actually resumes.
+    const isCourtesy = status === 'courtesy';
 
-    const nextBillingDate = isComplimentary
-        ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
-        : effectiveNextBillingDate
-          ? formatDate({ date: effectiveNextBillingDate, locale })
-          : t('account.pages.subscription.noBillingDate', 'N/A');
+    const nextBillingLabel = isCourtesy
+        ? t('account.pages.subscription.courtesyUntilLabel', 'Sin cargo hasta')
+        : isComplimentary
+          ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
+          : isCancelScheduled
+            ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
+            : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+
+    const nextBillingDate = isCourtesy
+        ? subscription.courtesyEndsAt
+            ? formatDate({ date: subscription.courtesyEndsAt, locale })
+            : t('account.pages.subscription.noBillingDate', 'N/A')
+        : isComplimentary
+          ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
+          : effectiveNextBillingDate
+            ? formatDate({ date: effectiveNextBillingDate, locale })
+            : t('account.pages.subscription.noBillingDate', 'N/A');
 
     const paymentMethodLabel = formatPaymentMethod(
         subscription.paymentMethod,

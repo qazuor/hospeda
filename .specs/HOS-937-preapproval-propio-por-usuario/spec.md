@@ -126,9 +126,25 @@ Tier 2 was never available.
 
 ## 4. Non-goals
 
-- **NG-1** — `qzpay` is not touched. The MercadoPago adapter already builds the body with
-  `payer_email` and `external_reference` and returns the `init_point`
-  (`packages/mercadopago/src/adapters/subscription.adapter.ts:225-255`).
+- **NG-1 — SUPERSEDED (owner decision, 2026-08-31).** This originally read "`qzpay` is not
+  touched", carried over from the issue. That was an **effort estimate** ("this is cheap
+  because qzpay needs no changes"), and it was wrong: §6.3's editable payer email is not
+  implementable without it. `billing.ts:1503` builds `customer: { email: customer.email }`
+  straight from storage and `subscription.adapter.ts:228` does
+  `payer_email: sanitizeEmail(providerInput.customer.email)` — no override anywhere, and
+  `metadata` does not reach that field. The only alternatives were overwriting
+  `billing_customers.email` (violates AC-9, repeats HOS-581) or dropping the editable
+  email outright.
+
+  qzpay is a first-party package, so the owner approved touching it.
+  **`@qazuor/qzpay-core@5.1.0`** (qzpay PR #75/#76) adds an optional
+  `payerEmail?: string` to `QZPayCreateSubscriptionInput`: when present it wins over
+  `customer.email`, when absent behavior is byte-for-byte unchanged. It is resolved once
+  in core and written into the field the adapter already reads, so `sanitizeEmail`'s
+  validation is inherited rather than duplicated. The repo already had the precedent —
+  `QZPayProcessPaymentInput` carried a `payerEmail?` for one-off payments.
+
+  What remains true: **the adapters needed no changes**, and no PCI surface was added.
 - **NG-2** — No PCI surface is added. MercadoPago still collects the card on its hosted
   screen; Hospeda never sees card data.
 - **NG-3** — The payment front-end (MercadoPago's own screen) is not touched. A screen of
@@ -425,6 +441,24 @@ Barrels that each lose one line: `packages/db/src/schemas/billing/index.ts:6`,
 `packages/db/src/models/billing/index.ts:1`,
 `packages/schemas/src/api/billing/index.ts:13`.
 
+#### Two helpers must MOVE, not be deleted
+
+`link-preapproval.service.ts` is on the deletion list, but two of its exports are now
+**load-bearing for the new path** and must survive the retirement:
+
+- `applyPendingDiscountBestEffort`
+- `applyPendingTrialExtensionBestEffort`
+
+Step 1 wired deferred promo redemption into the webhook (see below) by exporting and
+reusing these rather than duplicating them. Deleting the file without relocating them
+takes the promo bookkeeping down with it, silently: pricing would still be correct
+(the discount is baked into the MP plan) while redemption counts and
+`promo_effect_remaining_cycles` stop being written — which turns a capped promo code
+into an uncapped one and makes a multi-cycle discount run forever.
+
+Relocate them to a module of their own before deleting the file, and make the guard for
+the retirement assert that the webhook's redemption call still resolves.
+
 ### 7.3 Guards and tests that break
 
 - **`apps/api/test/services/inv1-cache-invalidation.guard.test.ts`** — the
@@ -689,6 +723,34 @@ premise changes and work must stop.
 Steps 1-3 are one PR and 4-6 can be another; step 7 is necessarily a third, because the
 retirement cannot land before all four flows have passed the smoke. Only the PR completing
 step 7 carries `Closes HOS-937` in its description.
+
+### 12.2b Progress as of 2026-08-31
+
+| Step | State |
+| -- | -- |
+| 1 · Own preapproval + `mp_subscription_id` before the redirect | **Done — monthly only, behind a flag that ships `false`** (PR #3075) |
+| 2 · Pre-redirect email screen + persist `mp_payer_email` | **1 of 3** — the column exists (PR #3073), nothing reads or writes it; the screen and the persistence are open. Unblocked by qzpay 5.1.0 (PR #3076) |
+| 3 · The two recoveries + cancellation webhook | Open |
+| 4 · Extend to annual, commerce, partner | Open — **1 of the 4 flows migrated** |
+| 5 · `back_url` guard (R-1) | Done (PR #3073) |
+| 6 · Preserve the SQLSTATE 23505 handling | Done (PR #3073) |
+| 7 · The retirement, across two releases | Open — **all 4,728 lines still standing** |
+
+Two findings from step 1 got their own tracking issues, both children of HOS-937:
+
+- **HOS-987** — qzpay-core drops the preapproval id when its own internal write fails,
+  leaving an orphan no consumer can cancel. Only fixable inside qzpay-core.
+- **HOS-988** — whether Checkout Pro rejects `+` at all. HOS-937 answered it for
+  `/preapproval` (it does); Checkout Pro is `sanitizeEmailForMercadoPago`'s only live
+  caller, and if it accepts `+` that function can be deleted outright.
+
+One thing step 1 discovered that this spec had not anticipated: **deferred promo
+bookkeeping**. It was applied at link time, and the new path links nothing, so redemption
+counts and `promo_effect_remaining_cycles` went unwritten — a capped promo code became
+uncapped. Closed by deferring redemption to the webhook's
+`pending_provider → active/trialing` transition; redeeming at creation would have burned a
+redemption on every abandoned checkout. This is what makes §7.2's "two helpers must move"
+note load-bearing.
 
 ### 12.3 The retirement spans two releases (expand/contract)
 

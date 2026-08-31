@@ -381,6 +381,16 @@ interface BillingSubscriptionsWriterEntry {
 
 const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] = [
     {
+        file: 'services/courtesy-grant.service.ts',
+        requiresCacheClear: true,
+        reason: 'Flips an accommodation-domain subscription to `courtesy`, which IS entitlement-granting — a stale cache would show the subscriber as paused and cut the entitlements the gift exists to preserve. Already calls clearEntitlementCache (HOS-180).'
+    },
+    {
+        file: 'cron/jobs/courtesy-expiry.job.ts',
+        requiresCacheClear: true,
+        reason: 'Returns a subscription from `courtesy` to `active` when the gift ends, and clears the courtesy window. Both are entitlement-bearing changes. Already calls clearEntitlementCache (HOS-180).'
+    },
+    {
         file: 'cron/jobs/abandoned-pending-subs.job.ts',
         requiresCacheClear: false,
         reason: 'Marks a PENDING/never-activated subscription as abandoned. The row never granted entitlements, so there is nothing cached to invalidate.'

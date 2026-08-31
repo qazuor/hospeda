@@ -17,6 +17,9 @@ import {
     AllianceClaimInvite,
     AllianceLeadDecision,
     ContactSubmissionEmail,
+    CourtesyEnded,
+    CourtesyGranted,
+    CourtesyStarted,
     FeedbackReportEmail,
     HostTradeRevoked,
     PartnerMentionsLogged,
@@ -58,6 +61,7 @@ import type {
     AllianceClaimInvitePayload,
     AllianceLeadDecisionPayload,
     ContactSubmissionPayload,
+    CourtesyPayload,
     FeedbackReportPayload,
     HostTradeReplyModeratedPayload,
     HostTradeReviewReceivedPayload,
@@ -556,6 +560,41 @@ export class NotificationService {
                 return SubscriptionPaused({
                     recipientName: payload.recipientName,
                     planName: lifecyclePayload.planName,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            // HOS-180. Registering a template and a type is NOT enough — this
+            // switch is what routes a type to a template, and a case missing
+            // here means the email is silently never sent.
+            case 'courtesy_granted': {
+                const p = payload as CourtesyPayload;
+                return CourtesyGranted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    cycles: p.cycles ?? 1,
+                    startsAt: p.startsAt ?? '',
+                    endsAt: p.endsAt ?? '',
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'courtesy_started': {
+                const p = payload as CourtesyPayload;
+                return CourtesyStarted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    endsAt: p.endsAt ?? '',
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'courtesy_ended': {
+                const p = payload as CourtesyPayload;
+                return CourtesyEnded({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    nextBillingDate: p.nextBillingDate ?? '',
                     baseUrl: this.deps.siteUrl
                 });
             }

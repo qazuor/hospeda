@@ -1,5 +1,5 @@
 {
-  "id": "69b75506-48ed-4f64-a632-817333df6b75",
+  "id": "b6362091-7345-486b-ac65-65325c9950c3",
   "prevId": "187dccb5-449c-494b-bb71-bc224c8954dd",
   "version": "7",
   "dialect": "postgresql",
@@ -32908,7 +32908,6 @@
         "billing.promoCode.manage",
         "billing.metrics.read",
         "billing.manage",
-        "billing.reconciliation.manage",
         "revalidation.trigger",
         "revalidation.config.view",
         "revalidation.config.edit",
@@ -33298,7 +33297,8 @@
         "expired",
         "pending_provider",
         "abandoned",
-        "comp"
+        "comp",
+        "courtesy"
       ]
     },
     "public.tag_color_enum": {

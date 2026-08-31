@@ -95,6 +95,14 @@ vi.mock('../../../../src/utils/route-factory', () => ({
 // ─── Mock @repo/service-core services used by stats.ts ───────────────────────
 
 vi.mock('@repo/service-core', () => ({
+    // HOS-180: the route reads the courtesy window off the subscription row.
+    // A whole-module mock leaves a new import `undefined`, which crashes at the
+    // call site rather than failing an assertion — so it has to be listed here.
+    readCourtesyFields: () => ({
+        courtesyStartsAt: null,
+        courtesyEndsAt: null,
+        courtesyCyclesGranted: null
+    }),
     AccommodationReviewService: vi.fn().mockImplementation(function () {
         return {
             listByUser: vi.fn().mockResolvedValue({ data: { total: 0 } })

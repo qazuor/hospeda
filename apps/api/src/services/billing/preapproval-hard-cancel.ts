@@ -83,7 +83,10 @@ export type HardCancelPreapprovalOutcome =
     | { readonly kind: 'failed'; readonly error: string };
 
 /** Which code path asked for the hard-cancel. */
-export type HardCancelPreapprovalSource = 'finalize-cancelled-subs' | 'refund-lifecycle';
+export type HardCancelPreapprovalSource =
+    | 'finalize-cancelled-subs'
+    | 'refund-lifecycle'
+    | 'courtesy-expiry';
 
 /**
  * Sentry `action` tag per source.
@@ -94,7 +97,10 @@ export type HardCancelPreapprovalSource = 'finalize-cancelled-subs' | 'refund-li
  */
 const SENTRY_ACTION_BY_SOURCE: Readonly<Record<HardCancelPreapprovalSource, string>> = {
     'finalize-cancelled-subs': 'finalize_hard_cancel_preapproval',
-    'refund-lifecycle': 'refund_hard_cancel_preapproval'
+    'refund-lifecycle': 'refund_hard_cancel_preapproval',
+    // HOS-180: a subscriber who cancelled mid-gift. The gift ends, the row goes
+    // terminal, and the preapproval has to go with it.
+    'courtesy-expiry': 'courtesy_hard_cancel_preapproval'
 };
 
 /**

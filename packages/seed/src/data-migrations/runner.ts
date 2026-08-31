@@ -44,6 +44,7 @@ import { getDb } from '@repo/db';
 import type { Actor } from '@repo/service-core';
 import { logger as defaultLogger, type SeedLogger } from '../utils/logger.js';
 import { findSuperAdminActor } from '../utils/superAdminLoader.js';
+import { assertRequiredColumns } from './columnDependencyGuard.js';
 import { buildMigrationContext } from './context.js';
 import {
     computePendingMigrations,
@@ -349,6 +350,13 @@ export async function runMigrations(args: RunMigrationsArgs = {}): Promise<RunMi
         try {
             await db.transaction(async (tx) => {
                 const ctx = await buildMigrationContext({ db: tx, actor: resolvedActor });
+
+                // HOS-433: a migration that reads a column a schema migration
+                // already dropped would move zero rows, be recorded `ok`, and
+                // be closed in the ledger forever. Refuse instead of
+                // succeeding emptily.
+                await assertRequiredColumns({ db: tx, meta: migration.meta });
+
                 const result = await migration.module.up(ctx);
                 const contents = await readFile(migration.filePath, 'utf8');
 
