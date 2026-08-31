@@ -763,6 +763,11 @@
         }
     },
     "billing": {
+        "checkoutRetry": {
+            "recovery": {
+                "invalid": "O estado de recuperação não é válido"
+            }
+        },
         "addon": {
             "cancel": {
                 "reason": {

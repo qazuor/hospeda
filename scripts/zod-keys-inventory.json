@@ -269,6 +269,7 @@
         "zodError.attraction.slug.min",
         "zodError.attraction.slug.pattern",
         "zodError.attraction.slug.required",
+        "zodError.billing.checkoutRetry.recovery.invalid",
         "zodError.billing.linkPreapproval.localSubscriptionId.invalid",
         "zodError.billing.linkPreapproval.localSubscriptionId.invalidType",
         "zodError.billing.linkPreapproval.outcome.invalid",
@@ -1815,7 +1816,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1814,
+    "total": 1815,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1830,7 +1831,7 @@
         "allianceLead": 24,
         "amenity": 46,
         "attraction": 26,
-        "billing": 233,
+        "billing": 234,
         "commerce": 14,
         "common": 244,
         "contact": 7,
