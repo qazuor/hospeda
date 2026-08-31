@@ -75,8 +75,19 @@ vi.mock('../../src/services/addon-plan-change.service.js', () => ({
 // 'not_found' (below, in the describe's beforeEach) so every PRE-EXISTING
 // "no local subscription" test keeps its original behavior unless it opts in.
 const mockLinkPreapproval = vi.fn();
+// HOS-937 step 1: the own-preapproval deferred-promo-redemption calls, mocked
+// so these tests stay scoped to `processSubscriptionUpdated`'s own gating
+// logic — the redemption bookkeeping itself is unit-tested in
+// `link-preapproval.service.test.ts`. Defaults are resolved (no-ops) so every
+// PRE-EXISTING test (none of which sets the HOS-937 metadata keys, so these
+// mocks are never even reached) keeps passing unmodified.
+const mockApplyPendingDiscount = vi.fn().mockResolvedValue(undefined);
+const mockApplyPendingTrialExtension = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../src/services/billing/link-preapproval.service.js', () => ({
-    linkPreapprovalToLocalSub: (...args: unknown[]) => mockLinkPreapproval(...args)
+    linkPreapprovalToLocalSub: (...args: unknown[]) => mockLinkPreapproval(...args),
+    applyPendingDiscountBestEffort: (...args: unknown[]) => mockApplyPendingDiscount(...args),
+    applyPendingTrialExtensionBestEffort: (...args: unknown[]) =>
+        mockApplyPendingTrialExtension(...args)
 }));
 
 // Hoisted mock stubs for notification functions - declared before any imports are resolved.
@@ -538,6 +549,8 @@ describe('processSubscriptionUpdated', () => {
         mockHandleCancellationAddons.mockReset().mockResolvedValue(undefined);
         mockHandlePlanChangeRecalculation.mockReset().mockResolvedValue(undefined);
         mockLinkPreapproval.mockReset().mockResolvedValue({ outcome: 'not_found' });
+        mockApplyPendingDiscount.mockReset().mockResolvedValue(undefined);
+        mockApplyPendingTrialExtension.mockReset().mockResolvedValue(undefined);
 
         // Spy on notificationsModule exports to ensure they return Promises even if the
         // vi.mock for the module doesn't intercept the import inside subscription-logic.ts.
@@ -3020,6 +3033,147 @@ describe('processSubscriptionUpdated', () => {
                 }),
                 expect.stringContaining('syncFeaturedByEntitlementForOwner failed (non-blocking')
             );
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // HOS-937 step 1: deferred promo redemption for the own-preapproval flow,
+    // on the same PENDING_PROVIDER -> ACTIVE/TRIALING transition.
+    // ---------------------------------------------------------------------------
+    describe('own-preapproval deferred promo redemption (HOS-937 step 1)', () => {
+        const PENDING_DISCOUNT_SNAPSHOT = {
+            promoCodeId: 'promo-discount-1',
+            finalAmountCentavos: 8000,
+            durationCycles: 3
+        };
+        const PENDING_TRIAL_EXTENSION_SNAPSHOT = {
+            promoCodeId: 'promo-trial-1',
+            code: 'EXTRA7'
+        };
+
+        it('does NOT call either redemption function for an OLD Path C row (no HOS-937 metadata keys)', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null,
+                livemode: false,
+                metadata: { source: 'start-paid-share-link' }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-noop'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(mockApplyPendingDiscount).not.toHaveBeenCalled();
+            expect(mockApplyPendingTrialExtension).not.toHaveBeenCalled();
+        });
+
+        it('calls applyPendingDiscountBestEffort with the parsed snapshot on PENDING_PROVIDER -> ACTIVE', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null,
+                livemode: false,
+                metadata: { pendingDiscountJson: JSON.stringify(PENDING_DISCOUNT_SNAPSHOT) }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-discount'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(mockApplyPendingDiscount).toHaveBeenCalledTimes(1);
+            expect(mockApplyPendingDiscount).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    localSubscriptionId: localSub.id,
+                    preapprovalId: 'preapproval-mp-001',
+                    customerId: localSub.customerId,
+                    planId: localSub.planId,
+                    pendingDiscount: PENDING_DISCOUNT_SNAPSHOT,
+                    livemode: false
+                })
+            );
+            expect(mockApplyPendingTrialExtension).not.toHaveBeenCalled();
+        });
+
+        it('calls applyPendingTrialExtensionBestEffort with the parsed snapshot on PENDING_PROVIDER -> TRIALING', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialStart: new Date(),
+                trialEnd,
+                livemode: true,
+                metadata: {
+                    pendingTrialExtensionJson: JSON.stringify(PENDING_TRIAL_EXTENSION_SNAPSHOT)
+                }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-trial-extension'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.TRIALING);
+            expect(mockApplyPendingTrialExtension).toHaveBeenCalledTimes(1);
+            expect(mockApplyPendingTrialExtension).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    localSubscriptionId: localSub.id,
+                    preapprovalId: 'preapproval-mp-001',
+                    customerId: localSub.customerId,
+                    pendingTrialExtension: PENDING_TRIAL_EXTENSION_SNAPSHOT,
+                    livemode: true
+                })
+            );
+            expect(mockApplyPendingDiscount).not.toHaveBeenCalled();
+        });
+
+        it('does NOT redeem when the transition is not FROM pending_provider, even if the metadata keys are present', async () => {
+            // Guards the gate itself: an unrelated transition (active -> past_due)
+            // must never trigger a redemption, even on a row that happens to still
+            // carry the HOS-937 snapshot keys (e.g. a stale write, or the promo
+            // metadata surviving past its one legitimate use).
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                livemode: false,
+                metadata: { pendingDiscountJson: JSON.stringify(PENDING_DISCOUNT_SNAPSHOT) }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-wrong-transition'
+            });
+
+            expect(mockApplyPendingDiscount).not.toHaveBeenCalled();
+            expect(mockApplyPendingTrialExtension).not.toHaveBeenCalled();
         });
     });
 

@@ -431,9 +431,14 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: "Creates the row in PENDING_PROVIDER status (mirrors the comp-create insert shape) before any MP authorization, and stamps its product_domain ('accommodation' by default, 'commerce'/'partner' for the non-accommodation checkouts that route through it since all four flows moved to Path C). No entitlement is granted until the webhook activates it, and loadEntitlements() filters strictly to product_domain='accommodation' (SPEC-239) anyway."
     },
     {
+        file: 'services/billing/own-preapproval-subscription-create.ts',
+        requiresCacheClear: false,
+        reason: "HOS-937 step 1. Creates the row through qzpay's mode:'paid' create (which lands it in `incomplete`) and then normalizes the status to PENDING_PROVIDER with a direct UPDATE, because `pending_provider` is a Hospeda-only value outside qzpay's enum. Same reasoning as the pending-provider-subscription-create.ts entry it replaces: neither `incomplete` nor `pending_provider` grants an entitlement, so there is nothing cached to invalidate. The row only becomes entitlement-bearing when the webhook activates it, and subscription-logic.ts already calls clearEntitlementCache there. It also stamps the pending promo snapshot onto the row metadata, which is bookkeeping, not an entitlement-bearing field."
+    },
+    {
         file: 'services/billing/trial-window-reconcile.ts',
         requiresCacheClear: false,
-        reason: "Clears trial_start/trial_end (HOS-936) when MercadoPago's own next_payment_date shows it is charging at the creation instant, so the trial we promised was never granted. Writes NEITHER plan_id NOR status — and both of its call sites run while the row is still pre-authorization (right after the inline preapproval create, and inside link-preapproval's link step), so no entitlement has been granted yet for a cache to hold. The webhook that later activates the row (subscription-logic.ts) already calls clearEntitlementCache. Entitlements gate on status and never on trial_end (the HOS-171 guard), so narrowing the window cannot change what loadEntitlements resolves."
+        reason: "Clears trial_start/trial_end (HOS-936) when MercadoPago's own next_payment_date shows it is charging at the creation instant, so the trial we promised was never granted. Writes NEITHER plan_id NOR status — and every call site runs while the row is still pre-authorization, so no entitlement has been granted yet for a cache to hold. The webhook that later activates the row (subscription-logic.ts) already calls clearEntitlementCache. Entitlements gate on status and never on trial_end (the HOS-171 guard), so narrowing the window cannot change what loadEntitlements resolves."
     },
     {
         file: 'services/plan-disable-lifecycle.service.ts',

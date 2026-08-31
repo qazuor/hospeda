@@ -93,6 +93,21 @@ export interface PendingCheckoutDiscount {
 }
 
 /**
+ * A resolved-but-not-yet-redeemed `trial_extension` promo code (HOS-240),
+ * snapshotted at checkout time. Named/exported (rather than kept inline on
+ * {@link CreatePendingProviderSubscriptionInput}) so both checkout flows
+ * that snapshot it — the `billing_pending_checkouts` correlation row here,
+ * and `billing_subscriptions.metadata` for the HOS-937 own-preapproval flow
+ * — share the same shape instead of duplicating it structurally.
+ */
+export interface PendingTrialExtension {
+    /** The DB promo code id (for the redemption record + FK stamp). */
+    readonly promoCodeId: string;
+    /** The normalized promo code string (logging / redemption record). */
+    readonly code: string;
+}
+
+/**
  * Input for {@link createPendingProviderSubscription}.
  */
 export interface CreatePendingProviderSubscriptionInput {
@@ -160,10 +175,7 @@ export interface CreatePendingProviderSubscriptionInput {
      * Omitted for config-backed trials (no DB row), kill-switched/ineligible
      * trials, and non-trial checkouts.
      */
-    readonly pendingTrialExtension?: {
-        readonly promoCodeId: string;
-        readonly code: string;
-    };
+    readonly pendingTrialExtension?: PendingTrialExtension;
     /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
     readonly productDomain?: string;
     /**
