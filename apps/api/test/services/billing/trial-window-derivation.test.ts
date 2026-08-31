@@ -223,6 +223,17 @@ describe('readTrialWindowFromPreapprovalPayload — shapes it must survive', () 
         expect(result.deferralMs).toBe(30 * DAY_MS);
     });
 
+    it('returns `unknown` for an already-invalid Date instance', () => {
+        // Not the same path as an unparseable string: a caller that already
+        // did its own `new Date(...)` hands us the Invalid Date itself.
+        const result = readTrialWindowFromPreapprovalPayload({
+            date_created: new Date('not-a-date'),
+            next_payment_date: new Date('2026-09-30T03:28:02.000Z')
+        });
+
+        expect(result.outcome).toBe('unknown');
+    });
+
     it('accepts real Date instances, not only ISO strings', () => {
         const result = readTrialWindowFromPreapprovalPayload({
             date_created: new Date('2026-08-31T03:28:02.000Z'),

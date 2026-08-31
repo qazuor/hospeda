@@ -42,6 +42,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 import { reconcileTrialWindowAgainstProvider } from '../../../src/services/billing/trial-window-reconcile.js';
+import { env } from '../../../src/utils/env.js';
 
 const LOCAL_SUBSCRIPTION_ID = 'sub-local-1';
 const MP_PREAPPROVAL_ID = '54889b0a';
@@ -214,6 +215,36 @@ describe('reconcileTrialWindowAgainstProvider — it only ever narrows', () => {
         expect(setMock).not.toHaveBeenCalled();
     });
 
+    it('writes nothing, and never calls MercadoPago, without an access token', async () => {
+        // An unconfigured environment must not look like "no trial granted".
+        const { client, setMock } = makeDbStub(rowPromisingATrial);
+        const fetchImpl = makeFetchStub({});
+        const realToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
+        (env as { HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN?: string }).HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN =
+            '';
+
+        try {
+            const result = await reconcileTrialWindowAgainstProvider({
+                localSubscriptionId: LOCAL_SUBSCRIPTION_ID,
+                mpPreapprovalId: MP_PREAPPROVAL_ID,
+                db: client,
+                fetchImpl
+            });
+
+            expect(result.outcome).toBe('indeterminate');
+            expect(fetchImpl).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalled();
+            expect(loggerWarnMock).toHaveBeenCalledWith(
+                expect.objectContaining({ localSubscriptionId: LOCAL_SUBSCRIPTION_ID }),
+                expect.stringContaining('ACCESS_TOKEN not configured')
+            );
+        } finally {
+            (
+                env as { HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN?: string }
+            ).HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = realToken;
+        }
+    });
+
     it('writes nothing when MercadoPago answers 404', async () => {
         const { client, setMock } = makeDbStub(rowPromisingATrial);
         const fetchImpl = makeFetchStub({}, 404);
@@ -246,6 +277,42 @@ describe('reconcileTrialWindowAgainstProvider — never fails the checkout', () 
 
         expect(result.outcome).toBe('indeterminate');
         expect(setMock).not.toHaveBeenCalled();
+    });
+
+    it('swallows a non-Error rejection too', async () => {
+        // The catch stringifies whatever it caught. A thrown string must not
+        // escape as `undefined` in the log and must not reach the caller.
+        const client = {
+            select: () => {
+                throw 'connection terminated unexpectedly';
+            }
+        } as never;
+
+        const result = await reconcileTrialWindowAgainstProvider({
+            localSubscriptionId: LOCAL_SUBSCRIPTION_ID,
+            mpPreapprovalId: MP_PREAPPROVAL_ID,
+            db: client,
+            fetchImpl: makeFetchStub({})
+        });
+
+        expect(result.outcome).toBe('indeterminate');
+        expect(loggerWarnMock).toHaveBeenCalledWith(
+            expect.objectContaining({ error: 'connection terminated unexpectedly' }),
+            expect.stringContaining('reconciliation failed')
+        );
+    });
+
+    it('degrades instead of throwing when no client is injected', async () => {
+        // Exercises the `getDb()` default. The mock makes it throw, which is
+        // the point: even a database that cannot be reached at all must not
+        // take the checkout down with it.
+        const result = await reconcileTrialWindowAgainstProvider({
+            localSubscriptionId: LOCAL_SUBSCRIPTION_ID,
+            mpPreapprovalId: MP_PREAPPROVAL_ID,
+            fetchImpl: makeFetchStub({})
+        });
+
+        expect(result.outcome).toBe('indeterminate');
     });
 
     it('swallows a database failure and reports indeterminate', async () => {

@@ -112,9 +112,14 @@ export async function reconcileTrialWindowAgainstProvider(
     input: ReconcileTrialWindowInput
 ): Promise<ReconcileTrialWindowResult> {
     const { localSubscriptionId, mpPreapprovalId, fetchImpl } = input;
-    const client = input.db ?? getDb();
 
     try {
+        // Resolved INSIDE the try: `getDb()` throws when the database was never
+        // initialised, and this function's whole contract is that it never
+        // throws. Resolving it above the boundary would let that one case take
+        // down a checkout MercadoPago had already accepted.
+        const client = input.db ?? getDb();
+
         // Read the stored window FIRST. A row that promises nothing cannot be
         // contradicted, so it does not justify a call to MercadoPago on the
         // checkout hot path.
