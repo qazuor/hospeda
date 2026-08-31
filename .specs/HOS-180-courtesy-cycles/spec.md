@@ -434,6 +434,24 @@ payment method (HOS-926). See R-7.
   natural fix belongs with HOS-914 (the state reconciler), which has to
   understand both derived states anyway — see R-4.
 
+- **R-9 — annual subscriptions are unverified, and one sibling refuses them
+  outright.** `subscription-pause.ts` rejects an annual with
+  `PAUSE_NOT_SUPPORTED_FOR_ANNUAL`, on the pre-HOS-171 premise that an annual is
+  a single Checkout Pro payment with no recurring preapproval to pause. Since
+  HOS-171 an annual IS a recurring preapproval, so the premise no longer holds
+  — but nobody has confirmed that `billing.subscriptions.pause()` actually works
+  on one.
+
+  The grant does not special-case annuals: it requires an `mp_subscription_id`
+  and lets MercadoPago answer, surfacing a refusal as `PROVIDER_ERROR` rather
+  than pretending the gift landed. Fail-closed, so no money is at risk — but
+  "gift a year" is untested and belongs in the staging smoke.
+
+  Related: `resolveCadence` reads `metadata.billingInterval` and falls back to
+  monthly. A subscription that never recorded that key would get a one-MONTH
+  gift where a year was intended. Under-gifting rather than over-gifting, and
+  visible in the response, but worth a look during the smoke.
+
 ## 11. Decisions (owner, 2026-08-31)
 
 Four of the five open questions were answered by the owner. **OQ-1 is the only one
