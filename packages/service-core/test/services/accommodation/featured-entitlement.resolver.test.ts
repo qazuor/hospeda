@@ -229,14 +229,17 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
         expect(mockSelect).toHaveBeenCalledTimes(2);
     });
 
-    it('queries billing_subscriptions filtered to exactly the active/trialing/comp statuses', async () => {
+    it('queries billing_subscriptions filtered to exactly the entitlement-granting statuses', async () => {
         mockSelect
             .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
             .mockReturnValueOnce(makeChain([]));
 
         await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
-        expect(inArray).toHaveBeenCalledWith('status', ['active', 'trialing', 'comp']);
+        // HOS-180 added `courtesy`. A gifted subscriber keeps every entitlement of
+        // their plan — FEATURED_LISTING included — so leaving it out would quietly
+        // un-feature their accommodations for the duration of the gift.
+        expect(inArray).toHaveBeenCalledWith('status', ['active', 'trialing', 'comp', 'courtesy']);
     });
 });
 
