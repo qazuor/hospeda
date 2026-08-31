@@ -403,7 +403,8 @@ export class NotificationService {
                     amount: p.amount,
                     currency: p.currency,
                     baseUrl: this.deps.siteUrl,
-                    failureReason: p.failureReason
+                    failureReason: p.failureReason,
+                    retryUrl: p.retryUrl
                 });
             }
 
