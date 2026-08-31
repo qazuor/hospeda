@@ -636,10 +636,15 @@ The issue's five landmines, all measured, plus two that surfaced while writing t
      wrote.
   3. **Reuse `sanitizeEmailForMercadoPago`** — ruled out, per the above.
 
-  Until a decision lands, the implementation leaves the extension point with an explicit
-  `TODO` referencing this OQ and proceeds with everything else. **Corollary**: HOS-937
-  answers half of the doubt the docblock leaves open (*«STILL UNVERIFIED: whether Checkout
-  Pro rejects '+' at all»*) — for `/preapproval` it is verified that it **does** reject.
+  **Owner decision, 2026-08-31: deliberately deferred to the end of the spec.** The
+  implementation leaves the extension point marked with an explicit `TODO` referencing this
+  OQ; until it is resolved, a `+`-bearing email fails with a clear error rather than being
+  silently rewritten into an address the user never wrote. Nothing else in the spec is
+  blocked by it. This OQ must be resolved before the spec can be closed.
+
+  **Corollary**: HOS-937 answers half of the doubt the docblock leaves open (*«STILL
+  UNVERIFIED: whether Checkout Pro rejects '+' at all»*) — for `/preapproval` it is
+  verified that it **does** reject.
 
 - **OQ-2 — What to do with production orphan
   `f6d89f718c1d4e2287a9aa0e5da209bb`.** Pending an owner decision; out of scope here
