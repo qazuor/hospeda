@@ -43,6 +43,7 @@ import {
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
+import { sendCourtesyGrantedNotification } from './courtesy-notifications.service.js';
 
 /** Input for {@link grantCourtesyCycles}. */
 export interface GrantCourtesyCyclesInput {
@@ -283,6 +284,15 @@ export async function grantCourtesyCycles(
     });
 
     clearEntitlementCache(subscription.customerId);
+
+    // Notification 1 of 3. Fire-and-forget: a mail failure must not undo a gift
+    // that MercadoPago and the database have both already accepted.
+    await sendCourtesyGrantedNotification({ subscriptionId }).catch((err) => {
+        apiLogger.warn(
+            { subscriptionId, error: String(err) },
+            'Courtesy granted notification failed'
+        );
+    });
 
     apiLogger.info(
         {
