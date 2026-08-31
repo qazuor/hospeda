@@ -557,9 +557,22 @@ export const meta = {
 
 Names are **physical Postgres identifiers** in the `public` schema, not Drizzle camelCase
 properties — the whole point is to name a column the TypeScript schema may no longer
-describe. The runner resolves each one against `information_schema` before calling `up()`,
-and aborts the run when any is missing: no ledger row is written, so the migration stays
-pending and can be retried once the environment is fixed.
+describe. The runner resolves each one against `information_schema` before calling `up()`.
+
+**It aborts only when the column is missing AND its table still holds rows.** A missing
+column means one of two things, and the row count is what separates them:
+
+- **The table has rows** — data this migration was written to move is now unreachable. That
+  is the HOS-433 failure: abort, write no ledger row, leave the migration pending so it can
+  be retried once the environment is fixed.
+- **The table is empty** — nothing was lost, because nothing was there. This is an ordinary,
+  legitimate state: a database built from scratch runs every migration in sequence against
+  the CURRENT schema, where a column dropped by a later structural migration never existed.
+
+The first version of the gate checked only for the column's absence, on the reasoning that a
+fresh environment stamps migrations rather than running them. That reasoning was wrong, and
+CI caught it — the day-1 bootstrap and `cli-data-migrate.integration.test.ts` both run them
+for real.
 
 **What it is and is not for.** It does not make a misordered deploy work — it makes it fail
 legibly instead of silently. The actual fix for the ordering is the two-release split

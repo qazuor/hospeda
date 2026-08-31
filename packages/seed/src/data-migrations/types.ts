@@ -111,7 +111,10 @@ export interface SeedMigrationMeta {
     /**
      * Columns this migration must be able to READ for its work to mean
      * anything. The runner verifies every entry against `information_schema`
-     * before calling `up()`, and aborts the whole run if one is missing.
+     * before calling `up()`, and aborts the whole run when one is missing
+     * **and its table still holds rows** — an absent column over an empty table
+     * means nothing was lost, which is the ordinary state of a database built
+     * from scratch against the current schema.
      *
      * ## The failure this prevents
      *
