@@ -1,20 +1,24 @@
 /**
  * Forbidden Route.
  *
- * Renders the residual "access denied" surface for authenticated users who
- * landed in the admin without `ACCESS_PANEL_ADMIN`. Tourists (USER role) are
- * never sent here — they are redirected by `_authed.tsx` to the public
- * host-onboarding funnel. This page only sees:
+ * Renders the "access denied" surface for the 13 route-level permission
+ * guards that redirect here directly (billing, AI, newsletter, platform,
+ * conversations, analytics, account billing — see each guard's own
+ * `throw redirect({ to: '/auth/forbidden' })`) when an authenticated user
+ * lacks the specific permission a route requires. None of them pass a
+ * `reason` param, so this page only ever renders `reason=generic`.
  *
- *   - `reason=host-missing-permission` — HOST without panel access. This is an
- *     expected access boundary, not a config error: hosts manage their
- *     account from the main site, not the admin panel.
- *   - `reason=generic` — staff with the wrong account, exotic roles, guests
- *     who somehow ended up here.
+ * The admin's blanket panel-access check (`_authed.tsx`'s `beforeLoad`) does
+ * NOT use this page any more (HOS-609): an authenticated user without
+ * `ACCESS_PANEL_ADMIN` — tourist, host, or any other non-panel role — is
+ * redirected straight to the web app's own access-denied page instead. This
+ * page's `reason` mechanism (and the zod enum below) is kept for future
+ * per-route reason variants, but `'host-missing-permission'` — the one
+ * `_authed.tsx` used to set for HOST accounts — was removed once nothing set
+ * it any more.
  *
- * The page is reason-aware: copy and CTAs adapt to the situation. The user's
- * email is always shown so people accidentally signed in with the wrong
- * account can spot it immediately.
+ * The user's email is always shown so people accidentally signed in with the
+ * wrong account can spot it immediately.
  *
  * @module routes/auth/forbidden
  */
@@ -31,7 +35,7 @@ import { buildSupportMailto, type ForbiddenReason } from '@/lib/forbidden-mailto
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
 
 const searchSchema = z.object({
-    reason: z.enum(['host-missing-permission', 'generic']).optional().catch(undefined),
+    reason: z.enum(['generic']).optional().catch(undefined),
     redirect: z.string().optional().catch(undefined)
 });
 
@@ -90,14 +94,10 @@ function ForbiddenPage(): React.JSX.Element {
 
     const siteUrl = env.VITE_SITE_URL ?? '';
 
-    const titleKey =
-        reason === 'host-missing-permission'
-            ? 'admin-pages.auth.forbidden.reason.host-missing-permission.title'
-            : 'admin-pages.auth.forbidden.reason.generic.title';
-    const messageKey =
-        reason === 'host-missing-permission'
-            ? 'admin-pages.auth.forbidden.reason.host-missing-permission.message'
-            : 'admin-pages.auth.forbidden.reason.generic.message';
+    // HOS-609: `reason` only ever resolves to 'generic' now (see this file's
+    // JSDoc), so title/message no longer branch on it.
+    const titleKey = 'admin-pages.auth.forbidden.reason.generic.title';
+    const messageKey = 'admin-pages.auth.forbidden.reason.generic.message';
 
     const mailtoHref = buildSupportMailto({
         email: authState.email,
@@ -141,7 +141,11 @@ function ForbiddenPage(): React.JSX.Element {
         ? t('admin-pages.auth.forbidden.email', { email: authState.email })
         : null;
 
-    const showAllActions = reason === 'generic';
+    // HOS-609: `reason` only ever resolves to 'generic' now, which always
+    // showed every action — kept as a named constant (rather than inlining
+    // `true` at the JSX call site) so a future reason variant that hides an
+    // action has a single place to branch again.
+    const showAllActions = true;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">

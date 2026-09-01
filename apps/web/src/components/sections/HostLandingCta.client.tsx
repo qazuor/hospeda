@@ -87,8 +87,9 @@ export function HostLandingCta({ locale }: HostLandingCtaProps): JSX.Element {
     // HOS-311: this CTA used to send a HOST straight to the admin panel, which
     // HOS-152 made unreachable for that role (`ACCESS_PANEL_ADMIN` was removed
     // from HOST after a security incident, so `apps/admin`'s authed-guard
-    // bounces them to `/auth/forbidden?reason=host-missing-permission`). Hosts
-    // self-manage in the web app, so the CTA stays inside it.
+    // bounces them away — HOS-609 changed the destination to this app's own
+    // `/acceso-denegado/` page). Hosts self-manage in the web app, so the CTA
+    // stays inside it.
     //
     // The host branch also used to point at `mi-cuenta/propiedades`, but
     // `publicar/index.astro` SSR-redirects any authenticated actor with >=1
