@@ -596,5 +596,50 @@ describe('promo-code.redemption', () => {
             expect(txUpdateSpy).not.toHaveBeenCalled();
             expect(txInsertSpy).not.toHaveBeenCalled();
         });
+
+        // The distinction that makes the guard above safe, and the one it got
+        // wrong first. `amount` is optional: the preview path validates a code
+        // before any price is known, and `effectiveAmount` then defaults to 0,
+        // so EVERY discount computes to finalAmount 0. A guard written as a bare
+        // `finalAmount === 0` rejects every previewed code and blames a price
+        // nobody supplied. Six tests across two files caught it, all of them
+        // calling apply() with no amount for reasons that had nothing to do with
+        // discounts — which is exactly how a wrong guard gets found.
+        it('HOS-996: no amount supplied is not a discount-to-zero — the code still applies', async () => {
+            mockGetPromoCodeByCode.mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'pc3',
+                    code: 'WELCOME20',
+                    type: 'percentage',
+                    value: 20,
+                    active: true,
+                    expiresAt: null
+                }
+            });
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([
+                        { id: 'pc3', usedCount: 0, maxUses: null, expiresAt: null }
+                    ]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) })
+                    }),
+                    insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue([]) })
+                };
+                return fn(tx);
+            });
+
+            // Act — note the missing third argument.
+            const result = await applyPromoCode('WELCOME20', 'cust1');
+
+            // Assert — applied, not refused, even though finalAmount is 0.
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('expected success');
+            expect(result.data.finalAmount).toBe(0);
+            expect(result.data.originalAmount).toBe(0);
+        });
     });
 });

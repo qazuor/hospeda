@@ -918,7 +918,15 @@ export async function applyPromoCode(
         //
         // Placing the guard here, above `withTransaction`, is the whole point: a
         // rejection after the transaction would still burn the redemption.
-        if (finalAmount === 0) {
+        // `effectiveAmount > 0` is load-bearing, not defensive. `amount` is
+        // OPTIONAL on this function (`const effectiveAmount = amount ?? 0`) and
+        // the preview path — validating a code before a price is known — omits
+        // it. With no amount, EVERY discount computes to `finalAmount: 0`, so a
+        // bare `finalAmount === 0` would reject every code the preview ever
+        // checked, and report "this reduces the price to zero" about a price
+        // nobody supplied. Zero out of zero is not a discount to zero; there has
+        // to be a price for the code to have taken it away.
+        if (effectiveAmount > 0 && finalAmount === 0) {
             return {
                 success: false as const,
                 error: {

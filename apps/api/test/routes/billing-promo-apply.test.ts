@@ -261,7 +261,18 @@ describe('Promo Code Apply Functionality', () => {
             }
         });
 
-        it('should cap fixed discount at total amount', async () => {
+        // HOS-996: this used to assert that a fixed discount larger than the
+        // amount is capped to the amount and returned as a success with
+        // finalAmount 0. The capping is real arithmetic and is still covered in
+        // the pure reducer; what changed is that a charge of zero is refused
+        // rather than redeemed. On this path the refusal has to come first,
+        // because redeeming and then answering zero costs the customer their
+        // code for nothing — the checkout refuses the very same code afterwards.
+        //
+        // The sibling test right below (`no amount provided`) is the boundary
+        // this must not cross: with no amount at all there is no price to have
+        // taken to zero, and the code still applies.
+        it('should refuse a fixed discount that exceeds the total amount', async () => {
             // Arrange
             const promo = makePromoCode({
                 id: 'promo-789',
@@ -273,17 +284,17 @@ describe('Promo Code Apply Functionality', () => {
             setupSuccessfulRedemption();
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
-            const amount = 5000; // Only $50
+            const amount = 5000; // Only $50 — a 10000 discount takes it to zero.
 
             // Act
             const result = await service.apply('BIGDISCOUNT', checkoutId, amount);
 
             // Assert
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.discountAmount).toBe(5000); // Capped at amount
-                expect(result.data.finalAmount).toBe(0); // Can't go negative
-            }
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('INVALID_PROMO_CODE');
+            expect(result.error?.message).toBe(
+                'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+            );
         });
 
         it('should handle no amount provided (0 discount)', async () => {
