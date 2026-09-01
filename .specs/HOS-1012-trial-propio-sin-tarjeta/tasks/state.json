@@ -358,62 +358,62 @@
             "id": "T-011",
             "title": "Unpublish the owner's accommodations on expiry, reusing the /unpublish path",
             "description": "D-3: at expiry the listing leaves the site and the data stays intact. Reuse the lifecycleState transition that `/unpublish` already performs — do NOT write a second path to the same state, or the two drift. The panel stays fully usable: trialMiddleware already paywalls mutating requests on trialStatus.isExpired while leaving GET/HEAD readable (SPEC-217 AC-1.1), so no middleware change is needed. TESTS: expiry unpublishes every accommodation of the owner; data columns (photos, texts, prices) are untouched; a second run is a no-op.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Locate and reuse the /unpublish lifecycle transition",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert no data column is cleared",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "accommodation", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T12:30:00.000Z",
+                "completed": "2026-09-01T12:50:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "T-3: schedule ISR revalidation for every listing unpublished by expiry",
             "description": "Spec trap T-3: unpublishing without scheduling revalidation leaves Cloudflare serving the page. The listing is gone from the DB and still live on the site — the exact failure D-3 is supposed to produce the opposite of. Call `getRevalidationService().scheduleRevalidationBatch` for every affected listing on every actual write. TESTS: the batch is scheduled with exactly the unpublished listings; nothing is scheduled when zero rows expired (no empty-batch call); mutate by removing the call and confirm a test dies.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Schedule the batch on real writes only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: remove the call, confirm a test dies",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "cache", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T12:30:00.000Z",
+                "completed": "2026-09-01T12:50:00.000Z"
             }
         },
         {
@@ -1083,9 +1083,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 26,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.6
     }
