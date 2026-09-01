@@ -20,6 +20,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -94,7 +95,11 @@ describe('hasAnyPriorSubscription', () => {
     it('returns false for a customer with no subscription rows (tourist-free default)', async () => {
         const billing = makeBilling([]);
 
-        const result = await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID });
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
 
         expect(result).toBe(false);
         expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledWith(CUSTOMER_ID);
@@ -105,7 +110,13 @@ describe('hasAnyPriorSubscription', () => {
     it('returns true for a customer with one active subscription', async () => {
         const billing = makeBilling([{ id: 'sub-1', status: 'active' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
         // An unambiguously-authorized row short-circuits the event query.
         expect(getDb).not.toHaveBeenCalled();
     });
@@ -113,14 +124,26 @@ describe('hasAnyPriorSubscription', () => {
     it('returns true when the only prior subscription is a comp grant', async () => {
         const billing = makeBilling([{ id: 'sub-1', status: 'comp' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
         expect(getDb).not.toHaveBeenCalled();
     });
 
     it('returns true when the only prior subscription is past_due', async () => {
         const billing = makeBilling([{ id: 'sub-1', status: 'past_due' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
     });
 
     // HOS-230: a checkout that was started but never authorized (the user opened
@@ -131,7 +154,13 @@ describe('hasAnyPriorSubscription', () => {
             { id: 'sub-1', status: 'abandoned', providerSubscriptionIds: {} }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
     });
 
     it('returns false when the only prior subscription is a never-authorized pending_provider', async () => {
@@ -139,7 +168,13 @@ describe('hasAnyPriorSubscription', () => {
             { id: 'sub-1', status: 'pending_provider', providerSubscriptionIds: {} }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
     });
 
     // HOS-230 C2: `getByCustomerId` returns the RAW stored status, and the
@@ -151,7 +186,13 @@ describe('hasAnyPriorSubscription', () => {
             { id: 'sub-1', status: 'incomplete', providerSubscriptionIds: {} }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
     });
 
     it('returns false for a raw qzpay `incomplete_expired` row (mode:paid, abandoned)', async () => {
@@ -159,7 +200,13 @@ describe('hasAnyPriorSubscription', () => {
             { id: 'sub-1', status: 'incomplete_expired', providerSubscriptionIds: {} }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
     });
 
     // HOS-230 (round-2 finding): a provider id being PRESENT does NOT imply the
@@ -176,7 +223,13 @@ describe('hasAnyPriorSubscription', () => {
             }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
     });
 
     // ---- `cancelled` disambiguation (HOS-230 round-3 finding) ----------------
@@ -190,7 +243,13 @@ describe('hasAnyPriorSubscription', () => {
         ]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
         expect(getDb).toHaveBeenCalledOnce();
     });
 
@@ -198,7 +257,13 @@ describe('hasAnyPriorSubscription', () => {
         mockSubscriptionEvents([{ previousStatus: 'trialing', newStatus: 'cancelled' }]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
     });
 
     // HOS-191 backout: MercadoPago reports the pending preapproval rejected before
@@ -209,7 +274,13 @@ describe('hasAnyPriorSubscription', () => {
         mockSubscriptionEvents([{ previousStatus: 'pending_provider', newStatus: 'cancelled' }]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
         expect(getDb).toHaveBeenCalledOnce();
     });
 
@@ -217,7 +288,13 @@ describe('hasAnyPriorSubscription', () => {
         mockSubscriptionEvents([]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(false);
     });
 
     // A comp (free-forever) grant later revoked (comp -> cancelled, SPEC-262
@@ -227,7 +304,13 @@ describe('hasAnyPriorSubscription', () => {
         mockSubscriptionEvents([{ previousStatus: 'comp', newStatus: 'cancelled' }]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
     });
 
     // The event query must batch ALL cancelled rows; one authorized among them
@@ -242,7 +325,13 @@ describe('hasAnyPriorSubscription', () => {
             { id: 'sub-2', status: 'cancelled' }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
     });
 
     // An authorized subscription short-circuits BEFORE the event query, even when
@@ -253,7 +342,13 @@ describe('hasAnyPriorSubscription', () => {
             { id: 'sub-2', status: 'active' }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
         expect(getDb).not.toHaveBeenCalled();
     });
 });
@@ -262,7 +357,11 @@ describe('resolveTrialEligibility', () => {
     it('is eligible for a customer with no prior subscription', async () => {
         const billing = makeBilling([]);
 
-        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+        const result = await resolveTrialEligibility({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
 
         expect(result).toEqual({ eligible: true });
     });
@@ -270,7 +369,11 @@ describe('resolveTrialEligibility', () => {
     it('is NOT eligible for a customer with an authorized prior subscription', async () => {
         const billing = makeBilling([{ id: 'sub-1', status: 'active' }]);
 
-        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+        const result = await resolveTrialEligibility({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
 
         expect(result).toEqual({ eligible: false });
     });
@@ -282,7 +385,11 @@ describe('resolveTrialEligibility', () => {
             { id: 'sub-1', status: 'abandoned', providerSubscriptionIds: {} }
         ]);
 
-        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+        const result = await resolveTrialEligibility({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
 
         expect(result).toEqual({ eligible: true });
     });
@@ -299,7 +406,11 @@ describe('resolveTrialEligibility', () => {
             }
         ]);
 
-        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+        const result = await resolveTrialEligibility({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
 
         expect(result).toEqual({ eligible: true });
     });
@@ -310,8 +421,182 @@ describe('resolveTrialEligibility', () => {
         mockSubscriptionEvents([{ previousStatus: 'pending_provider', newStatus: 'cancelled' }]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
-        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+        const result = await resolveTrialEligibility({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
 
         expect(result).toEqual({ eligible: true });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1012 D-2 / HOS-931 — eligibility is per product domain.
+//
+// The rule used to be "one trial per customer, for life, in ANY domain". In a
+// market of 22 destinations the same people own the cabin AND the restaurant,
+// so that denied a trial the owner had never actually had in that vertical.
+//
+// The asymmetry below is the part that breaks silently and is therefore tested
+// in BOTH directions: accommodation fails OPEN on a missing domain (the column
+// post-dates most rows) while every other domain fails CLOSED.
+// ---------------------------------------------------------------------------
+
+describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => {
+    it('a spent gastronomy trial leaves the accommodation trial available', async () => {
+        const billing = makeBilling([
+            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' }
+        ]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
+
+        expect(result).toBe(false);
+    });
+
+    it('a spent accommodation trial leaves the gastronomy trial available', async () => {
+        const billing = makeBilling([
+            { id: 'sub-accom', status: 'active', productDomain: 'accommodation' }
+        ]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.GASTRONOMY
+        });
+
+        expect(result).toBe(false);
+    });
+
+    it('a prior subscription in the SAME domain still consumes the trial', async () => {
+        const billing = makeBilling([
+            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' }
+        ]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.GASTRONOMY
+        });
+
+        expect(result).toBe(true);
+    });
+
+    it('gastronomy and experience are separate verticals, not one commerce bucket', async () => {
+        const billing = makeBilling([
+            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' }
+        ]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.EXPERIENCE
+        });
+
+        expect(result).toBe(false);
+    });
+
+    describe('the fail-open / fail-closed asymmetry', () => {
+        it('a legacy row with NO domain consumes the ACCOMMODATION trial (fails open)', async () => {
+            // The column post-dates most rows, so an absent value must read as
+            // accommodation — otherwise every pre-column subscriber silently
+            // regains a trial they already spent.
+            const billing = makeBilling([{ id: 'sub-legacy', status: 'active' }]);
+
+            const result = await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            });
+
+            expect(result).toBe(true);
+        });
+
+        it('a legacy row with NO domain does NOT consume a gastronomy trial (fails closed)', async () => {
+            const billing = makeBilling([{ id: 'sub-legacy', status: 'active' }]);
+
+            const result = await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.GASTRONOMY
+            });
+
+            expect(result).toBe(false);
+        });
+
+        it('an explicit null domain behaves the same as an absent one', async () => {
+            const billing = makeBilling([
+                { id: 'sub-legacy', status: 'active', productDomain: null }
+            ]);
+
+            expect(
+                await hasAnyPriorSubscription({
+                    billing,
+                    customerId: CUSTOMER_ID,
+                    productDomain: ProductDomainEnum.ACCOMMODATION
+                })
+            ).toBe(true);
+        });
+    });
+
+    it('a row still carrying the retired "commerce" value matches NO vertical (HOS-695)', async () => {
+        // Deliberate: a leftover 'commerce' row goes dark rather than silently
+        // matching a vertical it was never resolved to. Per CLAUDE.md that is
+        // the intended failure mode, not a bug to widen the comparison for.
+        const billing = makeBilling([
+            { id: 'sub-legacy-commerce', status: 'active', productDomain: 'commerce' }
+        ]);
+
+        for (const domain of [
+            ProductDomainEnum.GASTRONOMY,
+            ProductDomainEnum.EXPERIENCE,
+            ProductDomainEnum.ACCOMMODATION
+        ]) {
+            expect(
+                await hasAnyPriorSubscription({
+                    billing,
+                    customerId: CUSTOMER_ID,
+                    productDomain: domain
+                })
+            ).toBe(false);
+        }
+    });
+
+    it('keeps excluding never-authorized checkouts WITHIN the matching domain (HOS-230)', async () => {
+        // The domain filter must narrow the candidate set, not replace the
+        // authorization rule that runs over it.
+        const billing = makeBilling([
+            { id: 'sub-gastro', status: 'pending_provider', productDomain: 'gastronomy' }
+        ]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.GASTRONOMY
+        });
+
+        expect(result).toBe(false);
+    });
+
+    it('only inspects event history for cancelled rows IN the requested domain', async () => {
+        // A cancelled accommodation row is ambiguous and would trigger the
+        // event-history lookup — but when asking about gastronomy it is not a
+        // candidate at all, so the lookup must never run.
+        mockSubscriptionEvents([{ previousStatus: 'active', newStatus: 'cancelled' }]);
+        const billing = makeBilling([
+            { id: 'sub-accom', status: 'cancelled', productDomain: 'accommodation' }
+        ]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.GASTRONOMY
+        });
+
+        expect(result).toBe(false);
     });
 });

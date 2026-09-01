@@ -503,7 +503,11 @@ export async function initiatePaidMonthlySubscription(
     // never disagree on who is still trial-eligible.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
-            ? await hasAnyPriorSubscription({ billing, customerId })
+            ? await hasAnyPriorSubscription({
+                  billing,
+                  customerId,
+                  productDomain: ProductDomainEnum.ACCOMMODATION
+              })
             : true;
 
     const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
@@ -868,7 +872,7 @@ export async function initiateCommerceMonthlySubscription(
     // accommodation path — the answer cannot change the outcome otherwise.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
-            ? await hasAnyPriorSubscription({ billing, customerId })
+            ? await hasAnyPriorSubscription({ billing, customerId, productDomain })
             : true;
 
     const { freeTrialDays } = resolveCheckoutFreeTrialDays({
@@ -1567,7 +1571,11 @@ export async function initiatePaidAnnualSubscription(
     // SAME query the read-only `GET /trial-eligibility` route runs.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
-            ? await hasAnyPriorSubscription({ billing, customerId })
+            ? await hasAnyPriorSubscription({
+                  billing,
+                  customerId,
+                  productDomain: ProductDomainEnum.ACCOMMODATION
+              })
             : true;
 
     const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;

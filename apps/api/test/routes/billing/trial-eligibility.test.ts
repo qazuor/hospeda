@@ -17,6 +17,7 @@
  * @module test/routes/billing/trial-eligibility
  */
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -139,7 +140,12 @@ describe('handleTrialEligibility', () => {
             expect(resolveTrialEligibility).toHaveBeenCalledOnce();
             expect(resolveTrialEligibility).toHaveBeenCalledWith({
                 billing: FAKE_BILLING,
-                customerId: CUSTOMER_ID
+                customerId: CUSTOMER_ID,
+                // HOS-1012 D-2: eligibility is per vertical, and this route
+                // backs the accommodation pricing page. Asserted explicitly
+                // rather than with objectContaining, so dropping the domain
+                // fails here instead of passing silently.
+                productDomain: ProductDomainEnum.ACCOMMODATION
             });
         });
     });

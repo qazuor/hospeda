@@ -153,7 +153,7 @@ const PLAN_SLUG = 'commerce-listing';
  */
 function createBillingMock(input?: {
     planMetadata?: Record<string, unknown>;
-    priorSubscriptions?: ReadonlyArray<{ id: string; status: string }>;
+    priorSubscriptions?: ReadonlyArray<{ id: string; status: string; productDomain?: string }>;
 }) {
     const create = vi.fn().mockResolvedValue({
         id: LOCAL_SUB_ID,
@@ -375,10 +375,17 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
             expect(subArg.trialGranted).toBe(true);
         });
 
-        it('grants NO trial when the plan declares one but the customer already consumed it (one trial per customer, for life)', async () => {
+        it('grants NO trial when the plan declares one but the customer already consumed it IN THIS VERTICAL', async () => {
+            // HOS-1012 D-2: the prior subscription must carry this checkout's own
+            // product domain to consume its trial. Before D-2 this test passed
+            // with a domain-less prior, which is precisely the HOS-931 bug it
+            // was unknowingly asserting: an accommodation subscriber was denied
+            // a gastronomy trial they had never had.
             const { billing } = createBillingMock({
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
-                priorSubscriptions: [{ id: 'prior-sub-1', status: 'active' }]
+                priorSubscriptions: [
+                    { id: 'prior-sub-1', status: 'active', productDomain: 'gastronomy' }
+                ]
             });
 
             await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
@@ -391,6 +398,29 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
                 unknown
             >;
             expect(subArg.trialGranted).toBe(false);
+        });
+
+        it('HOS-1012 D-2: a prior ACCOMMODATION subscription leaves the gastronomy trial intact', async () => {
+            // The other half of the same rule, and the actual HOS-931 fix: the
+            // same person owns the cabin and the restaurant, and their spent
+            // accommodation trial must not deny them the gastronomy one.
+            const { billing } = createBillingMock({
+                planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
+                priorSubscriptions: [
+                    { id: 'prior-accom', status: 'active', productDomain: 'accommodation' }
+                ]
+            });
+
+            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+
+            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
+            expect(planArg?.trialDays).toBe(30);
+
+            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            expect(subArg.trialGranted).toBe(true);
         });
 
         it('grants no trial when the plan declares none, exactly as before HOS-590 (the partner path stays this way permanently)', async () => {
