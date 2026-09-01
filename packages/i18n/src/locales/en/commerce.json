@@ -284,7 +284,7 @@
         "gastronomy": {
             "benefits": {
                 "tagline": "Why Hospeda?",
-                "title": "Benefits for your restaurant",
+                "title": "Benefits for your food business",
                 "item1": {
                     "title": "Regional visibility",
                     "desc": "Show up where thousands of travelers search for places to eat in Concepción del Uruguay and the Litoral region."
@@ -318,7 +318,8 @@
                 "tagline": "One simple plan",
                 "title": "Gastronomy Premium",
                 "priceSuffix": "/month",
-                "trial": "30-day free trial",
+                "trial_one": "{{count}} day free trial",
+                "trial_other": "{{count}} days free trial",
                 "feature1": "1 published gastronomy listing",
                 "feature2": "Presence in the Hospeda catalog",
                 "feature3": "No commission on bookings or inquiries",
@@ -328,8 +329,10 @@
             "faq": {
                 "tagline": "Have questions?",
                 "title": "Frequently asked questions",
-                "q1": "How much does it cost to list my restaurant on Hospeda?",
-                "a1": "One fixed monthly payment, with a 30-day free trial. No commission on bookings or inquiries.",
+                "q1": "How much does it cost to list my food business on Hospeda?",
+                "a1_one": "One fixed monthly payment, with a {{count}}-day free trial. No commission on bookings or inquiries.",
+                "a1_other": "One fixed monthly payment, with a {{count}}-day free trial. No commission on bookings or inquiries.",
+                "a1NoTrial": "One fixed monthly payment. No commission on bookings or inquiries.",
                 "q2": "Is there a minimum commitment?",
                 "a2": "No. You can cancel your subscription anytime from your account.",
                 "q3": "How many listings can I publish?",
@@ -373,7 +376,8 @@
                 "tagline": "One simple plan",
                 "title": "Experience Premium",
                 "priceSuffix": "/month",
-                "trial": "30-day free trial",
+                "trial_one": "{{count}} day free trial",
+                "trial_other": "{{count}} days free trial",
                 "feature1": "1 published experience listing",
                 "feature2": "Presence in the Hospeda catalog",
                 "feature3": "No commission on bookings or inquiries",
@@ -384,7 +388,9 @@
                 "tagline": "Have questions?",
                 "title": "Frequently asked questions",
                 "q1": "How much does it cost to list my experience on Hospeda?",
-                "a1": "One fixed monthly payment, with a 30-day free trial. No commission on bookings or inquiries.",
+                "a1_one": "One fixed monthly payment, with a {{count}}-day free trial. No commission on bookings or inquiries.",
+                "a1_other": "One fixed monthly payment, with a {{count}}-day free trial. No commission on bookings or inquiries.",
+                "a1NoTrial": "One fixed monthly payment. No commission on bookings or inquiries.",
                 "q2": "Is there a minimum commitment?",
                 "a2": "No. You can cancel your subscription anytime from your account.",
                 "q3": "How many listings can I publish?",
