@@ -26,6 +26,7 @@ import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
 import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
+import PlanCatalogueNav from '@/components/billing/PlanCatalogueNav.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -64,12 +65,16 @@ const touristPlans = fetchResult.ok
 	: [];
 
 const intlLocale = getIntlLocale(locale);
-const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';
 const hasPlans = touristPlans.length > 0;
 
 // Build absolute URL for each plan (used by JSON-LD Offer entries).
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes/turistas' })}`;
+
+// One resolution of the comparison URL, read by the nav above the cards and by
+// the teaser below them. Note this is the TOURIST table, at a different path
+// from the owner one.
+const comparisonHref = buildUrl({ locale, path: 'suscriptores/turistas/comparar' });
 
 const jsonLdPlans = touristPlans.map((plan) => ({
 	name: plan.name,
@@ -110,11 +115,19 @@ const headingMain = headingWords.join(' ');
 		<Fragment slot="icon-3"><SunIcon size="md" weight="duotone" /></Fragment>
 	</MarketingHero>
 
+	{/*
+		Above the cards: back to the audience index, and across to the comparison
+		table. The comparison link is deliberately in BOTH places — the teaser at
+		the foot of the page is unchanged, but a reader still choosing between
+		tiers should not have to scroll past every card to reach the surface that
+		compares them.
+	*/}
+	<PlanCatalogueNav locale={locale} comparisonHref={comparisonHref} />
+
 	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
 		<PricingCardsGrid
 			locale={locale}
 			plans={touristPlans}
-			highlightedSlug={highlightedSlug}
 			intlLocale={intlLocale}
 			audience="tourist"
 			sectionHeading={t(
@@ -130,10 +143,7 @@ const headingMain = headingWords.join(' ');
 
 	{hasPlans && (
 		<section class="comparison-link section">
-			<ComparisonLinkTeaser
-				locale={locale}
-				href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
-			/>
+			<ComparisonLinkTeaser locale={locale} href={comparisonHref} />
 		</section>
 	)}
 </MarketingLayout>

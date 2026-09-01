@@ -93,6 +93,28 @@ const ALLOWLIST = Object.freeze({
     // The count drops to 1 because the detail page keeps only the TYPE badge:
     // the tier badge went with the card, since the tier is never shown publicly.
     'src/pages/[lang]/partners/[slug].astro': 1,
+    // HOS-943: the audience index gives each of the five cards its own accent
+    // through a single `--audience-ink` custom property, set per card by a
+    // `[data-audience=...]` selector. Two residuals, and only ONE of them is
+    // structurally unavoidable:
+    //
+    //  1. `oklch(from var(--audience-ink) l c h / 0.12)` on the glyph chip is
+    //     genuinely runtime-dynamic: it is ONE rule tinting FIVE different inks.
+    //     A precomputed `--token-aNN` cannot express it — there is no single
+    //     colour to precompute.
+    //  2. `--audience-ink: oklch(from var(--hospeda-sand) 0.55 c h)` on the
+    //     experience card is NOT dynamic; it is a hand-derived text colour.
+    //     The other four audiences use a calibrated token
+    //     (--brand-primary-link, --brand-accent-text, --hospeda-forest-link,
+    //     --brand-primary-text); sand has no text-safe sibling, so this one was
+    //     derived inline. Replacing it needs a real token in @repo/design-tokens
+    //     (an owner call, and a cross-package change), which is why it is
+    //     allowlisted rather than fixed here.
+    //
+    // NOTE for whoever adds that token: this ink's contrast against the card is
+    // UNMEASURED, and `Plans Index [light]` already carries accepted
+    // `color-contrast` debt in the a11y baseline — so the sweep will not flag it.
+    'src/pages/[lang]/suscriptores/planes/index.astro': 2,
     'src/components/account/CollectionCard.tsx': 3,
     // SPEC-203: subtle primary/accent tints + a modal overlay on the plan-management
     // surface. No precomputed alpha tokens exist (only --ring-a50), so these follow

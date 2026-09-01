@@ -169,6 +169,73 @@ export function getLimitName(input: { key: string; t: Translator }): string {
 }
 
 /**
+ * Get the plain-language explanation of what a numeric limit means, and what
+ * happens once it is reached (HOS-943 AC-13).
+ *
+ * A pricing card that says "15 photos" and nothing else asks the reader to
+ * guess: per listing or in total? blocked at the cap or charged for more?
+ * `billing.limitHelp.<key>` answers both, and every limit key in the catalogue
+ * has one.
+ *
+ * Falls back to `LIMIT_METADATA`'s English description rather than to an empty
+ * string on purpose: the explanation is the accessible name the value hangs
+ * off, so an unexplained number is the one output this must never produce.
+ */
+export function getLimitHelp(input: { key: string; t: Translator }): string {
+    const { key, t } = input;
+    const meta = LIMIT_METADATA[key as LimitKey];
+    const fallback = meta?.description ?? humanizeKey(key);
+    return t(`billing.limitHelp.${key}`, fallback);
+}
+
+/**
+ * Render a limit's numeric value for display: either the localized "unlimited"
+ * label or the number formatted for the locale.
+ *
+ * @param input.value - Raw value from the plan's `limits` map.
+ * @param input.isUnlimited - Whether the value is the catalogue's `-1`
+ *   sentinel. Passed in rather than re-derived so this helper stays ignorant of
+ *   the sentinel's spelling — `plan-card-delta.ts` owns that.
+ * @param input.intlLocale - BCP-47 tag for thousand separators.
+ */
+export function formatLimitValue(input: {
+    value: number;
+    isUnlimited: boolean;
+    intlLocale: string;
+    t: Translator;
+}): string {
+    const { value, isUnlimited, intlLocale, t } = input;
+    if (isUnlimited) return t('billing.comparison.unlimited', 'Ilimitado');
+    try {
+        return new Intl.NumberFormat(intlLocale).format(value);
+    } catch {
+        return String(value);
+    }
+}
+
+/**
+ * Get the "Recommended for: <profile>" copy of a plan.
+ *
+ * Every plan gets a profile — that is the point (HOS-943 AC-12). Rather than
+ * one plan wearing a "most popular" badge, which needs data Hospeda does not
+ * have and turns the other two tiers into losers, each card names the person it
+ * is for and lets the reader self-select.
+ *
+ * The per-slug key is curated copy; a slug nobody has written copy for yet
+ * degrades to the audience's generic profile rather than to a raw dotted key,
+ * so a plan added in admin can never render a card with no profile line.
+ */
+export function getPlanRecommendedFor(input: {
+    plan: PlanLike;
+    audience: PricingAudience;
+    t: Translator;
+}): string {
+    const { plan, audience, t } = input;
+    const generic = t(`pricing.recommendedFor.default.${audience}`);
+    return t(`pricing.recommendedFor.plan.${plan.slug}`, generic);
+}
+
+/**
  * Get the localized label for an entitlement-or-limit group header in the
  * comparison table.
  */

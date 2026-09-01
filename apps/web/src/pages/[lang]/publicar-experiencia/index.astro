@@ -30,7 +30,8 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -39,7 +40,7 @@ import { getIntlLocale } from '@/lib/pricing-plans';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const title = t('commerce.lead.experience.title');
 const subtitle = t('commerce.lead.experience.subtitle');
@@ -61,16 +62,51 @@ applyCacheHeaders({
     tags: [CACHE_TAG_PRICING]
 });
 
-// The experience vertical's single sellable tier (HOS-688 §6.8), scoped by
-// `?domain=experience` on the public plans endpoint (HOS-685). `category` on
-// this plan is `'owner'` only to satisfy `PlanCategory`'s type — the real
-// discriminator is `product_domain`, already applied server-side by the
-// `domain` query param, so no further category filtering narrows the result
-// beyond `isActive`.
+// ONE fetch feeds BOTH the price and the trial length (HOS-941 R-2). The
+// experience vertical's single sellable tier (HOS-688 §6.8) is scoped by
+// `?domain=experience` on the public plans endpoint (HOS-685); `category`
+// on this plan is `'owner'` only to satisfy `PlanCategory`'s type — the
+// real discriminator is `product_domain`, already applied server-side by
+// the `domain` query param, so the resolver narrows nothing beyond
+// `isActive`. Selecting the plan here and the trial there would let the
+// two lines of the card describe different plans, so both come out of the
+// same call. See `lib/billing/commerce-landing-plan.ts`.
 const plansResult = await fetchPublicPlans({ domain: 'experience' });
-const experiencePlan = plansResult.ok
-    ? (filterPlansByCategory(plansResult.plans, 'owner')[0] ?? null)
-    : null;
+const { plan: experiencePlan, trialDays } = resolveCommerceLandingOffer({ plansResult });
+
+/**
+ * The trial line on the price card, or `null` when none may be promised.
+ *
+ * `tPlural` and not `t`: the CLDR `_one`/`_other` pair is what makes "1 día
+ * de prueba" and "30 días de prueba" both grammatical in all three locales,
+ * and the number is INTERPOLATED from the plan — no locale file carries a
+ * trial length any more (HOS-941 R-2). This key used to read literally "30
+ * días de prueba gratis", which matched the catalogue only by coincidence:
+ * it would have kept promising 30 the day an operator edited the plan in
+ * admin, and nothing would have failed. That is HOS-525, where marketing
+ * promised hosts 30 days while the checkout granted 14.
+ *
+ * `null` renders NOTHING — never "0 días", never a number inherited from
+ * the other vertical or from a constant. It covers a failed fetch and a plan
+ * that genuinely offers no trial, and a visitor must not be able to tell
+ * those apart.
+ */
+const trialLabel =
+    trialDays === null ? null : tPlural('commerce.landing.experience.price.trial', trialDays);
+
+/**
+ * The price FAQ answer — the same number, from the same plan.
+ *
+ * It needs its own no-trial string rather than the clause being spliced out
+ * at render time: the trial is embedded mid-sentence, and cutting it
+ * mechanically would leave the sentence limping in whichever locale the
+ * splitter was not written for. `a1NoTrial` is written to stand on its own
+ * in each language.
+ */
+const priceFaqAnswer =
+    trialDays === null
+        ? t('commerce.landing.experience.faq.a1NoTrial')
+        : tPlural('commerce.landing.experience.faq.a1', trialDays);
 
 const intlLocale = getIntlLocale(locale);
 
@@ -131,10 +167,18 @@ const priceFeatureKeys = [
     'commerce.landing.experience.price.feature3'
 ] as const;
 
+/**
+ * The FAQ, with every answer RESOLVED here rather than left as a key for the
+ * template to translate. `a1` is the price answer and it is the one whose
+ * shape depends on the catalogue, which a key-per-question array cannot
+ * express. Resolving all three the same way keeps the rendered page and the
+ * `FAQPage` JSON-LD reading from one value each, so the structured data can
+ * never advertise a trial the visible answer omits.
+ */
 const faqs = [
-    { qKey: 'commerce.landing.experience.faq.q1', aKey: 'commerce.landing.experience.faq.a1' },
-    { qKey: 'commerce.landing.experience.faq.q2', aKey: 'commerce.landing.experience.faq.a2' },
-    { qKey: 'commerce.landing.experience.faq.q3', aKey: 'commerce.landing.experience.faq.a3' }
+    { q: t('commerce.landing.experience.faq.q1'), a: priceFaqAnswer },
+    { q: t('commerce.landing.experience.faq.q2'), a: t('commerce.landing.experience.faq.a2') },
+    { q: t('commerce.landing.experience.faq.q3'), a: t('commerce.landing.experience.faq.a3') }
 ] as const;
 
 const faqJsonLd = {
@@ -142,10 +186,10 @@ const faqJsonLd = {
     '@type': 'FAQPage',
     mainEntity: faqs.map((faq) => ({
         '@type': 'Question',
-        name: t(faq.qKey),
+        name: faq.q,
         acceptedAnswer: {
             '@type': 'Answer',
-            text: t(faq.aKey)
+            text: faq.a
         }
     }))
 };
@@ -262,10 +306,8 @@ const signupUrl = buildCommerceStartUrl({ locale, vertical: 'experience' });
                                     {t('commerce.landing.experience.price.priceSuffix')}
                                 </span>
                             </p>
-                            {experiencePlan.hasTrial && (
-                                <p class="pub-exp__price-trial">
-                                    {t('commerce.landing.experience.price.trial')}
-                                </p>
+                            {trialLabel && (
+                                <p class="pub-exp__price-trial">{trialLabel}</p>
                             )}
                             <ul class="pub-exp__price-features">
                                 {priceFeatureKeys.map((key) => (
@@ -305,8 +347,8 @@ const signupUrl = buildCommerceStartUrl({ locale, vertical: 'experience' });
                 {
                     faqs.map((faq) => (
                         <details class="pub-exp__faq-item">
-                            <summary class="pub-exp__faq-question">{t(faq.qKey)}</summary>
-                            <p class="pub-exp__faq-answer">{t(faq.aKey)}</p>
+                            <summary class="pub-exp__faq-question">{faq.q}</summary>
+                            <p class="pub-exp__faq-answer">{faq.a}</p>
                         </details>
                     ))
                 }

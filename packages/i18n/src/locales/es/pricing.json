@@ -2,10 +2,28 @@
     "cta": "Empezar",
     "free": "Gratis",
     "recommended": "Recomendado",
-    "trial_one": "{{count}} día gratis",
-    "trial_other": "{{count}} días gratis",
+    "trial_one": "{{count}} día de prueba gratis",
+    "trial_other": "{{count}} días de prueba gratis",
     "trialNotEligible": "Sin período de prueba",
     "includesEverything": "Todo lo del plan {plan}, más:",
+    "includesAll": "Este plan incluye:",
+    "limitsLabel": "Límites de este plan",
+    "limitLine": "{label}: {value}",
+    "recommendedFor": {
+        "label": "Recomendado para",
+        "default": {
+            "owner": "quien publica su alojamiento en Hospeda",
+            "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma"
+        },
+        "plan": {
+            "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
+            "owner-pro": "quien maneja varias propiedades y ya recibe reservas seguido",
+            "owner-premium": "quien vive de alquilar y necesita todas las herramientas y el mayor alcance",
+            "tourist-free": "quien está empezando a mirar alojamientos y quiere guardar algunos favoritos",
+            "tourist-plus": "quien viaja seguido y compara varias opciones antes de decidir",
+            "tourist-vip": "quien viaja seguido y quiere todos los beneficios y el contacto directo con el anfitrión"
+        }
+    },
     "inheritedSummary_one": "+{{count}} función del plan {{plan}}",
     "inheritedSummary_other": "+{{count}} funciones del plan {{plan}}",
     "baseHighlightTitle": "Ideal para empezar",
@@ -24,7 +42,9 @@
         "monthly": "Mensual",
         "annual": "Anual",
         "annualSaving": "Ahorrá {percent}%",
-        "ariaLabel": "Elegí la frecuencia de facturación"
+        "ariaLabel": "Elegí la frecuencia de facturación",
+        "question": "¿Cómo querés pagar?",
+        "annualBadge": "Ahorrá hasta {percent}%"
     },
     "period": {
         "month": "/mes",
@@ -38,32 +58,60 @@
         "heading": "Un plan para cada audiencia",
         "subtitle": "Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá los precios.",
         "cardsHeading": "Elegí tu audiencia",
+        "highlightsLabel": "Qué obtenés",
         "from": "Desde {{price}}",
+        "trial_one": "{{count}} día de prueba gratis",
+        "trial_other": "{{count}} días de prueba gratis",
         "cards": {
             "host": {
                 "title": "Alquilar mi alojamiento",
                 "audience": "Para anfitriones con casas, cabañas, departamentos u hoteles para alquilar.",
-                "cta": "Ver planes para anfitriones"
+                "cta": "Ver planes para anfitriones",
+                "highlights": {
+                    "item1": "Publicá tu alojamiento con fotos, servicios y calendario de disponibilidad.",
+                    "item2": "Recibí consultas por WhatsApp y respondé las reseñas de tus huéspedes.",
+                    "item3": "Seguí las visitas de tu ficha y creá promociones."
+                }
             },
             "tourist": {
                 "title": "Beneficios para viajar",
                 "audience": "Para viajeros que quieren comparar alojamientos, guardar favoritos y recibir alertas de precio.",
-                "cta": "Ver planes para viajeros"
+                "cta": "Ver planes para viajeros",
+                "highlights": {
+                    "item1": "Guardá favoritos y organizalos en colecciones de viaje.",
+                    "item2": "Recibí alertas de precio y accedé a ofertas exclusivas.",
+                    "item3": "Compará alojamientos y escribí tus reseñas."
+                }
             },
             "gastronomy": {
-                "title": "Publicar mi restaurante",
-                "audience": "Para restaurantes, bares y cafés que quieren aparecer en la guía gastronómica.",
-                "cta": "Ver planes de gastronomía"
+                "title": "Publicar mi local gastronómico",
+                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
+                "cta": "Ver planes de gastronomía",
+                "highlights": {
+                    "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
+                    "item2": "Aparecé en la guía gastronómica que consultan los viajeros.",
+                    "item3": "Precio mensual fijo, sin comisión por consulta ni reserva."
+                }
             },
             "experience": {
                 "title": "Publicar mis experiencias",
                 "audience": "Para guías y operadores de excursiones, paseos y actividades.",
-                "cta": "Ver planes de experiencias"
+                "cta": "Ver planes de experiencias",
+                "highlights": {
+                    "item1": "Publicá excursiones, paseos y actividades con fotos y horarios.",
+                    "item2": "Aparecé entre las experiencias que se buscan en el Litoral.",
+                    "item3": "Un monto mensual fijo: ninguna reserva te cobra comisión aparte."
+                }
             },
             "partner": {
                 "title": "Ser partner de Hospeda",
                 "audience": "Para marcas y comercios que quieren visibilidad en toda la plataforma.",
-                "cta": "Conocer el programa de partners"
+                "cta": "Conocer el programa de partners",
+                "highlights": {
+                    "item1": "Presencia de marca en el carrusel de aliados de Hospeda.",
+                    "item2": "Visibilidad conjunta en nuestras campañas y canales de difusión.",
+                    "item3": "Acceso a la red de alojamientos y comercios verificados de la región."
+                }
             }
         }
     },
@@ -111,5 +159,15 @@
             "title": "Comparativa de planes para turistas",
             "description": "Compará todas las funciones, beneficios y límites de cada plan para turistas."
         }
+    },
+    "annualHint": "Pagando por año ahorrás {percent}%",
+    "seeAll": "Ver todo lo que incluye ({count} más)",
+    "seeLess": "Ver menos",
+    "select": {
+        "aria": "Seleccionar el plan {plan}"
+    },
+    "nav": {
+        "backToIndex": "Volver a todos los planes",
+        "ariaLabel": "Navegación del catálogo de planes"
     }
 }
