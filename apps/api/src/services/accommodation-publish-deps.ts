@@ -32,7 +32,7 @@
  * eligibility resolver — hence the billing client this factory takes again.
  */
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { isSubscriptionLive } from '@repo/billing';
+import { isSubscriptionLive, resolveTrialPlanSlug } from '@repo/billing';
 import {
     and,
     billingCustomers,
@@ -47,7 +47,6 @@ import {
 import { ProductDomainEnum } from '@repo/schemas';
 import {
     type AccommodationPublishDeps,
-    DEFAULT_TRIAL_PLAN_SLUG,
     isAccommodationSubscription,
     isOwnerCategorySubscription,
     type PublishEligibility,
@@ -66,6 +65,30 @@ import { createTrialSubscription } from './subscription-trial-create.service';
  * still has their accommodation one.
  */
 const PUBLISH_PRODUCT_DOMAIN = ProductDomainEnum.ACCOMMODATION;
+
+/**
+ * The plan the accommodation trial runs on (HOS-1012 D-5, spec §6.8).
+ *
+ * Resolved FROM the vertical rather than named directly, and that is the whole
+ * point: `resolveTrialPlanSlug` is the single place a product domain becomes a
+ * trial plan slug, so gastronomy and experiences reach their OWN trial plans
+ * instead of falling back to the accommodation one when their publish paths
+ * arrive. Hardcoding `'owner-trial'` here would work today and be the first of
+ * three copies tomorrow.
+ *
+ * It is no longer `owner-basico` (`DEFAULT_TRIAL_PLAN_SLUG`, the correct
+ * placeholder before D-5 was decided). A trial on the entry tier shows the host
+ * a version of Hospeda nobody pays for and then asks them, on day 30, to pay for
+ * exactly what they already had. `owner-trial` carries `owner-pro`'s
+ * entitlements with `owner-basico`'s limits — the host experiences what sells,
+ * and cannot end up over any paid tier's cap.
+ *
+ * `undefined` is unreachable for accommodation (it is one of the three declared
+ * verticals) but is handled rather than asserted away: the failure mode of a
+ * wrong assumption here is a publish with no clock, and a refusal is the correct
+ * degradation.
+ */
+const PUBLISH_TRIAL_PLAN_SLUG = resolveTrialPlanSlug({ productDomain: PUBLISH_PRODUCT_DOMAIN });
 
 /**
  * Builds the publish dependencies that `AccommodationService.publish()` needs.
@@ -189,22 +212,32 @@ export function buildAccommodationPublishDeps(
                 );
                 return null;
             }
+            if (!PUBLISH_TRIAL_PLAN_SLUG) {
+                apiLogger.error(
+                    { ownerId, productDomain: PUBLISH_PRODUCT_DOMAIN },
+                    'HOS-1012: cannot start publish trial — no trial plan is declared for this vertical'
+                );
+                return null;
+            }
             // `billing_plans.name` IS the slug (SPEC-168 convention; the table
             // has no `slug` column), and soft-deleted plans are excluded — the
-            // same filter `getPlanBySlug` applies.
+            // same filter `getPlanBySlug` applies. `active` is deliberately NOT
+            // filtered, exactly as `getPlanBySlug` does not: a trial plan is
+            // seeded inactive precisely because it is never sellable, and
+            // filtering on it here would make every first publish fail.
             const [plan] = await tx
                 .select({ id: billingPlans.id })
                 .from(billingPlans)
                 .where(
                     and(
-                        eq(billingPlans.name, DEFAULT_TRIAL_PLAN_SLUG),
+                        eq(billingPlans.name, PUBLISH_TRIAL_PLAN_SLUG),
                         isNull(billingPlans.deletedAt)
                     )
                 )
                 .limit(1);
             if (!plan) {
                 apiLogger.error(
-                    { ownerId, planSlug: DEFAULT_TRIAL_PLAN_SLUG },
+                    { ownerId, planSlug: PUBLISH_TRIAL_PLAN_SLUG },
                     'HOS-1012: cannot start publish trial — trial plan not found'
                 );
                 return null;
@@ -214,6 +247,10 @@ export function buildAccommodationPublishDeps(
             // IS `OWNER_TRIAL_DAYS`, and naming it here would create a second
             // place the accommodation trial length is decided. (The DB-side
             // override lives on the plan row — see T-2 in the spec.)
+            // `createTrialSubscription` re-reads the plan's `product_domain` and
+            // throws when it does not match `productDomain`. That check is what
+            // turns a wrong slug→vertical mapping into a loud failure instead of
+            // a silent trial consumed in the wrong vertical.
             const { localSubscriptionId, trialEnd } = await createTrialSubscription({
                 customerId: customer.id,
                 planId: plan.id,

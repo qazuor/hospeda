@@ -127,7 +127,11 @@ describe('HOS-1012 — buildAccommodationPublishDeps.startLocalTrial', () => {
         vi.clearAllMocks();
         pooled.used = false;
         fixtures.customers = [{ id: CUSTOMER_ID, externalId: OWNER_ID }];
-        fixtures.plans = [{ id: PLAN_ID, name: 'owner-basico' }];
+        // HOS-1012 T-037: the publish path now resolves the vertical's TRIAL
+        // plan. This suite's `where()` is a no-op, so the slug here is a label
+        // rather than an assertion — `accommodation-publish-trial-plan.test.ts`
+        // is the one that captures the predicate.
+        fixtures.plans = [{ id: PLAN_ID, name: 'owner-trial' }];
         mocks.createTrialSubscription.mockResolvedValue({
             localSubscriptionId: 'sub-local-1',
             trialStart: new Date('2026-09-01T00:00:00.000Z'),
