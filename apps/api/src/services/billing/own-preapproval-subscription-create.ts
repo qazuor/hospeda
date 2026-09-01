@@ -221,6 +221,33 @@ export async function createOwnPreapprovalSubscription(
     const mpSubscriptionId = result.subscription.providerSubscriptionIds?.mercadopago;
     const client = db ?? getDb();
 
+    // HOS-937 step 3: the recovery metadata below (`checkoutUrl`,
+    // `mpPreapprovalPlanId`, `billingInterval`) used to be stamped ONLY on the
+    // commerce/partner (`writeDomainLinkRow`) branch — accommodation
+    // monthly/annual got no metadata write at all here, since qzpay's own
+    // `billing.subscriptions.create` already persists `mergedMetadata` as part
+    // of its own INSERT. That gap made the `pending` recovery (§6.4: "send them
+    // back to the SAME object's init_point") unbuildable for accommodation,
+    // because qzpay-core never persists `providerInitPoint`/`init_point`
+    // anywhere else. Stamping it unconditionally, for every flow, is what lets
+    // `mintRetryPreapprovalAttempt` (`preapproval-recovery.service.ts`)
+    // recover the checkout URL and the exact MP plan/cadence for ANY of the
+    // four flows without an extra live MercadoPago call.
+    const recoveryMetadata: Record<string, string> = {
+        checkoutUrl: result.checkoutUrl,
+        // Cadence backing the row (HOS-937 step 3) — lets a later retry mint a
+        // fresh preapproval on the SAME cadence without re-deriving it from
+        // `billing_mp_plans`.
+        billingInterval: paidInput.billingInterval ?? 'monthly',
+        // Persisted so the §6.6-B reuse check can refuse a stale hit when the
+        // resolved MP plan drifted between two checkout attempts (price
+        // change, trial-day variant change) — same price-drift guard the OLD
+        // flow's `mpPreapprovalPlanId` reuse condition enforced. Also read by
+        // `mintRetryPreapprovalAttempt` to subscribe the fresh attempt against
+        // the SAME MP `preapproval_plan` (same amount/cadence/trial terms).
+        ...(paidInput.providerPriceId ? { mpPreapprovalPlanId: paidInput.providerPriceId } : {})
+    };
+
     try {
         if (writeDomainLinkRow) {
             // HOS-937 step 4 (commerce/partner): the status/domain UPDATE and
@@ -242,20 +269,9 @@ export async function createOwnPreapprovalSubscription(
                         // Spread `domainMetadata` LAST so the entity pointer is
                         // unmistakably part of the same immutable checkout
                         // snapshot, mirroring `createPendingProviderSubscription`.
-                        // `checkoutUrl` closes the §6.6-B reuse gap: qzpay-core
-                        // never persists `providerInitPoint` to storage.
                         metadata: {
                             ...mergedMetadata,
-                            checkoutUrl: result.checkoutUrl,
-                            // Persisted so the §6.6-B reuse check can refuse a
-                            // stale hit when the resolved MP plan drifted
-                            // between two checkout attempts (price change,
-                            // trial-day variant change) — same price-drift
-                            // guard the OLD flow's `mpPreapprovalPlanId`
-                            // reuse condition enforced.
-                            ...(paidInput.providerPriceId
-                                ? { mpPreapprovalPlanId: paidInput.providerPriceId }
-                                : {}),
+                            ...recoveryMetadata,
                             ...domainMetadata
                         }
                     })
@@ -268,7 +284,8 @@ export async function createOwnPreapprovalSubscription(
                 .update(billingSubscriptions)
                 .set({
                     status: SubscriptionStatusEnum.PENDING_PROVIDER,
-                    ...(productDomain === undefined ? {} : { productDomain })
+                    ...(productDomain === undefined ? {} : { productDomain }),
+                    metadata: { ...mergedMetadata, ...recoveryMetadata }
                 })
                 .where(eq(billingSubscriptions.id, localSubscriptionId));
         }

@@ -150,6 +150,7 @@ const activeLabel = resolveActiveLabel();
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<slot name="head-early" slot="head-early" />
 	<SEOHead
 		slot="head"
 		title={resolvedTitle}

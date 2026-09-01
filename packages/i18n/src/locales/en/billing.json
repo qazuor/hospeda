@@ -283,6 +283,21 @@
             "cancel": "Cancel"
         }
     },
+    "checkoutRetry": {
+        "checkingTitle": "Verifying your payment...",
+        "checkingBody": "We are checking the status of your subscription.",
+        "redirectingTitle": "Redirecting you to MercadoPago...",
+        "redirectingBody": "One moment, we're taking you to complete the payment.",
+        "activeTitle": "Your subscription is already active",
+        "activeBody": "No need to pay again: your plan is already up and running.",
+        "confirmingTitle": "We're confirming your payment",
+        "confirmingBody": "We may already be resolving this from another tab. Please wait a moment.",
+        "confirmingTimedOutTitle": "We're still confirming your payment",
+        "confirmingTimedOutBody": "This is taking longer than expected. You can try again in a moment.",
+        "errorTitle": "We couldn't verify your payment",
+        "errorBody": "Try again, or contact us if the problem continues.",
+        "retryButton": "Retry"
+    },
     "limit": {
         "max_favorites": {
             "title": "You've reached your favorites limit",

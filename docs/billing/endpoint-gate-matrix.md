@@ -262,6 +262,7 @@
 | `POST /api/v1/protected/billing/me/subscription-pause` | `billing/subscription-pause.ts` | none | - | n/a | Self-service pause; no entitlement gate |
 | `POST /api/v1/protected/billing/me/subscription-resume` | `billing/subscription-pause.ts` | none | - | n/a | Self-service resume; always allowed |
 | `GET /api/v1/protected/billing/subscriptions/{localId}/status` | `billing/subscription-status.ts` | none | - | n/a | Subscription status poll; auth + ownership sufficient |
+| `POST /api/v1/protected/billing/subscriptions/{localId}/checkout-retry` | `billing/checkout-retry.ts` | none | - | n/a | HOS-937 step 3: recovers a checkout that did not come back authorized (pending → same `init_point`; cancelled → mints a fresh preapproval, the only place in the codebase that does). Auth + ownership (session customer) only, no entitlement gate; a nonexistent or foreign row answers 404, never 403 — a 403 would confirm the id exists |
 | `GET /api/v1/protected/billing/usage` | `billing/usage.ts` | none | - | n/a | Own usage summary; auth-only sufficient |
 | `GET /api/v1/protected/billing/usage/{limitKey}` | `billing/usage.ts` | none | - | n/a | Own per-limit usage; auth-only sufficient |
 | `GET /api/v1/protected/billing/metrics` | `billing/metrics.ts` | none | - | n/a | Own metrics summary; auth-only sufficient |

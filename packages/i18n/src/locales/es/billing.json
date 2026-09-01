@@ -283,6 +283,21 @@
             "cancel": "Cancelar"
         }
     },
+    "checkoutRetry": {
+        "checkingTitle": "Verificando tu pago...",
+        "checkingBody": "Estamos revisando el estado de tu suscripción.",
+        "redirectingTitle": "Te estamos redirigiendo a Mercado Pago...",
+        "redirectingBody": "Un momento, te llevamos a completar el pago.",
+        "activeTitle": "Tu suscripción ya está activa",
+        "activeBody": "No hace falta que vuelvas a pagar: tu plan ya está funcionando.",
+        "confirmingTitle": "Estamos confirmando tu pago",
+        "confirmingBody": "Puede que ya lo estemos resolviendo desde otra pestaña. Esperá un momento.",
+        "confirmingTimedOutTitle": "Todavía estamos confirmando tu pago",
+        "confirmingTimedOutBody": "Esto está tardando más de lo esperado. Podés intentarlo de nuevo en un momento.",
+        "errorTitle": "No pudimos verificar tu pago",
+        "errorBody": "Volvé a intentarlo o escribinos si el problema sigue.",
+        "retryButton": "Reintentar"
+    },
     "limit": {
         "max_favorites": {
             "title": "Llegaste al límite de favoritos",

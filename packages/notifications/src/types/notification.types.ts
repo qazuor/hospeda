@@ -284,6 +284,17 @@ export interface PaymentNotificationPayload extends BaseNotificationPayload {
     planName: string;
     failureReason?: string;
     paymentMethod?: string;
+    /**
+     * HOS-937 step 3 — set only on `PAYMENT_FAILURE`, only when the failure is
+     * a checkout that never activated (MercadoPago cancelled the preapproval
+     * over a card rejection before day 1, spec §6.5/§8.3): the fresh
+     * preapproval's own `init_point`, so the user is not left staring at a
+     * "pay with another method" button that can never work (`cancelled ->
+     * authorized` is a forbidden MP transition). Absent for a REAL payment
+     * failure on an already-active subscription — that case is handled by
+     * automatic dunning retries, not a fresh checkout link.
+     */
+    retryUrl?: string;
 }
 
 /** Subscription events (renewal, plan change) */

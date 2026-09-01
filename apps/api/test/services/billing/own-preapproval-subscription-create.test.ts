@@ -141,11 +141,53 @@ describe('createOwnPreapprovalSubscription', () => {
 
         expect(result.subscription.id).toBe(LOCAL_SUB_ID);
         expect(result.subscription.providerSubscriptionIds?.mercadopago).toBe(MP_SUBSCRIPTION_ID);
+        // HOS-937 step 3: checkoutUrl + billingInterval are now ALWAYS stamped
+        // on metadata (not just the commerce/partner branch) so the retry
+        // recovery flow can resolve the SAME object's init_point for every
+        // flow, not just commerce/partner.
         expect(db.__setMock).toHaveBeenCalledWith({
-            status: SubscriptionStatusEnum.PENDING_PROVIDER
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
         expect(db.__whereMock).toHaveBeenCalledTimes(1);
         expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
+    });
+
+    // HOS-937 step 3, coverage requested on review: the four call sites in
+    // `subscription-checkout.service.ts` are accommodation-monthly (default
+    // billingInterval, covered above), accommodation-ANNUAL (this test —
+    // passes billingInterval:'annual' explicitly, the one dimension the
+    // default-argument test above cannot exercise), commerce (below, no
+    // writeDomainLinkRow variant + with writeDomainLinkRow variant), and
+    // partner (below, with writeDomainLinkRow). All four go through this
+    // SAME shared function, so these branch-combination tests are exhaustive
+    // for the metadata-stamping guarantee, not just the flow this module was
+    // originally written against.
+    it('HOS-937 step 3: stamps billingInterval=annual (accommodation ANNUAL flow) when the caller passes it explicitly', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            billingInterval: 'annual',
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            db: db as any
+        });
+
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'annual'
+            }
+        });
     });
 
     it('Hueco A: cancels the just-created MP preapproval when the status-normalize UPDATE fails, then rethrows the DB error', async () => {
@@ -271,7 +313,11 @@ describe('createOwnPreapprovalSubscription', () => {
         });
 
         expect(db.__setMock).toHaveBeenCalledWith({
-            status: SubscriptionStatusEnum.PENDING_PROVIDER
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
     });
 
@@ -292,7 +338,11 @@ describe('createOwnPreapprovalSubscription', () => {
 
         expect(db.__setMock).toHaveBeenCalledWith({
             status: SubscriptionStatusEnum.PENDING_PROVIDER,
-            productDomain: 'gastronomy'
+            productDomain: 'gastronomy',
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
     });
 
@@ -320,6 +370,7 @@ describe('createOwnPreapprovalSubscription', () => {
             productDomain: 'partner',
             metadata: {
                 checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
                 partnerId: 'partner-123'
             }
         });
@@ -354,6 +405,7 @@ describe('createOwnPreapprovalSubscription', () => {
             productDomain: 'gastronomy',
             metadata: {
                 checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
                 mpPreapprovalPlanId: 'mp_plan_gastronomy',
                 commerceEntityType: 'gastronomy',
                 commerceEntityId: 'ent-1'

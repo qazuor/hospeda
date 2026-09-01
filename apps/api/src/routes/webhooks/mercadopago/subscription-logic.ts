@@ -58,6 +58,10 @@ import { reconcileCommerceListingForSubscription } from '../../../services/comme
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
+import {
+    buildCheckoutRetryLandingUrl,
+    DEFAULT_RETURN_URL_LOCALE
+} from '../../billing/checkout-return-urls.js';
 
 /**
  * Safety margin timeout before MercadoPago's 22s webhook deadline.
@@ -1650,6 +1654,55 @@ export async function processSubscriptionUpdated({
             previousStatus
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription cancelled notification failed');
+        });
+    }
+
+    // HOS-937 step 3: PENDING_PROVIDER -> CANCELLED means MercadoPago
+    // cancelled a preapproval that never activated (typically a card
+    // rejection during checkout, spec §8.3). Left alone, MP keeps offering
+    // the user a "pay with another method" button that can never work
+    // (`cancelled -> authorized` is a forbidden MP transition) — an
+    // infinite loop with no way out.
+    //
+    // Redesigned per adversarial review: the webhook does NOT mint a fresh
+    // preapproval here. R-3 measured cancellations that read `cancelled` on
+    // BOTH the `PUT` and an immediate `GET`, then read `authorized`/
+    // `pending` HOURS later — a 350ms deferred re-read (what this used to
+    // do) does not cover that gap, and minting here risks a second live MP
+    // preapproval for a user whose original one resurrects. Minting is
+    // deferred all the way to the checkout-retry endpoint
+    // (`routes/billing/checkout-retry.ts`), which the user reaches by
+    // clicking the link below — naturally minutes-to-hours later, which
+    // covers R-3 for real, with no new mechanism. That endpoint does its
+    // own fresh `GET` and only mints if MercadoPago STILL reports
+    // cancelled at click time.
+    //
+    // This is deliberately its own `if`, NOT an `else` on
+    // `shouldSendCancelledEmail` above — that guard explicitly EXCLUDES
+    // this exact transition (a checkout that never activated is not "your
+    // subscription was cancelled"), which is why this transition has never
+    // sent the user anything until now.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        mappedStatus === SubscriptionStatusEnum.CANCELLED &&
+        customer?.email
+    ) {
+        sendNotification({
+            type: NotificationType.PAYMENT_FAILURE,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: localSubscription.customerId,
+            planName: planDisplayName,
+            amount: 0,
+            currency: 'ARS',
+            failureReason: 'card_rejected',
+            retryUrl: buildCheckoutRetryLandingUrl(DEFAULT_RETURN_URL_LOCALE, localSubscription.id)
+        }).catch((notifErr) => {
+            apiLogger.debug(
+                { error: notifErr, subscriptionId: localSubscription.id },
+                'HOS-937 step 3: retry-checkout notification failed'
+            );
         });
     }
 

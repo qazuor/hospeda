@@ -15,6 +15,7 @@ import type {
     AccommodationOccupancy,
     AccommodationReviewListItem,
     AddonResponse,
+    CheckoutRetryResponse,
     DestinationReviewListItem,
     DowngradePreview,
     HostTradeBenefitTypeEnum,
@@ -969,6 +970,44 @@ export const billingApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/link-preapproval`,
             body: { preapprovalId, localSubscriptionId }
+        });
+    },
+
+    /**
+     * Recover a checkout that did not come back `authorized` (HOS-937 step 4).
+     *
+     * Reads the caller's own preapproval by its LOCAL subscription id (never
+     * the MercadoPago id) and returns the recovery spec §6.4 defines. The
+     * four possible `recovery` values are NOT interchangeable:
+     * - `'authorized'` — the checkout already succeeded. `checkoutUrl` is
+     *   `null` — never redirect to pay again.
+     * - `'pending'` — the SAME preapproval is still awaiting completion.
+     *   `checkoutUrl` (when present) is its own `init_point`.
+     * - `'cancelled'` — a FRESH preapproval was minted (or reused from an
+     *   earlier call). `checkoutUrl` is the new `init_point`.
+     * - `'confirming'` — a concurrent call already claimed the right to
+     *   mint, or the deferred re-read was ambiguous. `checkoutUrl` is
+     *   `null`; the caller should retry shortly rather than treat this as
+     *   final.
+     *
+     * @param params.localId - The local subscription UUID (the `retryCheckoutId`
+     * query param on `/mi-cuenta/suscripcion/`).
+     * @returns The recovery classification plus a redirect URL when applicable.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.checkoutRetry({ localId });
+     * if (result.ok && result.data.recovery === 'authorized') { // already active }
+     * ```
+     */
+    checkoutRetry({
+        localId
+    }: {
+        readonly localId: string;
+    }): Promise<ApiResult<CheckoutRetryResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${localId}/checkout-retry`,
+            body: {}
         });
     },
 
