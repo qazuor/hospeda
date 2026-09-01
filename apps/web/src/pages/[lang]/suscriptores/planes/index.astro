@@ -275,6 +275,11 @@ const headingMain = headingWords.join(' ');
 	.audiences {
 		padding-block: clamp(2.5rem, 6vw, 4.5rem);
 		background-color: var(--core-background);
+		/* ONE number spaces the inside of a card. The flex fallback spends it as
+		   the card's `gap`; the subgrid branch spends it as the `row-gap` of the
+		   shared tracks. Declared on the section so both levels inherit it and
+		   there is a single place to change the card's rhythm. */
+		--audience-card-rhythm: var(--space-4, 1rem);
 	}
 
 	.audiences__container {
@@ -366,7 +371,7 @@ const headingMain = headingWords.join(' ');
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3, 0.75rem);
+		gap: var(--audience-card-rhythm);
 		width: 100%;
 		min-width: 0;
 		/* The extra 4px on top is the accent rule's own height, so the glyph
@@ -493,10 +498,22 @@ const headingMain = headingWords.join(' ');
 		font-family: var(--font-sans);
 	}
 
+	/* One step up the shared scale, `--text-h4` → `--text-lg` (owner review
+	   HOS-943: "el precio, un toque más grande"). `--text-lg` is 1.25rem FLAT;
+	   `--text-h4` is a clamp that only reaches 1.125rem past a ~1600px viewport,
+	   so this is roughly +2px on a phone and +2.4px on a 1440px screen — a step,
+	   not a jump.
+
+	   The card TITLE keeps its own size deliberately: the two are the only
+	   700-weight heading-font strings on the card, and the title is what the
+	   visitor is choosing between. The price is a supporting fact with a muted
+	   `/mes` hanging off it, it sits below the title and below the highlights,
+	   and it is not the first thing under the audience's glyph. If it ever needs
+	   to grow again, the title has to grow with it. */
 	.audiences__card-price-amount {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: var(--text-h4, 1.125rem);
+		font-size: var(--text-lg, 1.25rem);
 		color: var(--core-foreground);
 	}
 
@@ -505,21 +522,54 @@ const headingMain = headingWords.join(' ');
 		color: var(--core-muted-foreground);
 	}
 
-	/* The trial line. Deliberately quiet: it sits directly under the amount as
-	   a qualifier of it, so it takes the muted ink and the small step rather
-	   than competing with the price for the eye.
+	/* ─── The trial line ─────────────────────────────────────────────
+	   It used to be deliberately quiet — muted ink, small step, sitting under
+	   the amount as a qualifier of it. The owner read that back as "se pierde",
+	   and he is right for a reason that is not about the colour: on a card that
+	   is otherwise five stacked lines of sans-serif text, a sixth stacked line
+	   of sans-serif text cannot stand out however it is coloured. It is now a
+	   PILL — the only enclosed shape on the card — so it separates by SHAPE
+	   first and by colour second, and stays the standout element for a visitor
+	   who cannot tell the hues apart.
 
-	   Its own `margin-block-start: auto` for the same reason the price and the
-	   CTA carry one — see the note below. Partner renders a price and no trial,
-	   so neither of the two optional lines can be assumed present just because
-	   the other one is. */
+	   Same treatment and the same tokens as `.pricing-card__trial` on the two
+	   pricing pages, including the part that looks like an omission and is not:
+	   the chip has NO background fill. `--brand-accent-text` is the
+	   AA-normal-size step of the accent (SPEC-308) — `--brand-accent` is a fill
+	   hue and is not a text token — and measured over `--core-card` it reads
+	   4.53:1 on the light theme, three hundredths above the 4.5:1 floor. Any
+	   tint behind it spends headroom that does not exist: 12% of the ink itself
+	   takes it to 3.86:1, and even 4% takes it to 4.29:1. The dark theme passes
+	   either way; light is what binds. So the chip is built from shape (the only
+	   enclosed box on the card), a 2px outline, 700 weight and a step up in
+	   size, and its text still sits on the bare card at the token's own ratio.
+
+	   The border is mixed from `currentColor` so it tracks the ink; it is
+	   decoration rather than a UI control, so 1.4.11's 3:1 does not apply to it.
+
+	   Note the ink is NOT `--audience-ink`: two of the five audience accents are
+	   decorative tints that do not clear AA as body text, which is the same rule
+	   the CTA below follows.
+
+	   `inline-flex` + `width: fit-content` so the chip is as wide as its text
+	   rather than as wide as the card. It keeps `margin-block-start: auto` for
+	   the FALLBACK layout only (see the note below the CTA); in the subgrid
+	   branch it sits in a shared row and the auto resolves to zero. */
 	.audiences__card-trial {
 		margin: 0;
 		margin-block-start: auto;
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		max-width: 100%;
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm, 0.9375rem);
-		line-height: 1.4;
-		color: var(--core-muted-foreground);
+		font-size: var(--text-body, 1rem);
+		font-weight: 700;
+		line-height: 1.3;
+		padding: 0.3em 0.9em;
+		border-radius: var(--radius-pill);
+		color: var(--brand-accent-text);
+		border: 2px solid color-mix(in srgb, currentColor 60%, transparent);
 	}
 
 	/* `margin-block-start: auto` on the price, the trial and the CTA: each of
@@ -541,6 +591,118 @@ const headingMain = headingWords.join(' ');
 		   CTA deliberately does NOT take `--audience-ink`: two of the five inks
 		   are decorative tints that would not clear AA as body text. */
 		color: var(--brand-primary-link);
+	}
+
+	/* ─── Shared row tracks ──────────────────────────────────────────
+	   Owner review (HOS-943): the prices, and the trial lines, have to fall on
+	   the SAME horizontal line across the cards. Stacking each card
+	   independently cannot do that — a two-line title or a three-line highlight
+	   pushes everything under it down by one line, and with five audiences whose
+	   copy is genuinely different lengths the prices ended up staggered on every
+	   viewport.
+
+	   `subgrid` is the mechanism, and `min-height` is explicitly not: a height
+	   tuned by eye is a guess that breaks on the first copy edit, in the other
+	   two locales, and at any other font size. This is the same fix the two
+	   pricing pages already carry (see `PricingCardsGrid.astro`), with ONE extra
+	   problem to solve that those do not have.
+
+	   ## Five cards do not fit in one band
+
+	   `PricingCardsGrid` has at most three cards in a three-column grid, so
+	   every card can span `1 / -1` of a single row set. Here there are five, so
+	   at three columns the grid is 3 + 2 and at two columns it is 2 + 2 + 1:
+	   `grid-row: 1 / -1` would ask all five to span the same tracks and pile
+	   them into implicit rows.
+
+	   `grid-row: span 7` is what makes it work. Auto-placement gives each card
+	   its own seven tracks in whichever band it lands in, and `subgrid` shares
+	   THOSE seven with the other cards of that band. Alignment is therefore
+	   per-row-of-cards, which is the only place it is visible anyway.
+
+	   ## Every child names its row, and that is the point
+
+	   The rows are assigned explicitly (`grid-row: N`) instead of being filled
+	   in source order, because two of the seven blocks are OPTIONAL and the
+	   whole requirement turns on that: partner's plans are all `hasTrial: false`
+	   so partner renders no trial line, and a card whose catalogue fetch failed
+	   renders no price. Under auto-placement partner's CTA would slide up into
+	   the trial row and stop lining up with the other four. Named rows leave the
+	   missing block's track simply EMPTY in that one card, and everything after
+	   it stays on its line.
+
+	   The tourist card's "Gratis" needs nothing special for the same reason: it
+	   is still a price, in the price row, just without the `/mes` beside it.
+
+	   ## Gutters
+
+	   A subgrid inherits its parent's gutters in the subgridded axis, so the
+	   shorthand `gap` is split here: `column-gap` keeps the 1.25rem meant to sit
+	   BETWEEN cards, and `row-gap` becomes the card's own internal rhythm — the
+	   same one number the flex fallback uses for its `gap`. The visible
+	   consequence, and it is deliberate: rows of cards are separated by the
+	   rhythm (1rem) rather than by the column gutter (1.25rem), because one
+	   property cannot be two values. 4px is under the threshold where the grid
+	   reads as uneven.
+
+	   FALLBACK (no `subgrid`): every rule here is inside `@supports`, so the
+	   cards stay flex columns spaced by the same rhythm, `margin-block-start:
+	   auto` still pins the price/trial/CTA block to the bottom, and the layout
+	   degrades to exactly what shipped before this change. Below 640px there is
+	   one card per row and nothing to align, so the whole block starts at the
+	   first multi-column breakpoint. */
+	@media (min-width: 640px) {
+		@supports (grid-template-rows: subgrid) {
+			.audiences__grid {
+				column-gap: var(--space-5, 1.25rem);
+				row-gap: var(--audience-card-rhythm);
+			}
+
+			/* The `<li>` is the grid item, the `<a>` is the card. Two levels, so
+			   two nested subgrids: the item adopts the grid's tracks and the card
+			   adopts the item's. */
+			.audiences__item {
+				display: grid;
+				grid-row: span 7;
+				grid-template-rows: subgrid;
+				row-gap: var(--audience-card-rhythm);
+			}
+
+			.audiences__card {
+				display: grid;
+				grid-row: 1 / -1;
+				grid-template-rows: subgrid;
+				row-gap: var(--audience-card-rhythm);
+			}
+
+			.audiences__card-glyph {
+				grid-row: 1;
+			}
+
+			.audiences__card-title {
+				grid-row: 2;
+			}
+
+			.audiences__card-audience {
+				grid-row: 3;
+			}
+
+			.audiences__card-highlights {
+				grid-row: 4;
+			}
+
+			.audiences__card-price {
+				grid-row: 5;
+			}
+
+			.audiences__card-trial {
+				grid-row: 6;
+			}
+
+			.audiences__card-cta {
+				grid-row: 7;
+			}
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

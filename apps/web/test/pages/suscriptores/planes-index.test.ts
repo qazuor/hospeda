@@ -526,3 +526,313 @@ describe('sitemap classification of the moved routes (AC-6)', () => {
         expect(emitted).toContain('/suscriptores/turistas/comparar/');
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-943 owner review — the index cards line up
+// ---------------------------------------------------------------------------
+
+describe('plan index — prices and trial lines land on the same line (adjustment 6)', () => {
+    /** The body of one scoped rule on the index page, first occurrence. */
+    const ruleFor = (selector: string): string =>
+        indexSrc.match(new RegExp(`\\.${selector} \\{([^}]*)\\}`))?.[1] ?? '';
+
+    it('shares row tracks with subgrid rather than guessing a min-height', () => {
+        // A height tuned by eye is a guess that breaks on the first copy edit,
+        // in the other two locales, and at any other font size. The five
+        // audiences carry genuinely different-length copy, so it would break
+        // immediately.
+        expect(indexSrc).toContain('grid-template-rows: subgrid;');
+        expect(indexSrc).not.toMatch(/\.audiences__card \{[^}]*min-height:/);
+        expect(indexSrc).not.toMatch(/\.audiences__item \{[^}]*min-height:/);
+    });
+
+    it('spans seven rows instead of 1 / -1, because five cards do not fit one band', () => {
+        // `PricingCardsGrid` has at most three cards in a three-column grid, so
+        // every card can span `1 / -1` of ONE row set. Here there are five: at
+        // three columns the grid is 3 + 2 and at two columns 2 + 2 + 1.
+        // `grid-row: 1 / -1` on the item would ask all five to span the same
+        // tracks and pile them into implicit rows. `span 7` lets auto-placement
+        // give each band its own seven tracks, which is the only place the
+        // alignment is visible anyway.
+        expect(indexSrc).toContain('grid-row: span 7;');
+        expect(ruleFor('audiences__item')).not.toContain('grid-row: 1 / -1');
+        // The inner `<a>` DOES span all of the item's rows — it is the second
+        // level of a nested subgrid, not the auto-placed item.
+        expect(indexSrc).toMatch(
+            /\.audiences__card \{\s*display: grid;\s*grid-row: 1 \/ -1;\s*grid-template-rows: subgrid;/
+        );
+    });
+
+    it('names a row for every block, which is what survives the two odd cards', () => {
+        // The whole requirement turns on this. Two of the seven blocks are
+        // OPTIONAL: every partner tier is `hasTrial: false` so partner renders
+        // NO trial line, and a card whose catalogue fetch failed renders no
+        // price. Under source-order auto-placement partner's CTA would slide up
+        // into the trial row and stop lining up with the other four. Named rows
+        // leave the missing block's track empty in that one card, and
+        // everything after it stays on its line.
+        //
+        // The tourist card's "Gratis" needs nothing special for the same
+        // reason: it is still a price, in the price row, without a `/mes`.
+        const expected: ReadonlyArray<readonly [string, number]> = [
+            ['audiences__card-glyph', 1],
+            ['audiences__card-title', 2],
+            ['audiences__card-audience', 3],
+            ['audiences__card-highlights', 4],
+            ['audiences__card-price', 5],
+            ['audiences__card-trial', 6],
+            ['audiences__card-cta', 7]
+        ];
+
+        for (const [selector, row] of expected) {
+            expect(indexSrc, `${selector} must be pinned to row ${row}`).toMatch(
+                new RegExp(`\\.${selector} \\{\\s*grid-row: ${row};\\s*\\}`)
+            );
+        }
+
+        // The span and the block list must have the same length, exactly as on
+        // the pricing cards: a block added without a row silently shifts every
+        // card that renders it relative to the others.
+        const span = indexSrc.match(/grid-row: span (\d+);/);
+        expect(Number(span?.[1])).toBe(expected.length);
+    });
+
+    it('splits the gap shorthand so the card gutter does not space the shared rows', () => {
+        // A subgrid inherits its parent's gutters in the subgridded axis, so a
+        // plain `gap` would put the 1.25rem meant to sit BETWEEN cards between
+        // every block INSIDE one.
+        const branch = indexSrc.match(
+            /@supports \(grid-template-rows: subgrid\) \{([\s\S]*?)\n\t\t\}\n\t\}/
+        )?.[1];
+
+        expect(branch).toBeDefined();
+        expect(branch).toContain('column-gap: var(--space-5, 1.25rem);');
+        expect(branch).toContain('row-gap: var(--audience-card-rhythm);');
+        // ONE number spaces the inside of a card: the flex fallback spends it
+        // as `gap`, the subgrid branch as the shared `row-gap`.
+        expect(indexSrc).toContain('--audience-card-rhythm: var(--space-4, 1rem);');
+        expect(ruleFor('audiences__card')).toContain('gap: var(--audience-card-rhythm);');
+    });
+
+    it('declares the subgrid branch AFTER the base card rules', () => {
+        // Not cosmetic. `@supports` and `@media` add no specificity, so the
+        // branch's `display: grid` and the base rule's `display: flex` are a
+        // source-order tie — and the first cut of this change lost it. The
+        // cards silently stayed flex columns and nothing lined up, with every
+        // declaration correct and present in the served CSS.
+        const base = indexSrc.indexOf('.audiences__card {');
+        const branch = indexSrc.indexOf('@supports (grid-template-rows: subgrid)');
+
+        expect(base).toBeGreaterThan(-1);
+        expect(branch).toBeGreaterThan(base);
+    });
+
+    it('degrades to the previous flex layout where subgrid is unsupported', () => {
+        // Every rule is inside `@supports`, and the whole block starts at the
+        // first multi-column breakpoint — below 640px there is one card per row
+        // and nothing to align.
+        expect(indexSrc).toContain('@supports (grid-template-rows: subgrid)');
+        expect(ruleFor('audiences__card')).toContain('display: flex;');
+        // The fallback still pins the price/trial/CTA block to the bottom.
+        expect(ruleFor('audiences__card-cta')).toContain('margin-block-start: auto;');
+    });
+});
+
+describe('plan index — the trial line stands out, the price gains a step (3 and 4)', () => {
+    const ruleFor = (selector: string): string =>
+        indexSrc.match(new RegExp(`\\.${selector} \\{([^}]*)\\}`))?.[1] ?? '';
+
+    it('renders the trial line as an enclosed chip, not a sixth line of text', () => {
+        const rule = ruleFor('audiences__card-trial');
+
+        expect(rule).toContain('border-radius: var(--radius-pill);');
+        expect(rule).toContain('display: inline-flex;');
+        expect(rule).toContain('width: fit-content;');
+        expect(rule).toContain('font-weight: 700;');
+        // It used to take the muted ink and the small step, which is how it
+        // disappeared — not by being faint, but by looking like its neighbours.
+        expect(rule).not.toContain('color: var(--core-muted-foreground)');
+        expect(rule).toContain('color: var(--brand-accent-text);');
+    });
+
+    it('gives that chip NO background — the ink has no contrast headroom to spend', () => {
+        // Same measurement as `.pricing-card__trial`: `--brand-accent-text` is
+        // 4.53:1 over `--core-card` on the light theme, three hundredths above
+        // the 4.5:1 floor. A 12% tint of the ink itself takes it to 3.86:1 and
+        // even 4% takes it to 4.29:1. Dark passes either way, so the regression
+        // would only ever appear in one theme.
+        expect(ruleFor('audiences__card-trial')).not.toContain('background');
+    });
+
+    it('bumps the price one step without passing the card title', () => {
+        // "Un toque más grande, sin que se coma la jerarquía del título."
+        // `--text-lg` is 1.25rem FLAT; `--text-h4` is a clamp that only reaches
+        // 1.125rem past a ~1600px viewport.
+        expect(ruleFor('audiences__card-price-amount')).toContain(
+            'font-size: var(--text-lg, 1.25rem);'
+        );
+        // The title deliberately did not move. If the price ever grows again,
+        // the title has to grow with it.
+        expect(ruleFor('audiences__card-title')).toContain('font-size: var(--text-h4, 1.125rem);');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-943 adjustment 5 — "restaurante" was the vertical's only door
+// ---------------------------------------------------------------------------
+
+describe('the gastronomy card does not narrow the vertical to restaurants', () => {
+    const LOCALES = ['es', 'en', 'pt'] as const;
+
+    const gastronomyCard = (locale: string): Record<string, string> => {
+        const file = resolve(
+            __dirname,
+            `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
+        );
+        const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+            index?: { cards?: { gastronomy?: Record<string, unknown> } };
+        };
+        const card = parsed.index?.cards?.gastronomy ?? {};
+
+        return Object.fromEntries(
+            Object.entries(card)
+                .filter(([, value]) => typeof value === 'string')
+                .map(([key, value]) => [key, String(value)])
+        );
+    };
+
+    it.each(LOCALES)('%s does not put "restaurant" in the card title', (locale) => {
+        // The vertical sells to carritos, rotiserías, parrillas, panaderías,
+        // cafés, heladerías, food trucks and casas de comida. A choripán cart
+        // reading "restaurante" concludes, correctly, that this is not for it —
+        // and the title is the one string that decides whether it reads on.
+        expect(gastronomyCard(locale).title?.toLowerCase()).not.toMatch(/restaurante|restaurant/);
+    });
+
+    it.each(LOCALES)('%s still names the vertical in the title', (locale) => {
+        // Not merely "absence of restaurant": the title has to say what it is,
+        // or the card stops being a door at all.
+        expect(gastronomyCard(locale).title).toMatch(/local gastron[oóô]mico|food business/i);
+    });
+
+    it.each(LOCALES)('%s widens the audience line past three venue types', (locale) => {
+        // The line used to enumerate exactly "restaurantes, bares y cafés",
+        // which reads as an exhaustive list rather than as examples. Keeping
+        // "restaurante" AMONG several examples is fine — being the only door is
+        // what was not.
+        const audience = gastronomyCard(locale).audience ?? '';
+
+        expect(audience).toMatch(/food truck/i);
+        expect(audience).toMatch(/local gastron[oóô]mico|food business/i);
+    });
+
+    it('leaves the indexed URL alone — Google reads the path, a person reads the copy', () => {
+        // `/publicar-restaurante/` is indexed and "publicar restaurante" has
+        // real search volume. Renaming the route trades that for nothing: the
+        // URL and the copy address two different audiences and do not have to
+        // share a word.
+        const audiencePlans = readFileSync(
+            resolve(__dirname, '../../../src/lib/billing/audience-plans.ts'),
+            'utf8'
+        );
+
+        expect(audiencePlans).toContain("gastronomy: 'publicar-restaurante'");
+        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/publicar-restaurante/');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// R-2, widened — no locale key on ANY of the three plan surfaces states a
+// trial length. `pricing.index.trial*` was already guarded further up; the
+// pricing CARDS read `pricing.trial*`, which was not, and which HOS-943
+// rewrote.
+// ---------------------------------------------------------------------------
+
+describe('no trial key on the plan surfaces writes a number of days', () => {
+    const LOCALES = ['es', 'en', 'pt'] as const;
+
+    /** Every `trial*` string in `pricing.json`, card surface and index alike. */
+    const allTrialCopy = (locale: string): Record<string, string> => {
+        const file = resolve(
+            __dirname,
+            `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
+        );
+        const parsed = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+        const index = (parsed.index ?? {}) as Record<string, unknown>;
+
+        const collect = (
+            source: Record<string, unknown>,
+            prefix: string
+        ): ReadonlyArray<readonly [string, string]> =>
+            Object.entries(source)
+                .filter(([key, value]) => key.startsWith('trial') && typeof value === 'string')
+                .map(([key, value]) => [`${prefix}${key}`, String(value)] as const);
+
+        return Object.fromEntries([
+            ...collect(parsed, 'pricing.'),
+            ...collect(index, 'pricing.index.')
+        ]);
+    };
+
+    it.each(LOCALES)('%s covers both surfaces, so neither can drift unguarded', (locale) => {
+        // If this list ever shrinks, a key stopped being SEEN by the assertion
+        // below rather than stopped existing — which is the failure mode that
+        // makes a copy guard vacuous.
+        expect(Object.keys(allTrialCopy(locale)).sort()).toEqual([
+            'pricing.index.trial_one',
+            'pricing.index.trial_other',
+            'pricing.trialNotEligible',
+            'pricing.trial_one',
+            'pricing.trial_other'
+        ]);
+    });
+
+    it.each(LOCALES)('%s writes no digit into any trial string', (locale) => {
+        // THE R-2 assertion. A locale file is pure copy, so "contains a digit"
+        // here means exactly one thing: somebody wrote a trial length into a
+        // translation. That is HOS-525 — marketing promised hosts 30 days while
+        // the product granted 14 — with the numbers moved one file over. The
+        // database currently says 30 for nearly every audience, which is
+        // precisely why a literal would LOOK right and be just as wrong.
+        for (const [key, value] of Object.entries(allTrialCopy(locale))) {
+            expect(value, `${locale} / ${key}`).not.toMatch(/\d/);
+        }
+    });
+
+    it.each(LOCALES)('%s interpolates the count in both plural pairs', (locale) => {
+        const copy = allTrialCopy(locale);
+
+        for (const key of [
+            'pricing.trial_one',
+            'pricing.trial_other',
+            'pricing.index.trial_one',
+            'pricing.index.trial_other'
+        ]) {
+            expect(copy[key], `${locale} / ${key}`).toContain('{{count}}');
+        }
+    });
+
+    it.each(LOCALES)('%s says the word "trial", not merely "free"', (locale) => {
+        // Owner review: the line has to read "30 días de prueba gratis". "30
+        // días gratis" sitting beside a monthly price is ambiguous — free of
+        // what? — and this is the card's strongest argument, so it cannot also
+        // be its vaguest line.
+        const copy = allTrialCopy(locale);
+        const namesTheTrial = /prueba|trial|teste/i;
+
+        expect(copy['pricing.trial_one'], locale).toMatch(namesTheTrial);
+        expect(copy['pricing.trial_other'], locale).toMatch(namesTheTrial);
+        expect(copy['pricing.index.trial_other'], locale).toMatch(namesTheTrial);
+    });
+
+    it.each(LOCALES)('%s never promises a signup without a card', (locale) => {
+        // HOS-171: every subscription is a MercadoPago preapproval, so payment
+        // details are collected on day one. Copy to the contrary is a false
+        // promise, not merely unhelpful.
+        for (const [key, value] of Object.entries(allTrialCopy(locale))) {
+            expect(value.toLowerCase(), `${locale} / ${key}`).not.toMatch(
+                /sin tarjeta|no card|without a card|sem cart[aã]o/
+            );
+        }
+    });
+});
