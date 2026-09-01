@@ -69,6 +69,38 @@ export const StartPaidSubscriptionRequestSchema = z.object({
 export type StartPaidSubscriptionRequest = z.infer<typeof StartPaidSubscriptionRequestSchema>;
 
 /**
+ * Request body for the commerce owner self-checkout
+ * (`POST /api/v1/protected/commerce/listings/{entityType}/{entityId}/start-subscription`).
+ *
+ * Carries ONLY `payerEmail` (HOS-1008): the plan is derived from the
+ * listing's vertical and the interval is always monthly, so unlike
+ * {@link StartPaidSubscriptionRequestSchema} there is nothing else for the
+ * caller to choose. The whole body is optional — omitting it keeps the exact
+ * pre-HOS-1008 behavior, which is what the `ownPreapprovalEnabled` flag being
+ * off must produce.
+ *
+ * Deliberately NOT accepted on the ADMIN commerce start-subscription route:
+ * that route provisions on the OWNER's behalf, and the admin has no way to
+ * know which MercadoPago account the owner pays with — an editable field
+ * there would let one person bind another person's payer email. Same
+ * reasoning that keeps the partner flow on a synthetic address.
+ *
+ * The `payerEmail` field reuses the same validation and the same i18n error
+ * keys as its accommodation sibling on purpose: it is the same value, bound
+ * to the same MercadoPago field, and a second set of keys would drift.
+ */
+export const CommerceStartSubscriptionRequestSchema = z.object({
+    payerEmail: z
+        .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
+        .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
+        .max(255, { message: 'zodError.billing.startPaid.payerEmail.max' })
+        .optional()
+});
+export type CommerceStartSubscriptionRequest = z.infer<
+    typeof CommerceStartSubscriptionRequestSchema
+>;
+
+/**
  * Response body for `POST /api/v1/protected/billing/subscriptions/start-paid`.
  *
  * `checkoutUrl` is the provider-hosted page (MP `init_point` for monthly

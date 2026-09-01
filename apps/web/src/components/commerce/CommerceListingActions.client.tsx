@@ -17,6 +17,8 @@
 
 import type { JSX } from 'react';
 import { useState } from 'react';
+import { PayerEmailConfirmDialog } from '@/components/billing/PayerEmailConfirmDialog.client';
+import { useSession } from '@/lib/auth-client';
 import { storePendingCheckoutSubId } from '@/lib/billing/checkout-pending';
 import {
     type CommerceListingCardState,
@@ -54,6 +56,22 @@ export interface CommerceListingActionsProps {
      * property never opens a checkout.
      */
     readonly hasVerticalSubscription: boolean;
+    /**
+     * Whether the own-preapproval checkout path (HOS-937) is active, resolved
+     * SSR-side by the page via `fetchCheckoutConfig()` — the web app has no
+     * client access to the API's env.
+     *
+     * Gates {@link PayerEmailConfirmDialog} (HOS-1008). The dialog only has an
+     * effect on that path: it is the only one that binds `payer_email`
+     * server-side. On the hosted share-link path MercadoPago discards the
+     * email entirely, so the dialog would be a pure extra click in a flow
+     * that bills.
+     *
+     * Defaults to `false` — the same dark-by-default posture as the API flag,
+     * so a page that forgets to pass it renders today's behavior rather than
+     * a step that does nothing.
+     */
+    readonly ownPreapprovalEnabled?: boolean;
 }
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
@@ -69,10 +87,13 @@ const PUBLIC_PATH_BY_VERTICAL: Record<CommerceOwnerListingSummaryWithState['vert
 export function CommerceListingActions({
     listing,
     locale,
-    hasVerticalSubscription
+    hasVerticalSubscription,
+    ownPreapprovalEnabled = false
 }: CommerceListingActionsProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const { data: session } = useSession();
     const [isCheckoutStarting, setIsCheckoutStarting] = useState(false);
+    const [showPayerEmailConfirm, setShowPayerEmailConfirm] = useState(false);
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     // AC-14/R-5: on a 422 the SERVER's `missing` array is authoritative and
     // overrides the local preview — see `resolveListingCompleteness`'s module
@@ -91,7 +112,28 @@ export function CommerceListingActions({
         isCheckoutStarting
     });
 
-    async function handlePublishAndPay(): Promise<void> {
+    /**
+     * Whether this click will actually open a MercadoPago checkout.
+     *
+     * Two conditions, and BOTH matter (HOS-1008):
+     *
+     * - `ownPreapprovalEnabled` — only that path binds `payer_email`.
+     * - `!hasVerticalSubscription` — with a subscription already held for this
+     *   vertical the backend ATTACHES the listing and publishes it
+     *   synchronously (HOS-688 §6.8 branch 2). No payment is opened, so there
+     *   is no payer to confirm and the dialog would be a step that asks the
+     *   owner about a charge that is not going to happen.
+     */
+    const needsPayerEmailConfirm = ownPreapprovalEnabled && !hasVerticalSubscription;
+
+    /**
+     * Runs the checkout itself.
+     *
+     * `payerEmail` is forwarded only when the owner actually went through the
+     * confirmation screen; otherwise nothing is sent and the request is
+     * identical to the pre-HOS-1008 one.
+     */
+    async function runCheckout(payerEmail?: string): Promise<void> {
         if (isCheckoutStarting) {
             return;
         }
@@ -101,7 +143,8 @@ export function CommerceListingActions({
         try {
             const result = await startOwnerListingCheckout({
                 vertical: listing.vertical,
-                listingId: listing.id
+                listingId: listing.id,
+                ...(payerEmail === undefined ? {} : { payerEmail })
             });
 
             if (result.ok) {
@@ -163,6 +206,29 @@ export function CommerceListingActions({
         } finally {
             setIsCheckoutStarting(false);
         }
+    }
+
+    /**
+     * The CTA handler. Opens the payer-email confirmation screen when this
+     * click will really open a MercadoPago checkout; otherwise goes straight
+     * to {@link runCheckout}, which is exactly what happened before HOS-1008.
+     */
+    function handlePublishAndPay(): void {
+        if (isCheckoutStarting) {
+            return;
+        }
+        if (needsPayerEmailConfirm) {
+            setCheckoutError(null);
+            setShowPayerEmailConfirm(true);
+            return;
+        }
+        void runCheckout();
+    }
+
+    /** Called with the confirmed (possibly edited) email. */
+    function handlePayerEmailConfirmed(email: string): void {
+        setShowPayerEmailConfirm(false);
+        void runCheckout(email);
     }
 
     if (state.kind === 'published') {
@@ -291,7 +357,7 @@ export function CommerceListingActions({
                 className={styles.publishButton}
                 disabled={!canPublish || isCheckoutStarting}
                 aria-busy={isCheckoutStarting}
-                onClick={() => void handlePublishAndPay()}
+                onClick={handlePublishAndPay}
                 data-testid="commerce-publish-button"
             >
                 {isCheckoutStarting ? publishingLabel : publishCtaLabel}
@@ -305,6 +371,22 @@ export function CommerceListingActions({
                     {checkoutError}
                 </p>
             )}
+
+            {/*
+             * HOS-1008: the pre-redirect payer-email screen the commerce
+             * checkout was missing. Mounted unconditionally and toggled via
+             * `isOpen` — the same shape `PlanPurchaseButton` uses — so the
+             * dialog's own "re-seed on open" effect works across repeated
+             * attempts. It can only ever open when `needsPayerEmailConfirm`
+             * is true.
+             */}
+            <PayerEmailConfirmDialog
+                isOpen={showPayerEmailConfirm}
+                locale={locale}
+                defaultEmail={session?.user?.email ?? ''}
+                onCancel={() => setShowPayerEmailConfirm(false)}
+                onConfirm={handlePayerEmailConfirmed}
+            />
         </div>
     );
 }
