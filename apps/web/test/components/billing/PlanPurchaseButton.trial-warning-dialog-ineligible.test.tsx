@@ -67,6 +67,10 @@ const SSR_TRIAL_TEXT = '14 días gratis';
 const INELIGIBLE_NOTE = 'Sin período de prueba';
 const CHECKOUT_URL = 'https://mp.com/checkout/trial-warning-ineligible-test';
 
+// `ownPreapprovalEnabled: true` — this file's one test clicks through
+// the payer-email confirm dialog (HOS-937 review fix gate must be on for it
+// to appear). The gate's OFF behavior is covered separately in
+// `PlanPurchaseButton.own-preapproval-gate.test.tsx`.
 const defaultProps = {
     planSlug: 'owner-basico',
     monthlyPrice: 120000,
@@ -74,7 +78,8 @@ const defaultProps = {
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const,
-    trialDays: 14
+    trialDays: 14,
+    ownPreapprovalEnabled: true
 };
 
 function mockAuthenticated() {
@@ -164,7 +169,13 @@ describe('PlanPurchaseButton — trial-warning dialog gate (confirmed ineligible
 
         await user.click(getMainButton());
 
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        // The trial-warning dialog specifically must NOT appear — but the
+        // payer-email confirm dialog (HOS-937 step 2, spec §8.1) now always
+        // does, right before every paid checkout.
+        const dialog = await screen.findByRole('dialog');
+        expect(dialog).not.toHaveTextContent('La prueba gratis la otorga Mercado Pago');
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
         await waitFor(() => {
             expect(window.location.href).toBe(CHECKOUT_URL);
         });

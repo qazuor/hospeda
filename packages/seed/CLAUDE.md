@@ -96,6 +96,13 @@ Full guard-path list, exemption rationale, and the run order
 (`db:migrate` → `db:apply-extras` → `db:seed:migrate`, schema before data) are in the
 [author guide](../../docs/guides/seed-data-migrations.md).
 
+**The run order covers columns being ADDED, not columns being REMOVED (HOS-433).** A
+backfill that reads a column the same release drops finds it already gone — `db:migrate`
+applies the whole pending batch first — so it moves zero rows and the ledger records it
+applied, permanently. Split the release (backfill in N, `DROP COLUMN` in N+1, the same
+expand/contract rule the structural carril already follows) and declare
+`meta.requiresColumns` so the runner refuses instead of succeeding emptily.
+
 ## Test Users for Billing (SPEC-143 Block 1)
 
 A separate `--test-users` seed group creates 18 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.

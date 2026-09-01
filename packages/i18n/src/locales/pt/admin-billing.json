@@ -969,6 +969,110 @@
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Sem plano"
     },
+    "reconciliation": {
+        "title": "Resgate de pagamentos órfãos",
+        "description": "Compara o MercadoPago com o livro contábil local e propõe vínculos. A ferramenta PROPÕE, um humano DECIDE: nada é vinculado automaticamente.",
+        "table": {
+            "title": "Divergências",
+            "loading": "Carregando divergências...",
+            "errorLoading": "Erro ao carregar divergências",
+            "empty": "Nenhuma divergência",
+            "emptyTitle": "Nenhuma divergência encontrada",
+            "emptyHint": "O MercadoPago e o livro contábil local coincidem no período consultado.",
+            "divergenceCount_one": "{{count}} divergência",
+            "divergenceCount_other": "{{count}} divergências",
+            "columns": {
+                "kind": "Tipo",
+                "identifier": "Identificador",
+                "payerEmail": "Email do pagador",
+                "amount": "Valor",
+                "date": "Data",
+                "mpStatus": "Status no MP",
+                "candidates": "Candidatos",
+                "actions": "Ações"
+            },
+            "viewButton": "Ver detalhe",
+            "backfillButton": "Registrar pagamento",
+            "forceLinkButton": "Vincular"
+        },
+        "kinds": {
+            "unrecordedPayment": "Pagamento não registrado",
+            "orphanPreapproval": "Preapproval órfão"
+        },
+        "notAttributableYet": "Ainda não é possível atribuir",
+        "matchedOn": {
+            "externalReference": "Referência externa",
+            "payerEmail": "Email do pagador",
+            "mpPlanId": "Plano do MP",
+            "preapprovalId": "ID do preapproval"
+        },
+        "detailDialog": {
+            "title": "Detalhe da divergência",
+            "mpSection": "Dados do MercadoPago",
+            "payerSection": "Identidade do pagador",
+            "candidatesSection": "Candidatos locais",
+            "noCandidates": "Nenhum candidato encontrado. Não há nada para propor: o operador deve buscar manualmente.",
+            "localStatusLabel": "Status local:",
+            "useCandidateButton": "Usar este"
+        },
+        "fields": {
+            "mpPaymentId": "ID do pagamento (MP)",
+            "mpStatusDetail": "Detalhe do status",
+            "approvedAt": "Aprovado em",
+            "payerId": "ID do pagador (MP)",
+            "preapprovalId": "ID do preapproval (MP)",
+            "description": "Descrição",
+            "reason": "Motivo (MP)",
+            "nextPaymentDate": "Próxima cobrança",
+            "preapprovalPlanId": "ID do plano do preapproval",
+            "sourcePaymentId": "Pagamento de origem",
+            "amount": "Valor",
+            "mpStatus": "Status no MP",
+            "createdAt": "Criado em",
+            "externalReference": "Referência externa",
+            "payerEmailRaw": "Email do pagador (bruto, MP)",
+            "payerEmailFromPayment": "Email do pagador (do pagamento vinculado)"
+        },
+        "payerEmailRawEmptyHint": "O MercadoPago retorna este campo vazio em todos os preapprovals reais. Isso não é uma falha da ferramenta.",
+        "actionDialog": {
+            "forceLinkTitle": "Vincular preapproval a uma assinatura local",
+            "forceLinkDescription": "Une este preapproval do MercadoPago à assinatura local que você escolher. Esta ação é auditada.",
+            "backfillTitle": "Registrar pagamento no livro contábil",
+            "backfillDescription": "Cria a linha de billing_payments que falta para esta cobrança já aprovada. Esta ação é auditada.",
+            "auditWarning": "Esta ação grava no livro contábil e é auditada em seu nome. Não pode ser desfeita com um clique.",
+            "mpTargetLabel": "Identificador do MercadoPago",
+            "localSubscriptionIdLabel": "ID da assinatura local",
+            "localSubscriptionIdPlaceholder": "Cole o ID da assinatura local...",
+            "localSubscriptionIdHint": "Este campo sempre começa vazio. Para copiar um candidato aqui, abra o detalhe e use \"Usar este\".",
+            "reasonLabel": "Motivo",
+            "reasonPlaceholder": "Explique por que esses dois registros são a mesma pessoa/assinatura (mínimo 10 caracteres)...",
+            "reasonHint": "Este texto permanece no registro de auditoria. Seja específico: é a única coisa que explica o vínculo no futuro.",
+            "processingButton": "Processando...",
+            "forceLinkConfirmButton": "Vincular",
+            "backfillConfirmButton": "Registrar pagamento",
+            "forceLinkSuccess": "Preapproval vinculado com sucesso",
+            "forceLinkError": "Erro ao vincular:",
+            "backfillSuccess": "Pagamento registrado com sucesso",
+            "backfillError": "Erro ao registrar o pagamento:"
+        },
+        "truncatedBanner": {
+            "title": "Relatório parcial",
+            "description": "A varredura do MercadoPago atingiu o teto de páginas configurado. O total exibido é um piso, não uma contagem completa: pode haver mais divergências não listadas."
+        },
+        "filters": {
+            "title": "Filtros",
+            "kindLabel": "Tipo",
+            "allKinds": "Todos",
+            "sinceLabel": "Desde",
+            "sinceHint": "Por padrão são consultados os últimos 90 dias. Cada consulta custa chamadas espaçadas ao MercadoPago."
+        },
+        "mpCallStats": "{{calls}} chamadas ao MercadoPago ({{rateLimited}} limitadas por rate limit)",
+        "pagination": {
+            "previous": "Anterior",
+            "next": "Próxima",
+            "pageOf": "Página {{page}} de {{totalPages}}"
+        }
+    },
     "subscriptions": {
         "title": "Assinaturas",
         "description": "Gerencie as assinaturas ativas dos usuários",
@@ -1066,7 +1170,8 @@
             "extendTrialButton": "Estender teste",
             "cancelSubscriptionButton": "Cancelar assinatura",
             "pauseButton": "Pausar",
-            "resumeButton": "Retomar"
+            "resumeButton": "Retomar",
+            "grantCourtesyButton": "Presentear períodos"
         },
         "paymentHistory": {
             "title": "Histórico de pagamentos",
@@ -1155,7 +1260,9 @@
             "paused": "Assinatura pausada",
             "resumed": "Assinatura retomada",
             "pauseError": "Erro ao pausar assinatura:",
-            "resumeError": "Erro ao retomar assinatura:"
+            "resumeError": "Erro ao retomar assinatura:",
+            "courtesyGranted": "Períodos presenteados",
+            "courtesyError": "Não foi possível presentear:"
         },
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Plano não identificado",
@@ -1168,6 +1275,15 @@
             "experience": "Experiência",
             "partner": "Parceiro",
             "unknown": "Outro"
+        },
+        "courtesyDialog": {
+            "title": "Presentear períodos",
+            "description": "Presentear períodos sem cobrança a",
+            "cyclesLabel": "Quantos períodos você quer presentear?",
+            "startsAtNotice": "O presente começa quando termina o período já pago, não hoje. Até lá nada muda para o assinante.",
+            "leadTimeWarning": "Se faltarem menos de 3 dias para a próxima cobrança, o presente é recusado: pausar tão perto pode não impedi-la, e ele seria cobrado justamente pelo período presenteado.",
+            "confirmButton": "Presentear",
+            "backButton": "Voltar"
         }
     },
     "exchangeRates": {

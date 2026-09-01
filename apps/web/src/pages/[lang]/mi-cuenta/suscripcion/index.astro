@@ -9,6 +9,8 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboard.client';
+import { CheckoutRetryBanner } from '@/components/billing/CheckoutRetryBanner.client';
+import StripCheckoutReturnParams from '@/components/billing/StripCheckoutReturnParams.astro';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -61,6 +63,16 @@ const heldDomains: SubscriptionDashboardDomain[] = SUBSCRIPTION_DASHBOARD_DOMAIN
 
 const rawDomain = Astro.url.searchParams.get('domain');
 const productDomain = resolveActiveSubscriptionDomain({ rawDomain, heldDomains });
+
+/**
+ * HOS-937 step 4: `?retryCheckoutId=<localSubscriptionId>` is the card-
+ * rejection notification link (spec §6.5/§8.3, `buildCheckoutRetryLandingUrl`).
+ * Read SERVER-SIDE so `CheckoutRetryBanner` never has to fall back to
+ * `window.location` — `StripCheckoutReturnParams` below scrubs it from the
+ * visible URL before the island hydrates (mirrors the HOS-209
+ * `preapproval_id` pattern on the checkout success page).
+ */
+const retryCheckoutId = Astro.url.searchParams.get('retryCheckoutId');
 
 const TITLE_KEY_BY_DOMAIN: Record<SubscriptionDashboardDomain, { key: string; fallback: string }> = {
 	accommodation: { key: 'account.pages.subscription.title', fallback: 'Suscripción' },
@@ -118,7 +130,20 @@ const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans,
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
+	{/* HOS-937 step 4 / HOS-209 pattern: strip `retryCheckoutId` (and any
+	   future provider return-secret) from the visible URL synchronously,
+	   before PostHog captures `$current_url` and before any cross-origin
+	   subresource sends a Referer. CheckoutRetryBanner already has the id
+	   via its SSR prop, so removing it from the client URL never breaks
+	   the retry flow. */}
+	<StripCheckoutReturnParams slot="head-early" />
 	<AccountPageHeader title={title} />
+
+	<CheckoutRetryBanner
+		locale={locale}
+		retryCheckoutId={retryCheckoutId}
+		client:load
+	/>
 
 	{heldDomains.length > 1 && (
 		<nav

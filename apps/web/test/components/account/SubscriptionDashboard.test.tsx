@@ -153,6 +153,19 @@ const COMP_SUBSCRIPTION = {
     paymentMethod: null
 };
 
+// HOS-180: a courtesy subscription (admin-gifted cycles). The underlying
+// MercadoPago preapproval is PAUSED, but nothing is suspended for the
+// subscriber — the panel must show the courtesy end date, never
+// "paused"/"suspended" wording (AC-11). courtesyEndsAt is computed relative
+// to "now" (not a hardcoded string) so this fixture never drifts stale as
+// real time moves forward.
+const COURTESY_ENDS_AT_ISO = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString();
+const COURTESY_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    status: 'courtesy' as const,
+    courtesyEndsAt: COURTESY_ENDS_AT_ISO
+};
+
 const CANCELLED_SUBSCRIPTION = {
     ...ACTIVE_SUBSCRIPTION,
     status: 'cancelled' as const,
@@ -575,6 +588,151 @@ describe('SubscriptionDashboard — complimentary (comp) gating (HOS-242)', () =
         renderDashboard();
         await waitForLoaded();
         expect(screen.getByText(/mercadopago/i)).toBeInTheDocument();
+    });
+});
+
+describe('SubscriptionDashboard — courtesy status wording (HOS-180 AC-11)', () => {
+    // Positive half: the courtesy end date is shown under the honest
+    // "Sin cargo hasta" label, not a bogus "Próxima facturación".
+    it('shows "Sin cargo hasta" and the formatted courtesyEndsAt date', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByText(/sin cargo hasta/i)).toBeInTheDocument();
+        const expectedDate = formatDate({
+            date: COURTESY_SUBSCRIPTION.courtesyEndsAt,
+            locale: 'es'
+        });
+        expect(screen.getByText(expectedDate)).toBeInTheDocument();
+    });
+
+    it('does not show "próxima facturación" for a courtesy subscription', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.queryByText(/próxima facturación/i)).not.toBeInTheDocument();
+    });
+
+    // Negative half: AC-11 forbids "paused"/"suspended" wording anywhere on
+    // the panel for a courtesy subscription — a real, failable assertion
+    // (search for the pause copy and expect it absent), not an
+    // objectContaining that would stay blind to a missing/extra field.
+    //
+    // The regex anchors on the "pausa"/"pause"/"suspend" ROOTS, not just the
+    // adjective forms ("pausada"/"paused"/"suspendida"). The narrower form
+    // missed the pause BUTTON's own copy ("Pausar suscripción",
+    // SubscriptionDashboard.client.tsx pauseButton/pauseModal.title/confirm) —
+    // it doesn't render for courtesy today, but if that ever changed this
+    // guard would stay green while looking straight at the regression it
+    // exists to catch.
+    it('never shows "pausar"/"pausada"/"paused"/"suspendida" wording for a courtesy subscription', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.queryByText(/pausa|pause|suspend/i)).not.toBeInTheDocument();
+    });
+
+    it('renders the status badge as "De regalo", not the paused label', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByText(/de regalo/i)).toBeInTheDocument();
+    });
+});
+
+// ─── HOS-1007: self-service actions offered during a courtesy window ──────────
+
+/**
+ * Each gate must mirror the status set its own backend accepts, and the three
+ * backends do NOT agree on `courtesy`:
+ *
+ *   - cancel      → `SOFT_CANCELLABLE_STATUSES` = active | trialing | courtesy
+ *   - pause       → active | trialing
+ *   - change plan → active | trialing
+ *
+ * So a gifted subscriber must be offered Cancel and denied Pause / Change-plan.
+ * Before HOS-1007 they got the opposite on two of the three: no Cancel (a real
+ * capability hidden) and an enabled Change-plan (a button whose backend answers
+ * 404).
+ */
+describe('SubscriptionDashboard — courtesy self-service actions (HOS-1007)', () => {
+    it('offers the cancel action for a courtesy subscription (the backend accepts it)', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cancelar suscripción/i })).toBeInTheDocument();
+    });
+
+    it('does NOT offer the pause action for a courtesy subscription (the backend rejects it)', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('button', { name: /pausar suscripción/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('disables the "Cambiar plan" button for a courtesy subscription', async () => {
+        // plan-change.ts finds `active | trialing` only — a courtesy row is
+        // neither, so the flow would open and then fail with 404 "No active
+        // subscription found".
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        // Assert on the SETTLED render, not inside a waitFor — a waitFor would
+        // accept an intermediate frame in which the button is not yet enabled.
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeDisabled();
+    });
+
+    // Root cause, not just the courtesy symptom: `canChangePlan` used to be a
+    // list of exclusions, so every status it had not been taught about defaulted
+    // to "allowed". `paused` was the pre-existing casualty — the same backend
+    // find rejects it, and the button was enabled anyway. Inverting the gate to
+    // an inclusion list fixes courtesy and paused in one move; this test is what
+    // stops the exclusion form coming back.
+    it('disables the "Cambiar plan" button for a paused subscription (pre-existing leak)', async () => {
+        mockSubscriptionSuccess(PAUSED_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeDisabled();
+    });
+
+    it('still enables the "Cambiar plan" button for an ordinary active subscription', async () => {
+        // The inclusion list must not over-reach: the happy path stays intact.
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeEnabled();
     });
 });
 

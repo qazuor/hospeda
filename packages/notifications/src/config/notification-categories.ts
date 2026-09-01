@@ -36,6 +36,11 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Subscription lifecycle - Transactional, always sent
     [NotificationType.SUBSCRIPTION_CANCELLED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_PAUSED]: NotificationCategory.TRANSACTIONAL,
+    // Transactional, not marketing: all three tell the subscriber something
+    // about what they will or will not be charged, so none may be opted out of.
+    [NotificationType.COURTESY_GRANTED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.COURTESY_STARTED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.COURTESY_ENDED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL,
 
     // Plan management - Transactional

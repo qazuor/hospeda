@@ -106,16 +106,28 @@ const NON_URL_BUILDER_EXPORTS: ReadonlySet<string> = new Set([
  * extra harmless-looking parameter, does not change the path it emits, so
  * neither can be used to dodge this allowlist.
  *
- * The one entry today is the Checkout Pro add-on redirect page (HOS-224),
- * which reads `?status=` / `?addon=` to render its purchase-result banner.
- * It is a DIFFERENT MercadoPago flow from the recurring-preapproval
- * `back_url` this guard protects: MercadoPago's preapproval redirect
- * concatenates its own param with a bare `?` (the R-1 defect), but Checkout
- * Pro's `back_urls` do not have that failure mode. See
- * `checkout-return-urls.test.ts` for the add-on builders' own regression
- * coverage — this guard only needs to know their produced path is expected.
+ * The first entry is the Checkout Pro add-on redirect page (HOS-224), which
+ * reads `?status=` / `?addon=` to render its purchase-result banner. It is a
+ * DIFFERENT MercadoPago flow from the recurring-preapproval `back_url` this
+ * guard protects: MercadoPago's preapproval redirect concatenates its own
+ * param with a bare `?` (the R-1 defect), but Checkout Pro's `back_urls` do
+ * not have that failure mode. See `checkout-return-urls.test.ts` for the
+ * add-on builders' own regression coverage — this guard only needs to know
+ * their produced path is expected.
+ *
+ * The second entry is `buildCheckoutRetryLandingUrl` (HOS-937 step 3): its
+ * `?retryCheckoutId=` query param is likewise safe, but for a different
+ * reason than the add-on pair above — it is not merely a different
+ * MercadoPago flow, it is not a MercadoPago URL at all. It is a link OUR OWN
+ * cancellation-notification email sends to `mi-cuenta/suscripcion/` on our
+ * own site; MercadoPago never redirects here and never appends anything to
+ * it, so the R-1 concatenation bug (a bare `?` colliding with `preapproval_id`)
+ * cannot occur on this path by construction, not just by convention.
  */
-const QUERY_PARAM_ALLOWED_PATHS: ReadonlySet<string> = new Set(['/es/mi-cuenta/addons/']);
+const QUERY_PARAM_ALLOWED_PATHS: ReadonlySet<string> = new Set([
+    '/es/mi-cuenta/addons/',
+    '/es/mi-cuenta/suscripcion/'
+]);
 
 /** One function export, resolved to a URL and its path (query/origin stripped). */
 interface UrlBuilderOutcome {

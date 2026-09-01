@@ -763,6 +763,11 @@
         }
     },
     "billing": {
+        "checkoutRetry": {
+            "recovery": {
+                "invalid": "The recovery status is not valid"
+            }
+        },
         "addon": {
             "cancel": {
                 "reason": {
@@ -1178,6 +1183,11 @@
             "localSubscriptionId": {
                 "invalid": "Local subscription ID is not valid",
                 "invalidType": "Local subscription ID has an invalid data type"
+            },
+            "payerEmail": {
+                "invalid": "The payment email is not valid",
+                "invalidType": "The payment email has an invalid data type",
+                "max": "The payment email cannot exceed {{max}} characters"
             },
             "planSlug": {
                 "invalidType": "Plan slug has an invalid data type",

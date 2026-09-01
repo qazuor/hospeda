@@ -88,10 +88,6 @@
             "goToSite": "Go to website",
             "contactAdmin": "Contact support",
             "reason": {
-                "host-missing-permission": {
-                    "title": "The admin panel isn't part of your account",
-                    "message": "Hosts manage their listings and bookings from the main Hospeda site — the admin panel is only for Hospeda staff. This isn't an error, just the wrong door. Head back to the site to keep managing your account."
-                },
                 "generic": {
                     "title": "Restricted area",
                     "message": "This area is for Hospeda admins and hosts. Your account doesn't have access. If you think this is a mistake, contact us or sign in with another account."

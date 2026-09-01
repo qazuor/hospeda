@@ -23,9 +23,11 @@ import {
     BILLING_EVENT_TYPES,
     type BillingEventType,
     checkSubscriptionStatusTransition,
+    deriveCourtesyStatus,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
+    readCourtesyFields,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -35,13 +37,31 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
-import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import {
+    applyPendingDiscountBestEffort,
+    applyPendingTrialExtensionBestEffort,
+    linkPreapprovalToLocalSub
+} from '../../../services/billing/link-preapproval.service.js';
+import {
+    PENDING_DISCOUNT_METADATA_KEY,
+    PENDING_TRIAL_EXTENSION_METADATA_KEY
+} from '../../../services/billing/own-preapproval-subscription-create.js';
+import { persistMpPayerEmailBestEffort } from '../../../services/billing/payer-email.js';
+import type {
+    PendingCheckoutDiscount,
+    PendingTrialExtension
+} from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
+import { readTrialWindowFromPreapprovalPayload } from '../../../services/billing/trial-window-derivation.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
+import {
+    buildCheckoutRetryLandingUrl,
+    DEFAULT_RETURN_URL_LOCALE
+} from '../../billing/checkout-return-urls.js';
 
 /**
  * Safety margin timeout before MercadoPago's 22s webhook deadline.
@@ -336,60 +356,107 @@ export async function completeReactivationSupersession({
     }
 }
 
-/**
- * Reads whether a live MercadoPago preapproval carries a card-first free trial
- * (HOS-211).
+/*
+ * REMOVED, HOS-936: `livePreapprovalHasFreeTrial`.
  *
- * **Corrected, HOS-211 follow-up**: this was originally documented as reading
- * `auto_recurring.free_trial` off the raw snake_case payload that supposedly
- * survives alongside qzpay's typed fields on `subscriptions.retrieve()`. That
- * claim was FALSE — `@qazuor/qzpay-mercadopago@2.6.0`'s `mapToProviderSubscription()`
- * builds a closed camelCase object (`id`, `status`, `currentPeriodStart`,
- * `currentPeriodEnd`, `cancelAtPeriodEnd`, `canceledAt`, `trialStart`, `trialEnd`,
- * `metadata`) with NO `auto_recurring` key at all, and hardcodes `trialStart`/
- * `trialEnd` to `null` unconditionally. This function therefore ALWAYS returned
- * `false` against a real MP response, which is exactly how every card-first
- * trial subscription landed as `active`/`trial_end=null` instead of `trialing`
- * (the bug this comment used to misdescribe as already handled).
+ * It read `auto_recurring.free_trial` off the live preapproval and treated a
+ * positive `frequency` as "this subscription is on a trial". That premise is
+ * measurably wrong: MercadoPago grants a preapproval's free trial once per
+ * `(payer, preapproval_plan)`, so `free_trial` describes the PLAN'S TERMS and is
+ * byte-identical on a preapproval whose trial will run and one whose trial was
+ * already spent. Two preapprovals for the same payer on the same plan, created
+ * two seconds apart on 2026-08-31, reported the same `free_trial` and the same
+ * `first_invoice_offset` while only one of them was actually being deferred.
  *
- * The real fix (Option B) is upstream of this function: `trial_end` is now
- * PERSISTED on the local `billing_subscriptions` row at subscription creation
- * time, computed from `freeTrialDays` (already resolved at checkout by
- * `resolveCheckoutFreeTrialDays`) — see
- * `apps/api/src/services/billing/pending-provider-subscription-create.ts`. The
- * caller's preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd
- * ?? ...`) picks that up directly, without ever needing this helper.
+ * The replacement is `readTrialWindowFromPreapprovalPayload`, which derives the
+ * window from `next_payment_date - date_created` — the only field on the
+ * response that is a statement about THIS subscription. See
+ * `services/billing/trial-window-derivation.ts` for the measurement and the
+ * threshold.
  *
- * This function remains ONLY as a defensive fallback for the (currently
- * unreachable in prod) case where `livePreapproval` genuinely does carry an
- * `auto_recurring.free_trial` object — e.g. a future qzpay version, a test
- * double, or a differently-shaped provider response. Do not rely on it firing
- * against real MercadoPago traffic today.
- *
- * @param livePreapproval - The object returned by `subscriptions.retrieve()`.
- * @returns `true` only when `auto_recurring.free_trial` is a non-null object with
- *   a positive `frequency`. Always `false` for qzpay's real mapped shape.
+ * Behaviour against real traffic is unchanged by the swap: qzpay's
+ * `mapToProviderSubscription()` builds a closed camelCase object carrying
+ * neither `auto_recurring` nor `next_payment_date`, so the old helper always
+ * returned `false` and the new one always returns `unknown`. Both leave
+ * `resolvedTrialEnd` to the preserve-if-set value persisted at creation time
+ * (`services/billing/pending-provider-subscription-create.ts`, HOS-211
+ * Option B). What changes is that a payload which DOES carry the fields — a
+ * future qzpay version, a raw retrieve, a test double — is now read honestly
+ * instead of being believed.
  */
-function livePreapprovalHasFreeTrial(livePreapproval: unknown): boolean {
-    if (typeof livePreapproval !== 'object' || livePreapproval === null) {
-        return false;
+
+/**
+ * Result of {@link extractPendingPromoFromRowMetadata}.
+ */
+interface ExtractedPendingPromo {
+    readonly pendingDiscount?: PendingCheckoutDiscount;
+    readonly pendingTrialExtension?: PendingTrialExtension;
+}
+
+/**
+ * Read back the deferred-redemption promo snapshot HOS-937's own-preapproval
+ * flow stores on `billing_subscriptions.metadata` (see
+ * `own-preapproval-subscription-create.ts` — there is no
+ * `billing_pending_checkouts` row for that flow to snapshot it on instead).
+ *
+ * Absence of both keys is the ordinary case for every OLD Path C row (which
+ * snapshots on the correlation row and never writes these keys on the
+ * subscription's own metadata) as well as an own-preapproval row with no
+ * promo applied — this function returns an empty object for both, and the
+ * caller no-ops. Malformed JSON (should never happen; only this module ever
+ * writes these keys) is treated the same as absent rather than throwing,
+ * since a webhook must never fail processing a status transition over
+ * promo-bookkeeping metadata.
+ *
+ * @param metadata - `billing_subscriptions.metadata` as read off the row.
+ */
+function extractPendingPromoFromRowMetadata(metadata: unknown): ExtractedPendingPromo {
+    if (typeof metadata !== 'object' || metadata === null) {
+        return {};
     }
-    const record = livePreapproval as Record<string, unknown>;
-    const autoRecurring =
-        typeof record.auto_recurring === 'object' && record.auto_recurring !== null
-            ? (record.auto_recurring as Record<string, unknown>)
-            : null;
-    if (autoRecurring === null) {
-        return false;
+    const record = metadata as Record<string, unknown>;
+    const result: {
+        pendingDiscount?: PendingCheckoutDiscount;
+        pendingTrialExtension?: PendingTrialExtension;
+    } = {};
+
+    const discountJson = record[PENDING_DISCOUNT_METADATA_KEY];
+    if (typeof discountJson === 'string') {
+        try {
+            const parsed = JSON.parse(discountJson) as Partial<PendingCheckoutDiscount>;
+            if (
+                typeof parsed.promoCodeId === 'string' &&
+                typeof parsed.finalAmountCentavos === 'number'
+            ) {
+                result.pendingDiscount = {
+                    promoCodeId: parsed.promoCodeId,
+                    finalAmountCentavos: parsed.finalAmountCentavos,
+                    ...(parsed.durationCycles === undefined
+                        ? {}
+                        : { durationCycles: parsed.durationCycles })
+                };
+            }
+        } catch {
+            // Malformed — treat as absent, see docblock.
+        }
     }
-    const freeTrial =
-        typeof autoRecurring.free_trial === 'object' && autoRecurring.free_trial !== null
-            ? (autoRecurring.free_trial as Record<string, unknown>)
-            : null;
-    if (freeTrial === null) {
-        return false;
+
+    const trialExtensionJson = record[PENDING_TRIAL_EXTENSION_METADATA_KEY];
+    if (typeof trialExtensionJson === 'string') {
+        try {
+            const parsed = JSON.parse(trialExtensionJson) as Partial<PendingTrialExtension>;
+            if (typeof parsed.promoCodeId === 'string' && typeof parsed.code === 'string') {
+                result.pendingTrialExtension = {
+                    promoCodeId: parsed.promoCodeId,
+                    code: parsed.code
+                };
+            }
+        } catch {
+            // Malformed — treat as absent, see docblock.
+        }
     }
-    return typeof freeTrial.frequency === 'number' && freeTrial.frequency > 0;
+
+    return result;
 }
 
 /**
@@ -560,31 +627,46 @@ export async function processSubscriptionUpdated({
     //
     // `resolvedTrialEnd` is only ever COMPUTED when the stored value is still
     // null — an already-set `trialEnd` always wins untouched. This is load
-    // bearing, not a simplification: if we recomputed trialEnd from
-    // `currentPeriodEnd` on every webhook, then AFTER the day-N charge MP still
-    // reports `auto_recurring.free_trial` (it describes the plan's trial terms,
-    // not "is currently trialing") and `currentPeriodEnd` has already rolled to
-    // the NEXT (future) cycle — so the row would wrongly flip back to `trialing`
-    // forever. Fixing `trialEnd` once, only while it is still null, is what lets
-    // `deriveTrialingStatus`'s own past-date rule settle the row to `ACTIVE`
-    // once the real trial elapses.
+    // bearing, not a simplification: recomputing it on every webhook would flip
+    // the row back to `trialing` forever, because MercadoPago keeps advertising
+    // the plan's trial terms long after the day-N charge. Fixing `trialEnd`
+    // once, only while it is still null, is what lets `deriveTrialingStatus`'s
+    // own past-date rule settle the row to `ACTIVE` when the real trial elapses.
+    //
+    // HOS-936: the window is derived from `next_payment_date - date_created`,
+    // never from `auto_recurring.free_trial` — the latter describes the plan and
+    // reads identically on a preapproval MercadoPago is charging right now. See
+    // `services/billing/trial-window-derivation.ts`.
     const now = new Date();
     const periodEnd = mpSubscription.currentPeriodEnd ?? null;
+    const providerTrialWindow = readTrialWindowFromPreapprovalPayload(mpSubscription);
     const resolvedTrialEnd =
         localSubscription.trialEnd ??
-        (livePreapprovalHasFreeTrial(mpSubscription) &&
-        periodEnd &&
-        periodEnd.getTime() > now.getTime()
-            ? periodEnd
+        (providerTrialWindow.outcome === 'granted' &&
+        providerTrialWindow.trialEnd &&
+        providerTrialWindow.trialEnd.getTime() > now.getTime()
+            ? providerTrialWindow.trialEnd
             : null);
 
     // This deliberately lands BEFORE every consumer of `mappedStatus` — the
     // planId safety net, the Step 6 fast-path guard and the in-transaction guard
     // must all observe the SAME target status, or the row is written with one
     // value while the guards reason about another.
-    const mappedStatus = deriveTrialingStatus({
-        mappedStatus: providerStatus,
-        trialEnd: resolvedTrialEnd,
+    // HOS-180: courtesy is the SECOND local derivation, chained after trialing.
+    // The two can never both fire — trialing keys off ACTIVE, courtesy off
+    // PAUSED — so the order between them is irrelevant, but their position
+    // relative to everything below is not (see the comment above).
+    //
+    // This is also what keeps a gifted subscriber from being told their card
+    // failed: `shouldSendPausedEmail` reads the DERIVED status, so a courtesy
+    // never looks like a pause to the notification decision (HOS-926, R-7).
+    const mappedStatus = deriveCourtesyStatus({
+        mappedStatus: deriveTrialingStatus({
+            mappedStatus: providerStatus,
+            trialEnd: resolvedTrialEnd,
+            now
+        }),
+        courtesyEndsAt: readCourtesyFields(localSubscription.metadata).courtesyEndsAt,
         now
     });
 
@@ -1125,6 +1207,78 @@ export async function processSubscriptionUpdated({
         });
     }
 
+    // HOS-937 step 1: redeem any deferred-redemption promo bookkeeping the
+    // own-preapproval checkout flow snapshotted on THIS row's own metadata
+    // (`own-preapproval-subscription-create.ts` — that flow has no
+    // `billing_pending_checkouts` correlation row to snapshot on instead, and
+    // therefore no `linkPreapprovalToLocalSub` "link" event to redeem at; the
+    // row already carried `mp_subscription_id` from creation, so it was found
+    // directly in Step 5 above and the `!localSubscription` / F3 fallback
+    // branch — the OLD flow's redemption call site — never ran for it).
+    //
+    // Gated on the SAME pending_provider -> active/trialing transition as the
+    // reactivation-supersession block above, but broader: TRIALING is
+    // included (not just ACTIVE) because a trial_extension code is most often
+    // exactly what put the row in trialing in the first place. Reused
+    // verbatim from `link-preapproval.service.ts` (`applyPendingDiscountBestEffort`
+    // / `applyPendingTrialExtensionBestEffort`) rather than reimplemented —
+    // same fail-closed-stamp / best-effort-record split, same Sentry
+    // reporting. Never runs for an OLD Path C row: those never carry either
+    // metadata key (see `extractPendingPromoFromRowMetadata`'s docblock), so
+    // this is a pure no-op for them, not a second redemption on top of the
+    // one `linkPreapprovalToLocalSub` already recorded at link time.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        (mappedStatus === SubscriptionStatusEnum.ACTIVE ||
+            mappedStatus === SubscriptionStatusEnum.TRIALING)
+    ) {
+        const { pendingDiscount, pendingTrialExtension } = extractPendingPromoFromRowMetadata(
+            localSubscription.metadata
+        );
+        if (pendingDiscount) {
+            await applyPendingDiscountBestEffort({
+                billing,
+                localSubscriptionId: localSubscription.id,
+                preapprovalId: mpPreapprovalId,
+                customerId: localSubscription.customerId,
+                planId: localSubscription.planId,
+                pendingDiscount,
+                livemode: localSubscription.livemode
+            });
+        }
+        if (pendingTrialExtension) {
+            await applyPendingTrialExtensionBestEffort({
+                localSubscriptionId: localSubscription.id,
+                preapprovalId: mpPreapprovalId,
+                customerId: localSubscription.customerId,
+                pendingTrialExtension,
+                livemode: localSubscription.livemode
+            });
+        }
+
+        // HOS-937 step 2 (spec §6.3/AC-9): the preapproval just reached
+        // `authorized` — this IS the moment MercadoPago confirmed the payer
+        // email it was created with actually worked. Persist it onto
+        // `billing_customers.mp_payer_email` so the customer's NEXT checkout
+        // defaults to it instead of guessing again. `mpSubscription` is the
+        // SAME provider read from Step 2 above (`mpSubscription.payerEmail`
+        // is also how the OLD Path C fallback link at the top of this
+        // function correlates a checkout — see `payerEmail:
+        // mpSubscription.payerEmail ?? null` a few hundred lines up).
+        // `persistMpPayerEmailBestEffort` writes ONLY `mp_payer_email` — it
+        // never touches `billing_customers.email` (AC-9, HOS-581) — and is
+        // itself best-effort: a failure here must never break webhook
+        // processing or the activation it is reporting, same contract as
+        // `applyPendingDiscountBestEffort` / `applyPendingTrialExtensionBestEffort`
+        // above.
+        if (mpSubscription.payerEmail) {
+            await persistMpPayerEmailBestEffort({
+                customerId: localSubscription.customerId,
+                payerEmail: mpSubscription.payerEmail
+            });
+        }
+    }
+
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
     // No-op for accommodation subs (no commerce_listing_subscriptions row).
     // Non-blocking: never breaks webhook processing.
@@ -1500,6 +1654,55 @@ export async function processSubscriptionUpdated({
             previousStatus
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription cancelled notification failed');
+        });
+    }
+
+    // HOS-937 step 3: PENDING_PROVIDER -> CANCELLED means MercadoPago
+    // cancelled a preapproval that never activated (typically a card
+    // rejection during checkout, spec §8.3). Left alone, MP keeps offering
+    // the user a "pay with another method" button that can never work
+    // (`cancelled -> authorized` is a forbidden MP transition) — an
+    // infinite loop with no way out.
+    //
+    // Redesigned per adversarial review: the webhook does NOT mint a fresh
+    // preapproval here. R-3 measured cancellations that read `cancelled` on
+    // BOTH the `PUT` and an immediate `GET`, then read `authorized`/
+    // `pending` HOURS later — a 350ms deferred re-read (what this used to
+    // do) does not cover that gap, and minting here risks a second live MP
+    // preapproval for a user whose original one resurrects. Minting is
+    // deferred all the way to the checkout-retry endpoint
+    // (`routes/billing/checkout-retry.ts`), which the user reaches by
+    // clicking the link below — naturally minutes-to-hours later, which
+    // covers R-3 for real, with no new mechanism. That endpoint does its
+    // own fresh `GET` and only mints if MercadoPago STILL reports
+    // cancelled at click time.
+    //
+    // This is deliberately its own `if`, NOT an `else` on
+    // `shouldSendCancelledEmail` above — that guard explicitly EXCLUDES
+    // this exact transition (a checkout that never activated is not "your
+    // subscription was cancelled"), which is why this transition has never
+    // sent the user anything until now.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        mappedStatus === SubscriptionStatusEnum.CANCELLED &&
+        customer?.email
+    ) {
+        sendNotification({
+            type: NotificationType.PAYMENT_FAILURE,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: localSubscription.customerId,
+            planName: planDisplayName,
+            amount: 0,
+            currency: 'ARS',
+            failureReason: 'card_rejected',
+            retryUrl: buildCheckoutRetryLandingUrl(DEFAULT_RETURN_URL_LOCALE, localSubscription.id)
+        }).catch((notifErr) => {
+            apiLogger.debug(
+                { error: notifErr, subscriptionId: localSubscription.id },
+                'HOS-937 step 3: retry-checkout notification failed'
+            );
         });
     }
 

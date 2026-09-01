@@ -328,6 +328,13 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_PROMO_CODE_READ,
         PermissionEnum.BILLING_PROMO_CODE_MANAGE,
         PermissionEnum.BILLING_METRICS_READ,
+        // HOS-765 orphan-payment rescue (force-link + payment backfill).
+        // SUPER_ADMIN ONLY, and deliberately not folded into BILLING_MANAGE:
+        // these two verbs write money into the ledger and bind a real payer's
+        // charge to a named person's subscription. Granting it alongside
+        // BILLING_MANAGE would mean the grant that lets someone expire an add-on
+        // also lets them move a charge between customers.
+        PermissionEnum.BILLING_RECONCILIATION_MANAGE,
 
         // REVALIDATION: All permissions
         PermissionEnum.REVALIDATION_TRIGGER,

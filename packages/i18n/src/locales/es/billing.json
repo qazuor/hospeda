@@ -273,7 +273,30 @@
             "body": "Mercado Pago otorga el período de prueba una sola vez por cuenta y por plan. Si ya usaste una prueba de este plan con la misma cuenta de Mercado Pago, Mercado Pago va a cobrar el primer período al momento en lugar de aplicarte la prueba.",
             "confirm": "Entendido, continuar",
             "cancel": "Cancelar"
+        },
+        "payerEmailConfirm": {
+            "title": "Con qué email vas a poder pagar",
+            "body": "Mercado Pago solo te va a dejar pagar con este email exacto. Si querés usar otra cuenta de Mercado Pago, cambialo antes de continuar.",
+            "label": "Email de pago",
+            "invalidError": "Ingresá un email válido",
+            "confirm": "Continuar",
+            "cancel": "Cancelar"
         }
+    },
+    "checkoutRetry": {
+        "checkingTitle": "Verificando tu pago...",
+        "checkingBody": "Estamos revisando el estado de tu suscripción.",
+        "redirectingTitle": "Te estamos redirigiendo a Mercado Pago...",
+        "redirectingBody": "Un momento, te llevamos a completar el pago.",
+        "activeTitle": "Tu suscripción ya está activa",
+        "activeBody": "No hace falta que vuelvas a pagar: tu plan ya está funcionando.",
+        "confirmingTitle": "Estamos confirmando tu pago",
+        "confirmingBody": "Puede que ya lo estemos resolviendo desde otra pestaña. Esperá un momento.",
+        "confirmingTimedOutTitle": "Todavía estamos confirmando tu pago",
+        "confirmingTimedOutBody": "Esto está tardando más de lo esperado. Podés intentarlo de nuevo en un momento.",
+        "errorTitle": "No pudimos verificar tu pago",
+        "errorBody": "Volvé a intentarlo o escribinos si el problema sigue.",
+        "retryButton": "Reintentar"
     },
     "limit": {
         "max_favorites": {

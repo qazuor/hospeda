@@ -67,7 +67,15 @@ describe('decideAuthedGuard', () => {
         expect(new URL(decision.href).pathname).toBe('/en/auth/signin/');
     });
 
-    it('redirects a tourist (role=USER, no panel access) to the public host funnel with from=admin', () => {
+    // HOS-609: every non-panel-access role now produces the SAME decision —
+    // an external redirect to the web app's own `/acceso-denegado/` page.
+    // This replaces two previously distinct outcomes: the "tourist funnel"
+    // (role=USER only, sent to `/publicar/?from=admin`) and the admin's own
+    // `/auth/forbidden?reason=host-missing-permission` (HOST without panel
+    // access). Both cases are covered below, alongside every other
+    // non-panel-access shape, to prove they all now converge.
+
+    it('redirects a tourist (role=USER, no panel access) to the web access-denied page', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ roles: ['USER'], permissions: [] }),
             pathname: DEFAULT_PATH,
@@ -76,13 +84,14 @@ describe('decideAuthedGuard', () => {
             adminUrl: ADMIN_URL
         });
 
-        expect(decision.kind).toBe('redirect-tourist-funnel');
-        if (decision.kind !== 'redirect-tourist-funnel') return;
+        expect(decision.kind).toBe('redirect-web-forbidden');
+        if (decision.kind !== 'redirect-web-forbidden') return;
 
         const url = new URL(decision.href);
         expect(url.origin).toBe(SITE_URL);
-        expect(url.pathname).toBe('/pt/publicar/');
-        expect(url.searchParams.get('from')).toBe('admin');
+        expect(url.pathname).toBe('/pt/acceso-denegado/');
+        // No original path is forwarded — the page has no consumer for it.
+        expect(url.search).toBe('');
     });
 
     it('encodes the locale into the redirect path verbatim', () => {
@@ -94,12 +103,12 @@ describe('decideAuthedGuard', () => {
             adminUrl: ADMIN_URL
         });
 
-        expect(decision.kind).toBe('redirect-tourist-funnel');
-        if (decision.kind !== 'redirect-tourist-funnel') return;
-        expect(new URL(decision.href).pathname).toBe('/en/publicar/');
+        expect(decision.kind).toBe('redirect-web-forbidden');
+        if (decision.kind !== 'redirect-web-forbidden') return;
+        expect(new URL(decision.href).pathname).toBe('/en/acceso-denegado/');
     });
 
-    it('redirects a HOST without panel access to forbidden with reason=host-missing-permission', () => {
+    it('redirects a HOST without panel access to the SAME web access-denied page as a tourist', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ roles: ['HOST'], permissions: [] }),
             pathname: '/admin/accommodations/abc',
@@ -109,15 +118,12 @@ describe('decideAuthedGuard', () => {
         });
 
         expect(decision).toEqual({
-            kind: 'redirect-forbidden',
-            search: {
-                reason: 'host-missing-permission',
-                redirect: '/admin/accommodations/abc'
-            }
+            kind: 'redirect-web-forbidden',
+            href: `${SITE_URL}/${DEFAULT_LOCALE}/acceso-denegado/`
         });
     });
 
-    it('HOS-296: treats a user holding BOTH USER and HOST as a host, not a tourist', () => {
+    it('HOS-296: treats a user holding BOTH USER and HOST the same as either alone', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ roles: ['USER', 'HOST'], permissions: [] }),
             pathname: '/admin/accommodations/abc',
@@ -127,15 +133,12 @@ describe('decideAuthedGuard', () => {
         });
 
         expect(decision).toEqual({
-            kind: 'redirect-forbidden',
-            search: {
-                reason: 'host-missing-permission',
-                redirect: '/admin/accommodations/abc'
-            }
+            kind: 'redirect-web-forbidden',
+            href: `${SITE_URL}/${DEFAULT_LOCALE}/acceso-denegado/`
         });
     });
 
-    it('HOS-296: does NOT bounce a user holding USER plus a staff hat to the tourist funnel', () => {
+    it('HOS-296: also bounces a user holding USER plus a staff hat to the web access-denied page', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ roles: ['USER', 'EDITOR'], permissions: [] }),
             pathname: '/admin/billing/plans',
@@ -145,15 +148,12 @@ describe('decideAuthedGuard', () => {
         });
 
         expect(decision).toEqual({
-            kind: 'redirect-forbidden',
-            search: {
-                reason: 'generic',
-                redirect: '/admin/billing/plans'
-            }
+            kind: 'redirect-web-forbidden',
+            href: `${SITE_URL}/${DEFAULT_LOCALE}/acceso-denegado/`
         });
     });
 
-    it('redirects any other authenticated role (e.g. ADMIN without ACCESS_PANEL_ADMIN, exotic roles) to forbidden with reason=generic', () => {
+    it('redirects any other authenticated role (e.g. ADMIN without ACCESS_PANEL_ADMIN, exotic roles) to the web access-denied page', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ roles: ['ADMIN'], permissions: [] }),
             pathname: '/admin/billing/plans',
@@ -163,11 +163,8 @@ describe('decideAuthedGuard', () => {
         });
 
         expect(decision).toEqual({
-            kind: 'redirect-forbidden',
-            search: {
-                reason: 'generic',
-                redirect: '/admin/billing/plans'
-            }
+            kind: 'redirect-web-forbidden',
+            href: `${SITE_URL}/${DEFAULT_LOCALE}/acceso-denegado/`
         });
     });
 
@@ -203,7 +200,7 @@ describe('decideAuthedGuard', () => {
         expect(decision).toEqual({ kind: 'allow', authState });
     });
 
-    it('treats empty roles with empty permissions as generic forbidden', () => {
+    it('treats empty roles with empty permissions the same as any other non-panel-access shape', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ roles: [], permissions: [] }),
             pathname: '/admin',
@@ -212,9 +209,30 @@ describe('decideAuthedGuard', () => {
             adminUrl: ADMIN_URL
         });
 
-        expect(decision.kind).toBe('redirect-forbidden');
-        if (decision.kind !== 'redirect-forbidden') return;
-        expect(decision.search.reason).toBe('generic');
+        expect(decision).toEqual({
+            kind: 'redirect-web-forbidden',
+            href: `${SITE_URL}/${DEFAULT_LOCALE}/acceso-denegado/`
+        });
+    });
+
+    // The no-session branch is a separate guard clause (checked before panel
+    // access is even evaluated) and HOS-609 did not touch it — pinned here so
+    // a future edit to the non-panel-access branch cannot silently widen into
+    // this one.
+    it('does not touch the unauthenticated (no-session) branch', () => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ isAuthenticated: false, userId: null, roles: [] }),
+            pathname: '/admin',
+            preferredLocale: DEFAULT_LOCALE,
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
+        });
+
+        expect(decision.kind).toBe('redirect-signin');
+        if (decision.kind !== 'redirect-signin') return;
+        const url = new URL(decision.href);
+        expect(url.pathname).toBe(`/${DEFAULT_LOCALE}/auth/signin/`);
+        expect(url.searchParams.get('callbackUrl')).toBe(`${ADMIN_URL}/admin`);
     });
 });
 

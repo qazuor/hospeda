@@ -58,6 +58,7 @@ import { publicAuthorRoutes } from './author/public/index.js';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
+import { publicGetCheckoutConfigRoute } from './billing/public/getCheckoutConfig.js';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import { adminCommerceRoutes, protectedCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
@@ -363,6 +364,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
+        // HOS-937 review fix: read-only checkout-behavior flags (currently just
+        // `ownPreapprovalEnabled`) the web pricing pages need to decide
+        // whether to render the payer-email confirm dialog. Mounted separately
+        // from `/api/v1/public/plans` rather than nested under it — the flag is
+        // a checkout-behavior concern, not plan data.
+        app.route('/api/v1/public/billing/checkout-config', publicGetCheckoutConfigRoute);
         app.route('/api/v1/public', contactRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);

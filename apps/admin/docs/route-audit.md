@@ -8,7 +8,10 @@
 > **Code splitting:** Heavy pages use `.lazy.tsx` pattern
 > **i18n:** No (Spanish-only UI)
 > **Navigation:** Header (5 sections) + contextual Sidebar + Tabs on detail pages
-> **Total route files:** 98 (excluding layouts and .lazy.tsx)
+> **Total route files:** 97 (excluding layouts and .lazy.tsx). Was 98 at the
+> original 2026-02-16 audit date; `/dev/icon-comparison` was deleted (HOS-609,
+> unguarded dev tool from the finished Phosphor migration, owner decision) and
+> is not renumbered below — see the removal note where it used to be row 6.
 > **Layout files:** `__root.tsx`, `auth.tsx`, `_authed.tsx`
 
 ---
@@ -20,7 +23,7 @@
 | 3 | `/auth/signup` | `routes/auth/signup.tsx` | No (redirects to `/` if authenticated) | **Better Auth** .. `signUp.email()` mutation, `useAuthSync()` hook | Link from signin page |
 | 4 | `/auth/callback` | `routes/auth/callback.tsx` | No | **Better Auth** .. `useSession()` hook checks auth status, redirects to `/dashboard` or `/auth/signin` | OAuth provider redirect |
 | 5 | `/auth` | `routes/auth/index.tsx` | No | No data .. redirects to `/auth/signin` | Direct navigation |
-| 6 | `/dev/icon-comparison` | `routes/dev/icon-comparison.tsx` | No | Hardcoded .. `ICON_CATEGORIES` array (143 icons in 13 categories), static comparison of current SVGs vs Phosphor replacements | Dev tools (not in production nav) |
+| — | ~~`/dev/icon-comparison`~~ | **Removed (HOS-609)** — was `routes/dev/icon-comparison.tsx`, an unguarded dev tool (no auth at all, not under `_authed`) left over from the finished Phosphor icon migration. Deleted by owner decision; the row numbering below is left as-is rather than renumbered. | — | — | — |
 | 7 | `/dashboard` | `routes/_authed/dashboard.tsx` + `dashboard.lazy.tsx` | **Yes** | **TanStack Query** .. `useDashboardStats()` fetches accommodation/destination/event/post counts. KPI card config is hardcoded. Traffic chart and recent activity sections are **placeholder** ("Coming soon"). | Header logo, Sidebar "Resumen" |
 | 8 | `/notifications` | `routes/_authed/notifications.tsx` | **Yes** | **localStorage** .. reads from key `hospeda-admin-notifications`, manages in-memory state with `useState`. **Placeholder** content ("No new notifications"). | Sidebar link, Header bell icon |
 | 9 | `/me/profile` | `routes/_authed/me/profile.tsx` | **Yes** | **Better Auth** .. `useSession()` hook for user data, profile update mutation | Header user icon, Sidebar "Mi Perfil" |
@@ -166,9 +169,12 @@ These routes exist but have incomplete or placeholder functionality:
 | 3 | `/events/:id/attendees` | **Stub** | Shows event capacity from `useEventQuery(id)`. | Full "Coming Soon" page with feature wishlist (attendee registration, check-in, export). No attendee data or CRUD. |
 | 4 | `/events/:id/tickets` | **Partial** | Shows event pricing info (free/paid, price, currency) and capacity from real event data via `useEventQuery(id)`. | Ticket type management CRUD is "Coming Soon". Cannot create/edit/delete ticket types. |
 | 5 | `/access/users/:id/activity` | **Partial** | Shows `createdAt` and `updatedAt` from real user data via `useUserQuery(id)`. | Activity history section is "Coming Soon" placeholder. Depends on audit log system that doesn't exist yet. |
-| 6 | `/dev/icon-comparison` | **Dev tool** | Fully functional icon comparison grid (143 icons, 13 categories). | Not a placeholder, but a **dev-only tool** that is accessible without authentication in production. |
-| 7 | `/analytics/debug` | **Dev tool** | Real API calls to `/api/v1/health` and `/api/v1/health/db` via TanStack Query. Reset metrics mutation works. | Functional but is a **dev/debug tool** that should be restricted in production. |
-| 8 | `/billing/cron` | **Dev tool** | Uses `CronJobsPanel` feature component with `useTranslations()` for i18n. Shows cron job configuration. | Informational panel about scheduled tasks. Developer-oriented tool .. should be restricted in production. |
+| 6 | `/analytics/debug` | **Dev tool** | Real API calls to `/api/v1/health` and `/api/v1/health/db` via TanStack Query. Reset metrics mutation works. | Functional but is a **dev/debug tool** that should be restricted in production. |
+| 7 | `/billing/cron` | **Dev tool** | Uses `CronJobsPanel` feature component with `useTranslations()` for i18n. Shows cron job configuration. | Informational panel about scheduled tasks. Developer-oriented tool .. should be restricted in production. |
+
+> `/dev/icon-comparison` (formerly row 6 here, a fully functional 143-icon comparison grid with no
+> auth at all) was **removed** in HOS-609 — owner decision to delete the unguarded dev tool rather
+> than gate it, since the Phosphor icon migration it supported is finished.
 
 ---
 
@@ -192,7 +198,7 @@ Currently, only `/dashboard` uses the `.lazy.tsx` pattern for code splitting. Ot
 |---|-------|----------------|----------|
 | 1 | **Hardcoded permission arrays** | All `/*/new` routes (accommodations, destinations, attractions, events, posts, sponsors, tags, amenities, features, event-locations, event-organizers, users) | **High** .. Every create route has `PermissionEnum` arrays hardcoded directly in the component with comments like "hardcoded for now". These should come from the auth session or a permissions service. If permissions change, every create route must be manually updated. |
 | 2 | **No route-level permission checks** | Most detail/edit routes | **Medium** .. The `_authed` layout only checks if the user IS authenticated, but does not check if the user HAS permissions for the specific section. A user with only "view accommodations" permission can navigate to `/billing/settings` or `/settings/critical`. Permission checks happen at the API level, but the UI still renders the page and shows an error. |
-| 3 | **Dev tools accessible without production gating** | `/dev/icon-comparison`, `/analytics/debug`, `/billing/cron` | **Medium** .. These routes are dev/debug tools. `/dev/icon-comparison` has no auth at all (not under `_authed`). The other two require auth but no specific permission. In production, these should be hidden or restricted to super-admin. |
+| 3 | **Dev tools accessible without production gating** | `/analytics/debug`, `/billing/cron` | **Medium** .. These routes are dev/debug tools that require auth but no specific permission. In production, these should be restricted to super-admin. (`/dev/icon-comparison`, which used to head this list with NO auth at all, was removed in HOS-609 rather than gated.) |
 | 4 | **LimitGate wraps create forms but not edit forms** | All `/*/edit` routes | **Low** .. `LimitGate` (billing plan limits) is used on create routes but not on edit routes. If a user exceeds their plan limit, they can still edit existing entities. This may be intentional (allow editing but not creating) but should be explicit. |
 
 ---
@@ -228,4 +234,6 @@ The admin app is documented as "Spanish-only UI" but uses `useTranslations()` fr
 | 5 | `/events/:id/tickets` ticket CRUD | Stub | Implement ticket types API. The page already shows event pricing data .. adding ticket management would complete the events workflow. | **Medium** |
 | 6 | `/access/users/:id/activity` history | Stub | Depends on audit log system. Same dependency as dashboard activity feed. | **Low** |
 | 7 | `/billing/plans` static fallback | `ALL_PLANS` from `@repo/billing` | The fallback to static plan data is fine for bootstrapping but should log a warning when API fails. Ensure the static data stays in sync with database plans. | **Low** |
-| 8 | `/dev/icon-comparison` | Hardcoded `ICON_CATEGORIES` | Appropriate .. this is a dev tool. Should stay hardcoded. | N/A |
+
+> Row 8 here (`/dev/icon-comparison`, hardcoded `ICON_CATEGORIES`) is gone — the route was removed
+> in HOS-609, so there is no longer a data source to recommend for it.

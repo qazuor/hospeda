@@ -228,7 +228,14 @@ vi.mock('@repo/db', () => {
     };
     return {
         getDb: vi.fn(() => ({
-            insert: vi.fn(() => insertChain)
+            insert: vi.fn(() => insertChain),
+            // HOS-937 step 2: `initiatePaidMonthlySubscription`/
+            // `initiatePaidAnnualSubscription` now read
+            // `billing_customers.mp_payer_email` via raw SQL
+            // (`getMpPayerEmail`, `db.execute(sql\`...\`)`) before resolving
+            // the checkout. Not what this suite tests — default to the real
+            // `{ rows: [...] }` shape so it never blocks the route's happy path.
+            execute: vi.fn().mockResolvedValue({ rows: [] })
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
         // Required by role-permissions-cache.ts (loaded via the actor middleware
@@ -243,7 +250,14 @@ vi.mock('@repo/db', () => {
             async findAll(_filters: unknown, _opts?: unknown) {
                 return { items: [], total: 0 };
             }
-        }
+        },
+        // HOS-937 step 2: `getMpPayerEmail` builds its query with the real
+        // `sql` tagged template from `@repo/db` — this mock fully replaces
+        // the module (no `...actual` spread), so without a stand-in `sql`
+        // would be `undefined` here. A plain capture (mirrors the pattern in
+        // `subscription-checkout-own-preapproval-promo-plumbing.test.ts`) is
+        // enough since `db.execute` above never inspects its argument.
+        sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
     };
 });
 

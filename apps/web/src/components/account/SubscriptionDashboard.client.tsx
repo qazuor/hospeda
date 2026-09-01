@@ -53,7 +53,8 @@ type SubscriptionStatus =
     | 'expired'
     | 'past_due'
     | 'pending'
-    | 'paused';
+    | 'paused'
+    | 'courtesy';
 
 /** User shape passed from the Astro page */
 export interface SubscriptionDashboardUser {
@@ -110,6 +111,12 @@ function getBadgeClass(status: SubscriptionStatus): string {
             return styles.badgePending ?? '';
         case 'paused':
             return styles.badgePaused ?? '';
+        // HOS-180: a courtesy sits on a PAUSED MercadoPago preapproval, but
+        // nothing is suspended for the subscriber. It must never borrow the
+        // paused badge — AC-11 forbids "paused"/"suspended" wording anywhere on
+        // this screen for a gifted subscription.
+        case 'courtesy':
+            return styles.badgeActive ?? '';
         default:
             return styles.badgePending ?? '';
     }
@@ -879,17 +886,28 @@ export function SubscriptionDashboard({
 
     // HOS-242: a comp has a ~100-year sentinel `currentPeriodEnd` and is never
     // charged — surface "no renewal" instead of a bogus far-future billing date.
-    const nextBillingLabel = isComplimentary
-        ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
-        : isCancelScheduled
-          ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
-          : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+    // HOS-180: during a gifted window the honest field is "you are not being
+    // charged until X", not "next billing". `courtesyEndsAt` is when billing
+    // actually resumes.
+    const isCourtesy = status === 'courtesy';
 
-    const nextBillingDate = isComplimentary
-        ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
-        : effectiveNextBillingDate
-          ? formatDate({ date: effectiveNextBillingDate, locale })
-          : t('account.pages.subscription.noBillingDate', 'N/A');
+    const nextBillingLabel = isCourtesy
+        ? t('account.pages.subscription.courtesyUntilLabel', 'Sin cargo hasta')
+        : isComplimentary
+          ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
+          : isCancelScheduled
+            ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
+            : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+
+    const nextBillingDate = isCourtesy
+        ? subscription.courtesyEndsAt
+            ? formatDate({ date: subscription.courtesyEndsAt, locale })
+            : t('account.pages.subscription.noBillingDate', 'N/A')
+        : isComplimentary
+          ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
+          : effectiveNextBillingDate
+            ? formatDate({ date: effectiveNextBillingDate, locale })
+            : t('account.pages.subscription.noBillingDate', 'N/A');
 
     const paymentMethodLabel = formatPaymentMethod(
         subscription.paymentMethod,
@@ -911,11 +929,21 @@ export function SubscriptionDashboard({
         adminUrl = '';
     }
 
-    // Cancel/pause stop making sense once the cancellation is already
+    // HOS-1007: each of the three gates below mirrors exactly the status set its
+    // own backend accepts. They deliberately do NOT share one list — cancel takes
+    // `courtesy`, pause and change-plan do not:
+    //   - cancel      → `SOFT_CANCELLABLE_STATUSES` = active | trialing | courtesy
+    //                   (subscription-cancel.service.ts)
+    //   - pause       → active | trialing (subscription-pause.ts)
+    //   - change plan → active | trialing (plan-change.ts)
+    // (`trialing` is the backend spelling; this endpoint maps it to `'trial'`.)
+    // Cancel/pause also stop making sense once the cancellation is already
     // scheduled — there is no "undo cancel" endpoint, so hide both actions
     // rather than let the user re-trigger a cancel that already happened.
     const canCancel =
-        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
+        (status === 'active' || status === 'trial' || status === 'courtesy') &&
+        !isCancelScheduled &&
+        !isComplimentary;
     const canPause =
         (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
     // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
@@ -925,14 +953,27 @@ export function SubscriptionDashboard({
     // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
     const canResume = status === 'paused' && !isCancelScheduled;
 
-    // A plan change is rejected by the backend (409 SUBSCRIPTION_CANCEL_PENDING)
-    // while a cancellation is already scheduled — there is no "undo cancel"
-    // endpoint, so it can only happen once the current period ends. Disable the
-    // entry point rather than let the user open the flow and hit an opaque error
-    // (BETA-194). HOS-242: also hidden for a comp — plan-change's find is
-    // `active | trialing` and a comp has no MP preapproval to mutate, so it would
-    // fail with "No active subscription found".
-    const canChangePlan = !isCancelScheduled && !isComplimentary;
+    // HOS-1007: expressed as an INCLUSION list, not a run of exclusions. The old
+    // `!isCancelScheduled && !isComplimentary` form defaulted every status to
+    // "allowed" and required someone to remember a new `!isX` for each status
+    // added — it already failed twice (`comp`, then `courtesy`), and it was
+    // silently wrong for `paused`/`past_due`/`expired`/`cancelled` too: those
+    // offered an enabled "Cambiar plan" against a backend whose find is
+    // `active | trialing` and answers 404 "No active subscription found".
+    // Mirroring plan-change.ts's own find closes all of them at once, and any
+    // future status is excluded by default instead of by memory.
+    //
+    // The two exclusions still layered on top of the inclusion list:
+    //   - `isCancelScheduled` — the backend answers 409
+    //     SUBSCRIPTION_CANCEL_PENDING while a cancellation is already scheduled
+    //     (there is no "undo cancel" endpoint), so disable the entry point
+    //     rather than let the user open the flow and hit an opaque error
+    //     (BETA-194).
+    //   - `isComplimentary` (HOS-242) — a comp is reported with status 'active'
+    //     but has no MP preapproval to mutate, so the inclusion list alone
+    //     cannot exclude it.
+    const canChangePlan =
+        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
 
     // ── JSX ────────────────────────────────────────────────────────────────
 

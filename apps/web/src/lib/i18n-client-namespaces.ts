@@ -113,16 +113,28 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'alliance-leads',
     'alliance-leads.form',
     'auth-ui.common',
+    // HOS-959: the tabbed auth island renders the active tab's page title as
+    // its <h1>, reusing `auth-ui.pages.signin.title` / `.signup.title`.
+    'auth-ui.pages',
     'auth-ui.signIn',
     'auth-ui.signOut',
     'auth-ui.signUp',
     'auth-ui.userMenu',
     'auth.forgotPassword',
+    // HOS-959: the OAuth block moved out of both password forms into one
+    // shared island above the tabs, so its labels left `auth.signIn`/
+    // `auth.signUp` for a namespace of their own.
+    'auth.oauth',
     'auth.resetPassword',
     'auth.signIn',
     'auth.signUp',
+    // HOS-959: the sign-in/sign-up tab strip.
+    'auth.tabs',
     'auth.verifyEmail',
     'billing.checkout',
+    // HOS-937 step 3 — the checkout-retry banner (CheckoutRetryBanner.client.tsx)
+    // named on `mi-cuenta/suscripcion` after a card-rejected preapproval.
+    'billing.checkoutRetry',
     'billing.limit',
     'blog.categories',
     'comments.form',

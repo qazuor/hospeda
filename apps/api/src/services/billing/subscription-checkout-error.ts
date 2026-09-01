@@ -117,7 +117,17 @@ export type SubscriptionCheckoutErrorCode =
     // (server-side inconsistency, not an upstream provider failure). The MP
     // mutation failing on its own reuses MP_PREAPPROVAL_MUTATION_FAILED (502),
     // fail-closed — nothing was applied locally.
-    | 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED';
+    | 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED'
+    // HOS-937 step 2: the resolved payer email (user-typed, the customer's
+    // last-working `mp_payer_email`, or their signup `email` — see
+    // `billing/payer-email.ts`) contains a `+`, which MercadoPago rejects
+    // outright with an opaque "User bad request". Product decision on how
+    // to handle this is deliberately deferred (spec §11 OQ-1); until it
+    // resolves, the checkout fails loudly instead of silently rewriting the
+    // email. Maps to HTTP 400 — the resolved value is not something
+    // MercadoPago will accept, closer to a validation failure than a
+    // provider or business-rule error.
+    | 'PAYER_EMAIL_UNSUPPORTED_CHARACTER';
 
 /**
  * Domain-level error thrown across the paid-subscription checkout and
