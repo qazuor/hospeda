@@ -263,11 +263,12 @@ export interface InitiatePaidMonthlySubscriptionInput {
      * Optional promo code. Resolved via
      * {@link resolveCheckoutPromoPlan} into a trial / discount / comp plan
      * (SPEC-262 T-012 P2):
-     *  - `trial_extension` → validated but not applied here yet (HOS-1012). The
-     *    extra days can no longer ride on a MercadoPago `free_trial`; re-homing
-     *    them onto the local trial row is an open decision — see the
-     *    `TODO(HOS-1012)` in {@link initiatePaidMonthlySubscription}. The code
-     *    is NOT redeemed in the meantime.
+     *  - `trial_extension` → validated but never applied here (HOS-1012). The
+     *    extra days no longer ride on a MercadoPago `free_trial`; they are
+     *    pushed onto the local trial row by
+     *    `services/promo-trial-extension-apply.service.ts`, reached through
+     *    `POST /protected/billing/promo-codes/apply`. The code is NOT redeemed
+     *    here.
      *  - `discount` → live-preapproval `transaction_amount` mutation (FAIL-CLOSED).
      *  - `comp` → a `status='comp'` subscription, NO MercadoPago preapproval.
      * An unknown / inactive / restricted code surfaces as
@@ -329,9 +330,9 @@ export interface InitiatePaidMonthlySubscriptionResult {
      * `trial_extension` code with no trial to lengthen, and that signal came
      * from `resolveCheckoutFreeTrialDays`, which checkout no longer calls. The
      * field is retained — the wire schema declares it and trial extension is a
-     * kept feature — and will be set again by whichever entry point ends up
-     * owning the effect (see the `TODO(HOS-1012)` in
-     * {@link initiatePaidMonthlySubscription}).
+     * kept feature — but the effect now lives on the account-page entry point
+     * (`services/promo-trial-extension-apply.service.ts`, HOS-1012 T-039), which
+     * answers with the persisted `trial_end` rather than through this flag.
      *
      * Absent (not `false`) — the front-end should treat "absent" and "false"
      * identically.
@@ -470,27 +471,25 @@ export async function initiatePaidMonthlySubscription(
         };
     }
 
-    // TODO(HOS-1012): re-home the trial-extension effect.
-    // Extending the trial is a KEPT feature — `FREEMONTH` stays live, and so
-    // does `LANZAMIENTO60`, the production code that adds 60 days on top of the
-    // default 30 (that pair is what a real 90-day customer is holding). What
-    // changed is WHERE the extra days can land: they can no longer be summed
-    // into a MercadoPago `auto_recurring.free_trial`, because no checkout asks
-    // MercadoPago for a trial at all any more. They have to resolve against the
-    // LOCAL trial row instead. That primitive already exists —
-    // `extendExistingSubscriptionTrial`
-    // (`packages/service-core/src/services/billing/promo-code/promo-code.trial-extension.ts`),
-    // exposed by `POST /api/v1/protected/billing/promo-codes/apply`. WHICH entry
-    // point a code presented at checkout is handed to is an open PRODUCT
-    // decision being closed with the owner; it is deliberately not invented here.
+    // TRIAL EXTENSION lives elsewhere now (HOS-1012 T-021 removed it here,
+    // T-039 re-homed it). Extending the trial is a KEPT feature — `FREEMONTH`
+    // stays live, and so does `LANZAMIENTO60`, the production code that adds 60
+    // days on top of the default 30 (that pair is what a real 90-day customer is
+    // holding). What changed is WHERE the extra days land: no longer summed into
+    // a MercadoPago `auto_recurring.free_trial` (no checkout asks MercadoPago
+    // for a trial at all any more), but pushed onto the LOCAL trial row by
+    // `applyTrialExtensionToRunningTrial`
+    // (`apps/api/src/services/promo-trial-extension-apply.service.ts`), which
+    // wraps `extendExistingSubscriptionTrial` and is reached through
+    // `POST /api/v1/protected/billing/promo-codes/apply`.
     //
-    // Until it lands, a `trial_extension` code at checkout is still fully
-    // VALIDATED (an unknown / expired / restricted code still throws
-    // INVALID_PROMO_CODE → 422) but applies nothing here, and — this is the part
-    // that matters — is NOT redeemed: no `pendingTrialExtension` snapshot is
-    // taken below, so no `used_count++` and no usage row is ever written for
-    // days that were not granted. The code stays unburnt and usable through
-    // whichever entry point wins.
+    // At CHECKOUT a `trial_extension` code is still fully VALIDATED (an unknown
+    // / expired / restricted code still throws INVALID_PROMO_CODE → 422) but
+    // applies nothing here and is NOT redeemed: no `used_count++` and no usage
+    // row is ever written for days that were not granted. Checkout is the PAID
+    // path — the trial it would extend has already ended by the time anyone
+    // reaches it. The code stays unburnt and is applied from the account page
+    // while the trial is still running.
     //
     // Do NOT deactivate or repurpose `FREEMONTH` / `LANZAMIENTO60` in
     // `packages/billing/src/config/promo-codes.config.ts` to work around this.
@@ -1314,9 +1313,9 @@ export interface InitiatePaidAnnualSubscriptionInput {
      * behavior left:
      *  - `comp` → a `status='comp'` subscription, NO MercadoPago charge. Wins
      *    outright over a trial.
-     *  - `trial_extension` → validated but not applied here yet (HOS-1012), and
-     *    NOT redeemed. Same open decision as monthly — see the
-     *    `TODO(HOS-1012)` in {@link initiatePaidMonthlySubscription}.
+     *  - `trial_extension` → validated but never applied here (HOS-1012), and
+     *    NOT redeemed. Same as monthly — see the note in
+     *    {@link initiatePaidMonthlySubscription}.
      *  - `discount` → the preapproval amount is mutated down, FAIL-CLOSED, and
      *    the multi-cycle counter applies exactly as it does for monthly.
      * An unknown / inactive code surfaces as INVALID_PROMO_CODE (HTTP 422).
@@ -1456,8 +1455,8 @@ export async function initiatePaidAnnualSubscription(
         };
     }
 
-    // TODO(HOS-1012): re-home the trial-extension effect — identical to the
-    // monthly path, and deliberately so. Annual resolves no trial length either:
+    // TRIAL EXTENSION lives elsewhere now — identical to the monthly path, and
+    // deliberately so. Annual resolves no trial length either:
     // it is the same preapproval on a 12-month cadence, and it asks MercadoPago
     // for no free days. A `trial_extension` code here is validated (an invalid
     // one still 422s) but applies nothing and is NOT redeemed. See the full note
