@@ -82,70 +82,70 @@
             "id": "T-003",
             "title": "Create the local trial subscription creator (no MercadoPago object)",
             "description": "New service that inserts a `billing_subscriptions` row with status='trialing', mp_subscription_id=NULL, trial_start, trial_end, plan_id and product_domain. Model it on `apps/api/src/services/subscription-comp-create.service.ts` (SPEC-262), which already creates a provider-less subscription by direct DB insert — NOT on the checkout path. Must accept an optional transaction context so T-008 can call it inside `withServiceTransaction`. TESTS: unit tests covering the inserted row shape (mp_subscription_id is NULL, product_domain set, trial_end = trial_start + N days), and that passing a tx context routes the write through it rather than a fresh connection.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-008", "T-010", "T-022"],
             "subtasks": [
                 {
                     "title": "Read subscription-comp-create.service.ts as the template",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement createTrialSubscription with optional tx context",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm isEntitlementGrantingStatus already covers 'trialing' — no entitlement change",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "db", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T08:30:00.000Z",
+                "completed": "2026-09-01T08:45:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Unit-test the trial creator, mutation-verified",
             "description": "Tests for T-003. Must fail if mp_subscription_id stops being NULL, if product_domain is dropped, or if trial_end is computed from the wrong anchor. TESTS: mutate each of those three in turn and confirm a test dies for each — a passing suite that survives all three mutations is not covering the row shape.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Mutation: mp_subscription_id set to a value",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: product_domain omitted",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: trial_end anchored to now instead of trial_start",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T08:30:00.000Z",
+                "completed": "2026-09-01T08:45:00.000Z"
             }
         },
         {
@@ -1040,9 +1040,9 @@
     ],
     "summary": {
         "total": 31,
-        "pending": 30,
+        "pending": 28,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.6
     }
