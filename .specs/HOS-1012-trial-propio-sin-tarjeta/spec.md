@@ -63,9 +63,10 @@ argument, and is recorded as such.
 > | `peychauxchristian@gmail.com` | 2026-08-27 → **2026-09-26** | 30 days |
 > | `pri.laupc@hotmail.com` | 2026-08-27 → **2026-11-25** | 90 days |
 >
-> The 90-day window is not the standard one and its origin is unexplained (annual plan? a
-> `trial_extension` promo?) — worth resolving before either is touched. See OQ-3, now
-> decided.
+> The 90-day window is **explained** (owner, 2026-09-01): it comes from `LANZAMIENTO60`, a
+> `trial_extension` promo code live in production that adds 60 days to the default 30. Not
+> an annual plan and not a bug — and the reason extending a trial stays a supported feature
+> after this spec (see T-039). See OQ-3, now decided.
 
 **The argument that settled it**: keeping MercadoPago's trial — whether by moving the
 clock (Option B) or by dropping the shared plan (Option C) — keeps betting on a mechanism
