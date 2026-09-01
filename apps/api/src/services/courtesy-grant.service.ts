@@ -164,7 +164,7 @@ export async function grantCourtesyCycles(
     // Already gifted? Refuse rather than silently extending — stacking gifts is
     // a different decision nobody has made, and overwriting the window would
     // lose the audit trail of the first grant.
-    if (readCourtesyFields(subscription.metadata).courtesyEndsAt !== null) {
+    if (readCourtesyFields(subscription).courtesyEndsAt !== null) {
         return {
             success: false,
             error: {
@@ -300,10 +300,7 @@ export async function grantCourtesyCycles(
         .update(billingSubscriptions)
         .set({
             status: SubscriptionStatusEnum.COURTESY,
-            metadata: writeCourtesyFields({
-                metadata: subscription.metadata,
-                fields: window
-            })
+            ...writeCourtesyFields(window)
         })
         .where(eq(billingSubscriptions.id, subscriptionId));
 

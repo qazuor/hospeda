@@ -15,7 +15,7 @@
  * Test matrix:
  *   1. A `courtesy` subscription serializes as `status: 'courtesy'` (never
  *      'pending', never 'paused', never 'active').
- *   2. `courtesyEndsAt` is surfaced from the metadata window alongside it.
+ *   2. `courtesyEndsAt` is surfaced from the typed column alongside it.
  *   3. A genuinely `paused` subscription (no gift) still serializes as
  *      'paused' — the mapping added for courtesy must not swallow a real pause.
  *   4. An unknown provider status still falls back to 'pending' — the default
@@ -77,6 +77,7 @@ vi.mock('../../../../src/utils/actor', () => ({
 // Import triggers — AFTER all vi.mock declarations
 // ---------------------------------------------------------------------------
 
+import { getDb } from '@repo/db';
 import '../../../../src/routes/user/protected/subscription';
 
 // ---------------------------------------------------------------------------
@@ -159,6 +160,9 @@ interface StubSub {
     readonly trialEnd: null;
     readonly scheduledPlanChange: null;
     readonly metadata: Record<string, unknown>;
+    readonly courtesyStartsAt?: Date | null;
+    readonly courtesyEndsAt?: Date | null;
+    readonly courtesyCyclesGranted?: number | null;
 }
 
 function makeSub(overrides: Partial<StubSub> = {}): StubSub {
@@ -180,17 +184,16 @@ function makeSub(overrides: Partial<StubSub> = {}): StubSub {
 /**
  * A gifted subscription exactly as the DB holds it: the status column already
  * carries the derived `courtesy` (written by `courtesy-grant.service.ts`), and
- * the window lives in the `metadata` jsonb as ISO strings (jsonb round-trips a
- * Date as a string — see `readCourtesyFields`).
+ * the window lives in its own typed columns (HOS-993) — a `timestamptz`
+ * column arrives as a `Date`, not an ISO string (see `readCourtesyFields`).
+ * `metadata` no longer carries the window at all.
  */
 function makeCourtesySub(): StubSub {
     return makeSub({
         status: 'courtesy',
-        metadata: {
-            courtesyStartsAt: COURTESY_STARTS_AT.toISOString(),
-            courtesyEndsAt: COURTESY_ENDS_AT.toISOString(),
-            courtesyCyclesGranted: 2
-        }
+        courtesyStartsAt: COURTESY_STARTS_AT,
+        courtesyEndsAt: COURTESY_ENDS_AT,
+        courtesyCyclesGranted: 2
     });
 }
 
@@ -205,6 +208,27 @@ function setupBillingMock(sub: StubSub) {
         plans: { get: vi.fn().mockResolvedValue({ name: 'owner-pro' }) }
     };
     mockGetQZPayBilling.mockReturnValue(mock);
+
+    // The route reads the courtesy window from the ROW, not from the object
+    // `getByCustomerId` returns: qzpay-core's mapper builds those field by
+    // field from core's own interface, so a column qzpay-drizzle adds on top
+    // never reaches them. Mirroring the stub's window here is what keeps this
+    // fixture honest about where the value actually comes from — put it only
+    // on the facade object and the endpoint would answer `null` in production
+    // while the test stayed green.
+    vi.mocked(getDb).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([
+            {
+                courtesyStartsAt: sub.courtesyStartsAt ?? null,
+                courtesyEndsAt: sub.courtesyEndsAt ?? null,
+                courtesyCyclesGranted: sub.courtesyCyclesGranted ?? null
+            }
+        ])
+    } as never);
+
     return mock;
 }
 
@@ -266,7 +290,7 @@ describe('GET /api/v1/protected/users/me/subscription — courtesy status (HOS-1
         expect(result.subscription?.status).not.toBe('active');
     });
 
-    it('surfaces courtesyEndsAt from the metadata window alongside the status', async () => {
+    it('surfaces courtesyEndsAt from the typed column alongside the status', async () => {
         // Arrange
         setupBillingMock(makeCourtesySub());
 

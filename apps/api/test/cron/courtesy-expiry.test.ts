@@ -113,7 +113,15 @@ const { courtesyExpiryJob } = await import('../../src/cron/jobs/courtesy-expiry.
 const PAST = new Date(Date.now() - 24 * 60 * 60 * 1000);
 const FUTURE = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-/** A subscription sitting in a gift whose window has already elapsed. */
+/**
+ * A subscription sitting in a gift whose window has already elapsed.
+ *
+ * HOS-993: the three window fields are typed columns on the row now, not
+ * `metadata` keys — a `timestamptz` column arrives as a `Date`, so the
+ * fixture uses `Date` instances rather than ISO strings. `metadata` still
+ * carries `billingInterval` (untouched by HOS-993) and, where a test needs
+ * it, `courtesyStartedNotifiedAt` (deliberately left in metadata).
+ */
 function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
     return {
         id: 'sub-1',
@@ -121,12 +129,10 @@ function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
         status: 'courtesy',
         cancelAtPeriodEnd: false,
         mpSubscriptionId: 'mp-preapproval-1',
-        metadata: {
-            billingInterval: 'monthly',
-            courtesyStartsAt: PAST.toISOString(),
-            courtesyEndsAt: PAST.toISOString(),
-            courtesyCyclesGranted: 2
-        },
+        courtesyStartsAt: PAST,
+        courtesyEndsAt: PAST,
+        courtesyCyclesGranted: 2,
+        metadata: { billingInterval: 'monthly' },
         ...overrides
     };
 }
@@ -134,12 +140,9 @@ function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
 /** A subscription whose gift has begun but not yet ended. */
 function runningCourtesyRow(overrides: Record<string, unknown> = {}) {
     return elapsedCourtesyRow({
-        metadata: {
-            billingInterval: 'monthly',
-            courtesyStartsAt: PAST.toISOString(),
-            courtesyEndsAt: FUTURE.toISOString(),
-            courtesyCyclesGranted: 2
-        },
+        courtesyStartsAt: PAST,
+        courtesyEndsAt: FUTURE,
+        courtesyCyclesGranted: 2,
         ...overrides
     });
 }
@@ -218,7 +221,7 @@ describe('courtesy-expiry — window ends (AC-5)', () => {
         expect(result.errors).toBe(0);
     });
 
-    it('writes ACTIVE and deletes the courtesy keys while preserving the rest of metadata', async () => {
+    it('writes ACTIVE and nulls the three courtesy columns', async () => {
         // Arrange
         subscriptionRows = [elapsedCourtesyRow()];
 
@@ -226,14 +229,16 @@ describe('courtesy-expiry — window ends (AC-5)', () => {
         await courtesyExpiryJob.handler(createMockContext());
 
         // Assert — a lingering window would make the NEXT unrelated pause
-        // derive as a courtesy and hand out free entitlements.
+        // derive as a courtesy and hand out free entitlements. HOS-993: the
+        // window lives in its own columns now, so clearing it no longer
+        // touches `metadata` at all — the patch names only the three
+        // courtesy columns (plus status).
         const values = updatedValues();
         expect(values.status).toBe('active');
-        const metadata = values.metadata as Record<string, unknown>;
-        expect(metadata).not.toHaveProperty('courtesyStartsAt');
-        expect(metadata).not.toHaveProperty('courtesyEndsAt');
-        expect(metadata).not.toHaveProperty('courtesyCyclesGranted');
-        expect(metadata.billingInterval).toBe('monthly');
+        expect(values.courtesyStartsAt).toBeNull();
+        expect(values.courtesyEndsAt).toBeNull();
+        expect(values.courtesyCyclesGranted).toBeNull();
+        expect(values).not.toHaveProperty('metadata');
     });
 
     it('records a COURTESY_WINDOW_ENDED audit event and clears the customer cache', async () => {
@@ -257,12 +262,7 @@ describe('courtesy-expiry — window ends (AC-5)', () => {
         // Arrange — the gift ends tomorrow, and it already notified its start.
         subscriptionRows = [
             runningCourtesyRow({
-                metadata: {
-                    courtesyStartsAt: PAST.toISOString(),
-                    courtesyEndsAt: FUTURE.toISOString(),
-                    courtesyCyclesGranted: 1,
-                    courtesyStartedNotifiedAt: PAST.toISOString()
-                }
+                metadata: { courtesyStartedNotifiedAt: PAST.toISOString() }
             })
         ];
 
@@ -295,7 +295,9 @@ describe('courtesy-expiry — cancelled mid-gift (AC-5)', () => {
 
         const values = updatedValues();
         expect(values.status).toBe('cancelled');
-        expect(values.metadata).not.toHaveProperty('courtesyEndsAt');
+        expect(values.courtesyStartsAt).toBeNull();
+        expect(values.courtesyEndsAt).toBeNull();
+        expect(values.courtesyCyclesGranted).toBeNull();
         expect(result.success).toBe(true);
         expect(result.processed).toBe(1);
     });
@@ -355,8 +357,15 @@ describe('courtesy-expiry — failures are loud (spec R-1)', () => {
     });
 
     it('leaves a courtesy row with an unreadable window intact and counts it as an error', async () => {
-        // Arrange — corrupt data: status says courtesy, metadata says nothing.
-        subscriptionRows = [elapsedCourtesyRow({ metadata: { billingInterval: 'monthly' } })];
+        // Arrange — corrupt data: status says courtesy, the window columns say
+        // nothing.
+        subscriptionRows = [
+            elapsedCourtesyRow({
+                courtesyStartsAt: null,
+                courtesyEndsAt: null,
+                courtesyCyclesGranted: null
+            })
+        ];
 
         // Act
         const result = await courtesyExpiryJob.handler(createMockContext());
@@ -420,11 +429,14 @@ describe('courtesy-expiry — window starts, exactly once (AC-13)', () => {
         expect(startedNotifyMock).toHaveBeenCalledWith({ subscriptionId: 'sub-1' });
         expect(callOrder).toEqual(['notify-started', 'local-write']);
 
-        const metadata = updatedValues().metadata as Record<string, unknown>;
+        const values = updatedValues();
+        const metadata = values.metadata as Record<string, unknown>;
         expect(typeof metadata.courtesyStartedNotifiedAt).toBe('string');
-        // The stamp must not swallow the window it is stamped beside.
-        expect(metadata.courtesyEndsAt).toBe(FUTURE.toISOString());
         expect(metadata.billingInterval).toBe('monthly');
+        // HOS-993: the window now lives in its own columns, untouched by this
+        // write — there is no risk of the metadata spread swallowing it, since
+        // this `.set()` never names the window columns at all.
+        expect(values).not.toHaveProperty('courtesyEndsAt');
         // No resume: the gift is running, not ending.
         expect(resumeMock).not.toHaveBeenCalled();
         expect(result.success).toBe(true);
@@ -437,9 +449,6 @@ describe('courtesy-expiry — window starts, exactly once (AC-13)', () => {
             runningCourtesyRow({
                 metadata: {
                     billingInterval: 'monthly',
-                    courtesyStartsAt: PAST.toISOString(),
-                    courtesyEndsAt: FUTURE.toISOString(),
-                    courtesyCyclesGranted: 2,
                     courtesyStartedNotifiedAt: PAST.toISOString()
                 }
             })
@@ -459,11 +468,9 @@ describe('courtesy-expiry — window starts, exactly once (AC-13)', () => {
         // Arrange — granted, but the paid period has not run out yet.
         subscriptionRows = [
             runningCourtesyRow({
-                metadata: {
-                    courtesyStartsAt: FUTURE.toISOString(),
-                    courtesyEndsAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-                    courtesyCyclesGranted: 1
-                }
+                courtesyStartsAt: FUTURE,
+                courtesyEndsAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+                courtesyCyclesGranted: 1
             })
         ];
 

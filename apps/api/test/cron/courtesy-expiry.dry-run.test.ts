@@ -107,7 +107,14 @@ const { courtesyExpiryJob } = await import('../../src/cron/jobs/courtesy-expiry.
 const PAST = new Date(Date.now() - 24 * 60 * 60 * 1000);
 const FUTURE = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-/** A subscription sitting in a gift whose window has already elapsed. */
+/**
+ * A subscription sitting in a gift whose window has already elapsed.
+ *
+ * HOS-993: the three window fields are typed columns on the row now, not
+ * `metadata` keys — a `timestamptz` column arrives as a `Date`, so the
+ * fixture uses `Date` instances rather than ISO strings. `metadata` still
+ * carries `billingInterval` (untouched by HOS-993).
+ */
 function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
     return {
         id: 'sub-1',
@@ -115,12 +122,10 @@ function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
         status: 'courtesy',
         cancelAtPeriodEnd: false,
         mpSubscriptionId: 'mp-preapproval-1',
-        metadata: {
-            billingInterval: 'monthly',
-            courtesyStartsAt: PAST.toISOString(),
-            courtesyEndsAt: PAST.toISOString(),
-            courtesyCyclesGranted: 2
-        },
+        courtesyStartsAt: PAST,
+        courtesyEndsAt: PAST,
+        courtesyCyclesGranted: 2,
+        metadata: { billingInterval: 'monthly' },
         ...overrides
     };
 }
@@ -128,12 +133,9 @@ function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
 /** A subscription whose gift has just begun and was never announced. */
 function openingCourtesyRow(overrides: Record<string, unknown> = {}) {
     return elapsedCourtesyRow({
-        metadata: {
-            billingInterval: 'monthly',
-            courtesyStartsAt: PAST.toISOString(),
-            courtesyEndsAt: FUTURE.toISOString(),
-            courtesyCyclesGranted: 2
-        },
+        courtesyStartsAt: PAST,
+        courtesyEndsAt: FUTURE,
+        courtesyCyclesGranted: 2,
         ...overrides
     });
 }
@@ -289,7 +291,13 @@ describe('courtesy-expiry dry run — counts without touching anything', () => {
 describe('courtesy-expiry dry run — data faults still surface', () => {
     it('still fails loudly on a courtesy row with no readable window', async () => {
         // Arrange — corrupt data is wrong whether or not anyone writes today.
-        subscriptionRows = [elapsedCourtesyRow({ metadata: { billingInterval: 'monthly' } })];
+        subscriptionRows = [
+            elapsedCourtesyRow({
+                courtesyStartsAt: null,
+                courtesyEndsAt: null,
+                courtesyCyclesGranted: null
+            })
+        ];
 
         // Act
         const result = await courtesyExpiryJob.handler(dryRunContext());

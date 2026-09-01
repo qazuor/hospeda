@@ -666,7 +666,7 @@ export async function processSubscriptionUpdated({
             trialEnd: resolvedTrialEnd,
             now
         }),
-        courtesyEndsAt: readCourtesyFields(localSubscription.metadata).courtesyEndsAt,
+        courtesyEndsAt: readCourtesyFields(localSubscription).courtesyEndsAt,
         now
     });
 
