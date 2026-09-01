@@ -45,6 +45,9 @@ import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 
+/** Milliseconds in a day. Durations are epoch arithmetic, never local-time setters (HOS-1010). */
+const MS_PER_DAY = 86_400_000;
+
 export type {
     ReactivateFromTrialInput,
     ReactivateFromTrialResult,
@@ -986,8 +989,14 @@ export class TrialService {
             const currentTrialEnd = subscription.trialEnd
                 ? new Date(subscription.trialEnd)
                 : new Date();
-            const newTrialEnd = new Date(currentTrialEnd);
-            newTrialEnd.setDate(newTrialEnd.getDate() + additionalDays);
+            // Extending a trial by N days is a DURATION, so it is plain epoch
+            // arithmetic. The `setDate(getDate() + n)` this replaces read and
+            // wrote in the process's local timezone, which happens to agree
+            // here only because Argentina has had no DST since 2009 — an
+            // undeclared premise the code should not rest on (HOS-1010).
+            // `promo-code.trial-extension.ts` already computes the identical
+            // value this way.
+            const newTrialEnd = new Date(currentTrialEnd.getTime() + additionalDays * MS_PER_DAY);
 
             // Update both the actual trialEnd field and metadata for audit trail
             await this.billing.subscriptions.update(subscriptionId, {
