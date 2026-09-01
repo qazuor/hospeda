@@ -20,6 +20,10 @@
  * elapsed window, and then they are simply paused, forever, with no signal
  * anywhere (spec R-1).
  *
+ * `dryRun` is therefore honoured strictly: it reports the counts and touches
+ * nothing. Data faults still surface in dry run — a row in status `courtesy`
+ * with no readable window is wrong whether or not anyone is writing today.
+ *
  * So it fails LOUDLY. A run that could not resume a preapproval reports
  * `success: false`, which is what puts it in `cron_runs` as a failure rather
  * than a green run that quietly did nothing — the exact pattern HOS-918
@@ -52,13 +56,25 @@ const STARTED_NOTIFIED_KEY = 'courtesyStartedNotifiedAt';
  * window lives in `metadata` jsonb while spec OQ-1 is open, so there is no
  * column to index. The candidate set is "subscriptions in status courtesy",
  * which is a handful at any realistic volume.
+ *
+ * @param args.now - Injected clock; the boundary every window is compared to.
+ * @param args.dryRun - When `true`, counts what the sweep WOULD do and writes
+ *   nothing at all: no resume, no hard cancel, no notification, no row update,
+ *   no audit event, no cache eviction. Rehearsing any of those is not a
+ *   rehearsal — a resumed preapproval starts charging, and a start
+ *   notification stamped in dry run would silence the next real run.
  */
-async function sweepCourtesyWindows(now: Date): Promise<{
+async function sweepCourtesyWindows(args: {
+    readonly now: Date;
+    readonly dryRun: boolean;
+}): Promise<{
     started: number;
     ended: number;
+    cancelled: number;
     errors: number;
     failures: string[];
 }> {
+    const { now, dryRun } = args;
     const db = getDb();
     const billing = getQZPayBilling();
 
@@ -69,6 +85,7 @@ async function sweepCourtesyWindows(now: Date): Promise<{
 
     let started = 0;
     let ended = 0;
+    let cancelled = 0;
     let errors = 0;
     const failures: string[] = [];
 
@@ -93,6 +110,18 @@ async function sweepCourtesyWindows(now: Date): Promise<{
             if (!billing) {
                 errors++;
                 failures.push(`${row.id}: billing not configured, cannot resume`);
+                continue;
+            }
+
+            // A dry run counts and stops here. Every statement below this
+            // point is irreversible — a resumed or hard-cancelled preapproval
+            // cannot be un-called, a mailed subscriber cannot be un-mailed, and
+            // a cleared window cannot be recovered from the row.
+            if (dryRun) {
+                if (row.cancelAtPeriodEnd === true) {
+                    cancelled++;
+                }
+                ended++;
                 continue;
             }
 
@@ -131,6 +160,7 @@ async function sweepCourtesyWindows(now: Date): Promise<{
                         })
                         .where(eq(billingSubscriptions.id, row.id));
                     clearEntitlementCache(row.customerId);
+                    cancelled++;
                     ended++;
                     continue;
                 }
@@ -199,6 +229,11 @@ async function sweepCourtesyWindows(now: Date): Promise<{
             fields.courtesyStartsAt !== null &&
             fields.courtesyStartsAt.getTime() <= now.getTime()
         ) {
+            if (dryRun) {
+                started++;
+                continue;
+            }
+
             try {
                 await sendCourtesyStartedNotification({ subscriptionId: row.id });
                 // Stamped so a second sweep over the same boundary sends nothing
@@ -225,7 +260,7 @@ async function sweepCourtesyWindows(now: Date): Promise<{
         }
     }
 
-    return { started, ended, errors, failures };
+    return { started, ended, cancelled, errors, failures };
 }
 
 /**
@@ -242,11 +277,19 @@ export const courtesyExpiryJob: CronJobDefinition = {
     schedule: '0 * * * *',
     enabled: true,
     timeoutMs: 120_000,
-    handler: async ({ logger }) => {
+    handler: async ({ logger, dryRun }) => {
         const startedAt = new Date();
 
+        logger.info('Starting courtesy expiry sweep', {
+            dryRun,
+            startedAt: startedAt.toISOString()
+        });
+
         try {
-            const { started, ended, errors, failures } = await sweepCourtesyWindows(startedAt);
+            const { started, ended, cancelled, errors, failures } = await sweepCourtesyWindows({
+                now: startedAt,
+                dryRun
+            });
             const durationMs = Date.now() - startedAt.getTime();
 
             // Fails loudly on purpose (R-1). A subscription that could not be
@@ -254,6 +297,7 @@ export const courtesyExpiryJob: CronJobDefinition = {
             // mechanism to rescue them, so this must never report a green run.
             if (errors > 0) {
                 logger.error('Courtesy expiry completed with failures', {
+                    dryRun,
                     started,
                     ended,
                     errors,
@@ -261,22 +305,61 @@ export const courtesyExpiryJob: CronJobDefinition = {
                 });
                 return {
                     success: false,
-                    message: `Courtesy expiry: ${ended} ended, ${started} started, ${errors} FAILED`,
+                    message: `Courtesy expiry${dryRun ? ' (dry run)' : ''}: ${ended} ended, ${started} started, ${errors} FAILED`,
                     processed: started + ended,
                     errors,
                     durationMs,
-                    details: { failures }
+                    details: { dryRun, failures }
                 };
             }
 
-            logger.info('Courtesy expiry completed', { started, ended, durationMs });
+            if (dryRun) {
+                logger.info('Courtesy expiry dry run completed', {
+                    started,
+                    ended,
+                    cancelled,
+                    durationMs
+                });
 
+                return {
+                    success: true,
+                    message: `Courtesy expiry (dry run): would end ${ended} window(s) (${cancelled} by cancellation), would start ${started}`,
+                    processed: started + ended,
+                    errors: 0,
+                    durationMs,
+                    details: {
+                        dryRun: true,
+                        wouldResume: ended - cancelled,
+                        wouldHardCancel: cancelled,
+                        wouldNotifyStart: started
+                    }
+                };
+            }
+
+            logger.info('Courtesy expiry completed', {
+                started,
+                ended,
+                cancelled,
+                durationMs
+            });
+
+            // The mirror of the dry-run report above. `success`, `processed`
+            // and `errors` are identical in both modes, so `details` and the
+            // message are the ONLY things that say whether this run actually
+            // resumed anybody — which makes them load-bearing for `cron_runs`,
+            // not decoration.
             return {
                 success: true,
-                message: `Courtesy expiry: ${ended} window(s) ended, ${started} started`,
+                message: `Courtesy expiry: ${ended} window(s) ended (${cancelled} by cancellation), ${started} started`,
                 processed: started + ended,
                 errors: 0,
-                durationMs
+                durationMs,
+                details: {
+                    dryRun: false,
+                    resumed: ended - cancelled,
+                    hardCancelled: cancelled,
+                    notifiedStart: started
+                }
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
