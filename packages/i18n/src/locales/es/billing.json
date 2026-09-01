@@ -279,6 +279,7 @@
             "body": "Mercado Pago solo te va a dejar pagar con este email exacto. Si querés usar otra cuenta de Mercado Pago, cambialo antes de continuar.",
             "label": "Email de pago",
             "invalidError": "Ingresá un email válido",
+            "plusError": "Mercado Pago no acepta emails con «+». Escribí otra dirección para poder pagar.",
             "confirm": "Continuar",
             "cancel": "Cancelar"
         }
