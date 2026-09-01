@@ -48,7 +48,8 @@ const {
     mockApply,
     mockApplySeam,
     mockAssertSubOwnership,
-    mockBillingCustomerIdCell
+    mockBillingCustomerIdCell,
+    mockQZPayBillingCell
 } = vi.hoisted(() => ({
     mockCreate: vi.fn(),
     mockGetByCode: vi.fn(),
@@ -61,7 +62,14 @@ const {
      */
     mockAssertSubOwnership: vi.fn().mockResolvedValue({ success: true }),
     /** Mutable cell: tests set this to control what billingCustomerMiddleware injects. */
-    mockBillingCustomerIdCell: { value: null as string | null }
+    mockBillingCustomerIdCell: { value: null as string | null },
+    /**
+     * Mutable cell: what `getQZPayBilling()` returns. Defaults to `null`, which
+     * is right for every path that never reaches the T-007 seam. A test that DOES
+     * reach the seam must set a stub here, or the route short-circuits with 503
+     * "Billing service unavailable" before the seam is ever consulted (HOS-996).
+     */
+    mockQZPayBillingCell: { value: null as unknown }
 }));
 
 // ---------------------------------------------------------------------------
@@ -131,12 +139,12 @@ vi.mock('../../../src/services/promo-discount-apply.service', () => ({
     applyMultiCycleDiscountToExistingSubscription: mockApplySeam
 }));
 
-// Billing middleware — getQZPayBilling returns null (not used in create path)
+// Billing middleware — getQZPayBilling reads the mutable cell (null by default)
 vi.mock('../../../src/middlewares/billing', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../src/middlewares/billing')>();
     return {
         ...actual,
-        getQZPayBilling: vi.fn(() => null),
+        getQZPayBilling: vi.fn(() => mockQZPayBillingCell.value),
         requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => {
             await next();
         }),
@@ -528,6 +536,8 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         mockAssertSubOwnership.mockResolvedValue({ success: true });
         // Default: caller is looking up their own customer
         mockBillingCustomerIdCell.value = OWN_CUSTOMER_ID;
+        // Default: no billing instance — only the seam path needs one.
+        mockQZPayBillingCell.value = null;
         app = initApp();
     });
 
@@ -876,5 +886,51 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
         // Assert — 409 Conflict, not 500 Internal Server Error
         expect(res.status).toBe(409);
+    });
+
+    // ── HOS-996: discount-to-zero on the seam → 422 with OUR message ──────────
+
+    it('HOS-996: seam rejects a 100% discount → 422 with our message, not MercadoPago’s', async () => {
+        // Arrange — the peek must see a `discount` effect so the request is routed
+        // through the seam rather than the plain service.apply path.
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: { id: 'pc-zero', effect: { kind: 'discount' } }
+        });
+        // A billing instance must exist or the route answers 503 before the seam.
+        mockQZPayBillingCell.value = {};
+        // The seam's HOS-996 guard fires before it ever calls MercadoPago.
+        mockApplySeam.mockResolvedValue({
+            success: false,
+            error: {
+                code: 'INVALID_PROMO_CODE',
+                message:
+                    'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+            }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'TODOGRATIS100',
+                customerId: OWN_CUSTOMER_ID,
+                subscriptionId: randomUUID(),
+                amount: 10000
+            })
+        });
+
+        // Assert — 422, the status INVALID_PROMO_CODE maps to everywhere else in
+        // the API. Before HOS-996 added the statusMap entry this fell through to
+        // the `?? 500` default, reporting a caller mistake as an internal error.
+        expect(res.status).toBe(422);
+        const body = (await res.json()) as { error?: { message?: string }; message?: string };
+        const message = body.error?.message ?? body.message ?? '';
+        expect(message).toContain('reduces the price to zero');
+        expect(message).toContain('comp code');
+        // The seam ran and the fallback path never did.
+        expect(mockApplySeam).toHaveBeenCalledOnce();
+        expect(mockApply).not.toHaveBeenCalled();
     });
 });

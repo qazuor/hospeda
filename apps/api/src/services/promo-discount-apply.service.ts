@@ -49,6 +49,7 @@ import {
     resolveFullPlanPriceCentavos
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
+import { DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE } from './billing/subscription-checkout-error.js';
 import { applyInitialDiscountMutation } from './promo-renewal-mp.service.js';
 
 /**
@@ -167,6 +168,24 @@ export async function applyMultiCycleDiscountToExistingSubscription(input: {
                 }
             };
         }
+        // HOS-996: a discount that reduces the price to zero is invalid on THIS
+        // path too. The checkout-signup path has guarded it since SPEC-262 L1;
+        // this seam did not, so a 100% code reached `applyInitialDiscountMutation`
+        // and surfaced whatever MercadoPago answered to a `transaction_amount` of
+        // 0 instead of our own message. It was always fail-closed (MP rejects the
+        // mutation), so nothing was ever given away — what was broken is the
+        // diagnosis. Same code and same message as the checkout guard, sharing one
+        // constant so the two can never drift.
+        if (mutation.finalAmount === 0) {
+            return {
+                success: false,
+                error: {
+                    code: 'INVALID_PROMO_CODE',
+                    message: DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
+                }
+            };
+        }
+
         const discountedCentavos = mutation.finalAmount;
         const discountedMajor = discountedCentavos / 100;
 

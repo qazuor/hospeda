@@ -59,7 +59,10 @@ import type { PendingCheckoutDiscount } from './billing/pending-provider-subscri
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
-import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
+import {
+    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE,
+    SubscriptionCheckoutError
+} from './billing/subscription-checkout-error.js';
 import { hasAnyPriorSubscription } from './billing/trial-eligibility.service.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
@@ -538,7 +541,7 @@ export async function initiatePaidMonthlySubscription(
             if (mutation.finalAmount === 0) {
                 throw new SubscriptionCheckoutError(
                     'INVALID_PROMO_CODE',
-                    'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+                    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
                 );
             }
             // Snapshot on the pending-checkout row so F2/F3 stamps promoCodeId,
