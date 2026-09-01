@@ -323,35 +323,35 @@
             "id": "T-010",
             "title": "Replace reconcileExpiredTrials' body with local expiry",
             "description": "`reconcileExpiredTrials` (`trial.service.ts:602`) mirrors a provider verdict; there is no provider to mirror any more. TRAP T-1: `blockExpiredTrials` does NOT exist — only its constants kept the name. REUSE, do not rename: BLOCK_EXPIRED_TRIALS_LOCK_KEY (advisory lock 1004), the 200-row batch size, and the per-subscription billing_subscription_events dedup. REPLACE the body: claim trialing rows whose trial_end has passed, transition each to a terminal expired state, and write one event row as the idempotency guard. Unpublishing is T-011. TESTS: an already-expired-and-evented row is not processed twice; the advisory lock serializes two concurrent runs; a row whose trial_end is still in the future is untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-011", "T-013", "T-017"],
             "subtasks": [
                 {
                     "title": "Keep lock 1004 and the 200-row batch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace the provider-mirroring body",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write the idempotency event per subscription",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "cron", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T12:05:00.000Z",
+                "completed": "2026-09-01T12:20:00.000Z"
             }
         },
         {
@@ -1083,9 +1083,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.6
     }
