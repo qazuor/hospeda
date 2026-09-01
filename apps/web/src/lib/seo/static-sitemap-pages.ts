@@ -108,9 +108,15 @@ export type StaticSitemapExclusionReason =
  * in {@link STATIC_SITEMAP_PAGES}.
  *
  * Pages under the `SITEMAP_EXCLUDED_PATHS` prefixes (`/auth/`,
- * `/mi-cuenta/`, `/feedback/`) are absent by construction — they are also
- * `Disallow`ed in robots.txt — so the guard filters them before consulting
- * this map.
+ * `/mi-cuenta/`, `/feedback/`, `/presentacion/`) are absent by construction —
+ * they are also `Disallow`ed in robots.txt — so the guard filters them before
+ * consulting this map.
+ *
+ * That is why HOS-978's six commercial presentations are not listed
+ * individually below: adding `/presentacion/` to the shared prefix list covers
+ * all six at once, in the one place that also drives the robots.txt
+ * `Disallow`. Listing them here as well would be redundant, and the guard
+ * would never reach the entries.
  */
 export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExclusionReason>> = {
     // Listing pages: emitted with fresh `lastmod` by the dynamic sitemap.

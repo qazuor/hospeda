@@ -1,0 +1,328 @@
+---
+/**
+ * @file presentacion/alojamientos/index.astro
+ * @description Commercial presentation for accommodation owners (HOS-978). A verbatim
+ * migration of the owner-approved artifact "Presentación Alojamientos"; the copy and the
+ * stylesheet below are the artifact's own and must not be rewritten here —
+ * the artifact is the source of truth for both.
+ *
+ * WHY IT IS NOT THE PUBLIC LANDING (/suscriptores/propietarios/ y /publicar/). That landing sells and is
+ * optimized to rank. This page is what the owner sends personally to one
+ * prospect over WhatsApp, or dictates by phone, and it carries things a public
+ * landing must not: negotiable pricing, comparisons against competitors, and
+ * operational detail. That is why `noindex, nofollow` is a requirement here
+ * rather than a precaution, and why the page is excluded from the sitemap (see
+ * `lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS, which also drives the
+ * robots.txt `Disallow`).
+ *
+ * WHY IT IS NOT TRANSLATED. The audience is local (owner decision, HOS-978).
+ * The page lives under `[lang]/` anyway so the short, dictable URL works:
+ * `hospeda.com.ar/presentacion/alojamientos` is 301-redirected to
+ * `/es/presentacion/alojamientos/` by the middleware's locale step, so no middleware
+ * exemption was needed. It therefore serves the same Spanish copy under
+ * `/en/` and `/pt/` BY DESIGN — unlike HOS-908, where that was a defect.
+ *
+ * WHY `StandaloneLayout`. The page owns 100% of its chrome, exactly like the
+ * `/funcionalidades/` brochure (HOS-119) it follows. No Header, no Footer, no
+ * site nav — it must look like the artifact it came from.
+ *
+ * WHY THE STYLESHEET IS A PLAIN `<style>` BLOCK. Astro extracts it to a real
+ * stylesheet. An `is:inline` block would be dropped in production: the CSP
+ * omits `'unsafe-inline'` from `style-src` outside dev (see
+ * `lib/middleware-helpers.ts`), so the page would render unstyled in prod
+ * while looking perfect locally. Do not add `is:inline` here.
+ *
+ * @route /{lang}/presentacion/alojamientos/
+ * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+import '@/styles/presentacion.css';
+import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: the content is hardcoded copy, so it only
+// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alojamientos/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentación Alojamientos"
+		description="Publicá tu alojamiento en Hospeda. El portal donde se buscan alojamientos del Litoral: publicás tu casa, departamento o cabaña, y el que la quiere alquilar te escribe directo a vos."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+	<link
+		slot="head"
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
+	/>
+
+<PresentationThemeToggle />
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Hospeda &middot; Alojamientos</p>
+    <h1>Publicá tu alojamiento en Hospeda</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      Hospeda es el portal donde se buscan alojamientos del Litoral: Concepción del Uruguay,
+      Colón, Gualeguaychú, Federación, Villa Elisa, San José, Concordia y muchos destinos más.
+      Publicás tu casa, departamento o cabaña, y el que la quiere alquilar te escribe
+      <strong>directo a vos</strong>.
+    </p>
+    <div class="factsheet">
+      <div class="fact">
+        <span class="fact__k">Comisión por reserva</span>
+        <span class="fact__v fact__v--free">Ninguna</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Prueba</span>
+        <span class="fact__v">30 días</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Cómo se entra</span>
+        <span class="fact__v">Solo, en el momento</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo primero, sin vueltas</p>
+      <h2>Cómo ganamos plata</h2>
+    </div>
+    <div class="notice">
+      <h3>No nos quedamos con un peso de tu alquiler.</h3>
+      <p>
+        <strong>No cobramos comisión.</strong> Ni por reserva, ni por consulta, ni por contacto.
+        Lo que cobrás por la estadía es tuyo, entero, y el precio lo arreglás vos con el huésped
+        como lo hacés hoy.
+      </p>
+      <p>
+        Lo único que se paga es <strong>una suscripción mensual fija</strong> por tener tu
+        alojamiento publicado. Sabés todos los meses cuánto vas a pagar, alquiles mucho o poco.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Antes de que preguntes</p>
+      <h2>No se reserva ni se cobra por acá</h2>
+    </div>
+    <p>
+      Hospeda <strong>no es una plataforma de reservas</strong>. Nadie te bloquea fechas ni te
+      manda plata por el sitio. Lo que hace es que la gente te encuentre y te escriba: por el
+      mensajero interno o por WhatsApp. De ahí en adelante — la seña, el pago, las condiciones —
+      es entre el huésped y vos, como siempre.
+    </p>
+    <p>
+      Si buscabas algo que te cobre la estadía y te la deposite, no somos eso. Si buscabas que te
+      llamen para alquilar sin dejar una comisión en el camino, sí.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Paso a paso</p>
+      <h2>Cómo publicás</h2>
+    </div>
+    <ol class="steps">
+      <li>
+        <span class="num">01</span>
+        <div class="step__body">
+          <h3>Creás tu cuenta y cargás lo básico</h3>
+          <p>
+            Nombre del alojamiento, una descripción corta, qué tipo es (casa, departamento,
+            cabaña&hellip;) y en qué ciudad está. Nada más.
+          </p>
+          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se hace desde el celular</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="step__body">
+          <h3>Completás la ficha con calma</h3>
+          <p>
+            Queda guardada como borrador, sin que nadie la vea, el tiempo que necesites. Vas
+            cargando fotos, precio, capacidad, ubicación, servicios y horarios cuando puedas.
+          </p>
+          <p class="step__meta">Sigue sin costo mientras esté en borrador</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="step__body">
+          <h3>Le das publicar</h3>
+          <p>
+            Recién <strong>acá</strong> elegís tu plan y cargás la tarjeta. Ese es el momento en
+            que arranca la prueba: tu alojamiento sale publicado y <strong>tenés 30 días sin
+            que se te cobre nada</strong>.
+          </p>
+          <p class="step__meta">Para publicar hacen falta: capacidad, noches mínimas, dormitorios, baños y la foto principal</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">04</span>
+        <div class="step__body">
+          <h3>Al día 31 se cobra el primer mes</h3>
+          <p>
+            Si en esos 30 días decidís que no es para vos, cancelás y <strong>no se te cobra
+            nada</strong>. Si seguís, se debita el primer mes y después uno por mes.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Los planes</p>
+      <h2>Tres, según cuántos alojamientos tengas</h2>
+    </div>
+    <p>
+      El de entrada <strong>ronda los veinte mil pesos por mes</strong> — menos que una noche en
+      temporada. El más completo, unos sesenta y cinco mil. Si lo pagás por año,
+      <strong>pagás diez meses y tenés doce</strong>. Los valores exactos están siempre en el sitio.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">&nbsp;</th>
+            <th scope="col">Básico</th>
+            <th scope="col">Profesional</th>
+            <th scope="col">Premium</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Alojamientos publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">10</td></tr>
+          <tr><td>Fotos por alojamiento</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
+          <tr><td>Promociones activas</td><td class="mono">2</td><td class="mono">5</td><td class="mono">sin tope</td></tr>
+          <tr><td>Aparecer destacado</td><td>con un adicional</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Calendario conectado con Airbnb, Booking y Google</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Descripción con formato y video</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Atención prioritaria</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Estadísticas avanzadas</td><td>—</td><td>—</td><td>sí</td></tr>
+          <tr><td>Insignia de verificado</td><td>—</td><td>—</td><td>sí</td></tr>
+          <tr><td>Tu identidad visual en la ficha</td><td>—</td><td>—</td><td>sí</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="subhead">
+      <strong>En los tres planes</strong> entran: editar toda tu ficha, calendario de ocupación,
+      preguntas frecuentes, promociones, estadísticas básicas, la ayuda de la inteligencia
+      artificial (ver abajo) y el paquete completo de turista VIP para usar el sitio como viajero.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo que te ahorra trabajo</p>
+      <h2>Cuatro cosas que no vas a encontrar juntas en otro lado</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">1</span><span><strong>Traé tu ficha de otro lado, hecha.</strong> Pegás el enlace de tu publicación en Google, Mercado Libre u otras plataformas de alquiler y el sistema completa fotos, textos y datos solo. Después corregís lo que quieras.</span></li>
+      <li><span class="tick">2</span><span><strong>Un solo calendario.</strong> Se conecta con Airbnb, Booking y Google Calendar: cuando te ocupan fechas en uno, se bloquean acá. Se terminan las reservas dobles. <em>(Desde el plan Profesional.)</em></span></li>
+      <li><span class="tick">3</span><span><strong>Tu ficha en tres idiomas.</strong> El sitio está en español, inglés y portugués, y traduce tus textos automáticamente. El turista brasileño te lee en portugués.</span></li>
+      <li><span class="tick">4</span><span><strong>Escrito para que Google te encuentre</strong> — y también para que te recomienden los asistentes de inteligencia artificial cuando alguien les pregunta dónde parar en la zona. Casi ninguna plataforma de la región está preparada para eso.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Los números que ves</p>
+      <h2>Qué pasa con tu alojamiento</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span>Cuántas veces vieron tu ficha, día por día.</span></li>
+      <li><span class="tick">&check;</span><span>Cuánta gente la guardó en favoritos.</span></li>
+      <li><span class="tick">&check;</span><span>Cuántas consultas recibiste en el mes y en cuánto contestás.</span></li>
+      <li><span class="tick">&check;</span><span>Cómo te comparás con alojamientos parecidos al tuyo en la zona.</span></li>
+      <li><span class="tick">&check;</span><span>Los huéspedes pueden dejarte reseñas, y podés mostrar los puntajes que ya tenés en Google o Booking.</span></li>
+      <li><span class="tick tick--no">&times;</span><span><strong>Todavía no podés responder una reseña.</strong> Está en la lista de lo que viene, pero hoy no existe la pantalla y preferimos decírtelo antes que después.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Adicionales</p>
+      <h2>Si un mes necesitás más</h2>
+    </div>
+    <p>
+      No hace falta cambiar de plan: se suman aparte y se sacan cuando no los necesitás.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Adicional</th><th scope="col">Para qué</th><th scope="col">Cómo se paga</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Destacar por 7 o 30 días</td><td>Tu alojamiento aparece resaltado en los resultados. Útil para un fin de semana largo o el arranque de temporada.</td><td>Una sola vez</td></tr>
+          <tr><td>20 fotos más</td><td>Si tu alojamiento se luce y las del plan te quedan cortas.</td><td>Por mes</td></tr>
+          <tr><td>5 alojamientos más</td><td>Si administrás varias propiedades y superás el tope de tu plan.</td><td>Por mes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Para ser justos</p>
+      <h2>Lo que conviene que sepas antes</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick tick--no">!</span><span><strong>La tarjeta se pide para publicar</strong>, antes de los 30 días de prueba, no después. Registrarte y armar la ficha no cuesta nada; publicarla exige dejar la tarjeta cargada.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>Tu WhatsApp no lo ve cualquiera.</strong> Se muestra a los viajeros con cuenta paga; el visitante suelto te escribe por el mensajero del sitio. Es a propósito: filtra las consultas que no van en serio.</span></li>
+      <li><span class="tick tick--no">!</span><span>Un alojamiento sin la foto principal, la capacidad, las noches mínimas y los ambientes cargados <strong>no se puede publicar</strong>. No es un capricho: una ficha incompleta no la elige nadie.</span></li>
+      <li><span class="tick tick--no">!</span><span>Si dejás de pagar, tu ficha deja de verse, pero <strong>no se borra</strong>: tus fotos, textos y reseñas quedan, y vuelven a estar en línea cuando reactivás.</span></li>
+    </ul>
+  </section>
+
+  <footer class="close">
+    <h2>Probalo</h2>
+    <p>
+      Armar la ficha es gratis y no compromete a nada. Recién decidís cuando la querés publicar,
+      y aun ahí tenés 30 días para arrepentirte sin que se te cobre un peso.
+    </p>
+    <a class="cta" href="https://hospeda.com.ar/es/publicar">hospeda.com.ar/es/publicar</a>
+    <div class="phone">
+      <span class="fact__k">¿Preferís que te acompañemos?</span>
+      <strong>Llamanos o escribinos por WhatsApp al 3442 453797</strong>
+      <span class="finelines">Te ayudamos a cargar la ficha la primera vez, si querés.</span>
+    </div>
+    <div class="finelines">
+      Hospeda cobra una suscripción por publicar, nunca un porcentaje de tus alquileres, y no
+      interviene en el trato con el huésped: la reserva, la seña y el pago se arreglan directo
+      entre ustedes. Los precios y los límites de cada plan son los vigentes al día de hoy y
+      pueden cambiar; los del momento están siempre publicados en el sitio.
+    </div>
+  </footer>
+
+</div>
+
+</StandaloneLayout>
+
