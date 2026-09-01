@@ -483,8 +483,8 @@ describe('promo-code.redemption', () => {
             }
         });
 
-        it('should compute fixed discount and cap at original amount', async () => {
-            // Arrange
+        it('should compute a fixed discount smaller than the amount', async () => {
+            // Arrange — 200 off 5000 leaves 4800, well clear of zero.
             mockGetPromoCodeByCode.mockResolvedValue({
                 success: true,
                 data: {
@@ -516,15 +516,130 @@ describe('promo-code.redemption', () => {
             });
 
             // Act
-            const result = await applyPromoCode('FLAT200', 'cust1', 100);
+            const result = await applyPromoCode('FLAT200', 'cust1', 5000);
 
             // Assert
             expect(result.success).toBe(true);
             if (result.success) {
-                // discount is capped at original amount (100), so finalAmount = 0
-                expect(result.data.discountAmount).toBe(100);
-                expect(result.data.finalAmount).toBe(0);
+                expect(result.data.discountAmount).toBe(200);
+                expect(result.data.finalAmount).toBe(4800);
             }
+        });
+
+        // ------------------------------------------------------------------
+        // HOS-996 — a discount that takes the price to zero is refused here,
+        // and refused BEFORE anything is redeemed.
+        //
+        // This test used to assert the opposite: a fixed discount larger than
+        // the amount was capped to the amount and returned `finalAmount: 0` as a
+        // success. The cap itself is real and still tested where it lives — the
+        // pure reducer, in `promo-code.effect-engine.test.ts` — but capping is
+        // arithmetic, and acting on the result is a business decision. A 200-off
+        // code spent on a 100 purchase answered 200, granted nothing, and burned
+        // the redemption; `/start-paid` then refused the very same code with 422.
+        //
+        // The `used_count` assertion is the part that matters. A guard placed
+        // after the transaction would still return the right error and still
+        // cost the customer their code.
+        // ------------------------------------------------------------------
+        it('HOS-996: a fixed discount that exceeds the amount is refused, redemption untouched', async () => {
+            // Arrange — 200 off 100 caps to 100, leaving zero.
+            mockGetPromoCodeByCode.mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'pc2',
+                    code: 'FLAT200',
+                    type: 'fixed',
+                    value: 200,
+                    active: true,
+                    expiresAt: null
+                }
+            });
+            const txUpdateSpy = vi.fn();
+            const txInsertSpy = vi.fn();
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([
+                        { id: 'pc2', usedCount: 0, maxUses: null, expiresAt: null }
+                    ]),
+                    update: vi.fn().mockImplementation((...args: unknown[]) => {
+                        txUpdateSpy(...args);
+                        return {
+                            set: vi.fn().mockReturnValue({
+                                where: vi.fn().mockResolvedValue([])
+                            })
+                        };
+                    }),
+                    insert: vi.fn().mockImplementation((...args: unknown[]) => {
+                        txInsertSpy(...args);
+                        return { values: vi.fn().mockResolvedValue([]) };
+                    })
+                };
+                return fn(tx);
+            });
+
+            // Act
+            const result = await applyPromoCode('FLAT200', 'cust1', 100);
+
+            // Assert — our typed refusal, with the message the other two paths use.
+            expect(result.success).toBe(false);
+            if (result.success) throw new Error('expected failure');
+            expect(result.error.code).toBe('INVALID_PROMO_CODE');
+            expect(result.error.message).toBe(
+                'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+            );
+            // Nothing was redeemed: no `used_count` bump, no usage row, and the
+            // transaction was never even opened.
+            expect(mockWithTransaction).not.toHaveBeenCalled();
+            expect(txUpdateSpy).not.toHaveBeenCalled();
+            expect(txInsertSpy).not.toHaveBeenCalled();
+        });
+
+        // The distinction that makes the guard above safe, and the one it got
+        // wrong first. `amount` is optional: the preview path validates a code
+        // before any price is known, and `effectiveAmount` then defaults to 0,
+        // so EVERY discount computes to finalAmount 0. A guard written as a bare
+        // `finalAmount === 0` rejects every previewed code and blames a price
+        // nobody supplied. Six tests across two files caught it, all of them
+        // calling apply() with no amount for reasons that had nothing to do with
+        // discounts — which is exactly how a wrong guard gets found.
+        it('HOS-996: no amount supplied is not a discount-to-zero — the code still applies', async () => {
+            mockGetPromoCodeByCode.mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'pc3',
+                    code: 'WELCOME20',
+                    type: 'percentage',
+                    value: 20,
+                    active: true,
+                    expiresAt: null
+                }
+            });
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                const tx = {
+                    ...selectForUpdateMock([
+                        { id: 'pc3', usedCount: 0, maxUses: null, expiresAt: null }
+                    ]),
+                    update: vi.fn().mockReturnValue({
+                        set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) })
+                    }),
+                    insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue([]) })
+                };
+                return fn(tx);
+            });
+
+            // Act — note the missing third argument.
+            const result = await applyPromoCode('WELCOME20', 'cust1');
+
+            // Assert — applied, not refused, even though finalAmount is 0.
+            expect(result.success).toBe(true);
+            if (!result.success) throw new Error('expected success');
+            expect(result.data.finalAmount).toBe(0);
+            expect(result.data.originalAmount).toBe(0);
         });
     });
 });

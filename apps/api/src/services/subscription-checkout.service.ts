@@ -38,6 +38,7 @@ import {
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
+    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE,
     resolveCheckoutFreeTrialDays,
     resolvePlanTrialConfig
 } from '@repo/service-core';
@@ -538,7 +539,7 @@ export async function initiatePaidMonthlySubscription(
             if (mutation.finalAmount === 0) {
                 throw new SubscriptionCheckoutError(
                     'INVALID_PROMO_CODE',
-                    'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+                    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
                 );
             }
             // Snapshot on the pending-checkout row so F2/F3 stamps promoCodeId,
