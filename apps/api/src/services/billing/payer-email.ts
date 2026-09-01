@@ -111,20 +111,49 @@ export function resolvePayerEmail(input: ResolvePayerEmailInput): ResolvePayerEm
  * module JSDoc for why this column cannot be read through the typed
  * Drizzle table).
  *
+ * Best-effort, exactly like its sibling {@link persistMpPayerEmailBestEffort}:
+ * a query failure is logged (with Sentry capture) and degraded to `null`,
+ * never rethrown. The value this returns is step 1 of a three-step
+ * precedence (see {@link resolvePayerEmail}) with two perfectly good
+ * fallbacks behind it — `requestedPayerEmail` and `customerEmail` — so a
+ * read failure must cost the caller the OPTIMIZATION, not the checkout.
+ *
+ * This is not hypothetical (HOS-1028): the column ships through the extras
+ * carril, and it was absent from both staging and production while the
+ * code that reads it sat merged and undeployed. Because all five checkout
+ * call sites in `subscription-checkout.service.ts` invoke this BEFORE their
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` check, a throw here answered
+ * 500 on every checkout path — accommodation monthly, annual, commerce and
+ * partner alike — with the feature flag OFF. The migration removed that
+ * specific trigger; degrading here removes the class of failure, which a
+ * timeout, an exhausted pool, or a revoked grant can still reach.
+ *
  * @param customerId - The qzpay/Hospeda billing customer id.
  * @param db - Drizzle client override for tests. Defaults to {@link getDb}.
- * @returns The stored `mp_payer_email`, or `null` when unset or the
- *   customer row does not exist.
+ * @returns The stored `mp_payer_email`, or `null` when unset, when the
+ *   customer row does not exist, or when the read itself failed.
  */
 export async function getMpPayerEmail(
     customerId: string,
     db: DrizzleClient = getDb()
 ): Promise<string | null> {
-    const result = await db.execute(
-        sql`SELECT mp_payer_email FROM billing_customers WHERE id = ${customerId} LIMIT 1`
-    );
-    const row = result.rows[0] as { mp_payer_email: string | null } | undefined;
-    return row?.mp_payer_email ?? null;
+    try {
+        const result = await db.execute(
+            sql`SELECT mp_payer_email FROM billing_customers WHERE id = ${customerId} LIMIT 1`
+        );
+        const row = result.rows[0] as { mp_payer_email: string | null } | undefined;
+        return row?.mp_payer_email ?? null;
+    } catch (error) {
+        apiLogger.error(
+            {
+                customerId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-1028: failed to read billing_customers.mp_payer_email (best-effort, degrading to the remaining payer-email precedence)',
+            { capture: true }
+        );
+        return null;
+    }
 }
 
 /**

@@ -13,6 +13,9 @@
  *   `applyPendingDiscountBestEffort` contract).
  * - `getMpPayerEmail` reads the raw-SQL column and normalizes a missing row
  *   / unset column to `null`.
+ * - `getMpPayerEmail` degrades a FAILED read to `null` rather than throwing
+ *   (HOS-1028), so that a dead read costs the payer-email optimization and
+ *   not the whole checkout.
  *
  * @module test/services/billing/payer-email
  */
@@ -117,6 +120,10 @@ describe('resolvePayerEmail', () => {
 describe('getMpPayerEmail', () => {
     beforeEach(() => {
         mockExecute.mockReset();
+        // The logger mock is module-scoped: without this, a test that
+        // asserts a CALL COUNT on apiLogger.error inherits the calls made
+        // by every test that ran before it.
+        vi.mocked(apiLogger.error).mockClear();
     });
 
     it('returns the stored mp_payer_email when present', async () => {
@@ -136,11 +143,59 @@ describe('getMpPayerEmail', () => {
         const result = await getMpPayerEmail('cust_missing', { execute: mockExecute } as never);
         expect(result).toBeNull();
     });
+
+    it('HOS-1028: degrades to null instead of throwing when the query itself fails', async () => {
+        // The exact production failure: the extras-carril column was absent
+        // from staging and prod while the reading code sat merged. A throw
+        // here answered 500 on all five checkout call sites, with the
+        // HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED flag OFF, because every
+        // one of them calls this BEFORE checking that flag.
+        mockExecute.mockRejectedValueOnce(new Error('column "mp_payer_email" does not exist'));
+
+        const result = await getMpPayerEmail('cust_1', { execute: mockExecute } as never);
+
+        expect(result).toBeNull();
+    });
+
+    it('HOS-1028: reports the failed read to Sentry rather than swallowing it silently', async () => {
+        mockExecute.mockRejectedValueOnce(new Error('connection pool exhausted'));
+
+        await getMpPayerEmail('cust_1', { execute: mockExecute } as never);
+
+        expect(apiLogger.error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                customerId: 'cust_1',
+                error: 'connection pool exhausted'
+            }),
+            expect.stringContaining('mp_payer_email'),
+            { capture: true }
+        );
+    });
+
+    it('HOS-1028: a failed read costs the optimization, not the checkout — resolution falls through to the remaining precedence', async () => {
+        // This is the assertion that matters: the caller shape is
+        // `mpPayerEmail: await getMpPayerEmail(...)` inlined into the
+        // resolvePayerEmail input (subscription-checkout.service.ts:448,
+        // 609, 970, 1534, 1652). A dead read must still produce a usable
+        // payer email from step 2 or 3 of the precedence.
+        mockExecute.mockRejectedValueOnce(new Error('column "mp_payer_email" does not exist'));
+
+        const { payerEmail } = resolvePayerEmail({
+            mpPayerEmail: await getMpPayerEmail('cust_1', { execute: mockExecute } as never),
+            customerEmail: 'signup@example.com'
+        });
+
+        expect(payerEmail).toBe('signup@example.com');
+    });
 });
 
 describe('persistMpPayerEmailBestEffort', () => {
     beforeEach(() => {
         mockExecute.mockReset();
+        // The logger mock is module-scoped: without this, a test that
+        // asserts a CALL COUNT on apiLogger.error inherits the calls made
+        // by every test that ran before it.
+        vi.mocked(apiLogger.error).mockClear();
     });
 
     it('AC-9: the UPDATE statement writes ONLY mp_payer_email — the raw SQL text never mentions the email column', async () => {
