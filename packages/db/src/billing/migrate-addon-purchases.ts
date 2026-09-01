@@ -34,6 +34,9 @@ import type { DrizzleClient } from '../types.ts';
 import { createBillingAdapter } from './drizzle-adapter.ts';
 import { billingPlans, billingSubscriptions } from './schemas.ts';
 
+/** Milliseconds in a day. Durations are epoch arithmetic, never local-time setters (HOS-1010). */
+const MS_PER_DAY = 86_400_000;
+
 /**
  * Logger for migration operations
  */
@@ -606,8 +609,14 @@ export async function migrateAddonPurchases(input: MigrationOptions = {}): Promi
                         let expiresAt: Date | null = null;
                         if (addonDef?.durationDays) {
                             const purchasedAt = new Date(adjustment.appliedAt);
-                            expiresAt = new Date(purchasedAt);
-                            expiresAt.setDate(expiresAt.getDate() + addonDef.durationDays);
+                            // An addon's duration is a fixed span of days, so this
+                            // is epoch arithmetic. The local-time setters it
+                            // replaces made a PERSISTED expiry depend on the
+                            // timezone of whichever host ran the migration
+                            // (HOS-1010).
+                            expiresAt = new Date(
+                                purchasedAt.getTime() + addonDef.durationDays * MS_PER_DAY
+                            );
                         }
 
                         if (dryRun) {

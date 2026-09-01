@@ -64,21 +64,43 @@ export type CourtesyGrantResult =
 
 /**
  * What the courtesy window does when the period end falls on a day the target
- * month does not have — 31 January plus one month.
+ * month does not have — 31 January plus one month lands on 28 February.
  *
- * ## This is provisional, and says so on purpose
+ * ## This is our decision, not a copy of MercadoPago's
  *
- * **What MercadoPago actually does here was never measured** (HOS-1010). The
- * rule is not ours to pick: if our window and the real charge follow different
- * rules they diverge exactly at the boundary, which is where it costs most. The
- * measurement protocol is on the issue; until it is run, `'clamp'` is a
- * deliberate placeholder chosen because it cannot hand out a day that does not
- * exist in the month being gifted.
+ * The issue that found this bug assumed the rule had to be measured from
+ * MercadoPago and imitated, on the reasoning that our window and the real
+ * charge would otherwise diverge exactly at the boundary. That reasoning does
+ * not apply here, and the mechanism is why: **a courtesy is a PAUSED
+ * preapproval plus a local window**. While the gift runs, MercadoPago is not
+ * charging and is not computing a cycle date at all — `courtesy-expiry.job`
+ * resumes the preapproval when this window closes. There is no provider-side
+ * date to diverge from.
  *
- * Changing it is a one-line edit here and nowhere else — that is why
- * {@link addCalendarMonths} takes the rule as an argument instead of assuming
- * one. Every period ending on day 1-28 is identical under both rules, which is
- * the overwhelming majority of subscriptions; only day 29-31 is at stake.
+ * So the rule decides two things, and both are ours: how many days the gift
+ * lasts, and which day of the month the subscriber is left billing on once the
+ * preapproval resumes.
+ *
+ * ## Why clamp
+ *
+ * The three days are marginal. Where the subscriber ENDS UP is not. Clamping
+ * leaves someone who billed on the 31st billing on the 28th — shifted, but
+ * still anchored to the end of the month. Overflowing moves them to the 3rd of
+ * the following month, which is not a shift but a change of anchor, it does not
+ * revert on its own, and it cannot be stated on a screen: "your one month of
+ * courtesy from 31 January ends on 3 March" is not a sentence a subscriber can
+ * act on. In a feature whose whole purpose is to make someone feel well
+ * treated, that confusion costs more than the days it hands out.
+ *
+ * Searched for documentation before deciding: MercadoPago does not document the
+ * case anywhere (2026-09-01). Its `billing_day` field is reportedly restricted
+ * to days 1-28, which would sidestep the question entirely, but that could not
+ * be confirmed against the reference and we do not use that field.
+ *
+ * Owner decision, 2026-09-01. Every period ending on day 1-28 is identical
+ * under either rule — only day 29-31 is at stake — and changing it stays a
+ * one-line edit here, which is why {@link addCalendarMonths} takes the rule as
+ * an argument instead of assuming one.
  */
 const COURTESY_DAY_OVERFLOW: DayOverflowRule = 'clamp';
 
