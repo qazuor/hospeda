@@ -268,6 +268,10 @@ jobs:
         run: pnpm check:locale-resolution-single-source
       - name: Check the trial window is not derived from free_trial (HOS-936)
         run: bash scripts/check-trial-not-derived-from-free-trial.sh
+      # The WRITE direction of the guard above: HOS-936 stops us BELIEVING a
+      # trial MercadoPago reports, HOS-1012 stops us ASKING for one at all.
+      - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
+        run: bash scripts/check-no-trial-to-mercadopago.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
