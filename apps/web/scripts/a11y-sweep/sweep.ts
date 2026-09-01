@@ -88,6 +88,10 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/publicar-restaurante/', name: 'Publish Restaurant Landing' },
     { url: '/es/planes/gastronomia/', name: 'Sales Gastronomy' },
     { url: '/es/publicar-experiencia/', name: 'Publish Experience Landing' },
+    // HOS-985: the two new level-2 sales pages built from the same
+    // SalesSection-based components as Sales Gastronomy above.
+    { url: '/es/planes/experiencias/', name: 'Sales Experience' },
+    { url: '/es/planes/anfitriones/', name: 'Sales Host' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];

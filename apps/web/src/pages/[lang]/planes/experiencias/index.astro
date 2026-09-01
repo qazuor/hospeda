@@ -1,31 +1,31 @@
 ---
 /**
- * @file planes/gastronomia/index.astro
- * @description Sales page for the gastronomy vertical — level 2 of the three
+ * @file planes/experiencias/index.astro
+ * @description Sales page for the experience vertical — level 2 of the three
  * that HOS-941 D-7 defines: "why is this worth it", answered without leaving
  * the page, and one click to "what does it cost".
  *
- * @route     /[lang]/planes/gastronomia/
+ * @route     /[lang]/planes/experiencias/
  * @rendering SSR (no prerender); edge-cacheable via the `pricing` cache class,
  *   tagged `CACHE_TAG_PRICING`. The middleware is fail-closed and rejects a
  *   public `Cache-Control` without a declared class and tag (HOS-941 R-5).
  *
  * ## What moved, and what stayed behind
  *
- * Supersedes `/publicar-restaurante/`, which 301s here. That page carried the
- * price block inline; the price moved DOWN to `/planes/gastronomia/precios/`
- * (H7). The split is not tidiness: a visitor who has already decided to publish
- * should not scroll a brochure to reach the grid, and "publicar mi restaurante"
- * and "cuánto cuesta publicar mi restaurante" are two search intents that a
- * single URL can only serve one of well.
+ * Supersedes `/publicar-experiencia/`, which 301s here. That page carried the
+ * price block inline; the price moves DOWN to `/planes/experiencias/precios/`
+ * (H7), mirroring the gastronomy vertical's split at `/planes/gastronomia/`:
+ * a visitor who has already decided to publish should not scroll a brochure
+ * to reach the grid, and "publicar mi experiencia" and "cuánto cuesta
+ * publicar mi experiencia" are two search intents a single URL serves badly.
  *
- * ## Why `gastronomia` and not `restaurantes`
- *
- * D-9. HOS-986 is open precisely because "Publicá tu restaurante" reads as
- * excluding food trucks, rotiserías and parrillas — all of which this vertical
- * sells to. Repeating that word in a URL bakes the exclusion into the most
- * expensive thing to change later. No collision with the public `/gastronomia/`
- * listing section: this one is nested under `/planes/`.
+ * Built from the same `SalesSection`-based components as
+ * `/planes/gastronomia/` (HOS-985 H6) — see that file's docblock for the
+ * shared-component rationale. This page reuses the existing
+ * `commerce.landing.experience.*` i18n namespace and
+ * `resolveCommerceLandingOffer` used by `/publicar-experiencia/` unchanged;
+ * only the page shell moved from a hand-rolled `pub-exp__*` layout to the
+ * shared sales-page components.
  */
 
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
@@ -59,58 +59,52 @@ applyCacheHeaders({
 /**
  * The trial length, read from the plan catalogue and never from a string.
  *
- * HOS-941 R-2, and the reason is on the record: `commerce.json` used to spell
- * "30 días de prueba gratis" by hand in three locales, which matched the
- * catalogue by coincidence and would have kept promising 30 the day an operator
- * edited the plan. That is exactly HOS-525, where marketing promised hosts 30
- * days and checkout granted 14.
- *
- * `null` renders NOTHING. Never "0 días", never a number borrowed from the
- * other vertical: a failed fetch and a plan with no trial must be
- * indistinguishable to a visitor, because promising a trial we cannot honour is
- * worse than staying quiet.
+ * HOS-941 R-2 — see `planes/gastronomia/index.astro` for the full rationale
+ * (HOS-525). `null` renders NOTHING. Never "0 días", never a number borrowed
+ * from the other vertical: a failed fetch and a plan with no trial must be
+ * indistinguishable to a visitor.
  */
-const plansResult = await fetchPublicPlans({ domain: 'gastronomy' });
+const plansResult = await fetchPublicPlans({ domain: 'experience' });
 const { trialDays } = resolveCommerceLandingOffer({ plansResult });
 
 const priceFaqAnswer =
     trialDays === null
-        ? t('commerce.landing.gastronomy.faq.a1NoTrial')
-        : tPlural('commerce.landing.gastronomy.faq.a1', trialDays);
+        ? t('commerce.landing.experience.faq.a1NoTrial')
+        : tPlural('commerce.landing.experience.faq.a1', trialDays);
 
 const benefits = [
     {
         Icon: MapIcon,
-        title: t('commerce.landing.gastronomy.benefits.item1.title'),
-        desc: t('commerce.landing.gastronomy.benefits.item1.desc')
+        title: t('commerce.landing.experience.benefits.item1.title'),
+        desc: t('commerce.landing.experience.benefits.item1.desc')
     },
     {
         Icon: SettingsIcon,
-        title: t('commerce.landing.gastronomy.benefits.item2.title'),
-        desc: t('commerce.landing.gastronomy.benefits.item2.desc')
+        title: t('commerce.landing.experience.benefits.item2.title'),
+        desc: t('commerce.landing.experience.benefits.item2.desc')
     },
     {
         Icon: ShieldIcon,
-        title: t('commerce.landing.gastronomy.benefits.item3.title'),
-        desc: t('commerce.landing.gastronomy.benefits.item3.desc')
+        title: t('commerce.landing.experience.benefits.item3.title'),
+        desc: t('commerce.landing.experience.benefits.item3.desc')
     }
 ] as const;
 
 const steps = [
     {
         num: '01',
-        title: t('commerce.landing.gastronomy.howItWorks.step1.title'),
-        desc: t('commerce.landing.gastronomy.howItWorks.step1.desc')
+        title: t('commerce.landing.experience.howItWorks.step1.title'),
+        desc: t('commerce.landing.experience.howItWorks.step1.desc')
     },
     {
         num: '02',
-        title: t('commerce.landing.gastronomy.howItWorks.step2.title'),
-        desc: t('commerce.landing.gastronomy.howItWorks.step2.desc')
+        title: t('commerce.landing.experience.howItWorks.step2.title'),
+        desc: t('commerce.landing.experience.howItWorks.step2.desc')
     },
     {
         num: '03',
-        title: t('commerce.landing.gastronomy.howItWorks.step3.title'),
-        desc: t('commerce.landing.gastronomy.howItWorks.step3.desc')
+        title: t('commerce.landing.experience.howItWorks.step3.title'),
+        desc: t('commerce.landing.experience.howItWorks.step3.desc')
     }
 ] as const;
 
@@ -123,9 +117,9 @@ const steps = [
  * each, so the JSON-LD can never advertise a trial the visible answer omits.
  */
 const faqs = [
-    { q: t('commerce.landing.gastronomy.faq.q1'), a: priceFaqAnswer },
-    { q: t('commerce.landing.gastronomy.faq.q2'), a: t('commerce.landing.gastronomy.faq.a2') },
-    { q: t('commerce.landing.gastronomy.faq.q3'), a: t('commerce.landing.gastronomy.faq.a3') }
+    { q: t('commerce.landing.experience.faq.q1'), a: priceFaqAnswer },
+    { q: t('commerce.landing.experience.faq.q2'), a: t('commerce.landing.experience.faq.a2') },
+    { q: t('commerce.landing.experience.faq.q3'), a: t('commerce.landing.experience.faq.a3') }
 ] as const;
 
 const faqJsonLd = {
@@ -138,9 +132,9 @@ const faqJsonLd = {
     }))
 };
 
-const title = t('commerce.lead.title');
-const subtitle = t('commerce.lead.subtitle');
-const pricingHref = buildUrl({ locale, path: 'planes/gastronomia/precios' });
+const title = t('commerce.lead.experience.title');
+const subtitle = t('commerce.lead.experience.subtitle');
+const pricingHref = buildUrl({ locale, path: 'planes/experiencias/precios' });
 ---
 
 <MarketingLayout
@@ -153,7 +147,7 @@ const pricingHref = buildUrl({ locale, path: 'planes/gastronomia/precios' });
     <Breadcrumbs locale={locale} items={[{ label: title }]} />
 
     <MarketingHero
-        tagline={t('commerce.landing.gastronomy.benefits.tagline')}
+        tagline={t('commerce.landing.experience.benefits.tagline')}
         titleAccent={title}
         subtitle={subtitle}
     >
@@ -167,29 +161,29 @@ const pricingHref = buildUrl({ locale, path: 'planes/gastronomia/precios' });
     </MarketingHero>
 
     <BenefitsSection
-        tagline={t('commerce.landing.gastronomy.benefits.tagline')}
-        title={t('commerce.landing.gastronomy.benefits.title')}
+        tagline={t('commerce.landing.experience.benefits.tagline')}
+        title={t('commerce.landing.experience.benefits.title')}
         items={benefits}
         columns={3}
     />
 
     <StepsSection
-        tagline={t('commerce.landing.gastronomy.howItWorks.tagline')}
-        title={t('commerce.landing.gastronomy.howItWorks.title')}
+        tagline={t('commerce.landing.experience.howItWorks.tagline')}
+        title={t('commerce.landing.experience.howItWorks.title')}
         items={steps}
         columns={3}
         warm
     />
 
     <FaqSection
-        tagline={t('commerce.landing.gastronomy.faq.tagline')}
-        title={t('commerce.landing.gastronomy.faq.title')}
+        tagline={t('commerce.landing.experience.faq.tagline')}
+        title={t('commerce.landing.experience.faq.title')}
         items={faqs}
     />
 
     <section class="sales-cta section section--warm">
         <div class="sales-cta__container section__container">
-            <h2 class="sales-cta__title">{t('commerce.landing.gastronomy.price.title')}</h2>
+            <h2 class="sales-cta__title">{t('commerce.landing.experience.price.title')}</h2>
             <GradientButton
                 href={pricingHref}
                 label={t('pricing.nav.seePlans')}

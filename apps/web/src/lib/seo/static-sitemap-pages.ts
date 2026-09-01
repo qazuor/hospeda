@@ -69,6 +69,16 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // meanwhile because both still answer 200.
     { path: '/planes/gastronomia/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar-experiencia/', changefreq: 'monthly', priority: 0.7 },
+    // HOS-985: the experience vertical's own level-2 sales page, alongside
+    // gastronomy's above. Same split, same reason: `/publicar-experiencia/`
+    // 301s here once its retirement lands; both are listed meanwhile.
+    { path: '/planes/experiencias/', changefreq: 'monthly', priority: 0.7 },
+    // HOS-985: the host-audience level-2 sales page. Unlike the two commerce
+    // verticals it does not sit above a not-yet-built `/precios/` page — its
+    // CTAs point at the existing `/suscriptores/planes/anfitriones/` pricing
+    // grid — but it is still a NEW indexable URL, so it is listed here at the
+    // same priority as the `/suscriptores/propietarios/` landing above.
+    { path: '/planes/anfitriones/', changefreq: 'monthly', priority: 0.8 },
 
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },
