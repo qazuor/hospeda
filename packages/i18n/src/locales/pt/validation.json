@@ -1184,6 +1184,11 @@
                 "invalid": "O ID de assinatura local não é válido",
                 "invalidType": "O ID de assinatura local tem um tipo de dado inválido"
             },
+            "payerEmail": {
+                "invalid": "O e-mail de pagamento não é válido",
+                "invalidType": "O e-mail de pagamento tem um tipo de dado inválido",
+                "max": "O e-mail de pagamento não pode exceder {{max}} caracteres"
+            },
             "planSlug": {
                 "invalidType": "O slug do plano tem um tipo de dado inválido",
                 "max": "O slug do plano não pode ultrapassar {{max}} caracteres",

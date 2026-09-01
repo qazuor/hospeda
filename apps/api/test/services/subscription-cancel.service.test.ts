@@ -562,6 +562,27 @@ describe('softCancelSubscription', () => {
             ).resolves.toBeDefined();
         });
 
+        // HOS-180 AC-14 / OQ-2: 'courtesy' is deliberately in
+        // SOFT_CANCELLABLE_STATUSES — the ONE billing action left open during
+        // a gifted window. A subscriber who is not being charged and cannot
+        // leave is trapped for nobody's benefit (Resolución 424/2020).
+        it('accepts courtesy status (soft-cancellable, HOS-180)', async () => {
+            setupDbSelectRow(buildSubRow({ status: 'courtesy' }));
+            billing = buildBillingMock({
+                ...buildSubRow({ status: 'courtesy' }),
+                canceledAt: CANCELED_AT
+            });
+
+            const result = await softCancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            });
+
+            expect(result.cancelAtPeriodEnd).toBe(true);
+            expect(mockBillingCancelFn).toHaveBeenCalledOnce();
+        });
+
         // HOS-211/HOS-215: when the row carries no `trialEnd` (the pre-HOS-215
         // shape, or a trial-less row), `accessUntil` still falls back to
         // `existingRow.currentPeriodEnd` exactly as before — no regression for

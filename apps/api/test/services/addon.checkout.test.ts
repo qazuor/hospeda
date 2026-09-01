@@ -1712,6 +1712,49 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(result.error?.code).toBe('NO_ACTIVE_SUBSCRIPTION');
             expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
         });
+
+        // HOS-180 AC-14 (relaxed by owner decision): a subscriber in the
+        // derived `courtesy` status keeps paying for their base plan and
+        // is explicitly allowed to buy add-ons — only pause / plan-change /
+        // cancel are blocked during the courtesy window, not one-time addon
+        // purchases. `isEntitlementGrantingStatus` includes 'courtesy' on
+        // purpose (see AC-2); this asserts its consumer here actually honors it.
+        it('should allow checkout creation for a courtesy subscription', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'courtesy-user@example.com',
+                    metadata: { name: 'Courtesy User' }
+                },
+                subscription: { id: 'sub_courtesy', status: 'courtesy', planId: 'plan_basico' }
+            });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(true);
+            expect(mockBillingCheckoutCreate).toHaveBeenCalledOnce();
+        });
+
+        // Mirror of the courtesy case above: a status that does NOT grant
+        // entitlements must still be rejected. Without this pair, the courtesy
+        // test can't tell "the gate specifically accepts courtesy" from
+        // "the gate accepts anything".
+        it('should still reject checkout creation for a paused subscription', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'paused-user@example.com',
+                    metadata: { name: 'Paused User' }
+                },
+                subscription: { id: 'sub_paused', status: 'paused', planId: 'plan_basico' }
+            });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NO_ACTIVE_SUBSCRIPTION');
+            expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
+        });
     });
 
     describe('payer fields (customerEmail / customerName)', () => {

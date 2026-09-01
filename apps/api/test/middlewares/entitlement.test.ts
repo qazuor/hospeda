@@ -963,6 +963,114 @@ describe('entitlementMiddleware', () => {
         });
     });
 
+    describe('courtesy cycles retain plan entitlements via loadEntitlements (HOS-180 AC-2)', () => {
+        beforeEach(() => {
+            // Same plan shape as the "active subscription" suite above, so the
+            // only variable across these two tests is the subscription status.
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-123',
+                name: 'Pro Plan',
+                entitlements: [
+                    EntitlementKey.PUBLISH_ACCOMMODATIONS,
+                    EntitlementKey.EDIT_ACCOMMODATION_INFO,
+                    EntitlementKey.VIEW_BASIC_STATS
+                ],
+                limits: {
+                    [LimitKey.MAX_ACCOMMODATIONS]: 10,
+                    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 20
+                }
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+        });
+
+        it('retains the full plan entitlements for a subscription in status "courtesy" (HOS-180 AC-2)', async () => {
+            // Arrange — status:'courtesy' is what an admin-granted gift cycle
+            // looks like from the QZPay read side (derived, never a real MP
+            // status). isEntitlementGrantingStatus() must resolve it the same
+            // as 'active'/'trialing'/'comp'.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-courtesy-123',
+                    planId: 'plan-123',
+                    status: 'courtesy'
+                }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — full plan entitlements retained, exactly like 'active'.
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(data.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(10);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(20);
+        });
+
+        it('does NOT retain plan entitlements for the same subscription in status "paused" (mirror of AC-2)', async () => {
+            // Arrange — the preapproval underneath a courtesy window IS paused
+            // in MercadoPago; this proves the courtesy grant, not the raw
+            // 'paused' status, is what keeps access. Everything else (plan,
+            // subscription id, limits) is identical to the test above.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-courtesy-123',
+                    planId: 'plan-123',
+                    status: 'paused'
+                }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — 'paused' is not entitlement-granting, so no active
+            // accommodation subscription is found and the request falls back
+            // to tourist-free defaults, NOT the paused plan's entitlements.
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).not.toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBeUndefined();
+        });
+    });
+
     describe('customer-level entitlement/limit merging', () => {
         beforeEach(() => {
             // Common setup: active subscription pointing to plan-456

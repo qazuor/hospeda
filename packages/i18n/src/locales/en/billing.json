@@ -273,6 +273,14 @@
             "body": "Mercado Pago grants the trial period only once per account and per plan. If you've already used a trial for this plan with the same Mercado Pago account, Mercado Pago will charge the first period right away instead of applying the trial.",
             "confirm": "Got it, continue",
             "cancel": "Cancel"
+        },
+        "payerEmailConfirm": {
+            "title": "Which email you'll be able to pay with",
+            "body": "Mercado Pago will only let you pay with this exact email. If you want to use a different Mercado Pago account, change it before continuing.",
+            "label": "Payment email",
+            "invalidError": "Enter a valid email",
+            "confirm": "Continue",
+            "cancel": "Cancel"
         }
     },
     "checkoutRetry": {

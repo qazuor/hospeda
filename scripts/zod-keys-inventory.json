@@ -439,6 +439,9 @@
         "zodError.billing.startPaid.expiresAt.invalidType",
         "zodError.billing.startPaid.localSubscriptionId.invalid",
         "zodError.billing.startPaid.localSubscriptionId.invalidType",
+        "zodError.billing.startPaid.payerEmail.invalid",
+        "zodError.billing.startPaid.payerEmail.invalidType",
+        "zodError.billing.startPaid.payerEmail.max",
         "zodError.billing.startPaid.planSlug.invalidType",
         "zodError.billing.startPaid.planSlug.max",
         "zodError.billing.startPaid.planSlug.min",
@@ -1816,7 +1819,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1815,
+    "total": 1818,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1831,7 +1834,7 @@
         "allianceLead": 24,
         "amenity": 46,
         "attraction": 26,
-        "billing": 234,
+        "billing": 237,
         "commerce": 14,
         "common": 244,
         "contact": 7,

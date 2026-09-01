@@ -101,7 +101,12 @@ vi.mock('@repo/db', () => ({
     // behaviour the assertions below pin. Reuse itself is covered in
     // `test/services/billing/checkout-idempotency-by-entity.test.ts`.
     getDb: vi.fn(() => ({
-        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) })
+        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+        // HOS-937 step 4: `initiateCommerceMonthlySubscription` resolves the
+        // payer email via `getMpPayerEmail` (raw `db.execute(sql...)`) before
+        // either checkout branch runs — an empty result falls through to
+        // `customer.email`, which is what these cases already assert.
+        execute: vi.fn().mockResolvedValue({ rows: [] })
     })),
     // Retained so the PRE-fix implementation (which wrapped its own
     // `withTransaction`) still loads — the red run must fail on behavior, not

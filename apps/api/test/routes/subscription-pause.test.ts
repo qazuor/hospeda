@@ -293,6 +293,35 @@ describe('handleSelfServePause', () => {
     });
 
     // -----------------------------------------------------------------------
+    // Courtesy guard (HOS-180 AC-14 / OQ-2) — a courtesy subscription is
+    // excluded by omission, same as any other non-active/trialing status. No
+    // new gate was added; this pins the omission so a future addition of
+    // 'courtesy' to the filter above regresses silently otherwise.
+    // -----------------------------------------------------------------------
+
+    it('throws 404 when the only subscription is courtesy (HOS-180)', async () => {
+        mockBilling(makeBillingMock([{ id: 'sub-courtesy', status: 'courtesy', metadata: {} }]));
+        const ctx = createMockContext();
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+
+        try {
+            await handleSelfServePause(ctx as never);
+        } catch (err) {
+            expect((err as HTTPException).status).toBe(404);
+        }
+    });
+
+    it('does not call billing.subscriptions.pause for a courtesy-only customer (HOS-180)', async () => {
+        const billing = makeBillingMock([{ id: 'sub-courtesy', status: 'courtesy', metadata: {} }]);
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+        expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+    });
+
+    // -----------------------------------------------------------------------
     // Soft-cancel guard (HOS-246) — mirror of the resume guard from HOS-236
     // -----------------------------------------------------------------------
 

@@ -105,6 +105,12 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             // for the immediate cross-category plan swap — MP already mutated,
             // local commit failed after. 500 (server-side inconsistency).
             return new HTTPException(500, { message: err.message });
+        case 'PAYER_EMAIL_UNSUPPORTED_CHARACTER':
+            // HOS-937 step 2: the resolved payer email contains a '+', which
+            // MercadoPago rejects outright. Well-formed input, but not something
+            // the provider will accept — 400, so the front-end can prompt for a
+            // different email (spec §11 OQ-1).
+            return new HTTPException(400, { message: err.message });
         default: {
             // Defensive: the union should be exhaustive, but TS doesn't
             // enforce that downstream consumers add new codes here. Fall

@@ -106,6 +106,7 @@ export const handleStartPaidSubscription = async (
         planSlug: string;
         billingInterval: 'monthly' | 'annual';
         promoCode?: string;
+        payerEmail?: string;
     }
 ): Promise<StartPaidSubscriptionResponse> => {
     const billingEnabled = c.get('billingEnabled');
@@ -336,7 +337,10 @@ export const handleStartPaidSubscription = async (
                       // (HOS-171 §7.2) and MercadoPago preapprovals have no
                       // statement-descriptor field — only the hosted checkout
                       // this replaced did. Monthly never set one either.
-                      promoCode: body.promoCode
+                      promoCode: body.promoCode,
+                      // HOS-937 step 2: the email the user typed on the
+                      // pre-redirect screen, if any (spec §8.1/§6.3).
+                      payerEmail: body.payerEmail
                   })
                 : await initiatePaidMonthlySubscription({
                       customerId: billingCustomerId,
@@ -348,7 +352,10 @@ export const handleStartPaidSubscription = async (
                           paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
-                      promoCode: body.promoCode
+                      promoCode: body.promoCode,
+                      // HOS-937 step 2: the email the user typed on the
+                      // pre-redirect screen, if any (spec §8.1/§6.3).
+                      payerEmail: body.payerEmail
                   });
 
         apiLogger.info(
@@ -508,7 +515,8 @@ export const startPaidSubscriptionRoute = createCRUDRoute({
         handleStartPaidSubscription(c, {
             planSlug: body.planSlug as string,
             billingInterval: body.billingInterval as 'monthly' | 'annual',
-            promoCode: body.promoCode as string | undefined
+            promoCode: body.promoCode as string | undefined,
+            payerEmail: body.payerEmail as string | undefined
         })
 });
 

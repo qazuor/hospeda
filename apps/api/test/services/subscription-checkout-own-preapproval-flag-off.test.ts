@@ -95,6 +95,15 @@ const PENDING_RESULT = {
     expiresAt: '2099-01-01T00:00:00.000Z'
 };
 
+/**
+ * HOS-937 step 2: see the identical stub in
+ * `subscription-checkout-own-preapproval-flag-on.test.ts` — the global
+ * `@repo/db` mock's `execute()` resolves to `[]`, not `{ rows: [] }`, which
+ * breaks the new `getMpPayerEmail` raw-SQL read. Not what this suite is
+ * testing, so stub it with the real shape.
+ */
+const DB_STUB = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+
 describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED unset)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -108,7 +117,8 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(createPendingProviderSubscription).toHaveBeenCalledTimes(1);

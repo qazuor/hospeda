@@ -406,6 +406,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Expires an active/trialing subscription that has no MercadoPago preapproval and whose period elapsed (H-21). The row WAS granting entitlements, so the cached set must be dropped or the user keeps the old plan gates until the 5-minute TTL lapses — already calls clearEntitlementCache.'
     },
     {
+        file: 'services/billing/payment-reconcile.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-765 operator force-link binds a MercadoPago preapproval to a local subscription and flips its status to pending_provider. Both the statuses it writes onto (abandoned, pending_provider) and the status it writes are non-entitling, so on paper nothing cached changed — the clear is deliberate anyway, because the alternative failure mode is an operator rescuing a subscription and the customer still not being able to use their account until the TTL lapses. Already calls clearEntitlementCache.'
+    },
+    {
         file: 'routes/webhooks/mercadopago/payment-logic.ts',
         requiresCacheClear: true,
         reason: 'Activation/upgrade via MP payment webhook — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
@@ -449,6 +454,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         file: 'services/billing/preapproval-recovery.service.ts',
         requiresCacheClear: false,
         reason: 'HOS-937 step 3. Writes are the compare-and-set claim (`metadata.retryClaimedAt`) and the post-mint stamp (`metadata.retryMintedLocalSubscriptionId`/`retryMintedCheckoutUrl`) on the CANCELLED row being recovered from — pure bookkeeping on a row that never granted entitlements (a checkout that never activated). The fresh preapproval it mints is a brand-new row created through `createOwnPreapprovalSubscription` (already inventoried, requiresCacheClear:false), and any entitlement grant only happens later when the webhook activates THAT new row (subscription-logic.ts, already calls clearEntitlementCache).'
+    },
+    {
+        file: 'services/billing/trial-window-reconcile.ts',
+        requiresCacheClear: false,
+        reason: "Clears trial_start/trial_end (HOS-936) when MercadoPago's own next_payment_date shows it is charging at the creation instant, so the trial we promised was never granted. Writes NEITHER plan_id NOR status — and every call site runs while the row is still pre-authorization, so no entitlement has been granted yet for a cache to hold. The webhook that later activates the row (subscription-logic.ts) already calls clearEntitlementCache. Entitlements gate on status and never on trial_end (the HOS-171 guard), so narrowing the window cannot change what loadEntitlements resolves."
     },
     {
         file: 'services/plan-disable-lifecycle.service.ts',
