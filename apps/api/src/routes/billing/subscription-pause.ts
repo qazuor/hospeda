@@ -102,10 +102,27 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
     // dominant, user-facing reason and applies regardless of interval. The
     // annual guard only fires for a still-live (non-cancelling) annual sub.
     //
-    // Annual one-time subscriptions are backed by a single MP payment, not a
-    // recurring preapproval. There is nothing to pause on the billing side, and
-    // calling billing.subscriptions.pause() on them would silently fail or lie
-    // about the pause state. Reject early with a clear, actionable error.
+    // HOS-995: the reason this guard was originally written is GONE. It used to
+    // say annual subscriptions were "backed by a single MP payment, not a
+    // recurring preapproval", so there was nothing to pause. HOS-171 (card-first)
+    // retired that: an annual subscription IS a recurring preapproval today, at
+    // qzpay's 'annual' cadence (MP `frequency: 12, frequency_type: 'months'`),
+    // and `create-annual-subscription.ts` was deleted. There is a preapproval,
+    // and it has a pause endpoint.
+    //
+    // The guard stays anyway, for a different and narrower reason: nobody has
+    // yet verified against the MercadoPago sandbox that pause/resume actually
+    // behave on an annual preapproval. Until that experiment runs, refusing with
+    // a clear message beats forwarding the call and surfacing whatever MP
+    // answers as a raw provider error.
+    //
+    // When the experiment runs: if pause works, this guard should either go away
+    // or be narrowed to `mp_subscription_id IS NULL` — which is the real "there
+    // is nothing to pause" condition, and has nothing to do with the interval.
+    // If it does not work, keep the guard and record what MP answered here.
+    //
+    // This also blocks verifying a courtesy gift of a full year (spec HOS-180,
+    // risk R-9), since a courtesy is a paused preapproval.
     if (target.metadata?.billingInterval === 'annual') {
         throw new HTTPException(400, {
             message: 'PAUSE_NOT_SUPPORTED_FOR_ANNUAL: Annual subscriptions cannot be paused'
