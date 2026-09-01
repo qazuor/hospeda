@@ -56,12 +56,161 @@ describe('plan index — the five audience cards (AC-1)', () => {
         expect(indexSrc).not.toContain('aria-expanded');
         expect(indexSrc).not.toContain('role="tab"');
         expect(indexSrc).not.toContain('role="tablist"');
-        expect(indexSrc).not.toMatch(/\bhidden\b\s*(=|\/?>)/);
+        // The HTML `hidden` attribute, and ONLY that. The lookbehind is what
+        // stops this from also matching `aria-hidden`, which it used to catch by
+        // accident: this rule is about a card being hidden behind a control, and
+        // `aria-hidden` on a decorative tick is not that. The card-level
+        // `aria-hidden` this no longer sees is caught by the next test instead,
+        // which is a stricter statement than the one it replaces.
+        expect(indexSrc).not.toMatch(/(?<![-\w])hidden\b\s*(=|\/?>)/);
+    });
+
+    it('hides nothing from assistive tech except the decorative glyphs', () => {
+        // `aria-hidden` is legitimate on an icon whose meaning is carried by the
+        // text beside it, and illegitimate on anything else — a card, a list, a
+        // price. Enumerating the elements that carry it is what keeps the first
+        // statement true without forbidding the second.
+        const carriers = [...indexSrc.matchAll(/<(\w+) class="([^"]+)" aria-hidden="true"/g)].map(
+            (match) => match[2]
+        );
+
+        expect(carriers).toEqual(['audiences__card-check']);
     });
 
     it('renders one list item per card, each wrapping a real link', () => {
         expect(indexSrc).toContain('<li class="audiences__item"');
         expect(indexSrc).toContain('<a class="audiences__card" href={card.href}>');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// AC-1b / AC-2b — a card has to sell its vertical, not just link to it
+// ---------------------------------------------------------------------------
+
+describe('plan index — each card says what THAT audience gets (AC-1b)', () => {
+    it('renders the highlights from the shared resolver, never inline copy', () => {
+        // What the bullets SAY, that there are three of them and that no line is
+        // shared between two audiences are executable claims and live in
+        // `test/lib/billing/audience-card-content.test.ts`. What lives here is
+        // the only part that is genuinely a property of the page: that it goes
+        // through the resolver at all.
+        expect(indexSrc).toContain("} from '@/lib/billing/audience-card-content'");
+        expect(indexSrc).toContain('resolveAudienceHighlights({ id, t })');
+        expect(indexSrc).toContain('class="audiences__card-highlight"');
+    });
+
+    it('drops the whole list rather than rendering an empty one', () => {
+        expect(indexSrc).toContain('{card.highlights.length > 0 && (');
+    });
+
+    it('writes no user-facing copy into the page itself', () => {
+        // Every string a visitor reads goes through `t()`; a literal here would
+        // serve Spanish under /en and /pt.
+        expect(indexSrc).toContain("t('pricing.index.highlightsLabel'");
+    });
+});
+
+describe('plan index — the five audiences are told apart without reading (AC-2b)', () => {
+    it('gives every card a glyph resolved per audience', () => {
+        expect(indexSrc).toContain('AUDIENCE_CARD_ICONS[id]');
+        expect(indexSrc).toContain('<AudienceIcon size="md" weight="bold" />');
+    });
+
+    it('takes the glyph colour from the card, which duotone would ignore', () => {
+        // `createPhosphorIcon` only forwards `color` (default `currentColor`) on
+        // the non-duotone weights; under `duotone` it paints the icon package's
+        // own brand blue and all five glyphs come out identical.
+        expect(indexSrc).not.toMatch(/<AudienceIcon[^>]*weight="duotone"/);
+    });
+
+    it('declares a distinct accent for each of the five audiences', () => {
+        const declared = [
+            ...indexSrc.matchAll(/data-audience='([a-z]+)'\]\s*\{\s*--audience-ink:\s*([^;]+);/g)
+        ];
+
+        expect(declared.map((match) => match[1]).sort()).toEqual([
+            'experience',
+            'gastronomy',
+            'host',
+            'partner',
+            'tourist'
+        ]);
+        // Two audiences sharing an ink distinguish nothing.
+        expect(new Set(declared.map((match) => match[2]?.trim())).size).toBe(5);
+    });
+
+    it('keeps the accent off every piece of card TEXT', () => {
+        // Two of the five inks are decorative tints that do not clear AA as body
+        // text. The accent paints a glyph, a rule, a bullet and a hover border —
+        // nothing a reader has to read.
+        expect(indexSrc).not.toMatch(/\bcolor:\s*var\(--audience-ink\)\s*;[\s\S]{0,40}font-size/);
+        for (const rule of [
+            '.audiences__card-title',
+            '.audiences__card-audience',
+            '.audiences__card-highlight',
+            '.audiences__card-cta'
+        ]) {
+            const body = indexSrc.match(new RegExp(`\\${rule} \\{([^}]*)\\}`))?.[1] ?? '';
+            expect(body, rule).not.toContain('color: var(--audience-ink)');
+        }
+    });
+
+    it('falls back to a real ink rather than an undefined custom property', () => {
+        // `var(--audience-ink)` with nothing behind it resolves to the initial
+        // value and erases the glyph in silence — the same class of failure as
+        // `var(--core-border)`.
+        const item = indexSrc.match(/\.audiences__item \{([^}]*)\}/)?.[1] ?? '';
+
+        expect(item).toContain('--audience-ink:');
+    });
+
+    it('uses --border, never --core-border', () => {
+        expect(indexSrc).not.toContain('--core-border');
+    });
+});
+
+describe('plan index — the highlight list is a list, and it lines up', () => {
+    it('resets the browser’s own list indent, which is what pushed it out of the card', () => {
+        // Every `ul` gets ~40px of `padding-inline-start` from the UA sheet. Left
+        // in place, the bullets start to the LEFT of the title and the paragraph
+        // above them — which is exactly how it shipped and what the owner saw.
+        const list = indexSrc.match(/\.audiences__card-highlights \{([^}]*)\}/)?.[1] ?? '';
+
+        expect(list).toContain('list-style: none;');
+        expect(list).toMatch(/padding: 0;/);
+    });
+
+    it('gives each item a tick from @repo/icons, not an inline svg or a CSS dot', () => {
+        expect(indexSrc).toContain('CheckIcon');
+        expect(indexSrc).toContain('<CheckIcon size="sm" weight="bold" />');
+        expect(indexSrc).not.toContain('<svg');
+        // The CSS pseudo-dot this replaced.
+        expect(indexSrc).not.toContain('.audiences__card-highlight::before');
+    });
+
+    it('lays the item out in two columns, so a two-line bullet does not slide under the tick', () => {
+        // A marker hung in the text's own `padding-inline-start` wraps
+        // underneath itself on the second line. A flex row with a `flex: none`
+        // tick cannot.
+        const item = indexSrc.match(/\.audiences__card-highlight \{([^}]*)\}/)?.[1] ?? '';
+        const check = indexSrc.match(/\.audiences__card-check \{([^}]*)\}/)?.[1] ?? '';
+
+        expect(item).toContain('display: flex;');
+        expect(item).toContain('align-items: flex-start;');
+        expect(item).toContain('gap:');
+        // No hanging indent left behind — that would double the offset.
+        expect(item).not.toContain('padding-inline-start:');
+        expect(check).toContain('flex: none;');
+    });
+
+    it('keeps the item text at the card’s own left edge', () => {
+        // Nothing between the list box and the sentence may add an inset: the
+        // list resets the UA padding, the item adds none, and the tick is a
+        // sibling column rather than something the text is pushed past.
+        const list = indexSrc.match(/\.audiences__card-highlights \{([^}]*)\}/)?.[1] ?? '';
+
+        expect(list).not.toMatch(/padding-inline-start: (?!0)/);
+        expect(list).not.toMatch(/margin-inline-start: (?!0)/);
     });
 });
 

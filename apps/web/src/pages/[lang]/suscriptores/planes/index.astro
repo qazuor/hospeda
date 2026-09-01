@@ -24,6 +24,24 @@
  * regrouping the verticals under it in the UI would resurrect the vocabulary the
  * domain split removed.
  *
+ * ## A card has to sell its vertical, not just link to it (AC-1b / AC-2b)
+ *
+ * The first cut of this page gave every card a title, one line and a price. The
+ * owner read the result back as "a list of links with a border", and he was
+ * right: nothing on a card said what THAT audience gets, and the only thing
+ * separating a restaurant owner's card from a host's was a paragraph. Two
+ * additions fix it, and both are deliberately cheap:
+ *
+ * 1. **Three concrete highlights per card**, from
+ *    `resolveAudienceHighlights` — audience-specific copy sourced from what each
+ *    vertical actually offers, never a line that could be moved between cards.
+ * 2. **A glyph and an accent colour per audience**, keyed off the same
+ *    `data-audience` attribute. There are no illustrations to spend here, so the
+ *    differentiation is built from what the site already ships: `@repo/icons`
+ *    and existing brand tokens. The accent is decoration only — every piece of
+ *    text on the card keeps a foreground/muted/link token, so nothing depends on
+ *    a hue clearing a contrast threshold to be readable.
+ *
  * ## Prices are fetched, never written down
  *
  * Each "from $X" comes from `GET /api/v1/public/plans` at request time (AC-8),
@@ -50,9 +68,13 @@ import {
 	fetchAudienceStartingPrices,
 	formatStartingPriceArs
 } from '@/lib/billing/audience-plans';
+import {
+	AUDIENCE_CARD_ICONS,
+	resolveAudienceHighlights
+} from '@/lib/billing/audience-card-content';
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { ArrowRightIcon, BuildingIcon, CompassIcon, StarIcon } from '@repo/icons';
+import { ArrowRightIcon, BuildingIcon, CheckIcon, CompassIcon, StarIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -88,12 +110,16 @@ function priceLabelFor(id: (typeof AUDIENCE_CARD_ORDER)[number]): string | null 
 	});
 }
 
+const highlightsLabel = t('pricing.index.highlightsLabel', 'Qué obtenés');
+
 const cards = AUDIENCE_CARD_ORDER.map((id) => ({
 	id,
 	href: buildUrl({ locale, path: AUDIENCE_CARD_PATHS[id] }),
 	title: t(`pricing.index.cards.${id}.title`),
 	audience: t(`pricing.index.cards.${id}.audience`),
 	cta: t(`pricing.index.cards.${id}.cta`),
+	highlights: resolveAudienceHighlights({ id, t }),
+	icon: AUDIENCE_CARD_ICONS[id],
 	priceLabel: priceLabelFor(id),
 	/** `/mes` only makes sense next to an amount, not next to the free label. */
 	showPeriod: startingPrices[id]?.kind === 'from'
@@ -136,30 +162,68 @@ const headingMain = headingWords.join(' ');
 			</h2>
 
 			<ul class="audiences__grid" data-audience-count={cards.length}>
-				{cards.map((card) => (
-					<li class="audiences__item" data-audience={card.id}>
-						<a class="audiences__card" href={card.href}>
-							<h3 class="audiences__card-title">{card.title}</h3>
-							<p class="audiences__card-audience">{card.audience}</p>
+				{cards.map((card) => {
+					// Astro renders a capitalised binding as a component; the map's
+					// block body is what lets the per-audience glyph be a value
+					// rather than five branches in the template.
+					const AudienceIcon = card.icon;
+					return (
+						<li class="audiences__item" data-audience={card.id}>
+							<a class="audiences__card" href={card.href}>
+								{/*
+									`weight="bold"` and not the duotone the hero uses: the
+									factory only forwards `color` (which defaults to
+									`currentColor`) on the non-duotone weights, so this is
+									what lets the glyph take the audience's accent instead
+									of the icon package's own brand blue.
+								*/}
+								<span class="audiences__card-glyph">
+									<AudienceIcon size="md" weight="bold" />
+								</span>
 
-							{card.priceLabel && (
-								<p class="audiences__card-price">
-									<span class="audiences__card-price-amount">{card.priceLabel}</span>
-									{card.showPeriod && (
-										<span class="audiences__card-price-period">
-											{t('pricing.period.month', '/mes')}
-										</span>
-									)}
-								</p>
-							)}
+								<h3 class="audiences__card-title">{card.title}</h3>
+								<p class="audiences__card-audience">{card.audience}</p>
 
-							<span class="audiences__card-cta">
-								{card.cta}
-								<ArrowRightIcon size="sm" weight="bold" />
-							</span>
-						</a>
-					</li>
-				))}
+								{card.highlights.length > 0 && (
+									<ul class="audiences__card-highlights" aria-label={highlightsLabel}>
+										{card.highlights.map((highlight) => (
+											<li class="audiences__card-highlight">
+												{/*
+													The tick is decoration: the bullet's meaning is
+													its sentence. Wrapped rather than passed an
+													`aria-label` because `@repo/icons` always emits
+													one — fifteen "check icon" announcements on this
+													page would be noise between the lines a reader
+													actually needs.
+												*/}
+												<span class="audiences__card-check" aria-hidden="true">
+													<CheckIcon size="sm" weight="bold" />
+												</span>
+												<span class="audiences__card-highlight-text">{highlight}</span>
+											</li>
+										))}
+									</ul>
+								)}
+
+								{card.priceLabel && (
+									<p class="audiences__card-price">
+										<span class="audiences__card-price-amount">{card.priceLabel}</span>
+										{card.showPeriod && (
+											<span class="audiences__card-price-period">
+												{t('pricing.period.month', '/mes')}
+											</span>
+										)}
+									</p>
+								)}
+
+								<span class="audiences__card-cta">
+									{card.cta}
+									<ArrowRightIcon size="sm" weight="bold" />
+								</span>
+							</a>
+						</li>
+					);
+				})}
 			</ul>
 		</div>
 	</section>
@@ -196,7 +260,7 @@ const headingMain = headingWords.join(' ');
 		padding: 0;
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: var(--space-4, 1rem);
+		gap: var(--space-5, 1.25rem);
 	}
 
 	@media (min-width: 640px) {
@@ -211,42 +275,110 @@ const headingMain = headingWords.join(' ');
 		}
 	}
 
+	/* ─── The per-audience accent ────────────────────────────────────
+	   One custom property, set on the list item and inherited by everything
+	   inside the card, so a card's glyph, its top rule, its bullets and its
+	   hover border all move together and there is ONE place to change an
+	   audience's colour.
+
+	   Every value is an existing token: the blue and orange the site already
+	   uses for links and CTAs, the forest green of the `hospeda` palette, that
+	   palette's sand darkened by relative colour (the same technique
+	   `lib/colors.ts` uses throughout), and the deep brand navy. No new hue is
+	   introduced — this is the site's own palette, spread across five cards.
+
+	   The accent is DECORATION. Card text never uses it, so none of these has
+	   to clear a text-contrast threshold; the accent only ever paints a glyph,
+	   a 4px rule, a bullet and a border. */
+	.audiences__item[data-audience='host'] {
+		--audience-ink: var(--brand-primary-link);
+	}
+
+	.audiences__item[data-audience='tourist'] {
+		--audience-ink: var(--brand-accent-text);
+	}
+
+	.audiences__item[data-audience='gastronomy'] {
+		--audience-ink: var(--hospeda-forest-link);
+	}
+
+	.audiences__item[data-audience='experience'] {
+		--audience-ink: oklch(from var(--hospeda-sand) 0.55 c h);
+	}
+
+	.audiences__item[data-audience='partner'] {
+		--audience-ink: var(--brand-primary-text);
+	}
+
 	.audiences__item {
 		/* Without this a long unbroken word in a card would set the track's
 		   minimum width and overflow the row. */
 		min-width: 0;
 		display: flex;
+		/* Any audience whose rule above is missing still gets a defined accent
+		   rather than an invalid `var()` that silently erases the glyph. */
+		--audience-ink: var(--brand-primary-link);
 	}
 
 	.audiences__card {
+		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2, 0.5rem);
+		gap: var(--space-3, 0.75rem);
 		width: 100%;
 		min-width: 0;
-		padding: var(--space-5, 1.25rem);
+		/* The extra 4px on top is the accent rule's own height, so the glyph
+		   sits the same distance from the rule as the copy does from the sides. */
+		padding: calc(var(--space-5, 1.25rem) + 4px) var(--space-5, 1.25rem)
+			var(--space-5, 1.25rem);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-card);
 		background-color: var(--core-card);
 		color: var(--core-foreground);
 		text-decoration: none;
+		/* Clips the accent rule to the card's own corner radius. */
+		overflow: clip;
 		transition:
 			border-color 0.2s ease,
 			transform 0.2s ease,
 			box-shadow 0.2s ease;
 	}
 
+	/* The accent rule. A pseudo-element rather than a `border-top`, so the
+	   card's 1px outline stays one uniform colour and the rule can sit inside
+	   the rounded corners. */
+	.audiences__card::before {
+		content: '';
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline: 0;
+		height: 4px;
+		background-color: var(--audience-ink);
+	}
+
 	.audiences__card:hover,
 	.audiences__card:focus-visible {
-		border-color: var(--brand-primary);
+		border-color: var(--audience-ink);
 		transform: translateY(-2px);
 		box-shadow: var(--shadow-card-hover);
+	}
+
+	.audiences__card-glyph {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		flex: none;
+		border-radius: var(--radius-md);
+		background-color: oklch(from var(--audience-ink) l c h / 0.12);
+		color: var(--audience-ink);
 	}
 
 	.audiences__card-title {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: var(--text-body-lg, 1.0625rem);
+		font-size: var(--text-h4, 1.125rem);
 		color: var(--core-foreground);
 		margin: 0;
 		line-height: 1.3;
@@ -262,18 +394,67 @@ const headingMain = headingWords.join(' ');
 		overflow-wrap: anywhere;
 	}
 
+	/* The three highlights. They are what turns the card from a link into an
+	   offer, so they are plain readable text in the foreground colour — the
+	   accent is spent only on the marker. */
+	.audiences__card-highlights {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		padding-block-start: var(--space-3, 0.75rem);
+		border-block-start: 1px solid var(--border);
+	}
+
+	/* Two columns — tick, then text — rather than a marker hung in the text's
+	   own padding. Two reasons, and the first is what the owner saw: a `ul`
+	   carries a ~40px browser `padding-inline-start`, so anything that does not
+	   reset it starts to the LEFT of the rest of the card. This list has
+	   `padding: 0` above, and the text column therefore lines up exactly with
+	   the title and the paragraph. The second is wrapping: with `flex` and a
+	   `flex: none` tick, a bullet that runs to two lines keeps its second line
+	   in the text column instead of sliding under the icon. */
+	.audiences__card-highlight {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2, 0.5rem);
+		min-width: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		line-height: 1.5;
+		color: var(--core-foreground);
+	}
+
+	.audiences__card-check {
+		display: inline-flex;
+		flex: none;
+		/* Optically centred on the first line rather than on the whole item. */
+		margin-block-start: 0.15em;
+		color: var(--audience-ink);
+	}
+
+	.audiences__card-highlight-text {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
 	.audiences__card-price {
 		display: flex;
 		align-items: baseline;
 		flex-wrap: wrap;
 		gap: 0.25rem;
-		margin: var(--space-2, 0.5rem) 0 0;
+		margin: 0;
+		margin-block-start: auto;
+		padding-block-start: var(--space-3, 0.75rem);
 		font-family: var(--font-sans);
 	}
 
 	.audiences__card-price-amount {
+		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: var(--text-body-lg, 1.0625rem);
+		font-size: var(--text-h4, 1.125rem);
 		color: var(--core-foreground);
 	}
 
@@ -282,17 +463,23 @@ const headingMain = headingWords.join(' ');
 		color: var(--core-muted-foreground);
 	}
 
+	/* `margin-block-start: auto` on BOTH the price and the CTA: the price line
+	   is optional (a domain whose catalogue failed to load renders without it),
+	   so pinning the block to the bottom cannot depend on either one being
+	   present. Whichever comes first absorbs the slack; the second one's `auto`
+	   then resolves to zero. */
 	.audiences__card-cta {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
-		margin-top: auto;
-		padding-top: var(--space-3, 0.75rem);
+		margin-block-start: auto;
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm, 0.9375rem);
 		font-weight: 600;
 		/* `-link` rather than `brand-primary`: this is normal-size text, and the
-		   vibrant brand blue only reaches ~3.5:1 on a light card (SPEC-308). */
+		   vibrant brand blue only reaches ~3.5:1 on a light card (SPEC-308). The
+		   CTA deliberately does NOT take `--audience-ink`: two of the five inks
+		   are decorative tints that would not clear AA as body text. */
 		color: var(--brand-primary-link);
 	}
 
