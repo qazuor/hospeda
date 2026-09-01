@@ -1,0 +1,92 @@
+---
+/**
+ * @file SalesSection.astro
+ * @description The shared shell every section of a sales page renders inside:
+ * a `<section>`, the centred container, a decorative tagline and the heading.
+ *
+ * Extracted for HOS-985 (H6 of HOS-941). Before this, five pages hand-rolled
+ * the same shell under five different BEM prefixes — `owners-benefits__*`,
+ * `publicar-benefits__*`, `benefits-section__*`, `pub-rest__*`, `pub-exp__*` —
+ * and the duplication had already caused a real regression (HOS-331), where
+ * copy edited on one surface silently diverged from its twin.
+ *
+ * Shape is modelled on `publicar-restaurante` / `publicar-experiencia`, which
+ * were byte-for-byte identical to each other and therefore the pair carrying
+ * the least accidental variation.
+ *
+ * ## Why the background is a prop
+ *
+ * `apps/web/CLAUDE.md` requires adjacent sections to alternate between
+ * `--core-background` and `--surface-warm`. Which one a given section needs
+ * depends on what precedes it on the page, not on what the section IS: the
+ * "how it works" block is `--warm` on the owner landing and plain on the
+ * gastronomy one. Hardcoding either would force half the callers to fight it.
+ *
+ * ## Why decoration is a slot
+ *
+ * The existing pages decorate inconsistently — a watermark icon plus a wavy
+ * path and four floating dots on the owner landing, an external arrow image on
+ * `publicar`, a `?` watermark on the owner FAQ, and nothing at all on the two
+ * commerce landings. None of that is shared, so it stays a `decoration` slot
+ * the caller opts into rather than a built-in every consumer must switch off.
+ */
+
+interface Props {
+    /** Handwritten kicker above the heading. */
+    readonly tagline: string;
+    /** The section heading, rendered as `<h2>`. */
+    readonly title: string;
+    /**
+     * Render on `--surface-warm` instead of the default page background.
+     * The caller owns the alternation across the page.
+     */
+    readonly warm?: boolean;
+    /** Extra class for the outer `<section>`, for page-level spacing tweaks. */
+    readonly class?: string;
+}
+
+const { tagline, title, warm = false, class: className } = Astro.props;
+---
+
+<section class:list={['sales-section', 'section', warm && 'section--warm', className]}>
+    <slot name="decoration" />
+    <div class="sales-section__container section__container">
+        <p class="sales-section__tagline" data-reveal="up">{tagline}</p>
+        <h2 class="sales-section__title" data-reveal="up">{title}</h2>
+        <slot />
+    </div>
+</section>
+
+<style>
+    .sales-section__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+
+    .sales-section__tagline,
+    .sales-section__title {
+        text-align: center;
+    }
+
+    .sales-section__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+        /* Inherited from HOS-690's a11y fix, and load-bearing: --brand-accent on
+           --surface-warm measures 2.44:1, under the 3:1 AA floor for large text
+           (caught by the a11y sweep as a serious color-contrast violation).
+           --core-foreground is the design system's always-AA-safe text token on
+           any light surface, and this shell renders on both. */
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .sales-section__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-8);
+    }
+</style>
