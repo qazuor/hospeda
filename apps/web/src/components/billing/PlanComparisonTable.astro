@@ -29,6 +29,7 @@ import { createTranslations } from '@/lib/i18n';
 import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -39,6 +40,11 @@ interface Props {
 
 const { locale, plans, audience, intlLocale } = Astro.props;
 const { t } = createTranslations(locale);
+
+// HOS-937 review fix: same SSR gate as PricingCardsGrid.astro — resolves
+// server-side so PlanPurchaseButton can decide whether the payer-email
+// confirm dialog has any effect. Fails closed on error.
+const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
 
 const unlimitedLabel = t('billing.comparison.unlimited', 'Ilimitado');
 const notIncludedLabel = t('billing.comparison.notIncluded', 'No incluido');
@@ -95,6 +101,7 @@ function formatPriceArs(cents: number): string {
 								locale={locale}
 								showPromo={false}
 								trialDays={plan.hasTrial ? plan.trialDays : 0}
+								ownPreapprovalEnabled={ownPreapprovalEnabled}
 							/>
 						</span>
 					</th>

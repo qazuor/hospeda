@@ -123,6 +123,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'auth.signUp',
     'auth.verifyEmail',
     'billing.checkout',
+    // HOS-937 step 3 — the checkout-retry banner (CheckoutRetryBanner.client.tsx)
+    // named on `mi-cuenta/suscripcion` after a card-rejected preapproval.
+    'billing.checkoutRetry',
     'billing.limit',
     'blog.categories',
     'comments.form',

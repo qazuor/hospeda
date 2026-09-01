@@ -35,15 +35,21 @@
  *   comped subscriber retains the full entitlements of the plan they were
  *   comped on. Omitting it is exactly what stranded comp subscribers on
  *   `plan: null` / wrong entitlements (HOS-238 / HOS-239).
+ * - `'courtesy'` — a finite run of gifted cycles (HOS-180). The whole point of
+ *   the gift is that the subscriber loses nothing, so it grants the full plan
+ *   entitlements. This is the single line that separates a courtesy from the
+ *   `paused` preapproval underneath it: `'paused'` is NOT in this list and must
+ *   never be added, because a real pause is meant to cut access.
  */
-export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp'] as const;
+export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp', 'courtesy'] as const;
 
 /**
  * Whether a subscription status grants its plan's entitlements right now
  * (status-only, date-agnostic). See {@link ENTITLEMENT_GRANTING_STATUSES}.
  *
  * @param status - The billing subscription status string.
- * @returns `true` for `'active'`, `'trialing'`, or `'comp'`; `false` otherwise.
+ * @returns `true` for `'active'`, `'trialing'`, `'comp'`, or `'courtesy'`;
+ *   `false` otherwise.
  *
  * @example
  * ```ts

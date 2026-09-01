@@ -44,7 +44,14 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 export const meta = {
     name: '0037-hos-390-content-media-to-relational',
     group: 'required',
-    destructive: false
+    destructive: false,
+    // HOS-433: unlike its commerce sibling 0034, no schema migration drops
+    // these columns — they keep holding videos. Declared anyway so the
+    // dependency is enforced rather than assumed if that ever changes.
+    requiresColumns: [
+        { table: 'posts', column: 'media' },
+        { table: 'events', column: 'media' }
+    ]
 } as const satisfies SeedMigrationModule['meta'];
 
 /** A post or event whose JSONB blob actually carries photos worth backfilling. */

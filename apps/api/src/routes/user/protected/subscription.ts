@@ -6,7 +6,7 @@
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
 import { ProductDomainEnum } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import { readCourtesyFields, subscriptionMatchesDomain } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -26,6 +26,7 @@ const planService = new PlanService();
 const SUBSCRIPTION_STATUSES = [
     'active',
     'trial',
+    'courtesy',
     'cancelled',
     'expired',
     'past_due',
@@ -46,6 +47,22 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     comp: 'active',
     trialing: 'trial',
     trial: 'trial',
+    // HOS-1007: a `courtesy` (HOS-180 gifted cycles) subscription gets its OWN
+    // response status rather than following the `comp` precedent above
+    // (map → 'active' + a boolean flag). Two reasons the two cases differ:
+    //   1. A courtesy is a *window*, not a permanent state. The panel has to say
+    //      "sin cargo hasta <courtesyEndsAt>" and badge it "De regalo" — copy it
+    //      can only select on a status of its own. Collapsing it into 'active'
+    //      would need yet another boolean AND would render the honest date under
+    //      a "Próxima facturación" label that is factually wrong.
+    //   2. Unlike a comp, a courtesy IS self-service cancellable
+    //      (`SOFT_CANCELLABLE_STATUSES` in subscription-cancel.service.ts holds
+    //      `active | trialing | courtesy`), so it cannot reuse `isComplimentary`,
+    //      whose whole job is to hide the cancel action.
+    // The web panel already declares 'courtesy' in its status union and consumes
+    // it; without this entry the value fell through to the 'pending' default
+    // below and that branch was unreachable in production.
+    courtesy: 'courtesy',
     canceled: 'cancelled',
     cancelled: 'cancelled',
     expired: 'expired',
@@ -97,6 +114,12 @@ const SubscriptionResponseSchema = z.object({
              */
             canceledAt: z.string().nullable(),
             trialEndsAt: z.string().nullable(),
+            /**
+             * End of a gifted courtesy window (HOS-180), or null.
+             * While the subscription is in `courtesy` this — not
+             * currentPeriodEnd — is when the subscriber is charged again.
+             */
+            courtesyEndsAt: z.string().nullable(),
             monthlyPriceArs: z.number(),
             paymentMethod: z
                 .object({
@@ -359,6 +382,9 @@ export const userSubscriptionRoute = createProtectedRoute({
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
                 canceledAt: toIsoString(activeSubscription.canceledAt),
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
+                courtesyEndsAt: toIsoString(
+                    readCourtesyFields(activeSubscription.metadata).courtesyEndsAt
+                ),
                 monthlyPriceArs,
                 paymentMethod: null,
                 gracePeriodDaysRemaining,

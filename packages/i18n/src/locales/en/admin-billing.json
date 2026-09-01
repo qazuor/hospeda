@@ -969,6 +969,110 @@
         "unknownUser": "Unknown user",
         "unknownPlan": "No plan"
     },
+    "reconciliation": {
+        "title": "Orphan payment rescue",
+        "description": "Compares MercadoPago against the local ledger and proposes links. The tool PROPOSES, a human DECIDES: nothing links automatically.",
+        "table": {
+            "title": "Divergences",
+            "loading": "Loading divergences...",
+            "errorLoading": "Error loading divergences",
+            "empty": "No divergences",
+            "emptyTitle": "No divergences found",
+            "emptyHint": "MercadoPago and the local ledger match for the queried range.",
+            "divergenceCount_one": "{{count}} divergence",
+            "divergenceCount_other": "{{count}} divergences",
+            "columns": {
+                "kind": "Type",
+                "identifier": "Identifier",
+                "payerEmail": "Payer email",
+                "amount": "Amount",
+                "date": "Date",
+                "mpStatus": "MP status",
+                "candidates": "Candidates",
+                "actions": "Actions"
+            },
+            "viewButton": "View details",
+            "backfillButton": "Record payment",
+            "forceLinkButton": "Link"
+        },
+        "kinds": {
+            "unrecordedPayment": "Unrecorded payment",
+            "orphanPreapproval": "Orphan preapproval"
+        },
+        "notAttributableYet": "Not attributable yet",
+        "matchedOn": {
+            "externalReference": "External reference",
+            "payerEmail": "Payer email",
+            "mpPlanId": "MP plan",
+            "preapprovalId": "Preapproval ID"
+        },
+        "detailDialog": {
+            "title": "Divergence detail",
+            "mpSection": "MercadoPago data",
+            "payerSection": "Payer identity",
+            "candidatesSection": "Local candidates",
+            "noCandidates": "No candidates found. There is nothing to propose: the operator must search manually.",
+            "localStatusLabel": "Local status:",
+            "useCandidateButton": "Use this one"
+        },
+        "fields": {
+            "mpPaymentId": "Payment ID (MP)",
+            "mpStatusDetail": "Status detail",
+            "approvedAt": "Approved at",
+            "payerId": "Payer ID (MP)",
+            "preapprovalId": "Preapproval ID (MP)",
+            "description": "Description",
+            "reason": "Reason (MP)",
+            "nextPaymentDate": "Next payment",
+            "preapprovalPlanId": "Preapproval plan ID",
+            "sourcePaymentId": "Source payment",
+            "amount": "Amount",
+            "mpStatus": "MP status",
+            "createdAt": "Created at",
+            "externalReference": "External reference",
+            "payerEmailRaw": "Payer email (raw, MP)",
+            "payerEmailFromPayment": "Payer email (from linked payment)"
+        },
+        "payerEmailRawEmptyHint": "MercadoPago returns this field empty on every real preapproval. This is not a tool failure.",
+        "actionDialog": {
+            "forceLinkTitle": "Link preapproval to a local subscription",
+            "forceLinkDescription": "Binds this MercadoPago preapproval to the local subscription you choose. This action is audited.",
+            "backfillTitle": "Record payment in the ledger",
+            "backfillDescription": "Creates the missing billing_payments row for this already-approved charge. This action is audited.",
+            "auditWarning": "This action writes to the ledger and is audited under your name. It cannot be undone with a click.",
+            "mpTargetLabel": "MercadoPago identifier",
+            "localSubscriptionIdLabel": "Local subscription ID",
+            "localSubscriptionIdPlaceholder": "Paste the local subscription ID...",
+            "localSubscriptionIdHint": "This field always starts empty. To copy a candidate here, open the detail view and use \"Use this one\".",
+            "reasonLabel": "Reason",
+            "reasonPlaceholder": "Explain why these two records are the same person/subscription (minimum 10 characters)...",
+            "reasonHint": "This text stays in the audit record. Be specific: it is the only thing that explains the link later.",
+            "processingButton": "Processing...",
+            "forceLinkConfirmButton": "Link",
+            "backfillConfirmButton": "Record payment",
+            "forceLinkSuccess": "Preapproval linked successfully",
+            "forceLinkError": "Error linking:",
+            "backfillSuccess": "Payment recorded successfully",
+            "backfillError": "Error recording payment:"
+        },
+        "truncatedBanner": {
+            "title": "Partial report",
+            "description": "The MercadoPago sweep hit its configured page ceiling. The total shown is a floor, not a full count: there may be more unlisted divergences."
+        },
+        "filters": {
+            "title": "Filters",
+            "kindLabel": "Type",
+            "allKinds": "All",
+            "sinceLabel": "Since",
+            "sinceHint": "Defaults to the last 90 days. Each query costs paced calls against MercadoPago."
+        },
+        "mpCallStats": "{{calls}} MercadoPago calls ({{rateLimited}} rate-limited)",
+        "pagination": {
+            "previous": "Previous",
+            "next": "Next",
+            "pageOf": "Page {{page}} of {{totalPages}}"
+        }
+    },
     "subscriptions": {
         "title": "Subscriptions",
         "description": "Manage active user subscriptions",
@@ -1066,7 +1170,8 @@
             "extendTrialButton": "Extend trial",
             "cancelSubscriptionButton": "Cancel subscription",
             "pauseButton": "Pause",
-            "resumeButton": "Resume"
+            "resumeButton": "Resume",
+            "grantCourtesyButton": "Gift cycles"
         },
         "paymentHistory": {
             "title": "Payment History",
@@ -1155,7 +1260,9 @@
             "paused": "Subscription paused",
             "resumed": "Subscription resumed",
             "pauseError": "Error pausing subscription:",
-            "resumeError": "Error resuming subscription:"
+            "resumeError": "Error resuming subscription:",
+            "courtesyGranted": "Cycles gifted",
+            "courtesyError": "Could not gift cycles:"
         },
         "unknownUser": "Unknown user",
         "unknownPlan": "Unknown plan",
@@ -1168,6 +1275,15 @@
             "experience": "Experience",
             "partner": "Partner",
             "unknown": "Other"
+        },
+        "courtesyDialog": {
+            "title": "Gift billing cycles",
+            "description": "Gift free cycles to",
+            "cyclesLabel": "How many cycles do you want to gift?",
+            "startsAtNotice": "The gift starts when the period they already paid for ends, not today. Nothing changes for the subscriber until then.",
+            "leadTimeWarning": "If the next charge is under 3 days away the grant is refused: pausing that close may not stop it, and they would be charged for exactly the cycle being gifted.",
+            "confirmButton": "Gift",
+            "backButton": "Back"
         }
     },
     "exchangeRates": {

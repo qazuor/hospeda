@@ -340,3 +340,59 @@ describe('isSubscriptionLive', () => {
         });
     });
 });
+
+describe('isSubscriptionLive — courtesy (HOS-180)', () => {
+    const NOW = new Date('2026-09-15T12:00:00Z').getTime();
+
+    it('is live while the courtesy window is open', () => {
+        expect(
+            isSubscriptionLive({
+                status: 'courtesy',
+                courtesyEndsAt: new Date('2026-10-15T12:00:00Z'),
+                nowMs: NOW
+            })
+        ).toBe(true);
+    });
+
+    it('is not live once the window is past the cron-lag grace', () => {
+        expect(
+            isSubscriptionLive({
+                status: 'courtesy',
+                courtesyEndsAt: new Date('2026-09-14T12:00:00Z'),
+                nowMs: NOW
+            })
+        ).toBe(false);
+    });
+
+    it('stays live inside the cron-lag grace, so cron timing never punishes the subscriber', () => {
+        // One hour past the window, well inside the 6h grace: the job that
+        // resumes the preapproval has not run yet, and that is our problem, not
+        // the subscriber's.
+        expect(
+            isSubscriptionLive({
+                status: 'courtesy',
+                courtesyEndsAt: new Date(NOW - 3_600_000),
+                nowMs: NOW
+            })
+        ).toBe(true);
+    });
+
+    it('fails open on an absent window, like every other date on this input', () => {
+        expect(isSubscriptionLive({ status: 'courtesy', nowMs: NOW })).toBe(true);
+        expect(isSubscriptionLive({ status: 'courtesy', courtesyEndsAt: null, nowMs: NOW })).toBe(
+            true
+        );
+    });
+
+    it('does not make a plain paused subscription live', () => {
+        // Same underlying MercadoPago state, opposite answer. This is the
+        // distinction the whole feature rests on.
+        expect(
+            isSubscriptionLive({
+                status: 'paused',
+                courtesyEndsAt: new Date('2026-10-15T12:00:00Z'),
+                nowMs: NOW
+            })
+        ).toBe(false);
+    });
+});

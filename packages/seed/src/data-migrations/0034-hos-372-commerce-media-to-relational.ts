@@ -61,7 +61,15 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 export const meta = {
     name: '0034-hos-372-commerce-media-to-relational',
     group: 'required',
-    destructive: false
+    destructive: false,
+    // HOS-433: this migration's whole job is to read these columns before
+    // migration 0072 drops them. Declared so the runner refuses to execute
+    // it against an already-dropped source instead of moving zero rows and
+    // closing itself in the ledger.
+    requiresColumns: [
+        { table: 'gastronomies', column: 'media' },
+        { table: 'experiences', column: 'media' }
+    ]
 } as const satisfies SeedMigrationModule['meta'];
 
 /** A listing whose JSONB blob actually carries photos worth backfilling. */

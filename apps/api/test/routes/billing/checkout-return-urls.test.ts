@@ -14,10 +14,31 @@ import {
     buildAddonSuccessUrl,
     buildAnnualCancelUrl,
     buildAnnualSuccessUrl,
+    buildCheckoutRetryLandingUrl,
     buildNotificationUrl,
     buildPartnerCheckoutReturnUrl,
     buildPaymentMethodReturnUrl
 } from '../../../src/routes/billing/checkout-return-urls.js';
+
+describe('checkout-return-urls — buildCheckoutRetryLandingUrl (HOS-937 step 3)', () => {
+    it('points at the account subscription page in OUR domain, never a MercadoPago URL', () => {
+        const url = buildCheckoutRetryLandingUrl('es', 'sub-local-001');
+        expect(url).toBe(
+            'https://site.test/es/mi-cuenta/suscripcion/?retryCheckoutId=sub-local-001'
+        );
+        expect(url).not.toContain('mercadopago');
+        expect(url).not.toContain('mp.');
+    });
+
+    it('embeds the locale and the local subscription id for every locale', () => {
+        expect(buildCheckoutRetryLandingUrl('en', 'sub-002')).toBe(
+            'https://site.test/en/mi-cuenta/suscripcion/?retryCheckoutId=sub-002'
+        );
+        expect(buildCheckoutRetryLandingUrl('pt', 'sub-003')).toBe(
+            'https://site.test/pt/mi-cuenta/suscripcion/?retryCheckoutId=sub-003'
+        );
+    });
+});
 
 describe('checkout-return-urls — annual builders (HOS-123 T-005)', () => {
     it('buildAnnualSuccessUrl returns the locale-prefixed checkout success page', () => {

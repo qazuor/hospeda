@@ -487,6 +487,52 @@ Before manually mutating a subscription:
 
 ### Procedure
 
+#### Case 0: try the rescue screen FIRST (HOS-765)
+
+Before any hand-written SQL, open **Comercial -> Conciliacion** in the admin panel
+(`/billing/reconciliation`). It answers two questions this runbook used to answer
+by hand, and it does the write for you with an audit trail attached:
+
+- which MercadoPago payments were APPROVED with no `billing_payments` row;
+- which preapprovals are AUTHORIZED with no local subscription pointing at them.
+
+Two actions, both gated on `BILLING_RECONCILIATION_MANAGE` (SUPER_ADMIN only, a
+permission of its own precisely because these verbs write money):
+
+- **Force-link** — bind a preapproval to a local subscription. This replaces the
+  old recovery path, which was to call
+  `POST /api/v1/protected/billing/subscriptions/link-preapproval` **from the
+  affected customer's own authenticated session**. That worked, and it was wrong
+  three ways: it needed that person's session, there was no screen, and nothing
+  recorded that an operator had intervened. Do not go back to it.
+- **Backfill payment** — write the `billing_payments` row for a charge that
+  already settled and was never recorded. **There was previously no path for this
+  at all.** The webhooks had already answered 200, so MercadoPago never retries,
+  and no code in the repo could write that row after the fact. A charge the
+  ledger cannot see is a charge that cannot be reconciled or refunded.
+
+Two things to read correctly on that screen:
+
+- **`payer_email` on a preapproval is EMPTY.** Always, measured. The real payer
+  email lives on the PAYMENT (`payment.payer.email`), and the screen shows it as
+  a separate field. When that field is blank it means no payment has been linked
+  yet — "cannot attribute yet", not "attribution failed". At authorization time
+  there may be no payment at all: a preapproval was measured `authorized`, with a
+  `card_id`, and no associated payment whatsoever.
+- **A "results truncated" banner means the count is a FLOOR.** The MercadoPago
+  sweep is paced (350 ms between calls, an empirical floor — a ~60-call sweep
+  without it returns 429 on several) and bounded by a page ceiling. Narrow the
+  date window and re-run rather than concluding there is nothing else.
+
+The screen never links anything by itself. It proposes candidates with the
+signals that produced them and stops there, because the failure this whole area
+exists to prevent is crediting one person's charge to another person's
+subscription — and `payer_email`, the one signal that would automate it, is the
+field that comes back empty.
+
+Fall through to the cases below only when the screen cannot express what you
+need (a plan swap, a post-refund cancel, a fresh subscription row).
+
 #### Case A: reactivate a cancelled sub after manual payment
 
 ```bash

@@ -210,6 +210,21 @@ export const BILLING_EVENT_TYPES = {
      */
     ADMIN_SUBSCRIPTION_RESUMED: 'ADMIN_SUBSCRIPTION_RESUMED',
     /**
+     * Fired when an admin gifts N free billing cycles to a paying subscriber
+     * (HOS-180). Distinct from {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED}
+     * even though both pause the MercadoPago preapproval: the audit trail must
+     * be able to tell "we suspended this subscriber" from "we gave them
+     * something", and the two carry opposite entitlement consequences.
+     */
+    ADMIN_SUBSCRIPTION_COURTESY_GRANTED: 'ADMIN_SUBSCRIPTION_COURTESY_GRANTED',
+    /**
+     * Fired by the expiry cron when a courtesy window closes and the
+     * preapproval is resumed (HOS-180). Distinct from
+     * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED} for the same
+     * reason its sibling is: a gift ending is not an admin action.
+     */
+    COURTESY_WINDOW_ENDED: 'COURTESY_WINDOW_ENDED',
+    /**
      * Fired when a host pauses their OWN subscription via the self-service
      * `/me/subscription-pause` route (HOS-657). Mirrors
      * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED} for the

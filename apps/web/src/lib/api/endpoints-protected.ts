@@ -15,6 +15,7 @@ import type {
     AccommodationOccupancy,
     AccommodationReviewListItem,
     AddonResponse,
+    CheckoutRetryResponse,
     DestinationReviewListItem,
     DowngradePreview,
     HostTradeBenefitTypeEnum,
@@ -290,7 +291,15 @@ export const userBookmarksApi = {
 // --- User (Protected) ---
 
 /** Subscription status values */
-type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due' | 'pending';
+type SubscriptionStatus =
+    | 'active'
+    | 'trial'
+    | 'cancelled'
+    | 'expired'
+    | 'past_due'
+    | 'pending'
+    | 'paused'
+    | 'courtesy';
 
 /** Subscription data returned by the protected subscription endpoint */
 export interface SubscriptionData {
@@ -311,6 +320,15 @@ export interface SubscriptionData {
     readonly currentPeriodEnd: string | null;
     readonly cancelAtPeriodEnd: boolean;
     readonly trialEndsAt: string | null;
+    /**
+     * End of a gifted courtesy window (HOS-180), or `null` when there is none.
+     *
+     * While `status` is `'courtesy'` this — not `currentPeriodEnd` — is the date
+     * the subscriber actually gets charged again, so the dashboard reads it for
+     * the "sin cargo hasta" field. Same relationship `trialEndsAt` has to a
+     * trialing subscription.
+     */
+    readonly courtesyEndsAt?: string | null;
     readonly monthlyPriceArs: number;
     readonly paymentMethod?: {
         readonly brand: string;
@@ -830,7 +848,9 @@ export const billingApi = {
      * `window.location.href`; the sentinel page handles the success flow
      * without touching the payment provider (SPEC-262 T-012).
      *
-     * @param params - Plan slug, billing interval, and optional promo code
+     * @param params - Plan slug, billing interval, optional promo code, and
+     *   optional payer email (HOS-937 step 2 — the email confirmed/edited on
+     *   the pre-redirect screen; see `PayerEmailConfirmDialog.client.tsx`).
      * @returns The checkout URL to redirect the user to, plus metadata
      *
      * @example
@@ -842,15 +862,25 @@ export const billingApi = {
     createCheckout({
         planSlug,
         billingInterval,
-        promoCode
+        promoCode,
+        payerEmail
     }: {
         readonly planSlug: string;
         readonly billingInterval: 'monthly' | 'annual';
         readonly promoCode?: string;
+        /**
+         * HOS-937 step 2: the email the user confirmed or typed on the
+         * pre-redirect screen (spec §8.1). Optional — when omitted, the
+         * server falls back to its own resolution (spec §6.3).
+         */
+        readonly payerEmail?: string;
     }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
         const body: Record<string, unknown> = { planSlug, billingInterval };
         if (promoCode) {
             body.promoCode = promoCode;
+        }
+        if (payerEmail) {
+            body.payerEmail = payerEmail;
         }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/start-paid`,
@@ -940,6 +970,44 @@ export const billingApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/link-preapproval`,
             body: { preapprovalId, localSubscriptionId }
+        });
+    },
+
+    /**
+     * Recover a checkout that did not come back `authorized` (HOS-937 step 4).
+     *
+     * Reads the caller's own preapproval by its LOCAL subscription id (never
+     * the MercadoPago id) and returns the recovery spec §6.4 defines. The
+     * four possible `recovery` values are NOT interchangeable:
+     * - `'authorized'` — the checkout already succeeded. `checkoutUrl` is
+     *   `null` — never redirect to pay again.
+     * - `'pending'` — the SAME preapproval is still awaiting completion.
+     *   `checkoutUrl` (when present) is its own `init_point`.
+     * - `'cancelled'` — a FRESH preapproval was minted (or reused from an
+     *   earlier call). `checkoutUrl` is the new `init_point`.
+     * - `'confirming'` — a concurrent call already claimed the right to
+     *   mint, or the deferred re-read was ambiguous. `checkoutUrl` is
+     *   `null`; the caller should retry shortly rather than treat this as
+     *   final.
+     *
+     * @param params.localId - The local subscription UUID (the `retryCheckoutId`
+     * query param on `/mi-cuenta/suscripcion/`).
+     * @returns The recovery classification plus a redirect URL when applicable.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.checkoutRetry({ localId });
+     * if (result.ok && result.data.recovery === 'authorized') { // already active }
+     * ```
+     */
+    checkoutRetry({
+        localId
+    }: {
+        readonly localId: string;
+    }): Promise<ApiResult<CheckoutRetryResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${localId}/checkout-retry`,
+            body: {}
         });
     },
 

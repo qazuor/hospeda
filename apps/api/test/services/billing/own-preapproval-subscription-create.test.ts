@@ -1,5 +1,6 @@
 /**
- * Unit tests for the own-preapproval subscription creator (HOS-937 step 1).
+ * Unit tests for the own-preapproval subscription creator (HOS-937 step 1,
+ * extended step 4).
  *
  * Covers:
  * - `external_reference`: Hospeda's call to `billing.subscriptions.create`
@@ -18,6 +19,12 @@
  *   supplied, and left off entirely when not — this is the ONLY write this
  *   flow does at creation time; the actual redemption is deferred to the
  *   webhook (`subscription-logic.ts`, tested separately).
+ * - HOS-937 step 4: `productDomain` is stamped only when the caller supplies
+ *   it (accommodation monthly/annual never do, relying on the column's own
+ *   DB default); `domainMetadata` + the resolved `checkoutUrl` are merged
+ *   onto `metadata` and `writeDomainLinkRow` is invoked inside the SAME local
+ *   transaction, ONLY when the caller supplies a bridge-row writer
+ *   (commerce/partner).
  *
  * @module test/services/billing/own-preapproval-subscription-create
  */
@@ -67,6 +74,37 @@ function createDbMock(opts: { failUpdate?: boolean } = {}) {
     return { update: updateMock, __setMock: setMock, __whereMock: whereMock };
 }
 
+/**
+ * Builds a Drizzle client mock exposing BOTH `.update().set().where()` and
+ * `.transaction(cb)` — the `writeDomainLinkRow` branch (HOS-937 step 4) opens
+ * a nested `client.transaction(...)` and hands its callback the SAME `tx`
+ * this mock's own `.update()` chain lives on, so assertions can verify
+ * `writeDomainLinkRow` really received the transaction client, not the
+ * outer one.
+ */
+function createTxDbMock(opts: { failUpdate?: boolean; failLinkRow?: boolean } = {}) {
+    const whereMock = vi.fn().mockImplementation(async () => {
+        if (opts.failUpdate) {
+            throw new Error('connection reset');
+        }
+        return undefined;
+    });
+    const setMock = vi.fn().mockReturnValue({ where: whereMock });
+    const updateMock = vi.fn().mockReturnValue({ set: setMock });
+    const tx = { update: updateMock };
+    const transactionMock = vi
+        .fn()
+        .mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
+            await cb(tx);
+        });
+    return {
+        transaction: transactionMock,
+        __tx: tx,
+        __setMock: setMock,
+        __whereMock: whereMock
+    };
+}
+
 describe('createOwnPreapprovalSubscription', () => {
     it('never passes an externalReference to billing.subscriptions.create (qzpay-core owns it)', async () => {
         const billing = createBillingMock();
@@ -103,11 +141,53 @@ describe('createOwnPreapprovalSubscription', () => {
 
         expect(result.subscription.id).toBe(LOCAL_SUB_ID);
         expect(result.subscription.providerSubscriptionIds?.mercadopago).toBe(MP_SUBSCRIPTION_ID);
+        // HOS-937 step 3: checkoutUrl + billingInterval are now ALWAYS stamped
+        // on metadata (not just the commerce/partner branch) so the retry
+        // recovery flow can resolve the SAME object's init_point for every
+        // flow, not just commerce/partner.
         expect(db.__setMock).toHaveBeenCalledWith({
-            status: SubscriptionStatusEnum.PENDING_PROVIDER
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
         });
         expect(db.__whereMock).toHaveBeenCalledTimes(1);
         expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
+    });
+
+    // HOS-937 step 3, coverage requested on review: the four call sites in
+    // `subscription-checkout.service.ts` are accommodation-monthly (default
+    // billingInterval, covered above), accommodation-ANNUAL (this test —
+    // passes billingInterval:'annual' explicitly, the one dimension the
+    // default-argument test above cannot exercise), commerce (below, no
+    // writeDomainLinkRow variant + with writeDomainLinkRow variant), and
+    // partner (below, with writeDomainLinkRow). All four go through this
+    // SAME shared function, so these branch-combination tests are exhaustive
+    // for the metadata-stamping guarantee, not just the flow this module was
+    // originally written against.
+    it('HOS-937 step 3: stamps billingInterval=annual (accommodation ANNUAL flow) when the caller passes it explicitly', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            billingInterval: 'annual',
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            db: db as any
+        });
+
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'annual'
+            }
+        });
     });
 
     it('Hueco A: cancels the just-created MP preapproval when the status-normalize UPDATE fails, then rethrows the DB error', async () => {
@@ -216,5 +296,144 @@ describe('createOwnPreapprovalSubscription', () => {
 
         const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(call).not.toHaveProperty('metadata');
+    });
+
+    it('HOS-937 step 4: omits productDomain from the UPDATE when the caller does not supply one (accommodation monthly/annual)', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            db: db as any
+        });
+
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
+        });
+    });
+
+    it('HOS-937 step 4: stamps the SUPPLIED productDomain onto the status UPDATE when no domain link row is needed', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            productDomain: 'gastronomy',
+            db: db as any
+        });
+
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            productDomain: 'gastronomy',
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly'
+            }
+        });
+    });
+
+    it('HOS-937 step 4: with writeDomainLinkRow supplied, opens a local transaction, stamps productDomain + domainMetadata + checkoutUrl on metadata, and invokes writeDomainLinkRow with the TRANSACTION client', async () => {
+        const billing = createBillingMock();
+        const db = createTxDbMock();
+        const writeDomainLinkRow = vi.fn().mockResolvedValue(undefined);
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            productDomain: 'partner',
+            domainMetadata: { partnerId: 'partner-123' },
+            writeDomainLinkRow,
+            db: db as any
+        });
+
+        expect(db.transaction).toHaveBeenCalledTimes(1);
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            productDomain: 'partner',
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
+                partnerId: 'partner-123'
+            }
+        });
+        expect(writeDomainLinkRow).toHaveBeenCalledTimes(1);
+        expect(writeDomainLinkRow).toHaveBeenCalledWith({
+            tx: db.__tx,
+            localSubscriptionId: LOCAL_SUB_ID
+        });
+    });
+
+    it('HOS-937 step 4: also stamps mpPreapprovalPlanId onto metadata when providerPriceId is supplied (§6.6-B reuse guard)', async () => {
+        const billing = createBillingMock();
+        const db = createTxDbMock();
+        const writeDomainLinkRow = vi.fn().mockResolvedValue(undefined);
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            providerPriceId: 'mp_plan_gastronomy',
+            productDomain: 'gastronomy',
+            domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'ent-1' },
+            writeDomainLinkRow,
+            db: db as any
+        });
+
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            productDomain: 'gastronomy',
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
+                mpPreapprovalPlanId: 'mp_plan_gastronomy',
+                commerceEntityType: 'gastronomy',
+                commerceEntityId: 'ent-1'
+            }
+        });
+    });
+
+    it('HOS-937 step 4, Hueco A: cancels the MP preapproval and rethrows when writeDomainLinkRow itself fails inside the transaction', async () => {
+        const billing = createBillingMock();
+        const db = createTxDbMock();
+        const writeDomainLinkRow = vi.fn().mockRejectedValue(new Error('bridge row insert failed'));
+
+        await expect(
+            createOwnPreapprovalSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl,
+                productDomain: 'partner',
+                domainMetadata: { partnerId: 'partner-123' },
+                writeDomainLinkRow,
+                db: db as any
+            })
+        ).rejects.toThrow('bridge row insert failed');
+
+        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.cancel).toHaveBeenCalledWith(LOCAL_SUB_ID);
     });
 });

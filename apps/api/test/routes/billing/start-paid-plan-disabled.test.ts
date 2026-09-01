@@ -85,8 +85,16 @@ vi.mock('../../../src/utils/env', () => ({
 vi.mock('@repo/db', () => {
     const insertChain = { values: vi.fn().mockResolvedValue(undefined) };
     return {
-        getDb: vi.fn(() => ({ insert: vi.fn(() => insertChain) })),
-        billingSubscriptions: { __table: 'billing_subscriptions' }
+        getDb: vi.fn(() => ({
+            insert: vi.fn(() => insertChain),
+            // HOS-937 step 2: see the identical stub in
+            // `test/routes/start-paid.test.ts` — `getMpPayerEmail` reads
+            // `billing_customers.mp_payer_email` via raw SQL before the
+            // checkout decision logic this suite exercises.
+            execute: vi.fn().mockResolvedValue({ rows: [] })
+        })),
+        billingSubscriptions: { __table: 'billing_subscriptions' },
+        sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
     };
 });
 

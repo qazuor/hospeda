@@ -20,12 +20,22 @@
  *
  * - `auto_recurring.free_trial` describes the **plan's terms**, not "this
  *   subscription is currently on a trial". MercadoPago keeps reporting it after
- *   the day-N charge, which is why `livePreapprovalHasFreeTrial`
- *   (`routes/webhooks/mercadopago/subscription-logic.ts`) is documented as
- *   always returning `false` against qzpay's real mapped shape.
- * - `next_payment_date` does discriminate, but only inside the ~90 second window
- *   between authorization and the first charge, and it rolls forward to the next
- *   cycle right after — so a webhook that arrives late reads as "granted".
+ *   the day-N charge, and HOS-936 later measured that it reads identically on a
+ *   preapproval whose trial was already spent — so it never discriminates, at
+ *   any point in the lifecycle. Nothing derives the trial from it any more; a
+ *   static guard enforces that.
+ * - `next_payment_date` **does** discriminate, but its usable window is narrow
+ *   and early: it is decisive at creation, and it rolls forward to the next
+ *   cycle once a charge lands — so a webhook that arrives late reads as
+ *   "granted".
+ *
+ * That second point is a statement about WHEN, not about trustworthiness, and
+ * HOS-936 acts on the other half of it: at creation the field is not merely
+ * usable, it is the only honest one, so
+ * {@link ./trial-window-derivation | `trial-window-derivation.ts`} derives the
+ * window from `next_payment_date - date_created` right where the preapproval is
+ * born. This module is what still has to hold afterwards, once that window has
+ * rolled and the question can no longer be asked of the provider.
  *
  * A **settled charge that lands before the promised trial could plausibly have
  * elapsed** has neither problem. It is recorded in our own database, it cannot
