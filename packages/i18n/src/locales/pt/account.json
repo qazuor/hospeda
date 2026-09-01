@@ -689,6 +689,17 @@
             "uncancelButton": "Descartar cancelamento",
             "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
             "uncancelError": "Não foi possível descartar o cancelamento.",
+            "trialExtension": {
+                "title": "Estender seu período de teste grátis",
+                "help": "Se você tem um código promocional, aplique agora e some dias ao seu teste.",
+                "label": "Código promocional",
+                "placeholder": "Digite seu código",
+                "apply": "Aplicar",
+                "applying": "Aplicando...",
+                "success": "Pronto. Estendemos seu período de teste grátis.",
+                "successWithDate": "Pronto. Seu período de teste grátis termina em {{date}}.",
+                "errorGeneric": "Não foi possível aplicar o código. Verifique e tente de novo."
+            },
             "status": {
                 "active": "Ativa",
                 "trial": "Teste",

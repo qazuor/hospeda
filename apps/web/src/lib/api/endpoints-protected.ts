@@ -657,6 +657,32 @@ export interface PlanItem {
     readonly isCurrent?: boolean;
 }
 
+/**
+ * Response of `POST /protected/billing/promo-codes/apply` (HOS-1012 T-039).
+ *
+ * `trialEnd` is present only for a `trial_extension` effect, and it is the
+ * value PERSISTED on the subscription row by the apply — not a projection the
+ * client should recompute.
+ */
+export interface ApplyPromoCodeResult {
+    /** Billing customer the code was applied to */
+    readonly id: string;
+    /** The applied code, echoed back */
+    readonly promoCode: string | null;
+    /** `discount` | `trial_extension` | `comp` */
+    readonly effectKind: string;
+    readonly originalAmount: number;
+    readonly discountAmount: number;
+    readonly finalAmount: number;
+    readonly amount: number;
+    /** Calendar days added — `trial_extension` only */
+    readonly extraDays?: number;
+    /** ISO 8601 persisted trial end — `trial_extension` only */
+    readonly trialEnd?: string;
+    /** True when the subscription became permanently complimentary */
+    readonly comp?: boolean;
+}
+
 /** Protected billing API endpoints for the user dashboard */
 export const billingApi = {
     /**
@@ -1049,6 +1075,49 @@ export const billingApi = {
         }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/promo-codes/validate`,
+            body
+        });
+    },
+
+    /**
+     * Apply a promo code to the authenticated user's own account (HOS-1012 T-039).
+     *
+     * Today the only self-service caller is the trial-extension form on the
+     * account subscription page: a `trial_extension` code applied while a trial
+     * is running pushes `trial_end` on the row and comes back with the date that
+     * was actually PERSISTED (`trialEnd`), never a projection.
+     *
+     * `customerId` is deliberately NOT sent — the endpoint resolves the caller's
+     * own billing customer from the session, which is the only customer a
+     * non-admin may ever target.
+     *
+     * Failure modes worth surfacing to the host: 422 when no trial is running
+     * (the code is NOT consumed and stays valid), 409 when the code was already
+     * used, 404/400 for an unknown, inactive or expired code.
+     *
+     * @param params.code - Promo code string entered by the user
+     * @param params.subscriptionId - Optional explicit subscription to target
+     * @returns The applied effect, including the persisted `trialEnd`
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.applyPromoCode({ code: 'FREEMONTH', subscriptionId });
+     * if (result.ok) console.log(result.data.trialEnd);
+     * ```
+     */
+    applyPromoCode({
+        code,
+        subscriptionId
+    }: {
+        readonly code: string;
+        readonly subscriptionId?: string;
+    }): Promise<ApiResult<ApplyPromoCodeResult>> {
+        const body: { code: string; subscriptionId?: string } = { code };
+        if (subscriptionId !== undefined) {
+            body.subscriptionId = subscriptionId;
+        }
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/promo-codes/apply`,
             body
         });
     },
