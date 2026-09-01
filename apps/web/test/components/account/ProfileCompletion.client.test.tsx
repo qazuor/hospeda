@@ -74,11 +74,19 @@ vi.mock('@repo/schemas', () => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function renderForm() {
+function renderForm({
+    returnUrl = '/es/mi-cuenta/',
+    setPasswordUrl = '/es/mi-cuenta/agregar-contrasena/'
+}: {
+    returnUrl?: string;
+    setPasswordUrl?: string;
+} = {}) {
     return render(
         <ProfileCompletion
             locale="es"
             apiUrl="http://localhost:3001"
+            returnUrl={returnUrl}
+            setPasswordUrl={setPasswordUrl}
         />
     );
 }
@@ -237,5 +245,84 @@ describe('ProfileCompletion (HOS-190 slice 3 — useZodForm migration)', () => {
         });
 
         window.location = originalLocation;
+    });
+});
+
+describe('ProfileCompletion — HOS-838: the destination survives the gate', () => {
+    /**
+     * Replaces `window.location` with a proxy that records `href` assignments,
+     * so a redirect is observable without a real jsdom navigation.
+     */
+    function spyOnHrefAssignment(): ReturnType<typeof vi.fn> {
+        const hrefAssignSpy = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: {
+                ...originalLocation,
+                set href(v: string) {
+                    hrefAssignSpy(v);
+                }
+            } as Location
+        });
+        return hrefAssignSpy;
+    }
+
+    /** Mocks the completion endpoint with the given `requiresSetPassword`. */
+    function mockCompleteResponse({ requiresSetPassword }: { requiresSetPassword: boolean }): void {
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({ data: { profileCompleted: true, requiresSetPassword } }),
+                {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            )
+        );
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('lands on the interrupted destination when no further gate applies', async () => {
+        // Arrange
+        mockCompleteResponse({ requiresSetPassword: false });
+        const hrefAssignSpy = spyOnHrefAssignment();
+        renderForm({ returnUrl: '/es/mi-cuenta/comercios/nuevo/' });
+        fillRequiredFields();
+
+        // Act
+        submit();
+
+        // Assert
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalledWith('/es/mi-cuenta/comercios/nuevo/');
+        });
+    });
+
+    it('hands off to the set-password step, which carries the destination on', async () => {
+        // Arrange
+        mockCompleteResponse({ requiresSetPassword: true });
+        const hrefAssignSpy = spyOnHrefAssignment();
+        renderForm({
+            returnUrl: '/es/mi-cuenta/comercios/nuevo/',
+            setPasswordUrl:
+                '/es/mi-cuenta/agregar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+        });
+        fillRequiredFields();
+
+        // Act
+        submit();
+
+        // Assert — the island navigates to the URL the server built; it must
+        // never assemble that URL itself.
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalledWith(
+                '/es/mi-cuenta/agregar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+        expect(hrefAssignSpy).not.toHaveBeenCalledWith('/es/mi-cuenta/');
     });
 });
