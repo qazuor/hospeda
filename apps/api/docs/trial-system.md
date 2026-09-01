@@ -210,18 +210,15 @@ app.get('/dashboard', async (c) => {
 
 ### Require Active Subscription
 
-```typescript
-import { requireActiveSubscription } from '../middlewares/trial';
+`requireActiveSubscription()` was **deleted by HOS-1012 T-028**. It was exported and
+mounted in no route at all — the only occurrences of its name in the repo were its own
+definition, the example that used to sit here, and a comment in `entitlement-cause.ts`
+noting it was mounted nowhere. An unmounted middleware is not an unprotected feature, so
+removing it removed dead code and no protection.
 
-app.post(
-  '/premium-feature',
-  requireActiveSubscription(),
-  async (c) => {
-    // User has active subscription or valid trial
-    return c.json({ success: true });
-  }
-);
-```
+To gate a route on an entitlement, use the entitlement middlewares documented in
+[the API's gate matrix](../../../docs/billing/endpoint-gate-matrix.md); the global
+`trialMiddleware` below already answers 402 for an expired trial before any of them run.
 
 ### Apply Trial Middleware Globally
 
