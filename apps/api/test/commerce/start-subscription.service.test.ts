@@ -281,7 +281,11 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(arg.billingInterval).toBe('monthly');
         expect(arg.mpPreapprovalPlanId).toBe('mp_plan_test');
         expect(arg.payerEmail).toBe(CUSTOMER_EMAIL);
-        expect(arg.trialGranted).toBe(false);
+        // HOS-1012: the trial inputs are GONE from this helper's contract, not
+        // merely false. Asserted as absence because a present-but-false key
+        // would mean the checkout still had a trial decision to report.
+        expect(Object.hasOwn(arg, 'trialGranted')).toBe(false);
+        expect(Object.hasOwn(arg, 'freeTrialDays')).toBe(false);
         expect(arg.livemode).toBe(false);
     });
 
@@ -352,9 +356,22 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(planArg?.backUrl).toBe(URLS.paymentMethodReturnUrl);
     });
 
-    // ── HOS-590: commerce now routes through the canonical trial resolver ──
-    describe('HOS-590 — routed through the canonical trial resolver', () => {
-        it('grants the plan-declared trial when the plan carries one and the customer is eligible', async () => {
+    // ── HOS-1012: commerce sends no trial to MercadoPago either ────────────
+    // HOS-590 had routed commerce through the same canonical trial resolver the
+    // accommodation paths used, and HOS-812 then fixed the resolved days not
+    // reaching the row writer. Both are superseded here, in the same direction:
+    // no checkout of any vertical asks MercadoPago for a free day, because
+    // MercadoPago grants a preapproval's trial once per
+    // `(payer, preapproval_plan)` and reports a spent one identically to a live
+    // one (HOS-522: ARS 18.000 charged 118 seconds after promising 14 free days).
+    //
+    // What HOS-1012 T-005 fixed — trial eligibility scoped to the product domain,
+    // so a spent accommodation trial does not deny a gastronomy one — is NOT
+    // undone: that rule now lives where the local trial is actually granted and
+    // on the read-only `GET /trial-eligibility` route. It simply has no bearing
+    // on a checkout that grants nothing.
+    describe('HOS-1012 — no commerce checkout sends a trial to MercadoPago', () => {
+        it('resolves trialDays=0 for a plan that declares a 30-day trial and an eligible customer', async () => {
             const { billing } = createBillingMock({
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
                 priorSubscriptions: []
@@ -363,24 +380,20 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
             await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
 
             // Load-bearing (not cosmetic): `resolveCheckoutMpPlanId` resolves the
-            // MP preapproval PLAN from this value, so a wrong number here mints
-            // the WRONG MercadoPago plan — the same mechanism AC-16 depends on.
+            // MP preapproval PLAN from this value and bakes `free_trial` into it
+            // whenever it is > 0. A nonzero here mints a trial-bearing MP plan.
             const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
-            expect(planArg?.trialDays).toBe(30);
+            expect(planArg?.trialDays).toBe(0);
 
             const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
                 string,
                 unknown
             >;
-            expect(subArg.trialGranted).toBe(true);
+            expect(Object.hasOwn(subArg, 'trialGranted')).toBe(false);
+            expect(Object.hasOwn(subArg, 'freeTrialDays')).toBe(false);
         });
 
-        it('grants NO trial when the plan declares one but the customer already consumed it IN THIS VERTICAL', async () => {
-            // HOS-1012 D-2: the prior subscription must carry this checkout's own
-            // product domain to consume its trial. Before D-2 this test passed
-            // with a domain-less prior, which is precisely the HOS-931 bug it
-            // was unknowingly asserting: an accommodation subscriber was denied
-            // a gastronomy trial they had never had.
+        it('resolves trialDays=0 for a customer with a prior subscription in this vertical', async () => {
             const { billing } = createBillingMock({
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
                 priorSubscriptions: [
@@ -390,20 +403,13 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
 
             await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
 
-            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
-            expect(planArg?.trialDays).toBe(0);
-
-            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
-                string,
-                unknown
-            >;
-            expect(subArg.trialGranted).toBe(false);
+            expect(vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0]?.trialDays).toBe(0);
         });
 
-        it('HOS-1012 D-2: a prior ACCOMMODATION subscription leaves the gastronomy trial intact', async () => {
-            // The other half of the same rule, and the actual HOS-931 fix: the
-            // same person owns the cabin and the restaurant, and their spent
-            // accommodation trial must not deny them the gastronomy one.
+        it('resolves trialDays=0 for a customer whose only prior subscription is an ACCOMMODATION one', async () => {
+            // Kept from T-005's pair so the invariant is pinned on BOTH sides of
+            // the old domain-scoped eligibility branch: the answer is the same
+            // number, reached without consulting history at all.
             const { billing } = createBillingMock({
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
                 priorSubscriptions: [
@@ -413,44 +419,24 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
 
             await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
 
-            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
-            expect(planArg?.trialDays).toBe(30);
-
-            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
-                string,
-                unknown
-            >;
-            expect(subArg.trialGranted).toBe(true);
+            expect(vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0]?.trialDays).toBe(0);
+            expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         });
 
-        it('grants no trial when the plan declares none, exactly as before HOS-590 (the partner path stays this way permanently)', async () => {
+        it('resolves trialDays=0 for a plan that declares no trial', async () => {
             const { billing } = createBillingMock({
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: false, trialDays: 0 }
             });
 
             await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
 
-            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
-            expect(planArg?.trialDays).toBe(0);
-
-            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
-                string,
-                unknown
-            >;
-            expect(subArg.trialGranted).toBe(false);
+            expect(vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0]?.trialDays).toBe(0);
         });
-    });
 
-    // ── HOS-812: the trial WINDOW, not just the boolean ─────────────────────
-    // The HOS-590 block above asserts `trialGranted`, which is metadata only.
-    // The column writer is `freeTrialDays` — `createPendingProviderSubscription`
-    // derives `trial_start`/`trial_end` from THAT and nothing else. Commerce
-    // passed the boolean and dropped the number, so every row was born with a
-    // NULL `trial_end` and therefore `active` instead of `trialing`, invisible to
-    // the H-137 control that only scans `trialing` rows. Asserting the boolean
-    // could never catch it; these assert the number.
-    describe('HOS-812 — the resolved trial days reach the row writer', () => {
-        it('passes freeTrialDays to createPendingProviderSubscription when a trial is granted', async () => {
+        it('writes no trial window: the row writer receives neither trial field', async () => {
+            // HOS-812's inverse. Its bug was MercadoPago being told "30 free
+            // days" while our row recorded none — a divergence between the two
+            // sides. There is one side now: neither is told anything.
             const { billing } = createBillingMock({
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
                 priorSubscriptions: []
@@ -458,51 +444,17 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
 
             await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
 
-            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
-                string,
-                unknown
-            >;
-            // Presence is asserted separately from value: `expect(...).toBe(30)`
-            // alone would also pass on a key that is present-but-undefined only
-            // because 30 !== undefined, whereas a future refactor that renames the
-            // field would read as "no trial" rather than as a failure.
-            expect(Object.hasOwn(subArg, 'freeTrialDays')).toBe(true);
-            expect(subArg.freeTrialDays).toBe(30);
-        });
-
-        it('passes the SAME trial length to the row writer and to the MP plan resolver', async () => {
-            const { billing } = createBillingMock({
-                planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 14 },
-                priorSubscriptions: []
-            });
-
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
-
-            // The divergence this pins is exactly the bug's shape: MercadoPago was
-            // told "14 days of free trial" while our row recorded none. Both sides
-            // must read from the one resolved value.
             const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
             const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
                 string,
                 unknown
             >;
-            expect(planArg?.trialDays).toBe(14);
-            expect(subArg.freeTrialDays).toBe(planArg?.trialDays);
-        });
-
-        it('leaves freeTrialDays undefined when no trial is granted, so trial_end stays NULL', async () => {
-            const { billing } = createBillingMock({
-                planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: false, trialDays: 0 }
-            });
-
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
-
-            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
-                string,
-                unknown
-            >;
-            expect(subArg.freeTrialDays).toBeUndefined();
-            expect(subArg.trialGranted).toBe(false);
+            expect(planArg?.trialDays).toBe(0);
+            // Presence asserted separately from value: `toBeUndefined()` alone
+            // would also pass on a key present-but-undefined, which is a
+            // different (and re-openable) state than the key not existing.
+            expect(Object.hasOwn(subArg, 'freeTrialDays')).toBe(false);
+            expect(Object.hasOwn(subArg, 'trialGranted')).toBe(false);
         });
     });
 

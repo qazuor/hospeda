@@ -8,14 +8,18 @@
  * (so this stays a focused branch-routing test, not an MP/DB integration
  * test).
  *
- * HOS-171 (card-first) removed the separate no-card trial branch. A trial is
- * baked into the MP `preapproval_plan` resolved by `resolveCheckoutMpPlanId`
- * (via its `trialDays` input) — the SAME resolution + pending-subscription
- * materialization every checkout makes, trial or not. `CheckoutAppliedEffect`
- * has no `'trial'` variant: a granted trial produces no `appliedEffect`
- * marker, only the boolean `trialGranted` on the pending-subscription input
- * and result. Precedence: `comp` wins outright -> `trial_extension` lengthens
- * the trial -> `discount` COEXISTS with a trial (both apply).
+ * HOS-1012 (Hospeda's own trial) removed the trial from checkout entirely. No
+ * checkout resolves free-trial days, none passes `freeTrialDays`, and the MP
+ * `preapproval_plan` is ALWAYS resolved at the no-trial variant
+ * (`trialDays: 0`) on every vertical. The measured reason: MercadoPago grants a
+ * preapproval's free trial once per `(payer, preapproval_plan)` and reports a
+ * spent trial identically to a live one — in production that charged ARS 18.000
+ * one hundred and eighteen seconds after promising fourteen free days (HOS-522).
+ * The trial moved to a local `status='trialing'` row opened at the owner's first
+ * publish. Precedence that survives: `comp` wins outright; `discount` applies;
+ * `trial_extension` is validated but applies nothing HERE and is NOT redeemed
+ * (re-homing it onto the local row is an open decision — see the
+ * `TODO(HOS-1012)` in `subscription-checkout.service.ts`).
  *
  * HOS-191 Path C removed the server-side preapproval create entirely
  * (MercadoPago rejects `POST /preapproval` built from a `preapproval_plan_id`
@@ -34,13 +38,11 @@
  * Critical coverage (CI guardrail):
  *  - comp (monthly + annual) → createCompSubscription, appliedEffect='comp', no MP plan resolution.
  *  - discount happy path (monthly + annual) → appliedEffect='discount', pendingDiscount snapshotted.
- *  - discount COEXISTS with a granted trial (HOS-171): both the `trialGranted`
- *    marker and `pendingDiscount` are present.
- *  - AC-8: a 60-day `trial_extension` on a 14-day plan resolves the MP plan
- *    with `trialDays: 74`.
- *  - AC-9: `HOSPEDA_TRIAL_DAYS_OVERRIDE=0` suppresses the trial even with an
- *    extension promo (the kill-switch is evaluated against the BASE length).
- *  - AC-10: any prior subscription (any status) -> no trial, `trialDays: 0`.
+ *  - HOS-1012: EVERY monthly/annual path resolves the MP plan with
+ *    `trialDays: 0`, whatever the plan metadata, the promo code, the ops
+ *    override or the customer's history say.
+ *  - HOS-1012: a `trial_extension` code snapshots no `pendingTrialExtension`
+ *    and records no redemption — it is not burnt for days it did not grant.
  *  - SPEC-262 C1+H1: expired/restricted codes → INVALID_PROMO_CODE (resolver returns invalid).
  *  - SPEC-262 L1: 100% discount → INVALID_PROMO_CODE (0-amount rejected before the pending subscription).
  *
@@ -353,7 +355,7 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         expect(createPendingProviderSubscriptionMock).not.toHaveBeenCalled();
     });
 
-    it('AC-8: trial_extension sums with the plan base into ONE 74-day trialDays sent to the MP plan resolver', async () => {
+    it('HOS-1012: a 60-day trial_extension on a 14-day plan still resolves a trialDays=0 MP plan', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 60 });
         const billing = makeTrialBilling();
 
@@ -364,20 +366,17 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
             promoCode: 'EXTEND60'
         });
 
-        // No 'trial' marker — card-first removed that CheckoutAppliedEffect
-        // variant. The trial is invisible in `appliedEffect`.
         expect(result.appliedEffect).toBeUndefined();
-        expect(result.promoCodeIgnored).toBeUndefined();
-        expect(result.trialGranted).toBe(true);
-        // Exactly ONE MP plan resolution, carrying 74 days (14 base + 60
-        // extension) as `trialDays` — not 14 now and 60 again later.
-        expect(mpPlanCallArg().trialDays).toBe(74);
-        expect(pendingCallArg().trialGranted).toBe(true);
-        // HOS-240: a config-backed trial (no DB id) records NO redemption.
+        // Neither the plan's own 14 days nor the code's 60 reach MercadoPago.
+        // `resolveCheckoutMpPlanId` bakes `free_trial` into the preapproval_plan
+        // whenever this is > 0, so 0 is the whole point.
+        expect(mpPlanCallArg().trialDays).toBe(0);
+        // Nothing is snapshotted, so nothing is redeemed at link time either.
         expect(pendingCallArg().pendingTrialExtension).toBeUndefined();
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
     });
 
-    it('HOS-240: a DB-backed trial_extension threads pendingTrialExtension to the pending sub', async () => {
+    it('HOS-1012: a DB-backed trial_extension is NOT snapshotted and NOT redeemed', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'trial',
             freeTrialDays: 30,
@@ -393,26 +392,27 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
             promoCode: 'FREEMONTH'
         });
 
-        expect(result.trialGranted).toBe(true);
-        // HOS-240: the promo identity is SNAPSHOTTED on the pending sub / correlation
-        // row — its redemption is DEFERRED to link time (link-preapproval.service.ts),
-        // NOT recorded at checkout. So the checkout must perform no redemption here.
-        expect(pendingCallArg().pendingTrialExtension).toEqual({
-            promoCodeId: 'pc-trial-1',
-            code: 'FREEMONTH'
-        });
+        expect(result.appliedEffect).toBeUndefined();
+        // HOS-1012: NOT snapshotted any more. HOS-240 had deferred the redemption
+        // to link time; there is nothing to defer now, because the code grants
+        // nothing at checkout. The load-bearing half is that it is not burnt: no
+        // snapshot here means no `used_count++` at link time, so the customer
+        // keeps a usable code for whichever entry point ends up owning the
+        // effect.
+        expect(pendingCallArg().pendingTrialExtension).toBeUndefined();
         expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
     });
 
-    it('HOS-240: a DB trial_extension that grants NO trial (prior subscription) records no redemption', async () => {
+    it('HOS-1012: a DB trial_extension records no redemption for a customer with a prior subscription either', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'trial',
             freeTrialDays: 30,
             promoCodeId: 'pc-trial-1',
             code: 'FREEMONTH'
         });
-        // A customer who already had a subscription burns the one-per-lifetime
-        // trial → the extension is ignored → nothing to redeem.
+        // Prior history is irrelevant now — no checkout grants a trial to
+        // anyone — but the case is kept so the invariant is asserted on both
+        // sides of the old eligibility branch.
         const billing = makeTrialBilling({ existingSubscriptions: [{ id: 'old-sub' }] });
 
         await initiatePaidMonthlySubscription({
@@ -422,12 +422,13 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
             promoCode: 'FREEMONTH'
         });
 
-        expect(pendingCallArg().trialGranted).toBe(false);
+        expect(mpPlanCallArg().trialDays).toBe(0);
         expect(pendingCallArg().pendingTrialExtension).toBeUndefined();
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
     });
 
-    it('discount: applies ALONGSIDE the trial — the customer gets both (HOS-171)', async () => {
-        // Arrange — a trial-eligible customer on a 14-day plan, with a 50%-off code
+    it('discount: still applies in full, on a trialDays=0 MP plan (HOS-1012)', async () => {
+        // Arrange — a customer on a plan that DECLARES a 14-day trial, with a 50%-off code
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
@@ -450,14 +451,11 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
             promoCode: 'LANZA50'
         });
 
-        // Assert — the trial defers the first charge; the discount lowers what
-        // that charge will be once linked (F2/F3). They are no longer mutually
-        // exclusive (HOS-171).
+        // Assert — the discount is unaffected by HOS-1012; only the trial left.
         expect(result.promoCodeIgnored).toBeUndefined();
         expect(result.appliedEffect).toBe('discount');
-        expect(result.trialGranted).toBe(true);
-        // The trial is untouched, at its base length.
-        expect(mpPlanCallArg().trialDays).toBe(14);
+        // The plan metadata still declares 14 days and it still does not matter.
+        expect(mpPlanCallArg().trialDays).toBe(0);
         // And the discount is snapshotted for the deferred F2/F3 apply — Path C
         // never mutates a live preapproval synchronously.
         expect(pendingCallArg().pendingDiscount).toEqual({
@@ -469,7 +467,7 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 
-    it('none: no promo code supplied → the trial is granted at its base length, no promoCodeIgnored flag', async () => {
+    it('none: no promo code supplied → a trialDays=0 MP plan, no promoCodeIgnored flag (HOS-1012)', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
         const billing = makeTrialBilling();
 
@@ -481,10 +479,14 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
 
         expect(result.appliedEffect).toBeUndefined();
         expect(result.promoCodeIgnored).toBeUndefined();
-        expect(mpPlanCallArg().trialDays).toBe(14);
+        // The plan's metadata declares `{ hasTrial: true, trialDays: 14 }` and
+        // the checkout does not read it. That is the whole of HOS-1012 in one
+        // assertion: a plan can still WANT a trial and MercadoPago is still
+        // never told about it.
+        expect(mpPlanCallArg().trialDays).toBe(0);
     });
 
-    it('AC-10: a customer with a prior authorized subscription gets no trial and resolves a no-trial MP plan', async () => {
+    it('HOS-1012: prior-subscription history is not even queried — the MP plan is no-trial regardless', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
         // `expired` = a real, authorized subscription that ran its course. Since
         // HOS-230 the gate no longer counts never-authorized backouts
@@ -500,10 +502,11 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         });
 
         expect(result.appliedEffect).toBeUndefined();
-        expect(result.trialGranted).toBeUndefined();
-        expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledOnce();
+        // The one-trial-per-customer-for-life lookup is gone from checkout: with
+        // no trial to grant there is no eligibility to establish, so the query
+        // is not issued at all.
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         expect(mpPlanCallArg().trialDays).toBe(0);
-        expect(pendingCallArg().trialGranted).toBe(false);
     });
 
     it('an invalid promo code always throws INVALID_PROMO_CODE, even for a trial-eligible customer', async () => {
@@ -532,7 +535,13 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
     });
 });
 
-describe('HOS-171 §7.4 AC-9: the ops kill-switch beats an extension promo', () => {
+// HOS-1012: `HOSPEDA_TRIAL_DAYS_OVERRIDE` no longer reaches the checkout at all
+// — the checkout stopped resolving trial days, so there is nothing left for the
+// kill-switch to switch off HERE. These two cases are kept, flipped: they now
+// prove the override is IRRELEVANT to what MercadoPago is told. Both the
+// switch-off and the switch-on setting must produce `trialDays: 0`, otherwise
+// "no trial reaches MP" would be true only by accident of an env default.
+describe('HOS-1012: the ops trial override cannot change what MercadoPago is told', () => {
     let originalOverride: typeof env.HOSPEDA_TRIAL_DAYS_OVERRIDE;
 
     beforeEach(() => {
@@ -545,8 +554,11 @@ describe('HOS-171 §7.4 AC-9: the ops kill-switch beats an extension promo', () 
         env.HOSPEDA_TRIAL_DAYS_OVERRIDE = originalOverride;
     });
 
-    it('HOSPEDA_TRIAL_DAYS_OVERRIDE=0 suppresses the trial even with a 60-day extension promo (monthly)', async () => {
-        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 0;
+    it('a 90-day override plus a 60-day extension promo still resolves trialDays=0 (monthly)', async () => {
+        // Deliberately the OPPOSITE of the old kill-switch case: the override is
+        // set to a large NON-zero value, so a checkout that still consulted it
+        // would resolve a nonzero `trialDays` and this test would fail.
+        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 90;
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 60 });
         const billing = makeTrialBilling();
 
@@ -557,15 +569,12 @@ describe('HOS-171 §7.4 AC-9: the ops kill-switch beats an extension promo', () 
             promoCode: 'EXTEND60'
         });
 
-        // The extension is discarded — nothing to lengthen — and the
-        // customer resolves a full-price, no-trial MP plan.
         expect(result.appliedEffect).toBeUndefined();
-        expect(result.promoCodeIgnored).toBe(true);
         expect(mpPlanCallArg().trialDays).toBe(0);
     });
 
-    it('HOSPEDA_TRIAL_DAYS_OVERRIDE=0 suppresses the trial even with a 10-day extension promo (annual)', async () => {
-        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 0;
+    it('a 90-day override plus a 10-day extension promo still resolves trialDays=0 (annual)', async () => {
+        env.HOSPEDA_TRIAL_DAYS_OVERRIDE = 90;
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 10 });
         const billing = makeTrialBilling();
 
@@ -577,7 +586,6 @@ describe('HOS-171 §7.4 AC-9: the ops kill-switch beats an extension promo', () 
         });
 
         expect(result.appliedEffect).toBeUndefined();
-        expect(result.promoCodeIgnored).toBe(true);
         expect(mpPlanCallArg().billingInterval).toBe('annual');
         expect(mpPlanCallArg().trialDays).toBe(0);
     });
@@ -822,7 +830,7 @@ describe('annual comp + discount branches (HOS-171 §7.2: annual resolves an MP 
 // HOS-115/HOS-171/HOS-191 — annual TRIAL-eligible checkout (mirrors monthly above)
 // ---------------------------------------------------------------------------
 
-describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors monthly HOS-110 W1)', () => {
+describe('HOS-1012: annual checkout on a trial-declaring plan (mirrors the monthly block)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         createPendingProviderSubscriptionMock.mockResolvedValue({
@@ -831,7 +839,7 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
         });
     });
 
-    it('AC-1: a trial-eligible annual checkout resolves an MP plan carrying trialDays=14, billingInterval=annual', async () => {
+    it('a trial-declaring annual plan still resolves an MP plan carrying trialDays=0, billingInterval=annual', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
         const billing = makeTrialBilling();
 
@@ -842,16 +850,14 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
         });
 
         expect(result.appliedEffect).toBeUndefined();
-        expect(result.trialGranted).toBe(true);
         expect(result.localSubscriptionId).toBe('trial-sub-1');
         // A REAL MP hosted share-link URL — not the comp in-app success sentinel.
         expect(result.checkoutUrl).toBe(EXPECTED_SHARE_LINK);
         expect(mpPlanCallArg().billingInterval).toBe('annual');
-        expect(mpPlanCallArg().trialDays).toBe(14);
-        expect(pendingCallArg().trialGranted).toBe(true);
+        expect(mpPlanCallArg().trialDays).toBe(0);
     });
 
-    it('AC-2: a not-eligible customer (existing subscription) skips the trial — the MP plan resolves with trialDays=0', async () => {
+    it('a customer with an existing subscription resolves the same trialDays=0 annual MP plan', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
         const billing = makeTrialBilling({
             existingSubscriptions: [{ id: 'existing-sub', status: 'active' }]
@@ -864,18 +870,18 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
         });
 
         expect(result.appliedEffect).toBeUndefined();
-        expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledOnce();
+        // HOS-1012: the eligibility query is gone from the annual path too.
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         expect(mpPlanCallArg().billingInterval).toBe('annual');
         expect(mpPlanCallArg().trialDays).toBe(0);
     });
 
-    it('AC-7/AC-10: cross-interval eligibility — a customer who already consumed a trial (any interval, any status) is not granted a second one', async () => {
+    it('a customer who already consumed a trial still checks out normally, on a trialDays=0 plan', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
-        // The customer's only subscription is an EXPIRED monthly trial — an
-        // authorized subscription that ran its course. The eligibility gate is
-        // cross-interval, so this disqualifies an annual trial too (one trial
-        // per customer, for life). Post-HOS-230 the gate DOES distinguish never-
-        // authorized backouts, but an expired trial is unambiguously authorized.
+        // The old cross-interval one-trial-per-lifetime gate lived here. It is
+        // gone from checkout (HOS-1012): the checkout grants nobody a trial, so
+        // there is no second grant to prevent. The case is kept to prove an
+        // expired-trial customer is not blocked or branched differently.
         const billing = makeTrialBilling({
             existingSubscriptions: [{ id: 'expired-monthly-trial', status: 'expired' }]
         });
@@ -918,7 +924,7 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
         expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
     });
 
-    it('trial_extension lengthens the annual trial by the code freeTrialDays', async () => {
+    it('a trial_extension code does not lengthen anything on the annual path either', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'trial', freeTrialDays: 10 });
         const billing = makeTrialBilling();
 
@@ -930,10 +936,9 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
         });
 
         expect(result.appliedEffect).toBeUndefined();
-        expect(result.promoCodeIgnored).toBeUndefined();
-        // 14 base (TRIAL_PLAN) + 10 extension = 24.
+        // Would have been 14 base (TRIAL_PLAN) + 10 extension = 24 before HOS-1012.
         expect(mpPlanCallArg().billingInterval).toBe('annual');
-        expect(mpPlanCallArg().trialDays).toBe(24);
+        expect(mpPlanCallArg().trialDays).toBe(0);
     });
 
     it('HOS-244: annual + discount is rejected even when the plan has a trial', async () => {

@@ -500,10 +500,15 @@ describe('handleStartPaidSubscription (monthly)', () => {
                 priceId: MONTHLY_PRICE_ID,
                 billingInterval: 'monthly',
                 mpPreapprovalPlanId: 'mp_plan_test',
-                payerEmail: OWNER_CUSTOMER_FIXTURE.email,
-                trialGranted: false
+                payerEmail: OWNER_CUSTOMER_FIXTURE.email
             })
         );
+        // HOS-1012: the trial inputs are gone from the helper's contract.
+        const pendingArg = mockCreatePendingProviderSubscription.mock.calls[0]?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(pendingArg).not.toHaveProperty('trialGranted');
+        expect(pendingArg).not.toHaveProperty('freeTrialDays');
         // Finding #8: MP back_url (threaded into `resolveCheckoutMpPlanId`)
         // points at the existing locale-prefixed checkout success page, not
         // the old /billing/return (which Astro rewrote to a 404).
@@ -587,12 +592,12 @@ describe('handleStartPaidSubscription (monthly)', () => {
     // annual now delegates to `initiatePaidAnnualSubscription` — see the
     // `handleStartPaidSubscription (annual)` describe block below.
 
-    it('sums the plan base trial and FREEMONTH into ONE freeTrialDays', async () => {
-        // FREEMONTH is a `trial_extension`: it LENGTHENS the trial the plan already
-        // grants, it does not create one. It used to forward a flat 30 regardless;
-        // card-first resolves base + promo ONCE (resolveCheckoutFreeTrialDays), so
-        // the plan has to declare a trial for the extension to have anything to add
-        // to — on a plan without one it grants nothing and reports promoCodeIgnored.
+    it('sends trialDays=0 to the MP plan resolver even with FREEMONTH on a trial plan', async () => {
+        // FREEMONTH is a KEPT feature — the code is still valid and still not
+        // redeemed at checkout — but since HOS-1012 its days cannot ride on a
+        // MercadoPago `free_trial`, because no checkout asks for one. Re-homing
+        // the effect onto the local trial row is an open decision (see the
+        // `TODO(HOS-1012)` in subscription-checkout.service.ts).
         const billing = createBillingMock({
             plans: [createPlan([MONTHLY_PRICE, ANNUAL_PRICE], TRIAL_METADATA)]
         });
@@ -606,11 +611,12 @@ describe('handleStartPaidSubscription (monthly)', () => {
         });
 
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: PLAN_TRIAL_DAYS + 30 })
+            expect.objectContaining({ trialDays: 0 })
         );
-        expect(mockCreatePendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: true })
-        );
+        const pendingArg = mockCreatePendingProviderSubscription.mock.calls[0]?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(pendingArg).not.toHaveProperty('freeTrialDays');
     });
 
     it('returns 422 when an unknown promo code is supplied (INVALID_PROMO_CODE)', async () => {
@@ -988,21 +994,28 @@ describe('handleStartPaidSubscription (annual)', () => {
         // Checkout Pro charge and the promo engine only spoke preapproval. HOS-171
         // made annual the same preapproval as monthly, so it runs the same promo
         // resolution and the code reaches MercadoPago rather than being dropped.
-        // (The default annual plan fixture declares no trial, so FREEMONTH has
-        // nothing to lengthen — the checkout still succeeds, just with
-        // `promoCodeIgnored: true`, mirroring the monthly no-trial-plan case.)
+        // HOS-1012: `promoCodeIgnored` is no longer asserted. It came from
+        // `resolveCheckoutFreeTrialDays`, which no checkout calls any more, and
+        // whether a `trial_extension` at checkout should report itself ignored
+        // or be re-homed onto the local trial row is an open product decision
+        // (see the `TODO(HOS-1012)` in subscription-checkout.service.ts). What
+        // this test is actually for — annual runs the SAME promo resolution as
+        // monthly instead of dropping the code — still holds: an unknown code
+        // would 422 here, and FREEMONTH resolves and completes the checkout.
         const billing = createAnnualBillingMock();
         mockBilling(billing);
 
         const ctx = createMockContext();
-        const result = await handleStartPaidSubscription(ctx as never, {
+        await handleStartPaidSubscription(ctx as never, {
             planSlug: 'owner-premium',
             billingInterval: 'annual',
             promoCode: 'FREEMONTH'
         });
 
         expect(mockCreatePendingProviderSubscription).toHaveBeenCalledTimes(1);
-        expect(result.promoCodeIgnored).toBe(true);
+        expect(resolveCheckoutPromoPlan).toHaveBeenCalledWith(
+            expect.objectContaining({ promoCode: 'FREEMONTH' })
+        );
     });
 });
 
@@ -1577,10 +1590,9 @@ describe('handleStartPaidSubscription — checkout_started analytics on the ANNU
         };
     }
 
-    it('AC-10: a trial-eligible ANNUAL checkout resolves appliedEffect="trial", but checkout_started (captured BEFORE the trial/paid decision) does NOT currently carry appliedEffect', async () => {
-        // ARRANGE — a trial-eligible customer on a trial-declaring plan,
-        // selecting the ANNUAL toggle. This must resolve to the TRIAL branch
-        // (verified independently below), matching AC-1/AC-10's premise.
+    it('AC-10: checkout_started, captured BEFORE the checkout resolves, carries no appliedEffect', async () => {
+        // ARRANGE — a customer on a trial-declaring plan, selecting the ANNUAL
+        // toggle.
         const billing = createAnnualTrialBillingMock();
         mockBilling(billing);
 
@@ -1592,13 +1604,11 @@ describe('handleStartPaidSubscription — checkout_started analytics on the ANNU
             billingInterval: 'annual'
         });
 
-        // SANITY — the checkout really did resolve to the trial branch (no MP
-        // checkout object created), establishing the premise AC-10 is about.
-        // A trial is no longer an `appliedEffect`: it is an ordinary paid preapproval
-        // with the first charge deferred, so it carries `trialGranted` instead and
-        // takes the normal MP redirect. The `outcome` assertion below is unchanged —
-        // the analytics contract this AC pins survives, only its carrier moved.
-        expect(result.trialGranted).toBe(true);
+        // SANITY — HOS-1012: this checkout no longer resolves to a trial branch
+        // at all (there is none), so the premise narrows to "an ordinary paid
+        // annual checkout on a trial-declaring plan". What AC-10 actually pins
+        // — that `checkout_started` fires BEFORE the decision and therefore
+        // carries no `appliedEffect` — is unaffected.
         expect(result.appliedEffect).toBeUndefined();
 
         // ASSERT — checkout_started WAS captured, with billingInterval='annual'
@@ -1725,7 +1735,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         };
     }
 
-    it('AC-1: a trial-eligible ANNUAL checkout emits checkout_completed with billingInterval="annual" and outcome="trial"', async () => {
+    it('HOS-1012: an ANNUAL checkout on a trial-declaring plan emits outcome="paid", never "trial"', async () => {
         // ARRANGE
         const billing = createAnnualTrialBillingMock();
         mockBilling(billing);
@@ -1737,17 +1747,16 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
             billingInterval: 'annual'
         });
 
-        // ASSERT
-        // A trial is no longer an `appliedEffect`: it is an ordinary paid preapproval
-        // with the first charge deferred, so it carries `trialGranted` instead and
-        // takes the normal MP redirect. The `outcome` assertion below is unchanged —
-        // the analytics contract this AC pins survives, only its carrier moved.
-        expect(result.trialGranted).toBe(true);
+        // ASSERT — HOS-1012 inverts AC-1's expected value. A checkout cannot
+        // produce a trial any more, so reporting `outcome: 'trial'` would be the
+        // funnel asserting something that did not happen. `trial_granted` rides
+        // its own dimension and is now a constant false.
         expect(result.appliedEffect).toBeUndefined();
         const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
         expect(completed?.properties.billing_period).toBe('annual');
-        expect(completed?.properties.checkout_outcome).toBe('trial');
+        expect(completed?.properties.checkout_outcome).toBe('paid');
+        expect(completed?.properties.trial_granted).toBe(false);
     });
 
     it('AC-2: a plain paid ANNUAL checkout (not trial-eligible, no promo) emits checkout_completed with outcome="paid", never absent', async () => {
@@ -1792,7 +1801,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         expect(completed?.properties.checkout_outcome).toBe('paid');
     });
 
-    it('AC-3: a trial-eligible MONTHLY checkout emits checkout_completed with billingInterval="monthly" and outcome="trial" (mirrors AC-1)', async () => {
+    it('HOS-1012: a MONTHLY checkout on a trial-declaring plan emits outcome="paid" too', async () => {
         // ARRANGE
         const billing = createMonthlyTrialBillingMock();
         mockBilling(billing);
@@ -1804,17 +1813,13 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
             billingInterval: 'monthly'
         });
 
-        // ASSERT
-        // A trial is no longer an `appliedEffect`: it is an ordinary paid preapproval
-        // with the first charge deferred, so it carries `trialGranted` instead and
-        // takes the normal MP redirect. The `outcome` assertion below is unchanged —
-        // the analytics contract this AC pins survives, only its carrier moved.
-        expect(result.trialGranted).toBe(true);
+        // ASSERT — same inversion as the annual case, on the monthly path.
         expect(result.appliedEffect).toBeUndefined();
         const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
         expect(completed?.properties.billing_period).toBe('monthly');
-        expect(completed?.properties.checkout_outcome).toBe('trial');
+        expect(completed?.properties.checkout_outcome).toBe('paid');
+        expect(completed?.properties.trial_granted).toBe(false);
     });
 
     it('AC-4: a comp promo checkout emits checkout_completed with outcome="comp"', async () => {
@@ -1912,18 +1917,16 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
             promoCode: 'SAVE10'
         });
 
-        // ASSERT — both effects land, and nothing is reported as ignored.
-        expect(result.trialGranted).toBe(true);
+        // ASSERT — the discount lands in full and nothing is reported ignored.
+        // HOS-1012: there is no trial alongside it any more, so `trial_granted`
+        // is false while `checkout_outcome` still reports what the money did.
         expect(result.appliedEffect).toBe('discount');
         expect(result.promoCodeIgnored).toBeUndefined();
 
         const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        // `checkout_outcome` is a scalar and reports what the money did. The trial is not
-        // lost with it — it rides its own dimension, which is the whole reason
-        // `trial_granted` exists on the event.
         expect(completed?.properties.checkout_outcome).toBe('discount');
-        expect(completed?.properties.trial_granted).toBe(true);
+        expect(completed?.properties.trial_granted).toBe(false);
         expect(completed?.properties.promotion_code_ignored).toBe(false);
     });
 
@@ -2022,8 +2025,11 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
     });
 
     it('D-10: $set persists last_checkout_outcome equal to the resolved outcome', async () => {
-        // ARRANGE — trial outcome, so this also cross-checks D-10 against a
-        // non-"paid" value (not just the default fallback).
+        // ARRANGE — HOS-1012: the old fixture was chosen to yield a non-"paid"
+        // outcome (`trial`). A checkout can no longer produce one, so the
+        // resolved outcome here IS "paid"; what D-10 pins is that `$set` mirrors
+        // whatever `checkout_outcome` resolved to, which the assertion below
+        // still checks by reading the event's own value rather than a literal.
         const billing = createAnnualTrialBillingMock();
         mockBilling(billing);
 
@@ -2037,6 +2043,9 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         // ASSERT
         const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.$set).toEqual({ last_checkout_outcome: 'trial' });
+        expect(completed?.properties.$set).toEqual({
+            last_checkout_outcome: completed?.properties.checkout_outcome
+        });
+        expect(completed?.properties.checkout_outcome).toBe('paid');
     });
 });
