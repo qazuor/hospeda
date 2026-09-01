@@ -42,7 +42,9 @@
         "monthly": "Mensual",
         "annual": "Anual",
         "annualSaving": "Ahorrá {percent}%",
-        "ariaLabel": "Elegí la frecuencia de facturación"
+        "ariaLabel": "Elegí la frecuencia de facturación",
+        "question": "¿Cómo querés pagar?",
+        "annualBadge": "Ahorrá hasta {percent}%"
     },
     "period": {
         "month": "/mes",
@@ -129,5 +131,14 @@
             "title": "Comparativa de planes para turistas",
             "description": "Compará todas las funciones, beneficios y límites de cada plan para turistas."
         }
+    },
+    "annualHint": "Pagando por año ahorrás {percent}%",
+    "seeAll": "Ver todo lo que incluye ({count} más)",
+    "select": {
+        "aria": "Seleccionar el plan {plan}"
+    },
+    "nav": {
+        "backToIndex": "Volver a todos los planes",
+        "ariaLabel": "Navegación del catálogo de planes"
     }
 }

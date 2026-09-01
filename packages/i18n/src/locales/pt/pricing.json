@@ -42,7 +42,9 @@
         "monthly": "Mensal",
         "annual": "Anual",
         "annualSaving": "Economize {percent}%",
-        "ariaLabel": "Escolha a frequência de cobrança"
+        "ariaLabel": "Escolha a frequência de cobrança",
+        "question": "Como você quer pagar?",
+        "annualBadge": "Economize até {percent}%"
     },
     "period": {
         "month": "/mês",
@@ -129,5 +131,14 @@
             "title": "Comparação de planos para viajantes",
             "description": "Compare todas as funções, benefícios e limites de cada plano para viajantes."
         }
+    },
+    "annualHint": "Pagando por ano você economiza {percent}%",
+    "seeAll": "Ver tudo o que inclui (mais {count})",
+    "select": {
+        "aria": "Selecionar o plano {plan}"
+    },
+    "nav": {
+        "backToIndex": "Voltar para todos os planos",
+        "ariaLabel": "Navegação do catálogo de planos"
     }
 }

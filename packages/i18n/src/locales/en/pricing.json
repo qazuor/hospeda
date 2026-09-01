@@ -42,7 +42,9 @@
         "monthly": "Monthly",
         "annual": "Annual",
         "annualSaving": "Save {percent}%",
-        "ariaLabel": "Choose billing frequency"
+        "ariaLabel": "Choose billing frequency",
+        "question": "How do you want to pay?",
+        "annualBadge": "Save up to {percent}%"
     },
     "period": {
         "month": "/month",
@@ -129,5 +131,14 @@
             "title": "Traveler plan comparison",
             "description": "Compare all features, benefits and limits of each traveler plan."
         }
+    },
+    "annualHint": "Paying yearly saves you {percent}%",
+    "seeAll": "See everything included ({count} more)",
+    "select": {
+        "aria": "Select the {plan} plan"
+    },
+    "nav": {
+        "backToIndex": "Back to all plans",
+        "ariaLabel": "Plan catalogue navigation"
     }
 }
