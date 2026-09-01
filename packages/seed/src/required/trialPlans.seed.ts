@@ -1,5 +1,10 @@
-import { ALL_TRIAL_PLANS } from '@repo/billing';
-import { type DrizzleClient, getDb } from '@repo/db';
+import {
+    ALL_TRIAL_PLANS,
+    describeTrialSnapshotDivergences,
+    findTrialSnapshotDivergences,
+    type TrialSnapshotPlanRow
+} from '@repo/billing';
+import { billingPlans, type DrizzleClient, getDb, inArray } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -68,6 +73,8 @@ export async function seedTrialPlans(_context: SeedContext): Promise<void> {
             }
         }
 
+        await reportSnapshotDivergences(db);
+
         logger.info(`${separator}`);
         logger.info(
             `${STATUS_ICONS.Info}  Trial plans: ${created} created, ${restamped} re-stamped, ${skipped} unchanged. No billing_prices row is ever created — a trial plan is granted at first publish, never bought.`
@@ -83,5 +90,63 @@ export async function seedTrialPlans(_context: SeedContext): Promise<void> {
             error instanceof Error ? error.message : String(error)
         );
         throw error;
+    }
+}
+
+/**
+ * Reports — never fixes, never fails — any trial plan whose stored SNAPSHOT has
+ * drifted from what its composition resolves against the LIVE source rows
+ * (HOS-1012 T-036).
+ *
+ * Reads rows rather than config on purpose. `entitlements` and `limitsValues`
+ * are `'commercial'` under HOS-39's Model C, so the drift this can catch — an
+ * operator raising `owner-basico`'s photo cap through the admin panel — exists
+ * only in the database. A config-vs-config check would agree with itself and
+ * see nothing.
+ *
+ * A divergence is not an error: the operator edit that caused it is supported,
+ * and the trial still GATES on the live composition. What has gone stale is the
+ * number an admin screen shows. So this logs and moves on.
+ *
+ * @param db - Drizzle client.
+ */
+async function reportSnapshotDivergences(db: DrizzleClient): Promise<void> {
+    const slugs = new Set<string>();
+    for (const { plan, composition } of ALL_TRIAL_PLANS) {
+        slugs.add(plan.slug);
+        slugs.add(composition.entitlementsFrom);
+        slugs.add(composition.limitsFrom);
+    }
+
+    const dbRows = await db
+        .select({
+            slug: billingPlans.name,
+            entitlements: billingPlans.entitlements,
+            limits: billingPlans.limits,
+            metadata: billingPlans.metadata
+        })
+        .from(billingPlans)
+        .where(inArray(billingPlans.name, [...slugs]));
+
+    const rows: TrialSnapshotPlanRow[] = dbRows.map((r) => ({
+        slug: r.slug,
+        entitlements: (r.entitlements ?? []) as string[],
+        limits: (r.limits ?? {}) as Record<string, number>,
+        metadata: r.metadata
+    }));
+
+    const divergences = findTrialSnapshotDivergences({ rows });
+    if (divergences.length === 0) {
+        logger.info(
+            `${STATUS_ICONS.Success}  Trial plan snapshots agree with what their compositions resolve.`
+        );
+        return;
+    }
+
+    logger.info(
+        `${STATUS_ICONS.Skip}  ${divergences.length} trial plan snapshot divergence(s) — the trial still GATES on the live composition; only the displayed values are stale:`
+    );
+    for (const line of describeTrialSnapshotDivergences(divergences)) {
+        logger.info(`   ${line}`);
     }
 }
