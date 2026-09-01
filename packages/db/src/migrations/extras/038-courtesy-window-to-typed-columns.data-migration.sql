@@ -44,16 +44,43 @@
 --   reads a missing count as absent.
 -- =============================================================================
 
-UPDATE billing_subscriptions
-SET
-    courtesy_starts_at = NULLIF(metadata ->> 'courtesyStartsAt', '')::timestamptz,
-    courtesy_ends_at = NULLIF(metadata ->> 'courtesyEndsAt', '')::timestamptz,
-    courtesy_cycles_granted = CASE
-        WHEN metadata ->> 'courtesyCyclesGranted' ~ '^[0-9]+$'
-            THEN (metadata ->> 'courtesyCyclesGranted')::integer
-        ELSE NULL
-    END
-WHERE
-    courtesy_ends_at IS NULL
-    AND metadata ->> 'courtesyEndsAt' IS NOT NULL
-    AND status = 'courtesy';
+DO $$
+BEGIN
+    -- =========================================================================
+    -- COLUMN GUARD: the three columns arrive with @qazuor/qzpay-drizzle 2.1.0,
+    -- through the structural carril (migration 0101). `db:apply-extras` runs
+    -- after `db:migrate` on a live environment, so they are there by then —
+    -- but this file is also re-applied against databases cloned from an older
+    -- template, where they are not, and erroring there aborts the whole extras
+    -- run (all 38 files) over a backfill that simply has nothing to do yet.
+    --
+    -- Skipping is safe precisely because the extras carril keeps no ledger:
+    -- unlike a seed data-migration, this file is re-applied on every run, so
+    -- the backfill happens on the first run after the columns exist. It cannot
+    -- be silently marked done while having moved nothing — which is the
+    -- HOS-433 failure this project already paid for.
+    -- =========================================================================
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name   = 'billing_subscriptions'
+          AND column_name  = 'courtesy_ends_at'
+    ) THEN
+        RAISE NOTICE '038-courtesy-window-to-typed-columns: courtesy columns absent (needs @qazuor/qzpay-drizzle >= 2.1.0 and migration 0101), skipping.';
+        RETURN;
+    END IF;
+
+    UPDATE billing_subscriptions
+    SET
+        courtesy_starts_at = NULLIF(metadata ->> 'courtesyStartsAt', '')::timestamptz,
+        courtesy_ends_at = NULLIF(metadata ->> 'courtesyEndsAt', '')::timestamptz,
+        courtesy_cycles_granted = CASE
+            WHEN metadata ->> 'courtesyCyclesGranted' ~ '^[0-9]+$'
+                THEN (metadata ->> 'courtesyCyclesGranted')::integer
+            ELSE NULL
+        END
+    WHERE
+        courtesy_ends_at IS NULL
+        AND metadata ->> 'courtesyEndsAt' IS NOT NULL
+        AND status = 'courtesy';
+END $$;
