@@ -193,6 +193,15 @@ const LIFECYCLE_SITES: readonly LifecycleSite[] = [
         description: 'trial start/expire/activation (trial.service.ts)',
         file: 'services/trial.service.ts'
     },
+    {
+        description:
+            'HOS-1012 local trial started at publish (accommodation-publish-deps.ts). The row is inserted by subscription-trial-create.service.ts INSIDE the publish transaction, which is why the clear cannot live there: it must run after the commit. This file owns the post-commit hook.',
+        file: 'services/accommodation-publish-deps.ts'
+    },
+    {
+        description: 'HOS-1012 local trial expiry (billing/trial-local-expiry.service.ts)',
+        file: 'services/billing/trial-local-expiry.service.ts'
+    },
 
     // ── REFUND ────────────────────────────────────────────────────────────────
 
@@ -479,6 +488,16 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         file: 'services/subscription-cancel.service.ts',
         requiresCacheClear: true,
         reason: 'Subscription cancel — already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/billing/trial-local-expiry.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-1012 T-010: flips an expired local trial to `expired`. The row WAS entitlement-granting (`trialing` is in isEntitlementGrantingStatus) and there is no preapproval and therefore no webhook to clear the cache afterwards, so this is the only place that can. Already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/subscription-trial-create.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-1012 T-003: inserts the Hospeda-owned `trialing` row, which IS entitlement-granting, with no MercadoPago preapproval and therefore no webhook that could ever clear the cache. It clears it itself on the standalone path; when it is handed a caller transaction it deliberately does NOT (clearing before that commit would publish entitlements for a row that can still roll back) and the caller clears it post-commit — see accommodation-publish-deps.ts. The call is present either way, which is what this guard checks.'
     },
     {
         file: 'services/subscription-comp-create.service.ts',
