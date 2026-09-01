@@ -1,6 +1,17 @@
 /**
  * @file SignIn.test.ts
  * @description Unit tests for SignIn auth component.
+ *
+ * HOS-959: the OAuth block (Google/Facebook buttons, `handleOauth`, the
+ * SPEC-120 error banner, `providerLabel`, and the query-param cleanup
+ * effect) moved OUT of this component and into `AuthTabs.client.tsx` — see
+ * `test/components/auth/AuthTabs.client.test.tsx` for that coverage now.
+ * What used to be the "OAuth error banner (SPEC-120)" describe block here,
+ * and the OAuth half of "external redirect (SPEC-182 callbackUrl)", no
+ * longer apply to THIS file's source — SignIn.client.tsx has no OAuth code
+ * left to assert on. The credential-submit half of SPEC-182 (forwarding
+ * `redirectTo`/`externalRedirect` on a successful password sign-in) is
+ * unaffected and still lives here.
  */
 
 import { readFileSync } from 'node:fs';
@@ -32,8 +43,19 @@ describe('SignIn.client.tsx', () => {
             expect(src).toContain('redirectTo');
         });
 
-        it('should accept showOAuth prop', () => {
-            expect(src).toContain('showOAuth');
+        // HOS-959: email is now a controlled value owned by AuthTabs (so it
+        // survives a tab switch), not local state.
+        it('should accept email and onEmailChange as controlled props', () => {
+            expect(src).toMatch(/readonly email: string/);
+            expect(src).toMatch(/readonly onEmailChange: \(value: string\) => void/);
+        });
+
+        it('should no longer own a local email useState (HOS-959 — controlled by AuthTabs)', () => {
+            expect(src).not.toMatch(/const\s+\[\s*email\s*,\s*setEmail\s*\]\s*=\s*useState/);
+        });
+
+        it('should no longer declare showOAuth (HOS-959 — OAuth block moved to AuthTabs)', () => {
+            expect(src).not.toContain('showOAuth');
         });
     });
 
@@ -58,56 +80,30 @@ describe('SignIn.client.tsx', () => {
         });
     });
 
-    // SPEC-120 — OAuth failure banner wiring.
-    describe('OAuth error banner (SPEC-120)', () => {
-        it('declares the initialOAuthError prop on SignInProps', () => {
-            expect(src).toContain('initialOAuthError');
-            expect(src).toMatch(/readonly\s+code:\s*string/);
-            expect(src).toMatch(/description\?:\s*string/);
-            expect(src).toMatch(/provider\?:\s*string/);
+    // HOS-959: this component no longer renders or knows about OAuth at all
+    // — no button, no handler, no icons, no error banner. Assert the
+    // negative so a future edit that re-introduces a second copy trips this
+    // guard immediately instead of silently duplicating AuthTabs's block.
+    describe('no OAuth surface left (HOS-959)', () => {
+        it('does not declare initialOAuthError', () => {
+            expect(src).not.toContain('initialOAuthError');
         });
 
-        it('exposes a providerLabel helper that maps brand ids', () => {
-            expect(src).toContain('function providerLabel');
-            expect(src).toContain("'Google'");
-            expect(src).toContain("'Facebook'");
+        it('does not define a providerLabel helper', () => {
+            expect(src).not.toContain('function providerLabel');
         });
 
-        it('destructures initialOAuthError in the component signature', () => {
-            expect(src).toMatch(/initialOAuthError\s*}\s*:\s*SignInProps/);
+        it('does not call signIn.social', () => {
+            expect(src).not.toContain('signIn.social');
         });
 
-        it('resolves the OAuth banner via the i18n catalog with provider interpolation', () => {
-            expect(src).toContain('auth-ui.signIn.errors.oauth.');
-            expect(src).toContain('provider: providerName');
+        it('does not render an OAuth button or icon component', () => {
+            expect(src).not.toContain('GoogleIcon');
+            expect(src).not.toContain('FacebookIcon');
         });
 
-        it('falls back to the `unknown` key when the specific code is missing', () => {
-            expect(src).toContain('auth-ui.signIn.errors.oauth.unknown');
-            expect(src).toContain('[MISSING:');
-        });
-
-        it('writes error_description to console.warn (never to UI)', () => {
-            expect(src).toContain('console.warn(`[OAuth]');
-        });
-
-        it('strips OAuth query params on hydration via history.replaceState', () => {
-            expect(src).toContain('history.replaceState');
-            expect(src).toContain("'error'");
-            expect(src).toContain("'error_description'");
-            expect(src).toContain("'provider'");
-        });
-
-        it('strips the URL hash too (handles Facebook #_=_ legacy bug)', () => {
-            expect(src).toMatch(/url\.hash\s*=\s*''/);
-        });
-
-        it('preserves unrelated query params (e.g. returnUrl) during cleanup', () => {
-            // The cleanup loop only deletes a fixed allowlist of OAuth keys
-            // before calling replaceState; it must not blow away the whole
-            // search string.
-            expect(src).toContain('url.searchParams.delete');
-            expect(src).not.toContain("url.search = ''");
+        it('does not use history.replaceState (that cleanup effect moved too)', () => {
+            expect(src).not.toContain('history.replaceState');
         });
     });
 
@@ -115,19 +111,17 @@ describe('SignIn.client.tsx', () => {
     // workaround (reverse-proxy localhost fix) must NOT apply when redirectTo
     // is a server-validated external callbackUrl (e.g. the admin panel) — the
     // strip would silently turn the admin URL into a broken web-origin path.
-    describe('external redirect (SPEC-182 callbackUrl)', () => {
+    // HOS-959: only the credential-submit path lives here now; the OAuth
+    // path moved to AuthTabs.client.tsx (see its own externalRedirect test).
+    describe('external redirect (SPEC-182 callbackUrl, credential submit)', () => {
         it('declares the externalRedirect prop on SignInProps', () => {
             expect(src).toMatch(/readonly externalRedirect\?: boolean/);
         });
 
-        it('honors redirectTo verbatim on credential success when externalRedirect', () => {
+        it('forwards redirectTo and externalRedirect to the shared redirect resolver on credential success', () => {
             expect(src).toMatch(
-                /externalRedirect[\s\S]{0,300}window\.location\.replace\(redirectTo\)/
+                /window\.location\.replace\(\s*resolvePostAuthRedirectUrl\(\{\s*target: redirectTo,\s*currentOrigin: window\.location\.origin,\s*externalRedirect\s*\}\)\s*\)/
             );
-        });
-
-        it('uses redirectTo verbatim as the OAuth callbackURL when externalRedirect', () => {
-            expect(src).toMatch(/externalRedirect[\s\S]{0,500}callbackURL = redirectTo/);
         });
     });
 });

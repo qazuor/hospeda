@@ -1,39 +1,34 @@
 /**
- * @file signin.test.ts
- * @description Source-level tests for the signin Astro page.
+ * @file signup.test.ts
+ * @description Source-level tests for the signup Astro page.
  *
- * Astro components cannot be rendered in Vitest, so behavior is asserted by
- * inspecting the source for the expected wiring (per the web CLAUDE.md
- * "Astro component test" pattern). For runtime behavior of the React island
- * the page mounts, see `apps/web/test/components/auth/AuthTabs.client.test.tsx`.
- *
- * HOS-959: this page now renders the unified `AuthTabs` island instead of
- * `SignIn` directly, and the `returnUrl`/`redirect`/`callbackUrl` redirect
- * computation moved into the shared, independently-testable
- * `resolveAuthTabsRedirectConfig` helper (see
+ * There was no `signup.astro` page test before HOS-959. This page now
+ * renders the unified `AuthTabs` island (same component signin.astro
+ * renders, with `initialTab="signup"`) and shares its redirect computation
+ * with signin.astro via `resolveAuthTabsRedirectConfig` — see
  * `test/lib/auth-tabs-config.test.ts` for the BEHAVIORAL coverage of that
- * logic — real inputs/outputs, not string matching, which a plain
- * importable function makes possible for the first time here). What this
- * file can still assert, being a source-string test, is that the page
- * actually WIRES to that helper and forwards its output to the island.
+ * helper (real inputs/outputs), and `test/pages/auth/signin.test.ts` for the
+ * mirrored wiring assertions on the sign-in page. Astro components cannot be
+ * rendered in Vitest, so behavior is asserted by inspecting the source (per
+ * the web CLAUDE.md "Astro component test" pattern).
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(resolve(__dirname, '../../../src/pages/[lang]/auth/signin.astro'), 'utf8');
+const src = readFileSync(resolve(__dirname, '../../../src/pages/[lang]/auth/signup.astro'), 'utf8');
 
-describe('signin.astro', () => {
+describe('signup.astro', () => {
     describe('renders the unified AuthTabs island (HOS-959)', () => {
-        it('imports AuthTabs, not SignIn directly', () => {
+        it('imports AuthTabs, not SignUp directly', () => {
             expect(src).toContain("import { AuthTabs } from '@/components/auth/AuthTabs.client'");
-            expect(src).not.toContain("from '@/components/auth/SignIn.client'");
+            expect(src).not.toContain("from '@/components/auth/SignUp.client'");
         });
 
-        it('renders AuthTabs with initialTab="signin"', () => {
+        it('renders AuthTabs with initialTab="signup"', () => {
             expect(src).toContain('<AuthTabs');
-            expect(src).toContain('initialTab="signin"');
+            expect(src).toContain('initialTab="signup"');
         });
 
         it('forwards signInConfig and signUpConfig to the island', () => {
@@ -73,6 +68,14 @@ describe('signin.astro', () => {
             );
         });
 
+        // HOS-959 deliberate behavior ADDITION (owner-approved): a validated
+        // callbackUrl now takes precedence over returnPath for an
+        // already-authenticated visitor on THIS page too, mirroring
+        // signin.astro — previously signup.astro ignored callbackUrl
+        // entirely. The password-registration destination itself
+        // (verify-email-sent) is UNCHANGED and still never honors either
+        // param — that gap is HOS-838, covered behaviorally in
+        // auth-tabs-config.test.ts, not touched here.
         it('lets a valid callbackUrl take precedence over returnPath on the auth redirect', () => {
             expect(src).toMatch(
                 /Astro\.redirect\(\s*validatedCallbackUrl\s*\?\?\s*returnPath\s*\)/
@@ -81,10 +84,10 @@ describe('signin.astro', () => {
     });
 
     // SPEC-120 — pick up OAuth failure signal from the API redirect chain.
-    // This parsing stays LOCAL to each page (not shared) — HOS-959 requires
-    // BOTH signin.astro and signup.astro to carry it, since the shared OAuth
-    // block in AuthTabs is reachable from either URL.
-    describe('OAuth error query reading (SPEC-120)', () => {
+    // HOS-959: signup.astro did NOT parse this before — it must now, since
+    // the shared OAuth block in AuthTabs is reachable from either URL and an
+    // OAuth failure returning to /auth/signup needs somewhere to surface.
+    describe('OAuth error query reading (SPEC-120, new on this page — HOS-959)', () => {
         it('reads ?error= from the query string', () => {
             expect(src).toContain("Astro.url.searchParams.get('error')");
         });
@@ -98,7 +101,6 @@ describe('signin.astro', () => {
         });
 
         it('validates the error code against a strict allowlist regex', () => {
-            // Strict charset to prevent injection into i18n keys / console output.
             expect(src).toMatch(/\/\^\[a-z_\]\{1,64\}\$\//);
         });
 
@@ -121,6 +123,14 @@ describe('signin.astro', () => {
 
         it('passes initialOAuthError to the AuthTabs island', () => {
             expect(src).toContain('initialOAuthError={initialOAuthError}');
+        });
+    });
+
+    describe('"already have an account" footer link (pre-existing, HOS-810)', () => {
+        it('forwards returnUrl to the sign-in link when a destination was requested', () => {
+            expect(src).toContain('const rawReturn =');
+            expect(src).toMatch(/rawReturn === ''/);
+            expect(src).toContain('signInHref');
         });
     });
 });
