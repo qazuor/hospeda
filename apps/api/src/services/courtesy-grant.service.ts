@@ -66,6 +66,7 @@ export type GrantCourtesyErrorCode =
     | 'ALREADY_COURTESY'
     | 'NOT_ENOUGH_LEAD_TIME'
     | 'INVALID_CYCLES'
+    | 'UNKNOWN_BILLING_INTERVAL'
     | 'PROVIDER_ERROR';
 
 /** Result of {@link grantCourtesyCycles}. */
@@ -99,13 +100,32 @@ const GRANTABLE_STATUSES = new Set<string>([SubscriptionStatusEnum.ACTIVE]);
  *
  * Mirrors how `subscription-pause.ts` reads `metadata.billingInterval`, which is
  * the only place the interval is recorded.
+ *
+ * Returns `null` when the interval is absent or unrecognised, and the caller
+ * refuses the grant (HOS-995). It used to fall back to `'monthly'`, which meant
+ * an annual subscriber whose metadata was missing the key silently received a
+ * gift of one MONTH where a YEAR was intended — the admin saw a success, the
+ * subscriber got a twelfth of the gift, and nothing anywhere said so.
+ *
+ * Under-gifting rather than over-gifting is not a reason to keep guessing. This
+ * value decides whether N cycles means N months or N years; a service that
+ * cannot tell must not pick one. All three creation paths record the key
+ * (`start-paid.ts`, `trial.ts`, `plan-change.ts`), so an absent value means a
+ * corrupt or pre-HOS-171 row, and that is worth surfacing rather than papering
+ * over.
  */
-function resolveCadence(metadata: unknown): CourtesyCadence {
+function resolveCadence(metadata: unknown): CourtesyCadence | null {
     const interval =
         metadata && typeof metadata === 'object'
             ? (metadata as Record<string, unknown>).billingInterval
             : undefined;
-    return interval === 'annual' ? 'annual' : 'monthly';
+    if (interval === 'annual') {
+        return 'annual';
+    }
+    if (interval === 'monthly') {
+        return 'monthly';
+    }
+    return null;
 }
 
 /**
@@ -188,10 +208,27 @@ export async function grantCourtesyCycles(
         };
     }
 
+    // Refused BEFORE MercadoPago is called, so a subscription whose interval we
+    // cannot read is never paused. Pausing first and failing to size the window
+    // afterwards would leave a live preapproval suspended with no window to
+    // resume it (spec R-3, same ordering rule as the write).
+    const cadence = resolveCadence(subscription.metadata);
+    if (cadence === null) {
+        return {
+            success: false,
+            error: {
+                code: 'UNKNOWN_BILLING_INTERVAL',
+                message:
+                    'This subscription does not record a billing interval, so a gift of ' +
+                    `${cycles} cycle(s) cannot be sized. Fix metadata.billingInterval before granting.`
+            }
+        };
+    }
+
     const computed = computeCourtesyWindow({
         currentPeriodEnd: subscription.currentPeriodEnd ?? null,
         cycles,
-        cadence: resolveCadence(subscription.metadata),
+        cadence,
         now
     });
 

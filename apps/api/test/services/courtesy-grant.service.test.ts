@@ -189,6 +189,25 @@ describe('grantCourtesyCycles — refusals never reach the provider', () => {
                 }
             }),
             'ALREADY_COURTESY'
+        ],
+        // HOS-995: the interval decides whether N cycles means N months or N
+        // years. resolveCadence used to fall back to 'monthly' here, so an
+        // annual subscriber with missing metadata silently got a twelfth of the
+        // intended gift and the admin saw a success.
+        [
+            'a subscription whose metadata records no billing interval',
+            eligibleSubscription({ metadata: {} }),
+            'UNKNOWN_BILLING_INTERVAL'
+        ],
+        [
+            'a subscription with no metadata at all',
+            eligibleSubscription({ metadata: null }),
+            'UNKNOWN_BILLING_INTERVAL'
+        ],
+        [
+            'a subscription whose billing interval is unrecognised',
+            eligibleSubscription({ metadata: { billingInterval: 'weekly' } }),
+            'UNKNOWN_BILLING_INTERVAL'
         ]
     ])('refuses %s without touching MercadoPago', async (_label, row, expectedCode) => {
         // Arrange
@@ -233,5 +252,74 @@ describe('grantCourtesyCycles — refusals never reach the provider', () => {
         expect(result.error.code).toBe('NOT_ENOUGH_LEAD_TIME');
         expect(result.error.message).toContain('day(s)');
         expect(pauseMock).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * The positive half of the HOS-995 pair. Refusing an unreadable interval only
+ * means something if a readable one still goes through and is sized by it —
+ * otherwise the refusal tests cannot tell "rejects what it cannot read" from
+ * "rejects everything".
+ *
+ * These assert the DURATION the interval selects, not the exact end date. The
+ * exact date is currently wrong: `addCycles` computes in local time over UTC
+ * timestamps and does not clamp an overflowing day-of-month, so a window can
+ * land up to three days off in either direction, and the result depends on the
+ * host's timezone (HOS-1010). Pinning the exact value here would freeze that
+ * bug into a green test. What HOS-995 changed is which cadence gets selected,
+ * and that is what these assert.
+ */
+describe('grantCourtesyCycles — the interval sizes the gift', () => {
+    const DAY = 86_400_000;
+
+    it.each([
+        ['monthly', 'monthly', 28, 32],
+        ['annual', 'annual', 362, 368]
+    ])('sizes a one-cycle %s gift from the end of the paid period', async (_label, interval, minDays, maxDays) => {
+        // Arrange — the paid period ends 2026-11-01, so the window opens there.
+        subscriptionRow = eligibleSubscription({ metadata: { billingInterval: interval } });
+
+        // Act
+        const result = await grantCourtesyCycles({
+            billing: makeBilling(),
+            subscriptionId: 'sub-1',
+            cycles: 1,
+            actorId: 'admin-1',
+            now: NOW
+        });
+
+        // Assert — the window opens at the end of the paid period (AC-15),
+        // and its length is the one the interval selects.
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.courtesyStartsAt).toEqual(new Date('2026-11-01T00:00:00.000Z'));
+
+        const spanDays =
+            (result.data.courtesyEndsAt.getTime() - result.data.courtesyStartsAt.getTime()) / DAY;
+        expect(spanDays).toBeGreaterThanOrEqual(minDays);
+        expect(spanDays).toBeLessThanOrEqual(maxDays);
+        expect(pauseMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('gifts a YEAR for an annual subscription, not a month', async () => {
+        // The regression that matters: resolveCadence used to fall back to
+        // 'monthly', so this exact subscription received a twelfth of the gift.
+        // Asserting the ratio rather than the dates keeps it independent of
+        // HOS-1010's arithmetic fix.
+        subscriptionRow = eligibleSubscription({ metadata: { billingInterval: 'annual' } });
+
+        const result = await grantCourtesyCycles({
+            billing: makeBilling(),
+            subscriptionId: 'sub-1',
+            cycles: 1,
+            actorId: 'admin-1',
+            now: NOW
+        });
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        const spanDays =
+            (result.data.courtesyEndsAt.getTime() - result.data.courtesyStartsAt.getTime()) / DAY;
+        expect(spanDays).toBeGreaterThan(300);
     });
 });
