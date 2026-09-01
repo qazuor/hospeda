@@ -27,6 +27,8 @@
     "Pricing Tourist [dark]": [],
     "Publish Restaurant Landing [light]": ["color-contrast"],
     "Publish Restaurant Landing [dark]": [],
+    "Sales Gastronomy [light]": ["color-contrast"],
+    "Sales Gastronomy [dark]": [],
     "Publish Experience Landing [light]": ["color-contrast"],
     "Publish Experience Landing [dark]": [],
     "Home EN [light]": ["color-contrast"],

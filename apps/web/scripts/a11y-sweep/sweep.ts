@@ -86,6 +86,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // behind in the header is exactly the kind of widget this baseline exists
     // to police.
     { url: '/es/publicar-restaurante/', name: 'Publish Restaurant Landing' },
+    { url: '/es/planes/gastronomia/', name: 'Sales Gastronomy' },
     { url: '/es/publicar-experiencia/', name: 'Publish Experience Landing' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }

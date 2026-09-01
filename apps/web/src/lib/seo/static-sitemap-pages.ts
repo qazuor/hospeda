@@ -59,6 +59,15 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/suscriptores/turistas/comparar/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
     { path: '/publicar-restaurante/', changefreq: 'monthly', priority: 0.7 },
+    // HOS-985: level 2 of the three-level structure (HOS-941 D-7) — the sales
+    // page for a vertical, with its prices one level below at
+    // `/planes/<audiencia>/precios/`. `gastronomia`, not `restaurantes`: D-9,
+    // because HOS-986 is open over "restaurante" reading as excluding food
+    // trucks, rotiserías and parrillas, and a URL is the most expensive place
+    // to carry that word. `/publicar-restaurante/` above 301s here once the
+    // retirement lands, and leaves this list at that point — both are listed
+    // meanwhile because both still answer 200.
+    { path: '/planes/gastronomia/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar-experiencia/', changefreq: 'monthly', priority: 0.7 },
 
     // Partner / collaborator acquisition.
