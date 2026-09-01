@@ -577,9 +577,37 @@ const selectGroupName = `pricing-select-${audience}`;
 	   glyph would paint the icon package's own brand blue at full strength
 	   regardless of the opacity below.
 
-	   The dark theme gets a slightly higher opacity: the same alpha over a dark
-	   card reads as almost nothing. `:global()` because `[data-theme]` lives on
-	   `<html>`, outside this component's scope. */
+	   ## The two alphas, and why dark is the LOWER one (HOS-943, owner review)
+
+	   The owner read the light theme back as "casi no se ve", which it was:
+	   0.06 over a white card is a 1.07:1 tint. It is now 0.1. The ceiling is not
+	   taste — it is the two text tokens this glyph is painted under, measured as
+	   `--brand-primary` composited over the card and then contrasted against
+	   each:
+
+	   - LIGHT card. `--brand-primary-link` (`.pricing-card__audience-label`,
+	     normal-size text, needs 4.5:1) reads 4.65:1 at 0.1 and drops under 4.5
+	     just past 0.125. `--brand-primary` on `.pricing-card__name` (large text,
+	     needs 3:1) reads 3.19:1 at 0.1. So 0.1 clears both with room, and ~0.12
+	     is the real ceiling — which is exactly the bound the guard in
+	     `test/components/billing/PricingCardsGrid.test.ts` already asserted.
+	   - DARK card. The binding token is a different one:
+	     `--core-muted-foreground` on `.pricing-card__desc`, which sits at the
+	     top of the card right where the glyph is and carries no background of
+	     its own. It reads 4.56:1 at 0.08 and crosses BELOW 4.5:1 at ~0.086 — so
+	     the 0.1 this rule used to carry was already fractionally short, and
+	     raising it in step with the light theme would have made a real (if
+	     axe-invisible, since axe reads the nearest background-carrying ancestor
+	     and never a `z-index: -1` sibling) contrast regression worse.
+
+	   Hence the inversion of the comment that used to live here: dark does NOT
+	   need MORE alpha. The same alpha reads STRONGER over a dark card, and dark
+	   has LESS contrast headroom. At these two values the glyph's own presence
+	   is matched across themes — 1.119:1 against the light card, 1.130:1 against
+	   the dark one — while every text token above it clears its threshold.
+
+	   `:global()` because `[data-theme]` lives on `<html>`, outside this
+	   component's scope. */
 	.pricing-card__watermark {
 		position: absolute;
 		z-index: -1;
@@ -587,12 +615,12 @@ const selectGroupName = `pricing-select-${audience}`;
 		inset-inline-end: calc(var(--space-6) * -1);
 		line-height: 0;
 		color: var(--brand-primary);
-		opacity: 0.06;
+		opacity: 0.1;
 		pointer-events: none;
 	}
 
 	:global([data-theme='dark']) .pricing-card__watermark {
-		opacity: 0.1;
+		opacity: 0.08;
 	}
 
 	/* Name + description: one group, one shared row, one tight internal gap. */

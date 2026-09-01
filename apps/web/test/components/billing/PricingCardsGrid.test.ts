@@ -662,7 +662,7 @@ describe('PricingCardsGrid.astro', () => {
             // - `.pricing-card__name` — AA's LARGE-text threshold is 3:1, which
             //   ~3.5:1 clears. The next test proves the title really is large.
             // - `.pricing-card__watermark` — not text at all. A decorative glyph
-            //   at 6% opacity, `aria-hidden`, painted BEHIND every child. The
+            //   at 10% opacity, `aria-hidden`, painted BEHIND every child. The
             //   test after next proves all three.
             //
             // Every OTHER rule in either file is still forbidden the token:
@@ -731,10 +731,57 @@ describe('PricingCardsGrid.astro', () => {
             expect(rule).toMatch(/inset-inline-end: calc\(.*\* -1\);/);
         });
 
-        it('lifts the glyph in dark mode, where the same alpha reads as nothing', () => {
-            expect(src).toMatch(
-                /:global\(\[data-theme='dark'\]\) \.pricing-card__watermark \{\s*opacity:/
+        it('caps the dark-theme glyph BELOW the light one, where headroom is smaller', () => {
+            // This used to assert a LIFT, on the assumption that the same alpha
+            // over a dark card reads as almost nothing. Measuring it for
+            // HOS-943 showed the opposite on both counts, and the rule now
+            // encodes the measurement:
+            //
+            // - The same alpha reads STRONGER over the dark card, so dark needs
+            //   less of it to match the light theme's presence.
+            // - The binding text token differs per theme. On light it is
+            //   `--brand-primary-link`, which stays above 4.5:1 until ~0.125.
+            //   On dark it is `--core-muted-foreground` on `.pricing-card__desc`
+            //   — top of the card, no background of its own, directly under the
+            //   glyph — which crosses BELOW 4.5:1 at ~0.086.
+            //
+            // So the dark value must exist, must be its own number (an override
+            // equal to the base is dead CSS a reviewer would delete), and must
+            // be the SMALLER of the two. Raising it to "match" the light theme
+            // is the regression this test exists to catch.
+            const light = Number(
+                src
+                    .match(/\.pricing-card__watermark \{([^}]*)\}/)?.[1]
+                    ?.match(/opacity: ([\d.]+);/)?.[1] ?? '1'
             );
+            const dark = Number(
+                src
+                    .match(
+                        /:global\(\[data-theme='dark'\]\) \.pricing-card__watermark \{([^}]*)\}/
+                    )?.[1]
+                    ?.match(/opacity: ([\d.]+);/)?.[1] ?? '1'
+            );
+
+            expect(dark).toBeGreaterThan(0);
+            expect(dark).not.toBe(light);
+            expect(dark).toBeLessThan(light);
+            // `--core-muted-foreground` on a dark card falls under AA past here.
+            expect(dark).toBeLessThanOrEqual(0.085);
+        });
+
+        it('keeps the light glyph visible enough to be a watermark at all', () => {
+            // The other half of the owner's complaint: the previous 0.06 was a
+            // 1.07:1 tint on a white card, which he read as "casi no se ve".
+            // The `<= 0.12` ceiling asserted above is the accessibility bound;
+            // this is the floor that stops a future edit from quietly fading it
+            // back out of existence while still passing every test above.
+            const light = Number(
+                src
+                    .match(/\.pricing-card__watermark \{([^}]*)\}/)?.[1]
+                    ?.match(/opacity: ([\d.]+);/)?.[1] ?? '1'
+            );
+
+            expect(light).toBeGreaterThanOrEqual(0.09);
         });
 
         it('resolves the glyph through the shared table, never inline in the template', () => {
