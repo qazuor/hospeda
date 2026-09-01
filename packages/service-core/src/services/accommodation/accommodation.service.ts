@@ -183,7 +183,9 @@ import {
 import type {
     AccommodationHookState,
     AccommodationPublishDeps,
-    HostOnboardingResult
+    HostOnboardingResult,
+    PublishTransactionContext,
+    StartLocalTrialResult
 } from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
@@ -1750,30 +1752,37 @@ export class AccommodationService extends BaseCrudService<
      * complete the listing — not for admin panel access, which HOST does not
      * have. By the time `publish` runs, the owner is already HOST (or higher).
      *
-     * Flow (Option C "external first, then short tx" pattern):
+     * Flow:
      *
      *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
      *     `ACCOMMODATION_UPDATE_ANY`.
      *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Capacity-completeness guard (HOS-152): validate `extraInfo` against
+     *  3. Resolve the owner's roles. If the owner is billing-exempt (ADMIN/
+     *     SUPER_ADMIN/CLIENT_MANAGER), skip the eligibility check entirely.
+     *  4. Otherwise (regular HOST), ask the billing layer for the owner's
+     *     publish eligibility (`first_publish` / `has_active_sub` /
+     *     `subscription_required`). `subscription_required` rejects with
+     *     FORBIDDEN here — deliberately BEFORE the completeness guard (H-99): a
+     *     missing subscription is the one rejection a host cannot resolve by
+     *     editing, so they should meet it first rather than after filling in
+     *     `bathrooms`.
+     *  5. Capacity-completeness guard (HOS-152): validate `extraInfo` against
      *     `AccommodationExtraInfoRequiredForPublishSchema`. If `capacity`/
      *     `minNights`/`bedrooms`/`bathrooms` are missing, reject with
-     *     `VALIDATION_ERROR` before touching billing or the owner at all.
-     *  4. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
-     *     CLIENT_MANAGER), skip the eligibility check entirely and just flip
-     *     lifecycleState to ACTIVE.
-     *  5. Otherwise (regular HOST), ask the billing layer for the owner's
-     *     publish eligibility (`first_publish` / `has_active_sub` /
-     *     `subscription_required`).
-     *  6. `subscription_required` AND `first_publish` -> reject with FORBIDDEN.
-     *     Only `has_active_sub` may publish (HOS-171): a trial is now a
-     *     MercadoPago preapproval, so it cannot exist until someone authorizes a
-     *     card, and `first_publish` therefore goes to the plans page rather than
-     *     being granted a trial here. This step used to call `startTrial` outside
-     *     the transaction and compensate with `cancelTrial` if the tx then failed;
-     *     publish no longer touches billing at all, so both are gone.
-     *  7. Open a short transaction:
-     *      - update accommodation lifecycleState to ACTIVE
+     *     `VALIDATION_ERROR`.
+     *  6. Open a short transaction (HOS-1012 G-2) containing BOTH writes:
+     *      - when eligibility was `first_publish`, insert the Hospeda-owned,
+     *        no-card trial subscription (`startLocalTrial`) — the clock starts
+     *        at publish, not at signup (D-1);
+     *      - update accommodation lifecycleState to ACTIVE.
+     *     They commit together or not at all. Nothing external is called inside
+     *     the boundary, which is what makes that possible: the trial is a local
+     *     row with `mp_subscription_id = NULL`, so unlike the pre-HOS-171
+     *     MercadoPago trial it needs no saga, no timeout and no compensating
+     *     cancel.
+     *  7. After the commit, clear the owner's entitlement cache
+     *     (`onTrialStarted`, INV-1) — best effort, a failure here never fails a
+     *     publish that already landed.
      *  8. Schedule revalidation as a best-effort side effect (never rolls back
      *     the publish on revalidation errors).
      *
@@ -1849,6 +1858,12 @@ export class AccommodationService extends BaseCrudService<
                 const ownerIsBillingExempt =
                     AccommodationService.holdsBillingExemptRole(ownerRoles);
 
+                // Set only by the `first_publish` branch below. A billing-exempt
+                // owner (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) never starts a trial:
+                // they bypass billing entirely, so there is no clock to start
+                // and nothing to expire.
+                let startsLocalTrial = false;
+
                 if (!ownerIsBillingExempt) {
                     if (!this._publishDeps) {
                         throw new ServiceError(
@@ -1860,23 +1875,17 @@ export class AccommodationService extends BaseCrudService<
                         accommodation.ownerId,
                         execCtx
                     );
-                    // Publishing requires a live subscription — and that now
-                    // includes the owner's very first publish (HOS-171).
-                    //
-                    // `first_publish` used to grant a no-card trial right here,
-                    // mid-publish, so the owner went live without ever seeing a
-                    // checkout. Card-first has no such thing: a trial IS a
-                    // MercadoPago preapproval, so the payer must authorize a card
-                    // before any free days exist. Both states therefore reject to
-                    // the plans page, where the card is collected and the trial
-                    // starts. Creating the accommodation stays free — it simply
-                    // stays a draft until then.
-                    if (
-                        eligibility === 'subscription_required' ||
-                        eligibility === 'first_publish'
-                    ) {
+                    // An owner with no live subscription and no trial left in
+                    // this vertical goes to the plans page. `first_publish` is
+                    // the other branch: they still have their accommodation
+                    // trial, so publishing GRANTS it (HOS-1012 D-1 — the clock
+                    // starts when the listing goes live, not at signup) and the
+                    // insert happens below, inside the same transaction as the
+                    // lifecycle flip.
+                    if (eligibility === 'subscription_required') {
                         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
                     }
+                    startsLocalTrial = eligibility === 'first_publish';
                 }
 
                 // Publish-completeness guard (HOS-152, rewritten for H-101/H-94).
@@ -1947,33 +1956,88 @@ export class AccommodationService extends BaseCrudService<
                     !opts?.callerSetVisibility &&
                     accommodation.visibility === VisibilityEnum.PRIVATE;
 
-                // No compensation wrapper any more: publish no longer creates a
-                // trial subscription before this write, so there is no external
-                // side effect left to undo if the transaction fails (HOS-171).
-                const updated: Accommodation = await withServiceTransaction(
-                    async (txCtx) => {
-                        const next = await this.model.update(
-                            { id },
-                            {
-                                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                                ...(shouldPromoteVisibility
-                                    ? { visibility: VisibilityEnum.PUBLIC }
-                                    : {}),
-                                updatedById: validatedActor.id
-                            },
-                            txCtx.tx
-                        );
-                        if (!next) {
-                            throw new ServiceError(
-                                ServiceErrorCode.INTERNAL_ERROR,
-                                'Failed to flip accommodation lifecycleState to ACTIVE'
+                // HOS-1012 G-2: the trial insert and the lifecycle flip commit
+                // together or neither does. A publish that succeeds while the
+                // trial insert fails leaves a live listing with no clock —
+                // permanently free. A trial that starts while the publish fails
+                // burns days for nothing.
+                //
+                // Still no compensation wrapper, and deliberately so: the trial
+                // is a local row, not a MercadoPago preapproval, so the database
+                // rolls it back. Nothing external is touched in here (ADR-019),
+                // which is exactly what lets both writes share one boundary.
+                //
+                // The trial goes FIRST: `startLocalTrial` returning null means
+                // the owner cannot be given a clock, and that must reject before
+                // the listing is written to at all.
+                const {
+                    updated,
+                    trial
+                }: { updated: Accommodation; trial: StartLocalTrialResult | null } =
+                    await withServiceTransaction(
+                        async (txCtx) => {
+                            let startedTrial: StartLocalTrialResult | null = null;
+                            if (startsLocalTrial) {
+                                // Narrowed here rather than at the top: `_publishDeps`
+                                // is only guaranteed non-null on the non-exempt path,
+                                // which is the only path that can set the flag.
+                                startedTrial =
+                                    (await this._publishDeps?.startLocalTrial({
+                                        ownerId: accommodation.ownerId,
+                                        ctx: txCtx as PublishTransactionContext
+                                    })) ?? null;
+                                if (!startedTrial) {
+                                    // No customer row, no trial plan, or billing is
+                                    // off. Publishing anyway would hand out an
+                                    // unbounded free listing.
+                                    throw new ServiceError(
+                                        ServiceErrorCode.FORBIDDEN,
+                                        'subscription_required'
+                                    );
+                                }
+                            }
+                            const next = await this.model.update(
+                                { id },
+                                {
+                                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    ...(shouldPromoteVisibility
+                                        ? { visibility: VisibilityEnum.PUBLIC }
+                                        : {}),
+                                    updatedById: validatedActor.id
+                                },
+                                txCtx.tx
                             );
-                        }
-                        return next;
-                    },
-                    undefined,
-                    { timeoutMs: 5000 }
-                );
+                            if (!next) {
+                                throw new ServiceError(
+                                    ServiceErrorCode.INTERNAL_ERROR,
+                                    'Failed to flip accommodation lifecycleState to ACTIVE'
+                                );
+                            }
+                            return { updated: next, trial: startedTrial };
+                        },
+                        undefined,
+                        { timeoutMs: 5000 }
+                    );
+
+                // INV-1, and only reachable once the transaction above has
+                // COMMITTED. A local trial has no preapproval and therefore no
+                // webhook, so this is the only thing that will ever drop the
+                // owner's cached (empty) entitlement set — without it they are
+                // told they are live and still gated for up to 5 minutes.
+                if (trial) {
+                    try {
+                        await this._publishDeps?.onTrialStarted(trial);
+                    } catch (error) {
+                        // The publish is already committed and the trial row is
+                        // durable. Failing the request now would tell the owner
+                        // their listing did not go live when it did; a stale
+                        // cache self-heals in 5 minutes.
+                        this.logger.error(
+                            { error, ...trial },
+                            '[accommodation.publish] trial post-commit hook failed (non-blocking; entitlement cache self-heals within the TTL)'
+                        );
+                    }
+                }
 
                 await this._scheduleAccommodationRevalidation(updated, '[accommodation.publish] ');
 

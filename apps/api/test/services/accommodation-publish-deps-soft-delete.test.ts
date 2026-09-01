@@ -17,7 +17,8 @@ const fixtures = vi.hoisted(() => ({
 }));
 
 const mocks = vi.hoisted(() => ({
-    isOwnerCategorySubscription: vi.fn()
+    isOwnerCategorySubscription: vi.fn(),
+    resolveTrialEligibility: vi.fn()
 }));
 
 vi.mock('@repo/db', async () => {
@@ -125,7 +126,23 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
+// HOS-1012: `first_publish` no longer means "zero subscription rows" — it means
+// "no LIVE owner subscription AND the accommodation trial is unspent". This file
+// is about the first half (soft-deleted rows must not count as live), so the
+// second half is stubbed to "eligible" and held constant across every case.
+vi.mock('../../src/services/billing/trial-eligibility.service', () => ({
+    resolveTrialEligibility: mocks.resolveTrialEligibility
+}));
+
 import { buildAccommodationPublishDeps } from '../../src/services/accommodation-publish-deps';
+
+/**
+ * Billing getter stub. `checkEligibility` needs a non-null client to be able to
+ * ask about trial eligibility at all (a null one answers
+ * `subscription_required`), but never calls into it here — the resolver above is
+ * mocked wholesale.
+ */
+const getBillingStub = () => ({}) as never;
 
 const OWNER_ID = 'owner-hos-777';
 const LIVE_CUSTOMER_ID = 'cus-live';
@@ -155,6 +172,8 @@ describe('HOS-777 — buildAccommodationPublishDeps.checkEligibility ignores sof
         fixtures.subscriptions = [];
         mocks.isOwnerCategorySubscription.mockReset();
         mocks.isOwnerCategorySubscription.mockResolvedValue(true);
+        mocks.resolveTrialEligibility.mockReset();
+        mocks.resolveTrialEligibility.mockResolvedValue({ eligible: true });
     });
 
     it('returns first_publish when the only active-looking subscription is soft-deleted', async () => {
@@ -167,7 +186,8 @@ describe('HOS-777 — buildAccommodationPublishDeps.checkEligibility ignores sof
             }
         ];
 
-        const result = await buildAccommodationPublishDeps().checkEligibility(OWNER_ID);
+        const result =
+            await buildAccommodationPublishDeps(getBillingStub).checkEligibility(OWNER_ID);
 
         expect(result).toBe('first_publish');
     });
@@ -190,7 +210,8 @@ describe('HOS-777 — buildAccommodationPublishDeps.checkEligibility ignores sof
             }
         ];
 
-        const result = await buildAccommodationPublishDeps().checkEligibility(OWNER_ID);
+        const result =
+            await buildAccommodationPublishDeps(getBillingStub).checkEligibility(OWNER_ID);
 
         expect(result).toBe('first_publish');
     });
@@ -212,7 +233,8 @@ describe('HOS-777 — buildAccommodationPublishDeps.checkEligibility ignores sof
             }
         ];
 
-        const result = await buildAccommodationPublishDeps().checkEligibility(OWNER_ID);
+        const result =
+            await buildAccommodationPublishDeps(getBillingStub).checkEligibility(OWNER_ID);
 
         expect(result).toBe('first_publish');
     });
@@ -221,7 +243,8 @@ describe('HOS-777 — buildAccommodationPublishDeps.checkEligibility ignores sof
         fixtures.customers = [liveCustomer];
         fixtures.subscriptions = [liveOwnerSubscription];
 
-        const result = await buildAccommodationPublishDeps().checkEligibility(OWNER_ID);
+        const result =
+            await buildAccommodationPublishDeps(getBillingStub).checkEligibility(OWNER_ID);
 
         expect(result).toBe('has_active_sub');
     });
@@ -238,7 +261,8 @@ describe('HOS-777 — buildAccommodationPublishDeps.checkEligibility ignores sof
         ];
         fixtures.subscriptions = [liveOwnerSubscription];
 
-        const result = await buildAccommodationPublishDeps().checkEligibility(OWNER_ID);
+        const result =
+            await buildAccommodationPublishDeps(getBillingStub).checkEligibility(OWNER_ID);
 
         expect(result).toBe('has_active_sub');
     });

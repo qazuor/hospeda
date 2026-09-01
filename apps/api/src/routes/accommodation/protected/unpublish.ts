@@ -5,6 +5,7 @@
 import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
@@ -16,7 +17,7 @@ const accommodationService = new AccommodationService(
     undefined,
     null,
     undefined,
-    buildAccommodationPublishDeps()
+    buildAccommodationPublishDeps(() => getQZPayBilling())
 );
 
 /**

@@ -17,6 +17,7 @@ import {
     gateRichDescription,
     gateVideoEmbed
 } from '../../../middlewares/accommodation-entitlements';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { requireEntitlement } from '../../../middlewares/entitlement';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
@@ -29,7 +30,7 @@ const accommodationService = new AccommodationService(
     undefined,
     null,
     undefined,
-    buildAccommodationPublishDeps()
+    buildAccommodationPublishDeps(() => getQZPayBilling())
 );
 
 /**
