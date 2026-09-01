@@ -378,8 +378,13 @@ payment method (HOS-926). See R-7.
 - **AC-13** — Three notifications fire, once each: on grant, on start, on end.
   Re-running the cron over an already-notified boundary sends nothing further.
 - **AC-14** — A subscriber in `courtesy` **can cancel** (soft-cancel succeeds) and
-  **cannot** pause, change plan, or buy an addon — each rejected by its existing
-  status gate, not by a new one.
+  **can buy an addon**, but **cannot** pause or change plan — each rejected by its
+  existing status gate, not by a new one. Addons are deliberately allowed: the addon
+  gate (`addon.checkout.ts`) checks `isEntitlementGrantingStatus`, which includes
+  `'courtesy'` on purpose to satisfy AC-2 (the whole point of the gift is that the
+  subscriber loses nothing), and an addon is a one-time purchase with its own
+  validity window — it never touches the paused preapproval, so there is nothing
+  for the pause to interfere with.
 - **AC-15** — `courtesyStartsAt` is the end of the already-paid period, not the
   grant instant, and `courtesyEndsAt` is N cycles after `courtesyStartsAt`.
 
@@ -459,15 +464,32 @@ still open, and it blocks nothing** — see below for how the implementation avo
 waiting on it.
 
 - **OQ-2 — Cancelling, pausing or changing plan during the gift.** ✅
-  **Cancelling is allowed; everything else is blocked.** The block costs no code:
-  every other billing gate already demands `active`/`trialing` explicitly, so a new
-  status is refused by omission — `subscription-pause.ts:76`, `plan-change.ts:235`,
-  `qzpay-admin-hooks.ts:874`. Only cancelling needs a change: adding `courtesy` to
-  `SOFT_CANCELLABLE_STATUSES` (`subscription-cancel.service.ts:110`), one line.
+  **Cancelling and buying an addon are allowed; pausing and changing plan are
+  blocked.** Pause and plan-change cost no code: both already demand
+  `active`/`trialing` explicitly, so `courtesy` is refused by omission —
+  `subscription-pause.ts:76`, `plan-change.ts:235`. Cancelling needed one change:
+  adding `courtesy` to `SOFT_CANCELLABLE_STATUSES`
+  (`subscription-cancel.service.ts:110`).
 
   Cancelling is deliberately NOT blocked. A subscriber who is not being charged and
   cannot leave is trapped for no benefit to anyone, and Argentine consumer law
   (Resolución 424/2020) requires unsubscribing to be as easy as subscribing.
+
+  **Decision update (owner, 2026-08-31): addons are also NOT blocked.** The
+  original premise here — "every other billing gate already demands
+  `active`/`trialing` explicitly, so the block costs no code" — was **false** for
+  addons. `addon.checkout.ts` never compares against `active`/`trialing` strings;
+  it gates on `isEntitlementGrantingStatus`, and that predicate was already
+  extended to include `'courtesy'` (alongside `active`/`trialing`/`comp`) to
+  satisfy AC-2 — a courtesy subscriber must retain every entitlement of their
+  plan, addons included. So "block addons via the existing gate" was never
+  actually true; the gate that exists grants, it does not block. Rather than add a
+  new blocking check to `addon.checkout.ts` to force the original premise true, the
+  owner chose to relax AC-14 instead: an addon is a one-time purchase with its own
+  validity window, never touching the paused MercadoPago preapproval underneath the
+  gift, so there is nothing about a courtesy window that an addon purchase could
+  interfere with. `qzpay-admin-hooks.ts:874` is unaffected by this correction — it
+  governs the admin pause/resume path, not the self-serve addon checkout.
 
 - **OQ-3 — Does a downgrade interrupt the gift?** ✅ **The question no longer
   exists.** Plan changes are blocked during a gift (OQ-2), so there is no mid-gift
