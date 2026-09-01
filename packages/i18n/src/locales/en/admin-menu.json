@@ -58,6 +58,7 @@
         "subscriptions": "Subscriptions",
         "addons": "Add-ons",
         "payments": "Payments",
+        "reconciliation": "Orphan payment rescue",
         "invoices": "Invoices",
         "promoCodes": "Promo Codes",
         "sponsorships": "Sponsorships",

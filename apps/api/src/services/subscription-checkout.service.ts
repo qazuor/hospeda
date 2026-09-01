@@ -45,7 +45,9 @@ import { env } from '../utils/env.js';
 import { sanitizeEmailForMercadoPago } from '../utils/mp-email.js';
 import {
     resolveReusableCommerceCheckout,
-    resolveReusablePartnerCheckout
+    resolveReusableCommerceOwnPreapprovalCheckout,
+    resolveReusablePartnerCheckout,
+    resolveReusablePartnerOwnPreapprovalCheckout
 } from './billing/checkout-idempotency.js';
 import {
     buildPreapprovalPlanShareLink,
@@ -922,13 +924,27 @@ export async function initiateCommerceMonthlySubscription(
     // `abandoned-pending-subs` cron already reaps exactly that row shape.
     // Living here rather than in the route is what also covers
     // `routes/commerce/admin/start-subscription.ts`, which has no guard at all.
-    const reusable = await resolveReusableCommerceCheckout({
-        entityType,
-        entityId,
-        customerId,
-        planId: plan.id,
-        mpPreapprovalPlanId: providerPriceId
-    });
+    // HOS-937 step 4: the flag also swaps in the own-preapproval replacement
+    // for this reuse check (spec §6.6-B) — a `pending_provider` row from the
+    // new flow always carries `mp_subscription_id`, so "is there already a
+    // checkout in flight" is answered by reading `billing_subscriptions`
+    // directly and handing back the SAME `init_point`, not a rebuilt share
+    // link.
+    const reusable = env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
+        ? await resolveReusableCommerceOwnPreapprovalCheckout({
+              entityType,
+              entityId,
+              customerId,
+              planId: plan.id,
+              mpPreapprovalPlanId: providerPriceId
+          })
+        : await resolveReusableCommerceCheckout({
+              entityType,
+              entityId,
+              customerId,
+              planId: plan.id,
+              mpPreapprovalPlanId: providerPriceId
+          });
     if (reusable) {
         return reusable;
     }
@@ -941,6 +957,77 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
+    // HOS-937 step 4: resolve which email binds the preapproval, same
+    // precedence as the accommodation paths (spec §6.3). The listing owner
+    // IS the payer here (both the owner self-checkout and the
+    // admin-initiated route resolve the OWNER's billing customer), so this
+    // is a real identity signal, unlike the partner flow below — there is
+    // no pre-redirect screen for commerce yet, so `requestedPayerEmail` is
+    // always undefined and this only prefers a previously-working
+    // `mp_payer_email` over the signup address.
+    const { payerEmail } = resolvePayerEmail({
+        requestedPayerEmail: undefined,
+        mpPayerEmail: await getMpPayerEmail(customerId, getDb()),
+        customerEmail: customer.email
+    });
+
+    // ── HOS-937 step 4: own-preapproval checkout, same dark-by-default flag
+    // as the accommodation paths ─────────────────────────────────────────
+    if (env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED) {
+        const ownPreapproval = await createOwnPreapprovalSubscription({
+            billing,
+            customerId,
+            planId: plan.id,
+            priceId: monthlyPrice.id,
+            billingInterval: 'monthly',
+            paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+            notificationUrl: urls.notificationUrl,
+            providerPriceId,
+            payerEmail,
+            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // D3: HOS-695 — the listing's own vertical, never the retired
+            // 'commerce' umbrella. `loadEntitlements()` filters strictly to
+            // `product_domain = 'accommodation'` (SPEC-239), so this is what
+            // keeps a commerce subscription from granting its owner the
+            // accommodation entitlement set.
+            productDomain,
+            // The SUBSCRIPTION → ENTITY path, plus the `checkoutUrl` stamp
+            // §6.6-B's reuse check reads back — see
+            // `own-preapproval-subscription-create.ts`'s module docblock.
+            domainMetadata: { commerceEntityType: entityType, commerceEntityId: entityId },
+            // D4: upsert the link row (one per entity), in the SAME local
+            // transaction as the status/domain UPDATE this helper issues.
+            writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
+                await tx
+                    .insert(commerceListingSubscriptions)
+                    .values({
+                        subscriptionId,
+                        productDomain,
+                        entityType,
+                        entityId,
+                        status: SubscriptionStatusEnum.PENDING_PROVIDER
+                    })
+                    .onConflictDoUpdate({
+                        target: [
+                            commerceListingSubscriptions.entityType,
+                            commerceListingSubscriptions.entityId
+                        ],
+                        set: {
+                            subscriptionId,
+                            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                            updatedAt: new Date()
+                        }
+                    });
+            }
+        });
+
+        return {
+            checkoutUrl: ownPreapproval.checkoutUrl,
+            localSubscriptionId: ownPreapproval.subscription.id,
+            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+        };
+    }
+
     const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
@@ -950,8 +1037,9 @@ export async function initiateCommerceMonthlySubscription(
         // The listing owner IS the payer here (both the owner self-checkout and
         // the admin-initiated route resolve the OWNER's billing customer), so the
         // snapshot is a real identity signal for the webhook linker — unlike the
-        // partner flow below.
-        payerEmail: customer.email,
+        // partner flow below. Resolved above via `resolvePayerEmail` (spec
+        // §6.3) rather than the raw signup address.
+        payerEmail,
         // HOS-590: mirrors `freeTrialDays !== undefined` on the accommodation
         // paths (`:559`, `:1303`) — the third of the three hardcodes that had
         // to move together, or this would promise a trial and charge day one.
@@ -1136,12 +1224,20 @@ export async function initiatePartnerMonthlySubscription(
     // An admin who switched the partner's plan between the two sends does NOT
     // get the stale link: the resolved `preapproval_plan` (and the commercial
     // plan id) are part of the reuse conditions.
-    const reusable = await resolveReusablePartnerCheckout({
-        partnerId,
-        customerId,
-        planId: plan.id,
-        mpPreapprovalPlanId: providerPriceId
-    });
+    // HOS-937 step 4: same own-preapproval reuse replacement as commerce (§6.6-B).
+    const reusable = env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
+        ? await resolveReusablePartnerOwnPreapprovalCheckout({
+              partnerId,
+              customerId,
+              planId: plan.id,
+              mpPreapprovalPlanId: providerPriceId
+          })
+        : await resolveReusablePartnerCheckout({
+              partnerId,
+              customerId,
+              planId: plan.id,
+              mpPreapprovalPlanId: providerPriceId
+          });
     if (reusable) {
         return reusable;
     }
@@ -1152,6 +1248,50 @@ export async function initiatePartnerMonthlySubscription(
             'CUSTOMER_NOT_FOUND',
             `Customer '${customerId}' not found`
         );
+    }
+
+    // ── HOS-937 step 4: own-preapproval checkout, same dark-by-default flag
+    // as the accommodation/commerce paths ────────────────────────────────
+    // No `freeTrialDays` — partner directory subscriptions are no-trial
+    // (`trialDays: 0` above). No payer email either — see this function's
+    // JSDoc on why a synthetic partner address must never be snapshotted.
+    if (env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED) {
+        const ownPreapproval = await createOwnPreapprovalSubscription({
+            billing,
+            customerId,
+            planId: plan.id,
+            priceId: monthlyPrice.id,
+            billingInterval: 'monthly',
+            paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+            notificationUrl: urls.notificationUrl,
+            providerPriceId,
+            productDomain: ProductDomainEnum.PARTNER,
+            domainMetadata: { partnerId },
+            writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
+                await tx
+                    .insert(partnerSubscriptions)
+                    .values({
+                        subscriptionId,
+                        productDomain: ProductDomainEnum.PARTNER,
+                        partnerId,
+                        status: SubscriptionStatusEnum.PENDING_PROVIDER
+                    })
+                    .onConflictDoUpdate({
+                        target: partnerSubscriptions.partnerId,
+                        set: {
+                            subscriptionId,
+                            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                            updatedAt: new Date()
+                        }
+                    });
+            }
+        });
+
+        return {
+            checkoutUrl: ownPreapproval.checkoutUrl,
+            localSubscriptionId: ownPreapproval.subscription.id,
+            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+        };
     }
 
     const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
@@ -1503,15 +1643,68 @@ export async function initiatePaidAnnualSubscription(
     }
 
     // HOS-937 step 2: resolve which email to record for this checkout — see
-    // the monthly path's identical resolution for the full rationale.
-    // Annual has no own-preapproval branch (Path C only), so this is
-    // informational (stored on the correlation row), not binding at
-    // MercadoPago.
+    // the monthly path's identical resolution for the full rationale. Binding
+    // at MercadoPago when the own-preapproval branch below runs (step 4);
+    // informational only (stored on the correlation row) on the Path C
+    // fallback further down.
     const { payerEmail } = resolvePayerEmail({
         requestedPayerEmail: input.payerEmail,
         mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
         customerEmail: customer.email
     });
+
+    // ── HOS-937 step 4: own-preapproval checkout, same dark-by-default flag
+    // as the monthly path ────────────────────────────────────────────
+    // Identical rationale to `initiatePaidMonthlySubscription`'s own branch:
+    // creating a per-user `POST /preapproval` here instead of the share link
+    // puts `external_reference` in the body of a server-to-server call, where
+    // MercadoPago preserves it. Annual needs NO extra wiring beyond
+    // `billingInterval: 'annual'` — `createPaidSubscription` already maps that
+    // to qzpay's `frequency: 12, frequency_type: 'months'` cadence, and
+    // `productDomain`/`writeDomainLinkRow` stay unset (accommodation only,
+    // just like monthly).
+    if (env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED) {
+        const ownPreapproval = await createOwnPreapprovalSubscription({
+            billing,
+            customerId,
+            planId: plan.id,
+            priceId: annualPrice.id,
+            billingInterval: 'annual',
+            paymentMethodReturnUrl: urls.successUrl,
+            notificationUrl: urls.notificationUrl,
+            providerPriceId,
+            // HOS-937 step 2: bind the preapproval to the resolved payer
+            // email, same as the monthly own-preapproval branch.
+            payerEmail,
+            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // No `pendingDiscount` for annual — HOS-244 blocks discount codes
+            // on annual checkout above (born-discounted is monthly-only).
+            ...(promoPlan.kind === 'trial' &&
+            promoPlan.promoCodeId &&
+            promoPlan.code &&
+            !promoExtensionIgnored
+                ? {
+                      pendingTrialExtension: {
+                          promoCodeId: promoPlan.promoCodeId,
+                          code: promoPlan.code
+                      }
+                  }
+                : {}),
+            ...(input.db ? { db: input.db } : {})
+        });
+
+        return {
+            checkoutUrl: ownPreapproval.checkoutUrl,
+            localSubscriptionId: ownPreapproval.subscription.id,
+            // Same synthesized window as the monthly path — no
+            // `billing_pending_checkouts` correlation row exists in this
+            // flow.
+            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+            ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
+            ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
+            payerEmail
+        };
+    }
 
     const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,

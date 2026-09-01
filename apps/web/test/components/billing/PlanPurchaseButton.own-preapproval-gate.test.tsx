@@ -1,21 +1,25 @@
 /**
  * @file PlanPurchaseButton.own-preapproval-gate.test.tsx
- * @description Regression coverage for the `ownPreapprovalMonthlyEnabled`
- * gate on the payer-email confirm dialog (HOS-937 review fix).
+ * @description Regression coverage for the `ownPreapprovalEnabled` gate on
+ * the payer-email confirm dialog (HOS-937 review fix, widened in step 4).
  *
  * The dialog (`PayerEmailConfirmDialog`) only has an effect on the
- * own-preapproval accommodation-monthly checkout path — the ONLY path that
- * binds `payer_email` server-side. On every other path (this flag off, which
- * is production today; the annual interval; commerce; partner) MercadoPago's
- * hosted share-link checkout silently discards `payer_email`, so the dialog
- * would be an extra click in a flow that bills, with zero effect.
+ * own-preapproval checkout path — the ONLY path that binds `payer_email`
+ * server-side. On every other path (this flag off, which is production
+ * today) MercadoPago's hosted share-link checkout silently discards
+ * `payer_email`, so the dialog would be an extra click in a flow that bills,
+ * with zero effect.
  *
  * Before this gate, `setShowPayerEmailConfirm(true)` fired unconditionally —
  * every authenticated checkout saw the dialog regardless of the flag. This
  * file is the regression test for that bug: prop omitted / `false` (the
  * flag's own dark-by-default posture and today's production value) must
  * render the pre-HOS-937 checkout flow byte for byte, and `true` must show
- * the dialog — but ONLY when the checkout about to fire is monthly.
+ * the dialog for BOTH intervals this button renders (monthly and annual) —
+ * since HOS-937 step 4 extended the own-preapproval path (and the SAME
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` flag) to accommodation annual
+ * too, so a gate still restricted to monthly would let an annual checkout
+ * bind a payer_email the user never saw or could edit.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -116,11 +120,11 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('PlanPurchaseButton — own-preapproval-monthly gate (HOS-937 review fix)', () => {
+describe('PlanPurchaseButton — own-preapproval gate (HOS-937 review fix)', () => {
     it('flag OFF (prop omitted): clicking the CTA skips the dialog entirely and goes straight to checkout with the session email', async () => {
-        // Arrange — `ownPreapprovalMonthlyEnabled` intentionally NOT passed,
-        // matching every real caller today (the SSR fetch defaults to `false`
-        // on any error, and production has the underlying env flag off).
+        // Arrange — `ownPreapprovalEnabled` intentionally NOT passed, matching
+        // every real caller today (the SSR fetch defaults to `false` on any
+        // error, and production has the underlying env flag off).
         const fetchMock = buildFetchMock();
         vi.stubGlobal('fetch', fetchMock);
         const user = userEvent.setup();
@@ -148,14 +152,14 @@ describe('PlanPurchaseButton — own-preapproval-monthly gate (HOS-937 review fi
         expect(body.payerEmail).toBe(SESSION_EMAIL);
     });
 
-    it('flag OFF explicit (`ownPreapprovalMonthlyEnabled={false}`): same direct-checkout behavior', async () => {
+    it('flag OFF explicit (`ownPreapprovalEnabled={false}`): same direct-checkout behavior', async () => {
         const fetchMock = buildFetchMock();
         vi.stubGlobal('fetch', fetchMock);
         const user = userEvent.setup();
         render(
             <PlanPurchaseButton
                 {...defaultProps}
-                ownPreapprovalMonthlyEnabled={false}
+                ownPreapprovalEnabled={false}
             />
         );
 
@@ -174,7 +178,7 @@ describe('PlanPurchaseButton — own-preapproval-monthly gate (HOS-937 review fi
         render(
             <PlanPurchaseButton
                 {...defaultProps}
-                ownPreapprovalMonthlyEnabled={true}
+                ownPreapprovalEnabled={true}
             />
         );
 
@@ -196,11 +200,12 @@ describe('PlanPurchaseButton — own-preapproval-monthly gate (HOS-937 review fi
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('flag ON but interval is annual: the dialog still does NOT appear — own-preapproval never applies outside monthly', async () => {
+    it('flag ON + annual interval: the dialog STILL appears — HOS-937 step 4 extended own-preapproval to annual too', async () => {
         // Arrange — wrapping in a [data-billing="annual"] ancestor makes the
         // island resolve billingInterval to 'annual' on mount, mirroring how
-        // the real annual toggle works. Even with the flag on, annual keeps
-        // using the share-link checkout, so the dialog must stay gated off.
+        // the real annual toggle works. This is the exact regression the
+        // step-4 widening fixes: before it, an annual checkout with the flag
+        // on created a binding own-preapproval but never showed this dialog.
         const fetchMock = buildFetchMock();
         vi.stubGlobal('fetch', fetchMock);
         const user = userEvent.setup();
@@ -208,7 +213,7 @@ describe('PlanPurchaseButton — own-preapproval-monthly gate (HOS-937 review fi
             <div data-billing="annual">
                 <PlanPurchaseButton
                     {...defaultProps}
-                    ownPreapprovalMonthlyEnabled={true}
+                    ownPreapprovalEnabled={true}
                 />
             </div>
         );
@@ -220,10 +225,18 @@ describe('PlanPurchaseButton — own-preapproval-monthly gate (HOS-937 review fi
         // Act
         await user.click(getMainButton());
 
-        // Assert — straight to checkout, no dialog.
+        // Assert — dialog appears, checkout has NOT fired yet.
+        const dialog = await screen.findByRole('dialog');
+        expect(dialog).toBeInTheDocument();
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(window.location.href).toBe('');
+
+        // Confirm — checkout fires with the pre-filled session email.
+        await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
         await waitFor(() => {
             expect(window.location.href).toBe(CHECKOUT_URL);
         });
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

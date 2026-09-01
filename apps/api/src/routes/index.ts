@@ -365,7 +365,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
         // HOS-937 review fix: read-only checkout-behavior flags (currently just
-        // `ownPreapprovalMonthlyEnabled`) the web pricing pages need to decide
+        // `ownPreapprovalEnabled`) the web pricing pages need to decide
         // whether to render the payer-email confirm dialog. Mounted separately
         // from `/api/v1/public/plans` rather than nested under it — the flag is
         // a checkout-behavior concern, not plan data.

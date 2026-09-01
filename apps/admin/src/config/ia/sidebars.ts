@@ -573,7 +573,7 @@ const comercialSidebar: SidebarInput = {
             label: { es: 'Pagos', en: 'Payments', pt: 'Pagamentos' },
             icon: 'ReceiptIcon',
             defaultOpen: false,
-            permissions: ['PAYMENT_VIEW', 'INVOICE_VIEW'],
+            permissions: ['PAYMENT_VIEW', 'INVOICE_VIEW', 'BILLING_RECONCILIATION_MANAGE'],
             onMissing: 'hide',
             items: [
                 {
@@ -592,6 +592,19 @@ const comercialSidebar: SidebarInput = {
                     icon: 'FileTextIcon',
                     route: '/billing/invoices',
                     permissions: ['INVOICE_VIEW'],
+                    onMissing: 'hide'
+                },
+                {
+                    type: 'link',
+                    id: 'reconciliation',
+                    label: {
+                        es: 'Rescate de pagos huérfanos',
+                        en: 'Orphan payment rescue',
+                        pt: 'Resgate de pagamentos órfãos'
+                    },
+                    icon: 'ShieldAlertIcon',
+                    route: '/billing/reconciliation',
+                    permissions: ['BILLING_RECONCILIATION_MANAGE'],
                     onMissing: 'hide'
                 }
             ]

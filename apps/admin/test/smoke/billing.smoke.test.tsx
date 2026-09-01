@@ -150,7 +150,9 @@ vi.mock('@/features/billing-subscriptions/hooks', () => ({
     useExtendTrialMutation: () => ({ mutate: vi.fn(), isPending: false }),
     // Added in commit 3bcc5d786 ("feat(admin): subscription pause/resume UI")
     usePauseSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false }),
-    useResumeSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false })
+    useResumeSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    // Added by HOS-180 ("feat(admin): courtesy grant action")
+    useGrantCourtesyMutation: () => ({ mutate: vi.fn(), isPending: false })
 }));
 
 vi.mock('@/features/billing-subscriptions/types', () => ({}));

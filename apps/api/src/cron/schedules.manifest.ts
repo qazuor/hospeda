@@ -268,6 +268,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Poll MercadoPago /preapproval/{id} for pending subscriptions to flip them to active when the subscription_preapproval webhook is delayed or lost (SPEC-143 Finding #17 fallback).'
     },
     {
+        name: 'courtesy-expiry',
+        displayName: 'Cierre de períodos de cortesía',
+        category: 'billing',
+        schedule: '0 * * * *',
+        description:
+            'Resume the MercadoPago preapproval of subscriptions whose gifted courtesy window has ended, and notify subscribers when a gift starts and when it ends (HOS-180). Load-bearing, not a backstop: nothing else resumes a paused preapproval, so a run that fails leaves the subscriber without service.'
+    },
+    {
         name: 'trial-reconcile',
         displayName: 'Reconciliación de pruebas',
         category: 'billing',

@@ -290,7 +290,15 @@ export const userBookmarksApi = {
 // --- User (Protected) ---
 
 /** Subscription status values */
-type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due' | 'pending';
+type SubscriptionStatus =
+    | 'active'
+    | 'trial'
+    | 'cancelled'
+    | 'expired'
+    | 'past_due'
+    | 'pending'
+    | 'paused'
+    | 'courtesy';
 
 /** Subscription data returned by the protected subscription endpoint */
 export interface SubscriptionData {
@@ -311,6 +319,15 @@ export interface SubscriptionData {
     readonly currentPeriodEnd: string | null;
     readonly cancelAtPeriodEnd: boolean;
     readonly trialEndsAt: string | null;
+    /**
+     * End of a gifted courtesy window (HOS-180), or `null` when there is none.
+     *
+     * While `status` is `'courtesy'` this — not `currentPeriodEnd` — is the date
+     * the subscriber actually gets charged again, so the dashboard reads it for
+     * the "sin cargo hasta" field. Same relationship `trialEndsAt` has to a
+     * trialing subscription.
+     */
+    readonly courtesyEndsAt?: string | null;
     readonly monthlyPriceArs: number;
     readonly paymentMethod?: {
         readonly brand: string;

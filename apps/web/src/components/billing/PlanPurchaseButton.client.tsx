@@ -83,20 +83,23 @@ export interface PlanPurchaseButtonProps {
      */
     readonly trialDays?: number;
     /**
-     * Whether the own-preapproval accommodation-monthly checkout path
-     * (HOS-937 step 1, `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` server-side)
+     * Whether the own-preapproval checkout path
+     * (HOS-937 step 4, `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` server-side)
      * is active. Resolved server-side (SSR) by the pricing pages' shared
      * grid/table components via `fetchCheckoutConfig()` — the web app has no
      * way to read that api-only env var directly.
      *
      * Gates {@link PayerEmailConfirmDialog}: the dialog only has an effect
-     * when this is `true` AND the checkout about to fire is monthly (the
-     * only path that binds `payer_email` server-side). Defaults to `false`
-     * so any caller that omits it — and any SSR fetch failure — renders the
-     * pre-HOS-937 checkout flow byte for byte (fail-closed, matches the
-     * flag's own dark-by-default posture).
+     * when this is `true`, regardless of `billingInterval` — since HOS-937
+     * step 4 the SAME flag gates the own-preapproval path for BOTH
+     * accommodation checkouts this button renders (monthly and annual), not
+     * monthly alone (the field was renamed from
+     * `ownPreapprovalMonthlyEnabled` to stop implying otherwise). Defaults
+     * to `false` so any caller that omits it — and any SSR fetch failure —
+     * renders the pre-HOS-937 checkout flow byte for byte (fail-closed,
+     * matches the flag's own dark-by-default posture).
      */
-    readonly ownPreapprovalMonthlyEnabled?: boolean;
+    readonly ownPreapprovalEnabled?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -269,7 +272,7 @@ export function PlanPurchaseButton({
     locale,
     showPromo = true,
     trialDays = 0,
-    ownPreapprovalMonthlyEnabled = false
+    ownPreapprovalEnabled = false
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
@@ -922,22 +925,31 @@ export function PlanPurchaseButton({
     }
 
     /**
-     * Gate for the payer-email confirm dialog (HOS-937 review fix). The
-     * dialog only has an effect on the own-preapproval accommodation-monthly
-     * checkout path — every other path (this flag off, which is production
-     * today; annual; commerce; partner) redirects to MercadoPago's hosted
-     * share-link checkout, which silently discards `payer_email`. Showing
-     * the dialog there would be a real extra click in a flow that bills,
-     * with zero effect — so skip straight to `runCheckout` with the
-     * session's own email (the same value the dialog would have pre-filled)
-     * whenever either condition is not met.
+     * Gate for the payer-email confirm dialog (HOS-937 review fix, widened
+     * in step 4). The dialog only has an effect on the own-preapproval
+     * checkout path — with the flag off (production today) BOTH intervals
+     * this button renders redirect to MercadoPago's hosted share-link
+     * checkout, which silently discards `payer_email`. Showing the dialog
+     * there would be a real extra click in a flow that bills, with zero
+     * effect — so skip straight to `runCheckout` with the session's own
+     * email (the same value the dialog would have pre-filled) whenever the
+     * flag is off.
+     *
+     * No longer conditioned on `billingInterval === 'monthly'`: HOS-937 step
+     * 4 extended the own-preapproval path to accommodation ANNUAL too (same
+     * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` flag), so restricting the
+     * gate to monthly left an annual checkout binding a payer_email the user
+     * never got to see or edit. Commerce and partner checkouts do not go
+     * through this component (see `CommerceListingActions.client.tsx` and
+     * `apps/api/src/routes/partners/admin/send-link.ts` respectively), so
+     * they are unaffected by this gate either way.
      *
      * Shared by `handleClick` (the direct-checkout path) and
      * `handleTrialWarningConfirm` (after the trial-warning dialog is
      * accepted) — both reach the same fork.
      */
     function proceedPastPayerEmailStep(): void {
-        if (ownPreapprovalMonthlyEnabled && billingInterval === 'monthly') {
+        if (ownPreapprovalEnabled) {
             setShowPayerEmailConfirm(true);
             return;
         }

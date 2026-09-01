@@ -155,7 +155,13 @@ const H = vi.hoisted(() => {
                     return { limit: (n: number) => Promise.resolve(projected.slice(0, n)) };
                 }
             })
-        })
+        }),
+        // HOS-937 step 4: `initiateCommerceMonthlySubscription` now resolves
+        // the payer email via `getMpPayerEmail` (raw `db.execute(sql...)`,
+        // not the typed `select` modeled above) before either checkout
+        // branch runs. No `mp_payer_email` fixture is relevant to this
+        // suite's reuse assertions, so an always-empty result is enough.
+        execute: async () => ({ rows: [] })
     };
 
     /**

@@ -6,7 +6,7 @@
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
 import { ProductDomainEnum } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import { readCourtesyFields, subscriptionMatchesDomain } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -97,6 +97,12 @@ const SubscriptionResponseSchema = z.object({
              */
             canceledAt: z.string().nullable(),
             trialEndsAt: z.string().nullable(),
+            /**
+             * End of a gifted courtesy window (HOS-180), or null.
+             * While the subscription is in `courtesy` this — not
+             * currentPeriodEnd — is when the subscriber is charged again.
+             */
+            courtesyEndsAt: z.string().nullable(),
             monthlyPriceArs: z.number(),
             paymentMethod: z
                 .object({
@@ -359,6 +365,9 @@ export const userSubscriptionRoute = createProtectedRoute({
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
                 canceledAt: toIsoString(activeSubscription.canceledAt),
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
+                courtesyEndsAt: toIsoString(
+                    readCourtesyFields(activeSubscription.metadata).courtesyEndsAt
+                ),
                 monthlyPriceArs,
                 paymentMethod: null,
                 gracePeriodDaysRemaining,

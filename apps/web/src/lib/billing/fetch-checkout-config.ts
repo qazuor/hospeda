@@ -5,14 +5,21 @@
  *
  * Introduced as a review fix on HOS-937 step 2: the payer-email confirm
  * dialog (`PayerEmailConfirmDialog`) only has an effect on the own-preapproval
- * accommodation-monthly checkout path, gated server-side (api-only) by
- * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED`. On every other checkout path
- * (the flag off — production today; annual; commerce; partner) MercadoPago's
- * hosted share-link checkout silently discards `payer_email`, so the dialog
- * would be pure friction with zero effect. The web app has no way to read an
- * api-only env var directly, so it asks the API instead — this keeps the flag
- * single-sourced (no second `PUBLIC_*` copy to drift out of sync across two
- * Coolify apps).
+ * checkout path, gated server-side (api-only) by
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED`. With the flag on, all four
+ * checkouts (accommodation monthly/annual, commerce, partner) create their
+ * own `POST /preapproval` and bind `payer_email` server-side (HOS-937 step
+ * 4); with it off (the default — production today) every path falls back to
+ * MercadoPago's hosted share-link checkout, which silently discards
+ * `payer_email`, so the dialog would be pure friction with zero effect. The
+ * web app has no way to read an api-only env var directly, so it asks the
+ * API instead — this keeps the flag single-sourced (no second `PUBLIC_*`
+ * copy to drift out of sync across two Coolify apps).
+ *
+ * Field renamed from `ownPreapprovalMonthlyEnabled` to `ownPreapprovalEnabled`
+ * (same PR that widened the gate in `PlanPurchaseButton`) once step 4
+ * extended the underlying flag to all four checkouts — see
+ * `getCheckoutConfig.ts`'s docblock for the full history.
  *
  * Fails CLOSED on any error (network, non-OK status, unexpected shape): the
  * dialog stays hidden, which matches the flag's own dark-by-default posture
@@ -27,15 +34,15 @@ import { getApiUrl } from '@/lib/env';
  */
 export interface CheckoutConfig {
     /**
-     * Whether the own-preapproval accommodation-monthly checkout path
-     * (HOS-937) is active. Drives whether `PlanPurchaseButton` shows the
-     * payer-email confirm dialog before a monthly checkout.
+     * Whether the own-preapproval checkout path (HOS-937) is active. Drives
+     * whether `PlanPurchaseButton` shows the payer-email confirm dialog
+     * before a checkout.
      */
-    readonly ownPreapprovalMonthlyEnabled: boolean;
+    readonly ownPreapprovalEnabled: boolean;
 }
 
 /** Safe fallback — matches the API's own dark-by-default flag value. */
-const FAIL_CLOSED_CONFIG: CheckoutConfig = { ownPreapprovalMonthlyEnabled: false };
+const FAIL_CLOSED_CONFIG: CheckoutConfig = { ownPreapprovalEnabled: false };
 
 /**
  * Fetch public checkout-behavior flags from the API at runtime (SSR).
@@ -46,7 +53,7 @@ const FAIL_CLOSED_CONFIG: CheckoutConfig = { ownPreapprovalMonthlyEnabled: false
  * showing it unconditionally.
  *
  * @returns The resolved config, or the fail-closed default
- *   (`ownPreapprovalMonthlyEnabled: false`) on any network/parse error or
+ *   (`ownPreapprovalEnabled: false`) on any network/parse error or
  *   non-OK response — the same behavior as the flag being off.
  */
 export async function fetchCheckoutConfig(): Promise<CheckoutConfig> {
@@ -61,13 +68,13 @@ export async function fetchCheckoutConfig(): Promise<CheckoutConfig> {
         }
 
         const body: unknown = await response.json();
-        const data = (body as { data?: { ownPreapprovalMonthlyEnabled?: unknown } } | null)?.data;
+        const data = (body as { data?: { ownPreapprovalEnabled?: unknown } } | null)?.data;
 
-        if (typeof data?.ownPreapprovalMonthlyEnabled !== 'boolean') {
+        if (typeof data?.ownPreapprovalEnabled !== 'boolean') {
             return FAIL_CLOSED_CONFIG;
         }
 
-        return { ownPreapprovalMonthlyEnabled: data.ownPreapprovalMonthlyEnabled };
+        return { ownPreapprovalEnabled: data.ownPreapprovalEnabled };
     } catch {
         return FAIL_CLOSED_CONFIG;
     }

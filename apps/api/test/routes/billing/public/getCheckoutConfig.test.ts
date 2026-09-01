@@ -6,7 +6,7 @@
  * payer-email confirm dialog on the actual server-side
  * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` flag instead of an inferred or
  * hardcoded value. Covers: public (skipAuth), and both flag states pass
- * through byte-for-byte as `ownPreapprovalMonthlyEnabled`.
+ * through byte-for-byte as `ownPreapprovalEnabled`.
  *
  * @module test/routes/billing/public/getCheckoutConfig
  */
@@ -48,11 +48,11 @@ import '../../../../src/routes/billing/public/getCheckoutConfig';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getHandler(): (ctx: unknown) => Promise<{ ownPreapprovalMonthlyEnabled: boolean }> {
+function getHandler(): (ctx: unknown) => Promise<{ ownPreapprovalEnabled: boolean }> {
     const call = mockCreateSimpleRoute.mock.calls[0];
     return (call?.[0] as Record<string, unknown>)?.handler as (
         ctx: unknown
-    ) => Promise<{ ownPreapprovalMonthlyEnabled: boolean }>;
+    ) => Promise<{ ownPreapprovalEnabled: boolean }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,19 +71,19 @@ describe('publicGetCheckoutConfigRoute', () => {
         expect(config?.options).toMatchObject({ skipAuth: true });
     });
 
-    it('returns ownPreapprovalMonthlyEnabled: false when the underlying env flag is off (production default)', async () => {
+    it('returns ownPreapprovalEnabled: false when the underlying env flag is off (production default)', async () => {
         mockEnv.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = false;
 
         const result = await getHandler()(undefined);
 
-        expect(result).toEqual({ ownPreapprovalMonthlyEnabled: false });
+        expect(result).toEqual({ ownPreapprovalEnabled: false });
     });
 
-    it('returns ownPreapprovalMonthlyEnabled: true when the underlying env flag is on', async () => {
+    it('returns ownPreapprovalEnabled: true when the underlying env flag is on', async () => {
         mockEnv.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true;
 
         const result = await getHandler()(undefined);
 
-        expect(result).toEqual({ ownPreapprovalMonthlyEnabled: true });
+        expect(result).toEqual({ ownPreapprovalEnabled: true });
     });
 });

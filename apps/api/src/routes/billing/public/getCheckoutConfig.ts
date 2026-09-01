@@ -6,12 +6,24 @@
  *
  * Why this exists (HOS-937 review fix): the payer-email confirm dialog
  * (`PayerEmailConfirmDialog`, apps/web) only has an effect on the
- * own-preapproval accommodation-monthly checkout path, gated server-side by
+ * own-preapproval checkout path, gated server-side by
  * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` (api-only env var — see
- * `subscription-checkout.service.ts`). On every OTHER checkout (the flag
- * off, which is production today; annual; commerce; partner) MercadoPago's
- * hosted share-link checkout silently discards `payer_email`, so showing
- * the dialog there is pure friction with zero effect.
+ * `subscription-checkout.service.ts`). With that flag on, ALL FOUR checkouts
+ * (accommodation monthly and annual, commerce, partner) create their own
+ * `POST /preapproval` and bind `payer_email` server-side (HOS-937 step 4);
+ * with it off (the default) every path still falls back to MercadoPago's
+ * hosted share-link checkout, which silently discards `payer_email`, so
+ * showing the dialog there is pure friction with zero effect.
+ *
+ * Field name history: this flag was originally named
+ * `ownPreapprovalMonthlyEnabled` back when the own-preapproval path existed
+ * for accommodation-monthly only. HOS-937 step 4 extended the SAME env var
+ * to gate all four checkouts, which left that name lying about scope — an
+ * annual/commerce/partner checkout with the flag on created a binding
+ * preapproval with no way for the payer to see or edit the email it would
+ * bind. Renamed to `ownPreapprovalEnabled` to describe what it actually
+ * gates. This is a brand-new public endpoint with no consumers outside this
+ * monorepo yet, so the rename is a same-PR, no-migration change.
  *
  * The web app cannot read an api-only env var directly — `PUBLIC_*`
  * variables live in a separate registry scope (see CLAUDE.md's "Adding a
@@ -34,9 +46,9 @@ import { z } from '../../../utils/zod';
  * checkout-behavior flags ever need to reach the web frontend.
  */
 const CheckoutConfigResponseSchema = z.object({
-    ownPreapprovalMonthlyEnabled: z.boolean().openapi({
+    ownPreapprovalEnabled: z.boolean().openapi({
         description:
-            'Whether the own-preapproval accommodation-monthly checkout path (HOS-937) is active. When false (the default), the payer-email confirm dialog must not be rendered — the legacy MercadoPago share-link checkout never binds payer_email server-side, so the dialog would be a no-op extra step.'
+            'Whether the own-preapproval checkout path (HOS-937) is active for all four checkouts (accommodation monthly/annual, commerce, partner). When false (the default), the payer-email confirm dialog must not be rendered — the legacy MercadoPago share-link checkout never binds payer_email server-side, so the dialog would be a no-op extra step.'
     })
 });
 
@@ -52,11 +64,11 @@ export const publicGetCheckoutConfigRoute = createSimpleRoute({
     path: '/',
     summary: 'Get public checkout config flags',
     description:
-        'Returns read-only checkout-behavior flags the web frontend needs to render the correct pre-checkout UI. Currently a single flag: whether the own-preapproval accommodation-monthly checkout path (HOS-937) is enabled.',
+        'Returns read-only checkout-behavior flags the web frontend needs to render the correct pre-checkout UI. Currently a single flag: whether the own-preapproval checkout path (HOS-937) is enabled.',
     tags: ['Billing'],
     responseSchema: CheckoutConfigResponseSchema,
     handler: async () => ({
-        ownPreapprovalMonthlyEnabled: env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
+        ownPreapprovalEnabled: env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
     }),
     options: {
         skipAuth: true,

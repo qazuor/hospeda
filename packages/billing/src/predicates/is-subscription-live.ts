@@ -24,6 +24,13 @@ export interface IsSubscriptionLiveInput {
      */
     readonly currentPeriodEnd?: Date | null;
     /**
+     * Timestamp at which a gifted courtesy window ends (HOS-180).
+     * Only meaningful when `status === 'courtesy'`.
+     * `null` or `undefined` → treated as live (fail-open), consistent with
+     * every other date on this input.
+     */
+    readonly courtesyEndsAt?: Date | null;
+    /**
      * Current time as a Unix epoch in milliseconds.
      * Defaults to `Date.now()` at call time when omitted.
      * Always pass an explicit value in tests for determinism.
@@ -53,7 +60,11 @@ export interface IsSubscriptionLiveInput {
  * - `'cancelled'` (soft-cancel grace): live iff `currentPeriodEnd` is
  *   absent/null **or** `currentPeriodEnd > now`. No extra grace window applies;
  *   access is valid exactly until the period the host already paid for ends.
+ * - `'courtesy'` (HOS-180): live iff `courtesyEndsAt` is absent/null **or**
+ *   the window has not exceeded the cron-lag grace, mirroring `'active'`.
  * - All other statuses (`past_due`, `paused`, `expired`, etc.) → `false`.
+ *   `'paused'` staying false is what distinguishes a real pause from the
+ *   courtesy sitting on top of one.
  * - A date that cannot be parsed (i.e. `isNaN(date.getTime())`) is treated as
  *   absent, preserving the fail-open policy.
  * - The grace window uses `<=` at the boundary: a subscription overdue by
@@ -98,6 +109,7 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         status,
         trialEnd,
         currentPeriodEnd,
+        courtesyEndsAt,
         nowMs = Date.now(),
         graceHours = BILLING_CRON_LAG_GRACE_HOURS
     } = input;
@@ -128,6 +140,16 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         // Soft-cancel grace: the host paid through currentPeriodEnd — grant access
         // until that moment, but no extra cron-lag window beyond it.
         return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs: 0 });
+    }
+
+    if (status === 'courtesy') {
+        // HOS-180: gifted cycles grant the full plan. The cron-lag grace applies
+        // for the same reason it does to 'active' — the job that resumes the
+        // preapproval runs on a schedule, and cutting a subscriber off in the gap
+        // between the window closing and the cron catching up would punish them
+        // for our timing.
+        const graceLimitMs = graceHours * 3_600_000;
+        return isWithinGrace({ date: courtesyEndsAt, nowMs, graceLimitMs });
     }
 
     // All other statuses (past_due, paused, expired, unpaid, etc.) are not live.

@@ -58,6 +58,7 @@
         "subscriptions": "Assinaturas",
         "addons": "Complementos",
         "payments": "Pagamentos",
+        "reconciliation": "Resgate de pagamentos órfãos",
         "invoices": "Faturas",
         "promoCodes": "Códigos Promocionais",
         "sponsorships": "Patrocínios",

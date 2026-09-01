@@ -106,7 +106,7 @@ const PENDING_KEY = 'hospeda:checkout:pendingSubscriptionId';
 /**
  * Default props used across most tests.
  *
- * `ownPreapprovalMonthlyEnabled: true` — this file's whole point is exercising
+ * `ownPreapprovalEnabled: true` — this file's whole point is exercising
  * the payer-email confirm dialog via `confirmPayerEmail()`, so every test here
  * opts the gate (HOS-937 review fix) in explicitly. The gate's OFF behavior
  * (dialog skipped, straight to checkout) is covered separately in
@@ -121,7 +121,7 @@ const defaultProps = {
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const,
-    ownPreapprovalMonthlyEnabled: true
+    ownPreapprovalEnabled: true
 };
 
 /**

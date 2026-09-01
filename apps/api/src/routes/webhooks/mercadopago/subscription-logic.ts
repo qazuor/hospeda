@@ -23,9 +23,11 @@ import {
     BILLING_EVENT_TYPES,
     type BillingEventType,
     checkSubscriptionStatusTransition,
+    deriveCourtesyStatus,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
+    readCourtesyFields,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -51,6 +53,7 @@ import type {
 } from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
+import { readTrialWindowFromPreapprovalPayload } from '../../../services/billing/trial-window-derivation.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -349,61 +352,34 @@ export async function completeReactivationSupersession({
     }
 }
 
-/**
- * Reads whether a live MercadoPago preapproval carries a card-first free trial
- * (HOS-211).
+/*
+ * REMOVED, HOS-936: `livePreapprovalHasFreeTrial`.
  *
- * **Corrected, HOS-211 follow-up**: this was originally documented as reading
- * `auto_recurring.free_trial` off the raw snake_case payload that supposedly
- * survives alongside qzpay's typed fields on `subscriptions.retrieve()`. That
- * claim was FALSE — `@qazuor/qzpay-mercadopago@2.6.0`'s `mapToProviderSubscription()`
- * builds a closed camelCase object (`id`, `status`, `currentPeriodStart`,
- * `currentPeriodEnd`, `cancelAtPeriodEnd`, `canceledAt`, `trialStart`, `trialEnd`,
- * `metadata`) with NO `auto_recurring` key at all, and hardcodes `trialStart`/
- * `trialEnd` to `null` unconditionally. This function therefore ALWAYS returned
- * `false` against a real MP response, which is exactly how every card-first
- * trial subscription landed as `active`/`trial_end=null` instead of `trialing`
- * (the bug this comment used to misdescribe as already handled).
+ * It read `auto_recurring.free_trial` off the live preapproval and treated a
+ * positive `frequency` as "this subscription is on a trial". That premise is
+ * measurably wrong: MercadoPago grants a preapproval's free trial once per
+ * `(payer, preapproval_plan)`, so `free_trial` describes the PLAN'S TERMS and is
+ * byte-identical on a preapproval whose trial will run and one whose trial was
+ * already spent. Two preapprovals for the same payer on the same plan, created
+ * two seconds apart on 2026-08-31, reported the same `free_trial` and the same
+ * `first_invoice_offset` while only one of them was actually being deferred.
  *
- * The real fix (Option B) is upstream of this function: `trial_end` is now
- * PERSISTED on the local `billing_subscriptions` row at subscription creation
- * time, computed from `freeTrialDays` (already resolved at checkout by
- * `resolveCheckoutFreeTrialDays`) — see
- * `apps/api/src/services/billing/pending-provider-subscription-create.ts`. The
- * caller's preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd
- * ?? ...`) picks that up directly, without ever needing this helper.
+ * The replacement is `readTrialWindowFromPreapprovalPayload`, which derives the
+ * window from `next_payment_date - date_created` — the only field on the
+ * response that is a statement about THIS subscription. See
+ * `services/billing/trial-window-derivation.ts` for the measurement and the
+ * threshold.
  *
- * This function remains ONLY as a defensive fallback for the (currently
- * unreachable in prod) case where `livePreapproval` genuinely does carry an
- * `auto_recurring.free_trial` object — e.g. a future qzpay version, a test
- * double, or a differently-shaped provider response. Do not rely on it firing
- * against real MercadoPago traffic today.
- *
- * @param livePreapproval - The object returned by `subscriptions.retrieve()`.
- * @returns `true` only when `auto_recurring.free_trial` is a non-null object with
- *   a positive `frequency`. Always `false` for qzpay's real mapped shape.
+ * Behaviour against real traffic is unchanged by the swap: qzpay's
+ * `mapToProviderSubscription()` builds a closed camelCase object carrying
+ * neither `auto_recurring` nor `next_payment_date`, so the old helper always
+ * returned `false` and the new one always returns `unknown`. Both leave
+ * `resolvedTrialEnd` to the preserve-if-set value persisted at creation time
+ * (`services/billing/pending-provider-subscription-create.ts`, HOS-211
+ * Option B). What changes is that a payload which DOES carry the fields — a
+ * future qzpay version, a raw retrieve, a test double — is now read honestly
+ * instead of being believed.
  */
-function livePreapprovalHasFreeTrial(livePreapproval: unknown): boolean {
-    if (typeof livePreapproval !== 'object' || livePreapproval === null) {
-        return false;
-    }
-    const record = livePreapproval as Record<string, unknown>;
-    const autoRecurring =
-        typeof record.auto_recurring === 'object' && record.auto_recurring !== null
-            ? (record.auto_recurring as Record<string, unknown>)
-            : null;
-    if (autoRecurring === null) {
-        return false;
-    }
-    const freeTrial =
-        typeof autoRecurring.free_trial === 'object' && autoRecurring.free_trial !== null
-            ? (autoRecurring.free_trial as Record<string, unknown>)
-            : null;
-    if (freeTrial === null) {
-        return false;
-    }
-    return typeof freeTrial.frequency === 'number' && freeTrial.frequency > 0;
-}
 
 /**
  * Result of {@link extractPendingPromoFromRowMetadata}.
@@ -647,31 +623,46 @@ export async function processSubscriptionUpdated({
     //
     // `resolvedTrialEnd` is only ever COMPUTED when the stored value is still
     // null — an already-set `trialEnd` always wins untouched. This is load
-    // bearing, not a simplification: if we recomputed trialEnd from
-    // `currentPeriodEnd` on every webhook, then AFTER the day-N charge MP still
-    // reports `auto_recurring.free_trial` (it describes the plan's trial terms,
-    // not "is currently trialing") and `currentPeriodEnd` has already rolled to
-    // the NEXT (future) cycle — so the row would wrongly flip back to `trialing`
-    // forever. Fixing `trialEnd` once, only while it is still null, is what lets
-    // `deriveTrialingStatus`'s own past-date rule settle the row to `ACTIVE`
-    // once the real trial elapses.
+    // bearing, not a simplification: recomputing it on every webhook would flip
+    // the row back to `trialing` forever, because MercadoPago keeps advertising
+    // the plan's trial terms long after the day-N charge. Fixing `trialEnd`
+    // once, only while it is still null, is what lets `deriveTrialingStatus`'s
+    // own past-date rule settle the row to `ACTIVE` when the real trial elapses.
+    //
+    // HOS-936: the window is derived from `next_payment_date - date_created`,
+    // never from `auto_recurring.free_trial` — the latter describes the plan and
+    // reads identically on a preapproval MercadoPago is charging right now. See
+    // `services/billing/trial-window-derivation.ts`.
     const now = new Date();
     const periodEnd = mpSubscription.currentPeriodEnd ?? null;
+    const providerTrialWindow = readTrialWindowFromPreapprovalPayload(mpSubscription);
     const resolvedTrialEnd =
         localSubscription.trialEnd ??
-        (livePreapprovalHasFreeTrial(mpSubscription) &&
-        periodEnd &&
-        periodEnd.getTime() > now.getTime()
-            ? periodEnd
+        (providerTrialWindow.outcome === 'granted' &&
+        providerTrialWindow.trialEnd &&
+        providerTrialWindow.trialEnd.getTime() > now.getTime()
+            ? providerTrialWindow.trialEnd
             : null);
 
     // This deliberately lands BEFORE every consumer of `mappedStatus` — the
     // planId safety net, the Step 6 fast-path guard and the in-transaction guard
     // must all observe the SAME target status, or the row is written with one
     // value while the guards reason about another.
-    const mappedStatus = deriveTrialingStatus({
-        mappedStatus: providerStatus,
-        trialEnd: resolvedTrialEnd,
+    // HOS-180: courtesy is the SECOND local derivation, chained after trialing.
+    // The two can never both fire — trialing keys off ACTIVE, courtesy off
+    // PAUSED — so the order between them is irrelevant, but their position
+    // relative to everything below is not (see the comment above).
+    //
+    // This is also what keeps a gifted subscriber from being told their card
+    // failed: `shouldSendPausedEmail` reads the DERIVED status, so a courtesy
+    // never looks like a pause to the notification decision (HOS-926, R-7).
+    const mappedStatus = deriveCourtesyStatus({
+        mappedStatus: deriveTrialingStatus({
+            mappedStatus: providerStatus,
+            trialEnd: resolvedTrialEnd,
+            now
+        }),
+        courtesyEndsAt: readCourtesyFields(localSubscription.metadata).courtesyEndsAt,
         now
     });
 
