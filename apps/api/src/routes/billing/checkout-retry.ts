@@ -33,7 +33,7 @@
  * @module routes/billing/checkout-retry
  */
 
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { createMercadoPagoAdapter, isEntitlementGrantingStatus } from '@repo/billing';
 import { billingSubscriptions, eq, getDb } from '@repo/db';
 import {
     CheckoutRetryParamsSchema,
@@ -57,13 +57,6 @@ import {
     buildPaymentMethodReturnUrl,
     resolveReturnUrlLocale
 } from './checkout-return-urls.js';
-
-/** Statuses this endpoint short-circuits without any MercadoPago call. */
-const ALREADY_ACTIVATED_STATUSES: ReadonlySet<string> = new Set([
-    SubscriptionStatusEnum.ACTIVE,
-    SubscriptionStatusEnum.TRIALING,
-    SubscriptionStatusEnum.COMP
-]);
 
 /**
  * Handler for the checkout-retry endpoint.
@@ -106,7 +99,9 @@ export const handleCheckoutRetry = async (
         throw new HTTPException(404, { message: 'Subscription not found' });
     }
 
-    if (ALREADY_ACTIVATED_STATUSES.has(row.status as string)) {
+    // Short-circuit without any MercadoPago call: a status that already
+    // grants entitlements (active/trialing/comp/courtesy) needs no retry.
+    if (isEntitlementGrantingStatus(row.status as string)) {
         return { recovery: 'authorized', checkoutUrl: null };
     }
 
