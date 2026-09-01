@@ -18,9 +18,13 @@ export const SUPPORT_EMAIL = 'soporte@hospeda.com.ar';
 
 /**
  * The reasons the forbidden page knows how to render — passed through to the
- * support mailto body so the recipient can prioritize the request.
+ * support mailto body so the recipient can prioritize the request. HOS-609
+ * pruned `'host-missing-permission'`: the `_authed` guard no longer sends
+ * HOST accounts here at all (they land on the web app's own access-denied
+ * page instead), leaving `'generic'` as the only reason this page's 13
+ * remaining callers ever pass.
  */
-export type ForbiddenReason = 'host-missing-permission' | 'generic';
+export type ForbiddenReason = 'generic';
 
 /**
  * Arguments for {@link buildSupportMailto}. RO-RO.

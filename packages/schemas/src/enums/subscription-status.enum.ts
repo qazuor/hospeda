@@ -39,5 +39,23 @@ export enum SubscriptionStatusEnum {
      * This is an explicit subscription state, NOT a 100% discount computation,
      * so it cannot revert to full price by a discount-engine change.
      */
-    COMP = 'comp'
+    COMP = 'comp',
+    /**
+     * Subscription is inside a courtesy window — a finite number of billing
+     * cycles gifted to a subscriber who is already paying (HOS-180).
+     *
+     * Backed by a PAUSED MercadoPago preapproval: MP skips the cycles while
+     * paused, and a cron resumes it when the window closes, returning the
+     * subscription to {@link SubscriptionStatusEnum.ACTIVE} at full price on
+     * its own. Unlike {@link SubscriptionStatusEnum.COMP} this is finite and
+     * keeps the preapproval, so there is something to go back to.
+     *
+     * Never written directly from a provider status: MercadoPago has no
+     * vocabulary for it and reports plain `paused`. It is DERIVED locally by
+     * `deriveCourtesyStatus`, exactly as `TRIALING` is derived from an
+     * authorized preapproval plus a local `trialEnd`. The local courtesy
+     * window is the only thing separating this from a real pause — a real
+     * pause still cuts entitlements, a courtesy grants them all.
+     */
+    COURTESY = 'courtesy'
 }

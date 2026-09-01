@@ -697,7 +697,8 @@
                 "expired": "Expired",
                 "past_due": "Past due",
                 "pending": "Pending",
-                "paused": "Paused"
+                "paused": "Paused",
+                "courtesy": "Gifted"
             },
             "cancelScheduled": {
                 "title": "Subscription cancelled",
@@ -782,7 +783,8 @@
                 "accommodation": "Accommodation",
                 "gastronomy": "Gastronomy",
                 "experience": "Experiences"
-            }
+            },
+            "courtesyUntilLabel": "No charge until"
         },
         "whatsNew": {
             "title": "What's New",

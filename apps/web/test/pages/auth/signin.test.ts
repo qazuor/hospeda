@@ -5,9 +5,17 @@
  * Astro components cannot be rendered in Vitest, so behavior is asserted by
  * inspecting the source for the expected wiring (per the web CLAUDE.md
  * "Astro component test" pattern). For runtime behavior of the React island
- * the page mounts, see `apps/web/test/components/auth/SignIn.test.ts`.
+ * the page mounts, see `apps/web/test/components/auth/AuthTabs.client.test.tsx`.
  *
- * @module test/pages/auth/signin
+ * HOS-959: this page now renders the unified `AuthTabs` island instead of
+ * `SignIn` directly, and the `returnUrl`/`redirect`/`callbackUrl` redirect
+ * computation moved into the shared, independently-testable
+ * `resolveAuthTabsRedirectConfig` helper (see
+ * `test/lib/auth-tabs-config.test.ts` for the BEHAVIORAL coverage of that
+ * logic — real inputs/outputs, not string matching, which a plain
+ * importable function makes possible for the first time here). What this
+ * file can still assert, being a source-string test, is that the page
+ * actually WIRES to that helper and forwards its output to the island.
  */
 
 import { readFileSync } from 'node:fs';
@@ -17,24 +25,65 @@ import { describe, expect, it } from 'vitest';
 const src = readFileSync(resolve(__dirname, '../../../src/pages/[lang]/auth/signin.astro'), 'utf8');
 
 describe('signin.astro', () => {
-    describe('returnUrl handling (pre-existing)', () => {
-        it('reads returnUrl from query params', () => {
-            expect(src).toContain("Astro.url.searchParams.get('returnUrl')");
+    describe('renders the unified AuthTabs island (HOS-959)', () => {
+        it('imports AuthTabs, not SignIn directly', () => {
+            expect(src).toContain("import { AuthTabs } from '@/components/auth/AuthTabs.client'");
+            expect(src).not.toContain("from '@/components/auth/SignIn.client'");
         });
 
-        it('rejects unsafe return paths (open-redirect guard)', () => {
-            // HOS-810 lifted the predicate out of this file into
-            // `lib/auth-redirect.ts` so signup.astro could reuse it AND so the
-            // rejection cases could finally be EXECUTED (an Astro page cannot
-            // be rendered here — this assertion only ever proved a spelling).
-            // The behaviour itself is covered by
-            // `test/lib/auth-redirect.test.ts`.
-            expect(src).toContain("import { resolveSafeReturnPath } from '@/lib/auth-redirect';");
-            expect(src).toContain('resolveSafeReturnPath({ rawReturn, locale })');
+        it('renders AuthTabs with initialTab="signin"', () => {
+            expect(src).toContain('<AuthTabs');
+            expect(src).toContain('initialTab="signin"');
+        });
+
+        it('forwards signInConfig and signUpConfig to the island', () => {
+            expect(src).toContain('signInConfig={signInConfig}');
+            expect(src).toContain('signUpConfig={signUpConfig}');
+        });
+
+        it('forwards both signInPath and signUpPath for the tab-switch URL rewrite', () => {
+            expect(src).toContain('signInPath={signInPath}');
+            expect(src).toContain('signUpPath={signUpPath}');
+            expect(src).toContain("buildUrl({ locale, path: 'auth/signin' })");
+            expect(src).toContain("buildUrl({ locale, path: 'auth/signup' })");
+        });
+    });
+
+    describe('redirect config wiring (HOS-959)', () => {
+        it('computes redirect config via the shared resolveAuthTabsRedirectConfig helper', () => {
+            expect(src).toContain(
+                "import { resolveAuthTabsRedirectConfig } from '@/lib/auth-tabs-config'"
+            );
+            expect(src).toContain('resolveAuthTabsRedirectConfig(');
+        });
+
+        it('passes Astro.url as astroUrl into the helper', () => {
+            expect(src).toContain('astroUrl: Astro.url');
+        });
+
+        it('resolves the allowlist against the configured site/admin origins and prod flag', () => {
+            expect(src).toContain('getSiteUrl');
+            expect(src).toContain('getAdminUrl');
+            expect(src).toContain('isProduction');
+        });
+
+        it('destructures returnPath and validatedCallbackUrl for the already-authenticated redirect', () => {
+            expect(src).toMatch(
+                /const\s*\{\s*returnPath,\s*validatedCallbackUrl,\s*signInConfig,\s*signUpConfig\s*\}\s*=\s*resolveAuthTabsRedirectConfig/
+            );
+        });
+
+        it('lets a valid callbackUrl take precedence over returnPath on the auth redirect', () => {
+            expect(src).toMatch(
+                /Astro\.redirect\(\s*validatedCallbackUrl\s*\?\?\s*returnPath\s*\)/
+            );
         });
     });
 
     // SPEC-120 — pick up OAuth failure signal from the API redirect chain.
+    // This parsing stays LOCAL to each page (not shared) — HOS-959 requires
+    // BOTH signin.astro and signup.astro to carry it, since the shared OAuth
+    // block in AuthTabs is reachable from either URL.
     describe('OAuth error query reading (SPEC-120)', () => {
         it('reads ?error= from the query string', () => {
             expect(src).toContain("Astro.url.searchParams.get('error')");
@@ -70,44 +119,8 @@ describe('signin.astro', () => {
             expect(src).toContain('oauthErrorCode');
         });
 
-        it('passes initialOAuthError to the SignIn island', () => {
+        it('passes initialOAuthError to the AuthTabs island', () => {
             expect(src).toContain('initialOAuthError={initialOAuthError}');
-        });
-    });
-
-    // SPEC-182 — accept a cross-app callbackUrl (e.g. the admin panel) and use
-    // it as the post-login destination after allowlist validation.
-    describe('callbackUrl handling (SPEC-182)', () => {
-        it('reads ?callbackUrl= from the query string', () => {
-            expect(src).toContain("Astro.url.searchParams.get('callbackUrl')");
-        });
-
-        it('validates callbackUrl against the allowlist via validateCallbackUrl', () => {
-            expect(src).toContain('validateCallbackUrl');
-            expect(src).toContain("from '@/lib/auth-callback'");
-        });
-
-        it('resolves the allowlist against the configured site and admin origins', () => {
-            expect(src).toContain('getSiteUrl');
-            expect(src).toContain('getAdminUrl');
-            expect(src).toContain('isProduction');
-        });
-
-        it('lets a valid callbackUrl take precedence over returnUrl on the auth redirect', () => {
-            expect(src).toMatch(
-                /Astro\.redirect\(\s*validatedCallbackUrl\s*\?\?\s*returnPath\s*\)/
-            );
-        });
-
-        it('uses a valid callbackUrl as the redirectTo passed to the SignIn island', () => {
-            expect(src).toMatch(/redirectTo\s*=\s*validatedCallbackUrl\s*\?\?/);
-        });
-
-        it('flags the island redirect as external when a validated callbackUrl is present', () => {
-            // Without this flag the island's host-strip+reattach workaround
-            // rewrites the admin URL onto the web origin and the post-login
-            // redirect to admin silently breaks (SPEC-182 follow-up fix).
-            expect(src).toMatch(/externalRedirect=\{Boolean\(validatedCallbackUrl\)\}/);
         });
     });
 });

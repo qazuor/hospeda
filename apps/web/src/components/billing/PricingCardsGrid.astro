@@ -29,6 +29,7 @@ import { resolvePlanWatermarkIcon } from '@/components/billing/plan-watermark-ic
 import type { PricingPlan } from '@/components/billing/pricing-card-view';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
+import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -73,6 +74,14 @@ const {
 
 const { t, tPlural } = createTranslations(locale);
 const hasPlans = plans.length > 0;
+
+// HOS-937 review fix: resolve the own-preapproval checkout flag
+// server-side (SSR) so `PlanPurchaseButton` can gate the payer-email confirm
+// dialog on its real state instead of showing it unconditionally. Fails
+// closed (`ownPreapprovalEnabled: false`) on any fetch error, which
+// renders the pre-HOS-937 checkout flow — the same behavior as the flag
+// being off.
+const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
 
 // Annual toggle: only render the UI when at least one plan in the grid has
 // an annual price configured. If every plan is monthly-only, the toggle is
@@ -407,6 +416,7 @@ const selectGroupName = `pricing-select-${audience}`;
 							locale={locale}
 							plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
 							trialDays={card.plan.hasTrial ? card.plan.trialDays : 0}
+							ownPreapprovalEnabled={ownPreapprovalEnabled}
 						/>
 					</div>
 				</div>

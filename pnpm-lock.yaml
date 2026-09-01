@@ -170,8 +170,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@qazuor/qzpay-core':
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^5.1.0
+        version: 5.1.0
       '@qazuor/qzpay-react':
         specifier: ^1.1.26
         version: 1.1.26(react@19.2.7)
@@ -447,8 +447,8 @@ importers:
         specifier: ^91.0.0
         version: 91.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^5.1.0
+        version: 5.1.0
       '@qazuor/qzpay-hono':
         specifier: ^1.6.11
         version: 1.6.11(hono@4.13.0)(zod@4.3.6)
@@ -1103,8 +1103,8 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^5.1.0
+        version: 5.1.0
       '@qazuor/qzpay-mercadopago':
         specifier: ^2.9.2
         version: 2.9.2(mercadopago@2.12.0)
@@ -1217,8 +1217,8 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^5.1.0
+        version: 5.1.0
       '@qazuor/qzpay-drizzle':
         specifier: ^2.0.0
         version: 2.0.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
@@ -1798,8 +1798,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^5.1.0
+        version: 5.1.0
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -4033,6 +4033,10 @@ packages:
 
   '@qazuor/qzpay-core@5.0.0':
     resolution: {integrity: sha512-3M+D7NW0Jbo3ftZLSFZ3V8adiuPwVv7D0TqoQY4h8eRBQXLDGYAs0DW3z1xH2NO08rH3zdvXQxa+Afr4xbxReQ==}
+    engines: {node: '>=22'}
+
+  '@qazuor/qzpay-core@5.1.0':
+    resolution: {integrity: sha512-GWLEMqw3oYd+xfnRl5zAhBaixj1WkycMNyHCn0IS+zYao+hRU/cM1g3MrzRF/nwXFJ52fkGHLNyzvc7VSxDDgg==}
     engines: {node: '>=22'}
 
   '@qazuor/qzpay-drizzle@2.0.0':
@@ -14992,6 +14996,8 @@ snapshots:
       - supports-color
 
   '@qazuor/qzpay-core@5.0.0': {}
+
+  '@qazuor/qzpay-core@5.1.0': {}
 
   '@qazuor/qzpay-drizzle@2.0.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
     dependencies:

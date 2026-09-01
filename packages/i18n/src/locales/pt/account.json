@@ -697,7 +697,8 @@
                 "expired": "Expirada",
                 "past_due": "Vencida",
                 "pending": "Pendente",
-                "paused": "Pausada"
+                "paused": "Pausada",
+                "courtesy": "De presente"
             },
             "cancelScheduled": {
                 "title": "Assinatura cancelada",
@@ -782,7 +783,8 @@
                 "accommodation": "Hospedagem",
                 "gastronomy": "Gastronomia",
                 "experience": "Experiências"
-            }
+            },
+            "courtesyUntilLabel": "Sem cobrança até"
         },
         "whatsNew": {
             "title": "Novidades",

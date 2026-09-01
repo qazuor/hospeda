@@ -273,7 +273,30 @@
             "body": "Mercado Pago grants the trial period only once per account and per plan. If you've already used a trial for this plan with the same Mercado Pago account, Mercado Pago will charge the first period right away instead of applying the trial.",
             "confirm": "Got it, continue",
             "cancel": "Cancel"
+        },
+        "payerEmailConfirm": {
+            "title": "Which email you'll be able to pay with",
+            "body": "Mercado Pago will only let you pay with this exact email. If you want to use a different Mercado Pago account, change it before continuing.",
+            "label": "Payment email",
+            "invalidError": "Enter a valid email",
+            "confirm": "Continue",
+            "cancel": "Cancel"
         }
+    },
+    "checkoutRetry": {
+        "checkingTitle": "Verifying your payment...",
+        "checkingBody": "We are checking the status of your subscription.",
+        "redirectingTitle": "Redirecting you to MercadoPago...",
+        "redirectingBody": "One moment, we're taking you to complete the payment.",
+        "activeTitle": "Your subscription is already active",
+        "activeBody": "No need to pay again: your plan is already up and running.",
+        "confirmingTitle": "We're confirming your payment",
+        "confirmingBody": "We may already be resolving this from another tab. Please wait a moment.",
+        "confirmingTimedOutTitle": "We're still confirming your payment",
+        "confirmingTimedOutBody": "This is taking longer than expected. You can try again in a moment.",
+        "errorTitle": "We couldn't verify your payment",
+        "errorBody": "Try again, or contact us if the problem continues.",
+        "retryButton": "Retry"
     },
     "limit": {
         "max_favorites": {

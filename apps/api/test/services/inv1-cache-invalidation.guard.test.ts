@@ -381,6 +381,16 @@ interface BillingSubscriptionsWriterEntry {
 
 const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] = [
     {
+        file: 'services/courtesy-grant.service.ts',
+        requiresCacheClear: true,
+        reason: 'Flips an accommodation-domain subscription to `courtesy`, which IS entitlement-granting — a stale cache would show the subscriber as paused and cut the entitlements the gift exists to preserve. Already calls clearEntitlementCache (HOS-180).'
+    },
+    {
+        file: 'cron/jobs/courtesy-expiry.job.ts',
+        requiresCacheClear: true,
+        reason: 'Returns a subscription from `courtesy` to `active` when the gift ends, and clears the courtesy window. Both are entitlement-bearing changes. Already calls clearEntitlementCache (HOS-180).'
+    },
+    {
         file: 'cron/jobs/abandoned-pending-subs.job.ts',
         requiresCacheClear: false,
         reason: 'Marks a PENDING/never-activated subscription as abandoned. The row never granted entitlements, so there is nothing cached to invalidate.'
@@ -394,6 +404,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         file: 'cron/jobs/preapproval-less-expiry.job.ts',
         requiresCacheClear: true,
         reason: 'Expires an active/trialing subscription that has no MercadoPago preapproval and whose period elapsed (H-21). The row WAS granting entitlements, so the cached set must be dropped or the user keeps the old plan gates until the 5-minute TTL lapses — already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/billing/payment-reconcile.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-765 operator force-link binds a MercadoPago preapproval to a local subscription and flips its status to pending_provider. Both the statuses it writes onto (abandoned, pending_provider) and the status it writes are non-entitling, so on paper nothing cached changed — the clear is deliberate anyway, because the alternative failure mode is an operator rescuing a subscription and the customer still not being able to use their account until the TTL lapses. Already calls clearEntitlementCache.'
     },
     {
         file: 'routes/webhooks/mercadopago/payment-logic.ts',
@@ -429,6 +444,21 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         file: 'services/billing/pending-provider-subscription-create.ts',
         requiresCacheClear: false,
         reason: "Creates the row in PENDING_PROVIDER status (mirrors the comp-create insert shape) before any MP authorization, and stamps its product_domain ('accommodation' by default, 'commerce'/'partner' for the non-accommodation checkouts that route through it since all four flows moved to Path C). No entitlement is granted until the webhook activates it, and loadEntitlements() filters strictly to product_domain='accommodation' (SPEC-239) anyway."
+    },
+    {
+        file: 'services/billing/own-preapproval-subscription-create.ts',
+        requiresCacheClear: false,
+        reason: "HOS-937 step 1. Creates the row through qzpay's mode:'paid' create (which lands it in `incomplete`) and then normalizes the status to PENDING_PROVIDER with a direct UPDATE, because `pending_provider` is a Hospeda-only value outside qzpay's enum. Same reasoning as the pending-provider-subscription-create.ts entry it replaces: neither `incomplete` nor `pending_provider` grants an entitlement, so there is nothing cached to invalidate. The row only becomes entitlement-bearing when the webhook activates it, and subscription-logic.ts already calls clearEntitlementCache there. It also stamps the pending promo snapshot onto the row metadata, which is bookkeeping, not an entitlement-bearing field."
+    },
+    {
+        file: 'services/billing/preapproval-recovery.service.ts',
+        requiresCacheClear: false,
+        reason: 'HOS-937 step 3. Writes are the compare-and-set claim (`metadata.retryClaimedAt`) and the post-mint stamp (`metadata.retryMintedLocalSubscriptionId`/`retryMintedCheckoutUrl`) on the CANCELLED row being recovered from — pure bookkeeping on a row that never granted entitlements (a checkout that never activated). The fresh preapproval it mints is a brand-new row created through `createOwnPreapprovalSubscription` (already inventoried, requiresCacheClear:false), and any entitlement grant only happens later when the webhook activates THAT new row (subscription-logic.ts, already calls clearEntitlementCache).'
+    },
+    {
+        file: 'services/billing/trial-window-reconcile.ts',
+        requiresCacheClear: false,
+        reason: "Clears trial_start/trial_end (HOS-936) when MercadoPago's own next_payment_date shows it is charging at the creation instant, so the trial we promised was never granted. Writes NEITHER plan_id NOR status — and every call site runs while the row is still pre-authorization, so no entitlement has been granted yet for a cache to hold. The webhook that later activates the row (subscription-logic.ts) already calls clearEntitlementCache. Entitlements gate on status and never on trial_end (the HOS-171 guard), so narrowing the window cannot change what loadEntitlements resolves."
     },
     {
         file: 'services/plan-disable-lifecycle.service.ts',

@@ -120,7 +120,8 @@ const VALID_TRANSITIONS: ReadonlyMap<
             SubscriptionStatusEnum.PAST_DUE, // payment failure webhook (subscription-logic.ts processSubscriptionUpdated)
             SubscriptionStatusEnum.PAUSED, // self-serve pause / admin pause (subscription-pause.ts, qzpay-admin-hooks.ts)
             SubscriptionStatusEnum.CANCELLED, // user cancel / admin cancel / refund (subscription-logic.ts, qzpay-admin-hooks.ts, payment-logic.ts T-194-03)
-            SubscriptionStatusEnum.EXPIRED // MP 'finished' webhook: subscription period ended (subscription-logic.ts QZPAY_TO_HOSPEDA_STATUS)
+            SubscriptionStatusEnum.EXPIRED, // MP 'finished' webhook: subscription period ended (subscription-logic.ts QZPAY_TO_HOSPEDA_STATUS)
+            SubscriptionStatusEnum.COURTESY // admin gifts N free cycles: the preapproval is paused and the row derives COURTESY (grant-courtesy.ts — HOS-180)
         ])
     ],
     [
@@ -158,6 +159,18 @@ const VALID_TRANSITIONS: ReadonlyMap<
         new Set<SubscriptionStatusFull>([
             SubscriptionStatusEnum.CANCELLED // admin revokes the complimentary (free-forever) grant (SPEC-262)
         ])
+    ],
+    [
+        SubscriptionStatusEnum.COURTESY,
+        new Set<SubscriptionStatusFull>([
+            SubscriptionStatusEnum.ACTIVE, // the gift ran out: the cron resumed the preapproval and the webhook confirms (courtesy-expiry.job.ts — HOS-180)
+            SubscriptionStatusEnum.TRIALING, // same resume, but `trial_end` still sits in the future so deriveTrialingStatus resolves TRIALING instead of ACTIVE. Reachable when the gift was granted over an active row whose trial had been extended; without this edge the resume is silently discarded with a 200 (HOS-913)
+            SubscriptionStatusEnum.CANCELLED, // the subscriber cancels mid-gift. Deliberately allowed: they are not being charged, and trapping them would serve nobody (HOS-180 OQ-2)
+            SubscriptionStatusEnum.PAST_DUE // the first charge after the gift fails — dunning takes over
+        ])
+        // COURTESY → PAUSED is deliberately ABSENT. Self-service pause is refused
+        // during a gift (HOS-180 OQ-2), so the API never produces this edge;
+        // adding it would legitimise a state nothing can reach.
     ]
 ]);
 

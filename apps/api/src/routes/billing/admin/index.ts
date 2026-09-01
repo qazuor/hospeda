@@ -53,10 +53,12 @@ import {
 import { adminCustomerEntitlementsRouter } from './customer-entitlements';
 import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
+import { adminBillingReconciliationRouter } from './payment-reconciliation';
 import { adminPaymentsViewRouter } from './payments-view';
 import { adminPlanPriceIncreaseRouter } from './plan-price-increase';
 import { adminPlansRouter } from './plans';
 import { adminBillingHooks } from './qzpay-admin-hooks';
+import { adminSubscriptionCourtesyRouter } from './subscription-courtesy';
 import { subscriptionEventsRoute } from './subscription-events';
 import { subscriptionPromoEffectRoute } from './subscription-promo-effect';
 import { adminSubscriptionTrialExtensionRouter } from './subscription-trial-extension';
@@ -99,6 +101,13 @@ app.route('/metrics', adminMetricsRouter);
 // /payments/:id/refund still fall through to qzpay.
 app.route('/payments', adminPaymentsViewRouter);
 
+// GET /reconciliation/divergences, POST /reconciliation/force-link,
+// POST /reconciliation/backfill-payment - orphan-payment rescue tool (HOS-765).
+// Gated on BILLING_RECONCILIATION_MANAGE, its own permission: these verbs write
+// money into the ledger, so the grant that opens them is not the one that also
+// expires an add-on.
+app.route('/reconciliation', adminBillingReconciliationRouter);
+
 // GET /subscriptions - Hospeda subscriptions list view (enriched + normalised
 // vocabulary). Shadows the qzpay tier's raw `GET /subscriptions` ONLY; every
 // /subscriptions/:id path still falls through to qzpay.
@@ -112,6 +121,8 @@ app.route('/subscriptions', subscriptionPromoEffectRoute);
 
 // POST /subscriptions/:subscriptionId/apply-trial-extension - Apply a trial_extension promo to a subscription (admin, BILLING_PROMO_CODE_MANAGE)
 app.route('/subscriptions', adminSubscriptionTrialExtensionRouter);
+// POST /subscriptions/:subscriptionId/grant-courtesy - Gift N free billing cycles to a paying subscriber (admin, BILLING_MANAGE) — HOS-180
+app.route('/subscriptions', adminSubscriptionCourtesyRouter);
 
 // GET /addons, /addons/:slug - Hospeda add-on catalog (admin only)
 app.route('/addons', adminAddonsRouter);

@@ -61,6 +61,7 @@ import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchPreapprovalPlanId } from '../../utils/mp-preapproval-plan-lookup.js';
 import { computeSignupDiscountCycleSeed } from '../subscription-discount-signup.service.js';
+import { reconcileTrialWindowAgainstProvider } from './trial-window-reconcile.js';
 
 /**
  * How far back (from "now") the heuristic (Tier 3) reconciliation path
@@ -776,9 +777,15 @@ async function verifyPreapprovalOwnership(params: {
  *
  * Never throws; never blocks the linking outcome.
  *
- * @internal
+ * Exported (HOS-937 step 1) so the own-preapproval webhook activation path
+ * (`subscription-logic.ts`) can reuse the SAME bookkeeping instead of
+ * duplicating it — that flow has no `billing_pending_checkouts` row to link,
+ * so it calls this directly on the `pending_provider -> active/trialing`
+ * transition, reading the snapshot back from `billing_subscriptions.metadata`
+ * instead of from a `checkout` row. Still `@internal` in the sense that it is
+ * not meant for a THIRD call site without re-reading this docblock first.
  */
-async function applyPendingDiscountBestEffort(params: {
+export async function applyPendingDiscountBestEffort(params: {
     readonly billing: QZPayBilling;
     readonly localSubscriptionId: string;
     readonly preapprovalId: string;
@@ -908,9 +915,12 @@ async function applyPendingDiscountBestEffort(params: {
  * converter) leaves the trial granted and is logged loudly for manual
  * reconciliation rather than blocking the link.
  *
- * @internal
+ * Exported (HOS-937 step 1) — see {@link applyPendingDiscountBestEffort}'s
+ * docblock for why: the own-preapproval flow calls this on the webhook's
+ * `pending_provider -> active/trialing` transition instead of at link time,
+ * since it has no correlation row to link against.
  */
-async function applyPendingTrialExtensionBestEffort(params: {
+export async function applyPendingTrialExtensionBestEffort(params: {
     readonly localSubscriptionId: string;
     readonly preapprovalId: string;
     readonly customerId: string;
@@ -1200,6 +1210,21 @@ export async function linkPreapprovalToLocalSub(
             livemode: subRow?.livemode ?? false
         });
     }
+
+    // Step 8: reconcile the promised trial window against the one MercadoPago
+    // actually granted (HOS-936), best-effort, non-blocking.
+    //
+    // The share-link row was written before any preapproval existed, so its
+    // `trial_end` is purely the checkout-time promise. This is the first moment a
+    // real preapproval is in hand, and its `next_payment_date` is what decides
+    // whether that promise survives. Runs AFTER the deferred trial extension
+    // above so an extension recorded in the same pass is reconciled too, and
+    // last overall because it may clear the window entirely.
+    await reconcileTrialWindowAgainstProvider({
+        localSubscriptionId: checkout.localSubscriptionId,
+        mpPreapprovalId: preapprovalId,
+        db: client
+    });
 
     apiLogger.info(
         { preapprovalId, localSubscriptionId: checkout.localSubscriptionId, viaHeuristic },

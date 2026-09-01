@@ -43,58 +43,40 @@ test.describe('SEC-02: guest cannot reach admin @p0 @security', () => {
             })
         );
 
-        // ── 1. Open admin root → redirect to login or forbidden ────────────
+        // ── 1. Open admin root → redirected out, to the web access-denied page ──
+        //
+        // HOS-609 made this outcome single and deterministic, which is what lets
+        // the assertion below name ONE destination instead of accepting a list.
+        // Every authenticated visitor without ACCESS_PANEL_ADMIN now leaves for
+        // {web}/{locale}/acceso-denegado/, whatever their roles — the old split
+        // (a plain USER to the /publicar host funnel, a HOST to the admin's own
+        // /auth/forbidden) is gone.
+        //
+        // The guard runs SERVER-side in `_authed`'s beforeLoad (a createServerFn),
+        // so the redirect arrives as a real 3xx before any HTML: there is no
+        // React-effect guard anywhere in this chain and therefore no window in
+        // which the browser holds an admin URL. Playwright follows the chain and
+        // reports the final response, so `page.url()` settles without a wait.
         const adminResponse = await page.goto(`${ADMIN_URL}/`, {
             waitUntil: 'domcontentloaded'
         });
-        // The admin SSR guard may redirect (via 302) before the page is delivered,
-        // OR the client-side guard fires after React boots (via useEffect).
-        // Wait up to 5s for the URL to settle to a non-root location.
-        const isProtectedUrlStr = (url: string) =>
-            url.includes('/auth/sign-in') ||
-            url.includes('/auth/forbidden') ||
-            url.includes('/forbidden') ||
-            url.includes('/publicar') ||
-            !url.startsWith(ADMIN_URL);
-        const isProtectedUrl = (url: URL) => isProtectedUrlStr(url.toString());
-        if (
-            !isProtectedUrlStr(page.url()) &&
-            !adminResponse?.status()?.toString().startsWith('4')
-        ) {
-            await page.waitForURL(isProtectedUrl, { timeout: 5_000 }).catch(() => {
-                // Guard did not redirect within 5s. Fall through to the assertion.
-            });
-        }
         const finalUrl = page.url();
         const status = adminResponse?.status() ?? 200;
-        // The admin guard may redirect USER-role sessions to:
-        //   - /auth/sign-in (unauthenticated redirect — via web app, SPEC-182)
-        //   - /auth/forbidden (HOST without panel access)
-        //   - /forbidden (generic)
-        //   - /{lang}/publicar/?from=admin (USER-role tourist funnel redirect)
-        //   - any URL outside the admin origin
-        // We also accept a 4xx response.
-        // The admin guard may redirect USER-role sessions to:
-        //   - /auth/sign-in (unauthenticated redirect — via web app, SPEC-182)
-        //   - /auth/forbidden (HOST without panel access)
-        //   - /forbidden (generic)
-        //   - /{lang}/publicar/?from=admin (USER-role tourist funnel redirect)
-        //   - any URL outside the admin origin
-        // We also accept /dashboard: in some local environments the admin's
-        // client-side guard fires AFTER SSR (React effect), resulting in a brief
-        // landing on /dashboard before or instead of the tourist-funnel redirect.
-        // The critical security property is step 2 (API endpoints must reject 403).
-        const isProtected =
-            status >= 400 ||
-            finalUrl.includes('/auth/sign-in') ||
-            finalUrl.includes('/auth/forbidden') ||
-            finalUrl.includes('/forbidden') ||
-            finalUrl.includes('/publicar') ||
-            finalUrl.includes('/dashboard') ||
-            !finalUrl.startsWith(ADMIN_URL);
-        expect(isProtected, `expected redirect or 4xx, got status=${status} url=${finalUrl}`).toBe(
-            true
-        );
+
+        // Two conditions, both required — an AND, not the OR-chain this used to
+        // be. That chain accepted `/dashboard`, the admin panel itself: the one
+        // place a blocked user must never end up. It also tested
+        // `/auth/sign-in`, which never matched anything, because the route is
+        // spelled `/auth/signin`. Between those two the check could not fail
+        // for any URL the admin could realistically serve.
+        expect(
+            finalUrl,
+            `expected the admin to redirect a USER-role session out to the web access-denied page, got status=${status} url=${finalUrl}`
+        ).toContain('/acceso-denegado');
+        expect(
+            finalUrl.startsWith(ADMIN_URL),
+            `expected the final URL to be outside the admin origin (${ADMIN_URL}), got ${finalUrl}`
+        ).toBe(false);
 
         // ── 2. Each admin API endpoint → 403 ───────────────────────────────
         const adminEndpoints = [

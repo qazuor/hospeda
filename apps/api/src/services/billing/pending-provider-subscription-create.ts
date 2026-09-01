@@ -93,6 +93,21 @@ export interface PendingCheckoutDiscount {
 }
 
 /**
+ * A resolved-but-not-yet-redeemed `trial_extension` promo code (HOS-240),
+ * snapshotted at checkout time. Named/exported (rather than kept inline on
+ * {@link CreatePendingProviderSubscriptionInput}) so both checkout flows
+ * that snapshot it — the `billing_pending_checkouts` correlation row here,
+ * and `billing_subscriptions.metadata` for the HOS-937 own-preapproval flow
+ * — share the same shape instead of duplicating it structurally.
+ */
+export interface PendingTrialExtension {
+    /** The DB promo code id (for the redemption record + FK stamp). */
+    readonly promoCodeId: string;
+    /** The normalized promo code string (logging / redemption record). */
+    readonly code: string;
+}
+
+/**
  * Input for {@link createPendingProviderSubscription}.
  */
 export interface CreatePendingProviderSubscriptionInput {
@@ -160,10 +175,7 @@ export interface CreatePendingProviderSubscriptionInput {
      * Omitted for config-backed trials (no DB row), kill-switched/ineligible
      * trials, and non-trial checkouts.
      */
-    readonly pendingTrialExtension?: {
-        readonly promoCodeId: string;
-        readonly code: string;
-    };
+    readonly pendingTrialExtension?: PendingTrialExtension;
     /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
     readonly productDomain?: string;
     /**
@@ -311,6 +323,13 @@ export async function createPendingProviderSubscription(
             // intentionally stays `pending_provider` above — a set `trialEnd` on
             // a pending row grants nothing until the webhook flips status, per
             // the HOS-171 guard (entitlements gate on status, never trial_end).
+            //
+            // HOS-936: this is Hospeda's PROMISE, not MercadoPago's answer —
+            // no preapproval exists yet at this point, so nothing here can be
+            // verified. The provider gets to contradict it the moment one does:
+            // `link-preapproval.service.ts` reconciles this window against the
+            // real `next_payment_date` and clears it when the provider turns out
+            // to be charging immediately (`trial-window-reconcile.ts`).
             trialStart: freeTrialDays === undefined ? null : now,
             trialEnd:
                 freeTrialDays === undefined

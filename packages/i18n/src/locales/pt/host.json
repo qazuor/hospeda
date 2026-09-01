@@ -695,9 +695,6 @@
         "trialCallout_one": "Experimente o Hospeda gratis por {{trialDays}} dia na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar.",
         "trialCallout_other": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
     },
-    "fromAdminBanner": {
-        "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
-    },
     "miniForm": {
         "fields": {
             "name": "Nome da acomodação",

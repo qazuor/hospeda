@@ -105,9 +105,19 @@ export interface SoftCancelSubscriptionResult {
 // Soft-cancellable statuses
 // ---------------------------------------------------------------------------
 
-/** Statuses that allow a soft-cancel. `trialing` is included: a trialing user
- * should be able to cancel before the trial converts to a paid subscription. */
-const SOFT_CANCELLABLE_STATUSES = new Set(['active', 'trialing']);
+/**
+ * Statuses that allow a soft-cancel. `trialing` is included: a trialing user
+ * should be able to cancel before the trial converts to a paid subscription.
+ *
+ * `courtesy` is included deliberately (HOS-180, OQ-2). It is the ONE billing
+ * action left open during a gifted window — pausing, changing plan and buying
+ * addons are all refused, but only because their own gates already demand
+ * `active`/`trialing` and a new status is excluded by omission. Cancelling had
+ * to be opted back IN, and it was: a subscriber who is not being charged and
+ * cannot leave is trapped for nobody's benefit, and Argentine consumer law
+ * (Resolución 424/2020) requires unsubscribing to be as easy as subscribing.
+ */
+const SOFT_CANCELLABLE_STATUSES = new Set(['active', 'trialing', 'courtesy']);
 
 // ---------------------------------------------------------------------------
 // Implementation

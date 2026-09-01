@@ -35,6 +35,7 @@ import type { AppOpenAPI } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
+import { checkoutRetryRouter } from './checkout-retry';
 import { createCollectionListingBlocker } from './collection-listing-block';
 import { downgradePreviewRouter } from './downgrade-preview';
 import { linkPreapprovalRouter } from './link-preapproval';
@@ -267,6 +268,10 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // operate on local subscription rows; Hono routes by exact path so there
     // is no conflict between the two routers.
     router.route('/subscriptions', subscriptionStatusRouter);
+
+    // Mount the checkout-retry recovery route (HOS-937 step 3). Same
+    // `/subscriptions` prefix, same reasoning as the status router above.
+    router.route('/subscriptions', checkoutRetryRouter);
 
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
