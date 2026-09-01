@@ -84,6 +84,13 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // straight to the price grid — so this is a genuinely new indexable URL
     // rather than a relocation, and nothing here replaces an entry above.
     { path: '/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
+    // HOS-985: the partner audience's level-2 sales page. It is the fifth and
+    // last of the family, and the only one whose CTA opens a lead form instead
+    // of a price grid — a partnership is agreed in a conversation, so there is
+    // no figure to publish (D-13). `/sumate/partner/` below still answers 200
+    // and keeps its entry: it holds the form this page sends people to, and
+    // cannot 301 here until H7 gives that form a home inside the family.
+    { path: '/planes/aliados/', changefreq: 'monthly', priority: 0.8 },
 
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },

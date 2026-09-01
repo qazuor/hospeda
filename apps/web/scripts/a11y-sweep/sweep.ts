@@ -93,6 +93,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/planes/experiencias/', name: 'Sales Experience' },
     { url: '/es/planes/anfitriones/', name: 'Sales Host' },
     { url: '/es/planes/turistas/', name: 'Sales Tourist' },
+    { url: '/es/planes/aliados/', name: 'Sales Partner' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];

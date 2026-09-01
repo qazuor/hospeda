@@ -37,6 +37,8 @@
     "Sales Host [dark]": [],
     "Sales Tourist [light]": ["color-contrast"],
     "Sales Tourist [dark]": [],
+    "Sales Partner [light]": ["color-contrast"],
+    "Sales Partner [dark]": [],
     "Home EN [light]": ["color-contrast"],
     "Home EN [dark]": [],
     "Home PT [light]": ["color-contrast"],
