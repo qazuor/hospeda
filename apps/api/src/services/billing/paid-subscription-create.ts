@@ -60,16 +60,22 @@ export interface CreatePaidSubscriptionInput {
     readonly paymentMethodReturnUrl: string;
     /** Webhook destination for this preapproval. */
     readonly notificationUrl: string;
-    /**
-     * Extra free-trial days to delay the first recurring charge
-     * (SPEC-126 D9). Omitted for a plain paid create with no promo effect.
+    /*
+     * HOS-1012: there is deliberately NO `freeTrialDays` here any more, and no
+     * `startDate` either. This is THE preapproval-create payload — every paid
+     * checkout funnels through the `billing.subscriptions.create` call below —
+     * so it is exactly where a free trial would leak back to MercadoPago.
      *
-     * NOTE (HOS-191): in the `preapproval_plan` flow the trial is baked into the
-     * MP plan referenced by {@link providerPriceId}, so this field is a no-op there
-     * (qzpay builds no inline `auto_recurring` when `providerPriceId` is present).
-     * It is retained for the legacy inline-preapproval fallback.
+     * MercadoPago grants a preapproval's free trial once per
+     * `(payer, preapproval_plan)` and reports a spent trial identically to a
+     * live one; in production that charged ARS 18.000 one hundred and eighteen
+     * seconds after promising fourteen free days (HOS-522). Hospeda's trial is
+     * local now — a `trialing` row with `mp_subscription_id = NULL`, born at the
+     * first publish — so nothing has to be asked of, or believed from, the
+     * provider. Removing the field is what makes the checkout callers unable to
+     * pass one by accident; `scripts/check-no-trial-to-mercadopago.sh` (G-1) is
+     * what stops it being added back.
      */
-    readonly freeTrialDays?: number;
     /**
      * MercadoPago `preapproval_plan` id to subscribe against (HOS-191). When set,
      * qzpay builds a plan-based preapproval (`preapproval_plan_id`, no inline
@@ -148,7 +154,6 @@ export async function createPaidSubscription(
         priceId,
         paymentMethodReturnUrl,
         notificationUrl,
-        freeTrialDays,
         providerPriceId,
         billingInterval = 'monthly',
         metadata,
@@ -174,10 +179,11 @@ export async function createPaidSubscription(
             billingInterval,
             paymentMethodReturnUrl,
             notificationUrl,
-            // SPEC-126 D9: extra free-trial days are forwarded to the MP
-            // preapproval so the first recurring charge is delayed by N days.
-            // Omitted when the caller has no qualifying trial extension.
-            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // HOS-1012: no trial field of any kind reaches this payload — not
+            // `freeTrialDays`, not `startDate`. HOS-171 measured that
+            // `auto_recurring.free_trial` and `start_date` are the same
+            // mechanism, so both are banned, and the ban is enforced statically
+            // by `scripts/check-no-trial-to-mercadopago.sh` (guard G-1).
             // HOS-191: when set, qzpay subscribes against this MP preapproval_plan
             // (plan-based flow) instead of building an inline preapproval.
             ...(providerPriceId === undefined ? {} : { providerPriceId }),

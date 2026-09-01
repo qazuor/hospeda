@@ -18,6 +18,27 @@
  * instead, and the real preapproval id is linked back afterwards (F2 back_url /
  * F3 webhook — `billing/link-preapproval.service.ts`).
  *
+ * ## HOS-1012: no checkout may send a trial to MercadoPago
+ *
+ * Every entry point here is the PAID path and nothing else. No checkout resolves
+ * free-trial days, none passes `freeTrialDays`, and none lets
+ * `auto_recurring.free_trial` or `start_date` reach a preapproval — HOS-171
+ * measured that the latter two are the same mechanism, so both are banned.
+ *
+ * The measured reason: MercadoPago grants a preapproval's free trial ONCE per
+ * `(payer, preapproval_plan)` and reports a trial it already spent exactly like
+ * a live one. In production that charged a customer ARS 18.000 one hundred and
+ * eighteen seconds after promising fourteen free days (HOS-522). A trial we
+ * never ask for is a trial MercadoPago cannot lie about.
+ *
+ * The trial did not disappear — it moved. It is now Hospeda's own: a local
+ * `status='trialing'` row with `mp_subscription_id = NULL`, born at the owner's
+ * first publish, with no card and no MercadoPago object behind it.
+ *
+ * `scripts/check-no-trial-to-mercadopago.sh` (guard G-1) fails CI if any
+ * production source puts one of the three banned keys back into a preapproval
+ * create payload.
+ *
  * The functions are intentionally framework-agnostic: they take the resolved
  * `billing` instance, the validated input, and the env-resolved URL
  * builders, and return either a success response or throw a
@@ -36,11 +57,11 @@ import {
     partnerSubscriptions
 } from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
-import {
-    calculatePromoCodeEffect,
-    resolveCheckoutFreeTrialDays,
-    resolvePlanTrialConfig
-} from '@repo/service-core';
+// HOS-1012: `resolveCheckoutFreeTrialDays` / `resolvePlanTrialConfig` are NOT
+// imported here any more. Checkout is the PAID path and nothing else — the trial
+// is Hospeda's own, granted locally at the first publish, and never asked of
+// MercadoPago (see the module docblock).
+import { calculatePromoCodeEffect } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { sanitizeEmailForMercadoPago } from '../utils/mp-email.js';
 import {
@@ -60,7 +81,6 @@ import { createPendingProviderSubscription } from './billing/pending-provider-su
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
-import { hasAnyPriorSubscription } from './billing/trial-eligibility.service.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
 
@@ -242,18 +262,17 @@ export interface InitiatePaidMonthlySubscriptionInput {
     /**
      * Optional promo code. Resolved via
      * {@link resolveCheckoutPromoPlan} into a trial / discount / comp plan
-     * (SPEC-262 T-012 P2). For a customer NOT eligible for the HOS-110
-     * no-card trial (see below), the effect applies to the paid checkout:
-     *  - `trial_extension` → `freeTrialDays` on the preapproval (delays first charge).
+     * (SPEC-262 T-012 P2):
+     *  - `trial_extension` → validated but not applied here yet (HOS-1012). The
+     *    extra days can no longer ride on a MercadoPago `free_trial`; re-homing
+     *    them onto the local trial row is an open decision — see the
+     *    `TODO(HOS-1012)` in {@link initiatePaidMonthlySubscription}. The code
+     *    is NOT redeemed in the meantime.
      *  - `discount` → live-preapproval `transaction_amount` mutation (FAIL-CLOSED).
      *  - `comp` → a `status='comp'` subscription, NO MercadoPago preapproval.
      * An unknown / inactive / restricted code surfaces as
-     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, mapped to HTTP 422,
-     * REGARDLESS of trial eligibility (the code is validated before any branch
-     * runs). See the TRIAL resolution comment in
-     * {@link initiatePaidMonthlySubscription} for the full per-`kind` behavior:
-     * comp wins outright; trial_extension lengthens the trial; discount lowers
-     * the preapproval amount and now coexists with a trial (HOS-171).
+     * `SubscriptionCheckoutError('INVALID_PROMO_CODE')`, mapped to HTTP 422
+     * (the code is validated before any branch runs).
      */
     readonly promoCode?: string;
     /** Drizzle client override for tests (comp insert path). */
@@ -278,11 +297,11 @@ export interface InitiatePaidMonthlySubscriptionInput {
  *
  * A `'trial'` variant existed while trials were granted without a card, because
  * that path created no preapproval and the front-end had to skip the redirect.
- * Card-first (HOS-171) removed it: a trial is now an ordinary preapproval that
- * happens to carry `free_trial`, so it redirects to MercadoPago exactly like any
- * other paid checkout and needs no marker.
+ * Card-first (HOS-171) removed it, and HOS-1012 removed the card-first trial
+ * itself: no checkout grants a trial at all now, so there is no trial marker to
+ * reinstate here either.
  *
- * Absent when no promo was applied, and also when a trial was granted.
+ * Absent when no promo was applied.
  */
 export type CheckoutAppliedEffect = 'comp' | 'discount';
 
@@ -302,35 +321,20 @@ export interface InitiatePaidMonthlySubscriptionResult {
     readonly expiresAt: string;
     readonly appliedEffect?: CheckoutAppliedEffect;
     /**
-     * `true` when this checkout granted free trial days — i.e. MercadoPago will
-     * defer the first charge rather than take it today.
-     *
-     * This is NOT an `appliedEffect`. A card-first trial is not an alternative to
-     * a paid checkout the way `comp` is: it IS the paid checkout, on the same
-     * preapproval, with the first debit pushed out. So it takes the normal MP
-     * redirect and carries no effect marker — which is exactly why the signal has
-     * to live on its own field.
-     *
-     * Without it the checkout analytics cannot tell a trial from a plain paid
-     * signup (`outcome` would collapse both to `'paid'`), and trial→paid
-     * conversion (HOS-130) has no event to build on.
-     */
-    readonly trialGranted?: true;
-
-    /**
      * Set to `true` when the customer supplied a promo code that ended up doing
      * nothing, so the front-end can say so instead of letting them believe it
      * applied.
      *
-     * One case only: a `trial_extension` code when no trial was granted (the
-     * plan declares none / the ops kill-switch is on / it is not the customer's
-     * first subscription). There is no trial to lengthen.
+     * NOT currently produced by any branch (HOS-1012). It used to flag a
+     * `trial_extension` code with no trial to lengthen, and that signal came
+     * from `resolveCheckoutFreeTrialDays`, which checkout no longer calls. The
+     * field is retained — the wire schema declares it and trial extension is a
+     * kept feature — and will be set again by whichever entry point ends up
+     * owning the effect (see the `TODO(HOS-1012)` in
+     * {@link initiatePaidMonthlySubscription}).
      *
-     * A `discount` alongside a trial is NOT ignored — since HOS-171 the two
-     * coexist, so the customer gets the free days and the reduced amount.
-     *
-     * Absent (not `false`) in every other case — the front-end should treat
-     * "absent" and "false" identically.
+     * Absent (not `false`) — the front-end should treat "absent" and "false"
+     * identically.
      */
     readonly promoCodeIgnored?: true;
     /**
@@ -466,63 +470,30 @@ export async function initiatePaidMonthlySubscription(
         };
     }
 
-    // ── TRIAL resolution (card-first — HOS-171) ─────────────────────────────
-    // There is no longer a separate no-card trial branch. Every subscription,
-    // trial or not, goes to MercadoPago as a preapproval; a trial is simply that
-    // preapproval carrying `auto_recurring.free_trial`, so MP collects the card
-    // on day 1 and defers the first charge to day N.
+    // TODO(HOS-1012): re-home the trial-extension effect.
+    // Extending the trial is a KEPT feature — `FREEMONTH` stays live, and so
+    // does `LANZAMIENTO60`, the production code that adds 60 days on top of the
+    // default 30 (that pair is what a real 90-day customer is holding). What
+    // changed is WHERE the extra days can land: they can no longer be summed
+    // into a MercadoPago `auto_recurring.free_trial`, because no checkout asks
+    // MercadoPago for a trial at all any more. They have to resolve against the
+    // LOCAL trial row instead. That primitive already exists —
+    // `extendExistingSubscriptionTrial`
+    // (`packages/service-core/src/services/billing/promo-code/promo-code.trial-extension.ts`),
+    // exposed by `POST /api/v1/protected/billing/promo-codes/apply`. WHICH entry
+    // point a code presented at checkout is handed to is an open PRODUCT
+    // decision being closed with the owner; it is deliberately not invented here.
     //
-    // This collapses what used to be two grants at two moments (a no-card trial
-    // here, then a `trial_extension` promo's days later at checkout, with
-    // nothing summing them) into ONE number decided once, below.
+    // Until it lands, a `trial_extension` code at checkout is still fully
+    // VALIDATED (an unknown / expired / restricted code still throws
+    // INVALID_PROMO_CODE → 422) but applies nothing here, and — this is the part
+    // that matters — is NOT redeemed: no `pendingTrialExtension` snapshot is
+    // taken below, so no `used_count++` and no usage row is ever written for
+    // days that were not granted. The code stays unburnt and usable through
+    // whichever entry point wins.
     //
-    // The promo is already resolved above (`comp` returned earlier and never
-    // reaches here) and folds in:
-    //  - `trial_extension` -> its days are added to the plan's base length.
-    //  - `discount` -> applied to the preapproval amount, INDEPENDENTLY of the
-    //    trial. The two are no longer mutually exclusive (HOS-171): the trial
-    //    defers the first charge, the discount lowers what that charge will be.
-    //    A trial-eligible customer with a 20%-off code gets their free days AND
-    //    20% off from the first charge onward.
-    //  - `none` -> plain base trial, no flag.
-    const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
-        plan.metadata
-    );
-
-    // One trial per customer, for life. This check WAS a cheap first-layer
-    // short-circuit in front of `TrialService.startTrial`, which re-checked it
-    // and was the authoritative gate. `startTrial` is gone, so this is now the
-    // single authoritative gate and has no second checker behind it: any prior
-    // subscription the provider AUTHORIZED at least once — any authorized status,
-    // any product domain, including cancelled — disqualifies. Never-authorized
-    // checkouts the user backed out of (`abandoned` / `pending_provider`, or the
-    // raw qzpay `incomplete`/`incomplete_expired`) do NOT count (HOS-230). Only
-    // queried when the plan actually declares a trial, since otherwise the answer
-    // cannot change the outcome. `hasAnyPriorSubscription` (HOS-226) is the SAME
-    // query the read-only `GET /trial-eligibility` route runs, so the two can
-    // never disagree on who is still trial-eligible.
-    const hasPriorSubscription =
-        planHasTrial && planTrialDays > 0
-            ? await hasAnyPriorSubscription({
-                  billing,
-                  customerId,
-                  productDomain: ProductDomainEnum.ACCOMMODATION
-              })
-            : true;
-
-    const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
-
-    const { freeTrialDays, promoExtensionIgnored } = resolveCheckoutFreeTrialDays({
-        planHasTrial,
-        planTrialDays,
-        trialDaysOverride: env.HOSPEDA_TRIAL_DAYS_OVERRIDE,
-        extraTrialDays,
-        hasPriorSubscription
-    });
-
-    // A trial_extension code with no trial to lengthen did nothing — tell the
-    // customer rather than silently pocketing it.
-    const promoCodeIgnored = promoExtensionIgnored;
+    // Do NOT deactivate or repurpose `FREEMONTH` / `LANZAMIENTO60` in
+    // `packages/billing/src/config/promo-codes.config.ts` to work around this.
 
     // ── DISCOUNT resolution (SPEC-262 + HOS-244) ──────────────────────────────
     // Resolve the signup discount ONCE here, BEFORE the MP plan is resolved, so the
@@ -588,7 +559,13 @@ export async function initiatePaidMonthlySubscription(
         // otherwise the plan-based preapproval bills monthly and the fast-cycle QA
         // tool is silently defeated. Real plans on this flow are always monthly.
         billingInterval: planSlug === TEST_DAILY_PLAN.slug ? 'daily' : 'monthly',
-        trialDays: freeTrialDays ?? 0,
+        // HOS-1012: a LITERAL zero, not a variable that happens to be zero.
+        // `resolveCheckoutMpPlanId` bakes `free_trial` into the MercadoPago
+        // `preapproval_plan` whenever `trialDays > 0`, so any expression here
+        // is a live path back to the field this spec exists to stop sending.
+        // A constant cannot be non-zero, and the G-1 guard can see that it is
+        // constant. Every checkout resolves the SAME no-trial MP plan variant.
+        trialDays: 0,
         // Same URL later used as the preapproval's back_url once the real
         // preapproval exists (F2); MP also requires it on preapproval_plan
         // creation (qzpay-mercadopago 2.5.0).
@@ -650,19 +627,11 @@ export async function initiatePaidMonthlySubscription(
             // (see `paid-subscription-create.ts`), which uses it in place of
             // `customer.email`.
             payerEmail,
-            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // HOS-1012: no `freeTrialDays` and no `pendingTrialExtension`. The
+            // preapproval this creates carries no trial of any kind, and a
+            // `trial_extension` code is reported ignored above rather than
+            // snapshotted for a deferred redemption that would grant nothing.
             ...(pendingDiscount ? { pendingDiscount } : {}),
-            ...(promoPlan.kind === 'trial' &&
-            promoPlan.promoCodeId &&
-            promoPlan.code &&
-            !promoExtensionIgnored
-                ? {
-                      pendingTrialExtension: {
-                          promoCodeId: promoPlan.promoCodeId,
-                          code: promoPlan.code
-                      }
-                  }
-                : {}),
             ...(input.db ? { db: input.db } : {})
         });
 
@@ -675,9 +644,7 @@ export async function initiatePaidMonthlySubscription(
             // Reuses the same window the `comp` branch above already
             // synthesizes for the same reason.
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
-            ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
             ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
-            ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
             payerEmail
         };
     }
@@ -694,25 +661,12 @@ export async function initiatePaidMonthlySubscription(
         // a binding `payer_email` (that only happens on the own-preapproval
         // branch above).
         payerEmail,
-        trialGranted: freeTrialDays !== undefined,
-        freeTrialDays,
+        // HOS-1012: no `trialGranted`, no `freeTrialDays`, no
+        // `pendingTrialExtension`. Checkout writes no trial window (the local
+        // trial is born at the first publish instead), and a `trial_extension`
+        // code is reported ignored rather than snapshotted for a redemption
+        // that would grant nothing.
         ...(pendingDiscount ? { pendingDiscount } : {}),
-        // HOS-240: snapshot the trial_extension promo so its redemption is
-        // DEFERRED to link time (like `pendingDiscount`) — recorded only once the
-        // MP preapproval is authorized+linked, never on an abandoned checkout.
-        // Only for a DB-backed code that actually granted the extra days (not a
-        // config code, not kill-switched/ineligible where the extension was ignored).
-        ...(promoPlan.kind === 'trial' &&
-        promoPlan.promoCodeId &&
-        promoPlan.code &&
-        !promoExtensionIgnored
-            ? {
-                  pendingTrialExtension: {
-                      promoCodeId: promoPlan.promoCodeId,
-                      code: promoPlan.code
-                  }
-              }
-            : {}),
         livemode: customer.livemode
     });
 
@@ -733,9 +687,7 @@ export async function initiatePaidMonthlySubscription(
         checkoutUrl,
         localSubscriptionId,
         expiresAt,
-        ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
         ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
-        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
         payerEmail
     };
 }
@@ -792,11 +744,9 @@ export interface InitiateCommerceMonthlySubscriptionResult {
  * reachable.
  *
  * Flow:
- *   1. resolve the trial length through the SAME canonical resolver the
- *      accommodation paths use (HOS-590: `resolvePlanTrialConfig` ->
- *      `resolveCheckoutFreeTrialDays`), then resolve/provision the matching MP
- *      `preapproval_plan` for this commercial plan variant + trial-day variant
- *      (`resolveCheckoutMpPlanId`);
+ *   1. resolve/provision the MP `preapproval_plan` for this commercial plan
+ *      variant, always at the NO-TRIAL variant (`trialDays: 0`, HOS-1012 — no
+ *      checkout resolves a trial length any more);
  *   2. materialize a `pending_provider` `billing_subscriptions` row stamped
  *      with the listing's OWN vertical (`product_domain = 'gastronomy'` /
  *      `'experience'`, HOS-695 — the transitional `'commerce'` umbrella is
@@ -855,33 +805,13 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
-    // HOS-590: commerce now routes through the SAME canonical trial resolver
-    // the accommodation paths use (`resolvePlanTrialConfig` ->
-    // `resolveCheckoutFreeTrialDays`) instead of hardcoding `trialDays: 0`
-    // (the HOS-191 shortcut this replaces). Commerce plans carry no promo
-    // codes (see the docblock above), so `extraTrialDays` is always
-    // `undefined` — the plan's declared `hasTrial`/`trialDays`
-    // (`billing_plans.metadata`, see migration `0064`) is the only input
-    // besides the ops kill-switch and the one-trial-per-customer-for-life
-    // check.
-    const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
-        plan.metadata
-    );
-
-    // Only queried when the plan actually declares a trial, mirroring the
-    // accommodation path — the answer cannot change the outcome otherwise.
-    const hasPriorSubscription =
-        planHasTrial && planTrialDays > 0
-            ? await hasAnyPriorSubscription({ billing, customerId, productDomain })
-            : true;
-
-    const { freeTrialDays } = resolveCheckoutFreeTrialDays({
-        planHasTrial,
-        planTrialDays,
-        trialDaysOverride: env.HOSPEDA_TRIAL_DAYS_OVERRIDE,
-        extraTrialDays: undefined,
-        hasPriorSubscription
-    });
+    // HOS-1012: no trial resolution here at all. HOS-590 had routed commerce
+    // through the same `resolvePlanTrialConfig` -> `resolveCheckoutFreeTrialDays`
+    // pair the accommodation paths used; that pair is gone from every checkout
+    // now. Commerce plans that still declare `hasTrial`/`trialDays` in
+    // `billing_plans.metadata` (migration `0064`) are simply not consulted —
+    // checkout is the paid path, and nothing it builds asks MercadoPago for a
+    // free day.
 
     // `planName` is the buyer-visible display name — it becomes the MP plan's
     // `reason`, i.e. what the buyer reads on MercadoPago's hosted page. With the
@@ -889,11 +819,6 @@ export async function initiateCommerceMonthlySubscription(
     // ever sees for a commerce checkout (qzpay's `buildCreateBody` used to build
     // a second one from the raw plan SLUG).
     //
-    // `trialDays` here is not cosmetic: `resolveCheckoutMpPlanId` resolves the
-    // MercadoPago preapproval PLAN from `(plan, amount, currency, interval,
-    // trialDays)`, so passing the resolved `freeTrialDays` mints (or reuses) a
-    // DIFFERENT MP preapproval plan than the no-trial one — the same mechanism
-    // §6.8 of the spec relies on.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
@@ -902,7 +827,10 @@ export async function initiateCommerceMonthlySubscription(
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
-        trialDays: freeTrialDays ?? 0,
+        // HOS-1012: a LITERAL zero — see the identical note on the accommodation
+        // monthly path. `resolveCheckoutMpPlanId` bakes `free_trial` into the MP
+        // `preapproval_plan` whenever this is > 0, so a constant is the point.
+        trialDays: 0,
         // Same URL later used as the preapproval's back_url once the real
         // preapproval exists (F2); MP also requires it on preapproval_plan
         // creation (qzpay-mercadopago 2.5.0).
@@ -988,7 +916,7 @@ export async function initiateCommerceMonthlySubscription(
             notificationUrl: urls.notificationUrl,
             providerPriceId,
             payerEmail,
-            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // HOS-1012: no `freeTrialDays` — this preapproval carries no trial.
             // D3: HOS-695 — the listing's own vertical, never the retired
             // 'commerce' umbrella. `loadEntitlements()` filters strictly to
             // `product_domain = 'accommodation'` (SPEC-239), so this is what
@@ -1044,17 +972,9 @@ export async function initiateCommerceMonthlySubscription(
         // partner flow below. Resolved above via `resolvePayerEmail` (spec
         // §6.3) rather than the raw signup address.
         payerEmail,
-        // HOS-590: mirrors `freeTrialDays !== undefined` on the accommodation
-        // paths (`:559`, `:1303`) — the third of the three hardcodes that had
-        // to move together, or this would promise a trial and charge day one.
-        trialGranted: freeTrialDays !== undefined,
-        // HOS-812: `trialGranted` is metadata only — it is `createPendingProviderSubscription`'s
-        // `freeTrialDays` that writes `trial_start`/`trial_end`. Omitting it here (while both
-        // accommodation paths passed it) left every commerce row with a NULL `trial_end`, so
-        // `deriveTrialingStatus` could never flip it to `trialing`: MercadoPago advertised the
-        // trial on its hosted page and our row was born `active`, outside the H-137 control that
-        // only scans `trialing` rows.
-        freeTrialDays,
+        // HOS-1012: no `trialGranted` / `freeTrialDays`. HOS-590 and HOS-812 had
+        // both fixed a commerce checkout that promised a trial MercadoPago was
+        // charging for; neither can recur, because no checkout promises one now.
         // D3: stamped inside the helper's transaction. ADR-035 / SPEC-239 —
         // `loadEntitlements()` filters to `product_domain = 'accommodation'`, so
         // this is what keeps a commerce subscription from granting its owner the
@@ -1306,7 +1226,6 @@ export async function initiatePartnerMonthlySubscription(
         mpPreapprovalPlanId: providerPriceId,
         // No `payerEmail` — see this function's JSDoc. The synthetic partner
         // address would veto every webhook link instead of corroborating one.
-        trialGranted: false,
         productDomain: ProductDomainEnum.PARTNER,
         // The SUBSCRIPTION → PARTNER path — see the commerce checkout above for
         // why the upserted link row alone cannot survive a second checkout
@@ -1395,15 +1314,12 @@ export interface InitiatePaidAnnualSubscriptionInput {
      * behavior left:
      *  - `comp` → a `status='comp'` subscription, NO MercadoPago charge. Wins
      *    outright over a trial.
-     *  - `trial_extension` → its days are added to the plan's base trial length,
-     *    as one `free_trial` on the preapproval. A no-op (flagged via
-     *    `promoCodeIgnored`) when no trial is granted — there is nothing to
-     *    lengthen.
+     *  - `trial_extension` → validated but not applied here yet (HOS-1012), and
+     *    NOT redeemed. Same open decision as monthly — see the
+     *    `TODO(HOS-1012)` in {@link initiatePaidMonthlySubscription}.
      *  - `discount` → the preapproval amount is mutated down, FAIL-CLOSED, and
-     *    the multi-cycle counter applies exactly as it does for monthly. Coexists
-     *    with a trial: the trial defers the first charge, the discount lowers it.
-     * An unknown / inactive code surfaces as INVALID_PROMO_CODE (HTTP 422),
-     * regardless of trial eligibility.
+     *    the multi-cycle counter applies exactly as it does for monthly.
+     * An unknown / inactive code surfaces as INVALID_PROMO_CODE (HTTP 422).
      */
     readonly promoCode?: string;
     /**
@@ -1423,11 +1339,9 @@ export interface InitiatePaidAnnualSubscriptionInput {
  * Output shape of a successful annual initiation. Mirrors the monthly
  * shape so the route handler can return either uniformly. `appliedEffect`
  * is `'comp'` when a comp code short-circuited the MP charge (no real
- * `checkoutUrl`), `'discount'` when the annual line-item was reduced, or
- * (HOS-115) `'trial'` when a trial-eligible customer was granted the
- * no-card trial instead of being charged upfront — mirrors the monthly
- * `InitiatePaidMonthlySubscriptionResult` shape exactly so the two stay
- * symmetric.
+ * `checkoutUrl`) and `'discount'` when the annual line-item was reduced.
+ * Mirrors the monthly `InitiatePaidMonthlySubscriptionResult` shape exactly so
+ * the two stay symmetric.
  */
 export interface InitiatePaidAnnualSubscriptionResult {
     readonly checkoutUrl: string;
@@ -1435,22 +1349,8 @@ export interface InitiatePaidAnnualSubscriptionResult {
     readonly expiresAt: string;
     readonly appliedEffect?: CheckoutAppliedEffect;
     /**
-     * `true` when this checkout granted free trial days — see the monthly
-     * result's note. Annual carries the identical signal because since HOS-171
-     * it is the identical mechanism: one preapproval, 12-month cadence.
-     */
-    readonly trialGranted?: true;
-    /**
-     * Set to `true` when the customer supplied a promo code that ended up doing
-     * nothing. One case only: a `trial_extension` code when no trial was granted.
-     *
-     * It no longer means "a discount was discarded because the trial took
-     * priority" — that precedence is gone (HOS-171). A discount and a trial
-     * coexist now: the trial defers the first charge, the discount lowers what
-     * that charge will be.
-     *
-     * Absent (not `false`) in every other case — the front-end should treat
-     * "absent" and "false" identically.
+     * Not currently produced by any branch (HOS-1012) — see the monthly
+     * result's identical note.
      */
     readonly promoCodeIgnored?: true;
     /**
@@ -1556,41 +1456,12 @@ export async function initiatePaidAnnualSubscription(
         };
     }
 
-    // ── TRIAL resolution (card-first — HOS-171) ───────────────────────────────
-    // Identical to the monthly path, and deliberately so: annual is no longer a
-    // different KIND of thing. It is the same preapproval with a 12-month
-    // cadence, so it gets the same trial, the same promo precedence and the same
-    // single decision point.
-    const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
-        plan.metadata
-    );
-
-    // One trial per customer, for life — cross-interval, not per-interval. This
-    // is the single authoritative gate now that `TrialService.startTrial` (which
-    // used to re-check it) is gone. `hasAnyPriorSubscription` (HOS-226) is the
-    // SAME query the read-only `GET /trial-eligibility` route runs.
-    const hasPriorSubscription =
-        planHasTrial && planTrialDays > 0
-            ? await hasAnyPriorSubscription({
-                  billing,
-                  customerId,
-                  productDomain: ProductDomainEnum.ACCOMMODATION
-              })
-            : true;
-
-    const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
-
-    const { freeTrialDays, promoExtensionIgnored } = resolveCheckoutFreeTrialDays({
-        planHasTrial,
-        planTrialDays,
-        trialDaysOverride: env.HOSPEDA_TRIAL_DAYS_OVERRIDE,
-        extraTrialDays,
-        hasPriorSubscription
-    });
-
-    // A trial_extension code with no trial to lengthen did nothing — tell the
-    // customer rather than silently pocketing it.
-    const promoCodeIgnored = promoExtensionIgnored;
+    // TODO(HOS-1012): re-home the trial-extension effect — identical to the
+    // monthly path, and deliberately so. Annual resolves no trial length either:
+    // it is the same preapproval on a 12-month cadence, and it asks MercadoPago
+    // for no free days. A `trial_extension` code here is validated (an invalid
+    // one still 422s) but applies nothing and is NOT redeemed. See the full note
+    // in `initiatePaidMonthlySubscription`.
 
     // HOS-244: annual checkout does NOT support signup discounts yet. The
     // born-discounted MP-plan mechanism (`discountCycle1AmountCentavos` threaded
@@ -1631,7 +1502,8 @@ export async function initiatePaidAnnualSubscription(
         amountCentavos: annualPrice.unitAmount,
         currency: annualPrice.currency,
         billingInterval: 'annual',
-        trialDays: freeTrialDays ?? 0,
+        // HOS-1012: a LITERAL zero — see the identical note on the monthly path.
+        trialDays: 0,
         // Same URL later used as the preapproval's back_url once the real
         // preapproval exists; MP also requires it on preapproval_plan creation
         // (qzpay-mercadopago 2.5.0).
@@ -1684,20 +1556,10 @@ export async function initiatePaidAnnualSubscription(
             // HOS-937 step 2: bind the preapproval to the resolved payer
             // email, same as the monthly own-preapproval branch.
             payerEmail,
-            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // HOS-1012: no `freeTrialDays` and no `pendingTrialExtension` — see
+            // the monthly own-preapproval branch.
             // No `pendingDiscount` for annual — HOS-244 blocks discount codes
             // on annual checkout above (born-discounted is monthly-only).
-            ...(promoPlan.kind === 'trial' &&
-            promoPlan.promoCodeId &&
-            promoPlan.code &&
-            !promoExtensionIgnored
-                ? {
-                      pendingTrialExtension: {
-                          promoCodeId: promoPlan.promoCodeId,
-                          code: promoPlan.code
-                      }
-                  }
-                : {}),
             ...(input.db ? { db: input.db } : {})
         });
 
@@ -1708,8 +1570,6 @@ export async function initiatePaidAnnualSubscription(
             // `billing_pending_checkouts` correlation row exists in this
             // flow.
             expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
-            ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
-            ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
             payerEmail
         };
     }
@@ -1721,24 +1581,8 @@ export async function initiatePaidAnnualSubscription(
         billingInterval: 'annual',
         mpPreapprovalPlanId: providerPriceId,
         payerEmail,
-        trialGranted: freeTrialDays !== undefined,
-        freeTrialDays,
-        // HOS-240: snapshot the trial_extension promo so its redemption is
-        // DEFERRED to link time (like `pendingDiscount`) — recorded only once the
-        // MP preapproval is authorized+linked, never on an abandoned checkout.
-        // Only for a DB-backed code that actually granted the extra days (not a
-        // config code, not kill-switched/ineligible where the extension was ignored).
-        ...(promoPlan.kind === 'trial' &&
-        promoPlan.promoCodeId &&
-        promoPlan.code &&
-        !promoExtensionIgnored
-            ? {
-                  pendingTrialExtension: {
-                      promoCodeId: promoPlan.promoCodeId,
-                      code: promoPlan.code
-                  }
-              }
-            : {}),
+        // HOS-1012: no `trialGranted` / `freeTrialDays` / `pendingTrialExtension`
+        // — see the monthly path.
         livemode: customer.livemode
     });
 
@@ -1754,10 +1598,8 @@ export async function initiatePaidAnnualSubscription(
         checkoutUrl,
         localSubscriptionId,
         expiresAt,
-        ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
         // No `appliedEffect: 'discount'` for annual — discount codes are blocked
         // on annual checkout (HOS-244, born-discounted is monthly-only for now).
-        ...(promoCodeIgnored ? { promoCodeIgnored: true } : {}),
         payerEmail
     };
 }
