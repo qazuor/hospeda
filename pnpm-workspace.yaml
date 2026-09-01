@@ -89,8 +89,28 @@ overrides:
   # activation path a purchase has: two approved payments were collected and
   # never recorded. Ships with migration 0093 on our side. FLOOR: core >= 3.1.0.
   #
-  # Current wave (2026-08-21): core 3.1.0 · mercadopago 2.9.0 · drizzle 1.12.0 ·
-  # hono 1.6.9 · react 1.1.24. Declared as `^` ranges in apps/api, apps/admin,
+  # 2026-09-01: the split above happened again, and this time nothing failed.
+  # `pnpm-lock.yaml` held TWO core versions — 5.1.0, demanded directly by the
+  # five workspace packages, and 5.0.0, pinned by the four siblings, which had
+  # been left a wave behind (drizzle 2.0.0, hono 1.6.11, react 1.1.26,
+  # mercadopago 2.9.2). Core was raised on its own to pick up `payerEmail`
+  # (HOS-937); npm already had all four siblings republished against 5.1.0, so
+  # the fix was to install the wave, not to publish anything. The tell was in
+  # this very file: `minimumReleaseAgeExclude` listed `qzpay-core@5.1.0` while
+  # every sibling line stopped one version short.
+  #
+  # It was benign — 5.1.0 is a purely additive optional field, so both type
+  # identities of `QZPayBilling` were structurally compatible and typecheck
+  # passed on all three apps. That is the point worth remembering: HOS-232 is
+  # not detected by a red build. It is detected by counting.
+  #
+  #     grep "'@qazuor/qzpay-core@" pnpm-lock.yaml   # must print ONE line
+  #
+  # Run that before and after any qzpay version change. Two lines means the
+  # wave is split, whether or not anything is failing yet.
+  #
+  # Current wave (2026-09-01): core 5.1.0 · mercadopago 2.9.3 · drizzle 2.0.1 ·
+  # hono 1.6.12 · react 1.1.27. Declared as `^` ranges in apps/api, apps/admin,
   # packages/billing, packages/db and packages/service-core.
   # ---------------------------------------------------------------------------
   typescript: "6.0.3"
@@ -279,7 +299,7 @@ forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
   - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0 || 5.0.0 || 5.1.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0'
-  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11'
-  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2 || 2.9.3'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0 || 2.0.1'
+  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11 || 1.6.12'
+  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26 || 1.1.27'

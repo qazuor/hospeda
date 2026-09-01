@@ -23,7 +23,7 @@
     },
     "dependencies": {
         "@qazuor/qzpay-core": "^5.1.0",
-        "@qazuor/qzpay-mercadopago": "^2.9.2",
+        "@qazuor/qzpay-mercadopago": "^2.9.3",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*"
