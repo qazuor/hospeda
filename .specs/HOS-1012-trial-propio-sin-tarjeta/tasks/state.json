@@ -420,31 +420,31 @@
             "id": "T-013",
             "title": "Test the expiry job end to end",
             "description": "Integration test over T-010 + T-011 + T-012: an expired trial transitions, unpublishes, revalidates and writes exactly one event; a re-run changes nothing. TESTS: assert the event count is exactly 1 after two runs — a dedup that writes a second event is the failure mode a 'no duplicate side effect' assertion misses.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011", "T-012"],
             "blocks": ["T-032"],
             "subtasks": [
                 {
                     "title": "Full-chain test on one expired row",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Second run writes no second event",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "cron", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T12:58:00.000Z",
+                "completed": "2026-09-01T13:05:00.000Z"
             }
         },
         {
@@ -1083,9 +1083,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.6
     }
