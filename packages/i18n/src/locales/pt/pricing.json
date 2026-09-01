@@ -168,6 +168,7 @@
     },
     "nav": {
         "backToIndex": "Voltar para todos os planos",
-        "ariaLabel": "Navegação do catálogo de planos"
+        "ariaLabel": "Navegação do catálogo de planos",
+        "seePlans": "Ver planos e preços"
     }
 }
