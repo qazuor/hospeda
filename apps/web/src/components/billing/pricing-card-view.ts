@@ -17,11 +17,15 @@
  * was enough to cross it, while the same code in a `.ts` module is fine.
  *
  * Bisected on 2026-08-31 against `PricingCardsGrid.astro`. Keeping the build
- * here has three independent payoffs: the frontmatter stays small enough that
- * props inference holds, the logic becomes unit-testable (an `.astro` file
- * cannot be rendered under Vitest, so anything left inline can only ever be
- * asserted by reading its source text), and the component drops back under the
- * repo's 500-line ceiling.
+ * here has two payoffs: the frontmatter stays small enough that props inference
+ * holds, and the logic becomes unit-testable (an `.astro` file cannot be
+ * rendered under Vitest, so anything left inline can only ever be asserted by
+ * reading its source text).
+ *
+ * It does NOT bring the component under the repo's 500-line ceiling — that file
+ * is ~1000 lines and is now almost entirely scoped CSS, which cannot move out
+ * of it (Astro scopes styles to the component that declares the markup). That
+ * overrun predates this change and is still open.
  *
  * **Do not move this back into the frontmatter.**
  */
