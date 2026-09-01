@@ -189,6 +189,13 @@ describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
         // The number must come from `plan.trialDays`; a copy string carrying it
         // goes stale the moment the catalogue changes and cannot be caught by
         // reading the catalogue.
+        //
+        // This covers the two subtrees HOS-943 added. The generalised version —
+        // the whole of `pricing.json` and `commerce.json`, in all three locales,
+        // anchored on the digit-next-to-a-day-unit token rather than on any key
+        // — lives in `packages/i18n/test/trial-days-not-hardcoded.guard.test.ts`
+        // (HOS-941 R-2). Keep both: this one runs in apps/web's suite over the
+        // exact strings its sibling assertions also sweep.
         const literalDays = [
             /\b\d+[\s-]*(d[ií]as?|dias?|days?)\b/i,
             /\b(d[ií]as?|days?)[\s-]*\d+\b/i
