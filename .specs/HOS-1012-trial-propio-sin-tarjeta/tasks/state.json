@@ -152,66 +152,66 @@
             "id": "T-005",
             "title": "Scope trial eligibility to the product domain (D-2, absorbs HOS-931)",
             "description": "`hasAnyPriorSubscription` (`trial-eligibility.service.ts:236`) currently treats ANY prior authorized subscription as consuming the trial across every vertical — that is HOS-931. Make a prior subscription consume the trial only for its own product_domain, using `subscriptionMatchesDomain()` (`packages/service-core/src/services/billing/subscription/subscription-product-domain.ts`). Per CLAUDE.md that helper is the ONLY place allowed to compare a subscription's domain, and it reads asymmetrically on purpose: accommodation fails open, every other domain fails closed. Do not re-derive the comparison at this call site. PRESERVE: the existing exclusion of pending_provider/abandoned rows (HOS-230) and the anyCancelledSubscriptionWasAuthorized history lookup. TESTS: an accommodation subscriber entering gastronomy is eligible; a second accommodation trial is not; a legacy row with a NULL domain still consumes the accommodation trial (fails open); a retired 'commerce' row consumes neither gastronomy nor experience (HOS-695, dark by design).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
                 {
                     "title": "Route the comparison through subscriptionMatchesDomain()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep the pending_provider/abandoned exclusion intact",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep anyCancelledSubscriptionWasAuthorized intact",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "eligibility", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T09:00:00.000Z",
+                "completed": "2026-09-01T09:25:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Test per-domain eligibility including the fail-open and fail-closed asymmetry",
             "description": "Tests for T-005. The asymmetry is the part that breaks silently: accommodation fails OPEN on a null/absent domain (the column post-dates most rows) while every other domain fails CLOSED. A test suite that only exercises the happy path passes with the asymmetry inverted. TESTS: table-driven over (row domain, requested domain) including null, 'commerce' (retired), and each of the four live values; mutate subscriptionMatchesDomain's null branch and confirm a test dies.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Table-driven cases over all domain pairs incl. null and 'commerce'",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutate the null branch and confirm a test dies",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T09:00:00.000Z",
+                "completed": "2026-09-01T09:25:00.000Z"
             }
         },
         {
@@ -1040,9 +1040,9 @@
     ],
     "summary": {
         "total": 31,
-        "pending": 28,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.6
     }
