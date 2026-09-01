@@ -156,7 +156,7 @@ describe('resolveAuthTabsRedirectConfig', () => {
         });
     });
 
-    describe('sign-up password-registration destination (HOS-838 gap, unaffected)', () => {
+    describe('sign-up password-registration browser destination', () => {
         it('always points at /auth/verify-email-sent/, ignoring returnUrl', () => {
             const result = resolveAuthTabsRedirectConfig({
                 astroUrl: urlFor('/es/auth/signup/?returnUrl=/es/mi-cuenta/favoritos/'),
@@ -200,6 +200,122 @@ describe('resolveAuthTabsRedirectConfig', () => {
 
             expect(result.signUpConfig.redirectTo).toBe(
                 'https://hospeda.com.ar/en/auth/verify-email-sent/'
+            );
+        });
+    });
+
+    describe('HOS-838: the destination rides in the verification email', () => {
+        it('carries a requested returnUrl as the verification callback', () => {
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor('/es/auth/signup/?returnUrl=/es/mi-cuenta/comercios/nuevo/'),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/comercios/nuevo/'
+            );
+        });
+
+        it('is ABSOLUTE, because a relative one resolves against the API host', () => {
+            // The verification link is followed from an inbox and handled by
+            // the API origin, which serves no pages.
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor('/es/auth/signup/?returnUrl=/es/mi-cuenta/favoritos/'),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toMatch(/^https:\/\//);
+        });
+
+        it('falls back to the account dashboard when nothing was requested', () => {
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor('/es/auth/signup/'),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/'
+            );
+        });
+
+        it('honours a validated cross-origin callbackUrl', () => {
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor(
+                    `/es/auth/signup/?callbackUrl=${encodeURIComponent(`${ADMIN_URL}/dashboard`)}`
+                ),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(`${ADMIN_URL}/dashboard`);
+        });
+
+        it('does NOT let an off-site returnUrl through', () => {
+            // The value is attacker-controlled and ends up inside an email we
+            // send, so a hostile one would be a phishing vector with our
+            // domain on the envelope.
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor('/es/auth/signup/?returnUrl=https://evil.example/phish'),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/'
+            );
+            expect(result.signUpConfig.verificationCallbackUrl).not.toContain('evil.example');
+        });
+
+        it('does NOT let a protocol-relative returnUrl through', () => {
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor('/es/auth/signup/?returnUrl=//evil.example/phish'),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).not.toContain('evil.example');
+        });
+
+        it('carries the destination on a non-Spanish locale', () => {
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: new URL('/en/auth/signup/?returnUrl=/en/mi-cuenta/favoritos/', SITE_URL),
+                locale: 'en',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/en/mi-cuenta/favoritos/'
             );
         });
     });

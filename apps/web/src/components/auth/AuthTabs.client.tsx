@@ -54,11 +54,20 @@ export interface AuthTabsSignUpConfig {
     /**
      * URL to redirect to after a successful EMAIL sign-up. Email
      * registration has no session until the user opens the verification
-     * email, so this always points at `/auth/verify-email-sent/` — the
-     * caller's original destination does NOT survive this path (HOS-838,
-     * a separate known gap).
+     * email, so this always points at `/auth/verify-email-sent/`.
      */
     readonly redirectTo: string;
+    /**
+     * Absolute URL the verification link should land on once the email is
+     * confirmed (HOS-838).
+     *
+     * This is how the caller's destination survives password registration: it
+     * cannot ride along in the browser, because the email may well be opened on
+     * another device, so it travels inside the verification link itself.
+     * `autoSignInAfterVerification` means that landing already carries a
+     * session, so it can point at a protected page directly.
+     */
+    readonly verificationCallbackUrl: string;
     /**
      * URL to redirect to after a successful OAUTH sign-up. OAuth providers
      * verify the email themselves, so the user is already authenticated —
@@ -385,6 +394,7 @@ export function AuthTabs({
                     <SignUp
                         locale={locale}
                         redirectTo={signUpConfig.redirectTo}
+                        verificationCallbackUrl={signUpConfig.verificationCallbackUrl}
                         email={email}
                         onEmailChange={setEmail}
                     />

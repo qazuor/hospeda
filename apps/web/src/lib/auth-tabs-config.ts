@@ -16,10 +16,13 @@
  * server-validated ABSOLUTE cross-app URL, SPEC-182 — e.g. the admin panel)
  * both feed into the SAME post-OAuth destination, because OAuth
  * authenticates the browser immediately regardless of which tab was active.
- * The one path that does NOT honor either param is password-registration —
- * it always lands on `/auth/verify-email-sent/`, since the API issues no
- * session until the verification email is opened (HOS-838 tracks that as a
- * known, separate gap; do not "fix" it here).
+ * Password-registration is the one path whose BROWSER destination is fixed at
+ * `/auth/verify-email-sent/`: there is no session at submit time, since the API
+ * requires email verification first. The caller's destination is not lost,
+ * though — HOS-838 carries it in `verificationCallbackUrl`, which the API
+ * stamps into the verification link. Because `autoSignInAfterVerification` is
+ * enabled, following that link creates the session, so the callback can point
+ * at a protected page directly.
  */
 
 import type { AuthTabsSignInConfig, AuthTabsSignUpConfig } from '@/components/auth/AuthTabs.client';
@@ -98,10 +101,16 @@ export function resolveAuthTabsRedirectConfig({
     };
 
     const signUpConfig: AuthTabsSignUpConfig = {
-        // Password registration never has a session at submit time, so it
-        // always goes to the "check your inbox" page — returnUrl/callbackUrl
-        // are lost on this one path only (HOS-838).
+        // Password registration has no session at submit time, so the browser
+        // still goes to the "check your inbox" page. The destination is not
+        // lost any more, though: it travels in the verification email as
+        // `verificationCallbackUrl` (HOS-838).
         redirectTo: new URL(buildUrl({ locale, path: 'auth/verify-email-sent' }), origin).href,
+        // Where the verification link should land the user. Absolute on
+        // purpose: Better Auth resolves a relative callback against the API
+        // origin, which serves no pages. The API forwards this verbatim after
+        // Better Auth has validated it against `trustedOrigins`.
+        verificationCallbackUrl: authenticatedTargetHref,
         // OAuth registration DOES authenticate immediately, so — as of
         // HOS-959 — it shares the exact same destination as sign-in,
         // callbackUrl included.

@@ -102,6 +102,7 @@ function renderIsland() {
         <Harness
             locale="es"
             redirectTo="/es/auth/verify-email-sent/"
+            verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
         />
     );
 }
@@ -200,7 +201,8 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
             expect(signUpEmailMock).toHaveBeenCalledWith({
                 email: 'user@example.com',
                 password: VALID_PASSWORD,
-                name: ''
+                name: '',
+                callbackURL: 'https://hospeda.com.ar/es/mi-cuenta/'
             });
         });
     });
@@ -243,6 +245,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
             <SignUp
                 locale="es"
                 redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
                 email=""
                 onEmailChange={() => {}}
             />
@@ -257,6 +260,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
             <SignUp
                 locale="es"
                 redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
                 email=""
                 onEmailChange={() => {}}
             />
@@ -285,6 +289,7 @@ describe('SignUp controlled email (HOS-959)', () => {
             <Harness
                 locale="es"
                 redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
                 initialEmail="preset@example.com"
             />
         );
@@ -299,6 +304,7 @@ describe('SignUp controlled email (HOS-959)', () => {
             <SignUp
                 locale="es"
                 redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
                 email=""
                 onEmailChange={onEmailChange}
             />
@@ -310,5 +316,46 @@ describe('SignUp controlled email (HOS-959)', () => {
         });
 
         expect(onEmailChange).toHaveBeenCalledWith('typed@example.com');
+    });
+});
+
+describe('SignUp — HOS-838: the destination reaches the verification email', () => {
+    beforeEach(() => {
+        signUpEmailMock.mockReset();
+        signUpEmailMock.mockResolvedValue({ error: null });
+    });
+
+    it('sends the requested destination as Better Auth callbackURL', async () => {
+        // The browser cannot carry the destination across the inbox hop — the
+        // email may be opened on another device — so it has to travel inside
+        // the verification link.
+        // Arrange
+        render(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/comercios/nuevo/"
+                email="user@example.com"
+                onEmailChange={() => undefined}
+            />
+        );
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
+            target: { value: VALID_PASSWORD }
+        });
+        fireEvent.change(screen.getByLabelText(/Confirmar contraseña/), {
+            target: { value: VALID_PASSWORD }
+        });
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+        // Assert
+        await waitFor(() => {
+            expect(signUpEmailMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    callbackURL: 'https://hospeda.com.ar/es/mi-cuenta/comercios/nuevo/'
+                })
+            );
+        });
     });
 });

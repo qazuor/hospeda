@@ -43,6 +43,12 @@ export interface SignUpProps {
      * `/auth/verify-email-sent/`.
      */
     readonly redirectTo: string;
+    /**
+     * Absolute URL the verification link should land on once the email is
+     * confirmed. Handed to Better Auth as `callbackURL`, which is what carries
+     * the caller's destination across the inbox hop (HOS-838).
+     */
+    readonly verificationCallbackUrl: string;
     /** Current email value — owned by `AuthTabs` so it survives a tab switch. */
     readonly email: string;
     /** Called with the new value on every keystroke in the email field. */
@@ -65,7 +71,13 @@ export interface SignUpProps {
  * <SignUp locale={locale} redirectTo="/es/auth/verify-email-sent/" email={email} onEmailChange={setEmail} />
  * ```
  */
-export function SignUp({ locale, redirectTo, email, onEmailChange }: SignUpProps) {
+export function SignUp({
+    locale,
+    redirectTo,
+    verificationCallbackUrl,
+    email,
+    onEmailChange
+}: SignUpProps) {
     const { t } = createTranslations(locale);
 
     const [password, setPassword] = useState('');
@@ -170,7 +182,15 @@ export function SignUp({ locale, redirectTo, email, onEmailChange }: SignUpProps
             // is satisfied with an empty string here; the profile completion
             // form (SPEC-113) collects firstName + lastName and updates the
             // user's display_name afterwards.
-            const result = await signUp.email({ email: trimmedEmail, password, name: '' });
+            // `callbackURL` is what Better Auth stamps into the verification
+            // link, so it is the only channel by which the destination reaches
+            // a person who opens the email on a different device (HOS-838).
+            const result = await signUp.email({
+                email: trimmedEmail,
+                password,
+                name: '',
+                callbackURL: verificationCallbackUrl
+            });
 
             if (result.error) {
                 setError(
