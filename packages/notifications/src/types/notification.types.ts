@@ -450,6 +450,39 @@ export interface TrialEventPayload extends BaseNotificationPayload {
     upgradeUrl: string;
 }
 
+/**
+ * One of the nine sends of the Hospeda-owned trial series (HOS-1012 §4).
+ *
+ * ONE payload shape across all nine, unlike the nine separate `type` values it
+ * discriminates on. The distinction the series needs is in the copy, and the
+ * copy lives in nine templates; what each of them needs from the caller is the
+ * same four facts. A payload per send would add nine identical interfaces and
+ * nine assembly branches in the dispatch switch without expressing anything.
+ *
+ * Note there is no `daysRemaining`: the offset is already carried by the `type`
+ * itself, and a template whose distance came from a field could be dispatched
+ * at the wrong distance — the exact desynchronisation between copy and distance
+ * that made the offsets constants instead of settings.
+ */
+export interface TrialSeriesPayload extends BaseNotificationPayload {
+    type:
+        | NotificationType.TRIAL_ENDING_10D
+        | NotificationType.TRIAL_ENDING_5D
+        | NotificationType.TRIAL_ENDING_1D
+        | NotificationType.TRIAL_EXPIRED
+        | NotificationType.TRIAL_WIN_BACK_1D
+        | NotificationType.TRIAL_WIN_BACK_5D
+        | NotificationType.TRIAL_WIN_BACK_10D
+        | NotificationType.TRIAL_WIN_BACK_30D
+        | NotificationType.TRIAL_WIN_BACK_60D;
+    /** Display name of the plan the trial was running on. */
+    planName: string;
+    /** ISO date at which the trial ends (or ended). */
+    trialEndDate: string;
+    /** Owner pricing page, carrying the interval the host originally chose. */
+    upgradeUrl: string;
+}
+
 /** Feedback report notifications (Linear API fallback) */
 export interface FeedbackReportPayload extends BaseNotificationPayload {
     type: NotificationType.FEEDBACK_REPORT;
@@ -1287,6 +1320,7 @@ export type NotificationPayload =
     | CourtesyPayload
     | AddonEventPayload
     | TrialEventPayload
+    | TrialSeriesPayload
     | AdminNotificationPayload
     | FeedbackReportPayload
     | ContactSubmissionPayload

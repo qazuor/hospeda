@@ -41,7 +41,16 @@ import {
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
+    TrialEnding1Day,
+    TrialEnding5Days,
+    TrialEnding10Days,
     TrialEndingReminder,
+    TrialExpired,
+    TrialWinBack1Day,
+    TrialWinBack5Days,
+    TrialWinBack10Days,
+    TrialWinBack30Days,
+    TrialWinBack60Days,
     UsageConfirmationReminder,
     UsageConfirmationRequest,
     UsageConfirmed,
@@ -85,7 +94,8 @@ import type {
     SubscriptionCancelConfirmedPayload,
     SubscriptionEventPayload,
     SubscriptionLifecyclePayload,
-    TrialEventPayload
+    TrialEventPayload,
+    TrialSeriesPayload
 } from '../types/notification.types.js';
 import { buildAddonLinkMetadata } from '../utils/addon-link-metadata.js';
 import {
@@ -477,6 +487,107 @@ export class NotificationService {
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
                     daysRemaining: p.daysRemaining,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            // ── HOS-1012: the nine sends of the Hospeda-owned trial series ───
+            //
+            // Nine cases and nine templates, not one case switching on a day
+            // count. The whole point of the redesign is that these read as nine
+            // different messages; routing them through one component would make
+            // that impossible to hold, and the ninefold repetition below is the
+            // cheapest possible way to keep each send's copy independently
+            // editable. The argument list is identical because the payload
+            // shape is (`TrialSeriesPayload`) — the difference lives in the
+            // template, which is where a reader looks for it.
+
+            case 'trial_ending_10d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialEnding10Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_ending_5d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialEnding5Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_ending_1d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialEnding1Day({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_expired': {
+                const p = payload as TrialSeriesPayload;
+                return TrialExpired({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_win_back_1d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack1Day({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_win_back_5d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack5Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_win_back_10d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack10Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_win_back_30d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack30Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            case 'trial_win_back_60d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack60Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
                     upgradeUrl: p.upgradeUrl
                 });
             }
