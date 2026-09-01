@@ -121,7 +121,7 @@ export function PlanDowngradeLimitWarning({
                     sin cambios. Es la opción más rápida si tu contenido es importante.
                 </Text>
                 <Section style={styles.buttonContainer}>
-                    <Button href={`${baseUrl}/es/precios/propietarios`}>
+                    <Button href={`${baseUrl}/es/suscriptores/planes/anfitriones/`}>
                         Ver planes disponibles
                     </Button>
                 </Section>
@@ -135,7 +135,7 @@ export function PlanDowngradeLimitWarning({
                     desactivado automáticamente.
                 </Text>
                 <Section style={styles.buttonContainer}>
-                    <Button href={`${baseUrl}/es/cuenta/alojamientos`}>
+                    <Button href={`${baseUrl}/es/mi-cuenta/propiedades/`}>
                         Administrar contenido
                     </Button>
                 </Section>

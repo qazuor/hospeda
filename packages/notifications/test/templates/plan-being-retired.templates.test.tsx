@@ -78,7 +78,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('https://hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
 
         it('should include plan retirement heading', () => {
@@ -108,7 +108,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(propsWithStagingUrl));
 
             // Assert
-            expect(html).toContain('https://staging.hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
     });
 

@@ -86,7 +86,9 @@ export function SubscriptionCancelConfirmed({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/precios/propietarios`}>Reactivate subscription</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
+                    Reactivate subscription
+                </Button>
             </Section>
         </EmailLayout>
     );

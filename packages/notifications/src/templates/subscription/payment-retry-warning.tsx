@@ -88,7 +88,7 @@ export function PaymentRetryWarning({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/cuenta/facturacion`}>Actualizar método de pago</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
             </Section>
 
             <Text style={styles.footerNote}>

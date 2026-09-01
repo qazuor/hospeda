@@ -58,7 +58,7 @@ describe('SubscriptionAccessEndingSoon email template (SPEC-147 T-010)', () => {
 
         it('should include reactivation CTA link using baseUrl', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
-            expect(html).toContain('https://hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
 
         it('should include "access ending" heading or similar urgency text', () => {
@@ -79,7 +79,7 @@ describe('SubscriptionAccessEndingSoon email template (SPEC-147 T-010)', () => {
                 baseUrl: 'https://staging.hospeda.com.ar'
             };
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(propsWithStagingUrl));
-            expect(html).toContain('https://staging.hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
     });
 
