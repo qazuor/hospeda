@@ -21,6 +21,22 @@ export interface Props {
     image?: string;
     /** Whether to add noindex robots meta tag */
     noindex?: boolean;
+    /**
+     * Whether the robots directive also carries `nofollow`. Only meaningful
+     * together with {@link noindex}: an indexable page emits its own positive
+     * directive and ignores this flag.
+     *
+     * Defaults to `false`, which keeps `noindex` emitting `noindex,follow` —
+     * the right choice for a page that is merely not worth indexing (a
+     * paginated tail, a filtered view) but whose outbound links should still
+     * pass equity to the pages they point at.
+     *
+     * Set it for a page that must not feed the crawler at all: HOS-978's
+     * commercial presentations are sent privately to one prospect and carry
+     * negotiable pricing, so neither the page nor the links it exposes should
+     * be walked.
+     */
+    nofollow?: boolean;
     /** Page locale for Open Graph and hreflang tags */
     locale?: SupportedLocale;
     /** Open Graph type */
@@ -55,6 +71,7 @@ const {
     canonical,
     image,
     noindex = false,
+    nofollow = false,
     locale = 'es',
     type = 'website',
     articlePublishedTime,
@@ -132,7 +149,7 @@ const ogImageUrl = new URL(image ?? generatedOgPath, siteBase).href;
 
 <!-- Robots meta tag: noindex when set, otherwise positive with max-image-preview -->
 {noindex
-    ? <meta name="robots" content="noindex,follow" />
+    ? <meta name="robots" content={nofollow ? 'noindex,nofollow' : 'noindex,follow'} />
     : <meta name="robots" content="index,follow,max-image-preview:large" />
 }
 

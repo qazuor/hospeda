@@ -1,0 +1,316 @@
+---
+/**
+ * @file presentacion/editores/index.astro
+ * @description Commercial presentation for editors and contributors (HOS-978). A verbatim
+ * migration of the owner-approved artifact "Presentación Editores"; the copy and the
+ * stylesheet below are the artifact's own and must not be rewritten here —
+ * the artifact is the source of truth for both.
+ *
+ * WHY IT IS NOT THE PUBLIC LANDING (/colaborar/editores/). That landing sells and is
+ * optimized to rank. This page is what the owner sends personally to one
+ * prospect over WhatsApp, or dictates by phone, and it carries things a public
+ * landing must not: negotiable pricing, comparisons against competitors, and
+ * operational detail. That is why `noindex, nofollow` is a requirement here
+ * rather than a precaution, and why the page is excluded from the sitemap (see
+ * `lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS, which also drives the
+ * robots.txt `Disallow`).
+ *
+ * WHY IT IS NOT TRANSLATED. The audience is local (owner decision, HOS-978).
+ * The page lives under `[lang]/` anyway so the short, dictable URL works:
+ * `hospeda.com.ar/presentacion/editores` is 301-redirected to
+ * `/es/presentacion/editores/` by the middleware's locale step, so no middleware
+ * exemption was needed. It therefore serves the same Spanish copy under
+ * `/en/` and `/pt/` BY DESIGN — unlike HOS-908, where that was a defect.
+ *
+ * WHY `StandaloneLayout`. The page owns 100% of its chrome, exactly like the
+ * `/funcionalidades/` brochure (HOS-119) it follows. No Header, no Footer, no
+ * site nav — it must look like the artifact it came from.
+ *
+ * WHY THE STYLESHEET IS A PLAIN `<style>` BLOCK. Astro extracts it to a real
+ * stylesheet. An `is:inline` block would be dropped in production: the CSP
+ * omits `'unsafe-inline'` from `style-src` outside dev (see
+ * `lib/middleware-helpers.ts`), so the page would render unstyled in prod
+ * while looking perfect locally. Do not add `is:inline` here.
+ *
+ * @route /{lang}/presentacion/editores/
+ * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+import '@/styles/presentacion.css';
+import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getSiteUrl } from '@/lib/env';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: the content is hardcoded copy, so it only
+// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/editores/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentación Editores"
+		description="Contá el Litoral que conocés. El blog y la agenda de eventos de Hospeda los lee gente que está por venir a la zona: si te gusta escribir, ese texto puede ser de tu autoría."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+	<link
+		slot="head"
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
+	/>
+
+<PresentationThemeToggle />
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Hospeda &middot; Editores</p>
+    <h1>Contá el Litoral que conocés</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      El blog (publicaciones y notas de interés) y la agenda de eventos de Hospeda los lee gente
+      que está por venir a la zona y no sabe dónde parar, qué comer, ni qué pasa este fin de
+      semana. Si conocés el Litoral y te gusta escribir, ese texto puede ser de tu autoría y
+      llevarte los créditos de haberlo hecho.
+    </p>
+    <div class="factsheet">
+      <div class="fact">
+        <span class="fact__k">Qué cuesta</span>
+        <span class="fact__v fact__v--free">Nada</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Qué te llevás</span>
+        <span class="fact__v">Tu firma</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Cuánto escribís</span>
+        <span class="fact__v">1 nota al mes</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo primero, sin vueltas</p>
+      <h2>No hay sueldo ni honorarios</h2>
+    </div>
+    <div class="notice">
+      <h3>No es un trabajo pago, y preferimos decírtelo en el primer párrafo.</h3>
+      <p>
+        Es una colaboración: vos ponés el texto y el conocimiento del lugar, nosotros ponemos el
+        lugar donde se lee, la revisión, la edición y la difusión. No hay sueldo, no hay honorarios
+        por nota y no hay relación laboral. Si buscabas una changa de redacción paga, no somos eso.
+      </p>
+      <p>
+        <strong>Lo que sí te llevás</strong> es el firmar la nota públicamente, una página de autor
+        con todo lo que escribiste y/o cargaste, notas que aparecen en Google con tu nombre y
+        difusión en las redes de Hospeda.
+      </p>
+      <p>
+        <strong>Y una sola cosa que podría considerarse económica:</strong> si además contratás un
+        plan en alguno de los verticales &mdash; alojamiento, gastronomía o experiencias &mdash;
+        podemos arreglar una bonificación sobre ese plan a cambio de tu trabajo editorial. No es un
+        pago: es un descuento sobre algo que ibas a contratar igual.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">De qué se escribe</p>
+      <h2>Dos cosas: notas y agenda</h2>
+    </div>
+    <div class="split">
+      <div class="panel panel--yes">
+        <h3>Notas del blog</h3>
+        <ul class="plain">
+          <li><span class="tick">+</span><span>Recorridos, historia local, gastronomía, pesca, termas, naturaleza.</span></li>
+          <li><span class="tick">+</span><span>Guías prácticas: cómo llegar, cuándo ir, qué llevar.</span></li>
+          <li><span class="tick">+</span><span>Lo que sabe alguien de acá y no está en ningún lado.</span></li>
+        </ul>
+      </div>
+      <div class="panel panel--yes">
+        <h3>Agenda de eventos</h3>
+        <ul class="plain">
+          <li><span class="tick">+</span><span>Fiestas, ferias, festivales, competencias, actividades.</span></li>
+          <li><span class="tick">+</span><span>Noches especiales en locales gastronómicos, pubs o confiterías.</span></li>
+          <li><span class="tick">+</span><span>Encuentros, charlas, paseos y todo lo que junte gente.</span></li>
+          <li><span class="tick">+</span><span>Fecha, lugar, organizador, descripción.</span></li>
+          <li><span class="tick">+</span><span>Mantener al día lo que ya está cargado.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Paso a paso</p>
+      <h2>Cómo entrás</h2>
+    </div>
+    <ol class="steps">
+      <li>
+        <span class="num">01</span>
+        <div class="step__body">
+          <h3>Te postulás</h3>
+          <p>
+            Un formulario corto: tu nombre, un email y unas líneas contándonos qué te gustaría
+            escribir. Si tenés algo publicado en algún lado, mandanos el enlace.
+          </p>
+          <p class="step__meta">hospeda.com.ar/es/colaborar/editores</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="step__body">
+          <h3>Te leemos y te habilitamos</h3>
+          <p>
+            Te avisamos por email en los dos casos. Si entrás, te habilitamos la cuenta a mano y
+            te llega el acceso.
+          </p>
+          <p class="step__meta">Si te postulaste sin tener cuenta, el enlace para activarla vence a los 7 días</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="step__body">
+          <h3>Escribís desde tu cuenta</h3>
+          <p>
+            Tenés tu propio espacio dentro del sitio para redactar notas y cargar eventos, con
+            todo a mano: imágenes, temas, organizadores. Nada de paneles técnicos.
+          </p>
+        </div>
+      </li>
+      <li>
+        <span class="num">04</span>
+        <div class="step__body">
+          <h3>Lo publicamos nosotros</h3>
+          <p>
+            Cuando terminás, lo revisamos y lo publicamos. <strong>Al principio no publicás
+            solo</strong>, y eso es a propósito: la primera nota de alguien nuevo la leemos entre
+            los administradores del portal. Con el tiempo y varias publicaciones ya aprobadas, te
+            habilitamos para publicar directo lo tuyo.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Antes de postularte</p>
+      <h2>Las preguntas de siempre</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Pregunta</th><th scope="col">Respuesta</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>¿Cada cuánto tengo que escribir?</td><td><strong>Una nota por mes es el mínimo.</strong> Recomendamos al menos una por semana, pero el piso es ese.</td></tr>
+          <tr><td>¿De qué largo tiene que ser una nota?</td><td>El que pida el tema. Una recomendación breve y una guía larga entran las dos.</td></tr>
+          <tr><td>¿Puedo dejar de colaborar cuando quiera?</td><td>Sí, sin aviso previo y sin explicaciones. Lo que publicaste queda, salvo que pidas que lo bajemos.</td></tr>
+          <tr><td>¿El texto sigue siendo mío?</td><td><strong>Sí.</strong> Podés republicarlo en tu blog o en tu portfolio; sólo te pedimos que menciones que salió primero en Hospeda y que sumes el enlace a la nota original.</td></tr>
+          <tr><td>¿Puedo escribir también en otros lados?</td><td>Sí, <strong>no pedimos exclusividad</strong>. Y también podés traer a Hospeda algo que ya publicaste en otro lado, siempre que encaje con los temas y el formato que usamos acá.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Tu firma</p>
+      <h2>Tenés página propia de autor</h2>
+    </div>
+    <p>
+      Vive en <strong>hospeda.com.ar/es/autores/tu-nombre</strong> y reúne todo lo que escribiste:
+      tus notas por un lado, los eventos que cargaste por el otro.
+    </p>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span>Tu foto y tu biografía, que <strong>editás vos</strong> cuando quieras.</span></li>
+      <li><span class="tick">&check;</span><span>Tus redes, si querés que te encuentren.</span></li>
+      <li><span class="tick">&check;</span><span>Cada nota firmada con tu nombre, enlazada a tu página.</span></li>
+      <li><span class="tick">&check;</span><span>Todo indexado en Google: alguien que te busca, te encuentra.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Difusión en las redes de Hospeda</strong>: promocionamos notas y eventos con el enlace directo a lo que cargaste vos.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Qué manejás</p>
+      <h2>Lo que podés y lo que no</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Acción</th><th scope="col">Cómo es</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Escribir y editar tus notas y tus eventos</td><td><strong>Cuando quieras, todas las veces que quieras</strong></td></tr>
+          <tr><td>Subir imágenes, poner temas, cargar organizadores</td><td><strong>Vos</strong></td></tr>
+          <tr><td>Moderar los comentarios de tus notas y eventos</td><td><strong>Vos</strong>, si lo deseás (aprobás, rechazás o borrás), y/o alguno de los administradores del sitio</td></tr>
+          <tr><td>Publicar lo que escribiste</td><td>Al principio lo hacemos nosotros. Se te habilita con el tiempo y publicaciones previas hechas.</td></tr>
+          <tr><td>Ver o editar lo que escribió otro editor</td><td>No. Cada uno ve lo suyo.</td></tr>
+          <tr><td>Borrar una nota tuya ya publicada</td><td>Pedínoslo y la bajamos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Para ser justos</p>
+      <h2>Lo que conviene que sepas antes</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick tick--no">!</span><span><strong>El alta la hacemos a mano</strong>, no es automática, y <strong>mientras no te habilitemos para publicar, tus notas quedan esperando.</strong> No se pierden ni se descartan, pero no salen hasta que las revisamos. Si vas a escribir mucho, avisanos y aceleramos ese paso.</span></li>
+      <li><span class="tick tick--no">!</span><span>Revisamos textos: tema, títulos, cortes, etc., para que vayan en línea con toda la editorial de Hospeda. <strong>Nunca cambiamos lo que quisiste decir</strong>, y si algo no te cierra de lo que decidimos cambiar, se conversa.</span></li>
+      <li><span class="tick tick--no">!</span><span>Lo que publiques queda en el sitio con tu firma. Si algún día querés borrar todo, se borra.</span></li>
+    </ul>
+  </section>
+
+  <footer class="close">
+    <h2>Postulate</h2>
+    <p>
+      Si tenés algo para contar del Litoral, escribinos. No hace falta que seas periodista ni que
+      tengas experiencia publicando: hace falta que conozcas el lugar y que te guste contarlo.
+    </p>
+    <a class="cta" href="https://hospeda.com.ar/es/colaborar/editores">hospeda.com.ar/es/colaborar/editores</a>
+    <div class="phone">
+      <span class="fact__k">¿Dudas antes de postularte?</span>
+      <strong>Escribinos por WhatsApp al 3442 453797</strong>
+      <span class="finelines">Te contamos qué estamos necesitando y vemos si encaja con lo tuyo.</span>
+    </div>
+    <div class="finelines">
+      Colaborar como editor es voluntario y no genera relación laboral, sueldo ni honorarios. Una
+      eventual bonificación sobre un plan contratado se acuerda por separado y no modifica el
+      carácter voluntario de la colaboración. El contenido se publica con tu firma y podés pedir
+      que se retire cuando quieras. Hospeda se reserva la edición de forma y la decisión final de
+      publicación.
+    </div>
+  </footer>
+
+</div>
+
+
+</StandaloneLayout>
+
