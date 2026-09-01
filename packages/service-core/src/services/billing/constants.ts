@@ -48,6 +48,23 @@ export const BILLING_EVENT_TYPES = {
     /** Fired when a trial subscription is blocked due to expiry (idempotency dedup guard) */
     TRIAL_BLOCKED: 'TRIAL_BLOCKED',
     /**
+     * Fired when a Hospeda-owned trial reaches its `trial_end` and is expired
+     * locally: status to `expired`, listings unpublished, data left intact
+     * (HOS-1012 D-3). Doubles as the idempotency dedup guard for that job.
+     *
+     * Deliberately NOT a reuse of `TRIAL_BLOCKED`, whose own docblock defines it
+     * as "we cancelled this customer" — the pre-HOS-171 no-card trial cut off
+     * access outright. D-3 does the opposite: the listing leaves the site and
+     * everything loaded stays editable in the panel, coming back online the
+     * moment they pay. Two different things happening to the customer deserve
+     * two different events, for the same reason `TRIAL_RECONCILED` was not
+     * folded into `TRIAL_BLOCKED`.
+     *
+     * Also distinct from `TRIAL_RECONCILED`, which means "the provider told us
+     * how this trial ended". Nobody tells us this one: there is no provider.
+     */
+    TRIAL_EXPIRED: 'TRIAL_EXPIRED',
+    /**
      * Fired when the trial reconciler settles an elapsed card-first trial against
      * the provider (HOS-171), recording the outcome it reconciled the local row
      * to — converted to active, mirrored to cancelled/paused, or routed to
