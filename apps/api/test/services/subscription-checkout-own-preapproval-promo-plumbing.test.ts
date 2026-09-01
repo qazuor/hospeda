@@ -144,6 +144,11 @@ const MONTHLY_BASE = {
 describe('initiatePaidMonthlySubscription — promo plumbing into createOwnPreapprovalSubscription (HOS-937 step 1)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-937 step 2: `getMpPayerEmail` reads `billing_customers.mp_payer_email`
+        // via `db.execute(sql\`SELECT ...\`)` before resolving the checkout. Not
+        // what this suite tests — default it to the real `{ rows: [...] }` shape
+        // so the promo-plumbing assertions below stay unaffected.
+        dbExecuteMock.mockResolvedValue({ rows: [] });
         createOwnPreapprovalSubscriptionMock.mockResolvedValue({
             subscription: {
                 id: 'own-preapproval-sub-1',

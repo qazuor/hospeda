@@ -90,6 +90,15 @@ vi.mock('../../src/services/billing/link-preapproval.service.js', () => ({
         mockApplyPendingTrialExtension(...args)
 }));
 
+// HOS-937 step 2: the mp_payer_email persistence call, mocked so these tests
+// stay scoped to `processSubscriptionUpdated`'s own gating logic — the
+// persistence behavior itself (raw SQL, AC-9 column isolation, best-effort
+// swallow) is unit-tested in `payer-email.test.ts`.
+const mockPersistMpPayerEmail = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../src/services/billing/payer-email.js', () => ({
+    persistMpPayerEmailBestEffort: (...args: unknown[]) => mockPersistMpPayerEmail(...args)
+}));
+
 // Hoisted mock stubs for notification functions - declared before any imports are resolved.
 const { mockSendCancelled, mockSendPaused, mockSendReactivated } = vi.hoisted(() => ({
     mockSendCancelled: vi.fn().mockResolvedValue(undefined),
@@ -551,6 +560,7 @@ describe('processSubscriptionUpdated', () => {
         mockLinkPreapproval.mockReset().mockResolvedValue({ outcome: 'not_found' });
         mockApplyPendingDiscount.mockReset().mockResolvedValue(undefined);
         mockApplyPendingTrialExtension.mockReset().mockResolvedValue(undefined);
+        mockPersistMpPayerEmail.mockReset().mockResolvedValue(undefined);
 
         // Spy on notificationsModule exports to ensure they return Promises even if the
         // vi.mock for the module doesn't intercept the import inside subscription-logic.ts.
@@ -3174,6 +3184,121 @@ describe('processSubscriptionUpdated', () => {
 
             expect(mockApplyPendingDiscount).not.toHaveBeenCalled();
             expect(mockApplyPendingTrialExtension).not.toHaveBeenCalled();
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // HOS-937 step 2: persist the confirmed payer email on the SAME
+    // PENDING_PROVIDER -> ACTIVE/TRIALING transition (spec §6.3/AC-9). The
+    // persistence function itself (raw SQL, AC-9 column isolation) is
+    // unit-tested in `payer-email.test.ts` — these tests only cover the
+    // gating logic (when it is/isn't called).
+    // ---------------------------------------------------------------------------
+    describe('mp_payer_email persistence (HOS-937 step 2)', () => {
+        it('persists the provider-confirmed payer email on PENDING_PROVIDER -> ACTIVE', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(
+                makeMpSubscription('active', { payerEmail: 'authorized@example.com' })
+            );
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null,
+                livemode: false
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-payer-email-active'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledTimes(1);
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
+                customerId: localSub.customerId,
+                payerEmail: 'authorized@example.com'
+            });
+        });
+
+        it('persists on PENDING_PROVIDER -> TRIALING too (not just ACTIVE)', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            mockRetrieve.mockResolvedValue(
+                makeMpSubscription('active', { payerEmail: 'trialer@example.com' })
+            );
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialStart: new Date(),
+                trialEnd,
+                livemode: true
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-payer-email-trialing'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.TRIALING);
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledTimes(1);
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
+                customerId: localSub.customerId,
+                payerEmail: 'trialer@example.com'
+            });
+        });
+
+        it('does NOT persist when the provider reports no payerEmail', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null,
+                livemode: false
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-payer-email-missing'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT persist on an unrelated transition (not FROM pending_provider), even with a payerEmail on the read', async () => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(
+                makeMpSubscription('paused', { payerEmail: 'someone@example.com' })
+            );
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                livemode: false
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos937-payer-email-wrong-transition'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
         });
     });
 

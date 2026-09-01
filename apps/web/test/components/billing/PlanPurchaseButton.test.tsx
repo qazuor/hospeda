@@ -103,7 +103,15 @@ type MockUseSession = ReturnType<typeof vi.fn>;
  */
 const PENDING_KEY = 'hospeda:checkout:pendingSubscriptionId';
 
-/** Default props used across most tests. */
+/**
+ * Default props used across most tests.
+ *
+ * `ownPreapprovalEnabled: true` — this file's whole point is exercising
+ * the payer-email confirm dialog via `confirmPayerEmail()`, so every test here
+ * opts the gate (HOS-937 review fix) in explicitly. The gate's OFF behavior
+ * (dialog skipped, straight to checkout) is covered separately in
+ * `PlanPurchaseButton.own-preapproval-gate.test.tsx`.
+ */
 const defaultProps = {
     planSlug: 'plan_starter',
     // 120000 cents = $1200 ARS — formatPrice divides by 100 internally
@@ -112,7 +120,8 @@ const defaultProps = {
     annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
-    locale: 'es' as const
+    locale: 'es' as const,
+    ownPreapprovalEnabled: true
 };
 
 /**
@@ -172,6 +181,19 @@ function mockSessionPending() {
  */
 function getMainButton(): HTMLElement {
     return screen.getByTestId('plan-cta-button');
+}
+
+/**
+ * HOS-937 step 2: clicking the CTA now always opens the payer-email confirm
+ * dialog (spec §8.1) before the actual checkout POST fires. Every existing
+ * test in this file that expects the checkout request to have fired must
+ * click through it first — this helper does that with the pre-filled
+ * default (the session's own email), matching the "zero new fields for
+ * whoever's email matches" behavior (one click through).
+ */
+async function confirmPayerEmail(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+    await screen.findByRole('dialog');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
 }
 
 // ---------------------------------------------------------------------------
@@ -292,6 +314,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act — multiple buttons present (main CTA + promo toggle); target main by aria-label
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             expect(getMainButton()).toBeDisabled();
@@ -306,6 +329,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             expect(getMainButton()).toHaveAttribute('aria-busy', 'true');
@@ -320,6 +344,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert — fallback text from mocked t() is the literal fallback arg
             expect(screen.getByText('Procesando...')).toBeInTheDocument();
@@ -349,6 +374,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert — aria-label uses the processingAriaLabel fallback
             expect(getMainButton()).toHaveAttribute('aria-label', 'Procesando pago');
@@ -384,6 +410,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act — target main CTA button (promo toggle is also in the DOM)
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             await waitFor(() => {
@@ -469,6 +496,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             await waitFor(() => {
@@ -503,6 +531,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             await waitFor(() => {
@@ -519,6 +548,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             await waitFor(() => {
@@ -541,6 +571,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
             // Assert
             await waitFor(() => {
@@ -572,10 +603,14 @@ describe('PlanPurchaseButton', () => {
     // -----------------------------------------------------------------------
 
     describe.skipIf(SPEC_131_PENDING)('no double-submit', () => {
-        it('fires only one fetch call when button is clicked twice rapidly', async () => {
+        it('fires only one fetch call when the CTA is clicked again while checkout is in flight', async () => {
             // Arrange
             mockAuthenticated();
-            // First click triggers a slow request; button is disabled until it resolves.
+            // HOS-937 step 2: the CTA click now only opens the payer-email confirm
+            // dialog — the actual checkout POST fires from the dialog's Continue
+            // button. The `if (loading) return;` guard in `handleClick` is what
+            // stops a second CTA click from re-opening the dialog once the
+            // request is in flight; that guard is what this test protects.
             let resolveFirst!: (v: unknown) => void;
             const slowFetch = vi.fn().mockReturnValueOnce(
                 new Promise((resolve) => {
@@ -588,9 +623,11 @@ describe('PlanPurchaseButton', () => {
 
             const button = getMainButton();
 
-            // Act — first click starts request; second click ignored because button disabled
+            // Act — first click opens the dialog; confirming it starts the
+            // (slow) checkout request and disables the button. A second CTA
+            // click while it's disabled/loading must be a no-op.
             await user.click(button);
-            // Button is now disabled, so userEvent won't fire a click on it
+            await confirmPayerEmail(user);
             await user.click(button);
 
             // Assert — only one fetch call despite two click attempts
@@ -641,17 +678,24 @@ describe('PlanPurchaseButton', () => {
 
             // First click — produces error
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
             await waitFor(() => {
                 expect(screen.getByRole('alert')).toBeInTheDocument();
             });
 
-            // Act — second click should clear error
+            // Act — second click should clear error immediately, BEFORE the
+            // payer-email dialog even opens (setError(null) runs
+            // synchronously at the top of handleClick, ahead of that gate).
             await user.click(getMainButton());
 
-            // Assert — error gone immediately (setError(null) runs synchronously at top of handleClick)
+            // Assert — error gone immediately
             await waitFor(() => {
                 expect(screen.queryByRole('alert')).not.toBeInTheDocument();
             });
+
+            // Confirm the dialog this second click opened, so the second
+            // (never-resolving-until-cleanup) fetch call actually fires.
+            await confirmPayerEmail(user);
 
             // Cleanup — resolve to avoid open promise handle (inside act to flush state)
             await act(async () => {
@@ -705,17 +749,25 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
 
             // Assert — body contains planSlug + billingInterval (default 'monthly')
+            // + payerEmail (HOS-937 step 2: the confirmed dialog value, unchanged
+            // from the session default here).
             const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
             const body = JSON.parse(requestInit.body as string) as {
                 planSlug: string;
                 billingInterval: string;
+                payerEmail: string;
             };
-            expect(body).toEqual({ planSlug: 'plan_pro', billingInterval: 'monthly' });
+            expect(body).toEqual({
+                planSlug: 'plan_pro',
+                billingInterval: 'monthly',
+                payerEmail: 'juan@example.com'
+            });
         });
 
         it('sends POST method with Content-Type application/json', async () => {
@@ -739,6 +791,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -772,6 +825,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -802,6 +856,7 @@ describe('PlanPurchaseButton', () => {
 
             // Act
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -1798,6 +1853,7 @@ describe('PlanPurchaseButton', () => {
 
             // Click main checkout button
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             // Assert — the checkout fetch body contains the promoCode
             await waitFor(() => {
@@ -1858,6 +1914,7 @@ describe('PlanPurchaseButton', () => {
             await waitFor(() => screen.getByRole('status'));
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             // Assert — navigates to the sentinel URL with `?effect=comp` appended
             // (HOS-110 F1: flags the granted effect so the success page renders
@@ -1921,6 +1978,7 @@ describe('PlanPurchaseButton', () => {
             await waitFor(() => screen.getByRole('status'));
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             // Assert — a real MP redirect carrying only the promoIgnored flag. There
             // is no `?effect=` param: a trial is not an effect any more.
@@ -1949,6 +2007,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
@@ -1989,6 +2048,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             await waitFor(() => {
                 expect(window.location.href).toBe('https://mp.com/checkout/paid');
@@ -2021,6 +2081,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             await waitFor(() => {
                 // No `?effect=` param — nothing to flag, it is an ordinary redirect.
@@ -2048,6 +2109,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             await user.click(screen.getByRole('button', { name: /Contratar/ }));
+            await confirmPayerEmail(user);
 
             await waitFor(() => {
                 expect(window.location.href).toBe(`${sentinelUrl}?effect=comp`);

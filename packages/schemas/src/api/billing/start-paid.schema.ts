@@ -52,6 +52,18 @@ export const StartPaidSubscriptionRequestSchema = z.object({
         .string({ message: 'zodError.billing.startPaid.promoCode.invalidType' })
         .min(1, { message: 'zodError.billing.startPaid.promoCode.min' })
         .max(64, { message: 'zodError.billing.startPaid.promoCode.max' })
+        .optional(),
+    /**
+     * HOS-937 step 2: the email the user explicitly typed on the
+     * pre-redirect screen (spec §8.1), overriding the default MercadoPago
+     * will otherwise resolve (`billing_customers.mp_payer_email`, then
+     * `.email` — spec §6.3). Optional: omitted when the user accepts the
+     * pre-filled default.
+     */
+    payerEmail: z
+        .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
+        .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
+        .max(255, { message: 'zodError.billing.startPaid.payerEmail.max' })
         .optional()
 });
 export type StartPaidSubscriptionRequest = z.infer<typeof StartPaidSubscriptionRequestSchema>;
@@ -152,6 +164,24 @@ export const StartPaidSubscriptionResponseSchema = z.object({
         .literal(true, {
             message: 'zodError.billing.startPaid.promoCodeIgnored.invalid'
         })
+        .optional(),
+    /**
+     * HOS-937 step 2: the resolved MercadoPago payer email (spec §6.3) —
+     * the email whoever authorizes this checkout at MercadoPago must use or
+     * type. The front-end shows this on the pre-redirect screen (spec
+     * §8.1), pre-filled and editable, before redirecting to `checkoutUrl`.
+     *
+     * Optional at the type level ONLY because this response schema is
+     * reused verbatim by the commerce/partner start-subscription routes
+     * (`apps/api/src/routes/commerce/.../start-subscription.ts`), which are
+     * untouched by HOS-937 (accommodation monthly/annual only — see spec
+     * §6.3) and do not resolve a payer email. Both accommodation branches
+     * of `/billing/subscriptions/start-paid` (monthly and annual) always
+     * populate it.
+     */
+    payerEmail: z
+        .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
+        .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
         .optional()
 });
 export type StartPaidSubscriptionResponse = z.infer<typeof StartPaidSubscriptionResponseSchema>;

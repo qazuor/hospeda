@@ -90,8 +90,17 @@ vi.mock('@repo/db', () => ({
     // check finds nothing in flight for every case here. Reuse itself is
     // covered in `test/services/billing/checkout-idempotency-by-entity.test.ts`.
     getDb: vi.fn(() => ({
-        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) })
+        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+        // HOS-937 step 4: `initiateCommerceMonthlySubscription` resolves the
+        // payer email via `getMpPayerEmail` (raw `db.execute(sql...)`) before
+        // creating the own-preapproval — an empty `mp_payer_email` here just
+        // means the resolution falls through to `customer.email`.
+        execute: vi.fn().mockResolvedValue({ rows: [] })
     })),
+    // `getMpPayerEmail` builds its query with the `sql` tagged template
+    // imported directly from `@repo/db` (not a method on the `db` instance),
+    // so it needs its own top-level mock entry too.
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
     and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },

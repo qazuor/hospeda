@@ -103,6 +103,18 @@ const OWN_PREAPPROVAL_RESULT = {
     checkoutUrl: 'https://mp.test/subscriptions/checkout?preapproval_id=own-annual-1'
 };
 
+/**
+ * HOS-937 step 2 (merged into the annual own-preapproval branch alongside
+ * step 4): `initiatePaidAnnualSubscription` now reads
+ * `billing_customers.mp_payer_email` via raw SQL (`getMpPayerEmail`) before
+ * resolving the checkout. The global `@repo/db` mock's `execute()` resolves
+ * to a bare `[]` (not `{ rows: [] }`) — fine for the Drizzle query-builder
+ * chains, but throws for the raw `db.execute(sql\`...\`)` shape this read
+ * expects. This suite is not about payer-email resolution — stub it out with
+ * the real shape, same fix as the monthly flag-on suite.
+ */
+const DB_STUB = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+
 describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -119,7 +131,8 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(createOwnPreapprovalSubscription).toHaveBeenCalledTimes(1);
@@ -133,7 +146,8 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(createOwnPreapprovalSubscription).toHaveBeenCalledTimes(1);
@@ -162,7 +176,8 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(result.checkoutUrl).toBe(OWN_PREAPPROVAL_RESULT.checkoutUrl);

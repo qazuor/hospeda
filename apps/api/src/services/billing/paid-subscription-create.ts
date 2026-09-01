@@ -80,6 +80,15 @@ export interface CreatePaidSubscriptionInput {
     readonly providerPriceId?: string;
     /** Arbitrary metadata attached to the created subscription/preapproval. */
     readonly metadata?: Readonly<Record<string, string>>;
+    /**
+     * HOS-937 step 2: the resolved MercadoPago payer email (spec §6.3, see
+     * `billing/payer-email.ts`'s `resolvePayerEmail`) to bind this
+     * preapproval to. Forwarded verbatim to qzpay-core's
+     * `billing.subscriptions.create` (`@qazuor/qzpay-core@5.1.0`), which
+     * uses it in place of `customer.email` when present — fully
+     * backwards-compatible when omitted.
+     */
+    readonly payerEmail?: string;
 }
 
 /**
@@ -142,7 +151,8 @@ export async function createPaidSubscription(
         freeTrialDays,
         providerPriceId,
         billingInterval = 'monthly',
-        metadata
+        metadata,
+        payerEmail
     } = input;
 
     // The preapproval create is wrapped in the E2E test-control seam so the
@@ -171,7 +181,10 @@ export async function createPaidSubscription(
             // HOS-191: when set, qzpay subscribes against this MP preapproval_plan
             // (plan-based flow) instead of building an inline preapproval.
             ...(providerPriceId === undefined ? {} : { providerPriceId }),
-            ...(metadata === undefined ? {} : { metadata })
+            ...(metadata === undefined ? {} : { metadata }),
+            // HOS-937 step 2: the resolved MercadoPago payer email (see
+            // `payerEmail` JSDoc on {@link CreatePaidSubscriptionInput}).
+            ...(payerEmail === undefined ? {} : { payerEmail })
         })
     )) as QZPaySubscriptionWithHelpers;
 

@@ -847,7 +847,9 @@ export const billingApi = {
      * `window.location.href`; the sentinel page handles the success flow
      * without touching the payment provider (SPEC-262 T-012).
      *
-     * @param params - Plan slug, billing interval, and optional promo code
+     * @param params - Plan slug, billing interval, optional promo code, and
+     *   optional payer email (HOS-937 step 2 — the email confirmed/edited on
+     *   the pre-redirect screen; see `PayerEmailConfirmDialog.client.tsx`).
      * @returns The checkout URL to redirect the user to, plus metadata
      *
      * @example
@@ -859,15 +861,25 @@ export const billingApi = {
     createCheckout({
         planSlug,
         billingInterval,
-        promoCode
+        promoCode,
+        payerEmail
     }: {
         readonly planSlug: string;
         readonly billingInterval: 'monthly' | 'annual';
         readonly promoCode?: string;
+        /**
+         * HOS-937 step 2: the email the user confirmed or typed on the
+         * pre-redirect screen (spec §8.1). Optional — when omitted, the
+         * server falls back to its own resolution (spec §6.3).
+         */
+        readonly payerEmail?: string;
     }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
         const body: Record<string, unknown> = { planSlug, billingInterval };
         if (promoCode) {
             body.promoCode = promoCode;
+        }
+        if (payerEmail) {
+            body.payerEmail = payerEmail;
         }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/start-paid`,

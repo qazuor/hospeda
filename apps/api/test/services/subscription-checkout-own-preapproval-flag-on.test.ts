@@ -104,6 +104,18 @@ const OWN_PREAPPROVAL_RESULT = {
     checkoutUrl: 'https://mp.test/subscriptions/checkout?preapproval_id=own-1'
 };
 
+/**
+ * HOS-937 step 2: `initiatePaidMonthlySubscription` now reads
+ * `billing_customers.mp_payer_email` via raw SQL (`getMpPayerEmail`) before
+ * resolving the checkout. The global `@repo/db` mock's `execute()` resolves
+ * to a bare `[]` (not `{ rows: [] }`), which is fine for the Drizzle
+ * query-builder chains the rest of this suite uses but throws for the raw
+ * `db.execute(sql\`...\`)` shape this new read expects. This suite is not
+ * about payer-email resolution — stub it out with the real shape so the
+ * pre-existing routing/plumbing assertions stay unaffected.
+ */
+const DB_STUB = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+
 describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -120,7 +132,8 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(createOwnPreapprovalSubscription).toHaveBeenCalledTimes(1);
@@ -134,7 +147,8 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(createOwnPreapprovalSubscription).toHaveBeenCalledWith(
@@ -157,7 +171,8 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
-            urls: URLS
+            urls: URLS,
+            db: DB_STUB as any
         });
 
         expect(result.checkoutUrl).toBe(OWN_PREAPPROVAL_RESULT.checkoutUrl);
