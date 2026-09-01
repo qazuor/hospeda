@@ -226,6 +226,10 @@ describe('GET /api/v1/protected/users/me/subscription (get user subscription)', 
                     const validStatuses = [
                         'active',
                         'trial',
+                        // HOS-1007: `courtesy` is its own response status (not
+                        // folded into 'active' the way `comp` is), because the
+                        // panel selects its "Sin cargo hasta" copy on it.
+                        'courtesy',
                         'cancelled',
                         'expired',
                         'past_due',
