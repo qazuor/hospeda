@@ -58,32 +58,58 @@
         "heading": "A plan for every audience",
         "subtitle": "There are five ways to join Hospeda. Pick yours and see the pricing.",
         "cardsHeading": "Choose your audience",
+        "highlightsLabel": "What you get",
         "from": "From {{price}}",
         "cards": {
             "host": {
                 "title": "List my property",
                 "audience": "For hosts with houses, cabins, apartments or hotels to rent.",
-                "cta": "See host plans"
+                "cta": "See host plans",
+                "highlights": {
+                    "item1": "Publish your property with photos, amenities and an availability calendar.",
+                    "item2": "Get WhatsApp enquiries and reply to your guests' reviews.",
+                    "item3": "Track your listing's views and create promotions."
+                }
             },
             "tourist": {
                 "title": "Travel benefits",
                 "audience": "For travellers who want to compare stays, save favourites and get price alerts.",
-                "cta": "See traveller plans"
+                "cta": "See traveller plans",
+                "highlights": {
+                    "item1": "Save favourites and organise them into travel collections.",
+                    "item2": "Get price alerts and unlock exclusive deals.",
+                    "item3": "Compare places to stay and write your own reviews."
+                }
             },
             "gastronomy": {
                 "title": "List my restaurant",
                 "audience": "For restaurants, bars and cafes that want to appear in the food guide.",
-                "cta": "See gastronomy plans"
+                "cta": "See gastronomy plans",
+                "highlights": {
+                    "item1": "A listing with photos, menu, opening hours and contact details.",
+                    "item2": "Show up in the dining guide travellers browse.",
+                    "item3": "A fixed monthly price, with no commission per enquiry or booking."
+                }
             },
             "experience": {
                 "title": "List my experiences",
                 "audience": "For guides and operators running tours, trips and activities.",
-                "cta": "See experience plans"
+                "cta": "See experience plans",
+                "highlights": {
+                    "item1": "Publish tours, outings and activities with photos and schedules.",
+                    "item2": "Appear among the experiences travellers look for in the Litoral.",
+                    "item3": "One fixed monthly amount: no booking charges you a separate commission."
+                }
             },
             "partner": {
                 "title": "Become a Hospeda partner",
                 "audience": "For brands and businesses that want visibility across the platform.",
-                "cta": "Explore the partner programme"
+                "cta": "Explore the partner programme",
+                "highlights": {
+                    "item1": "Brand presence in Hospeda's partner carousel.",
+                    "item2": "Joint visibility in our campaigns and outreach channels.",
+                    "item3": "Access to the region's network of verified stays and businesses."
+                }
             }
         }
     },
@@ -134,6 +160,7 @@
     },
     "annualHint": "Paying yearly saves you {percent}%",
     "seeAll": "See everything included ({count} more)",
+    "seeLess": "Show less",
     "select": {
         "aria": "Select the {plan} plan"
     },

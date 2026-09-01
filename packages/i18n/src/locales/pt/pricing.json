@@ -58,32 +58,58 @@
         "heading": "Um plano para cada público",
         "subtitle": "A Hospeda tem cinco formas de participar. Escolha a sua e veja os preços.",
         "cardsHeading": "Escolha o seu público",
+        "highlightsLabel": "O que você obtém",
         "from": "A partir de {{price}}",
         "cards": {
             "host": {
                 "title": "Alugar minha acomodação",
                 "audience": "Para anfitriões com casas, chalés, apartamentos ou hotéis para alugar.",
-                "cta": "Ver planos para anfitriões"
+                "cta": "Ver planos para anfitriões",
+                "highlights": {
+                    "item1": "Publique sua acomodação com fotos, comodidades e calendário de disponibilidade.",
+                    "item2": "Receba consultas por WhatsApp e responda às avaliações dos seus hóspedes.",
+                    "item3": "Acompanhe as visitas do seu anúncio e crie promoções."
+                }
             },
             "tourist": {
                 "title": "Benefícios para viajar",
                 "audience": "Para viajantes que querem comparar acomodações, salvar favoritos e receber alertas de preço.",
-                "cta": "Ver planos para viajantes"
+                "cta": "Ver planos para viajantes",
+                "highlights": {
+                    "item1": "Salve favoritos e organize-os em coleções de viagem.",
+                    "item2": "Receba alertas de preço e acesse ofertas exclusivas.",
+                    "item3": "Compare acomodações e escreva suas avaliações."
+                }
             },
             "gastronomy": {
                 "title": "Publicar meu restaurante",
                 "audience": "Para restaurantes, bares e cafés que querem aparecer no guia gastronômico.",
-                "cta": "Ver planos de gastronomia"
+                "cta": "Ver planos de gastronomia",
+                "highlights": {
+                    "item1": "Anúncio com fotos, cardápio, horários e dados de contato.",
+                    "item2": "Apareça no guia gastronômico que os viajantes consultam.",
+                    "item3": "Preço mensal fixo, sem comissão por consulta ou reserva."
+                }
             },
             "experience": {
                 "title": "Publicar minhas experiências",
                 "audience": "Para guias e operadores de excursões, passeios e atividades.",
-                "cta": "Ver planos de experiências"
+                "cta": "Ver planos de experiências",
+                "highlights": {
+                    "item1": "Publique excursões, passeios e atividades com fotos e horários.",
+                    "item2": "Apareça entre as experiências procuradas no Litoral.",
+                    "item3": "Um valor mensal fixo: nenhuma reserva cobra comissão à parte."
+                }
             },
             "partner": {
                 "title": "Ser parceiro da Hospeda",
                 "audience": "Para marcas e comércios que querem visibilidade em toda a plataforma.",
-                "cta": "Conhecer o programa de parceiros"
+                "cta": "Conhecer o programa de parceiros",
+                "highlights": {
+                    "item1": "Presença de marca no carrossel de parceiros da Hospeda.",
+                    "item2": "Visibilidade conjunta em nossas campanhas e canais de divulgação.",
+                    "item3": "Acesso à rede de acomodações e comércios verificados da região."
+                }
             }
         }
     },
@@ -134,6 +160,7 @@
     },
     "annualHint": "Pagando por ano você economiza {percent}%",
     "seeAll": "Ver tudo o que inclui (mais {count})",
+    "seeLess": "Ver menos",
     "select": {
         "aria": "Selecionar o plano {plan}"
     },
