@@ -312,9 +312,26 @@ Static guards, because "N call sites must remember X" is a guard, not N tests.
   `npx tsx scripts/extract-zod-keys.ts --verify` (without `--verify` it always exits 0),
   `corepack pnpm --filter @repo/i18n check-locales`, `corepack pnpm check:soft-delete-actor`,
   `corepack pnpm check:locale-resolution-single-source`.
-- **G-4 · i18n parity does not prove translation.** The parity guard checks that es/en/pt
-  hold the same keys; all three missing the same key passes. Nine new email templates × 3
-  locales is exactly the shape that slips through.
+- **G-4 · The nine emails must actually differ from each other.** *(Rewritten 2026-09-01
+  after measuring the codebase — the original guard vigilaba something that does not
+  exist.)*
+
+  The original text worried about i18n parity across es/en/pt. **Email templates do not go
+  through i18n at all**: all 57 of them are React components with Spanish embedded
+  directly (`packages/notifications/src/templates/**`), and only two files in the whole
+  package import `@repo/i18n`, neither a template. There are no keys for a parity guard to
+  check.
+
+  Owner decision (2026-09-01): the nine new templates follow the existing convention —
+  **Spanish only**. The recipient is a host in Entre Ríos, not a tourist. Internationalising
+  email is a separate concern from this spec and is not started here.
+
+  What the guard actually has to protect is the requirement that made §4 worth writing:
+  each of the nine carries its own tone, and shipping one template reused nine times passes
+  every structural check while failing the requirement silently. So the guard asserts the
+  nine subjects and bodies differ PAIRWISE, with a positive control that copying one into
+  another makes it fail. The three that land within 48 hours of each other — T−1, the
+  expiry mail, and +1 — are the ones that most need it.
 
 ## 8. Traps
 

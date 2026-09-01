@@ -11,7 +11,54 @@ export enum NotificationType {
     ADDON_EXPIRATION_WARNING = 'addon_expiration_warning',
     ADDON_EXPIRED = 'addon_expired',
     ADDON_RENEWAL_CONFIRMATION = 'addon_renewal_confirmation',
+    /**
+     * @deprecated HOS-1012 T-016 replaces this with the three offset-specific
+     * types below. Kept until that task retires the cron path that still emits
+     * it, so this addition does not break a live sender.
+     */
     TRIAL_ENDING_REMINDER = 'trial_ending_reminder',
+
+    // ── HOS-1012: the nine sends of the Hospeda-owned trial series ───────────
+    //
+    // Nine explicit types rather than three with an offset discriminator, for
+    // two reasons.
+    //
+    // The convention this file already documents (H-62/H-148, below) is that
+    // ONE type serves several senders when what the reader gets is identical,
+    // and separate types when it differs. Here it differs deliberately: each
+    // send carries its own tone, and that difference IS the requirement (spec
+    // section 4). One type per send keeps each template, subject and category
+    // bound to its own value, with no dispatch mechanism in between.
+    //
+    // It also removes a collision by construction. The idempotency key is
+    // `(type, customerId, daysAhead)`, so a pre-expiry send at 1 day out and a
+    // win-back at 1 day after would both suffix `:d1` and be told apart by the
+    // type alone. With a type per offset, two sends can never collapse into one
+    // no matter how the offsets are refactored later.
+
+    /** T−10: friendly, not selling. "Is it working for you? Need a hand?" */
+    TRIAL_ENDING_10D = 'trial_ending_10d',
+    /** T−5: friendly, but names the risk — the listing may be unpublished. */
+    TRIAL_ENDING_5D = 'trial_ending_5d',
+    /** T−1: direct. "If you do not pay, tomorrow it comes down." */
+    TRIAL_ENDING_1D = 'trial_ending_1d',
+    /**
+     * Day 0: the listing HAS come down. The only send in the series that
+     * reports a fact instead of warning about one — which is why its copy has
+     * to differ in kind from the T−1 warning a day earlier and the +1 win-back
+     * a day later. Those three land inside 48 hours.
+     */
+    TRIAL_EXPIRED = 'trial_expired',
+    /** +1 day after expiry. */
+    TRIAL_WIN_BACK_1D = 'trial_win_back_1d',
+    /** +5 days after expiry. */
+    TRIAL_WIN_BACK_5D = 'trial_win_back_5d',
+    /** +10 days after expiry. */
+    TRIAL_WIN_BACK_10D = 'trial_win_back_10d',
+    /** +30 days after expiry. */
+    TRIAL_WIN_BACK_30D = 'trial_win_back_30d',
+    /** +60 days after expiry. Nothing is sent after this one. */
+    TRIAL_WIN_BACK_60D = 'trial_win_back_60d',
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     /**

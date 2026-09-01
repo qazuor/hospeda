@@ -26,6 +26,20 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.ADDON_EXPIRED]: 'Tu add-on {addonName} ha expirado',
     [NotificationType.ADDON_RENEWAL_CONFIRMATION]: 'Add-on renovado - {addonName}',
     [NotificationType.TRIAL_ENDING_REMINDER]: 'Tu período de prueba termina pronto',
+
+    // HOS-1012 — nine subjects, deliberately different from each other. The
+    // tone shifts across the series (spec section 4) and the subject is the
+    // first place a reader notices it. Nine copies of one line would pass every
+    // structural check and fail the requirement silently.
+    [NotificationType.TRIAL_ENDING_10D]: '¿Cómo venís con tu publicación?',
+    [NotificationType.TRIAL_ENDING_5D]: 'Quedan 5 días de tu prueba gratis',
+    [NotificationType.TRIAL_ENDING_1D]: 'Mañana tu publicación sale del sitio',
+    [NotificationType.TRIAL_EXPIRED]: 'Tu publicación salió del sitio',
+    [NotificationType.TRIAL_WIN_BACK_1D]: 'Tu publicación te está esperando',
+    [NotificationType.TRIAL_WIN_BACK_5D]: 'Volvé a aparecer en Hospeda',
+    [NotificationType.TRIAL_WIN_BACK_10D]: 'Tus fotos y tus datos siguen guardados',
+    [NotificationType.TRIAL_WIN_BACK_30D]: '¿Retomamos tu publicación?',
+    [NotificationType.TRIAL_WIN_BACK_60D]: 'Tu ficha sigue disponible cuando quieras',
     [NotificationType.ADMIN_PAYMENT_FAILURE]: '[Admin] Fallo de pago - {userEmail}',
     [NotificationType.ADMIN_SYSTEM_EVENT]: '[Admin] Evento del sistema - {eventType}',
     // New acquisition lead (H-62 / H-148). Names the program and the applicant

@@ -43,39 +43,39 @@
             "id": "T-002",
             "title": "Add the nine notification types and clear the frozen guards they trip",
             "description": "Add TRIAL_EXPIRED (deleted by HOS-171) plus the win-back types to `notification.types.ts`. Per spec G-3, a new enum value has already broken five frozen guards across three packages in this repo. MANDATORY after editing: run the four CI guards that `pnpm check:guards` does NOT run — `CI=true npx tsx scripts/extract-zod-keys.ts --verify` (without --verify it always exits 0), `CI=true corepack pnpm --filter @repo/i18n check-locales`, `CI=true corepack pnpm check:soft-delete-actor`, `CI=true corepack pnpm check:locale-resolution-single-source`. TESTS: update whatever frozen count/inventory assertions fail, and verify each updated count actually reflects the new total rather than being loosened to a range.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-014", "T-015", "T-031"],
             "subtasks": [
                 {
                     "title": "Add TRIAL_EXPIRED back to NotificationType",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the five win-back types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run the four out-of-check:guards CI guards",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix every frozen inventory the additions trip",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "enums", "guards"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T13:08:00.000Z",
+                "completed": "2026-09-01T13:20:00.000Z"
             }
         },
         {
@@ -450,7 +450,7 @@
         {
             "id": "T-014",
             "title": "Write the three pre-expiry email templates with genuinely different copy",
-            "description": "Spec §4: T-10 friendly and not selling ('is it working for you?'), T-5 friendly but warning ('little time left, the listing is at risk'), T-1 direct ('if you do not pay, tomorrow it comes down'). Three DISTINCT templates — shipping one template three times satisfies every structural check and fails the requirement silently, which is the whole point of the change. Three locales (es/en/pt). Copy in the templates is user-facing product copy, authored in each locale, not machine-translated placeholders. TESTS: assert the three subjects and bodies differ from each other pairwise, not merely that three keys exist.",
+            "description": "Spec section 4: T-10 friendly and not selling (is it working for you?), T-5 friendly but warning (little time left, the listing is at risk), T-1 direct (if you do not pay, tomorrow it comes down). Three DISTINCT templates - shipping one template three times satisfies every structural check and fails the requirement silently, which is the whole point of the change. SPANISH ONLY (owner decision 2026-09-01): all 57 existing email templates are React components with Spanish embedded and none uses i18n, so these follow that convention. The recipient is a host in Entre Rios. Model them on packages/notifications/src/templates/trial/trial-ending-reminder.tsx, which currently varies one body by daysRemaining. TESTS: assert the three subjects and bodies differ from each other pairwise, not merely that three templates exist.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-002"],
@@ -489,7 +489,7 @@
         {
             "id": "T-015",
             "title": "Write the five win-back email templates",
-            "description": "Spec §4: +1, +5, +10, +30 and +60 days after expiry, three locales each. Nothing is sent after day 60. OQ-1 is OPEN and must not be assumed: do NOT put a discount or coupon hook in these templates — the standing rule is that coupons are never published, and a coupon by directed email is a separate decision the owner has not made. Write them without a commercial hook and leave the seam for one. TESTS: pairwise-difference assertion across the five; an assertion that no template references a promo code.",
+            "description": "Spec section 4: +1, +5, +10, +30 and +60 days after expiry. Nothing is sent after day 60. SPANISH ONLY, same convention as the other 57 templates (owner decision 2026-09-01). OQ-1 is OPEN and must not be assumed: do NOT put a discount or coupon hook in these templates - the standing rule is that coupons are never published, and a coupon by directed email is a separate decision the owner has not made. Write them without a commercial hook and leave the seam for one. TESTS: pairwise-difference assertion across the five; an assertion that no template references a promo code.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-002"],
@@ -811,7 +811,7 @@
         {
             "id": "T-025",
             "title": "G-4: prove the nine templates are translated, not merely present",
-            "description": "Spec guard G-4: the i18n parity guard checks that es/en/pt hold the same KEYS — all three missing the same key passes, and all three holding the Spanish string passes too. Nine templates times three locales is exactly the shape that slips through. Verify actual translation: assert the en and pt bodies differ from the es body for every one of the nine. TESTS: a positive control that copying the es string into en makes the check fail.",
+            "description": "Spec guard G-4, rewritten 2026-09-01 after measuring: email templates do NOT go through i18n (all 57 are React components with Spanish embedded; only two files in the package import @repo/i18n and neither is a template), so there is no parity to check and nothing to translate. What the guard must protect instead is the requirement that made section 4 worth writing: each of the nine carries its own tone, and one template reused nine times passes every structural check while failing the requirement silently. Assert the nine subjects and bodies differ PAIRWISE. The three that land within 48 hours of each other - T-1, the expiry mail and +1 - are the ones that most need it. TESTS: a positive control that copying one template's copy into another makes the guard fail.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-014", "T-015", "T-031"],
@@ -1009,7 +1009,7 @@
         {
             "id": "T-031",
             "title": "Write the expiry-day email (TRIAL_EXPIRED), the ninth send",
-            "description": "The spec says nine emails and then lists three plus five, which is eight. The ninth is TRIAL_EXPIRED, which spec section 5 lists separately as gone, must return and the Linear issue calls el mail de vencimiento. It sits at offset 0 (EXPIRY_DAY_OFFSET) and belongs to neither group, because it is the only send that REPORTS something that already happened - the listing came down - rather than warning about it. Its copy must therefore differ in kind from the T-1 warning that preceded it by a day: that one said tomorrow it comes down, this one says it came down, here is how to bring it back. Three locales. TESTS: assert its body differs from the T-1 template and from the plus-1 win-back that follows it, since those three land within 48 hours of each other and reading as one repeated message is the failure mode.",
+            "description": "The spec says nine emails and then lists three plus five, which is eight. The ninth is TRIAL_EXPIRED, which spec section 5 lists separately as gone, must return and the Linear issue calls el mail de vencimiento. It sits at offset 0 (EXPIRY_DAY_OFFSET) and belongs to neither group, because it is the only send that REPORTS something that already happened - the listing came down - rather than warning about it. Its copy must therefore differ in kind from the T-1 warning that preceded it by a day: that one said tomorrow it comes down, this one says it came down, here is how to bring it back. SPANISH ONLY, same convention as the other 57 templates. TESTS: assert its body differs from the T-1 template and from the plus-1 win-back that follows it, since those three land within 48 hours of each other and reading as one repeated message is the failure mode.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-002"],
@@ -1083,9 +1083,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.6
     }

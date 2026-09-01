@@ -18,6 +18,26 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.ADDON_EXPIRED]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_REMINDER]: NotificationCategory.REMINDER,
 
+    // HOS-1012 — the nine sends of the Hospeda-owned trial series.
+    // The warnings and the win-backs are opt-out-able reminders.
+    [NotificationType.TRIAL_ENDING_10D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_5D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_1D]: NotificationCategory.REMINDER,
+    /**
+     * TRANSACTIONAL, unlike its eight siblings: this one reports that the
+     * listing HAS left the site. Someone who opted out of reminders and then
+     * finds their listing gone with no notice reads it as the platform having
+     * deleted it silently — that is operational information about their own
+     * account, not a nudge. `ADDON_EXPIRED` is a REMINDER because losing an
+     * add-on costs a feature; losing publication costs the whole point.
+     */
+    [NotificationType.TRIAL_EXPIRED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.TRIAL_WIN_BACK_1D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_5D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_10D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_30D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_60D]: NotificationCategory.REMINDER,
+
     // Admin - Sent to admin email list only
     [NotificationType.ADMIN_PAYMENT_FAILURE]: NotificationCategory.ADMIN,
     [NotificationType.ADMIN_SYSTEM_EVENT]: NotificationCategory.ADMIN,
