@@ -116,6 +116,10 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/publicaciones/': 'in-dynamic-sitemap',
 
     // Utility views that declare `noindex={true}`.
+    // HOS-609: the admin redirects here when an authenticated user lacks
+    // ACCESS_PANEL_ADMIN. Nobody navigates to it on purpose and it says
+    // nothing to a crawler.
+    '/acceso-denegado/': 'noindex',
     '/alojamientos/comparar/': 'noindex',
     '/alojamientos/mapa/': 'noindex',
     '/destinos/mapa/': 'noindex',
