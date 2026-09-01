@@ -357,67 +357,36 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
 </StandaloneLayout>
 
 <style>
+  /* HOS-978: this palette resolves to Hospeda's own design tokens — river
+     blue, sun orange, forest green — instead of the artifact's standalone
+     colours, so the presentations read as the same brand as the rest of the
+     site. Same approach as the /funcionalidades/ brochure, which maps its
+     `--fx-*` names onto these very tokens.
+
+     It also makes dark mode automatic: every token below already flips with
+     `data-theme`, so the artifact's two dark blocks (the
+     prefers-color-scheme one and the `[data-theme="dark"]` one) were REMOVED
+     rather than remapped. Do not add them back — they would freeze one theme's
+     values and stop following the tokens. */
   :root{
-    --ground:#FBFBFA;
-    --surface:#FFFFFF;
-    --surface-2:#F2F2EF;
-    --ink:#16181A;
-    --ink-soft:#3A3E40;
-    --muted:#5D6164;
-    --line:#DFDFDA;
-    --line-strong:#C6C6BF;
-    --accent:#7A5418;
-    --accent-soft:#F3EDE0;
-    --on-accent:#FFFFFF;
-    --warm:#8A6410;
-    --warm-soft:#FBEEE0;
-    --good:#3F6B12;
-    --good-soft:#ECF3E1;
-    --stop:#962E24;
-    --stop-soft:#F8E9E7;
-    --shadow:0 1px 2px rgba(14,25,32,.05), 0 8px 24px -16px rgba(14,25,32,.28);
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --ground:#111213;
-      --surface:#1B1D1E;
-      --surface-2:#232527;
-      --ink:#EEEFEC;
-      --ink-soft:#D2D4D1;
-      --muted:#ABADA9;
-      --line:#2F3133;
-      --line-strong:#474A4C;
-      --accent:#D8B173;
-      --accent-soft:#2A2418;
-      --on-accent:#0C1319;
-      --warm:#DCB768;
-      --warm-soft:#2E2113;
-      --good:#A6D563;
-      --good-soft:#1B2716;
-      --stop:#EF9A8E;
-      --stop-soft:#2E1A18;
-      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
-    }
-  }
-  :root[data-theme="dark"]{
-    --ground:#111213;
-    --surface:#1B1D1E;
-    --surface-2:#232527;
-    --ink:#EEEFEC;
-    --ink-soft:#D2D4D1;
-    --muted:#ABADA9;
-    --line:#2F3133;
-    --line-strong:#474A4C;
-    --accent:#D8B173;
-    --accent-soft:#2A2418;
-    --on-accent:#0C1319;
-    --warm:#DCB768;
-    --warm-soft:#2E2113;
-    --good:#A6D563;
-    --good-soft:#1B2716;
-    --stop:#EF9A8E;
-    --stop-soft:#2E1A18;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    --ground:var(--core-background);
+    --surface:var(--core-card);
+    --surface-2:var(--surface-warm);
+    --ink:var(--core-foreground);
+    --ink-soft:color-mix(in oklab, var(--core-foreground) 80%, var(--core-muted-foreground));
+    --muted:var(--core-muted-foreground);
+    --line:var(--border);
+    --line-strong:color-mix(in oklab, var(--border) 65%, var(--core-foreground));
+    --accent:var(--brand-primary);
+    --accent-soft:var(--brand-primary-a12);
+    --on-accent:var(--primary-foreground);
+    --warm:var(--brand-accent);
+    --warm-soft:var(--brand-accent-a12);
+    --good:var(--hospeda-forest);
+    --good-soft:color-mix(in oklab, var(--hospeda-forest) 12%, transparent);
+    --stop:var(--destructive);
+    --stop-soft:color-mix(in oklab, var(--destructive) 12%, transparent);
+    --shadow:var(--shadow-card);
   }
 
   *{box-sizing:border-box}
