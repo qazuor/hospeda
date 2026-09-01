@@ -644,6 +644,98 @@ describe('SubscriptionDashboard — courtesy status wording (HOS-180 AC-11)', ()
     });
 });
 
+// ─── HOS-1007: self-service actions offered during a courtesy window ──────────
+
+/**
+ * Each gate must mirror the status set its own backend accepts, and the three
+ * backends do NOT agree on `courtesy`:
+ *
+ *   - cancel      → `SOFT_CANCELLABLE_STATUSES` = active | trialing | courtesy
+ *   - pause       → active | trialing
+ *   - change plan → active | trialing
+ *
+ * So a gifted subscriber must be offered Cancel and denied Pause / Change-plan.
+ * Before HOS-1007 they got the opposite on two of the three: no Cancel (a real
+ * capability hidden) and an enabled Change-plan (a button whose backend answers
+ * 404).
+ */
+describe('SubscriptionDashboard — courtesy self-service actions (HOS-1007)', () => {
+    it('offers the cancel action for a courtesy subscription (the backend accepts it)', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cancelar suscripción/i })).toBeInTheDocument();
+    });
+
+    it('does NOT offer the pause action for a courtesy subscription (the backend rejects it)', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('button', { name: /pausar suscripción/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('disables the "Cambiar plan" button for a courtesy subscription', async () => {
+        // plan-change.ts finds `active | trialing` only — a courtesy row is
+        // neither, so the flow would open and then fail with 404 "No active
+        // subscription found".
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        // Assert on the SETTLED render, not inside a waitFor — a waitFor would
+        // accept an intermediate frame in which the button is not yet enabled.
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeDisabled();
+    });
+
+    // Root cause, not just the courtesy symptom: `canChangePlan` used to be a
+    // list of exclusions, so every status it had not been taught about defaulted
+    // to "allowed". `paused` was the pre-existing casualty — the same backend
+    // find rejects it, and the button was enabled anyway. Inverting the gate to
+    // an inclusion list fixes courtesy and paused in one move; this test is what
+    // stops the exclusion form coming back.
+    it('disables the "Cambiar plan" button for a paused subscription (pre-existing leak)', async () => {
+        mockSubscriptionSuccess(PAUSED_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeDisabled();
+    });
+
+    it('still enables the "Cambiar plan" button for an ordinary active subscription', async () => {
+        // The inclusion list must not over-reach: the happy path stays intact.
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeEnabled();
+    });
+});
+
 describe('SubscriptionDashboard — cancel modal: open / close', () => {
     it('opens the confirmation modal when cancel button is clicked', async () => {
         mockSubscriptionSuccess();
