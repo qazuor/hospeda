@@ -55,7 +55,6 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/suscriptores/planes/anfitriones/', changefreq: 'weekly', priority: 0.8 },
     { path: '/suscriptores/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
     { path: '/suscriptores/planes/comparar/', changefreq: 'monthly', priority: 0.7 },
-    { path: '/suscriptores/propietarios/', changefreq: 'monthly', priority: 0.8 },
     { path: '/suscriptores/turistas/comparar/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
     { path: '/publicar-restaurante/', changefreq: 'monthly', priority: 0.7 },
@@ -76,8 +75,9 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // HOS-985: the host-audience level-2 sales page. Unlike the two commerce
     // verticals it does not sit above a not-yet-built `/precios/` page — its
     // CTAs point at the existing `/suscriptores/planes/anfitriones/` pricing
-    // grid — but it is still a NEW indexable URL, so it is listed here at the
-    // same priority as the `/suscriptores/propietarios/` landing above.
+    // grid — but it is still a NEW indexable URL. It inherits the priority the
+    // retired `/suscriptores/propietarios/` landing carried, since it is the
+    // page that URL now 301s to.
     { path: '/planes/anfitriones/', changefreq: 'monthly', priority: 0.8 },
     // HOS-985: the traveller audience's level-2 sales page. It is the only one
     // of the five that had NO landing before — `/suscriptores/turistas/` 301s
@@ -181,6 +181,13 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     // that keeps advertising it would be handing crawlers a URL that never
     // serves content again.
     '/suscriptores/turistas/': 'transactional',
+
+    // Redirect-only since HOS-985: the owner landing was retired (HOS-941
+    // D-12 — it was `/publicar/` minus the auth-aware parts, reading the same
+    // `owners.*` copy) and this URL 301s to `/planes/anfitriones/`. Same rule
+    // as the entry above: it leaves the sitemap in the change that turns it
+    // into a redirect.
+    '/suscriptores/propietarios/': 'transactional',
 
     // MercadoPago return targets and the redirect-only checkout root.
     '/suscriptores/checkout/': 'transactional',

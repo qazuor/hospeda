@@ -11,7 +11,7 @@
  * session resolves, without any server-side session check.
  *
  * Marketing prose (benefits, steps, FAQ) is deliberately kept in sync with
- * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
+ * /planes/anfitriones/ via shared i18n keys (owners.*) — no copy duplication.
  *
  * @route /{lang}/publicar/
  * @rendering SSR — the page fetches the visitor's owned-accommodation count
@@ -131,7 +131,7 @@ const expiredAtDisplay = trialStatus?.expiresAt
 const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
 // ---------------------------------------------------------------------------
-// Reuse marketing content from /suscriptores/propietarios/ via shared keys
+// Reuse marketing content from /planes/anfitriones/ via shared keys
 // ---------------------------------------------------------------------------
 
 const benefits = [
@@ -153,7 +153,7 @@ const steps = [
 // fetching the plan catalog twice on the same request.
 const genericTrialDays = await resolveGenericOwnerTrialDays();
 
-// Shared with /suscriptores/propietarios, which renders the same keys. This page
+// Shared with /planes/anfitriones/, which renders the same keys. This page
 // used to keep its own copy, so it still promised a free basic plan long after
 // the other page was corrected, and it rendered `{{trialDays}}` verbatim once
 // the answer stopped hardcoding the number (HOS-331).
@@ -263,7 +263,7 @@ const faqJsonLd = {
 		</div>
 	</section>
 
-	<!-- Benefits — reuses owners.benefits.* keys from /suscriptores/propietarios/ -->
+	<!-- Benefits — reuses owners.benefits.* keys from /planes/anfitriones/ -->
 	<section class="publicar-benefits section">
 		<div class="publicar-benefits__container">
 			<p class="publicar-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline')}</p>

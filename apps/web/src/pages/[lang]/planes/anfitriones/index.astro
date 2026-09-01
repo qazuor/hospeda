@@ -12,9 +12,10 @@
  *
  * ## What moved, and what stayed behind
  *
- * Content-sourced from `/suscriptores/propietarios/`, which is NOT retired by
- * this change (HOS-985 scope is limited to creating this page; the old one
- * 301s here in a later step). Unlike the commerce verticals, the host
+ * Content-sourced from `/suscriptores/propietarios/`, which this change RETIRES
+ * (HOS-941 D-12): that URL is now a 301 to this page, and its copy was never
+ * copied anywhere — both pages always rendered the same `owners.*` keys.
+ * Unlike the commerce verticals, the host
  * audience already has a real, working pricing page one level below this one
  * — `/suscriptores/planes/anfitriones/` (the `PricingCardsGrid` page) — so
  * this page's CTAs point there directly instead of at a not-yet-built
@@ -24,7 +25,7 @@
  * `/planes/gastronomia/` (HOS-985 H6) — see that file's docblock for the
  * shared-component rationale. The FAQ keeps its existing shape: `owners.faq.*`
  * answers are resolved through `resolveOwnerFaqAnswer` (shared with
- * `/suscriptores/propietarios/`) because item 1 interpolates the live trial
+ * `/publicar/`) because item 1 interpolates the live trial
  * length read from the plan catalogue (HOS-941 R-2 / H-98) — never a number
  * written into a locale string.
  */
@@ -84,8 +85,8 @@ const steps = [
 /**
  * The trial length in FAQ item 1 is interpolated from the live plan catalogue
  * via `buildOwnerFaqParams` (HOS-941 R-2 / H-98) — never hardcoded, and never
- * duplicated: this is the SAME resolver `/suscriptores/propietarios/` calls,
- * so both pages can only ever advertise the same number.
+ * duplicated: this is the SAME resolver `/publicar/` calls, so both pages can
+ * only ever advertise the same number.
  */
 const faqParams = await buildOwnerFaqParams();
 
@@ -115,7 +116,7 @@ const title = t('owners.hero.title');
 const subtitle = t('owners.hero.desc');
 
 // Split heading to underline the last word with a handwritten accent, as
-// `/suscriptores/propietarios/` already does.
+// `/publicar/` already does.
 const heroHeadingWords = title.trim().split(/\s+/);
 const heroHeadingAccent = heroHeadingWords.pop() ?? title;
 const heroHeadingMain = heroHeadingWords.join(' ');
