@@ -11,54 +11,28 @@
  * presentation of the plan cards themselves is identical. Keeping that UI in
  * one component prevents drift between the pages and makes future visual
  * tweaks land in both places at once.
+ *
+ * This file is MARKUP AND CSS. Everything the cards say — the cumulative delta,
+ * the summary/disclosure split, the prices, the annual discount — is built by
+ * `buildPricingCardViews` in `pricing-card-view.ts`, and deliberately so: past a
+ * certain amount of inference in one frontmatter, `astro check` gives up on the
+ * component's own props and resolves `Astro.props` to `Record<string, any>`,
+ * turning every prop into `any` while reporting errors that point only at map
+ * callbacks. That module's header has the full account. Keep this frontmatter
+ * thin.
  */
 
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
-import { computePlanDelta, computePlanDeltas } from '@/components/billing/plan-card-delta';
-import type { PlanDelta } from '@/components/billing/plan-card-delta';
+import PricingCardItemLine from '@/components/billing/PricingCardItem.astro';
+import { buildPricingCardViews } from '@/components/billing/pricing-card-view';
+import type { PricingPlan } from '@/components/billing/pricing-card-view';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import {
-	formatLimitValue,
-	getDisplayFeatures,
-	getLimitHelp,
-	getLimitName,
-	getPlanDescription,
-	getPlanName,
-	getPlanRecommendedFor,
-} from '@/lib/billing-i18n';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
-/**
- * Minimal plan shape required by this component. Decoupled from PlanDefinition
- * so the component works with the runtime endpoint response (PublicPlanData
- * from @/lib/billing/fetch-plans).
- *
- * `limits` is REQUIRED (HOS-943). It used to be excluded with the note that
- * this component "does not render limits — only entitlements", and that
- * omission is exactly what the cumulative delta could not survive: several
- * tiers in this catalogue differ ONLY in their numeric caps, so a card built
- * from entitlements alone renders "everything in Basic, plus:" followed by
- * nothing. The shape is `Record<key, value>` — QZPay's storage format, which is
- * what the public endpoint returns — not `LimitDefinition[]`.
- */
-export interface PricingPlan {
-	readonly slug: string;
-	readonly name: string;
-	readonly description: string;
-	readonly monthlyPriceArs: number;
-	readonly annualPriceArs: number | null;
-	readonly hasTrial: boolean;
-	readonly trialDays: number;
-	readonly sortOrder: number;
-	readonly isActive: boolean;
-	/** Entitlement keys (string values matching EntitlementKey). */
-	readonly entitlements: readonly string[];
-	/** Numeric caps as a key -> value map; `-1` is the unlimited sentinel. */
-	readonly limits: Readonly<Record<string, number>>;
-}
+export type { PricingPlan };
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -107,13 +81,7 @@ const hasAnyAnnualPrice = plans.some(
 );
 
 const featuresLabel = t('pricing.features.label', 'Incluye');
-const includesEverythingTemplate = t(
-	'pricing.includesEverything',
-	'Todo lo del plan {plan}, más:'
-);
-const includesAllLabel = t('pricing.includesAll', 'Este plan incluye:');
 const limitsLabel = t('pricing.limitsLabel', 'Límites de este plan');
-const limitLineTemplate = t('pricing.limitLine', '{label}: {value}');
 const recommendedForLabel = t('pricing.recommendedFor.label', 'Recomendado para');
 const toggleMonthlyLabel = t('pricing.toggle.monthly', 'Mensual');
 const toggleAnnualLabel = t('pricing.toggle.annual', 'Anual');
@@ -121,133 +89,32 @@ const toggleAriaLabel = t(
 	'pricing.toggle.ariaLabel',
 	'Elegí la frecuencia de facturación'
 );
-const annualSavingTemplate = t('pricing.toggle.annualSaving', 'Ahorrá {percent}%');
+const toggleQuestionLabel = t('pricing.toggle.question', '¿Cómo querés pagar?');
+const annualBadgeTemplate = t('pricing.toggle.annualBadge', 'Ahorrá hasta {percent}%');
 const periodMonthLabel = t('pricing.period.month', '/mes');
 const periodYearLabel = t('pricing.period.year', '/año');
 const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
 
-/**
- * Compute the per-plan annual saving percentage. Returns null when the
- * plan has no annual price (saving label gets hidden) or when the
- * annual price is greater than 12 monthly cycles (saving would be
- * negative — bad config, hide the label).
- */
-function computeAnnualSavingPercent(plan: PricingPlan): number | null {
-	if (plan.annualPriceArs === null || plan.annualPriceArs <= 0) return null;
-	if (plan.monthlyPriceArs <= 0) return null;
-	const yearAtMonthly = plan.monthlyPriceArs * 12;
-	if (plan.annualPriceArs >= yearAtMonthly) return null;
-	const saving = (yearAtMonthly - plan.annualPriceArs) / yearAtMonthly;
-	return Math.round(saving * 100);
-}
-
-/**
- * Format ARS cents to a locale-aware currency string. Mirrors the helper that
- * was previously inlined in each pricing page; keeping it here so both pages
- * share the same formatting logic.
- */
-function formatPriceArs(cents: number): string {
-	const pesos = cents / 100;
-	try {
-		return new Intl.NumberFormat(intlLocale, {
-			style: 'currency',
-			currency: 'ARS',
-			maximumFractionDigits: 0,
-			minimumFractionDigits: 0,
-		}).format(pesos);
-	} catch {
-		return `$${pesos.toLocaleString('es-AR')}`;
-	}
-}
-
-/** One numeric cap as it is rendered: the value line plus its explanation. */
-interface CardLimitLine {
-	readonly key: string;
-	/** "Photos per listing: 30" — built from `pricing.limitLine`. */
-	readonly text: string;
-	/** What the cap means and what happens at it (AC-13). */
-	readonly help: string;
-}
-
-/**
- * The cumulative delta for every card, computed ONCE from the plan payloads.
- *
- * Nothing about this list is curated: `computePlanDeltas` diffs consecutive
- * tiers, so a plan re-priced or re-scoped in admin changes what these cards say
- * with no edit here and no edit in the locale files (AC-11).
- */
-const deltas = computePlanDeltas({ plans });
-
-/**
- * Everything one card renders, resolved in the frontmatter rather than inline
- * in the markup.
- *
- * Two reasons, and the second is the load-bearing one. It keeps the template
- * readable; and it puts the "is there a previous tier?" decision in one typed
- * place, so the "everything in <previous>, plus:" header can only be built from
- * a plan object that exists. That is what makes "Todo lo del plan undefined,
- * más:" unrepresentable rather than merely unlikely (AC-17).
- */
-const cards = plans.map((plan, index) => {
-	const rawDelta = deltas[index] as PlanDelta;
-	const previousPlan = index > 0 ? plans[index - 1] : undefined;
-
-	/**
-	 * A non-first tier that adds NOTHING on top of the one below it is a
-	 * catalogue misconfiguration, and "everything in Basic, plus:" over an
-	 * empty list is the worst possible way to surface it. Fall back to the full
-	 * offer — literally the first-tier delta, recomputed with no predecessor —
-	 * so the card keeps selling the plan while the config is wrong.
-	 */
-	const showsDelta = !rawDelta.isFirstTier && !rawDelta.isEmpty && previousPlan !== undefined;
-	const delta = showsDelta ? rawDelta : computePlanDelta({ plan });
-
-	const features = getDisplayFeatures({ keys: delta.addedEntitlements, audience, t });
-	const limitLines: CardLimitLine[] = delta.limitChanges.map((change) => ({
-		key: change.key,
-		text: limitLineTemplate
-			.replace('{label}', getLimitName({ key: change.key, t }))
-			.replace(
-				'{value}',
-				formatLimitValue({
-					value: change.value,
-					isUnlimited: change.isUnlimited,
-					intlLocale,
-					t,
-				})
-			),
-		help: getLimitHelp({ key: change.key, t }),
-	}));
-
-	const monthlyFormatted =
-		plan.monthlyPriceArs === 0 ? t('pricing.free', 'Gratis') : formatPriceArs(plan.monthlyPriceArs);
-	const hasAnnualPrice = plan.annualPriceArs !== null && plan.annualPriceArs > 0;
-	const savingPercent = computeAnnualSavingPercent(plan);
-
-	return {
-		plan,
-		name: getPlanName({ plan, t }),
-		description: getPlanDescription({ plan, t }),
-		recommendedFor: getPlanRecommendedFor({ plan, audience, t }),
-		monthlyFormatted,
-		hasAnnualPrice,
-		annualFormatted: hasAnnualPrice ? formatPriceArs(plan.annualPriceArs as number) : '',
-		savingLabel:
-			savingPercent !== null
-				? annualSavingTemplate.replace('{percent}', String(savingPercent))
-				: '',
-		// Only a real previous plan can produce this header; when there is none
-		// the card falls back to the neutral "this plan includes:" line.
-		deltaHeading: showsDelta
-			? includesEverythingTemplate.replace(
-					'{plan}',
-					getPlanName({ plan: previousPlan as PricingPlan, t })
-				)
-			: includesAllLabel,
-		features,
-		limitLines,
-	};
+/** Every card's copy, prices and item split — see `pricing-card-view.ts`. */
+const { cards, maxAnnualSavingPercent } = buildPricingCardViews({
+	plans,
+	audience,
+	intlLocale,
+	t
 });
+
+/**
+ * The toggle badge. It has to sell the annual option BEFORE the reader has
+ * chosen a tier, so it speaks about the catalogue as a whole; when no tier has
+ * a valid annual price it renders nothing rather than an invented number.
+ */
+const annualBadgeLabel =
+	maxAnnualSavingPercent !== null
+		? annualBadgeTemplate.replace('{percent}', String(maxAnnualSavingPercent))
+		: '';
+
+/** One radio group per audience, so the two pricing pages never share a name. */
+const selectGroupName = `pricing-select-${audience}`;
 ---
 
 <div
@@ -257,26 +124,41 @@ const cards = plans.map((plan, index) => {
 >
 	<h2 class="sr-only">{sectionHeading}</h2>
 
+	{/*
+		The billing-interval toggle. It used to be a bare pill pair that read as
+		decoration; it now carries a question above it and the catalogue's best
+		annual discount inside the "Anual" option. The badge sits INSIDE the
+		radio, so the discount is part of that option's accessible name: a
+		screen-reader user hears the saving together with the option it applies
+		to, instead of a percentage floating beside a control it does not
+		belong to.
+	*/}
 	{hasPlans && hasAnyAnnualPrice && (
-		<div class="pricing-toggle" role="radiogroup" aria-label={toggleAriaLabel}>
-			<button
-				type="button"
-				class="pricing-toggle__option pricing-toggle__option--active"
-				data-pricing-toggle="monthly"
-				role="radio"
-				aria-checked="true"
-			>
-				{toggleMonthlyLabel}
-			</button>
-			<button
-				type="button"
-				class="pricing-toggle__option"
-				data-pricing-toggle="annual"
-				role="radio"
-				aria-checked="false"
-			>
-				{toggleAnnualLabel}
-			</button>
+		<div class="pricing-toggle-block">
+			<p class="pricing-toggle__question">{toggleQuestionLabel}</p>
+			<div class="pricing-toggle" role="radiogroup" aria-label={toggleAriaLabel}>
+				<button
+					type="button"
+					class="pricing-toggle__option pricing-toggle__option--active"
+					data-pricing-toggle="monthly"
+					role="radio"
+					aria-checked="true"
+				>
+					{toggleMonthlyLabel}
+				</button>
+				<button
+					type="button"
+					class="pricing-toggle__option"
+					data-pricing-toggle="annual"
+					role="radio"
+					aria-checked="false"
+				>
+					{toggleAnnualLabel}
+					{annualBadgeLabel && (
+						<span class="pricing-toggle__badge">{annualBadgeLabel}</span>
+					)}
+				</button>
+			</div>
 		</div>
 	)}
 
@@ -293,9 +175,33 @@ const cards = plans.map((plan, index) => {
 			{cards.map((card, i) => (
 				<div
 					class="pricing-card"
+					data-pricing-card
 					data-reveal="up"
 					data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
 				>
+					{/*
+						Card selection (owner review): clicking a card marks it, so a
+						reader comparing three tiers can park on one. The state is a
+						REAL radio, visually hidden — not a div carrying a pressed-state
+						ARIA attribute. Three reasons, all load-bearing: the card contains
+						a button and a `summary` element, so giving the card itself
+						`role="button"` would be a nested-interactive violation (and these
+						pages ARE in the axe sweep); that same pressed-state attribute on a
+						role-less element is prohibited ARIA and would never be announced;
+						and a native radio group gives keyboard operation (arrow keys), the
+						"selected" announcement and the no-JS path for free. The card is simply this control's
+						visual representation, which is the ordinary custom-radio
+						pattern. `.sr-only` is absolutely positioned, so the input is
+						NOT a grid item and does not consume one of the shared rows.
+					*/}
+					<input
+						type="radio"
+						class="sr-only pricing-card__select"
+						id={card.selectId}
+						name={selectGroupName}
+						aria-label={card.selectAriaLabel}
+						data-pricing-select
+					/>
 					<h3 class="pricing-card__name">{card.name}</h3>
 					<p class="pricing-card__desc">{card.description}</p>
 					{/*
@@ -344,12 +250,23 @@ const cards = plans.map((plan, index) => {
 								{monthlyOnlyLabel}
 							</span>
 						)}
+						{/*
+							The discount, stated while the reader is still looking at the
+							MONTHLY price. `.pricing-card__saving--annual` above only
+							appears once annual is already selected, which is too late to
+							influence the choice. Same computed percentage, opposite
+							visibility rule — CSS hides this one under the annual toggle.
+							Empty (and therefore absent) for a monthly-only tier.
+						*/}
+						{card.annualHintLabel && (
+							<p class="pricing-card__annual-hint">{card.annualHintLabel}</p>
+						)}
+						{card.plan.hasTrial && card.plan.trialDays > 0 && (
+							<p class="pricing-card__trial">
+								{tPlural('pricing.trial', card.plan.trialDays)}
+							</p>
+						)}
 					</div>
-					{card.plan.hasTrial && card.plan.trialDays > 0 && (
-						<p class="pricing-card__trial">
-							{tPlural('pricing.trial', card.plan.trialDays)}
-						</p>
-					)}
 					{/*
 						The delta heading. `card.deltaHeading` was resolved in the
 						frontmatter from a plan object that exists, so this can never
@@ -358,51 +275,39 @@ const cards = plans.map((plan, index) => {
 						includes:" line instead (AC-17).
 					*/}
 					<p class="pricing-card__delta-heading">{card.deltaHeading}</p>
-					{card.features.length > 0 && (
-						<ul class="pricing-card__features" aria-label={featuresLabel}>
-							{card.features.map((feature) => (
-								<li class="pricing-card__feature">
-									<svg
-										class="pricing-card__feature-icon"
-										xmlns="http://www.w3.org/2000/svg"
-										width="18"
-										height="18"
-										viewBox="0 0 24 24"
-										fill="none"
-										aria-hidden="true"
-									>
-										<path
-											d="M5 12.5l4.5 4.5L19 7"
-											stroke="currentColor"
-											stroke-width="2.5"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-										/>
-									</svg>
-									<span>{feature.label}</span>
-								</li>
-							))}
-						</ul>
-					)}
 					{/*
-						Numeric caps. Each one carries its explanation as a VISIBLE
-						sibling line inside the same <li>, not a tooltip (AC-13): a
-						tooltip has to be re-solved for keyboard and for screen readers,
-						and a number nobody can interpret is worse than a slightly
-						longer card. Being inside the list item is what makes the
-						explanation part of what a screen reader announces with the
-						value.
+						The card's list, cut in two. `visibleItems` is the summary; the
+						remainder lives in a native `details` element, which is why the "ver
+						todo" control works with JavaScript disabled, is keyboard
+						operable, and is announced as a disclosure — all of it for free.
+						Nothing is dropped: every hidden line is in the DOM, so the
+						browser's find, a crawler and an LLM fetcher all still read it.
+
+						Both halves render through the SAME item component. Inlining the
+						markup twice is how the two copies drift, and a source-reading
+						guard only ever matches the first one.
 					*/}
-					{card.limitLines.length > 0 && (
-						<ul class="pricing-card__limits" aria-label={limitsLabel}>
-							{card.limitLines.map((line) => (
-								<li class="pricing-card__limit">
-									<span class="pricing-card__limit-value">{line.text}</span>
-									<span class="pricing-card__limit-help">{line.help}</span>
-								</li>
-							))}
-						</ul>
-					)}
+					<div class="pricing-card__body">
+						{card.visibleItems.length > 0 && (
+							<ul class="pricing-card__items" aria-label={featuresLabel}>
+								{card.visibleItems.map((item) => (
+									<PricingCardItemLine item={item} />
+								))}
+							</ul>
+						)}
+						{card.hiddenItems.length > 0 && (
+							<details class="pricing-card__more">
+								<summary class="pricing-card__more-summary">
+									{card.seeAllLabel}
+								</summary>
+								<ul class="pricing-card__items" aria-label={limitsLabel}>
+									{card.hiddenItems.map((item) => (
+										<PricingCardItemLine item={item} />
+									))}
+								</ul>
+							</details>
+						)}
+					</div>
 					<div class="pricing-card__btn-wrapper">
 						<PlanPurchaseButton
 							client:load
@@ -477,6 +382,68 @@ const cards = plans.map((plan, index) => {
 		box-shadow: var(--shadow-card-hover);
 	}
 
+	/* ─── Shared row tracks ──────────────────────────────────────────
+	   The price and the CTA have to land on the SAME line across the three
+	   cards. Stacking each card independently cannot do that: a two-line plan
+	   name or a longer description pushes everything below it down by one line,
+	   and the prices end up staggered.
+
+	   `subgrid` is the mechanism, not `min-height`. The grid owns the row
+	   tracks; each card opts into them (`grid-row: 1 / -1`), so every row is as
+	   tall as the tallest card's content for that row and every card's Nth
+	   block starts at the same y. A `min-height` tuned by eye is a guess that
+	   breaks on the first copy edit, in another locale, or at another font
+	   size.
+
+	   There are SEVEN in-flow children per card and the row list below must
+	   match them one for one: name, description, "recomendado para", the price
+	   block, the delta heading, the body (list + disclosure) and the CTA. The
+	   selection radio is `position: absolute` via `.sr-only`, so it is out of
+	   flow and consumes no row — if it ever stopped being absolutely
+	   positioned, every card would shift by one row.
+
+	   The body row takes `1fr` so it absorbs the slack, which is what pins the
+	   CTA to the bottom.
+
+	   FALLBACK (no `subgrid` support): the cards stay flex columns. They are
+	   still equal height — grid items stretch by default — and the CTA is still
+	   bottom-aligned by its own `margin-top: auto`. Only the price alignment is
+	   lost, degrading to exactly today's behaviour. */
+	@media (min-width: 769px) {
+		@supports (grid-template-rows: subgrid) {
+			.pricing-cards__grid,
+			.pricing-cards__grid[data-count='1'],
+			.pricing-cards__grid[data-count='2'] {
+				grid-template-rows: auto auto auto auto auto 1fr auto;
+			}
+
+			.pricing-card {
+				display: grid;
+				grid-row: 1 / -1;
+			grid-template-rows: subgrid;
+				}
+		}
+	}
+
+	/* ─── Selected card ──────────────────────────────────────────────
+	   Driven by the hidden radio: `[data-selected]` is what the script sets,
+	   and `:has(:checked)` covers the no-script path (a keyboard user reaching
+	   the radio group and arrowing through it). Sober on purpose — a border and
+	   the hover elevation, no scale, no colour flood. */
+	.pricing-card[data-selected='true'],
+	.pricing-card:has(.pricing-card__select:checked) {
+		border-color: var(--brand-accent);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	/* The radio is visually hidden, so its focus ring has to be drawn on the
+	   card that represents it — otherwise a keyboard user arrowing through the
+	   group gets no visible indication of where they are. */
+	.pricing-card:has(.pricing-card__select:focus-visible) {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 3px;
+	}
+
 	/* There is deliberately no `.pricing-card--highlighted` rule and no
 	   "Recomendado" badge (HOS-943 AC-12). Singling out one tier needs
 	   conversion data Hospeda does not have, and it labels the other two as
@@ -542,16 +509,20 @@ const cards = plans.map((plan, index) => {
 		font-size: var(--text-body-sm);
 		color: var(--brand-accent-text);
 		font-weight: 600;
-		margin: 0 0 var(--space-4);
+		margin: var(--space-2) 0 0;
 	}
 
-	.pricing-card__features {
-		list-style: none;
-		padding: 0;
-		margin: 0 0 var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
+	/* The annual discount, stated in the MONTHLY state. `display` is owned by
+	   the toggle rules further down (hidden under `[data-billing='annual']`),
+	   so do not set it here. */
+	.pricing-card__annual-hint {
+		font-family: var(--font-sans);
+		font-size: var(--text-caption);
+		font-weight: 600;
+		/* `--brand-primary` is ~3.5:1 on a light card and fails WCAG AA as body
+		   text; `--brand-primary-link` is the accessible step of the same hue. */
+		color: var(--brand-primary-link);
+		margin: var(--space-2) 0 0;
 	}
 
 	/* Delta heading — either "Todo lo del plan X, más:" or, on the first tier,
@@ -567,56 +538,79 @@ const cards = plans.map((plan, index) => {
 		margin: 0 0 var(--space-2);
 	}
 
-	/* Numeric caps. Each item is a value line plus a muted explanation line;
-	   both live in the same <li>, which is what makes the explanation part of
-	   what a screen reader announces with the number (AC-13). No tooltip: a
-	   tooltip has to be re-solved for keyboard and for assistive tech, and this
-	   costs nothing but vertical space. */
-	.pricing-card__limits {
+	/* The list itself. Each ITEM's styling (bullet, cap value, cap explanation)
+	   lives in `PricingCardItem.astro`, which owns that markup — Astro scopes
+	   styles per component, so a rule for `.pricing-card__limit` written here
+	   would never match an element rendered by the child. */
+	.pricing-card__items {
 		list-style: none;
 		padding: 0;
-		margin: 0 0 var(--space-4);
+		margin: 0;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
 	}
 
-	.pricing-card__limit {
+	/* The body is one grid child (one shared row) holding both the summary and
+	   the disclosure, so the row list stays one entry per visible block. */
+	.pricing-card__body {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
-		font-family: var(--font-sans);
-		padding-left: var(--space-3);
-		border-left: 2px solid var(--border);
+		gap: var(--space-3);
+		margin-bottom: var(--space-4);
 	}
 
-	.pricing-card__limit-value {
+	/* "Ver todo lo que incluye (N más)". A native <details>: it works with no
+	   JavaScript, it is keyboard operable, and it is announced as a disclosure
+	   with its own expanded state — none of which a scripted toggle gets for
+	   free. Opening one card grows the shared body row, so the three cards stay
+	   the same height rather than one of them jumping. */
+	.pricing-card__more-summary {
+		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
 		font-weight: 600;
-		color: var(--core-foreground);
-		line-height: 1.4;
-	}
-
-	.pricing-card__limit-help {
-		font-size: var(--text-caption);
-		color: var(--core-muted-foreground);
-		line-height: 1.45;
-	}
-
-	.pricing-card__feature {
-		display: flex;
-		align-items: flex-start;
+		color: var(--brand-primary-link);
+		cursor: pointer;
+		list-style: none;
+		display: inline-flex;
+		align-items: center;
 		gap: var(--space-2);
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-foreground);
-		line-height: 1.5;
+		padding: var(--space-1) 0;
 	}
 
-	.pricing-card__feature-icon {
-		flex-shrink: 0;
-		color: var(--success);
-		margin-top: 2px;
+	/* Safari still paints the default disclosure triangle through the
+	   webkit-specific pseudo-element; `list-style: none` alone does not remove
+	   it there. The marker below replaces it in every browser. */
+	.pricing-card__more-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.pricing-card__more-summary::after {
+		content: '';
+		width: 0.5em;
+		height: 0.5em;
+		border-right: 2px solid currentColor;
+		border-bottom: 2px solid currentColor;
+		transform: rotate(45deg) translate(-15%, -15%);
+		transition: transform var(--duration-normal) ease;
+	}
+
+	.pricing-card__more[open] .pricing-card__more-summary::after {
+		transform: rotate(-135deg) translate(-15%, -15%);
+	}
+
+	.pricing-card__more-summary:hover {
+		text-decoration: underline;
+	}
+
+	.pricing-card__more-summary:focus-visible {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 2px;
+		border-radius: var(--radius-md);
+	}
+
+	.pricing-card__more[open] .pricing-card__items {
+		margin-top: var(--space-3);
 	}
 
 	.pricing-card__btn-wrapper {
@@ -638,17 +632,50 @@ const cards = plans.map((plan, index) => {
 		}
 	}
 
-	/* ─── Toggle UI ────────────────────────────────────────────────── */
+	/* ─── Toggle UI ──────────────────────────────────────────────────
+	   The toggle used to be a bare pill pair floating above the grid and read
+	   as decoration. It now sits in a block with a question above it and the
+	   catalogue's best discount inside the "Anual" option, so the annual saving
+	   is legible before the reader has switched anything. */
+	.pricing-toggle-block {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+	}
+
+	.pricing-toggle__question {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.pricing-toggle__badge {
+		font-size: var(--text-caption);
+		font-weight: 700;
+		line-height: 1.2;
+		padding: 0.15em 0.55em;
+		border-radius: var(--radius-pill);
+		background-color: color-mix(in srgb, var(--success) 16%, transparent);
+		color: var(--success);
+	}
+
 	.pricing-toggle {
 		display: inline-flex;
 		gap: 0;
-		margin: 0 auto var(--space-6);
+		/* Bottom spacing belongs to `.pricing-toggle-block` now — keeping it
+		   here too would double the gap under the toggle. */
+		margin: 0 auto;
 		background-color: var(--surface-warm);
 		border-radius: var(--radius-pill);
 		padding: var(--space-1);
 		position: relative;
 		justify-self: center;
 		align-self: center;
+		border: 1px solid var(--border);
 	}
 	.pricing-cards__container .pricing-toggle {
 		margin-left: auto;
@@ -666,6 +693,9 @@ const cards = plans.map((plan, index) => {
 		padding: var(--space-2) var(--space-4);
 		border-radius: var(--radius-pill);
 		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
 		transition: background-color var(--duration-normal) ease,
 			color var(--duration-normal) ease;
 	}
@@ -704,7 +734,8 @@ const cards = plans.map((plan, index) => {
 	   price amount/period are hidden under the annual toggle.
 	 */
 	[data-billing='annual'] .pricing-card__amount--monthly,
-	[data-billing='annual'] .pricing-card__period--monthly {
+	[data-billing='annual'] .pricing-card__period--monthly,
+	[data-billing='annual'] .pricing-card__annual-hint {
 		display: none;
 	}
 	[data-billing='annual'] .pricing-card__amount--annual,
@@ -729,6 +760,22 @@ const cards = plans.map((plan, index) => {
 		color: var(--core-muted-foreground);
 		font-style: italic;
 		font-weight: 400;
+	}
+
+	/* Selection and hover both move the card; neither may animate for a visitor
+	   who asked for less motion. The border and the elevation still change —
+	   the STATE is never removed, only its transition and its displacement. */
+	@media (prefers-reduced-motion: reduce) {
+		.pricing-card {
+			transition: none;
+		}
+		.pricing-card:hover {
+			transform: none;
+		}
+		.pricing-card__more-summary::after,
+		.pricing-card__more[open] .pricing-card__more-summary::after {
+			transition: none;
+		}
 	}
 </style>
 
@@ -925,10 +972,60 @@ const cards = plans.map((plan, index) => {
 		}
 	}
 
+	/**
+	 * Card selection (owner review): clicking anywhere on a card marks it, so a
+	 * reader comparing three tiers can park on one while they read.
+	 *
+	 * The state itself is NOT owned here — it lives in a visually hidden radio
+	 * per card (see the markup comment). That is what makes the feature
+	 * keyboard operable and announced without this script: arrowing through the
+	 * radio group already selects, and CSS `:has(:checked)` already paints it.
+	 * All this adds is the click target, plus a `data-selected` mirror for
+	 * browsers without `:has()`.
+	 *
+	 * A click that lands on a real control is left alone — the CTA, the "ver
+	 * todo" disclosure, and any link inside the card must keep behaving
+	 * exactly as they did before selection existed.
+	 */
+	function initPricingSelection(container: HTMLElement): void {
+		const cards = Array.from(
+			container.querySelectorAll<HTMLElement>('[data-pricing-card]')
+		);
+		if (cards.length === 0) return;
+
+		const syncFromInputs = (): void => {
+			for (const card of cards) {
+				const input = card.querySelector<HTMLInputElement>('[data-pricing-select]');
+				card.dataset.selected = input?.checked ? 'true' : 'false';
+			}
+		};
+
+		for (const card of cards) {
+			const input = card.querySelector<HTMLInputElement>('[data-pricing-select]');
+			if (!input) continue;
+			// Fires for a click on the card AND for an arrow-key move within the
+			// radio group, so keyboard selection updates the mirror too.
+			input.addEventListener('change', syncFromInputs);
+			card.addEventListener('click', (event) => {
+				const target = event.target as HTMLElement | null;
+				if (target?.closest('a, button, summary, input, label, [role="button"]')) {
+					return;
+				}
+				input.checked = true;
+				syncFromInputs();
+			});
+		}
+
+		syncFromInputs();
+	}
+
 	function initAllPricingToggles(): void {
 		document
 			.querySelectorAll<HTMLElement>('.pricing-cards__container[data-billing]')
-			.forEach((container) => initPricingToggle(container));
+			.forEach((container) => {
+				initPricingToggle(container);
+				initPricingSelection(container);
+			});
 	}
 
 	// Re-attach on every navigation. Astro's ClientRouter does not re-run module
