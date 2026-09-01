@@ -498,8 +498,6 @@
             "receiptHint": "Automatically send receipt on payment",
             "trialReminderLabel": "Trial expiry reminder",
             "trialReminderHint": "Notify before the trial period expires",
-            "trialReminderDaysLabel": "Reminder days in advance",
-            "trialReminderDaysHint": "Send the reminder X days before expiry",
             "paymentFailedLabel": "Notify failed payment",
             "paymentFailedHint": "Notify the customer when a payment fails",
             "subscriptionCancelledLabel": "Notify subscription cancellation",

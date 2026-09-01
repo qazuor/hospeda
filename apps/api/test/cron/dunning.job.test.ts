@@ -79,7 +79,6 @@ const {
             gracePeriodDays: 7,
             maxPaymentRetries: 4,
             retryIntervalHours: 24,
-            trialExpiryReminderDays: 3,
             sendTrialExpiryReminder: true,
             sendPaymentFailedNotification: true
         }),

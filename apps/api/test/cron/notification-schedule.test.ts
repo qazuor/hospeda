@@ -4,10 +4,9 @@
  * Tests the notification-schedule job handler that sends scheduled notifications.
  *
  * Test Coverage:
- * - Sends trial ending reminders: config-aware, skip-tolerant primary ("D-3")
- *   window + exact day-1 window (HOS-121)
- * - Durable per-variant dedup via billing_subscription_events (survives
- *   process restarts / multi-replica races — HOS-121 §4.2)
+ * - Runs the nine-send trial email series once per run and folds its counters
+ *   into the cron result (HOS-1012 T-016). The series' own behaviour lives in
+ *   `test/cron/trial-series-dispatch.test.ts`.
  * - Processes notification retry queue
  * - Handles no pending notifications gracefully
  * - Returns correct CronJobResult structure
@@ -18,8 +17,7 @@
  * @module test/cron/notification-schedule
  */
 
-import { NotificationType, RetryService } from '@repo/notifications';
-import { BILLING_EVENT_TYPES } from '@repo/service-core';
+import { RetryService } from '@repo/notifications';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     notificationScheduleJob,
@@ -131,15 +129,30 @@ vi.mock('../../src/utils/redis', () => ({
     getRedisClient: vi.fn().mockResolvedValue(undefined)
 }));
 
-// Mock billing settings loader
+// Mock billing settings loader. `trialExpiryReminderDays` is gone (HOS-1012
+// T-016) — the nine offsets are constants, not an admin setting.
 vi.mock('../../src/utils/billing-settings', () => ({
     loadBillingSettings: vi.fn().mockResolvedValue({
         gracePeriodDays: 7,
         maxPaymentRetries: 3,
         retryIntervalHours: 24,
-        trialExpiryReminderDays: 3,
         sendTrialExpiryReminder: true,
         sendPaymentFailedNotification: true
+    })
+}));
+
+// Mock the nine-send trial series. Its own behaviour is covered by
+// `test/cron/trial-series-dispatch.test.ts` against the real module; here the
+// subject is the JOB, and what the job owns is running the series once and
+// folding its counters into the cron result.
+vi.mock('../../src/cron/jobs/trial-series-dispatch', () => ({
+    dispatchTrialSeries: vi.fn().mockResolvedValue({
+        sent: 0,
+        deduped: 0,
+        converted: 0,
+        noCustomer: 0,
+        errors: 0,
+        cohortSizes: {}
     })
 }));
 
@@ -153,58 +166,10 @@ vi.mock('@repo/notifications', async () => {
 });
 
 // Import mocked modules after mocking
+import { dispatchTrialSeries } from '../../src/cron/jobs/trial-series-dispatch';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { processDbNotificationRetries } from '../../src/services/notification-retry.service';
-import { TrialService } from '../../src/services/trial.service';
 import { sendNotification } from '../../src/utils/notification-helper';
-
-/** A trial row as returned by `findTrialsEndingSoon`. */
-type MockTrial = {
-    id: string;
-    customerId: string;
-    userEmail: string;
-    userName: string;
-    userId: string;
-    planSlug: string;
-    planDisplayName?: string;
-    trialEnd: Date;
-    daysRemaining: number;
-    intendedInterval?: string;
-};
-
-/**
- * Build a trial row with sensible defaults; override any field per test.
- */
-function makeTrial(
-    overrides: Partial<MockTrial> & { id: string; daysRemaining: number }
-): MockTrial {
-    return {
-        customerId: `cust-${overrides.id}`,
-        userEmail: `user-${overrides.id}@example.com`,
-        userName: `User ${overrides.id}`,
-        userId: `user-${overrides.id}`,
-        planSlug: 'owner-basico',
-        trialEnd: new Date('2024-06-18T00:00:00Z'),
-        ...overrides
-    };
-}
-
-/**
- * Stub a TrialService whose `findTrialsEndingSoon` returns trials keyed by the
- * requested `daysAhead`. The job now queries the config-aware primary window
- * (daysAhead = trialReminderDays and trialReminderDays-1) plus daysAhead=1, so
- * mapping by daysAhead is robust to the exact number/order of calls.
- */
-function mockTrialServiceByDays(byDays: Record<number, MockTrial[]>): void {
-    const service = {
-        findTrialsEndingSoon: vi.fn((input: { daysAhead: number }) =>
-            Promise.resolve(byDays[input.daysAhead] ?? [])
-        )
-    };
-    vi.mocked(TrialService).mockImplementation(function () {
-        return service as unknown as InstanceType<typeof TrialService>;
-    });
-}
 
 /** Stub RetryService.processRetries as a no-op returning empty stats. */
 function mockEmptyRetryService(): void {
@@ -246,6 +211,17 @@ describe('Notification Schedule Cron Job', () => {
         // only its call history is cleared.
         getDbSelectLimit.mockReset().mockResolvedValue([]);
         getDbInsertValues.mockClear();
+        // `clearAllMocks` clears call history but KEEPS implementations, so a
+        // test that made the series reject would otherwise leak that rejection
+        // into every test after it. Restore the empty-run default explicitly.
+        vi.mocked(dispatchTrialSeries).mockReset().mockResolvedValue({
+            sent: 0,
+            deduped: 0,
+            converted: 0,
+            noCustomer: 0,
+            errors: 0,
+            cohortSizes: {}
+        });
         process.env.HOSPEDA_SITE_URL = 'https://hospeda.com';
     });
 
@@ -261,268 +237,73 @@ describe('Notification Schedule Cron Job', () => {
         });
     });
 
-    describe('Trial Ending Reminders', () => {
-        // HOS-231: the trial-ending email prefers the plan DISPLAY name
-        // (TrialEndingSubscription.planDisplayName) over the raw slug. The trial is
-        // returned for EVERY daysAhead window the job queries (not keyed to one
-        // day) so the assertion is independent of the config reminder window.
-        it('uses planDisplayName over planSlug when present', async () => {
+    describe('Trial Email Series (HOS-1012)', () => {
+        // The nine sends themselves — cohort selection, per-offset templates,
+        // durable dedup, the live paying re-check — are tested in
+        // `test/cron/trial-series-dispatch.test.ts` against the real module.
+        // What belongs HERE is only that the job runs the series and folds its
+        // counters into its own result, because that is what this job owns.
+
+        it('runs the series and folds its sent/errors counters into the result', async () => {
             const ctx = createMockContext();
-            const trial = makeTrial({
-                id: 'sub-1',
-                daysRemaining: 3,
-                planSlug: 'owner-basico',
-                planDisplayName: 'Basic'
-            });
-            const service = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue([trial])
-            };
-            vi.mocked(TrialService).mockImplementation(function () {
-                return service as unknown as InstanceType<typeof TrialService>;
-            });
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            mockEmptyRetryService();
+            vi.mocked(dispatchTrialSeries).mockResolvedValue({
+                sent: 3,
+                deduped: 1,
+                converted: 2,
+                noCustomer: 0,
+                errors: 1,
+                cohortSizes: { '-10': 1, '-5': 1, '-1': 1 }
+            });
+
+            const result = await notificationScheduleJob.handler(ctx);
+
+            expect(dispatchTrialSeries).toHaveBeenCalledTimes(1);
+            expect(result.processed).toBe(3);
+            expect(result.errors).toBe(1);
+        });
+
+        it('passes the admin reminder toggle through to the series', async () => {
+            // The toggle gates the eight REMINDER sends and never the expiry
+            // mail; that split is enforced inside the series. The job's part is
+            // only to hand the setting over — which it did NOT do before
+            // HOS-1012: the value was logged and never read.
+            const ctx = createMockContext();
+            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
             mockEmptyRetryService();
 
             await notificationScheduleJob.handler(ctx);
 
-            expect(sendNotification).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: NotificationType.TRIAL_ENDING_REMINDER,
-                    planName: 'Basic'
-                })
-            );
-            // Never the raw slug.
-            expect(sendNotification).not.toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: NotificationType.TRIAL_ENDING_REMINDER,
-                    planName: 'owner-basico'
-                })
+            expect(dispatchTrialSeries).toHaveBeenCalledWith(
+                expect.objectContaining({ remindersEnabled: true })
             );
         });
 
-        it('should send primary (D-3) reminders for trials in the config window', async () => {
-            // Arrange
+        it('reports the per-offset cohort sizes and every skip reason', async () => {
+            // A run that reports only what it sent cannot tell "nobody was due"
+            // from "everything was skipped".
             const ctx = createMockContext();
-            mockTrialServiceByDays({
-                3: [
-                    makeTrial({ id: 'sub-1', daysRemaining: 3 }),
-                    makeTrial({ id: 'sub-2', daysRemaining: 3, planSlug: 'complex-basico' })
-                ]
+            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
+            mockEmptyRetryService();
+            vi.mocked(dispatchTrialSeries).mockResolvedValue({
+                sent: 0,
+                deduped: 4,
+                converted: 1,
+                noCustomer: 2,
+                errors: 0,
+                cohortSizes: { '0': 7 }
             });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
 
-            // Act
             const result = await notificationScheduleJob.handler(ctx);
 
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.processed).toBe(2);
-            expect(sendNotification).toHaveBeenCalledTimes(2);
-            expect(sendNotification).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: NotificationType.TRIAL_ENDING_REMINDER,
-                    customerId: 'cust-sub-1',
-                    planName: 'owner-basico',
-                    daysRemaining: 3
-                })
-            );
-            // Durable dedup ledger written per sent reminder, tagged D-3.
-            expect(getDbInsertValues).toHaveBeenCalledTimes(2);
-            expect(getDbInsertValues).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    subscriptionId: 'sub-1',
-                    eventType: BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D3,
-                    triggerSource: 'cron'
-                })
-            );
-        });
-
-        it('should point the upgradeUrl at the owner pricing page and carry ?interval=annual (HOS-115 §5)', async () => {
-            // Arrange
-            const ctx = createMockContext();
-            mockTrialServiceByDays({
-                3: [makeTrial({ id: 'sub-1', daysRemaining: 3, intendedInterval: 'annual' })]
+            expect(result.details?.trialSeries).toEqual({
+                cohortSizes: { '0': 7 },
+                sent: 0,
+                deduped: 4,
+                converted: 1,
+                noCustomer: 2
             });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            // Not asserting on the exact host (env.HOSPEDA_SITE_URL is resolved once at
-            // module import, so the beforeEach process.env override above does not
-            // retroactively apply) — mirrors the pattern in
-            // trial.service.test.ts's TRIAL_EXPIRED upgradeUrl nudge tests (HOS-115 T-004).
-            const payload = vi.mocked(sendNotification).mock.calls[0]?.[0] as {
-                upgradeUrl: string;
-            };
-            expect(payload.upgradeUrl).toContain('/suscriptores/planes/');
-            expect(payload.upgradeUrl).toContain('?interval=annual');
-            expect(payload.upgradeUrl).not.toContain('/mi-cuenta/suscripcion');
-        });
-
-        it('should omit ?interval= when the trial has no recorded intent (HOS-115 §5, graceful degrade)', async () => {
-            // Arrange
-            const ctx = createMockContext();
-            mockTrialServiceByDays({
-                1: [makeTrial({ id: 'sub-1', daysRemaining: 1 })]
-            });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            const payload = vi.mocked(sendNotification).mock.calls[0]?.[0] as {
-                upgradeUrl: string;
-            };
-            expect(payload.upgradeUrl).toContain('/suscriptores/planes/');
-            expect(payload.upgradeUrl).not.toContain('interval=');
-            expect(payload.upgradeUrl).not.toContain('/mi-cuenta/suscripcion');
-        });
-
-        it('should send the day-1 reminder for trials ending tomorrow', async () => {
-            // Arrange
-            const ctx = createMockContext();
-            mockTrialServiceByDays({
-                1: [makeTrial({ id: 'sub-1', daysRemaining: 1 })]
-            });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.processed).toBe(1);
-            expect(sendNotification).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: NotificationType.TRIAL_ENDING_REMINDER,
-                    daysRemaining: 1
-                })
-            );
-            expect(getDbInsertValues).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    subscriptionId: 'sub-1',
-                    eventType: BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D1
-                })
-            );
-        });
-
-        it('should still send the primary reminder when a cron day was skipped (skip-tolerant window, HOS-121 §4.1)', async () => {
-            // Arrange — a trial that was 3 days out yesterday, missed the run, and
-            // is now 2 days out. The old exact-day match (daysAhead === 3) would
-            // drop it; the config-aware window (covers days 3 AND 2) still catches it.
-            const ctx = createMockContext();
-            mockTrialServiceByDays({
-                2: [makeTrial({ id: 'sub-late', daysRemaining: 2 })]
-            });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            expect(result.processed).toBe(1);
-            expect(sendNotification).toHaveBeenCalledTimes(1);
-            expect(sendNotification).toHaveBeenCalledWith(
-                expect.objectContaining({ customerId: 'cust-sub-late', daysRemaining: 2 })
-            );
-            // Still recorded under the D-3 (primary) variant, not D-1.
-            expect(getDbInsertValues).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    subscriptionId: 'sub-late',
-                    eventType: BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D3
-                })
-            );
-        });
-
-        it('should send both the primary and day-1 reminders for the same subscription (distinct variants)', async () => {
-            // Arrange — same subscription appears in both the primary and day-1
-            // windows. Each variant has its own durable event type, so both send.
-            const ctx = createMockContext();
-            const trial = makeTrial({ id: 'sub-1', daysRemaining: 3 });
-            mockTrialServiceByDays({ 3: [trial], 1: [{ ...trial, daysRemaining: 1 }] });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            expect(result.processed).toBe(2);
-            expect(sendNotification).toHaveBeenCalledTimes(2);
-            expect(getDbInsertValues).toHaveBeenCalledWith(
-                expect.objectContaining({ eventType: BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D3 })
-            );
-            expect(getDbInsertValues).toHaveBeenCalledWith(
-                expect.objectContaining({ eventType: BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D1 })
-            );
-        });
-
-        it('should de-duplicate a subscription appearing twice in the primary window (by id)', async () => {
-            // Arrange — the same subscription returned twice for the same day.
-            const ctx = createMockContext();
-            const trial = makeTrial({ id: 'sub-1', daysRemaining: 3 });
-            mockTrialServiceByDays({ 3: [trial, trial] });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert — collapsed to a single send.
-            expect(result.processed).toBe(1);
-            expect(sendNotification).toHaveBeenCalledTimes(1);
-        });
-
-        it('should not re-send when a durable event already exists (survives restart, HOS-121 §4.2)', async () => {
-            // Arrange — the durable dedup lookup finds a prior D-3 event row, as it
-            // would after a process restart that cleared any in-memory state.
-            const ctx = createMockContext();
-            mockTrialServiceByDays({ 3: [makeTrial({ id: 'sub-1', daysRemaining: 3 })] });
-            getDbSelectLimit.mockResolvedValue([{ id: 'existing-event' }]);
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert — dedup blocks the send AND the ledger insert.
-            expect(result.processed).toBe(0);
-            expect(sendNotification).not.toHaveBeenCalled();
-            expect(getDbInsertValues).not.toHaveBeenCalled();
-        });
-
-        it('should handle no trials ending soon', async () => {
-            // Arrange
-            const ctx = createMockContext();
-            mockTrialServiceByDays({});
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.processed).toBe(0);
-            expect(sendNotification).not.toHaveBeenCalled();
-            expect(getDbInsertValues).not.toHaveBeenCalled();
         });
     });
 
@@ -530,7 +311,6 @@ describe('Notification Schedule Cron Job', () => {
         it('should process database-based notification retry queue', async () => {
             // Arrange
             const ctx = createMockContext();
-            mockTrialServiceByDays({});
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
             // Mock database-based retry to return stats
             vi.mocked(processDbNotificationRetries).mockResolvedValue({
@@ -562,9 +342,15 @@ describe('Notification Schedule Cron Job', () => {
         it('should continue job execution even if retry processing fails', async () => {
             // Arrange
             const ctx = createMockContext();
-            mockTrialServiceByDays({ 3: [makeTrial({ id: 'sub-1', daysRemaining: 3 })] });
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(dispatchTrialSeries).mockResolvedValue({
+                sent: 1,
+                deduped: 0,
+                converted: 0,
+                noCustomer: 0,
+                errors: 0,
+                cohortSizes: { '-5': 1 }
+            });
             // Mock database-based retry to fail
             vi.mocked(processDbNotificationRetries).mockRejectedValue(
                 new Error('Database connection failed')
@@ -589,21 +375,19 @@ describe('Notification Schedule Cron Job', () => {
         it('should count notifications without sending in dry-run mode', async () => {
             // Arrange
             const ctx = createMockContext({ dryRun: true });
-            mockTrialServiceByDays({
-                3: [
-                    makeTrial({ id: 'sub-1', daysRemaining: 3 }),
-                    makeTrial({ id: 'sub-2', daysRemaining: 3 })
-                ],
-                1: [makeTrial({ id: 'sub-3', daysRemaining: 1 })]
-            });
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
 
-            // Assert
+            // Assert — dry-run is PASSED DOWN, not re-implemented here. The
+            // series decides what a dry run means for its own nine sends
+            // (count the cohorts, dispatch nothing); the job's obligation is
+            // only to hand the flag over and never to send behind its back.
             expect(result.success).toBe(true);
-            expect(result.processed).toBe(3);
+            expect(dispatchTrialSeries).toHaveBeenCalledWith(
+                expect.objectContaining({ dryRun: true })
+            );
             expect(sendNotification).not.toHaveBeenCalled();
             expect(getDbInsertValues).not.toHaveBeenCalled();
             expect(result.details?.dryRun).toBe(true);
@@ -612,7 +396,6 @@ describe('Notification Schedule Cron Job', () => {
         it('should skip retry processing in dry-run mode', async () => {
             // Arrange
             const ctx = createMockContext({ dryRun: true });
-            mockTrialServiceByDays({});
             const mockRetryService = {
                 processRetries: vi.fn()
             };
@@ -652,16 +435,14 @@ describe('Notification Schedule Cron Job', () => {
     });
 
     describe('Error Handling', () => {
-        it('should handle trial service errors gracefully', async () => {
-            // Arrange
+        it('reports failure when the trial series throws outright', async () => {
+            // A per-candidate failure is counted inside the series and never
+            // reaches here; only a failure of the whole pass does, and when it
+            // does the job must report `success: false` rather than a green run
+            // that quietly sent nothing.
             const ctx = createMockContext();
-            const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockRejectedValue(new Error('Database error'))
-            };
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(TrialService).mockImplementation(function () {
-                return mockTrialService as unknown as InstanceType<typeof TrialService>;
-            });
+            vi.mocked(dispatchTrialSeries).mockRejectedValue(new Error('Database error'));
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -672,31 +453,12 @@ describe('Notification Schedule Cron Job', () => {
             expect(result.message).toContain('Database error');
             expect(result.errors).toBeGreaterThan(0);
         });
-
-        it('should handle notification send failures gracefully (fire-and-forget)', async () => {
-            // Arrange — the send rejects asynchronously; because it is fire-and-forget
-            // the job still counts it as processed and writes the durable dedup row.
-            const ctx = createMockContext();
-            mockTrialServiceByDays({ 3: [makeTrial({ id: 'sub-1', daysRemaining: 3 })] });
-            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
-            vi.mocked(sendNotification).mockRejectedValue(new Error('Email service unavailable'));
-            mockEmptyRetryService();
-
-            // Act
-            const result = await notificationScheduleJob.handler(ctx);
-
-            // Assert
-            expect(result.success).toBe(true); // Job should not fail due to send errors
-            expect(result.processed).toBe(1);
-            expect(ctx.logger.debug).toHaveBeenCalled();
-        });
     });
 
     describe('Result Structure', () => {
         it('should return correctly structured CronJobResult', async () => {
             // Arrange
             const ctx = createMockContext();
-            mockTrialServiceByDays({});
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
             vi.mocked(RetryService).mockImplementation(function () {
                 return {
@@ -723,8 +485,13 @@ describe('Notification Schedule Cron Job', () => {
 
             if (result.details) {
                 expect(result.details).toMatchObject({
-                    trialsEndingPrimary: expect.any(Number),
-                    trialsEnding1Day: expect.any(Number),
+                    trialSeries: expect.objectContaining({
+                        cohortSizes: expect.any(Object),
+                        sent: expect.any(Number),
+                        deduped: expect.any(Number),
+                        converted: expect.any(Number),
+                        noCustomer: expect.any(Number)
+                    }),
                     retries: expect.objectContaining({
                         processed: expect.any(Number),
                         succeeded: expect.any(Number),

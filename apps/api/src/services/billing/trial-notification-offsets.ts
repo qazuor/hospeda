@@ -27,6 +27,9 @@
  * @module services/billing/trial-notification-offsets
  */
 
+import { NotificationType } from '@repo/notifications';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
+
 /**
  * Days BEFORE `trial_end` at which a pre-expiry email is sent, in the order the
  * subscriber experiences them.
@@ -71,3 +74,103 @@ export const EXPIRY_DAY_OFFSET = 0 as const;
  * exactly the change a series-size assertion exists to catch.
  */
 export const TOTAL_TRIAL_SERIES_EMAILS = 9;
+
+/**
+ * Which side of `trial_end` a send sits on.
+ *
+ * `expiry` is its own direction rather than a `post` with offset 0, because the
+ * two are selected by different predicates and say different kinds of thing: a
+ * win-back invites, the expiry mail reports.
+ */
+export type TrialSeriesDirection = 'pre' | 'expiry' | 'post';
+
+/**
+ * One send of the series: a distance, the template that belongs to it, and the
+ * ledger row that proves it went out.
+ */
+export interface TrialSeriesSend {
+    /**
+     * Distance in days from `trial_end`, signed as the subscriber experiences
+     * it: negative before, zero on the day, positive after.
+     */
+    readonly offset: number;
+    /** Which side of `trial_end` this send sits on. */
+    readonly direction: TrialSeriesDirection;
+    /** The notification type, which selects this send's own template. */
+    readonly notificationType: NotificationType;
+    /**
+     * The `billing_subscription_events.event_type` written when this send is
+     * dispatched — the durable, per-send dedup guard.
+     */
+    readonly eventType: string;
+}
+
+/**
+ * The nine sends, in the order a subscriber who never pays lives them.
+ *
+ * This table is the single place where a distance, a template and a dedup row
+ * are tied together, and it exists so they cannot drift apart. The failure it
+ * prevents is not hypothetical: until HOS-1012 the pre-expiry distance came
+ * from an admin-editable setting while the copy was fixed in one template, so
+ * an admin could move the reminder to one day out and the mail would still read
+ * as though there were plenty of time.
+ *
+ * Nothing is sent after `+60`. The array ending is the whole mechanism — there
+ * is no taper and no fallback send.
+ */
+export const TRIAL_SERIES_SENDS: readonly TrialSeriesSend[] = [
+    {
+        offset: -10,
+        direction: 'pre',
+        notificationType: NotificationType.TRIAL_ENDING_10D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_PRE_10D
+    },
+    {
+        offset: -5,
+        direction: 'pre',
+        notificationType: NotificationType.TRIAL_ENDING_5D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_PRE_5D
+    },
+    {
+        offset: -1,
+        direction: 'pre',
+        notificationType: NotificationType.TRIAL_ENDING_1D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_PRE_1D
+    },
+    {
+        offset: EXPIRY_DAY_OFFSET,
+        direction: 'expiry',
+        notificationType: NotificationType.TRIAL_EXPIRED,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_EXPIRY
+    },
+    {
+        offset: 1,
+        direction: 'post',
+        notificationType: NotificationType.TRIAL_WIN_BACK_1D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_POST_1D
+    },
+    {
+        offset: 5,
+        direction: 'post',
+        notificationType: NotificationType.TRIAL_WIN_BACK_5D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_POST_5D
+    },
+    {
+        offset: 10,
+        direction: 'post',
+        notificationType: NotificationType.TRIAL_WIN_BACK_10D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_POST_10D
+    },
+    {
+        offset: 30,
+        direction: 'post',
+        notificationType: NotificationType.TRIAL_WIN_BACK_30D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_POST_30D
+    },
+    {
+        offset: 60,
+        direction: 'post',
+        notificationType: NotificationType.TRIAL_WIN_BACK_60D,
+        eventType: BILLING_EVENT_TYPES.TRIAL_SERIES_NOTIF_POST_60D
+    }
+] as const;

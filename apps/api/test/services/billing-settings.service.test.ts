@@ -88,7 +88,6 @@ describe('BillingSettingsService', () => {
         maxPaymentRetries: 3,
         retryIntervalHours: 24,
         sendTrialExpiryReminder: true,
-        trialExpiryReminderDays: 3,
         sendPaymentFailedNotification: true,
         sendSubscriptionCancelledNotification: true
     };
@@ -485,21 +484,9 @@ describe('BillingSettingsService', () => {
             );
         });
 
-        it('should validate trialExpiryReminderDays minimum boundary', async () => {
-            const patch = { trialExpiryReminderDays: 0 };
-            mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch, false)).rejects.toThrow(
-                'trialExpiryReminderDays must be between 1 and 30'
-            );
-        });
-
-        it('should validate trialExpiryReminderDays maximum boundary', async () => {
-            const patch = { trialExpiryReminderDays: 31 };
-            mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch, false)).rejects.toThrow(
-                'trialExpiryReminderDays must be between 1 and 30'
-            );
-        });
+        // `trialExpiryReminderDays` and its 1..30 validation were removed by
+        // HOS-1012 T-016: the nine trial-email offsets are constants, because
+        // each email's copy names its own distance.
     });
 
     describe('resetSettings', () => {
@@ -581,8 +568,7 @@ describe('BillingSettingsService', () => {
                 gracePeriodDays: 0,
                 taxRate: 0,
                 maxPaymentRetries: 0,
-                retryIntervalHours: 1,
-                trialExpiryReminderDays: 1
+                retryIntervalHours: 1
             };
             mockLimit.mockResolvedValue([]);
 
@@ -602,8 +588,7 @@ describe('BillingSettingsService', () => {
                 gracePeriodDays: 30,
                 taxRate: 100,
                 maxPaymentRetries: 10,
-                retryIntervalHours: 168,
-                trialExpiryReminderDays: 30
+                retryIntervalHours: 168
             };
             mockLimit.mockResolvedValue([]);
 

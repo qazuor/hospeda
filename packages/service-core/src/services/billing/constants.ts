@@ -126,6 +126,51 @@ export const BILLING_EVENT_TYPES = {
      */
     TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1',
     /**
+     * The nine durable dedup guards of the Hospeda-owned trial email series
+     * (HOS-1012 §4) — one per send, replacing the two-variant D3/D1 pair above.
+     *
+     * NINE event types rather than one carrying the offset in `metadata`, for a
+     * mechanical reason: dedup is a check-then-insert on
+     * `(subscription_id, event_type)`, backed at the DB level by a partial
+     * UNIQUE index on exactly that pair. An offset that lived in `metadata`
+     * could not be part of that index, so the atomic backstop would collapse to
+     * "at most one email of the whole series per subscription" — the ledger
+     * would silently swallow eight of the nine sends.
+     *
+     * It also makes the pre-1-day and post-1-day sends impossible to conflate.
+     * Both talk about a distance of one day in opposite directions, and both
+     * previously produced the idempotency suffix `:d1` (HOS-1012 T-019); here
+     * they are two different strings and no refactor can collapse them.
+     *
+     * `TRIAL_PRE_END_NOTIF_D3`/`_D1` are deliberately NOT reused. Audit rows
+     * carrying them already exist on staging and production for the two-reminder
+     * scheme, and reusing either would make an existing row read as "the T−10
+     * mail already went out" for a trial that never received it.
+     */
+    TRIAL_SERIES_NOTIF_PRE_10D: 'TRIAL_SERIES_NOTIF_PRE_10D',
+    /** Dedup guard for the T−5 warning. */
+    TRIAL_SERIES_NOTIF_PRE_5D: 'TRIAL_SERIES_NOTIF_PRE_5D',
+    /** Dedup guard for the T−1 warning. */
+    TRIAL_SERIES_NOTIF_PRE_1D: 'TRIAL_SERIES_NOTIF_PRE_1D',
+    /**
+     * Dedup guard for the expiry-day mail. Distinct from `TRIAL_EXPIRED`, which
+     * records that the trial WAS expired and the listings came down: this one
+     * records that the customer was TOLD. The expiry must be able to succeed
+     * with the mail still pending, and a retry of the mail must not read as a
+     * second expiry.
+     */
+    TRIAL_SERIES_NOTIF_EXPIRY: 'TRIAL_SERIES_NOTIF_EXPIRY',
+    /** Dedup guard for the +1 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_1D: 'TRIAL_SERIES_NOTIF_POST_1D',
+    /** Dedup guard for the +5 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_5D: 'TRIAL_SERIES_NOTIF_POST_5D',
+    /** Dedup guard for the +10 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_10D: 'TRIAL_SERIES_NOTIF_POST_10D',
+    /** Dedup guard for the +30 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_30D: 'TRIAL_SERIES_NOTIF_POST_30D',
+    /** Dedup guard for the +60 day win-back, the last send of the series. */
+    TRIAL_SERIES_NOTIF_POST_60D: 'TRIAL_SERIES_NOTIF_POST_60D',
+    /**
      * Fired when a user explicitly requests cancellation of their subscription
      * via the self-service cancellation flow (SPEC-147). Persisted immediately
      * at cancellation request time so the intent is auditable even if the

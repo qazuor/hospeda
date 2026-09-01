@@ -139,7 +139,7 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('USER_UNCANCELED');
         });
 
-        it('the total number of event types is 44', () => {
+        it('the total number of event types is 56', () => {
             // 25 (this test's original baseline) + 5 (HOS-657 refund/admin-cancel/
             // preapproval-expiry writers: PAYMENT_PARTIAL_REFUND,
             // PAYMENT_FULL_REFUND, PAYMENT_FULL_REFUND_NO_TRANSITION,
@@ -152,8 +152,15 @@ describe('BILLING_EVENT_TYPES', () => {
             // WEBHOOK_SUBSCRIPTION_CANCELLED, WEBHOOK_SUBSCRIPTION_EXPIRED,
             // WEBHOOK_SUBSCRIPTION_PAST_DUE, WEBHOOK_SUBSCRIPTION_STATUS_OTHER,
             // REACTIVATION_SUPERSESSION_COMPLETED) = 44, + 2 (HOS-180:
-            // ADMIN_SUBSCRIPTION_COURTESY_GRANTED, COURTESY_WINDOW_ENDED) = 46.
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(46);
+            // ADMIN_SUBSCRIPTION_COURTESY_GRANTED, COURTESY_WINDOW_ENDED) = 46,
+            // + 1 (HOS-1012 T-010: TRIAL_EXPIRED, the local-expiry dedup guard
+            // — added in that task WITHOUT bumping this count, which left this
+            // assertion red on the branch until T-016 hit it)
+            // + 9 (HOS-1012 T-016: the nine TRIAL_SERIES_NOTIF_* dedup guards,
+            // one per send of the trial email series — nine and not one,
+            // because dedup keys on `(subscription_id, event_type)` and an
+            // offset living in metadata could not be part of that index) = 56.
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(56);
         });
     });
 

@@ -480,14 +480,32 @@ linkage (`userId: null`). HOS-115 first soft-disabled it (`enabled: false`); **H
 then ported its two robustness properties into `notification-schedule.job.ts` and
 **deleted the file** (and freed advisory lock 1005):
 
-1. The skip-tolerant primary ("D-3") window — now a config-aware
-   `[trialReminderDays-1, trialReminderDays]` range (default covers days 3 and 2) so a
-   missed cron day doesn't drop the primary reminder. The day-1 reminder stays exact.
+1. The skip-tolerant primary ("D-3") window — a config-aware
+   `[trialReminderDays-1, trialReminderDays]` range (default covering days 3 and 2) so a
+   missed cron day didn't drop the primary reminder. The day-1 reminder stayed exact.
 2. A durable `billing_subscription_events` dedup ledger (event types
    `TRIAL_PRE_END_NOTIF_D3` / `_D1`), written on the autocommit connection and backed by a
    partial UNIQUE index, which survives process restarts and multi-replica races — vs. the
    Redis-TTL + in-memory Map dedup, which `notification-schedule.job.ts` still uses for
    `RENEWAL_REMINDER` only.
+
+> **Superseded by HOS-1012 (point 1 only).** The two-variant scheme above was replaced
+> by a nine-send series at FIXED offsets (−10, −5, −1, 0, +1, +5, +10, +30, +60), each
+> with its own template, its own `NotificationType` and its own
+> `TRIAL_SERIES_NOTIF_*` ledger row — see
+> [`services/billing/trial-notification-offsets.ts`](../src/services/billing/trial-notification-offsets.ts)
+> and [`cron/jobs/trial-series-dispatch.ts`](../src/cron/jobs/trial-series-dispatch.ts).
+> `billingSettings.trialExpiryReminderDays` and its admin UI are **retired**: every email
+> in the series names its own distance in its copy, so an admin able to move the distance
+> is an admin able to make the copy lie.
+>
+> The skip tolerance did not carry over for the same reason — a catch-up send would state
+> a distance that is not true — so the buckets are exact and a missed cron day drops that
+> day's send. Losing one of nine is not what losing the only one was.
+>
+> Point 2 carried over intact, widened from two event types to nine. The HOS-121 index
+> (`030-hos121-trial-pre-end-notif-dedup`) stays in place for the historical rows; the new
+> one is `038-hos1012-trial-series-notif-dedup`, over a disjoint set of event types.
 
 ### Gate matrix impact
 
