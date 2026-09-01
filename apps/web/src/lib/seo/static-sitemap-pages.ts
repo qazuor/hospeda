@@ -79,6 +79,11 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // grid — but it is still a NEW indexable URL, so it is listed here at the
     // same priority as the `/suscriptores/propietarios/` landing above.
     { path: '/planes/anfitriones/', changefreq: 'monthly', priority: 0.8 },
+    // HOS-985: the traveller audience's level-2 sales page. It is the only one
+    // of the five that had NO landing before — `/suscriptores/turistas/` 301s
+    // straight to the price grid — so this is a genuinely new indexable URL
+    // rather than a relocation, and nothing here replaces an entry above.
+    { path: '/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
 
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },

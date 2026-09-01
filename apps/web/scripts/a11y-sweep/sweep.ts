@@ -92,6 +92,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // SalesSection-based components as Sales Gastronomy above.
     { url: '/es/planes/experiencias/', name: 'Sales Experience' },
     { url: '/es/planes/anfitriones/', name: 'Sales Host' },
+    { url: '/es/planes/turistas/', name: 'Sales Tourist' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];
