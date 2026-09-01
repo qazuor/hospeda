@@ -506,19 +506,31 @@ describe('PricingCardsGrid.astro', () => {
         it('declares one row per in-flow card block — the invariant subgrid depends on', () => {
             // Every direct child of `.pricing-card` consumes one shared row, so
             // the row list and the block list must have the same length. Adding
-            // a seventh block without a seventh row silently shifts every card
-            // that renders it relative to the others.
+            // a block without adding a row silently shifts every card that
+            // renders it relative to the others.
             //
-            // The list went from seven entries to six when the plan name and its
-            // description were wrapped in `.pricing-card__header`: they are one
-            // group, they now share one row, and the row list lost an `auto` to
-            // match. `pricing-card__name` and `pricing-card__desc` are asserted
-            // separately below — they are still rendered, they are just no
-            // longer DIRECT children.
+            // History of the count, because both moves were deliberate and each
+            // looks like a mistake from the other side:
+            //
+            //   7 → 6  the plan name and its description were wrapped in
+            //          `.pricing-card__header`. They are one group, they now
+            //          share one row, and the row list lost an `auto` to match.
+            //          `pricing-card__name` and `pricing-card__desc` are
+            //          asserted separately below — still rendered, just no
+            //          longer DIRECT children.
+            //   6 → 7  HOS-943 split the card into a centred offer half and a
+            //          left-aligned detail half. The `<hr>` between them is a
+            //          real in-flow child, so the row list gained an `auto`.
+            //          Taking the rule out of flow (absolute, or a
+            //          pseudo-element on a neighbour) would have kept the count
+            //          at six and been WRONG: a shared row is precisely what
+            //          makes the rule land on the same line across the three
+            //          cards.
             const blocks = [
                 'pricing-card__header',
                 'pricing-card__audience"',
                 'pricing-card__price"',
+                'pricing-card__divider',
                 'pricing-card__delta-heading',
                 'pricing-card__body',
                 'pricing-card__btn-wrapper'
@@ -879,6 +891,118 @@ describe('PricingCardsGrid.astro', () => {
             expect(branch).toBeDefined();
             expect(branch).toContain('column-gap: var(--space-card-gap);');
             expect(branch).toContain('row-gap: var(--pricing-card-rhythm);');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-943 owner review — the card is one offer sitting on its own detail
+    // -----------------------------------------------------------------------
+
+    describe('the card splits into a centred offer half and a left-aligned detail half', () => {
+        /** The body of one scoped rule, by selector, first occurrence. */
+        const ruleFor = (selector: string): string =>
+            src.match(new RegExp(`\\.${selector} \\{([^}]*)\\}`))?.[1] ?? '';
+
+        it('centres every block above the divider', () => {
+            // The header needs `align-items` and not only `text-align`: the plan
+            // name is `width: fit-content` (its hand-drawn underline has to be
+            // the width of the TEXT), so it is a narrow box inside that column
+            // and `text-align` alone would centre the glyphs inside a box still
+            // pinned to the left.
+            const header = ruleFor('pricing-card__header');
+
+            expect(header).toContain('align-items: center;');
+            expect(header).toContain('text-align: center;');
+            expect(ruleFor('pricing-card__audience')).toContain('text-align: center;');
+            expect(ruleFor('pricing-card__price')).toContain('text-align: center;');
+        });
+
+        it('leaves the item list alone — a centred bulleted list has no rail to read down', () => {
+            // Every line would start at a different x and the tick markers would
+            // stop forming a column. The change of alignment IS the signal that
+            // the card has two halves; extending it downwards erases it.
+            for (const selector of [
+                'pricing-card__delta-heading',
+                'pricing-card__body',
+                'pricing-card__items'
+            ]) {
+                expect(ruleFor(selector), selector).not.toContain('text-align: center');
+            }
+        });
+
+        it('draws the rule as an <hr> carrying no semantics', () => {
+            // `<hr>` maps to the `separator` role by default. Announcing a
+            // separator right before a line that already reads "todo lo del plan
+            // X, más:" is a landmark to step over for nothing.
+            //
+            // `role="presentation"` and not `aria-hidden="true"` on purpose:
+            // the two make different claims and only one of them is true here.
+            // `aria-hidden` says the element must be HIDDEN; `presentation` says
+            // it carries no SEMANTICS, which is the actual situation. Nothing is
+            // lost either way — an `<hr>` cannot contain text.
+            expect(src).toContain('<hr class="pricing-card__divider" role="presentation" />');
+            expect(src).not.toMatch(/<hr[^>]*aria-hidden/);
+        });
+
+        it('strips the UA rule’s own border and margin', () => {
+            // The UA sheet gives `<hr>` a 3D inset border and a vertical margin.
+            // The margin especially: the card's rhythm is ONE declared number,
+            // and a UA margin stacked on top of it is the same invisible-total
+            // bug the rhythm block was written to kill.
+            const divider = ruleFor('pricing-card__divider');
+
+            expect(divider).toContain('margin: 0;');
+            expect(divider).toContain('border: 0;');
+            expect(divider).toContain('border-block-start: 1px solid var(--border);');
+        });
+    });
+
+    describe('the trial line is a pill, and it has no fill (HOS-943 adjustment 2)', () => {
+        const trialRule = (): string => src.match(/\.pricing-card__trial \{([^}]*)\}/)?.[1] ?? '';
+
+        it('renders as an enclosed chip rather than one more line of text', () => {
+            // On a card that is otherwise five stacked lines of sans-serif text,
+            // a sixth stacked line cannot stand out however it is coloured. The
+            // pill separates by SHAPE first, which is also what makes it work
+            // for a reader who cannot tell the two oranges apart.
+            const rule = trialRule();
+
+            expect(rule).toContain('border-radius: var(--radius-pill);');
+            expect(rule).toContain('display: inline-flex;');
+            expect(rule).toContain('font-weight: 700;');
+            // A step up from the small step every other line on the card uses.
+            expect(rule).toContain('font-size: var(--text-body);');
+            expect(rule).not.toContain('font-size: var(--text-body-sm);');
+        });
+
+        it('carries NO background — the ink has no contrast headroom to spend', () => {
+            // `--brand-accent-text` measures 4.53:1 over `--core-card` on the
+            // light theme: three hundredths above the 4.5:1 floor, by design
+            // (SPEC-308). Any background behind it, of any colour, at any alpha,
+            // spends headroom that is not there — a 12% tint of the ink itself
+            // drops it to 3.86:1 and even 4% drops it to 4.29:1. Dark passes
+            // either way, which is exactly why this must be a guard: the
+            // regression would only appear in one theme.
+            const rule = trialRule();
+
+            expect(rule).not.toContain('background');
+            expect(rule).toContain('color: var(--brand-accent-text);');
+            // The border tracks the ink instead of naming a token, so the promo
+            // island's recolouring (`--promo`, `--ineligible`) stays coherent
+            // instead of leaving a green label inside an orange outline.
+            expect(rule).toMatch(/border: 2px solid color-mix\(in srgb, currentColor \d+%/);
+        });
+
+        it('keeps the trial element childless, because the island assigns textContent', () => {
+            // `PlanPurchaseButton` sets `trialEl.textContent` in TWO places (the
+            // trial-ineligible notice and the `trial_extension` promo), and
+            // assigning `textContent` destroys every child node. An icon inside
+            // this element would disappear the moment either fired, and the
+            // cleanup path restores a saved STRING, so it could never come back.
+            const markup = src.match(/<p class="pricing-card__trial">([\s\S]*?)<\/p>/)?.[1];
+
+            expect(markup).toBeDefined();
+            expect(markup).not.toMatch(/<[a-zA-Z]/);
         });
     });
 });

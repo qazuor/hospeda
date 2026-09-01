@@ -2,8 +2,8 @@
     "cta": "Empezar",
     "free": "Gratis",
     "recommended": "Recomendado",
-    "trial_one": "{{count}} día gratis",
-    "trial_other": "{{count}} días gratis",
+    "trial_one": "{{count}} día de prueba gratis",
+    "trial_other": "{{count}} días de prueba gratis",
     "trialNotEligible": "Sin período de prueba",
     "includesEverything": "Todo lo del plan {plan}, más:",
     "includesAll": "Este plan incluye:",
@@ -84,8 +84,8 @@
                 }
             },
             "gastronomy": {
-                "title": "Publicar mi restaurante",
-                "audience": "Para restaurantes, bares y cafés que quieren aparecer en la guía gastronómica.",
+                "title": "Publicar mi local gastronómico",
+                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
                 "cta": "Ver planes de gastronomía",
                 "highlights": {
                     "item1": "Ficha con fotos, menú, horarios y datos de contacto.",

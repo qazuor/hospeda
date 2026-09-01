@@ -316,6 +316,33 @@ const selectGroupName = `pricing-select-${audience}`;
 						)}
 					</div>
 					{/*
+						The rule between the card's two halves (HOS-943, owner review).
+						Everything above it — name, description, "recomendado para",
+						price, annual hint, trial — is the OFFER, and it is centred.
+						Everything below it is the DETAIL, and it stays left-aligned so
+						a bulleted list still reads as a list. The rule is what makes
+						that change of alignment look intentional instead of broken.
+
+						An `<hr>` and not a `<div>`: a horizontal rule is exactly the
+						element for a horizontal rule, it needs no children, and it
+						cannot accidentally acquire content later. `role="presentation"`
+						rather than `aria-hidden="true"` because the two say different
+						things and only one of them is true here: `aria-hidden` claims
+						the element must be HIDDEN from assistive tech, while
+						`role="presentation"` says it carries no SEMANTICS — which is the
+						actual situation. `<hr>` maps to the `separator` role by default,
+						and announcing a separator immediately before a line that already
+						says "todo lo del plan X, más:" adds a landmark a reader has to
+						step over for nothing. Stripping the role leaves an empty,
+						non-focusable, unannounced element; there is no text to lose,
+						because an `<hr>` cannot contain any.
+
+						It IS an in-flow child of the card, so it consumes one of the
+						shared subgrid rows — the row list below is SEVEN entries because
+						of this element. See the row-track comment there.
+					*/}
+					<hr class="pricing-card__divider" role="presentation" />
+					{/*
 						The delta heading. `card.deltaHeading` was resolved in the
 						frontmatter from a plan object that exists, so this can never
 						render "everything in plan undefined, plus:" — on the first tier
@@ -498,13 +525,20 @@ const selectGroupName = `pricing-select-${audience}`;
 	   breaks on the first copy edit, in another locale, or at another font
 	   size.
 
-	   There are SIX in-flow children per card and the row list below must
+	   There are SEVEN in-flow children per card and the row list below must
 	   match them one for one: the header (name + description, ONE block), the
-	   "recomendado para" line, the price block, the delta heading, the body
-	   (list + disclosure) and the CTA. The selection radio is
+	   "recomendado para" line, the price block, THE DIVIDER, the delta heading,
+	   the body (list + disclosure) and the CTA. The selection radio is
 	   `position: absolute` via `.sr-only`, so it is out of flow and consumes no
 	   row — if it ever stopped being absolutely positioned, every card would
 	   shift by one row.
+
+	   The count went from six to seven when the card was split into a centred
+	   offer half and a left-aligned detail half (HOS-943, owner review): the
+	   `<hr>` between them is a real in-flow child and therefore claims a row of
+	   its own. It is declared here deliberately rather than taken out of flow —
+	   a shared row is precisely what makes the rule land on the SAME line across
+	   the three cards, which is the whole point of drawing it.
 
 	   The body row takes `1fr` so it absorbs the slack, which is what pins the
 	   CTA to the bottom.
@@ -526,7 +560,7 @@ const selectGroupName = `pricing-select-${audience}`;
 			.pricing-cards__grid,
 			.pricing-cards__grid[data-count='1'],
 			.pricing-cards__grid[data-count='2'] {
-				grid-template-rows: auto auto auto auto 1fr auto;
+				grid-template-rows: auto auto auto auto auto 1fr auto;
 				column-gap: var(--space-card-gap);
 				row-gap: var(--pricing-card-rhythm);
 			}
@@ -623,12 +657,29 @@ const selectGroupName = `pricing-select-${audience}`;
 		opacity: 0.08;
 	}
 
-	/* Name + description: one group, one shared row, one tight internal gap. */
+	/* ─── The two halves of the card ─────────────────────────────────
+	   HOS-943, owner review: "centrar la parte de arriba … y dejar el detalle a
+	   la izquierda". The card now reads as an offer sitting on top of its own
+	   fine print, and the alignment is what says so — name, description,
+	   "recomendado para", price, annual hint and trial are CENTRED; the delta
+	   heading, the item list and its disclosure keep the left edge they had.
+
+	   Centring stops at the divider on purpose. A bulleted list set centred is
+	   unreadable: every line starts at a different x, so the eye has no rail to
+	   run down and the tick markers stop forming a column. The CTA was already
+	   centred by its own wrapper and is unaffected. */
 	.pricing-card__header {
 		display: flex;
 		flex-direction: column;
 		gap: var(--pricing-card-rhythm-tight);
 		min-width: 0;
+		/* `align-items` and not just `text-align`: the name is `width:
+		   fit-content` (its hand-drawn underline has to be the width of the
+		   TEXT, not of the card), so it is a narrow box inside this column and
+		   `text-align` alone would centre the glyphs inside a box still pinned
+		   left. */
+		align-items: center;
+		text-align: center;
 	}
 
 	/* ─── The plan name ──────────────────────────────────────────────
@@ -720,6 +771,8 @@ const selectGroupName = `pricing-select-${audience}`;
 		border-radius: var(--radius-md);
 		padding: var(--space-3);
 		margin: 0;
+		/* Part of the centred offer half — see `.pricing-card__header`. */
+		text-align: center;
 	}
 
 	.pricing-card__audience-label {
@@ -737,6 +790,10 @@ const selectGroupName = `pricing-select-${audience}`;
 	   derived tight step, not a free value. */
 	.pricing-card__price {
 		margin: 0;
+		/* Last block of the centred offer half — see `.pricing-card__header`.
+		   This also centres the two BLOCK children below it (the annual hint and
+		   the trial pill) without either of them needing an auto margin. */
+		text-align: center;
 	}
 
 	.pricing-card__amount {
@@ -753,11 +810,85 @@ const selectGroupName = `pricing-select-${audience}`;
 		margin-left: var(--space-1);
 	}
 
+	/* ─── The trial line ─────────────────────────────────────────────
+	   Owner review (HOS-943): "hoy la línea de prueba pasa desapercibida … tiene
+	   que resaltar: es de los argumentos más fuertes de la card". It used to be
+	   one more line of small coloured text stacked under two other lines of
+	   small coloured text (the period and the annual hint), which is exactly how
+	   a thing disappears — not by being faint, but by looking like its
+	   neighbours. So it is now a PILL: a tinted, bordered chip. It is the only
+	   enclosed shape in the price block, so it separates by SHAPE and not only
+	   by colour — which also means it still reads as the standout element for a
+	   visitor who cannot distinguish the hue.
+
+	   ## The chip has NO fill, and that is a measured decision
+
+	   The obvious badge is a tinted fill — `color-mix(currentColor 12%,
+	   transparent)` — and it is exactly what this rule must not do. The ink is
+	   `--brand-accent-text`, the AA-normal-size step of the accent (SPEC-308):
+	   `--brand-accent` itself is the fill hue and is not a text token, and this
+	   is normal-size text, so the 3:1 large-text allowance the plan NAME leans
+	   on is not available here.
+
+	   Measured over `--core-card`, that token reads **4.53:1 on the light
+	   theme** — three hundredths above the 4.5:1 floor. It is engineered to
+	   *just* clear it. Any background behind it, of any colour, at any alpha,
+	   spends headroom that is not there: a 12% tint of the ink itself drops it
+	   to 3.86:1, and even a 4% tint drops it to 4.29:1. A tint of the lighter
+	   `--brand-accent` instead of the ink is no better (4.01:1 at 12%). Dark
+	   passes comfortably either way (5.66:1 bare, 4.81:1 tinted) — light is what
+	   binds, and a rule that only fails in one theme is exactly the kind that
+	   ships.
+
+	   So the standout is built from everything EXCEPT a fill: the pill outline
+	   (the only enclosed shape in the price block, so it separates by shape and
+	   not only by hue, which is also what makes it work for a reader who cannot
+	   distinguish the two oranges), a 2px border rather than a hairline, 700
+	   weight, and a step up from `--text-body-sm` to `--text-body`. Every
+	   contrast figure on this element is therefore IDENTICAL to what it was
+	   before the pill existed — the text still sits on the bare card.
+
+	   The border is mixed from `currentColor` and not from the token, which is
+	   load-bearing: the promo island recolours this element at runtime
+	   (`--promo` → `--success`, `--ineligible` → muted, in the global block at
+	   the foot of this file). A token-named border would leave a green or grey
+	   label inside an orange outline. It is decoration, not a UI control — the
+	   sentence inside carries the whole meaning — so 1.4.11's 3:1 does not
+	   apply to it; at 60% of the ink it lands around 2.3:1 on the light card,
+	   which is comfortably visible without competing with the CTA.
+
+	   ## Why `display: inline-flex`
+
+	   The pill has to be as wide as its text, not as wide as the card, and it
+	   has to sit centred. An inline-level box inside a `text-align: center`
+	   block does both with no auto margins. `.pricing-card__price` is
+	   deliberately NOT a flex container (the amount and its period are inline
+	   siblings and the promo island injects more inline nodes there), so an
+	   inline-level child is also the shape that block already expects.
+
+	   `display` here is safe to set: unlike `.pricing-card__saving` and
+	   `.pricing-card__annual-hint`, this element is never shown or hidden by the
+	   monthly/annual toggle — HOS-115 made the trial copy interval-neutral.
+
+	   ## No icon inside this element, ever
+
+	   Tempting, and it would break silently. `PlanPurchaseButton` assigns
+	   `trialEl.textContent` in TWO places — the trial-ineligible notice and the
+	   `trial_extension` promo — and assigning `textContent` destroys every child
+	   node. An icon would vanish the moment either fired, and the cleanup path
+	   (which restores the saved `textContent`, a string) could not bring it
+	   back. */
 	.pricing-card__trial {
+		display: inline-flex;
+		align-items: center;
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
+		font-size: var(--text-body);
 		color: var(--brand-accent-text);
-		font-weight: 600;
+		font-weight: 700;
+		line-height: 1.3;
+		padding: 0.3em 0.9em;
+		border-radius: var(--radius-pill);
+		border: 2px solid color-mix(in srgb, currentColor 60%, transparent);
 		margin: var(--pricing-card-rhythm-tight) 0 0;
 	}
 
@@ -772,6 +903,25 @@ const selectGroupName = `pricing-select-${audience}`;
 		   text; `--brand-primary-link` is the accessible step of the same hue. */
 		color: var(--brand-primary-link);
 		margin: var(--pricing-card-rhythm-tight) 0 0;
+	}
+
+	/* ─── The rule between the two halves ────────────────────────────
+	   A UA stylesheet gives `<hr>` a 3D inset border and a vertical margin of
+	   its own; both have to go. The margin especially — the card's rhythm is one
+	   declared number (`--pricing-card-rhythm`) and a UA margin stacked on top of
+	   it is exactly the "nobody can see the total" bug the rhythm block above
+	   describes.
+
+	   `--border`, the same 1px hairline the card's own outline and the
+	   "recomendado para" box already use. It is one of the tokens that does NOT
+	   carry the `core-` prefix (only `background`, `foreground`, `card` and
+	   `muted-foreground` do), and a prefixed spelling of it would resolve to
+	   nothing at all — see the guard further down in the test file. */
+	.pricing-card__divider {
+		width: 100%;
+		margin: 0;
+		border: 0;
+		border-block-start: 1px solid var(--border);
 	}
 
 	/* Delta heading — either "Todo lo del plan X, más:" or, on the first tier,

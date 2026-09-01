@@ -2,8 +2,8 @@
     "cta": "Get started",
     "free": "Free",
     "recommended": "Recommended",
-    "trial_one": "{{count}} day free",
-    "trial_other": "{{count}} days free",
+    "trial_one": "{{count}} day free trial",
+    "trial_other": "{{count}} days free trial",
     "trialNotEligible": "No trial period",
     "includesEverything": "Everything in {plan}, plus:",
     "includesAll": "This plan includes:",
@@ -84,8 +84,8 @@
                 }
             },
             "gastronomy": {
-                "title": "List my restaurant",
-                "audience": "For restaurants, bars and cafes that want to appear in the food guide.",
+                "title": "List my food business",
+                "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
                 "cta": "See gastronomy plans",
                 "highlights": {
                     "item1": "A listing with photos, menu, opening hours and contact details.",
