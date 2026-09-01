@@ -365,3 +365,83 @@ describe('expireLocalTrial — unpublishing the listings (D-3)', () => {
         expect(unpublishMock.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ id: 'system' }));
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-1012 T-013 — the whole chain, and what a second run must not do.
+//
+// The unit tests above each pin one link. This block runs the links together
+// and then runs them AGAIN, because every idempotency bug in this repo's
+// billing history looked fine on the first pass.
+// ---------------------------------------------------------------------------
+
+describe('expireLocalTrial — the full chain and its re-run', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        selectLimitMock.mockResolvedValue([]);
+        resolveOwnerUserIdMock.mockResolvedValue('owner-1');
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }, { id: 'accom-2' }]);
+        unpublishMock.mockResolvedValue({ data: { id: 'accom-1' } });
+        selectFromMock.mockImplementation(() => ({
+            where: vi.fn((...args: unknown[]) => {
+                const chain = listingSelectWhereMock(...args) as Promise<unknown>;
+                return Object.assign(chain, { limit: selectLimitMock });
+            })
+        }));
+    });
+
+    it('transitions, unpublishes and writes exactly one event in a single run', async () => {
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('expired');
+        expect(updatedRow().status).toBe('expired');
+        expect(unpublishMock).toHaveBeenCalledTimes(2);
+        expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        expect(clearEntitlementCacheMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('a second run writes NO second event and takes nothing else down', async () => {
+        // First run: no dedup event exists yet.
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        const unpublishCallsAfterFirstRun = unpublishMock.mock.calls.length;
+
+        // Second run: the event written by the first run is now there. In
+        // production the row would also no longer be `trialing`, but the dedup
+        // guard has to hold on its own — it is what protects the window between
+        // the claim commit and the per-row processing.
+        selectLimitMock.mockResolvedValue([{ id: 'event-from-first-run' }]);
+
+        const second = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(second.outcome).toBe('already-expired');
+        // Exactly one event across BOTH runs. Asserting the total rather than
+        // "no new event" is deliberate: a dedup that writes a second row is the
+        // failure a per-run assertion misses.
+        expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        expect(unpublishMock).toHaveBeenCalledTimes(unpublishCallsAfterFirstRun);
+        expect(clearEntitlementCacheMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('a run that fails to unpublish leaves the row fully re-claimable', async () => {
+        // Nothing written at all: no status change, no event, no cache drop. The
+        // next tick must find the row exactly as it was, or the listing stays
+        // live behind a dedup event nobody will look past.
+        unpublishMock.mockResolvedValue({ error: { message: 'db down' } });
+
+        const first = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(first.outcome).toBe('unpublish-failed');
+        expect(insertValuesMock).not.toHaveBeenCalled();
+        expect(updateSetMock).not.toHaveBeenCalled();
+        expect(clearEntitlementCacheMock).not.toHaveBeenCalled();
+
+        // The retry succeeds and completes the whole chain.
+        unpublishMock.mockResolvedValue({ data: { id: 'accom-1' } });
+
+        const second = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(second.outcome).toBe('expired');
+        expect(insertValuesMock).toHaveBeenCalledTimes(1);
+    });
+});
