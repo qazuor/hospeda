@@ -165,7 +165,19 @@ describe('SignUp.client.tsx', () => {
         });
 
         it('sends the trimmed email to signUp.email', () => {
-            expect(src).toContain('signUp.email({ email: trimmedEmail, password, ');
+            // Matched by shape rather than by an exact one-line literal: the
+            // call is formatted by Biome, and a reformat must not read as a
+            // behaviour regression. The distance bound keeps this from
+            // matching an unrelated `trimmedEmail` elsewhere in the file.
+            expect(src).toMatch(/signUp\.email\(\{[\s\S]{0,120}?email:\s*trimmedEmail\b/);
+        });
+
+        it('tells the API where the verification link should land (HOS-838)', () => {
+            // The destination cannot travel in the browser — the inbox may be
+            // opened on another device — so it has to reach Better Auth here.
+            expect(src).toMatch(
+                /signUp\.email\(\{[\s\S]{0,200}?callbackURL:\s*verificationCallbackUrl\b/
+            );
         });
     });
 });
