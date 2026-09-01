@@ -254,7 +254,7 @@ describe('plan index — content changed, location did not (AC-5)', () => {
 
 describe('plan index — prices come from the API (AC-8)', () => {
     it('fetches the starting prices instead of importing a constant', () => {
-        expect(indexSrc).toContain('await fetchAudienceStartingPrices()');
+        expect(indexSrc).toContain('await fetchAudienceOffers()');
         expect(indexSrc).not.toContain('@repo/billing');
         expect(indexSrc).not.toContain('pricing-fallbacks');
     });
@@ -286,6 +286,140 @@ describe('plan index — prices come from the API (AC-8)', () => {
         expect(indentOf('<span class="audiences__card-cta">')).toBeLessThan(
             indentOf('<p class="audiences__card-price">')
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// R-2 — the trial length is read from the catalogue, in every language
+// ---------------------------------------------------------------------------
+
+describe('plan index — the trial line is read, never written (R-2)', () => {
+    it('takes the number from the fetched offers, not from a literal', () => {
+        // What each audience RESOLVES to is executable and lives in
+        // `test/lib/billing/audience-plans.test.ts`. What is genuinely a
+        // property of this file is that the page reads `trialDays` off the
+        // fetch result and nothing else.
+        expect(indexSrc).toContain(
+            'const { startingPrices, trialDays } = await fetchAudienceOffers()'
+        );
+        expect(indexSrc).toContain('const days = trialDays[id];');
+    });
+
+    it('passes the resolved count straight through, with no inline fallback', () => {
+        // A fallback string on this lookup would BE copy, and copy naming a
+        // trial length is the thing R-2 forbids. The call therefore takes the
+        // key and the count and nothing else.
+        //
+        // Asserted on the call site rather than by scanning the whole file for
+        // digits: this file is heavily commented, and a source-wide digit scan
+        // cannot tell a hardcoded string from a comment explaining why there
+        // are none. The equivalent claim about the COPY is asserted against the
+        // locale files below, where there is no prose to confuse it.
+        expect(indexSrc).toContain("tPlural('pricing.index.trial', days)");
+        expect(indexSrc).not.toMatch(/tPlural\('pricing\.index\.trial',\s*days\s*,/);
+    });
+
+    it('substitutes no default when the catalogue is silent', () => {
+        // `?? 30`, `|| OWNER_TRIAL_DAYS`, `?? 14` — any of these turns "we do
+        // not know" into a promise. The page has no fallback at all; the
+        // owner-only surfaces that DO fall back to `OWNER_TRIAL_DAYS` are a
+        // different contract and a different file.
+        const helper = indexSrc.match(/function trialLabelFor\([\s\S]*?\n\}/)?.[0] ?? '';
+
+        expect(helper).not.toContain('??');
+        expect(helper).not.toContain('||');
+        expect(helper).not.toMatch(/\d/);
+    });
+
+    it('routes the copy through the plural-aware translator', () => {
+        // "1 día" vs "30 días" is a CLDR category, not a concatenation. `t()`
+        // with a single string would ship one of the two ungrammatical.
+        expect(indexSrc).toContain('const { t, tPlural } = createTranslations(locale);');
+        expect(indexSrc).toContain('tPlural(');
+    });
+
+    it('renders nothing at all when an audience has no trial', () => {
+        // `null` (no trial on offer, or a failed fetch) must not fall through to
+        // a zero, an empty paragraph or a dash. The guard is on the LABEL, so a
+        // resolver returning `null` removes the element entirely.
+        expect(indexSrc).toContain('if (days === null) return null;');
+        expect(indexSrc).toContain('{card.trialLabel && (');
+    });
+
+    it('guards the trial line independently of the price line', () => {
+        // Partner has a price and no trial. Nesting the trial inside the price
+        // conditional would couple them; asserted by nesting DEPTH, since the
+        // two blocks are siblings at the same indent under the card.
+        const lines = indexSrc.split('\n');
+        const indentOf = (marker: string): number => {
+            const line = lines.find((candidate) => candidate.includes(marker));
+            expect(line, `no line contains ${marker}`).toBeDefined();
+            return (line as string).match(/^\t*/)?.[0].length ?? 0;
+        };
+
+        expect(indentOf('{card.trialLabel && (')).toBe(indentOf('{card.priceLabel && ('));
+    });
+});
+
+// ---------------------------------------------------------------------------
+// R-2 — the copy itself, asserted against the locale files
+// ---------------------------------------------------------------------------
+
+describe('the trial copy names no length and promises no card-free signup', () => {
+    const LOCALES = ['es', 'en', 'pt'] as const;
+
+    const trialCopy = (locale: string): Record<string, string> => {
+        const file = resolve(
+            __dirname,
+            `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
+        );
+        const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+            index?: Record<string, unknown>;
+        };
+        const index = parsed.index ?? {};
+
+        return Object.fromEntries(
+            Object.entries(index)
+                .filter(([key]) => key.startsWith('trial'))
+                .map(([key, value]) => [key, String(value)])
+        );
+    };
+
+    it.each(LOCALES)('%s ships both CLDR plural forms', (locale) => {
+        // Without `_one` the singular reads "1 días"; without `_other` the
+        // lookup falls back to the base key, which does not exist, and the raw
+        // dotted key reaches the visitor.
+        expect(Object.keys(trialCopy(locale)).sort()).toEqual(['trial_one', 'trial_other']);
+    });
+
+    it.each(LOCALES)('%s interpolates the count instead of stating a length', (locale) => {
+        // THE R-2 assertion, and the reason it lives on the JSON rather than on
+        // the page: a locale file is pure copy, so "contains a digit" here means
+        // exactly one thing — somebody wrote a trial length into the
+        // translation, which is HOS-525 with the numbers moved one file over.
+        for (const [key, value] of Object.entries(trialCopy(locale))) {
+            expect(value, `${locale}.${key}`).toContain('{{count}}');
+            expect(value, `${locale}.${key}`).not.toMatch(/\d/);
+        }
+    });
+
+    it.each(LOCALES)('%s never promises a signup without a card', (locale) => {
+        // HOS-171: every subscription is a MercadoPago preapproval, so payment
+        // details are collected on day one. Copy to the contrary is a false
+        // promise, not merely unhelpful.
+        for (const [key, value] of Object.entries(trialCopy(locale))) {
+            expect(value.toLowerCase(), `${locale}.${key}`).not.toMatch(
+                /sin tarjeta|no card|without a card|sem cart[aã]o/
+            );
+        }
+    });
+
+    it.each(LOCALES)('%s says something different for one day than for many', (locale) => {
+        // Two identical forms would mean the plural machinery is decorative and
+        // one of the two cases is ungrammatical.
+        const copy = trialCopy(locale);
+
+        expect(copy.trial_one).not.toBe(copy.trial_other);
     });
 });
 

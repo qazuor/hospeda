@@ -42,15 +42,24 @@
  *    text on the card keeps a foreground/muted/link token, so nothing depends on
  *    a hue clearing a contrast threshold to be readable.
  *
- * ## Prices are fetched, never written down
+ * ## Prices AND trial lengths are fetched, never written down
  *
  * Each "from $X" comes from `GET /api/v1/public/plans` at request time (AC-8),
  * so an operator's price edit in admin shows up here without a redeploy — same
  * contract the two pricing pages have had since SPEC-168 D3. When a domain's
- * fetch fails, `fetchAudienceStartingPrices` yields `null` for that audience and
- * the card renders WITHOUT a price line, keeping its copy and its CTA. A card
- * that vanished, or one showing a stale hardcoded figure, would both be worse
- * than a card with no number on it.
+ * fetch fails, `fetchAudienceOffers` yields `null` for that audience and the
+ * card renders WITHOUT a price line, keeping its copy and its CTA. A card that
+ * vanished, or one showing a stale hardcoded figure, would both be worse than a
+ * card with no number on it.
+ *
+ * The trial line obeys the same contract and for a sharper reason (R-2): the
+ * number is resolved PER AUDIENCE from the same payload, never written into the
+ * copy in any language. Host and tourist have carried different trial lengths in
+ * this database, so one generic sentence would necessarily be false for one of
+ * them — which is precisely HOS-525, where marketing promised hosts 30 days and
+ * the product granted 14. An audience with no trial on offer (every partner
+ * tier sits at `trialDays: 0`) gets NO line: never "0 días", never a number
+ * borrowed from a neighbouring card, never a default.
  *
  * @route /{lang}/suscriptores/planes/
  * @rendering SSR (prerender=false) — fetches the public plan catalogue per
@@ -65,7 +74,7 @@ import { buildUrl } from '@/lib/urls';
 import {
 	AUDIENCE_CARD_ORDER,
 	AUDIENCE_CARD_PATHS,
-	fetchAudienceStartingPrices,
+	fetchAudienceOffers,
 	formatStartingPriceArs
 } from '@/lib/billing/audience-plans';
 import {
@@ -79,7 +88,7 @@ import { ArrowRightIcon, BuildingIcon, CheckIcon, CompassIcon, StarIcon } from '
 export const prerender = false;
 
 const locale = Astro.locals.locale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // Cache at the edge, tagged so a plan write purges this page along with the two
 // pricing pages instead of flushing the whole zone (HOS-369 W1-1).
@@ -97,7 +106,7 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_PRICING]
 });
 
-const startingPrices = await fetchAudienceStartingPrices();
+const { startingPrices, trialDays } = await fetchAudienceOffers();
 const intlLocale = getIntlLocale(locale);
 
 /** Resolve one card's price line, or `null` when the catalogue did not load. */
@@ -108,6 +117,27 @@ function priceLabelFor(id: (typeof AUDIENCE_CARD_ORDER)[number]): string | null 
 	return t('pricing.index.from', 'Desde {{price}}', {
 		price: formatStartingPriceArs({ cents: price.monthlyPriceArs, intlLocale })
 	});
+}
+
+/**
+ * Resolve one card's trial line, or `null` when the audience has no trial to
+ * advertise.
+ *
+ * `tPlural` and not `t`: the CLDR `_one`/`_other` pair is what makes "1 día de
+ * prueba" and "30 días de prueba" both grammatical, in all three locales,
+ * without the page knowing which one applies. The count is INTERPOLATED into
+ * the string — no locale file contains a trial length, so an operator changing
+ * `trialDays` in admin changes this line too.
+ *
+ * The `null` branch is the one worth reading twice: it covers a failed fetch
+ * AND an audience that genuinely offers no trial, and both render as nothing at
+ * all. `computeMinimumTrialDays` never returns `0`, so this cannot fall through
+ * to "0 días de prueba".
+ */
+function trialLabelFor(id: (typeof AUDIENCE_CARD_ORDER)[number]): string | null {
+	const days = trialDays[id];
+	if (days === null) return null;
+	return tPlural('pricing.index.trial', days);
 }
 
 const highlightsLabel = t('pricing.index.highlightsLabel', 'Qué obtenés');
@@ -121,6 +151,7 @@ const cards = AUDIENCE_CARD_ORDER.map((id) => ({
 	highlights: resolveAudienceHighlights({ id, t }),
 	icon: AUDIENCE_CARD_ICONS[id],
 	priceLabel: priceLabelFor(id),
+	trialLabel: trialLabelFor(id),
 	/** `/mes` only makes sense next to an amount, not next to the free label. */
 	showPeriod: startingPrices[id]?.kind === 'from'
 }));
@@ -214,6 +245,17 @@ const headingMain = headingWords.join(' ');
 											</span>
 										)}
 									</p>
+								)}
+
+								{/*
+									Its own guard, independent of the price's: partner has a
+									price and no trial, and a failed fetch takes both. Nesting
+									this inside the price block would tie the two together and
+									make a trial line impossible on any card whose price did
+									not resolve.
+								*/}
+								{card.trialLabel && (
+									<p class="audiences__card-trial">{card.trialLabel}</p>
 								)}
 
 								<span class="audiences__card-cta">
@@ -463,11 +505,29 @@ const headingMain = headingWords.join(' ');
 		color: var(--core-muted-foreground);
 	}
 
-	/* `margin-block-start: auto` on BOTH the price and the CTA: the price line
-	   is optional (a domain whose catalogue failed to load renders without it),
-	   so pinning the block to the bottom cannot depend on either one being
-	   present. Whichever comes first absorbs the slack; the second one's `auto`
-	   then resolves to zero. */
+	/* The trial line. Deliberately quiet: it sits directly under the amount as
+	   a qualifier of it, so it takes the muted ink and the small step rather
+	   than competing with the price for the eye.
+
+	   Its own `margin-block-start: auto` for the same reason the price and the
+	   CTA carry one — see the note below. Partner renders a price and no trial,
+	   so neither of the two optional lines can be assumed present just because
+	   the other one is. */
+	.audiences__card-trial {
+		margin: 0;
+		margin-block-start: auto;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		line-height: 1.4;
+		color: var(--core-muted-foreground);
+	}
+
+	/* `margin-block-start: auto` on the price, the trial and the CTA: each of
+	   the first two is optional (a domain whose catalogue failed to load renders
+	   without a price; an audience with no trial on offer renders without a
+	   trial), so pinning the block to the bottom cannot depend on any one of
+	   them being present. Whichever comes first absorbs the slack; the later
+	   ones' `auto` then resolves to zero. */
 	.audiences__card-cta {
 		display: inline-flex;
 		align-items: center;
