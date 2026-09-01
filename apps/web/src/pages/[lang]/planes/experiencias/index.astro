@@ -12,9 +12,10 @@
  *
  * ## What moved, and what stayed behind
  *
- * Supersedes `/publicar-experiencia/`, which 301s here. That page carried the
- * price block inline; the price moves DOWN to `/planes/experiencias/precios/`
- * (H7), mirroring the gastronomy vertical's split at `/planes/gastronomia/`:
+ * Supersedes `/publicar-experiencia/`, which 301s here once H7 lands — not
+ * before, because that page still carries the price block inline and the price
+ * only moves DOWN to `/planes/experiencias/precios/` when H7 builds it. This
+ * mirrors the gastronomy vertical's split at `/planes/gastronomia/`:
  * a visitor who has already decided to publish should not scroll a brochure
  * to reach the grid, and "publicar mi experiencia" and "cuánto cuesta
  * publicar mi experiencia" are two search intents a single URL serves badly.
@@ -134,7 +135,15 @@ const faqJsonLd = {
 
 const title = t('commerce.lead.experience.title');
 const subtitle = t('commerce.lead.experience.subtitle');
-const pricingHref = buildUrl({ locale, path: 'planes/experiencias/precios' });
+/**
+ * Points at the page that HAS the price today — see the same block in
+ * `/planes/gastronomia/index.astro` for the full reasoning. In short:
+ * `/planes/experiencias/precios/` is H7's and does not exist yet, the price
+ * block still lives inside `/publicar-experiencia/` (HOS-690), and pointing
+ * both CTAs at a 404 until H7 lands would break every conversion path on the
+ * page.
+ */
+const pricingHref = buildUrl({ locale, path: 'publicar-experiencia' });
 ---
 
 <MarketingLayout

@@ -12,9 +12,11 @@
  *
  * ## What moved, and what stayed behind
  *
- * Supersedes `/publicar-restaurante/`, which 301s here. That page carried the
- * price block inline; the price moved DOWN to `/planes/gastronomia/precios/`
- * (H7). The split is not tidiness: a visitor who has already decided to publish
+ * Supersedes `/publicar-restaurante/`, which 301s here once H7 lands — not
+ * before, because that page still carries the price block inline and the price
+ * only moves DOWN to `/planes/gastronomia/precios/` when H7 builds it.
+ * Retiring the old URL first would leave the vertical with no price at all.
+ * The split is not tidiness: a visitor who has already decided to publish
  * should not scroll a brochure to reach the grid, and "publicar mi restaurante"
  * and "cuánto cuesta publicar mi restaurante" are two search intents that a
  * single URL can only serve one of well.
@@ -140,7 +142,21 @@ const faqJsonLd = {
 
 const title = t('commerce.lead.title');
 const subtitle = t('commerce.lead.subtitle');
-const pricingHref = buildUrl({ locale, path: 'planes/gastronomia/precios' });
+/**
+ * The CTA points at the page that HAS the price today, not at the one that
+ * will have it.
+ *
+ * `/planes/gastronomia/precios/` is H7's, and it does not exist yet — sending
+ * both CTAs there would make every conversion path on this page a 404 for as
+ * long as H7 takes. The price block still lives inside `/publicar-restaurante/`
+ * (HOS-690), which is exactly why that URL cannot 301 here yet either: the
+ * retirement and the `/precios/` page are one move, and they belong to H7.
+ *
+ * The host page does the same thing for the same reason, pointing at the live
+ * `/suscriptores/planes/anfitriones/` grid. Both lines change to
+ * `planes/<audiencia>/precios` the day H7 builds it.
+ */
+const pricingHref = buildUrl({ locale, path: 'publicar-restaurante' });
 ---
 
 <MarketingLayout
