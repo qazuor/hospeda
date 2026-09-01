@@ -1,0 +1,1018 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-1012",
+    "title": "Hospeda-owned free trial — no card, own clock, starts at publish",
+    "created": "2026-09-01T07:40:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add the 'first_publish' eligibility reason and the trial offset constants",
+            "description": "Reintroduce the `first_publish` value in the publish-eligibility reason union (`apps/api/src/services/accommodation-publish-deps.ts`, `packages/service-core/src/services/accommodation/accommodation.types.ts`) and define the notification offset constants (pre-expiry 10/5/1, post-expiry 1/5/10/30/60) in one shared location. Recover the exact shape from commit fed220c25 rather than re-deriving it. TESTS: unit test asserting the reason union accepts 'first_publish' and that the offset constants are the exact nine values the spec §4 lists — a frozen-array assertion, so a silent edit to an offset fails.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-007", "T-030"],
+            "subtasks": [
+                {
+                    "title": "git show fed220c25 -- accommodation.types.ts to recover the union",
+                    "completed": false
+                },
+                {
+                    "title": "Define PRE_EXPIRY_OFFSETS and WIN_BACK_OFFSETS as `as const`",
+                    "completed": false
+                },
+                {
+                    "title": "Frozen-array test over the nine offsets",
+                    "completed": false
+                }
+            ],
+            "tags": ["types", "billing", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add the nine notification types and clear the frozen guards they trip",
+            "description": "Add TRIAL_EXPIRED (deleted by HOS-171) plus the win-back types to `notification.types.ts`. Per spec G-3, a new enum value has already broken five frozen guards across three packages in this repo. MANDATORY after editing: run the four CI guards that `pnpm check:guards` does NOT run — `CI=true npx tsx scripts/extract-zod-keys.ts --verify` (without --verify it always exits 0), `CI=true corepack pnpm --filter @repo/i18n check-locales`, `CI=true corepack pnpm check:soft-delete-actor`, `CI=true corepack pnpm check:locale-resolution-single-source`. TESTS: update whatever frozen count/inventory assertions fail, and verify each updated count actually reflects the new total rather than being loosened to a range.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Add TRIAL_EXPIRED back to NotificationType",
+                    "completed": false
+                },
+                {
+                    "title": "Add the five win-back types",
+                    "completed": false
+                },
+                {
+                    "title": "Run the four out-of-check:guards CI guards",
+                    "completed": false
+                },
+                {
+                    "title": "Fix every frozen inventory the additions trip",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "enums", "guards"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create the local trial subscription creator (no MercadoPago object)",
+            "description": "New service that inserts a `billing_subscriptions` row with status='trialing', mp_subscription_id=NULL, trial_start, trial_end, plan_id and product_domain. Model it on `apps/api/src/services/subscription-comp-create.service.ts` (SPEC-262), which already creates a provider-less subscription by direct DB insert — NOT on the checkout path. Must accept an optional transaction context so T-008 can call it inside `withServiceTransaction`. TESTS: unit tests covering the inserted row shape (mp_subscription_id is NULL, product_domain set, trial_end = trial_start + N days), and that passing a tx context routes the write through it rather than a fresh connection.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-008", "T-010", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Read subscription-comp-create.service.ts as the template",
+                    "completed": false
+                },
+                {
+                    "title": "Implement createTrialSubscription with optional tx context",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm isEntitlementGrantingStatus already covers 'trialing' — no entitlement change",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "db", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Unit-test the trial creator, mutation-verified",
+            "description": "Tests for T-003. Must fail if mp_subscription_id stops being NULL, if product_domain is dropped, or if trial_end is computed from the wrong anchor. TESTS: mutate each of those three in turn and confirm a test dies for each — a passing suite that survives all three mutations is not covering the row shape.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Mutation: mp_subscription_id set to a value",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation: product_domain omitted",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation: trial_end anchored to now instead of trial_start",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Scope trial eligibility to the product domain (D-2, absorbs HOS-931)",
+            "description": "`hasAnyPriorSubscription` (`trial-eligibility.service.ts:236`) currently treats ANY prior authorized subscription as consuming the trial across every vertical — that is HOS-931. Make a prior subscription consume the trial only for its own product_domain, using `subscriptionMatchesDomain()` (`packages/service-core/src/services/billing/subscription/subscription-product-domain.ts`). Per CLAUDE.md that helper is the ONLY place allowed to compare a subscription's domain, and it reads asymmetrically on purpose: accommodation fails open, every other domain fails closed. Do not re-derive the comparison at this call site. PRESERVE: the existing exclusion of pending_provider/abandoned rows (HOS-230) and the anyCancelledSubscriptionWasAuthorized history lookup. TESTS: an accommodation subscriber entering gastronomy is eligible; a second accommodation trial is not; a legacy row with a NULL domain still consumes the accommodation trial (fails open); a retired 'commerce' row consumes neither gastronomy nor experience (HOS-695, dark by design).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Route the comparison through subscriptionMatchesDomain()",
+                    "completed": false
+                },
+                {
+                    "title": "Keep the pending_provider/abandoned exclusion intact",
+                    "completed": false
+                },
+                {
+                    "title": "Keep anyCancelledSubscriptionWasAuthorized intact",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "eligibility", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Test per-domain eligibility including the fail-open and fail-closed asymmetry",
+            "description": "Tests for T-005. The asymmetry is the part that breaks silently: accommodation fails OPEN on a null/absent domain (the column post-dates most rows) while every other domain fails CLOSED. A test suite that only exercises the happy path passes with the asymmetry inverted. TESTS: table-driven over (row domain, requested domain) including null, 'commerce' (retired), and each of the four live values; mutate subscriptionMatchesDomain's null branch and confirm a test dies.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Table-driven cases over all domain pairs incl. null and 'commerce'",
+                    "completed": false
+                },
+                {
+                    "title": "Mutate the null branch and confirm a test dies",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Restore 'first_publish' in the publish eligibility resolver",
+            "description": "Recover the `first_publish` branch in `apps/api/src/services/accommodation-publish-deps.ts` from commit fed220c25 (which deleted 171 lines from this file). The resolver must answer 'first_publish' when the owner has no subscription AND is still eligible for a trial in the accommodation domain (T-005), and keep answering 'subscription_required' otherwise. DO NOT recover startTrial/cancelTrial from the old deps — see T-008. TESTS: eligibility matrix over (has subscription, trial consumed in domain) and the date-aware lapsed-host cases already covered by the existing publish-deps suite.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-005"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "git show fed220c25 -- accommodation-publish-deps.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Restore only the eligibility branch, not the trial deps",
+                    "completed": false
+                },
+                {
+                    "title": "Recover the relevant deleted tests from the same commit",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "publish", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Start the trial INSIDE the publish transaction — no saga, no compensation",
+            "description": "In `AccommodationService.publish` (`accommodation.service.ts:1795`, comment at :1866), when eligibility is 'first_publish', insert the trial row inside the SAME `withServiceTransaction` block that flips lifecycleState to ACTIVE. CRITICAL — do NOT recover the old implementation verbatim: the pre-HOS-171 code called startTrial BEFORE the transaction (an external MercadoPago call with an 8s timeout), then compensated with cancelTrial when the local write failed, then logged 'CRITICAL: manual reconciliation required' when the compensation ALSO failed. That saga existed only because the trial lived in MercadoPago. The new trial is a local row with mp_subscription_id=NULL, so it belongs inside the transaction and the entire saga, timeout and compensation path must NOT come back. Also delete the now-obsolete comment at :1866. TESTS: see T-009.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-007"],
+            "blocks": ["T-009", "T-029"],
+            "subtasks": [
+                {
+                    "title": "Call the trial creator with txCtx inside withServiceTransaction",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no external call is introduced inside the transaction",
+                    "completed": false
+                },
+                {
+                    "title": "Remove the stale 'used to grant a no-card trial' comment",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "publish", "transaction", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "G-2: prove publish and trial-start commit together, mutated both ways",
+            "description": "Spec guard G-2. TESTS, both directions: (a) force the trial insert to fail and assert the accommodation is NOT left ACTIVE and no trial row exists; (b) force the lifecycle update to fail and assert no orphan trial row is left behind. Then mutate in both directions — move the trial insert outside the transaction, and swap the write order — and confirm a test dies for each. A publish that succeeds while the trial insert fails leaves a permanently free live listing; a trial that starts while publish fails burns days for nothing.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Failing trial insert leaves the accommodation non-ACTIVE",
+                    "completed": false
+                },
+                {
+                    "title": "Failing lifecycle update leaves no orphan trial row",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation: hoist the insert out of the transaction",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "publish", "testing", "guard"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Replace reconcileExpiredTrials' body with local expiry",
+            "description": "`reconcileExpiredTrials` (`trial.service.ts:602`) mirrors a provider verdict; there is no provider to mirror any more. TRAP T-1: `blockExpiredTrials` does NOT exist — only its constants kept the name. REUSE, do not rename: BLOCK_EXPIRED_TRIALS_LOCK_KEY (advisory lock 1004), the 200-row batch size, and the per-subscription billing_subscription_events dedup. REPLACE the body: claim trialing rows whose trial_end has passed, transition each to a terminal expired state, and write one event row as the idempotency guard. Unpublishing is T-011. TESTS: an already-expired-and-evented row is not processed twice; the advisory lock serializes two concurrent runs; a row whose trial_end is still in the future is untouched.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-011", "T-013", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Keep lock 1004 and the 200-row batch",
+                    "completed": false
+                },
+                {
+                    "title": "Replace the provider-mirroring body",
+                    "completed": false
+                },
+                {
+                    "title": "Write the idempotency event per subscription",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "cron", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Unpublish the owner's accommodations on expiry, reusing the /unpublish path",
+            "description": "D-3: at expiry the listing leaves the site and the data stays intact. Reuse the lifecycleState transition that `/unpublish` already performs — do NOT write a second path to the same state, or the two drift. The panel stays fully usable: trialMiddleware already paywalls mutating requests on trialStatus.isExpired while leaving GET/HEAD readable (SPEC-217 AC-1.1), so no middleware change is needed. TESTS: expiry unpublishes every accommodation of the owner; data columns (photos, texts, prices) are untouched; a second run is a no-op.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Locate and reuse the /unpublish lifecycle transition",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no data column is cleared",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "accommodation", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "T-3: schedule ISR revalidation for every listing unpublished by expiry",
+            "description": "Spec trap T-3: unpublishing without scheduling revalidation leaves Cloudflare serving the page. The listing is gone from the DB and still live on the site — the exact failure D-3 is supposed to produce the opposite of. Call `getRevalidationService().scheduleRevalidationBatch` for every affected listing on every actual write. TESTS: the batch is scheduled with exactly the unpublished listings; nothing is scheduled when zero rows expired (no empty-batch call); mutate by removing the call and confirm a test dies.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Schedule the batch on real writes only",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation: remove the call, confirm a test dies",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "cache", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Test the expiry job end to end",
+            "description": "Integration test over T-010 + T-011 + T-012: an expired trial transitions, unpublishes, revalidates and writes exactly one event; a re-run changes nothing. TESTS: assert the event count is exactly 1 after two runs — a dedup that writes a second event is the failure mode a 'no duplicate side effect' assertion misses.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Full-chain test on one expired row",
+                    "completed": false
+                },
+                {
+                    "title": "Second run writes no second event",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "cron", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Write the three pre-expiry email templates with genuinely different copy",
+            "description": "Spec §4: T-10 friendly and not selling ('is it working for you?'), T-5 friendly but warning ('little time left, the listing is at risk'), T-1 direct ('if you do not pay, tomorrow it comes down'). Three DISTINCT templates — shipping one template three times satisfies every structural check and fails the requirement silently, which is the whole point of the change. Three locales (es/en/pt). Copy in the templates is user-facing product copy, authored in each locale, not machine-translated placeholders. TESTS: assert the three subjects and bodies differ from each other pairwise, not merely that three keys exist.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-016", "T-025"],
+            "subtasks": [
+                {
+                    "title": "T-10 template, three locales",
+                    "completed": false
+                },
+                {
+                    "title": "T-5 template, three locales",
+                    "completed": false
+                },
+                {
+                    "title": "T-1 template, three locales",
+                    "completed": false
+                },
+                {
+                    "title": "Pairwise-difference assertion across the three",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "i18n", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write the five win-back email templates",
+            "description": "Spec §4: +1, +5, +10, +30 and +60 days after expiry, three locales each. Nothing is sent after day 60. OQ-1 is OPEN and must not be assumed: do NOT put a discount or coupon hook in these templates — the standing rule is that coupons are never published, and a coupon by directed email is a separate decision the owner has not made. Write them without a commercial hook and leave the seam for one. TESTS: pairwise-difference assertion across the five; an assertion that no template references a promo code.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-017", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Five templates, three locales each",
+                    "completed": false
+                },
+                {
+                    "title": "No promo/coupon hook (OQ-1 undecided)",
+                    "completed": false
+                },
+                {
+                    "title": "Pairwise-difference assertion",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "i18n", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Move the pre-expiry cron offsets from 3,1 to 10,5,1",
+            "description": "`notification-schedule.job.ts:8-9` currently sends TRIAL_ENDING_REMINDER at 3 and 1 days. Change to 10, 5 and 1, each dispatching its own template from T-014 rather than reusing one. `TrialService.findTrialsEndingSoon({daysAhead})` (`trial.service.ts:1502`) is exactly the query needed and does not change. TESTS: each offset selects the right cohort and dispatches the right template; a trial 7 days out matches no offset; the skip-tolerant window still catches a missed day.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Replace the offsets constant",
+                    "completed": false
+                },
+                {
+                    "title": "Map each offset to its own template",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "cron", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add the post-expiry win-back query and dispatch",
+            "description": "New query over expired trials by days elapsed since trial_end, dispatching at +1, +5, +10, +30, +60 and nothing after 60. Mirrors the pre-expiry mechanism rather than inventing a second one. TESTS: a trial expired 61 days ago receives nothing; each offset selects exactly its cohort; a trial expired 7 days ago matches no offset.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-015", "T-010"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Query expired trials by elapsed days",
+                    "completed": false
+                },
+                {
+                    "title": "Hard stop after day 60",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "cron", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Re-check live subscription state immediately before every dispatch",
+            "description": "Spec §4 invariant: the series stops entirely the moment the person pays. Every send must re-read live subscription state right before dispatching, never a snapshot taken when the send was scheduled — a snapshot mails someone who paid an hour ago. TESTS: a subscription that becomes active between selection and dispatch receives nothing; mutate by moving the check before the selection loop and confirm a test dies.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Re-read state inside the dispatch loop",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation: hoist the check out of the loop",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Make the idempotency key carry the offset",
+            "description": "`generateIdempotencyKey(type, customerId, daysAhead)` in `notification-schedule.job.ts` already has the right shape, but the offset MUST be part of the key or a re-run double-sends. With nine offsets across two directions the collision surface is larger than the current two. TESTS: two different offsets for the same (customer, type) produce different keys; the same triple produces the same key; a re-run of one day sends nothing twice.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Confirm the offset is in the key for both directions",
+                    "completed": false
+                },
+                {
+                    "title": "Re-run test sends nothing twice",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Test the full nine-email schedule",
+            "description": "Integration test over the whole series: a trial created today produces exactly nine sends across its lifetime at the right offsets, and paying at any point truncates the remainder. TESTS: parametrized over the payment moment (before T-10, between offsets, after expiry, after +30) asserting the exact set of emails sent in each case. This is the test that catches a series that keeps mailing a paying customer.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-017", "T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Nine sends over an untouched trial lifetime",
+                    "completed": false
+                },
+                {
+                    "title": "Parametrized truncation by payment moment",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Stop sending any trial to MercadoPago",
+            "description": "Spec §6.7: no checkout passes freeTrialDays, no auto_recurring.free_trial and no start_date is sent (HOS-171 measured those two are the same mechanism, so both are banned), and no code reads free_trial, first_invoice_offset or next_payment_date to decide anything about a trial. Remove `resolveCheckoutFreeTrialDays` from the checkout paths. HOS-937's per-user preapproval path is otherwise UNCHANGED — it is the paid path and stays. TESTS: assert the preapproval payload built by each of the checkout paths contains none of the three banned fields.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-022", "T-024", "T-026", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Drop freeTrialDays from every checkout path",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the built payload over all four verticals",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "mercadopago", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Supersede the trial row on activation — same transaction, never mutate",
+            "description": "Spec §6.6: the checkout creates its own pending_provider row as today; on the activation webhook the old trialing row for the same (customer, product_domain) moves to a terminal state IN THE SAME TRANSACTION as the activation. Do NOT mutate the trial row into a paid one — that would require it to acquire an mp_subscription_id mid-life, which is exactly the correlation problem HOS-937 spent ~4.750 lines solving. Rows keep their provenance. The overlap must not outlive the transaction: `loadEntitlements` picks the FIRST entitlement-granting accommodation subscription it finds (`entitlement.ts:446`), so two live rows resolve a nondeterministic plan. TESTS: see T-023.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-021"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Terminal-state the trial row inside the activation transaction",
+                    "completed": false
+                },
+                {
+                    "title": "Never write mp_subscription_id onto the trial row",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "webhook", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Prove two entitlement-granting rows never coexist past the transaction",
+            "description": "Tests for T-022. `TrialService.reconcileDuplicateSubscriptions` (`trial.service.ts:1663`) exists as a backstop but is NOT the design — a test that relies on the backstop to reach a single row is asserting the wrong thing. TESTS: immediately after the activation transaction commits, exactly one entitlement-granting row exists for (customer, accommodation); a failed activation leaves the trial row still granting; mutate by moving the supersede outside the transaction and confirm a test dies.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-026", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Exactly one granting row post-commit",
+                    "completed": false
+                },
+                {
+                    "title": "Failed activation leaves the trial intact",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation: supersede outside the transaction",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "G-1: static guard that no checkout can send a trial to MercadoPago",
+            "description": "Spec guard G-1. Fail CI if any production source passes freeTrialDays, free_trial or start_date into a preapproval create. ANCHOR IT ON THE PAYLOAD SHAPE, NOT ON A FUNCTION NAME — a guard anchored on a name dies silently at the first rename, and the PR that renames does not see it fail. Anchor the regexes (a repo precedent: an unanchored guard let `data-astro-reloadX` through). Verify the guard by running it against a branch that reintroduces the field and confirming it fails, not merely that it passes today. TESTS: the guard itself must be exercised with a positive control.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Anchor on payload shape, not function names",
+                    "completed": false
+                },
+                {
+                    "title": "Positive control: guard fails on a reintroduced field",
+                    "completed": false
+                },
+                {
+                    "title": "Wire it into CI, not only check:guards",
+                    "completed": false
+                }
+            ],
+            "tags": ["guards", "ci", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "G-4: prove the nine templates are translated, not merely present",
+            "description": "Spec guard G-4: the i18n parity guard checks that es/en/pt hold the same KEYS — all three missing the same key passes, and all three holding the Spanish string passes too. Nine templates times three locales is exactly the shape that slips through. Verify actual translation: assert the en and pt bodies differ from the es body for every one of the nine. TESTS: a positive control that copying the es string into en makes the check fail.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Per-template cross-locale difference assertion",
+                    "completed": false
+                },
+                {
+                    "title": "Positive control: duplicated locale string fails",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "guards", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Retire trial-window-derivation.ts and its CI guard script",
+            "description": "HOS-936's derivation exists to survive MercadoPago lying about a trial we no longer ask for. TRAP T-4: PR #3071 must still MERGE — while the old path runs in production it is the only defense against a repeat of the ARS 18.000 charge. It is deleted when the Hospeda-owned trial is LIVE, not before, which is why this task is blocked by T-023. Delete `trial-window-derivation.ts`, `scripts/check-trial-not-derived-from-free-trial.sh`, and the guard's CI wiring together — a guard left behind pointing at a deleted file is a red CI nobody can fix. TESTS: remove the suites that covered the deleted unit; confirm no remaining import resolves to it.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete the module, its tests and the guard script together",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no dangling import or CI reference",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "billing"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Retire trial-promise-verification.ts and the pre-checkout warning dialog",
+            "description": "HOS-522's detector verifies a promise we no longer delegate, and the pre-checkout dialog warned about a condition that no longer exists. Both go. Also retire `BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER`, now unreachable — check whether removing the enum value trips a frozen inventory the same way ADDING one does (G-3 cuts both ways). TESTS: delete the covering suites; run the four out-of-check:guards CI guards again after touching the event enum.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete trial-promise-verification.ts and its tests",
+                    "completed": false
+                },
+                {
+                    "title": "Remove the pre-checkout warning dialog from the web flow",
+                    "completed": false
+                },
+                {
+                    "title": "Remove TRIAL_NOT_GRANTED_BY_PROVIDER and re-run the guards",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "billing", "web"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Delete requireActiveSubscription(), which is mounted nowhere",
+            "description": "`requireActiveSubscription()` (`middlewares/trial.ts:276`) is exported and mounted in NO route — `utils/entitlement-cause.ts` already documents it as 'NOT mounted anywhere today'. Found while surveying; unrelated to the trial redesign but retired alongside it. Before deleting, confirm the absence with a positive control: grep for a middleware that IS mounted and verify the same search finds it. TESTS: none needed beyond a clean typecheck; note that an unmounted middleware is not an unprotected feature, so this removes dead code and no protection.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Positive-control the 'mounted nowhere' claim",
+                    "completed": false
+                },
+                {
+                    "title": "Delete the export and its tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "api"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "T-6: lift the 'sin tarjeta' copy ban in both places",
+            "description": "Spec trap T-6: CLAUDE.md and HOS-941 (R-1) forbid the copy saying 'sin tarjeta' under card-first. This decision lifts that prohibition, and it must be lifted EXPLICITLY in both places — if only one is updated the copy keeps lying, now in the other direction. Update the CLAUDE.md rule and comment on HOS-941 recording that R-1 is superseded by HOS-1012. Then audit the live copy for statements that still assume card-first.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update the rule in CLAUDE.md",
+                    "completed": false
+                },
+                {
+                    "title": "Record the supersession on HOS-941",
+                    "completed": false
+                },
+                {
+                    "title": "Audit live copy for card-first assumptions",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "content"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "T-2: ship a seed data-migration if the trial length or hasTrial changes",
+            "description": "Spec trap T-2: since HOS-39 `hasTrial`/`trialDays` in `plans.config.ts` are commercial layer and the DB wins. Editing the config passes every local test and changes NOTHING in staging or production. If this work changes either value, the SAME PR must both edit the baseline AND add a numbered data-migration via `pnpm db:seed:make` (the seed dual-write rule, enforced by a fail-closed CI guard). Note the guard reads the COMMITTED diff, so an uncommitted working tree returns a vacuous OK. TESTS: run the dual-write guard against the committed change, not the working tree.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Decide whether trialDays/hasTrial actually change",
+                    "completed": false
+                },
+                {
+                    "title": "If so: baseline edit AND numbered data-migration",
+                    "completed": false
+                },
+                {
+                    "title": "Run the dual-write guard on the committed diff",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "seed", "docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:40:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 30,
+        "pending": 30,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}
