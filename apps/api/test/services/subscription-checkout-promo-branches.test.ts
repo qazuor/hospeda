@@ -693,6 +693,17 @@ describe('monthly discount branch (deferred — HOS-191 Path C)', () => {
         }
 
         expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
+        // HOS-996: the message is asserted as a LITERAL, and deliberately so.
+        // It is shared with the apply-to-existing-subscription seam through one
+        // constant (`DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE`) precisely so the two
+        // paths cannot drift apart — but a shared constant only holds the side
+        // that some test pins. The seam's own test pins its side; without this
+        // line, editing THIS call site to stop using the constant, or to word the
+        // rejection differently, stays green across the whole checkout suite and
+        // the drift the constant exists to prevent happens anyway.
+        expect((thrown as SubscriptionCheckoutError).message).toBe(
+            'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+        );
         // Rejected before the MP plan is even resolved.
         expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
         expect(createPendingProviderSubscriptionMock).not.toHaveBeenCalled();

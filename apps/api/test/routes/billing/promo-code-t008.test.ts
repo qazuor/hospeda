@@ -933,4 +933,45 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         expect(mockApplySeam).toHaveBeenCalledOnce();
         expect(mockApply).not.toHaveBeenCalled();
     });
+
+    // Companion to the test above, and the reason the 422 entry means anything.
+    // Every other seam error the route sees is already in the statusMap, so
+    // nothing forced the `?? 500` default to stay 500 — changing the default to
+    // 422 left all 19 tests green and quietly made the INVALID_PROMO_CODE entry
+    // decorative. This sends a code that is NOT in the map to pin the default.
+    //
+    // MP_DISCOUNT_APPLY_FAILED is a real seam error (the preapproval mutation was
+    // rejected by MercadoPago), not an invented one. It lands on 500 today. That
+    // is the current contract this test records, not an endorsement: the checkout
+    // maps its equivalent DISCOUNT_APPLY_FAILED to 502, because a provider
+    // rejection is not our own fault. Aligning the two is a deliberate change of
+    // behaviour, out of scope for HOS-996 — if it is made, this expectation is
+    // exactly where it must be updated.
+    it('HOS-996: a seam error outside the statusMap falls to the 500 default, not 422', async () => {
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: { id: 'pc-mp', effect: { kind: 'discount' } }
+        });
+        mockQZPayBillingCell.value = {};
+        mockApplySeam.mockResolvedValue({
+            success: false,
+            error: {
+                code: 'MP_DISCOUNT_APPLY_FAILED',
+                message: 'MercadoPago rejected the amount change'
+            }
+        });
+
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'SAVE30',
+                customerId: OWN_CUSTOMER_ID,
+                subscriptionId: randomUUID(),
+                amount: 10000
+            })
+        });
+
+        expect(res.status).toBe(500);
+    });
 });
