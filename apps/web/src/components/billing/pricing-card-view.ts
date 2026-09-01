@@ -96,6 +96,23 @@ export interface PricingCardView {
     readonly monthlyFormatted: string;
     readonly hasAnnualPrice: boolean;
     readonly annualFormatted: string;
+    /**
+     * What the price block shows once ANNUAL is selected.
+     *
+     * Three cases, and the third one is why this is a discriminator rather than
+     * the bare `hasAnnualPrice` boolean the template used to branch on:
+     *
+     * - `'price'` — the tier has a real annual price; show it with `/año`.
+     * - `'free'` — the tier costs nothing, so it costs nothing per year either.
+     *   A price of zero has no cadence, which is exactly why the MONTHLY branch
+     *   has always rendered `freeLabel` here instead of "$0"; the annual branch
+     *   only ever asked whether an annual price existed and printed "solo plan
+     *   mensual" over the free tier — copy that means nothing about a $0 plan
+     *   and, worse, invents a limitation it does not have.
+     * - `'monthlyOnly'` — a PAID tier that is not sold by the year. This is the
+     *   only case the notice was ever describing.
+     */
+    readonly annualDisplay: 'price' | 'free' | 'monthlyOnly';
     /** The "ahorrá N%" line, shown only once annual is selected. Empty when none. */
     readonly savingLabel: string;
     /** The "pagando por año ahorrás N%" hint, shown while MONTHLY is selected. */
@@ -248,20 +265,41 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
         const hasAnnualPrice = plan.annualPriceArs !== null && plan.annualPriceArs > 0;
         const savingPercent = computeAnnualSavingPercent({ plan });
 
+        /**
+         * A tier that costs nothing. Read off the MONTHLY price on purpose: a
+         * free tier carries no annual price either (there is nothing to charge
+         * for a year), so `annualPriceArs` cannot tell "free" apart from
+         * "monthly-only" — which is precisely how the annual branch came to
+         * label the free tier "solo plan mensual".
+         */
+        const isFree = plan.monthlyPriceArs === 0;
+        const annualDisplay: PricingCardView['annualDisplay'] = hasAnnualPrice
+            ? 'price'
+            : isFree
+              ? 'free'
+              : 'monthlyOnly';
+
         cards.push({
             plan,
             savingPercent,
             name: getPlanName({ plan, t }),
             description: getPlanDescription({ plan, t }),
             recommendedFor: getPlanRecommendedFor({ plan, audience, t }),
-            monthlyFormatted:
-                plan.monthlyPriceArs === 0
-                    ? freeLabel
-                    : formatPriceArs({ cents: plan.monthlyPriceArs, intlLocale }),
+            monthlyFormatted: isFree
+                ? freeLabel
+                : formatPriceArs({ cents: plan.monthlyPriceArs, intlLocale }),
             hasAnnualPrice,
+            annualDisplay,
+            /**
+             * The free tier reads the SAME label under both cadences, which is
+             * the whole point: `monthlyFormatted` and `annualFormatted` agree
+             * because a $0 plan does not change with the billing interval.
+             */
             annualFormatted: hasAnnualPrice
                 ? formatPriceArs({ cents: plan.annualPriceArs as number, intlLocale })
-                : '',
+                : isFree
+                  ? freeLabel
+                  : '',
             savingLabel:
                 savingPercent === null
                     ? ''

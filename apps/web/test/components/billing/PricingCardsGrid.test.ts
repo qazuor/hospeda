@@ -11,6 +11,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { semanticTypography } from '@repo/design-tokens';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
@@ -246,22 +247,28 @@ describe('PricingCardsGrid.astro', () => {
     });
 
     describe('"Recomendado para" on every card, no superiority badge (AC-12)', () => {
-        it('renders the audience line unconditionally, at the same nesting depth as the plan name', () => {
+        it('renders the audience line unconditionally, at the card’s own nesting depth', () => {
             // An indentation-depth comparison, not a `)}`-position one: with
             // nested conditionals, `indexOf(')}')` finds the inner closer first
             // and passes with the element still inside a condition.
-            const nameLine = src
+            //
+            // The anchor is the header block, not the plan NAME: the name moved
+            // one level deeper when it was grouped with the description, so
+            // comparing against it would now demand that the audience line be
+            // nested too — the opposite of what this asserts. The header is the
+            // card's first direct child and is unconditional by construction.
+            const headerLine = src
                 .split('\n')
-                .find((line) => line.includes('<h3 class="pricing-card__name">'));
+                .find((line) => line.includes('<div class="pricing-card__header">'));
             const audienceLine = src
                 .split('\n')
                 .find((line) => line.includes('<p class="pricing-card__audience">'));
 
-            expect(nameLine).toBeDefined();
+            expect(headerLine).toBeDefined();
             expect(audienceLine).toBeDefined();
 
             const depthOf = (line: string): number => (line.match(/^\t*/)?.[0] ?? '').length;
-            expect(depthOf(audienceLine as string)).toBe(depthOf(nameLine as string));
+            expect(depthOf(audienceLine as string)).toBe(depthOf(headerLine as string));
         });
 
         it('resolves the profile through the shared helper for every plan', () => {
@@ -421,6 +428,70 @@ describe('PricingCardsGrid.astro', () => {
             );
             expect(viewSrc).toContain('const items = buildPricingCardItems({');
         });
+
+        it('keeps the summary the FIRST child of the details in the markup', () => {
+            // Non-negotiable: `<summary>` is only the disclosure's label — and
+            // only keyboard-operable as one — when it is the first child. The
+            // owner wanted the control at the foot of the list; that is a
+            // presentational reorder, never a DOM move.
+            const details = src.match(
+                /<details class="pricing-card__more">([\s\S]*?)<\/details>/
+            )?.[1];
+
+            expect(details).toBeDefined();
+            const summaryAt = (details as string).indexOf('<summary');
+            const listAt = (details as string).indexOf('<ul');
+            expect(summaryAt).toBeGreaterThan(-1);
+            expect(listAt).toBeGreaterThan(-1);
+            expect(summaryAt).toBeLessThan(listAt);
+        });
+
+        it('moves the trigger to the foot of the list with CSS alone', () => {
+            // Open, the control used to sit between the lines already showing
+            // and the ones just revealed, splitting the list in two.
+            const detailsRule = src.match(/\.pricing-card__more \{([^}]*)\}/)?.[1] ?? '';
+            const summaryRule = src.match(/\.pricing-card__more-summary \{([^}]*)\}/)?.[1] ?? '';
+
+            expect(detailsRule).toContain('display: flex;');
+            expect(detailsRule).toContain('flex-direction: column;');
+            expect(summaryRule).toContain('order: 2;');
+        });
+
+        it('carries BOTH labels in the DOM and alternates them on [open]', () => {
+            // Never a script: `details` keeps working with JavaScript off, so a
+            // JS-written label would say "ver todo" over an already-open list.
+            expect(src).toContain(
+                'class="pricing-card__more-label pricing-card__more-label--closed"'
+            );
+            expect(src).toContain(
+                'class="pricing-card__more-label pricing-card__more-label--open"'
+            );
+            expect(src).toContain('{card.seeAllLabel}');
+            expect(src).toContain('{seeLessLabel}');
+
+            // One rule per state. Either one missing leaves both labels visible
+            // in that state — the closed card would read "Ver todo lo que
+            // incluye (5 más) Ver menos".
+            expect(src).toMatch(
+                /\.pricing-card__more:not\(\[open\]\) \.pricing-card__more-label--open \{\s*display: none;/
+            );
+            expect(src).toMatch(
+                /\.pricing-card__more\[open\] \.pricing-card__more-label--closed \{\s*display: none;/
+            );
+        });
+
+        it('takes the open label from i18n, with no count baked into it', () => {
+            expect(src).toContain("t('pricing.seeLess'");
+        });
+
+        it('keeps the revealed lines free of focusable content, which is what makes the reorder safe', () => {
+            // Reordering with flex does NOT reorder tabbing. The reorder is only
+            // harmless because the summary's next tab stop is the CTA, below it
+            // in both orders. A link or a button inside a revealed line would
+            // send focus visually BACKWARDS.
+            expect(itemSrc).not.toMatch(/<(a|button|input|select|textarea)\b/);
+            expect(itemSrc).not.toContain('tabindex');
+        });
     });
 
     describe('prices and CTAs land on the same line across cards (adjustment 2)', () => {
@@ -435,11 +506,17 @@ describe('PricingCardsGrid.astro', () => {
         it('declares one row per in-flow card block — the invariant subgrid depends on', () => {
             // Every direct child of `.pricing-card` consumes one shared row, so
             // the row list and the block list must have the same length. Adding
-            // an eighth block without an eighth row silently shifts every card
+            // a seventh block without a seventh row silently shifts every card
             // that renders it relative to the others.
+            //
+            // The list went from seven entries to six when the plan name and its
+            // description were wrapped in `.pricing-card__header`: they are one
+            // group, they now share one row, and the row list lost an `auto` to
+            // match. `pricing-card__name` and `pricing-card__desc` are asserted
+            // separately below — they are still rendered, they are just no
+            // longer DIRECT children.
             const blocks = [
-                'pricing-card__name',
-                'pricing-card__desc',
+                'pricing-card__header',
                 'pricing-card__audience"',
                 'pricing-card__price"',
                 'pricing-card__delta-heading',
@@ -576,10 +653,185 @@ describe('PricingCardsGrid.astro', () => {
         });
 
         it('never uses --brand-primary as body text on a card', () => {
-            // ~3.5:1 on a light card — below WCAG AA. `--brand-primary-link` is
-            // the accessible step of the same hue.
-            expect(src).not.toMatch(/color: var\(--brand-primary\)/);
+            // ~3.5:1 on a light card — below WCAG AA's 4.5:1 for normal text.
+            // `--brand-primary-link` is the accessible step of the same hue.
+            //
+            // Two exceptions, neither a loophole, and each with the premise
+            // that licenses it asserted immediately below:
+            //
+            // - `.pricing-card__name` — AA's LARGE-text threshold is 3:1, which
+            //   ~3.5:1 clears. The next test proves the title really is large.
+            // - `.pricing-card__watermark` — not text at all. A decorative glyph
+            //   at 6% opacity, `aria-hidden`, painted BEHIND every child. The
+            //   test after next proves all three.
+            //
+            // Every OTHER rule in either file is still forbidden the token:
+            // add a third and this list stops matching.
+            const offending = [
+                ...src.matchAll(/([\w.\-[\]='"]+)\s*\{[^}]*color: var\(--brand-primary\)/g)
+            ];
+
+            expect(offending.map((match) => match[1]).sort()).toEqual([
+                '.pricing-card__name',
+                '.pricing-card__watermark'
+            ]);
             expect(itemSrc).not.toMatch(/color: var\(--brand-primary\)/);
+        });
+
+        it('keeps the plan name large enough for the 3:1 exemption it relies on', () => {
+            // The premise of the exception above, asserted rather than assumed:
+            // AA large text is >= 24px, or >= 18.66px bold. Both facts have to
+            // hold, and `--text-xl` has to be a FLAT 24px — a clamped step would
+            // shrink on a phone and take the colour out of conformance with
+            // nothing reporting it.
+            const rule = src.match(/\.pricing-card__name \{([^}]*)\}/)?.[1] ?? '';
+
+            expect(rule).toContain('font-size: var(--text-xl);');
+            expect(rule).toContain('font-weight: 700;');
+            // `semanticTypography`, not `fontSize`: the CSS custom property
+            // `--text-xl` is generated from the semantic scale (24px). The raw
+            // `fontSize.xl` is a different, smaller step (20px) and asserting on
+            // it would measure a token the component does not use.
+            expect(semanticTypography.xl).toBe('1.5rem');
+            expect(semanticTypography.xl).not.toContain('clamp');
+        });
+
+        it('keeps the corner glyph decorative, faint and behind every child', () => {
+            // The premise of the second exception above. All three conditions
+            // matter and each fails differently: dropping `aria-hidden` makes a
+            // screen reader announce "crown icon" before the plan name; raising
+            // the opacity puts a visible shape under the copy; losing the
+            // negative z-index paints it OVER the text.
+            const rule = src.match(/\.pricing-card__watermark \{([^}]*)\}/)?.[1] ?? '';
+            const opacity = Number(rule.match(/opacity: ([\d.]+);/)?.[1] ?? '1');
+
+            expect(src).toContain('<span class="pricing-card__watermark" aria-hidden="true">');
+            expect(rule).toContain('z-index: -1;');
+            expect(rule).toContain('pointer-events: none;');
+            expect(opacity).toBeLessThanOrEqual(0.12);
+            // A negative z-index only stays inside the card if the card is a
+            // stacking context; otherwise the glyph escapes behind the section.
+            expect(src).toMatch(/\.pricing-card \{[^}]*isolation: isolate;/);
+        });
+
+        it('takes the glyph colour from the card, which duotone would ignore', () => {
+            // `createPhosphorIcon` forwards `color` (default `currentColor`)
+            // only on the non-duotone weights; under duotone the glyph paints
+            // the icon package's own brand blue at full strength and the
+            // opacity above stops being the thing that fades it.
+            expect(src).toContain('<WatermarkIcon size={168} weight="fill" />');
+        });
+
+        it('cuts the glyph on the card edge instead of framing it', () => {
+            expect(src).toMatch(/\.pricing-card \{[^}]*overflow: hidden;/);
+            const rule = src.match(/\.pricing-card__watermark \{([^}]*)\}/)?.[1] ?? '';
+            // Both offsets negative: the glyph has to leave the box on two
+            // edges, or `overflow` has nothing to clip.
+            expect(rule).toMatch(/inset-block-start: calc\(.*\* -1\);/);
+            expect(rule).toMatch(/inset-inline-end: calc\(.*\* -1\);/);
+        });
+
+        it('lifts the glyph in dark mode, where the same alpha reads as nothing', () => {
+            expect(src).toMatch(
+                /:global\(\[data-theme='dark'\]\) \.pricing-card__watermark \{\s*opacity:/
+            );
+        });
+
+        it('resolves the glyph through the shared table, never inline in the template', () => {
+            expect(src).toContain(
+                "import { resolvePlanWatermarkIcon } from '@/components/billing/plan-watermark-icon';"
+            );
+            expect(src).toContain('resolvePlanWatermarkIcon({ slug: card.plan.slug })');
+        });
+
+        it('underlines the plan name with a masked stroke, not a border', () => {
+            // A straight `border-bottom` / `text-decoration` is the thing this
+            // replaces. And it is a MASK, not a `background-image`: an SVG used
+            // as a background is a separate document, so its colour would have
+            // to be baked into the data URI and dark mode would break silently.
+            const rule = src.match(/\.pricing-card__name::after \{([^}]*)\}/)?.[1] ?? '';
+
+            expect(rule).toContain('mask-image: url("data:image/svg+xml,');
+            expect(rule).toContain('background-color: var(--brand-accent);');
+            expect(rule).not.toContain('background-image:');
+            expect(rule).toContain('pointer-events: none;');
+
+            const nameRule = src.match(/\.pricing-card__name \{([^}]*)\}/)?.[1] ?? '';
+            expect(nameRule).not.toMatch(/border-bottom:/);
+            expect(nameRule).not.toMatch(/text-decoration:/);
+            // It follows the NAME's width, not the card's.
+            expect(nameRule).toContain('width: fit-content;');
+        });
+
+        it('ships the underline as a pseudo-element, so it is neither announced nor selectable', () => {
+            // An inline <svg> would be a node in the tree; a ::after with
+            // `content: ''` is not, and its content cannot be selected.
+            const rule = src.match(/\.pricing-card__name::after \{([^}]*)\}/)?.[1] ?? '';
+
+            expect(rule).toContain("content: '';");
+            expect(src).not.toMatch(/<svg[^>]*pricing-card__name/);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Vertical rhythm — owner review: "hay demasiado espaciado entre título,
+    // texto que le sigue, para quién es recomendado, precio, y lo que incluye"
+    // -----------------------------------------------------------------------
+
+    describe('one number spaces the card (owner review of the live pages)', () => {
+        it('groups the name and the description into one block', () => {
+            // Title and description are one unit. If either ever leaves the
+            // wrapper it becomes a direct child again and silently claims a
+            // shared subgrid row that the row list does not declare.
+            const header = src.match(/<div class="pricing-card__header">([\s\S]*?)<\/div>/)?.[1];
+
+            expect(header).toBeDefined();
+            expect(header).toContain('class="pricing-card__name"');
+            expect(header).toContain('class="pricing-card__desc"');
+        });
+
+        it('leaves no vertical margin on any block the card gap already spaces', () => {
+            // The bug this replaces: six blocks each carrying their own
+            // `margin-bottom`, stacked on top of the grid's 30px row gutter, and
+            // no single rule from which the total was visible. A margin back on
+            // any of them means two mechanisms are spacing the same edge again.
+            for (const block of [
+                'pricing-card__name',
+                'pricing-card__desc',
+                'pricing-card__audience',
+                'pricing-card__price',
+                'pricing-card__delta-heading',
+                'pricing-card__body'
+            ]) {
+                const rule = src.match(new RegExp(`\\.${block} \\{([^}]*)\\}`))?.[1] ?? '';
+
+                expect(rule, block).not.toMatch(/margin-bottom:/);
+                expect(rule, block).not.toMatch(/margin: 0 0 var\(/);
+            }
+        });
+
+        it('spaces the groups from a single declared rhythm', () => {
+            expect(src).toContain('--pricing-card-rhythm: var(--space-4);');
+            expect(src).toContain('gap: var(--pricing-card-rhythm);');
+            // Inside a group the step is DERIVED from that same number, not a
+            // second free value someone can drift.
+            expect(src).toContain(
+                '--pricing-card-rhythm-tight: calc(var(--pricing-card-rhythm) * 0.4);'
+            );
+        });
+
+        it('stops the 30px card gutter from spacing the shared subgrid rows', () => {
+            // A subgrid takes its parent's gutters in the subgridded axis, so
+            // the space meant to sit BETWEEN cards was also sitting between
+            // every block INSIDE one. Splitting the shorthand is the fix; a
+            // plain `gap` back on the subgrid branch reinstates the bug.
+            const branch = src.match(
+                /@supports \(grid-template-rows: subgrid\) \{([\s\S]*?)\n\t\t\}\n\t\}/
+            )?.[1];
+
+            expect(branch).toBeDefined();
+            expect(branch).toContain('column-gap: var(--space-card-gap);');
+            expect(branch).toContain('row-gap: var(--pricing-card-rhythm);');
         });
     });
 });

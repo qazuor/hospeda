@@ -25,6 +25,7 @@
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import PricingCardItemLine from '@/components/billing/PricingCardItem.astro';
 import { buildPricingCardViews } from '@/components/billing/pricing-card-view';
+import { resolvePlanWatermarkIcon } from '@/components/billing/plan-watermark-icon';
 import type { PricingPlan } from '@/components/billing/pricing-card-view';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
@@ -94,6 +95,11 @@ const annualBadgeTemplate = t('pricing.toggle.annualBadge', 'Ahorrá hasta {perc
 const periodMonthLabel = t('pricing.period.month', '/mes');
 const periodYearLabel = t('pricing.period.year', '/año');
 const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
+/**
+ * The disclosure's OPEN label. Constant, unlike `seeAllLabel`, which carries a
+ * per-card count: once the lines are on screen there is nothing left to count.
+ */
+const seeLessLabel = t('pricing.seeLess', 'Ver menos');
 
 /** Every card's copy, prices and item split — see `pricing-card-view.ts`. */
 const { cards, maxAnnualSavingPercent } = buildPricingCardViews({
@@ -172,13 +178,28 @@ const selectGroupName = `pricing-select-${audience}`;
 		/>
 	) : (
 		<div class="pricing-cards__grid" data-count={Math.min(cards.length, 3)}>
-			{cards.map((card, i) => (
+			{cards.map((card, i) => {
+				// Astro renders a capitalised binding as a component. Resolved per
+				// card rather than branched in the template so an unmapped slug is
+				// handled in ONE place — see `plan-watermark-icon.ts`.
+				const WatermarkIcon = resolvePlanWatermarkIcon({ slug: card.plan.slug });
+				return (
 				<div
 					class="pricing-card"
 					data-pricing-card
 					data-reveal="up"
 					data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
 				>
+					{/*
+						The oversized corner glyph. `aria-hidden` and `position:
+						absolute`: it is decoration, so it must not be announced, must
+						not be a tab stop, and — critically — must not become a grid
+						item, or it would claim one of the card's shared subgrid rows
+						and shift every block below it by one.
+					*/}
+					<span class="pricing-card__watermark" aria-hidden="true">
+						<WatermarkIcon size={168} weight="fill" />
+					</span>
 					{/*
 						Card selection (owner review): clicking a card marks it, so a
 						reader comparing three tiers can park on one. The state is a
@@ -202,8 +223,20 @@ const selectGroupName = `pricing-select-${audience}`;
 						aria-label={card.selectAriaLabel}
 						data-pricing-select
 					/>
-					<h3 class="pricing-card__name">{card.name}</h3>
-					<p class="pricing-card__desc">{card.description}</p>
+					{/*
+						Name and description are ONE block, not two (owner review of
+						the live pages: "hay demasiado espaciado entre título, texto
+						que le sigue, …"). The rhythm below is a single gap on the
+						card, so anything that belongs together has to say so
+						structurally — a wrapper with a tighter internal gap — rather
+						than by carrying a smaller ad-hoc margin than its neighbours.
+						This is also one shared subgrid row instead of two, so the
+						row list further down is SIX entries, not seven.
+					*/}
+					<div class="pricing-card__header">
+						<h3 class="pricing-card__name">{card.name}</h3>
+						<p class="pricing-card__desc">{card.description}</p>
+					</div>
 					{/*
 						Every card carries a "recommended for" profile — no card wears a
 						"most popular" badge (HOS-943 AC-12). A single highlighted tier
@@ -231,7 +264,16 @@ const selectGroupName = `pricing-select-${audience}`;
 								{periodMonthLabel}
 							</span>
 						)}
-						{card.hasAnnualPrice ? (
+						{/*
+							Three annual states, decided by `annualDisplay` in
+							`pricing-card-view.ts` and never re-derived here. The
+							template used to ask `card.hasAnnualPrice ? … : monthlyOnly`,
+							which printed "solo plan mensual" over the FREE tier — a
+							cadence claim about something that costs $0, and a
+							limitation it does not have. The monthly branch had always
+							handled free correctly; only this one had not.
+						*/}
+						{card.annualDisplay === 'price' && (
 							<>
 								<span class="pricing-card__amount pricing-card__amount--annual">
 									{card.annualFormatted}
@@ -245,7 +287,13 @@ const selectGroupName = `pricing-select-${audience}`;
 									</span>
 								)}
 							</>
-						) : (
+						)}
+						{card.annualDisplay === 'free' && (
+							<span class="pricing-card__amount pricing-card__amount--annual">
+								{card.annualFormatted}
+							</span>
+						)}
+						{card.annualDisplay === 'monthlyOnly' && (
 							<span class="pricing-card__amount pricing-card__amount--annual pricing-card__monthly-only">
 								{monthlyOnlyLabel}
 							</span>
@@ -297,8 +345,21 @@ const selectGroupName = `pricing-select-${audience}`;
 						)}
 						{card.hiddenItems.length > 0 && (
 							<details class="pricing-card__more">
+								{/*
+									Both labels are in the DOM and CSS alternates them on
+									`[open]`. Swapping the text from JavaScript would leave the
+									control saying "ver todo" over an already-open list on any
+									page where the script did not run — and `details` itself
+									keeps working with no JavaScript at all, which is the
+									whole reason it is a `details`.
+								*/}
 								<summary class="pricing-card__more-summary">
-									{card.seeAllLabel}
+									<span class="pricing-card__more-label pricing-card__more-label--closed">
+										{card.seeAllLabel}
+									</span>
+									<span class="pricing-card__more-label pricing-card__more-label--open">
+										{seeLessLabel}
+									</span>
 								</summary>
 								<ul class="pricing-card__items" aria-label={limitsLabel}>
 									{card.hiddenItems.map((item) => (
@@ -322,7 +383,8 @@ const selectGroupName = `pricing-select-${audience}`;
 						/>
 					</div>
 				</div>
-			))}
+				);
+			})}
 		</div>
 	)}
 </div>
@@ -363,14 +425,55 @@ const selectGroupName = `pricing-select-${audience}`;
 		max-width: 400px;
 	}
 
+	/* ─── Vertical rhythm ────────────────────────────────────────────
+	   ONE number spaces the whole card. Every block used to carry its own
+	   `margin-bottom` (0.5rem under the name, 1rem under the description,
+	   1rem under the price, …) and, on the desktop layout, those margins
+	   stacked on top of the GRID's own 30px row gutter, which the subgrid
+	   inherits from the parent. Nobody reading one rule could see the total,
+	   which is how the card ended up with ~46px between blocks and read as
+	   five loose fragments rather than one offer.
+
+	   So: the children carry no vertical margins at all, `--pricing-card-rhythm`
+	   is the gap BETWEEN groups, and `--pricing-card-rhythm-tight` — derived
+	   from it, not a second free number — is the gap INSIDE a group (name and
+	   description; price, annual hint and trial line). Two blocks that belong
+	   together sit closer than two that do not, which is what makes the five
+	   blocks read as three things instead of five.
+
+	   It is declared on the container so `.pricing-cards__grid` can use the
+	   same value for the shared subgrid rows. */
+	.pricing-cards__container {
+		--pricing-card-rhythm: var(--space-4);
+		--pricing-card-rhythm-tight: calc(var(--pricing-card-rhythm) * 0.4);
+	}
+
 	.pricing-card {
 		background-color: var(--core-card);
 		border-radius: var(--radius-card);
-		padding: var(--space-8);
+		padding: var(--space-6);
 		box-shadow: var(--shadow-card);
 		border: 2px solid transparent;
 		display: flex;
 		flex-direction: column;
+		/* The corner glyph is positioned against this box and cut off by it.
+		   Three things this deliberately does NOT break, each checked: the drop
+		   shadow paints outside the border box and is not subject to `overflow`;
+		   the selection radio's `:focus-visible` ring is an `outline`, which is
+		   likewise never clipped by the element's own overflow; and `overflow`
+		   on a grid container does not disturb subgrid — it clips paint, it does
+		   not change layout.
+
+		   `isolation` is what lets the glyph sit at `z-index: -1`: it makes the
+		   card a stacking context, so the negative layer paints above the card's
+		   own background and below every one of its children. Without it the
+		   glyph would escape to the section behind the card. */
+		position: relative;
+		overflow: hidden;
+		isolation: isolate;
+		/* Applies in the flex fallback; the subgrid branch below re-states it as
+		   a `row-gap` on the parent grid, where the shared tracks live. */
+		gap: var(--pricing-card-rhythm);
 		transition:
 			transform var(--duration-normal) ease,
 			box-shadow var(--duration-normal) ease,
@@ -395,15 +498,24 @@ const selectGroupName = `pricing-select-${audience}`;
 	   breaks on the first copy edit, in another locale, or at another font
 	   size.
 
-	   There are SEVEN in-flow children per card and the row list below must
-	   match them one for one: name, description, "recomendado para", the price
-	   block, the delta heading, the body (list + disclosure) and the CTA. The
-	   selection radio is `position: absolute` via `.sr-only`, so it is out of
-	   flow and consumes no row — if it ever stopped being absolutely
-	   positioned, every card would shift by one row.
+	   There are SIX in-flow children per card and the row list below must
+	   match them one for one: the header (name + description, ONE block), the
+	   "recomendado para" line, the price block, the delta heading, the body
+	   (list + disclosure) and the CTA. The selection radio is
+	   `position: absolute` via `.sr-only`, so it is out of flow and consumes no
+	   row — if it ever stopped being absolutely positioned, every card would
+	   shift by one row.
 
 	   The body row takes `1fr` so it absorbs the slack, which is what pins the
 	   CTA to the bottom.
+
+	   The row GUTTER is set here too, and it has to be: a subgrid inherits its
+	   parent's gutters in the subgridded axis, so without this the shared rows
+	   were separated by `--space-card-gap` (30px, the space meant to sit
+	   BETWEEN cards) on top of every child's own margin. `column-gap` keeps
+	   that 30px where it belongs. The single-column mobile layout is untouched
+	   — it never reaches this branch, and there `gap` really is the space
+	   between stacked cards.
 
 	   FALLBACK (no `subgrid` support): the cards stay flex columns. They are
 	   still equal height — grid items stretch by default — and the CTA is still
@@ -414,14 +526,17 @@ const selectGroupName = `pricing-select-${audience}`;
 			.pricing-cards__grid,
 			.pricing-cards__grid[data-count='1'],
 			.pricing-cards__grid[data-count='2'] {
-				grid-template-rows: auto auto auto auto auto 1fr auto;
+				grid-template-rows: auto auto auto auto 1fr auto;
+				column-gap: var(--space-card-gap);
+				row-gap: var(--pricing-card-rhythm);
 			}
 
 			.pricing-card {
 				display: grid;
 				grid-row: 1 / -1;
-			grid-template-rows: subgrid;
-				}
+				grid-template-rows: subgrid;
+				row-gap: var(--pricing-card-rhythm);
+			}
 		}
 	}
 
@@ -450,19 +565,119 @@ const selectGroupName = `pricing-select-${audience}`;
 	   second-best. `.pricing-card__audience` below is what replaced it: every
 	   card names the reader it is for. */
 
+	/* ─── The corner glyph ───────────────────────────────────────────
+	   Deliberately oversized and pushed past two edges so the card's `overflow`
+	   cuts it: a complete icon in a corner reads as a badge that means
+	   something, a cut one reads as texture. It is behind everything (`z-index:
+	   -1`) and very faint, so no text is ever drawn on top of a shape that could
+	   move its contrast — the axe sweep covers these two pages.
+
+	   `weight="fill"` and not the default duotone: the factory only forwards
+	   `color` (hence `currentColor`) on the non-duotone weights, and a duotone
+	   glyph would paint the icon package's own brand blue at full strength
+	   regardless of the opacity below.
+
+	   The dark theme gets a slightly higher opacity: the same alpha over a dark
+	   card reads as almost nothing. `:global()` because `[data-theme]` lives on
+	   `<html>`, outside this component's scope. */
+	.pricing-card__watermark {
+		position: absolute;
+		z-index: -1;
+		inset-block-start: calc(var(--space-8) * -1);
+		inset-inline-end: calc(var(--space-6) * -1);
+		line-height: 0;
+		color: var(--brand-primary);
+		opacity: 0.06;
+		pointer-events: none;
+	}
+
+	:global([data-theme='dark']) .pricing-card__watermark {
+		opacity: 0.1;
+	}
+
+	/* Name + description: one group, one shared row, one tight internal gap. */
+	.pricing-card__header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pricing-card-rhythm-tight);
+		min-width: 0;
+	}
+
+	/* ─── The plan name ──────────────────────────────────────────────
+	   Owner review: "que el título quede más estético, tal vez otra font, otro
+	   color". What changed is the COLOUR — the name now carries the brand blue
+	   instead of the same foreground ink as every other line on the card — plus
+	   a tighter line-height and a hair of negative tracking, which is what makes
+	   a two-word plan name read as a label rather than as a paragraph heading.
+
+	   The typeface stays `--font-heading`: `--font-decorative` (Caveat) is the
+	   site's handwritten TAGLINE voice, and a script face on the one string a
+	   reader compares across three columns costs legibility for decoration.
+
+	   `--text-xl` is 1.5rem FLAT, and that is load-bearing rather than
+	   incidental. `--brand-primary` measures ~3.5:1 on a light card (SPEC-308),
+	   which clears WCAG AA only under the large-text threshold of 3:1 — 24px, or
+	   18.66px bold. At 24px and 700 this qualifies twice over at every viewport.
+	   A clamped step such as `--text-h3` (1.25rem → 1.625rem) would drop to 20px
+	   on a phone and take the colour out of conformance with nothing reporting
+	   it. If this size ever shrinks, the colour has to move to
+	   `--brand-primary-link`. */
 	.pricing-card__name {
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: var(--text-xl);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-2);
+		line-height: 1.15;
+		letter-spacing: -0.01em;
+		color: var(--brand-primary);
+		margin: 0;
+		/* The underline below is drawn against this box, and it has to be the
+		   width of the NAME, not of the card. */
+		position: relative;
+		width: fit-content;
+		max-width: 100%;
+		padding-block-end: 0.3em;
+	}
+
+	/* ─── The hand-drawn underline ───────────────────────────────────
+	   The site already speaks this language: `MarketingHero` underlines the
+	   accent word of every marketing heading with a loose, uneven stroke. This
+	   is the same gesture at card scale, so the plan name reads as a title
+	   rather than as a line of bold text.
+
+	   It is a MASK, not a `background-image`. An SVG referenced as a background
+	   is an independent document — `currentColor` does not reach it and its
+	   colours would have to be baked into the data URI, which is how a
+	   hardcoded hex ends up in a stylesheet and how dark mode silently breaks.
+	   As a mask the SVG contributes only its ALPHA; the colour is
+	   `--brand-accent`, an ordinary token. (The `%23000` inside the data URI is
+	   therefore not a colour at all: any opaque paint yields the same mask.)
+
+	   A pseudo-element and not an inline `<svg>`, because this must add nothing
+	   to the accessibility tree and nothing to the text a reader can select.
+	   It is static, so `prefers-reduced-motion` has nothing to say about it. */
+	.pricing-card__name::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		inset-block-end: 0;
+		height: 0.3em;
+		background-color: var(--brand-accent);
+		opacity: 0.75;
+		pointer-events: none;
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 18' preserveAspectRatio='none'%3E%3Cpath d='M3 12.4C29 6.1 61 4.3 96 5.6c30 1.1 62 4.6 101 8.9' fill='none' stroke='%23000' stroke-width='4.2' stroke-linecap='round'/%3E%3C/svg%3E");
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 18' preserveAspectRatio='none'%3E%3Cpath d='M3 12.4C29 6.1 61 4.3 96 5.6c30 1.1 62 4.6 101 8.9' fill='none' stroke='%23000' stroke-width='4.2' stroke-linecap='round'/%3E%3C/svg%3E");
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-size: 100% 100%;
+		mask-size: 100% 100%;
 	}
 
 	.pricing-card__desc {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
+		line-height: 1.5;
 		color: var(--core-muted-foreground);
-		margin: 0 0 var(--space-4);
+		margin: 0;
 	}
 
 	/* "Recomendado para: …" — present on EVERY card. Bordered rather than
@@ -476,7 +691,7 @@ const selectGroupName = `pricing-select-${audience}`;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		padding: var(--space-3);
-		margin: 0 0 var(--space-4);
+		margin: 0;
 	}
 
 	.pricing-card__audience-label {
@@ -486,8 +701,14 @@ const selectGroupName = `pricing-select-${audience}`;
 		color: var(--brand-primary-link);
 	}
 
+	/* Price, annual hint and trial line: one group. Its children keep a
+	   MARGIN rather than a flex gap on purpose — the amount and its period
+	   are inline siblings, and the promo island injects further inline nodes
+	   here at runtime (see the global block at the bottom of this file), all
+	   of which a flex container would blockify. The margin they keep is the
+	   derived tight step, not a free value. */
 	.pricing-card__price {
-		margin-bottom: var(--space-4);
+		margin: 0;
 	}
 
 	.pricing-card__amount {
@@ -509,7 +730,7 @@ const selectGroupName = `pricing-select-${audience}`;
 		font-size: var(--text-body-sm);
 		color: var(--brand-accent-text);
 		font-weight: 600;
-		margin: var(--space-2) 0 0;
+		margin: var(--pricing-card-rhythm-tight) 0 0;
 	}
 
 	/* The annual discount, stated in the MONTHLY state. `display` is owned by
@@ -522,7 +743,7 @@ const selectGroupName = `pricing-select-${audience}`;
 		/* `--brand-primary` is ~3.5:1 on a light card and fails WCAG AA as body
 		   text; `--brand-primary-link` is the accessible step of the same hue. */
 		color: var(--brand-primary-link);
-		margin: var(--space-2) 0 0;
+		margin: var(--pricing-card-rhythm-tight) 0 0;
 	}
 
 	/* Delta heading — either "Todo lo del plan X, más:" or, on the first tier,
@@ -535,7 +756,7 @@ const selectGroupName = `pricing-select-${audience}`;
 		font-size: var(--text-body-sm);
 		font-weight: 700;
 		color: var(--core-foreground);
-		margin: 0 0 var(--space-2);
+		margin: 0;
 	}
 
 	/* The list itself. Each ITEM's styling (bullet, cap value, cap explanation)
@@ -557,14 +778,36 @@ const selectGroupName = `pricing-select-${audience}`;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
-		margin-bottom: var(--space-4);
+		margin: 0;
 	}
 
-	/* "Ver todo lo que incluye (N más)". A native <details>: it works with no
-	   JavaScript, it is keyboard operable, and it is announced as a disclosure
-	   with its own expanded state — none of which a scripted toggle gets for
-	   free. Opening one card grows the shared body row, so the three cards stay
-	   the same height rather than one of them jumping. */
+	/* "Ver todo lo que incluye (N más)" / "Ver menos". A native <details>: it
+	   works with no JavaScript, it is keyboard operable, and it is announced as
+	   a disclosure with its own expanded state — none of which a scripted toggle
+	   gets for free. Opening one card grows the shared body row, so the three
+	   cards stay the same height rather than one of them jumping.
+
+	   ─── The trigger sits at the FOOT of the list, not in the middle of it ───
+	   `<summary>` MUST be the first child of `<details>` in the DOM: that is
+	   what makes it the disclosure's label and what gives it the keyboard
+	   behaviour. So it is not moved in the markup — the `<details>` becomes a
+	   flex column and the summary takes `order: 2`, which is purely visual.
+	   Open, the control used to land between the lines that were already showing
+	   and the ones just revealed, cutting the list in two and reading as if the
+	   lower block were something else.
+
+	   Reordering with flex does NOT reorder tabbing, so the focus path is worth
+	   stating: the revealed lines contain NO focusable element (they are `li` /
+	   `span` / a decorative `svg` — see `PricingCardItem.astro`, and the guard
+	   test that keeps it that way). The summary's next tab stop is therefore the
+	   CTA, which is below it both visually and in the DOM. There is no jump.
+	   Putting a link or a button inside a revealed line WOULD create one. */
+	.pricing-card__more {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
 	.pricing-card__more-summary {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
@@ -576,7 +819,22 @@ const selectGroupName = `pricing-select-${audience}`;
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-1) 0;
+		order: 2;
+		/* A flex item blockifies, so without this the (inline-flex) summary would
+		   stretch the full card width and its hover underline with it. */
+		align-self: flex-start;
 	}
+
+	/* The label alternates on the element's own state, in CSS. Both strings are
+	   in the DOM; neither is written by script. */
+	.pricing-card__more:not([open]) .pricing-card__more-label--open {
+		display: none;
+	}
+
+	.pricing-card__more[open] .pricing-card__more-label--closed {
+		display: none;
+	}
+
 
 	/* Safari still paints the default disclosure triangle through the
 	   webkit-specific pseudo-element; `list-style: none` alone does not remove
@@ -609,9 +867,9 @@ const selectGroupName = `pricing-select-${audience}`;
 		border-radius: var(--radius-md);
 	}
 
-	.pricing-card__more[open] .pricing-card__items {
-		margin-top: var(--space-3);
-	}
+	/* The revealed list is spaced by the `<details>`' own flex gap now. A
+	   `margin-top` here would push it AWAY from the summary — which sits below
+	   it — and toward the visible half of the list, i.e. exactly backwards. */
 
 	.pricing-card__btn-wrapper {
 		display: flex;
@@ -753,7 +1011,7 @@ const selectGroupName = `pricing-select-${audience}`;
 		font-size: var(--text-caption);
 		font-weight: 600;
 		color: var(--success, var(--brand-accent));
-		margin-top: var(--space-1);
+		margin-top: var(--pricing-card-rhythm-tight);
 	}
 	.pricing-card__monthly-only {
 		font-size: var(--text-body-sm);

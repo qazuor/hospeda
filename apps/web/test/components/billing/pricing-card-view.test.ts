@@ -140,6 +140,79 @@ describe('buildPricingCardViews — the annual discount', () => {
     });
 });
 
+// ---------------------------------------------------------------------------
+// A free tier has no cadence
+// ---------------------------------------------------------------------------
+
+describe('buildPricingCardViews — what the ANNUAL cadence shows', () => {
+    /**
+     * The bug: the monthly branch resolved `monthlyPriceArs === 0` to the free
+     * label, the annual branch only asked whether an annual price existed, and
+     * so the tourist page's free tier read "Gratis" under Mensual and "Solo
+     * plan mensual" under Anual. A $0 plan has no cadence; the notice describes
+     * a limitation it does not have.
+     *
+     * Both cases below are asserted because they are genuinely different and a
+     * condition widened one notch too far fixes the first while breaking the
+     * second.
+     */
+    it('keeps a free tier free under BOTH cadences', () => {
+        const { cards } = build([
+            plan({ slug: 'tourist-free', monthlyPriceArs: 0, annualPriceArs: null })
+        ]);
+
+        expect(cards[0]?.annualDisplay).toBe('free');
+        expect(cards[0]?.monthlyFormatted).toBe('Gratis');
+        expect(cards[0]?.annualFormatted).toBe('Gratis');
+    });
+
+    it('still calls a PAID monthly-only tier monthly-only', () => {
+        // The regression a too-wide condition would cause: a paid tier that is
+        // simply not sold by the year must keep saying so.
+        const { cards } = build([
+            plan({ slug: 'basic', monthlyPriceArs: 1000, annualPriceArs: null })
+        ]);
+
+        expect(cards[0]?.annualDisplay).toBe('monthlyOnly');
+        expect(cards[0]?.annualFormatted).toBe('');
+    });
+
+    it('shows the real annual price when the tier has one', () => {
+        const { cards } = build([
+            plan({ slug: 'pro', monthlyPriceArs: 1000, annualPriceArs: 10_000 })
+        ]);
+
+        expect(cards[0]?.annualDisplay).toBe('price');
+        expect(cards[0]?.annualFormatted).not.toBe('');
+    });
+
+    it('advertises no annual saving on a free tier', () => {
+        // Confirmed rather than assumed: `computeAnnualSavingPercent` rejects a
+        // non-positive monthly price, so "pagando por año ahorrás N%" over a $0
+        // plan is unrepresentable — but nothing said so until now.
+        const { cards } = build([
+            plan({ slug: 'tourist-free', monthlyPriceArs: 0, annualPriceArs: null })
+        ]);
+
+        expect(cards[0]?.savingPercent).toBeNull();
+        expect(cards[0]?.annualHintLabel).toBe('');
+        expect(cards[0]?.savingLabel).toBe('');
+    });
+
+    it('advertises no annual saving even if a free tier somehow carries an annual price', () => {
+        // A catalogue misconfiguration, not a hypothetical shape: the guard is
+        // on the DENOMINATOR (`monthlyPriceArs <= 0`), so a $0/month tier with
+        // a price on the annual column still says nothing rather than "ahorrá
+        // 100%".
+        const { cards } = build([
+            plan({ slug: 'odd-free', monthlyPriceArs: 0, annualPriceArs: 5000 })
+        ]);
+
+        expect(cards[0]?.savingPercent).toBeNull();
+        expect(cards[0]?.annualHintLabel).toBe('');
+    });
+});
+
 describe('buildPricingCardViews — the rest of the card', () => {
     it('gives every card a selection radio id and an accessible name', () => {
         // Card selection is keyboard-operable because it is a real radio group;
