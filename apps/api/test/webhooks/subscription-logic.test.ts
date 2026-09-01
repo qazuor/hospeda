@@ -2816,6 +2816,158 @@ describe('processSubscriptionUpdated', () => {
     });
 
     // ---------------------------------------------------------------------------
+    // HOS-180 AC-4 / AC-9: courtesy-window derivation on the real webhook path
+    // ---------------------------------------------------------------------------
+    //
+    // The pure derivation (deriveCourtesyStatus) is unit-tested in
+    // subscription-status-derive.test.ts. What is missing — and what this block
+    // covers — is the REAL handler path: a `paused` webhook arriving while a
+    // local courtesy window (metadata.courtesyEndsAt) is still open must land
+    // the row on COURTESY, not PAUSED (AC-4), and that derived status must NOT
+    // trigger the "your card failed" paused-subscription email (AC-9, HOS-926 —
+    // subscription-paused.tsx blames the payment method).
+    describe('HOS-180: courtesy window on the paused webhook path', () => {
+        it('derives COURTESY (not PAUSED) when a paused webhook arrives during an active courtesy window (AC-4)', async () => {
+            // Arrange — admin gifted a cycle on an ACTIVE subscription; MP's
+            // preapproval is paused underneath the gift (that is how a courtesy
+            // is implemented — see grant-courtesy.ts), and the local courtesy
+            // window has not elapsed yet.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const futureCourtesyEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                metadata: { courtesyEndsAt: futureCourtesyEnd.toISOString() }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos180-ac4-a'
+            });
+
+            // Assert — the row lands on COURTESY, not the raw provider PAUSED.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.COURTESY
+            });
+            expect(dbMock.tx.update).toHaveBeenCalled();
+        });
+
+        it('applies the real PAUSED transition when the same paused webhook arrives with no active courtesy window (mirror of AC-4)', async () => {
+            // Arrange — same subscription, same raw MP event, but the courtesy
+            // window has already lapsed (an elapsed gift is a control case, not
+            // a live one — courtesy-expiry.job.ts owns resuming it, not this
+            // webhook). Everything else stays identical to the test above so
+            // the ONLY variable is the courtesy window, proving this is a real
+            // derivation and not a hardcoded "webhook paused -> always courtesy".
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const pastCourtesyEnd = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                metadata: { courtesyEndsAt: pastCourtesyEnd.toISOString() }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos180-ac4-b'
+            });
+
+            // Assert — a lapsed courtesy window is a real pause, not a gift.
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.PAUSED
+            });
+            expect(dbMock.tx.update).toHaveBeenCalled();
+        });
+
+        it('does NOT send the paused-subscription email when a paused webhook derives COURTESY (AC-9, regression, HOS-926)', async () => {
+            // Arrange — identical courtesy scenario to the AC-4 test above.
+            // subscription-paused.tsx blames the payment method for the pause,
+            // so sending it here would tell a just-gifted subscriber their card
+            // failed.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const futureCourtesyEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                metadata: { courtesyEndsAt: futureCourtesyEnd.toISOString() }
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos180-ac9-a'
+            });
+
+            // Assert — the row moved to COURTESY (sanity) AND the paused email
+            // was never dispatched — this is the test that actually watches
+            // `shouldSendPausedEmail`'s consumer; nothing else in this file did.
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.COURTESY);
+            expect(mockSendPaused).not.toHaveBeenCalled();
+        });
+
+        it('DOES send the paused-subscription email for a real pause with no courtesy window (mirror of AC-9)', async () => {
+            // Arrange — identical control scenario to the AC-4 mirror test:
+            // a real pause must still notify the subscriber. Without this
+            // mirror, a mock that silently never fires anything would also
+            // pass the test above for the wrong reason.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE
+                // No metadata.courtesyEndsAt at all — an ordinary real pause.
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos180-ac9-b'
+            });
+
+            // Assert
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.PAUSED);
+            expect(mockSendPaused).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // ---------------------------------------------------------------------------
     // SPEC-309 T-023: featuredByEntitlement sync on status transitions
     // ---------------------------------------------------------------------------
     //
