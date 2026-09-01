@@ -38,6 +38,7 @@
 
 import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getSiteUrl } from '@/lib/env';
 
@@ -75,6 +76,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
 		rel="stylesheet"
 		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
 	/>
+
+<PresentationThemeToggle />
 
 <div class="wrap">
 

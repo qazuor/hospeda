@@ -1,0 +1,169 @@
+---
+/**
+ * @file PresentationThemeToggle.astro
+ * @description Light/dark switch for the six commercial presentations
+ * (HOS-978). Owner decision: these pages decide their own theme, light by
+ * default, INDEPENDENTLY of whatever the visitor's Hospeda preference is —
+ * "son 2 cosas separadas".
+ *
+ * WHY IT DOES NOT REUSE `ThemeControl.client.tsx`. That control writes the
+ * site-wide `theme` key, so touching it here would change how the rest of
+ * Hospeda looks for this visitor. A prospect who opens a link sent over
+ * WhatsApp must not have their site preference rewritten as a side effect.
+ * This one owns a separate storage key and never reads or writes the site's.
+ *
+ * WHY IT WRITES `data-theme="light"` EXPLICITLY RATHER THAN REMOVING THE
+ * ATTRIBUTE. This is the whole mechanism, and it is why no artifact CSS had to
+ * be edited. Each presentation's stylesheet carries the standard three-state
+ * pattern:
+ *
+ *     :root { ...light... }
+ *     @media (prefers-color-scheme: dark) {
+ *       :root:not([data-theme="light"]) { ...dark... }
+ *     }
+ *     :root[data-theme="dark"] { ...dark... }
+ *
+ * Removing the attribute (which is what the site's own `ThemeFoucScript` does
+ * for light) would leave that `:not()` matching, so a visitor whose OS is in
+ * dark mode would get the dark palette even though light is meant to be the
+ * default. Writing the attribute explicitly is what makes light actually win,
+ * and it is also what makes this page ignore the site's preference: this
+ * script runs after `ThemeFoucScript` and overwrites whatever it set.
+ *
+ * WHY THE SCRIPT IS `is:inline`. It must run before first paint, or the page
+ * flashes light before switching to the visitor's saved dark. `is:inline` is
+ * safe under the CSP: `collectCspHashes()` hashes the inline scripts found in
+ * each response body and publishes them in that response's `script-src`, so a
+ * new inline script authorises itself. Do NOT add a `nonce` — HOS-369 WB0-1
+ * removed per-request nonces because Cloudflare caches the header with the
+ * body, and `scripts/check-no-inline-nonce.sh` fails the build on one.
+ *
+ * The state lives on the button's own `data-mode`, so the CSS below needs no
+ * global selector and is unaffected by Astro's style scoping.
+ *
+ * With JavaScript disabled the button simply does nothing and the page stays
+ * light, which is the intended default.
+ */
+
+import { MoonIcon, SunIcon } from '@repo/icons';
+---
+
+<button
+	type="button"
+	id="presentation-theme-toggle"
+	class="theme-toggle"
+	data-mode="light"
+	aria-label="Cambiar a modo oscuro"
+>
+	<span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">
+		<MoonIcon size={18} weight="regular" />
+	</span>
+	<span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">
+		<SunIcon size={18} weight="regular" />
+	</span>
+</button>
+
+<script is:inline>
+	(function () {
+		var KEY = 'hospeda-presentacion-theme';
+		var root = document.documentElement;
+		var btn = document.getElementById('presentation-theme-toggle');
+
+		function read() {
+			try {
+				return localStorage.getItem(KEY);
+			} catch (e) {
+				// Private mode / blocked site data: fall through to the default.
+				return null;
+			}
+		}
+
+		function apply(mode) {
+			root.setAttribute('data-theme', mode);
+			if (btn) {
+				btn.setAttribute('data-mode', mode);
+				btn.setAttribute(
+					'aria-label',
+					mode === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
+				);
+			}
+		}
+
+		// Light unless dark was explicitly chosen here before. Anything else —
+		// no value, a stale value, unreadable storage — is light.
+		apply(read() === 'dark' ? 'dark' : 'light');
+
+		if (btn) {
+			btn.addEventListener('click', function () {
+				var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+				try {
+					localStorage.setItem(KEY, next);
+				} catch (e) {
+					// Not persisting is acceptable; the switch still works for this view.
+				}
+				apply(next);
+			});
+		}
+	})();
+</script>
+
+<style>
+	.theme-toggle {
+		position: fixed;
+		top: 0.85rem;
+		right: 0.85rem;
+		z-index: 20;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		padding: 0;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		background: var(--surface);
+		color: var(--ink);
+		box-shadow: var(--shadow);
+		cursor: pointer;
+		transition:
+			background-color 0.18s ease,
+			border-color 0.18s ease,
+			transform 0.18s ease;
+	}
+
+	.theme-toggle:hover {
+		background: var(--surface-2);
+		transform: scale(1.05);
+	}
+
+	.theme-toggle:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+
+	.theme-toggle__icon {
+		display: none;
+		line-height: 0;
+	}
+
+	/* Light mode shows the moon (the action: go dark), and vice versa. */
+	.theme-toggle[data-mode='light'] .theme-toggle__icon--moon,
+	.theme-toggle[data-mode='dark'] .theme-toggle__icon--sun {
+		display: inline-flex;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.theme-toggle {
+			transition: none;
+		}
+		.theme-toggle:hover {
+			transform: none;
+		}
+	}
+
+	@media print {
+		.theme-toggle {
+			display: none;
+		}
+	}
+</style>
