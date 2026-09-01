@@ -65,31 +65,40 @@ export interface ResolvePayerEmailResult {
  *
  * @throws SubscriptionCheckoutError With code
  *   `PAYER_EMAIL_UNSUPPORTED_CHARACTER` when the resolved email contains a
- *   `+`. MercadoPago rejects such emails outright (`User bad request`), and
- *   spec §11 OQ-1 defers the product decision on how to handle this — until
- *   it resolves, the checkout fails loudly instead of silently rewriting
- *   the email into an address the user never wrote (see
- *   `apps/api/src/utils/mp-email.ts:75-87`'s `sanitizeEmailForMercadoPago`,
- *   which is deliberately NOT used here: its own docblock documents that
- *   the rewrite very likely produces a dead mailbox).
+ *   `+`. MercadoPago rejects such emails outright (`User bad request`, with
+ *   no field name and no code — isolated against a negative control: it is
+ *   the CHARACTER, not the Gmail alias).
+ *
+ *   Spec §11 OQ-1 is **resolved** (HOS-1021, option 1): the user is asked
+ *   for an alternative address on the pre-redirect screen
+ *   (`apps/web/src/components/billing/PayerEmailConfirmDialog.client.tsx`),
+ *   whose value arrives here as `requestedPayerEmail` and wins over both
+ *   other sources. This throw is no longer a placeholder for a pending
+ *   decision — it is **defense in depth** for any caller that does not come
+ *   through that dialog, and it must stay: a `+` that reaches MercadoPago
+ *   fails the whole checkout with an opaque error the user cannot act on.
+ *
+ *   `sanitizeEmailForMercadoPago` (`apps/api/src/utils/mp-email.ts:75-87`)
+ *   is deliberately NOT used to rescue this case. Its own docblock documents
+ *   that rewriting `+` to `.` very likely produces a DEAD MAILBOX (Gmail
+ *   ignores dots, so `user.tag@gmail.com` collapses to `usertag@gmail.com`,
+ *   which is not `user@gmail.com`) — and here that is worse than elsewhere,
+ *   because this exact string is what the user must later type at
+ *   MercadoPago to authorize the charge.
  */
 export function resolvePayerEmail(input: ResolvePayerEmailInput): ResolvePayerEmailResult {
     const { requestedPayerEmail, mpPayerEmail, customerEmail } = input;
 
     const payerEmail = requestedPayerEmail || mpPayerEmail || customerEmail;
 
-    // HOS-937 §11 OQ-1: deliberately deferred product decision. Fail loudly
-    // rather than silently rewrite — see JSDoc above.
+    // HOS-937 §11 OQ-1, resolved by HOS-1021 as option 1: the user is asked
+    // for an alternative address on the pre-redirect screen, and it arrives
+    // here as `requestedPayerEmail`. This branch is the backstop for every
+    // caller that does not come through that screen — it fails closed rather
+    // than rewriting the address into one the user never wrote. See JSDoc.
     if (payerEmail.includes('+')) {
         throw new SubscriptionCheckoutError(
             'PAYER_EMAIL_UNSUPPORTED_CHARACTER',
-            // TODO(HOS-937 OQ-1): once the owner decides how to handle a
-            // '+'-bearing payer email (ask for an alternative on the
-            // pre-redirect screen is the recommended option — spec §11),
-            // replace this hard failure with that resolution. Until then,
-            // MercadoPago rejects the whole checkout with an opaque
-            // "User bad request" if we send it, so we fail closed here
-            // with a message the user/front-end can act on instead.
             `The email '${payerEmail}' contains a '+', which MercadoPago does not accept as a payer email. Please use a different email.`
         );
     }

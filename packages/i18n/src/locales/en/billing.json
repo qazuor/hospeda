@@ -279,6 +279,7 @@
             "body": "Mercado Pago will only let you pay with this exact email. If you want to use a different Mercado Pago account, change it before continuing.",
             "label": "Payment email",
             "invalidError": "Enter a valid email",
+            "plusError": "Mercado Pago does not accept emails containing \"+\". Enter a different address so you can pay.",
             "confirm": "Continue",
             "cancel": "Cancel"
         }
