@@ -64,7 +64,7 @@ function renderIsland() {
 
 async function readyForm(): Promise<void> {
     // Wait for the hydrated tree before interacting with submit behavior.
-    await screen.findByLabelText('Correo electrónico');
+    await screen.findByLabelText(/Correo electrónico/);
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'not-an-email' }
         });
         fireEvent.change(screen.getByLabelText(/^Contraseña/), {
@@ -112,7 +112,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: '  user@example.com  ' }
         });
         fireEvent.change(screen.getByLabelText(/^Contraseña/), {
@@ -139,7 +139,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         );
 
         expect(screen.getByRole('form', { name: 'Iniciar sesión' })).toBeInTheDocument();
-        expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
         expect(screen.getByLabelText(/^Contraseña/)).toBeInTheDocument();
     });
 });
@@ -165,7 +165,7 @@ describe('SignIn controlled email (HOS-959)', () => {
         );
         await readyForm();
 
-        expect(screen.getByLabelText('Correo electrónico')).toHaveValue('preset@example.com');
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveValue('preset@example.com');
     });
 
     it('calls onEmailChange on every keystroke instead of managing its own state', async () => {
@@ -180,7 +180,7 @@ describe('SignIn controlled email (HOS-959)', () => {
         );
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'typed@example.com' }
         });
 
@@ -241,7 +241,7 @@ describe('SignIn password reveal (HOS-796)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'user@example.com' }
         });
         fireEvent.change(screen.getByLabelText(/^Contraseña/), {
@@ -256,5 +256,68 @@ describe('SignIn password reveal (HOS-796)', () => {
                 password: 'Secreta1!'
             });
         });
+    });
+});
+
+// ─── The required marker on the sign-in email label ──────────────────────────
+
+describe('SignIn required marker', () => {
+    it('marks the email label as required, like the password label below it', () => {
+        // Arrange / Act
+        renderIsland();
+
+        // Assert — on the label's own text, NOT the input's attributes:
+        // `required` and `aria-required` were already on this input, so an
+        // attribute check passed happily while this was the only mandatory
+        // field on either tab that did not look mandatory.
+        const label = screen.getByText('Correo electrónico').closest('label');
+        expect(label).not.toBeNull();
+        expect(label?.textContent).toBe('Correo electrónico *');
+    });
+
+    it('hides the marker from the accessibility tree', () => {
+        // The input already announces itself via `aria-required`; a literal
+        // asterisk in the accessible name on top of that is noise, which is
+        // why `PasswordField` marks its own span `aria-hidden` too.
+        renderIsland();
+
+        const marker = screen
+            .getByText('Correo electrónico')
+            .closest('label')
+            ?.querySelector('span');
+        expect(marker?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('still resolves by label, which now requires a partial match', () => {
+        // Worth stating explicitly, because adding the marker broke seven
+        // queries in this file at once.
+        //
+        // `aria-hidden` hides the asterisk from a REAL screen reader's
+        // accessible name, but Testing Library's getByLabelText matches on the
+        // label's text content and does not honour it, so the exact string
+        // 'Correo electrónico' stops matching the moment the span is added.
+        // Every query here uses a regex for that reason — the same thing
+        // HOS-821 had to do on the sign-up side.
+        renderIsland();
+
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveAttribute('id', 'signin-email');
+        expect(() => screen.getByLabelText('Correo electrónico')).toThrow();
+    });
+
+    it('server-renders the marker too, so it is present before hydration', () => {
+        // NOTE: `PasswordField` is mocked in this file, so the password
+        // label's own asterisk is deliberately NOT asserted here — that would
+        // be testing the stub.
+        const html = renderToStaticMarkup(
+            <SignIn
+                locale="es"
+                redirectTo="/es/mi-cuenta/"
+                email=""
+                onEmailChange={() => {}}
+            />
+        );
+
+        expect(html).toContain('aria-hidden="true"');
+        expect(html.replace(/<[^>]*>/g, '')).toContain('Correo electrónico *');
     });
 });

@@ -97,7 +97,7 @@ describe('AuthTabs — tab structure and ARIA', () => {
             'aria-selected',
             'false'
         );
-        expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
         // Sign-up-only field must NOT be mounted.
         expect(screen.queryByLabelText(/Confirmar contraseña/)).not.toBeInTheDocument();
     });
@@ -187,7 +187,7 @@ describe('AuthTabs — email survives a tab switch (HOS-959 core requirement)', 
     it('keeps the typed email when switching from sign-in to sign-up', () => {
         renderAuthTabs({ initialTab: 'signin' });
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'visitor@example.com' }
         });
 
@@ -205,7 +205,7 @@ describe('AuthTabs — email survives a tab switch (HOS-959 core requirement)', 
 
         fireEvent.click(screen.getByRole('tab', { name: 'Ingresar' }));
 
-        expect(screen.getByLabelText('Correo electrónico')).toHaveValue('newcomer@example.com');
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveValue('newcomer@example.com');
     });
 });
 

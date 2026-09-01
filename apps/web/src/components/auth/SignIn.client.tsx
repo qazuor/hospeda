@@ -163,6 +163,27 @@ export function SignIn({
                     className={styles.label}
                 >
                     {t('auth.signIn.email', 'Correo electrónico')}
+                    {/*
+                        The input has always carried `required` +
+                        `aria-required`, so assistive tech was already told;
+                        the VISIBLE marker was the only thing missing. Without
+                        it this was the one mandatory field on either tab that
+                        did not look mandatory — the password below it renders
+                        its own asterisk via `PasswordField`, and every field
+                        on the sign-up tab already had one (HOS-821), so it
+                        read as if e-mail were optional to sign in.
+
+                        Same span, class and `aria-hidden` as HOS-821 used on
+                        the sign-up label: hidden from the a11y tree precisely
+                        because `aria-required` already announces it, and
+                        saying it twice is worse than not at all.
+                    */}
+                    <span
+                        className={styles.required}
+                        aria-hidden="true"
+                    >
+                        {' *'}
+                    </span>
                 </label>
                 <input
                     id="signin-email"
