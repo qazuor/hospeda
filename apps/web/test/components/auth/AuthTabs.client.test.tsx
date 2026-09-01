@@ -60,6 +60,7 @@ function renderAuthTabs(overrides: Partial<Parameters<typeof AuthTabs>[0]> = {})
             }}
             signUpConfig={{
                 redirectTo: 'https://hospeda.com.ar/es/auth/verify-email-sent/',
+                verificationCallbackUrl: 'https://hospeda.com.ar/es/mi-cuenta/',
                 oauthRedirectTo: 'https://hospeda.com.ar/es/mi-cuenta/',
                 oauthExternalRedirect: false
             }}
@@ -272,6 +273,7 @@ describe('AuthTabs — shared OAuth block', () => {
             },
             signUpConfig: {
                 redirectTo: 'https://hospeda.com.ar/es/auth/verify-email-sent/',
+                verificationCallbackUrl: 'https://hospeda.com.ar/es/mi-cuenta/',
                 oauthRedirectTo: 'https://hospeda.com.ar/es/mi-cuenta/',
                 oauthExternalRedirect: false
             }

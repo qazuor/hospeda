@@ -1009,23 +1009,78 @@ export function isProfileCompletionBypassRole({
 }
 
 /**
+ * Appends a `returnUrl` query param to an onboarding redirect target.
+ *
+ * The onboarding gates (profile completion, set-password, change-password)
+ * interrupt whatever the user was trying to reach. Without carrying that
+ * destination forward, finishing the gate drops them on `/mi-cuenta/` and the
+ * thing they came to do is lost — which is exactly the gap HOS-838 reports for
+ * a brand-new account arriving from a marketing landing.
+ *
+ * The value is a same-app path taken from the request being interrupted, so it
+ * is trustworthy at write time. It is re-validated with `resolveSafeReturnPath`
+ * on the way out, because by then the user could have edited the URL by hand.
+ *
+ * @param params - The base path to redirect to and the destination to carry.
+ * @returns `base` unchanged when there is nothing worth carrying, otherwise
+ * `base?returnUrl=<encoded>`.
+ */
+function withReturnUrl({
+    base,
+    returnUrl
+}: {
+    readonly base: string;
+    readonly returnUrl?: string;
+}): string {
+    // Nothing to carry, or the destination IS the gate we are redirecting to:
+    // a self-referential returnUrl would bounce the user back onto the form
+    // they just finished.
+    if (!returnUrl || returnUrl.startsWith(base)) {
+        return base;
+    }
+    return `${base}?returnUrl=${encodeURIComponent(returnUrl)}`;
+}
+
+/**
  * Builds the redirect URL for the profile completion form.
  *
- * @param params - Object with locale
- * @returns Absolute path to `/{locale}/mi-cuenta/completar-perfil/`
+ * @param params - Object with locale and, optionally, the destination the user
+ * was interrupted on — carried through as `returnUrl` (HOS-838).
+ * @returns Absolute path to `/{locale}/mi-cuenta/completar-perfil/`, with a
+ * `returnUrl` query param when a destination was supplied.
  */
-export function buildProfileCompletionRedirect({ locale }: { locale: SupportedLocale }): string {
-    return `/${locale}/mi-cuenta/${PROFILE_COMPLETION_SEGMENT}/`;
+export function buildProfileCompletionRedirect({
+    locale,
+    returnUrl
+}: {
+    readonly locale: SupportedLocale;
+    readonly returnUrl?: string;
+}): string {
+    return withReturnUrl({
+        base: `/${locale}/mi-cuenta/${PROFILE_COMPLETION_SEGMENT}/`,
+        returnUrl
+    });
 }
 
 /**
  * Builds the redirect URL for the set-password form.
  *
- * @param params - Object with locale
- * @returns Absolute path to `/{locale}/mi-cuenta/agregar-contrasena/`
+ * @param params - Object with locale and, optionally, the destination the user
+ * was interrupted on — carried through as `returnUrl` (HOS-838).
+ * @returns Absolute path to `/{locale}/mi-cuenta/agregar-contrasena/`, with a
+ * `returnUrl` query param when a destination was supplied.
  */
-export function buildSetPasswordRedirect({ locale }: { locale: SupportedLocale }): string {
-    return `/${locale}/mi-cuenta/${SET_PASSWORD_SEGMENT}/`;
+export function buildSetPasswordRedirect({
+    locale,
+    returnUrl
+}: {
+    readonly locale: SupportedLocale;
+    readonly returnUrl?: string;
+}): string {
+    return withReturnUrl({
+        base: `/${locale}/mi-cuenta/${SET_PASSWORD_SEGMENT}/`,
+        returnUrl
+    });
 }
 
 /**
@@ -1211,9 +1266,20 @@ export function isChangePasswordRoute({ path }: { path: string }): boolean {
 /**
  * Builds the redirect URL for the change-password form.
  *
- * @param params - Object with locale
- * @returns Absolute path to `/{locale}/mi-cuenta/cambiar-contrasena/`
+ * @param params - Object with locale and, optionally, the destination the user
+ * was interrupted on — carried through as `returnUrl` (HOS-838).
+ * @returns Absolute path to `/{locale}/mi-cuenta/cambiar-contrasena/`, with a
+ * `returnUrl` query param when a destination was supplied.
  */
-export function buildChangePasswordRedirect({ locale }: { locale: SupportedLocale }): string {
-    return `/${locale}/mi-cuenta/${CHANGE_PASSWORD_SEGMENT}/`;
+export function buildChangePasswordRedirect({
+    locale,
+    returnUrl
+}: {
+    readonly locale: SupportedLocale;
+    readonly returnUrl?: string;
+}): string {
+    return withReturnUrl({
+        base: `/${locale}/mi-cuenta/${CHANGE_PASSWORD_SEGMENT}/`,
+        returnUrl
+    });
 }

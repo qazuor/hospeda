@@ -339,6 +339,14 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
             return context.redirect(loginUrl);
         }
 
+        // The path the user was actually trying to reach, carried through every
+        // onboarding gate below so finishing them lands there instead of on
+        // `/mi-cuenta/` (HOS-838). Includes the query string: a destination
+        // like `/es/mi-cuenta/comercios/nuevo?tipo=gastronomia` is only useful
+        // with its params intact. `buildLoginRedirect` above deliberately keeps
+        // using the bare pathname — changing that is a separate decision.
+        const interruptedDestination = `${path}${context.url.search}`;
+
         // Step 7.2 (SPEC-239): Must-change-password gate.
         //
         // Commerce owners are provisioned with a server-generated password and
@@ -357,7 +365,10 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
             !isChangePasswordRoute({ path }) &&
             !isAuthRoute({ path })
         ) {
-            const redirectUrl = buildChangePasswordRedirect({ locale });
+            const redirectUrl = buildChangePasswordRedirect({
+                locale,
+                returnUrl: interruptedDestination
+            });
             return context.redirect(redirectUrl);
         }
 
@@ -402,7 +413,10 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
                     // Check admin bypass before redirecting.
                     const isBypass = await isAdminBypassUser({ cookieHeader });
                     if (!isBypass) {
-                        const redirectUrl = buildProfileCompletionRedirect({ locale });
+                        const redirectUrl = buildProfileCompletionRedirect({
+                            locale,
+                            returnUrl: interruptedDestination
+                        });
                         return context.redirect(redirectUrl);
                     }
                 } else {
@@ -417,7 +431,10 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
                     if (needsSetPassword) {
                         const isBypass = await isAdminBypassUser({ cookieHeader });
                         if (!isBypass) {
-                            const redirectUrl = buildSetPasswordRedirect({ locale });
+                            const redirectUrl = buildSetPasswordRedirect({
+                                locale,
+                                returnUrl: interruptedDestination
+                            });
                             return context.redirect(redirectUrl);
                         }
                     }

@@ -1,8 +1,9 @@
-# Half A · Parity matrix — measurement complete, decisions pending
+# Half A · Parity matrix — complete
 
-**Measured** 2026-09-01 against `origin/staging`. Every cell in the measurement
-columns is **MEASURED** with file:line evidence unless marked otherwise; the two
-decision columns are **empty on purpose** — they are the owner's to fill.
+**Measured** 2026-09-01 against `origin/staging`; **decided** 2026-09-01 by the
+owner. Every cell in the measurement columns is **MEASURED** with file:line
+evidence unless marked otherwise. The two decision columns are the owner's
+verdicts, recorded verbatim — all 40 of them (20 keys × 2 verticals).
 
 ## How each column was measured
 
@@ -55,28 +56,32 @@ Sorted by **how urgently a decision is needed**, not alphabetically. The ones
 running free come first: every day they stay ungated is another owner who will
 lose something when a tier finally claims them.
 
-| Key | Gastronomy | Experiences | Free today? | Decision for gastronomy | Decision for experiences |
+| Key | Gastronomy | Experiences | Free today? | Decision — gastronomy | Decision — experiences |
 |---|---|---|---|---|---|
-| `CAN_USE_RICH_DESCRIPTION` | GATE MISSING | GATE MISSING | **YES — confirmed live** | | |
-| `CAN_EMBED_VIDEO` | GATE MISSING | GATE MISSING | **YES via the API** — public schemas expose `videos: true`; no front-end renders it yet | | |
-| `EDIT_ACCOMMODATION_INFO` | GATE MISSING | GATE MISSING | **YES — and gating it would lock every commerce owner out (see F-11)** | | |
-| `AI_TEXT_IMPROVE` | ALREADY WORKS | ALREADY WORKS | **PARTIALLY** — only for dual-role actors (see F-12) | | |
-| `CAN_CONTACT_WHATSAPP_DISPLAY` | FEATURE MISSING | FEATURE MISSING | No — but a dead typed field is a latent trap (F-13) | | |
-| `CAN_CONTACT_WHATSAPP_DIRECT` | FEATURE MISSING | FEATURE MISSING | No — refines a channel neither vertical exposes | | |
-| `VIEW_BASIC_STATS` | FEATURE MISSING | FEATURE MISSING | No | | |
-| `VIEW_ADVANCED_STATS` | FEATURE MISSING | FEATURE MISSING | No — no conceptual analogue | | |
-| `FEATURED_LISTING` | FEATURE MISSING | FEATURE MISSING | No — but see F-14 on the `isFeatured` name clash | | |
-| `HAS_VERIFICATION_BADGE` | FEATURE MISSING | FEATURE MISSING | No — column does not exist | | |
-| `CREATE_PROMOTIONS` | FEATURE MISSING | FEATURE MISSING | No — data model bound to `accommodationId` | | |
-| `AI_CHAT` | FEATURE MISSING | FEATURE MISSING | No — hardcoded to `accommodations` | | |
-| `AI_TRANSLATE` | FEATURE MISSING | FEATURE MISSING | No — the service itself knows neither vertical | | |
-| `AI_ACCOMMODATION_IMPORT` | FEATURE MISSING | FEATURE MISSING | No — a commerce equivalent is a new feature, not a port | | |
-| `PUBLISH_ACCOMMODATIONS` | FEATURE MISSING | FEATURE MISSING | No — no owner self-publish flow in either vertical | | |
-| `CAN_USE_CALENDAR` | FEATURE MISSING | FEATURE MISSING | No — no table; FK is accommodation-only | | |
-| `CAN_SYNC_EXTERNAL_CALENDAR` | FEATURE MISSING | FEATURE MISSING | No | | |
-| `RESPOND_REVIEWS` | phantom everywhere | phantom everywhere | No | | |
-| `PRIORITY_SUPPORT` | phantom everywhere | phantom everywhere | No | | |
-| `CUSTOM_BRANDING` | phantom everywhere | phantom everywhere | No | | |
+| `CAN_USE_RICH_DESCRIPTION` | GATE MISSING | GATE MISSING | **YES — confirmed live** | `TIER: pro` | `TIER: pro` |
+| `CAN_EMBED_VIDEO` | GATE MISSING | GATE MISSING | **YES via the API** — public schemas expose `videos: true`; no front-end renders it yet | `TIER: pro` | `TIER: pro` |
+| `EDIT_ACCOMMODATION_INFO` | GATE MISSING | GATE MISSING | **YES — and gating it would lock every commerce owner out (see F-11)** | `TIER: basic` — as a new key `EDIT_GASTRONOMY_INFO` | `TIER: basic` — as a new key `EDIT_EXPERIENCE_INFO` |
+| `AI_TEXT_IMPROVE` | ALREADY WORKS | ALREADY WORKS | **PARTIALLY** — only for dual-role actors (see F-12) | `TIER: pro` | `TIER: pro` |
+| `CAN_CONTACT_WHATSAPP_DISPLAY` | FEATURE MISSING | FEATURE MISSING | No — but a dead typed field is a latent trap (F-13) | `TIER: basic` | `TIER: basic` |
+| `CAN_CONTACT_WHATSAPP_DIRECT` | FEATURE MISSING | FEATURE MISSING | No — refines a channel neither vertical exposes | `TIER: basic` | `TIER: basic` |
+| `VIEW_BASIC_STATS` | FEATURE MISSING | FEATURE MISSING | No | `TIER: basic` | `TIER: basic` |
+| `VIEW_ADVANCED_STATS` | FEATURE MISSING | FEATURE MISSING | No — no conceptual analogue | `TIER: premium` | `TIER: premium` |
+| `FEATURED_LISTING` | FEATURE MISSING | FEATURE MISSING | No — but see F-14 on the `isFeatured` name clash | `TIER: premium` **and also an `ADDON`** | `TIER: premium` **and also an `ADDON`** |
+| `HAS_VERIFICATION_BADGE` | FEATURE MISSING | FEATURE MISSING | No — column does not exist | `LATER` | `LATER` |
+| `CREATE_PROMOTIONS` | FEATURE MISSING | FEATURE MISSING | No — data model bound to `accommodationId` | `TIER: basic` | `TIER: basic` |
+| `AI_CHAT` | FEATURE MISSING | FEATURE MISSING | No — hardcoded to `accommodations` | `TIER: premium` | `TIER: premium` |
+| `AI_TRANSLATE` | FEATURE MISSING | FEATURE MISSING | No — the service itself knows neither vertical | `TIER: basic` | `TIER: basic` |
+| `AI_ACCOMMODATION_IMPORT` | FEATURE MISSING | FEATURE MISSING | No — a commerce equivalent is a new feature, not a port | `TIER: premium` | `TIER: premium` |
+| `PUBLISH_ACCOMMODATIONS` | FEATURE MISSING | FEATURE MISSING | No — no owner self-publish flow in either vertical | `TIER: basic` — as a new key `PUBLISH_GASTRONOMY` | `TIER: basic` — as a new key `PUBLISH_EXPERIENCE` |
+| `CAN_USE_CALENDAR` | FEATURE MISSING | FEATURE MISSING | No — no table; FK is accommodation-only | `DOES NOT APPLY` | `LATER` — **not this key**: HOS-1040 |
+| `CAN_SYNC_EXTERNAL_CALENDAR` | FEATURE MISSING | FEATURE MISSING | No | `DOES NOT APPLY` | `DOES NOT APPLY` — there is no excursion OTA to sync with |
+| `RESPOND_REVIEWS` | phantom everywhere | phantom everywhere | No | `TIER: basic` — stays `upcoming` (D-B) | `TIER: basic` — stays `upcoming` (D-B) |
+| `PRIORITY_SUPPORT` | phantom everywhere | phantom everywhere | No | `TIER: pro` — stays `upcoming` (D-B) | `TIER: pro` — stays `upcoming` (D-B) |
+| `CUSTOM_BRANDING` | phantom everywhere | phantom everywhere | No | `TIER: premium` — stays `upcoming` (D-B) | `TIER: premium` — stays `upcoming` (D-B) |
+
+`TIER: basic` means the cheapest **paid** tier grants it and every tier above
+inherits it. There is no free commerce tier — publishing costs money — so `basic`
+is the floor of the product, not a giveaway.
 
 ## What the measurement found
 
@@ -165,16 +170,90 @@ deliberately, so as not to "serve a gated value to everyone", because on
 accommodation it is a paid entitlement. **Protecting one business model opened the
 hole in the other.**
 
-## How to fill the decision columns
+## The four framework decisions
 
-For each row, per vertical, one of:
+Taken by the owner on 2026-09-01. They are the reason the matrix above could be
+filled at all, and they are settled — H2/H3/H4 build on them, they do not reopen
+them.
 
-- **`TIER: basic` / `TIER: pro` / `TIER: premium`** — which tier grants it.
-- **`ADDON`** — sold separately rather than bundled (feeds H4/HOS-977).
-- **`DOES NOT APPLY`** — with the reason written down. A justified no is what stops
-  the same proposal returning in six months.
-- **`BLOCKED`** — needs something built first; name what.
+### D-A · Commerce inherits `TOURIST_VIP_ENTITLEMENTS` whole
 
-The four rows marked free today deserve their answer first, and the answer carries
-a cost either way: leave them ungated and the cheapest tier grants them to
-everyone, or gate them and take something away from owners who already had it.
+All 15 keys (`plans.config.ts:57-73`, counted). A commerce owner is also a tourist
+on this platform, so the tourist-side grants come along as a block rather than
+being re-derived per vertical — exactly as the six host plans already spread them
+(`plans.config.ts:118, 161, 210, 268, 312, 367`), which means every tier of a
+vertical gets all 15, not just the top one.
+
+**This cross-checks two rows of the matrix.** `CAN_CONTACT_WHATSAPP_DISPLAY` and
+`CAN_CONTACT_WHATSAPP_DIRECT` are *inside* those 15, and the owner independently
+placed both at `TIER: basic`. The two answers agree, so D-A grants them and no
+separate decision is needed.
+
+### D-B · The three phantom keys are not built now
+
+`RESPOND_REVIEWS`, `PRIORITY_SUPPORT` and `CUSTOM_BRANDING` enforce nothing
+anywhere on the platform — accommodation included. Their tier is recorded above so
+the comparison page has an answer to give, and they stay `status: 'upcoming'`
+there. That is already what the page says, so nothing is being mis-sold today and
+nothing has to change to keep it honest.
+
+### D-C · Addons declare `productDomain`
+
+**Rejected**: putting the verticals into `PlanCategory`. That enum carries an
+ordinal rank — `tourist < owner < complex` — and a vertical has no place on that
+line. `productDomain` already discriminates the four domains and is where the
+addon belongs.
+
+### D-D · The tier travels in the checkout body
+
+The way `start-paid.ts:261` already resolves the plan from `body.planSlug`. The
+env var is retired.
+
+### Caps
+
+`1 / 3 / 10` listings for both verticals. Today `commerceVerticalTier()` takes a
+single `maxListings` and **all six tiers pass `1`** (`plans.config.ts:690, 704,
+739, 763, 777, 794`). Widening that factory to take a per-tier cap is the first
+change H2 has to make.
+
+## Edit and publish: replicate accommodation
+
+The one verdict the matrix could not answer on its own. Four new keys —
+`EDIT_GASTRONOMY_INFO`, `PUBLISH_GASTRONOMY`, `EDIT_EXPERIENCE_INFO`,
+`PUBLISH_EXPERIENCE` — granted at all three tiers of their own vertical, and gated
+on the commerce routes exactly the way `accommodation/protected/patch.ts:126`
+gates its own.
+
+The alternative was to gate on the active subscription alone, which is what
+`commerceVerticalTier()`'s own comment describes as today's design: *"Commerce
+visibility is driven by the subscription status through
+`commerce_listing_subscriptions` + the reconciler, not by the entitlement engine
+— … there is simply nothing to put in the first half of that pattern."* That
+route costs zero new keys.
+
+**The owner chose parity over economy: one mechanism across the platform, not
+two.** The precedent being copied is exact — on accommodation, `EDIT_ACCOMMODATION_INFO`
+and `PUBLISH_ACCOMMODATIONS` are already granted by **all six** host plans
+(`plans.config.ts:120, 163, 212, 270, 314, 369`), so a key that is uniformly true
+across every tier of a vertical is the existing convention, not a compromise
+invented here.
+
+### Sequencing is load-bearing
+
+Commerce plans declare `entitlements: []`. Mount the gate before the grant ships
+and **every commerce owner loses the ability to edit their own listing** — F-11 is
+not a leak to close, it is what makes the product work today. The grant and the
+gate go in the same release, and within it the grant goes first.
+
+The same warning covers the other rows that are free today
+(`CAN_USE_RICH_DESCRIPTION`, `CAN_EMBED_VIDEO`, `AI_TEXT_IMPROVE`): all three land
+on `TIER: pro`, so gating them takes something away from an owner on the entry
+tier who has it for free today. That is a deliberate, priced decision — not a
+regression to be reported once it ships.
+
+### R-2 applies to every one of these keys
+
+Per HOS-973 R-2, the limit engine resolves an **unknown key as UNLIMITED** and
+fails open across five layers without raising. So each new key and each changed
+cap has to be asserted end to end against the real route — never with `checkLimit`
+and a hand-built context.

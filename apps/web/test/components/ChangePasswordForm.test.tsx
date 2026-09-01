@@ -42,11 +42,22 @@ const VALID_PWD = 'SecureP@ss1';
 /** Email of the signed-in account under test — see the HOS-752 block below. */
 const ACCOUNT_EMAIL = 'comerciante@ejemplo.test';
 
-function renderForm(accountEmail: string = ACCOUNT_EMAIL) {
+/** Default post-success destination, matching what the page resolves when no
+ * onboarding gate carried a `returnUrl` (HOS-838). */
+const DEFAULT_RETURN_URL = '/es/mi-cuenta/';
+
+function renderForm({
+    accountEmail = ACCOUNT_EMAIL,
+    returnUrl = DEFAULT_RETURN_URL
+}: {
+    accountEmail?: string;
+    returnUrl?: string;
+} = {}) {
     return render(
         <ChangePasswordForm
             locale="es"
             accountEmail={accountEmail}
+            returnUrl={returnUrl}
         />
     );
 }
@@ -352,6 +363,48 @@ describe('ChangePasswordForm', () => {
             // Restore.
             window.location = originalLocation;
         });
+
+        it('lands on the interrupted destination instead of /mi-cuenta/ (HOS-838)', async () => {
+            // A commerce owner provisioned with a temporary password is bounced
+            // here from whatever they were trying to reach. Finishing must take
+            // them back there, not to the account dashboard.
+            // Arrange
+            const hrefAssignSpy = vi.fn();
+            const originalLocation = window.location;
+            Object.defineProperty(window, 'location', {
+                configurable: true,
+                writable: true,
+                value: {
+                    ...originalLocation,
+                    set href(v: string) {
+                        hrefAssignSpy(v);
+                    }
+                } as Location
+            });
+
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            } as Response);
+
+            renderForm({ returnUrl: '/es/mi-cuenta/comercios/nuevo/' });
+            fillFields();
+
+            // Act
+            fireEvent.click(screen.getByRole('button', { name: /cambiar contraseña/i }));
+
+            // Assert
+            await waitFor(
+                () => {
+                    expect(hrefAssignSpy).toHaveBeenCalledWith('/es/mi-cuenta/comercios/nuevo/');
+                },
+                { timeout: 3000 }
+            );
+            expect(hrefAssignSpy).not.toHaveBeenCalledWith('/es/mi-cuenta/');
+
+            // Restore.
+            window.location = originalLocation;
+        });
     });
 
     // ── 7. Shows password strength indicator ──────────────────────────────────
@@ -422,7 +475,7 @@ describe('ChangePasswordForm', () => {
         it('renders the email it was given, not a hardcoded or cached one', () => {
             // Guards the wiring: a component that ignored the prop would still
             // pass the assertion above if the fixture happened to match.
-            renderForm('superadmin@otra-cuenta.test');
+            renderForm({ accountEmail: 'superadmin@otra-cuenta.test' });
             const notice = screen.getByTestId('change-password-account-notice');
             expect(notice).toHaveTextContent('superadmin@otra-cuenta.test');
             expect(notice).not.toHaveTextContent(ACCOUNT_EMAIL);

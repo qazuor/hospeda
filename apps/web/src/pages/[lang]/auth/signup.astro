@@ -20,14 +20,15 @@
  * already parses it. See `src/lib/commerce/start-url.ts` for the full
  * rationale.
  *
- * The password-REGISTRATION path does NOT honor `returnUrl`/`callbackUrl` —
- * that is a known gap (HOS-838), not an oversight: the API does not
- * auto-sign-in the user (email verification is required), so registration
- * always lands on `/auth/verify-email-sent/` and the destination is lost at
- * the verification hop. OAuth registration DOES authenticate immediately, so
- * it honors both params exactly like sign-in (HOS-959 — this is a
- * deliberate, owner-approved behavior ADDITION: previously `signup.astro`
- * ignored `callbackUrl` entirely, even for OAuth).
+ * The password-REGISTRATION path still lands the BROWSER on
+ * `/auth/verify-email-sent/`, because the API does not auto-sign-in the user
+ * (email verification is required) and there is no session to redirect with.
+ * The destination is no longer lost there, though: HOS-838 sends it to the API
+ * as the sign-up `callbackURL`, which ends up inside the verification link, and
+ * every onboarding gate that follows forwards it as `returnUrl`. OAuth
+ * registration authenticates immediately, so it honors both params exactly like
+ * sign-in (HOS-959 — a deliberate, owner-approved behavior ADDITION: previously
+ * `signup.astro` ignored `callbackUrl` entirely, even for OAuth).
  *
  * Both `returnUrl` and `redirect` are accepted, mirroring `signin.astro`;
  * `returnUrl` wins when both are present. The value is attacker-controlled, so
