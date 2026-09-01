@@ -44,12 +44,12 @@ import { billingSubscriptions, eq, getDb } from '@repo/db';
 import { PromoEffectKindEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
+    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE,
     getPromoCodeByCode,
     loadSubscriptionDiscountState,
     resolveFullPlanPriceCentavos
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
-import { DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE } from './billing/subscription-checkout-error.js';
 import { applyInitialDiscountMutation } from './promo-renewal-mp.service.js';
 
 /**

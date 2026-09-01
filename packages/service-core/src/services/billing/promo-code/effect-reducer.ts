@@ -67,6 +67,39 @@ export interface CompMutation {
  */
 export type PromoMutation = DiscountMutation | TrialExtensionMutation | CompMutation;
 
+/**
+ * User-facing message for a `discount` effect that reduces the price to zero.
+ *
+ * A `finalAmount` of 0 is a perfectly valid output of
+ * {@link calculatePromoCodeEffect} — the reducer is pure arithmetic and says
+ * nothing about whether the result can be charged. Deciding it cannot is a
+ * business rule, and it lives at every point that would act on the number.
+ *
+ * There are THREE such points, and until HOS-996 only the first had the rule:
+ *
+ * 1. **Checkout signup** — `subscription-checkout.service.ts`, which throws
+ *    `SubscriptionCheckoutError('INVALID_PROMO_CODE', ...)` before MercadoPago
+ *    is provisioned at all.
+ * 2. **Apply to an existing subscription** —
+ *    `promo-discount-apply.service.ts`, before it mutates the preapproval's
+ *    `transaction_amount`.
+ * 3. **`applyPromoCode`** below in `promo-code.redemption.ts`, the path a bare
+ *    `POST /apply` with no `subscriptionId` takes.
+ *
+ * All three answer HTTP 422. Paths 1 and 2 were always fail-closed — MercadoPago
+ * rejects a zero-amount preapproval — so what the rule buys there is a diagnosis
+ * instead of a raw provider error. Path 3 is the one that could actually lose
+ * something: it redeems the code (incrementing `used_count` and writing a usage
+ * row) and only then returns `finalAmount: 0`, so without the rule the customer
+ * burns their code on a request that answers 200 and buys nothing, and the
+ * checkout then refuses the same code.
+ *
+ * The right tool for a free subscription is a `comp` code, which is a status,
+ * not an amount.
+ */
+export const DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE =
+    'This discount code reduces the price to zero. Use a comp code for free subscriptions.';
+
 // ---------------------------------------------------------------------------
 // Pure computation
 // ---------------------------------------------------------------------------

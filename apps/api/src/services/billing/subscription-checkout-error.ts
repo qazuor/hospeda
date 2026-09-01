@@ -143,25 +143,3 @@ export class SubscriptionCheckoutError extends Error {
         this.name = 'SubscriptionCheckoutError';
     }
 }
-
-/**
- * User-facing message for a `discount` promo code whose effect reduces the
- * price all the way to zero.
- *
- * Shared verbatim by the TWO paths that can apply a discount, so they can never
- * drift apart (HOS-996):
- *
- * 1. **Checkout signup** — `subscription-checkout.service.ts`, which throws
- *    `SubscriptionCheckoutError('INVALID_PROMO_CODE', ...)` before any
- *    MercadoPago provisioning happens.
- * 2. **Apply to an existing subscription** —
- *    `promo-discount-apply.service.ts`, which returns the same code/message as
- *    a typed error before attempting the preapproval amount mutation.
- *
- * Both surface as HTTP 422. A zero-amount preapproval is meaningless (MercadoPago
- * rejects it outright), so the guard is fail-closed either way — what it buys is
- * a diagnosis the admin can act on instead of a raw provider error. The right
- * tool for a free subscription is a `comp` code, not a 100% discount.
- */
-export const DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE =
-    'This discount code reduces the price to zero. Use a comp code for free subscriptions.';

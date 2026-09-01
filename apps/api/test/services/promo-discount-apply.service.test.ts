@@ -36,7 +36,11 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val }))
 }));
 
-vi.mock('@repo/schemas', () => ({
+// Spread the real schemas package: the real `@repo/service-core` (see the mock
+// below) pulls PermissionEnum and friends out of it, which a whole-module factory
+// would leave undefined.
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     PromoEffectKindEnum: { DISCOUNT: 'discount', TRIAL_EXTENSION: 'trial_extension', COMP: 'comp' }
 }));
 
@@ -45,7 +49,15 @@ const calculatePromoCodeEffectMock = vi.fn();
 const applyPromoCodeMock = vi.fn();
 const resolveFullPlanPriceCentavosMock = vi.fn();
 const loadSubscriptionDiscountStateMock = vi.fn();
-vi.mock('@repo/service-core', () => ({
+// HOS-996: spread the real module before the overrides instead of replacing it
+// wholesale. The seam imports `DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE` from here,
+// and a whole-module factory hands back `undefined` for any export it does not
+// list — which is not a compile error and not an obvious runtime one either: the
+// guard would still fire and still reject, just with an empty message, and a test
+// that only checked "did it refuse" would stay green. Same shape
+// `promo-code-t008.test.ts` uses for this module.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
     getPromoCodeByCode: (...args: unknown[]) => getPromoCodeByCodeMock(...args),
     calculatePromoCodeEffect: (...args: unknown[]) => calculatePromoCodeEffectMock(...args),
     applyPromoCode: (...args: unknown[]) => applyPromoCodeMock(...args),

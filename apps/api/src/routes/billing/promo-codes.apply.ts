@@ -243,10 +243,15 @@ export const applyPromoCodeRoute = createProtectedRoute({
                 PROMO_CODE_MAX_USES_PER_CUSTOMER: 409,
                 // SF3: expired code → 400 Bad Request
                 PROMO_CODE_EXPIRED: 400,
+                // HOS-996: `applyPromoCode` refuses a discount that takes the
+                // price to zero, before it redeems anything. Same code, same
+                // message and same 422 as the two paths above, so the answer does
+                // not depend on which of the three the caller happened to hit.
+                INVALID_PROMO_CODE: 422,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 409 | 500, {
+            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500, {
                 message: result.error?.message ?? 'Unknown error applying promo code'
             });
         }
