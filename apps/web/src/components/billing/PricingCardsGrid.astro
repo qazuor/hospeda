@@ -1089,14 +1089,48 @@ const selectGroupName = `pricing-select-${audience}`;
 		margin: 0;
 	}
 
+	/* The saving badge is an OUTLINED green chip with no fill — the same shape
+	   the trial pill arrived at, and for the same reason.
+
+	   It shipped as `--success` ink on a 16% `--success` tint and axe measured
+	   2.89:1 (light) / 4.13:1 (dark). This is 12px bold, and AA's LARGE-text
+	   exemption starts at 18.66px bold, so the floor is 4.5:1 — not 3:1.
+
+	   Two things make this rule harder than it looks:
+
+	   - `--success` has no headroom to spend as text. Even bare, it is 3.46:1
+	     on the toggle track and 4:1 on a white card. A tint of ANY colour
+	     behind it only subtracts, which is why removing the fill alone would
+	     not have fixed it.
+	   - The badge sits inside the "Anual" radio, and that radio has TWO
+	     backgrounds: `--surface-warm` while unselected (what axe sampled) and
+	     `--core-card` once selected. Four pairings have to clear 4.5:1, not
+	     two, and only one of them is the one a scan reports.
+
+	   Inverting to a solid `--success` fill with `--success-foreground` ink
+	   was measured and REJECTED: that pair is 3.9:1 in light (near-white on a
+	   mid green). It passes in dark (6.77:1), which is exactly the trap.
+
+	   `--hospeda-forest-link` is SPEC-308's AA-safe green TEXT step — the same
+	   role `--brand-accent-text` plays for orange — and it is already the ink
+	   of the audience labels on this page. Measured, 8-bit quantised, WCAG 2.1:
+
+	     light  #007742 on #e2f0ff (track)  4.88:1   on #ffffff (selected) 5.65:1
+	     dark   #43c07a on #182334 (track)  6.82:1   on #1a283c (selected) 6.41:1
+
+	   The border is plain `currentColor` rather than a `color-mix` alpha so it
+	   inherits the ink's measured ratio (4.88:1 worst) and clears the 3:1
+	   non-text floor of WCAG 1.4.11 by itself. A 60% mix — the alpha the trial
+	   pill uses — is only 2.47:1 against the light track and would make the
+	   chip's own outline the failing element. */
 	.pricing-toggle__badge {
 		font-size: var(--text-caption);
 		font-weight: 700;
 		line-height: 1.2;
 		padding: 0.15em 0.55em;
 		border-radius: var(--radius-pill);
-		background-color: color-mix(in srgb, var(--success) 16%, transparent);
-		color: var(--success);
+		border: 1px solid currentColor;
+		color: var(--hospeda-forest-link);
 	}
 
 	.pricing-toggle {
@@ -1255,8 +1289,13 @@ const selectGroupName = `pricing-select-${audience}`;
 		background: currentColor;
 		flex: none;
 	}
+	/* Recolouring for a `trial_extension` promo. `--success` was 4:1 on a light
+	   card — under AA for this pill's normal-size text, and PREEXISTING rather
+	   than introduced by HOS-943. It takes the same AA-safe green step the
+	   toggle badge does, which lifts it to 5.65:1 light / 6.41:1 dark on
+	   `--core-card` and keeps the two greens on this page identical. */
 	.pricing-card__trial--promo {
-		color: var(--success, var(--brand-accent));
+		color: var(--hospeda-forest-link, var(--brand-accent));
 		font-weight: 700;
 	}
 	/* HOS-226: badge-suppression note injected by PlanPurchaseButton when an

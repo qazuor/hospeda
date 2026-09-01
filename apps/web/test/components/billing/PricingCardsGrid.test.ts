@@ -1005,4 +1005,69 @@ describe('PricingCardsGrid.astro', () => {
             expect(markup).not.toMatch(/<[a-zA-Z]/);
         });
     });
+
+    describe('the saving badge is green text, not green on green (HOS-943)', () => {
+        const badgeRule = (): string => src.match(/\.pricing-toggle__badge \{([^}]*)\}/)?.[1] ?? '';
+
+        // The ratios themselves are measured in
+        // `packages/design-tokens/src/tokens/green-text-contrast.test.ts`, which
+        // recomputes them from the theme records. This block only pins the
+        // CONSUMER: which token the rule reaches for, and that it spends no
+        // headroom on a fill. Neither half is sufficient alone — the token guard
+        // cannot see that this rule uses the token, and this guard cannot see
+        // whether the token still clears AA.
+
+        it('takes the AA-safe green text step, never --success', () => {
+            // `--success` is 3.46:1 on the toggle track and 4:1 on a white card:
+            // it fails AA as normal-size text BARE, so no amount of adjusting
+            // what sits behind it makes it usable here.
+            const rule = badgeRule();
+
+            expect(rule).toContain('color: var(--hospeda-forest-link);');
+            expect(rule).not.toContain('--success');
+        });
+
+        it('carries NO background — the badge is 12px bold, so its floor is 4.5:1', () => {
+            // It shipped as a 16% `--success` tint under `--success` ink and axe
+            // measured 2.89:1 light / 4.13:1 dark. Even under the token that
+            // replaced it, an 8% self-tint drops the light track to 4.37:1, so
+            // there is no "small enough" fill to reintroduce.
+            const rule = badgeRule();
+
+            expect(rule).not.toContain('background');
+            expect(rule).not.toContain('color-mix');
+        });
+
+        it('outlines with full currentColor, so the border clears 3:1 by itself', () => {
+            // Tracking the ink rather than naming a token keeps the outline
+            // coherent with whatever the text is. At full strength it inherits
+            // the ink's 4.88:1 worst case; the trial pill's 60% alpha would
+            // composite to 2.47:1 on the light track and fail WCAG 1.4.11.
+            expect(badgeRule()).toContain('border: 1px solid currentColor;');
+        });
+
+        it('recolours the promo trial pill with the same green', () => {
+            // Preexisting, not introduced here: `--success` measured 4:1 on a
+            // light `--core-card`. Same token, same page, so the two greens
+            // cannot drift apart.
+            const rule = src.match(/\.pricing-card__trial--promo \{([^}]*)\}/)?.[1] ?? '';
+
+            expect(rule).toContain('var(--hospeda-forest-link,');
+            expect(rule).not.toContain('var(--success');
+        });
+
+        it('leaves the badge outside the card, so it consumes no subgrid row', () => {
+            // The row-count invariant asserted far above counts DIRECT children
+            // of `.pricing-card`. This badge lives in `.pricing-toggle-block`,
+            // which is why restyling it cannot shift the cards — stated so that
+            // a future move of the badge into the card has to confront the
+            // row list rather than discover it.
+            const toggleBlock = src.match(
+                /<div class="pricing-toggle-block">([\s\S]*?)<\/div>\n\t\t<\/div>/
+            );
+
+            expect(toggleBlock?.[0]).toContain('pricing-toggle__badge');
+            expect(toggleBlock?.[0]).not.toContain('pricing-card__');
+        });
+    });
 });
