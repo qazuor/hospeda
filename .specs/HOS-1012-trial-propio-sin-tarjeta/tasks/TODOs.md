@@ -1,11 +1,20 @@
 # HOS-1012: Hospeda-owned free trial — no card, own clock, starts at publish
 
-## Progress: 0/30 tasks (0%)
+## Progress: 1/31 tasks (3%)
 
 **Average Complexity:** 2.6/3 (max)
 **Critical Path:** T-001 → T-003 → T-010 → T-011 → T-012 → T-013 (6 steps)
 **Parallel Tracks:** 3 identified (publish/eligibility · notifications · retirement)
 
+> **The series is nine sends, not eight.** The spec says nine and then lists three plus
+> five. The ninth is `TRIAL_EXPIRED` (offset 0), which spec §5 lists separately as
+> "gone, must return" — tracked as **T-031**.
+>
+> **Owner decision, 2026-09-01: the pre-expiry offsets are fixed in code**, not settings.
+> `billingSettings.trialExpiryReminderDays` and its admin UI are retired with T-016. Each
+> email's copy is written for its own distance, so an admin-editable offset desynchronises
+> the two silently.
+>
 > The trial stops being MercadoPago's and becomes a Hospeda state again: no card on day 1,
 > no preapproval, and MercadoPago is never told a trial exists. All of HOS-937 is preserved —
 > that is the paid path and it is needed either way.
@@ -14,8 +23,9 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) — Add the `first_publish` eligibility reason and the trial offset constants
-  - Recover the shape from commit `fed220c25` rather than re-deriving it. Frozen-array test over the nine offsets.
+- [x] **T-001** (complexity: 2) — ~~Add the `first_publish` eligibility reason and~~ the trial offset constants
+  - **Done.** `apps/api/src/services/billing/trial-notification-offsets.ts` + 6 frozen-value tests, 3 mutations killed.
+  - **`first_publish` needed no work**: it was never deleted from the union — `fed220c25` changed its meaning, not its existence. That work moved into T-007, which shrank accordingly.
   - Blocked by: none
   - Blocks: T-003, T-007, T-030
 
@@ -85,6 +95,11 @@
   - No commercial hook: OQ-1 is open and must not be assumed.
   - Blocked by: T-002
   - Blocks: T-017, T-025
+
+- [ ] **T-031** (complexity: 2) — Write the expiry-day email (`TRIAL_EXPIRED`), the ninth send
+  - The only send that reports a fact instead of warning about one. Its copy must differ in kind from the T-1 warning a day earlier and the +1 win-back a day later — the three land inside 48 hours.
+  - Blocked by: T-002
+  - Blocks: T-020, T-025
 
 ### Integration Phase
 

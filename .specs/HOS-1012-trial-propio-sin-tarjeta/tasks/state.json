@@ -8,35 +8,35 @@
             "id": "T-001",
             "title": "Add the 'first_publish' eligibility reason and the trial offset constants",
             "description": "Reintroduce the `first_publish` value in the publish-eligibility reason union (`apps/api/src/services/accommodation-publish-deps.ts`, `packages/service-core/src/services/accommodation/accommodation.types.ts`) and define the notification offset constants (pre-expiry 10/5/1, post-expiry 1/5/10/30/60) in one shared location. Recover the exact shape from commit fed220c25 rather than re-deriving it. TESTS: unit test asserting the reason union accepts 'first_publish' and that the offset constants are the exact nine values the spec §4 lists — a frozen-array assertion, so a silent edit to an offset fails.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003", "T-007", "T-030"],
             "subtasks": [
                 {
-                    "title": "git show fed220c25 -- accommodation.types.ts to recover the union",
-                    "completed": false
+                    "title": "Offsets defined in trial-notification-offsets.ts",
+                    "completed": true
                 },
                 {
-                    "title": "Define PRE_EXPIRY_OFFSETS and WIN_BACK_OFFSETS as `as const`",
-                    "completed": false
+                    "title": "Frozen-value tests, 3 mutations killed",
+                    "completed": true
                 },
                 {
-                    "title": "Frozen-array test over the nine offsets",
-                    "completed": false
+                    "title": "first_publish union needed no change - it was never deleted",
+                    "completed": true
                 }
             ],
             "tags": ["types", "billing", "setup"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-01T07:46:00.000Z",
+                "completed": "2026-09-01T07:55:00.000Z"
             }
         },
         {
@@ -46,7 +46,7 @@
             "status": "pending",
             "complexity": 3,
             "blockedBy": [],
-            "blocks": ["T-014", "T-015"],
+            "blocks": ["T-014", "T-015", "T-031"],
             "subtasks": [
                 {
                     "title": "Add TRIAL_EXPIRED back to NotificationType",
@@ -217,7 +217,7 @@
         {
             "id": "T-007",
             "title": "Restore 'first_publish' in the publish eligibility resolver",
-            "description": "Recover the `first_publish` branch in `apps/api/src/services/accommodation-publish-deps.ts` from commit fed220c25 (which deleted 171 lines from this file). The resolver must answer 'first_publish' when the owner has no subscription AND is still eligible for a trial in the accommodation domain (T-005), and keep answering 'subscription_required' otherwise. DO NOT recover startTrial/cancelTrial from the old deps — see T-008. TESTS: eligibility matrix over (has subscription, trial consumed in domain) and the date-aware lapsed-host cases already covered by the existing publish-deps suite.",
+            "description": "MEASURED 2026-09-01, SMALLER THAN WRITTEN: `first_publish` was never deleted from the union — `accommodation.types.ts:22` still declares it and `accommodation-publish-deps.ts` still RETURNS it at :75 and :89. fed220c25 changed its SEMANTICS (grant a trial → reject to the plans page), not its existence. So this task is not a restoration: it is making the two existing return branches agree with per-domain eligibility (T-005), and rewriting the docblock at accommodation.types.ts:8-16 which currently documents the card-first meaning. TESTS: eligibility matrix over (has subscription, trial consumed in THIS domain), plus the date-aware lapsed-host cases already covered by the existing publish-deps suite.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-001", "T-005"],
@@ -524,7 +524,7 @@
         {
             "id": "T-016",
             "title": "Move the pre-expiry cron offsets from 3,1 to 10,5,1",
-            "description": "`notification-schedule.job.ts:8-9` currently sends TRIAL_ENDING_REMINDER at 3 and 1 days. Change to 10, 5 and 1, each dispatching its own template from T-014 rather than reusing one. `TrialService.findTrialsEndingSoon({daysAhead})` (`trial.service.ts:1502`) is exactly the query needed and does not change. TESTS: each offset selects the right cohort and dispatches the right template; a trial 7 days out matches no offset; the skip-tolerant window still catches a missed day.",
+            "description": "OWNER DECISION 2026-09-01: the offsets are FIXED IN CODE, not settings. Import PRE_EXPIRY_OFFSET_DAYS from `services/billing/trial-notification-offsets.ts` (T-001). MEASURED: the current job does NOT hardcode 3 and 1 — that is only the docblock. It reads `billingSettings.trialExpiryReminderDays` (:431) and derives the contiguous window `[N, N-1].filter(d => d >= 2)` (:324) plus a separate fixed one-day block (:341). That shape cannot express three independent offsets, and an admin-editable offset silently desynchronises copy from distance. RETIRE `trialExpiryReminderDays`: the job read, the billing-settings field, and its admin UI (i18n keys admin-billing.settings.notification.trialReminderDays{Label,Hint} still exist). Removing a settings field touches live data — check whether the seed dual-write rule applies. TESTS: each offset selects its cohort and dispatches ITS OWN template; a trial 7 days out matches nothing.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-014"],
@@ -617,7 +617,7 @@
         {
             "id": "T-019",
             "title": "Make the idempotency key carry the offset",
-            "description": "`generateIdempotencyKey(type, customerId, daysAhead)` in `notification-schedule.job.ts` already has the right shape, but the offset MUST be part of the key or a re-run double-sends. With nine offsets across two directions the collision surface is larger than the current two. TESTS: two different offsets for the same (customer, type) produce different keys; the same triple produces the same key; a re-run of one day sends nothing twice.",
+            "description": "PARTLY DONE ALREADY, VERIFY RATHER THAN BUILD: `generateIdempotencyKey(type, customerId, daysAhead)` (:94-100) already appends `:d${daysAhead}`. What is unverified is the two-direction collision: a pre-expiry send at 1 day out and a win-back at 1 day after both produce suffix `:d1`, so they are distinguished ONLY by the `type` component. That holds while every offset has its own notification type — confirm it, and add a test that pins it, because a future refactor reusing one type across both directions would silently collapse two sends into one. TESTS: assert the pre-1 and post-1 keys differ; assert same-triple keys match; a re-run of one day sends nothing twice.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": [],
@@ -651,7 +651,7 @@
             "description": "Integration test over the whole series: a trial created today produces exactly nine sends across its lifetime at the right offsets, and paying at any point truncates the remainder. TESTS: parametrized over the payment moment (before T-10, between offsets, after expiry, after +30) asserting the exact set of emails sent in each case. This is the test that catches a series that keeps mailing a paying customer.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-016", "T-017", "T-018", "T-019"],
+            "blockedBy": ["T-016", "T-017", "T-018", "T-019", "T-031"],
             "blocks": [],
             "subtasks": [
                 {
@@ -814,7 +814,7 @@
             "description": "Spec guard G-4: the i18n parity guard checks that es/en/pt hold the same KEYS — all three missing the same key passes, and all three holding the Spanish string passes too. Nine templates times three locales is exactly the shape that slips through. Verify actual translation: assert the en and pt bodies differ from the es body for every one of the nine. TESTS: a positive control that copying the es string into en makes the check fail.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-014", "T-015"],
+            "blockedBy": ["T-014", "T-015", "T-031"],
             "blocks": [],
             "subtasks": [
                 {
@@ -1005,13 +1005,44 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-031",
+            "title": "Write the expiry-day email (TRIAL_EXPIRED), the ninth send",
+            "description": "The spec says nine emails and then lists three plus five, which is eight. The ninth is TRIAL_EXPIRED, which spec section 5 lists separately as gone, must return and the Linear issue calls el mail de vencimiento. It sits at offset 0 (EXPIRY_DAY_OFFSET) and belongs to neither group, because it is the only send that REPORTS something that already happened - the listing came down - rather than warning about it. Its copy must therefore differ in kind from the T-1 warning that preceded it by a day: that one said tomorrow it comes down, this one says it came down, here is how to bring it back. Three locales. TESTS: assert its body differs from the T-1 template and from the plus-1 win-back that follows it, since those three land within 48 hours of each other and reading as one repeated message is the failure mode.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-020", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Template in es/en/pt",
+                    "completed": false
+                },
+                {
+                    "title": "Differs in kind from T-1 and from +1",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "i18n", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T07:55:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 30,
+        "total": 31,
         "pending": 30,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.6
     }
