@@ -45,12 +45,27 @@ still subscribes against a **shared `preapproval_plan`**. The `(payer, preapprov
 limit survives `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` untouched. Turning the flag on
 fixes the `external_reference` correlation; the trial stays exactly as broken.
 
-**2.3 There is no production traffic to measure against.** `billing_subscriptions` in
-production holds **7 rows total** — 2 `comp`, 2 `trialing`, 3 `abandoned`, all owner test
-data from 2026-07-24 to 2026-08-28 — and `billing_subscription_events` holds 2 rows, both
-`WEBHOOK_SUBSCRIPTION_TRIALING`, with **zero** `TRIAL_NOT_GRANTED_BY_PROVIDER`. The
-abandonment rate, conversion rate and abuse rate HOS-956 asked for cannot be collected
-today. The decision rests on the structural argument, and is recorded as such.
+**2.3 There is almost no production traffic to measure against — but it is not zero.**
+`billing_subscriptions` in production holds **7 rows total** — 2 `comp`, 2 `trialing`,
+3 `abandoned`, from 2026-07-24 to 2026-08-28 — and `billing_subscription_events` holds 2
+rows, both `WEBHOOK_SUBSCRIPTION_TRIALING`, with **zero**
+`TRIAL_NOT_GRANTED_BY_PROVIDER`. The abandonment rate, conversion rate and abuse rate
+HOS-956 asked for cannot be collected today. The decision rests on the structural
+argument, and is recorded as such.
+
+> **CORRECTION (2026-09-01).** An earlier revision of this section called all seven rows
+> owner test data. **The two `trialing` rows are real customers** — confirmed by the owner,
+> who knows them personally. Both were created 2026-08-27 and both hold a live MercadoPago
+> preapproval:
+>
+> | customer | trial window | length |
+> | -- | -- | -- |
+> | `peychauxchristian@gmail.com` | 2026-08-27 → **2026-09-26** | 30 days |
+> | `pri.laupc@hotmail.com` | 2026-08-27 → **2026-11-25** | 90 days |
+>
+> The 90-day window is not the standard one and its origin is unexplained (annual plan? a
+> `trial_extension` promo?) — worth resolving before either is touched. See OQ-3, now
+> decided.
 
 **The argument that settled it**: keeping MercadoPago's trial — whether by moving the
 clock (Option B) or by dropping the shared plan (Option C) — keeps betting on a mechanism
@@ -331,9 +346,43 @@ Static guards, because "N call sites must remember X" is a guard, not N tests.
 - **OQ-2 · Trial length per vertical.** `owner-basico` uses `OWNER_TRIAL_DAYS`. D-2 makes a
   per-domain trial possible; whether gastronomy and experiences get one, and of what
   length, is a product decision (related: HOS-1004).
-- **OQ-3 · What happens to a trial that is running when this ships?** Production holds 2
-  `trialing` rows, both owner test data, so the migration is close to theoretical there.
-  Staging generates real ones. Decide: convert in place, or let them run out on the old path.
+- **OQ-3 · What happens to a trial that is running when this ships? — DECIDED
+  2026-09-01.** The two production `trialing` rows are **real customers**, not test data
+  (see the correction in §2.3). They are **converted in place, deliberately AFTER the
+  deploy and the smokes**, and NOT left to run out on the old path: the owner contacts
+  each one first, then the conversion runs. Nothing is touched before then.
+
+  **Order of operations, per customer — it is not negotiable:**
+
+  1. `UPDATE billing_subscriptions SET mp_subscription_id = NULL WHERE id = '<id>'`. The
+     status stays `trialing` and `trial_start`/`trial_end` are preserved untouched.
+  2. Only then, `PUT /preapproval/<id>` with `{"status":"cancelled"}`.
+  3. Verify the row is still `trialing`, with a NULL provider id and the same `trial_end`.
+
+  **Doing it in the other order breaks the customer's trial.** MercadoPago maps
+  `canceled → CANCELLED`; the `preapproval.updated` webhook finds the row by
+  `mp_subscription_id` and settles it to `cancelled`, which revokes entitlements and
+  unpublishes the listing. With the correct order the webhook finds nothing, attempts the
+  HOS-191 relink fallback — whose CAS requires `pending_provider`/`abandoned` and a NULL
+  provider id, so a `trialing` row can never match — and returns 200 with a warn. Nothing
+  is overwritten and MercadoPago does not retry.
+
+  **What the customer experiences:** nothing at all during the trial. The listing stays
+  published, the panel is unchanged, the date is the same. The one thing they may see is
+  a cancellation email from MercadoPago — **unverified, do not assume either way**; it can
+  be measured by cancelling a sandbox canary and watching the test buyer's inbox. At
+  expiry they must re-authorize a card in the checkout, which is the real cost of
+  converting: today MercadoPago would have charged them automatically.
+
+  **Hard deadline.** Converting removes their preapproval, so nothing charges them any
+  more — and if the new trial is not yet deployed, nothing mails them or unpublishes them
+  either. They would sit published for free, silently. The 30-day customer expires
+  **2026-09-26**. Either the Hospeda-owned trial is live in production before that date,
+  or that customer is left on the old path and only the November one is converted.
+
+  **Until the conversion runs, both kinds of row coexist**, and staging keeps minting new
+  legacy ones while it runs the old code. That is why the expiry job branches on
+  `mp_subscription_id` (T-010) rather than assuming every `trialing` row is a local one.
 
 ## 10. Issues to close — AFTER the smokes, not before
 

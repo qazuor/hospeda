@@ -423,7 +423,7 @@
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011", "T-012"],
-            "blocks": [],
+            "blocks": ["T-032"],
             "subtasks": [
                 {
                     "title": "Full-chain test on one expired row",
@@ -652,7 +652,7 @@
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-016", "T-017", "T-018", "T-019", "T-031"],
-            "blocks": [],
+            "blocks": ["T-032"],
             "subtasks": [
                 {
                     "title": "Nine sends over an untouched trial lifetime",
@@ -1036,11 +1036,54 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-032",
+            "title": "Convert the two real production trials, AFTER deploy and smokes",
+            "description": "OQ-3, decided 2026-09-01. Two REAL customers (not test data - the spec section 2.3 said otherwise and was corrected) hold trialing rows with live MercadoPago preapprovals: peychauxchristian@gmail.com expiring 2026-09-26, and pri.laupc@hotmail.com expiring 2026-11-25. The owner contacts each one first; then the conversion runs. ORDER IS NOT NEGOTIABLE: first UPDATE billing_subscriptions SET mp_subscription_id = NULL (status stays trialing, trial_end preserved), and only then PUT /preapproval/<id> with status cancelled. The reverse order settles the row to cancelled via the webhook and unpublishes the listing. HARD DEADLINE: the 30-day customer expires 2026-09-26 - converting before the new trial is deployed leaves them with no preapproval charging them AND no job mailing or unpublishing them, so they sit published for free in silence. If the deploy misses that date, leave that one on the old path and convert only the November one. Also unexplained and worth resolving first: the 90-day window on the second customer is not the standard length. TESTS: none - this is an operational runbook, verified by re-reading each row after the change.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Owner contacts both customers",
+                    "completed": false
+                },
+                {
+                    "title": "Explain the 90-day window on the second customer",
+                    "completed": false
+                },
+                {
+                    "title": "Measure whether MP emails the payer on cancellation (sandbox canary)",
+                    "completed": false
+                },
+                {
+                    "title": "Per customer: NULL the provider id, THEN cancel the preapproval",
+                    "completed": false
+                },
+                {
+                    "title": "Verify each row is still trialing with the same trial_end",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "runbook", "production"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-01T11:55:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 31,
-        "pending": 26,
+        "total": 32,
+        "pending": 27,
         "inProgress": 0,
         "completed": 5,
         "blocked": 0,
