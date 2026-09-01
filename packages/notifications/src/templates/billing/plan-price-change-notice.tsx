@@ -97,7 +97,7 @@ export function PlanPriceChangeNotice({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver mi suscripción</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
             </Section>
 
             <Text style={styles.footerNote}>

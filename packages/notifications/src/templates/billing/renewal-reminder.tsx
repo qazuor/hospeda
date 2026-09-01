@@ -76,7 +76,7 @@ export function RenewalReminder({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Gestionar suscripción</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Gestionar suscripción</Button>
             </Section>
 
             <Text style={styles.footerNote}>

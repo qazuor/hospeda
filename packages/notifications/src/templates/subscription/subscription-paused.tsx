@@ -54,7 +54,7 @@ export function SubscriptionPaused({ recipientName, planName, baseUrl }: Subscri
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
                     Actualizar metodo de pago
                 </Button>
             </Section>

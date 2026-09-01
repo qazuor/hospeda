@@ -66,7 +66,7 @@ export function PaymentSuccess({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver recibo</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver recibo</Button>
             </Section>
 
             <Text style={styles.footerNote}>Este correo confirma el pago de tu suscripción.</Text>

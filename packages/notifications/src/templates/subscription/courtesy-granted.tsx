@@ -87,7 +87,7 @@ export function CourtesyGranted({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver mi suscripción</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
             </Section>
         </EmailLayout>
     );
