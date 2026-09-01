@@ -695,9 +695,6 @@
         "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.",
         "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
     },
-    "fromAdminBanner": {
-        "eyebrow": "Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos."
-    },
     "miniForm": {
         "fields": {
             "name": "Nombre del alojamiento",

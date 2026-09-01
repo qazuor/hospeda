@@ -17,6 +17,14 @@
         "goHome": "Volver al inicio",
         "reportProblem": "Reportar problema"
     },
+    "forbidden": {
+        "title": "Sin acceso al panel",
+        "heading": "No tenés acceso al panel",
+        "description": "Tu cuenta no tiene permisos para entrar al panel de administración. Si creés que es un error, escribinos y lo revisamos.",
+        "goToAccount": "Ir a mi cuenta",
+        "goHome": "Ir al inicio",
+        "contact": "Contacto"
+    },
     "form": {
         "validation-failed": "La validación del formulario falló. Por favor, corrige los errores e intenta nuevamente.",
         "error-summary-title": "Revisá los siguientes campos",

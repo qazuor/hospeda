@@ -695,9 +695,6 @@
         "trialCallout_one": "Try Hospeda free for {{trialDays}} day on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends.",
         "trialCallout_other": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
     },
-    "fromAdminBanner": {
-        "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
-    },
     "miniForm": {
         "fields": {
             "name": "Accommodation name",

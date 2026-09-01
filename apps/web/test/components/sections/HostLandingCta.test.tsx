@@ -14,8 +14,8 @@
  *
  * The defect HOS-311 fixes: the host branch used to hand the CTA the ADMIN
  * PANEL origin, which a HOST cannot open (HOS-152 removed `ACCESS_PANEL_ADMIN`
- * from that role, so the panel answers
- * `/auth/forbidden?reason=host-missing-permission`).
+ * from that role, so the panel bounces them away — HOS-609 changed that
+ * destination to this app's own `/acceso-denegado/` page).
  *
  * HOS-296: the island no longer reads Better Auth's `useSession()` and no
  * longer hand-casts `session.user` to `{ role?: string }`. It resolves through

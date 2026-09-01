@@ -88,10 +88,6 @@
             "goToSite": "Ir para o site",
             "contactAdmin": "Contatar suporte",
             "reason": {
-                "host-missing-permission": {
-                    "title": "O painel de administração não faz parte da sua conta",
-                    "message": "Os anfitriões gerenciam seus alojamentos e reservas pelo site principal da Hospeda — o painel de administração é só para a equipe da Hospeda. Isso não é um erro, é só a porta errada. Volte ao site para continuar gerenciando sua conta."
-                },
                 "generic": {
                     "title": "Área restrita",
                     "message": "Esta área é para administradores e anfitriões da Hospeda. Sua conta não tem acesso. Se acredita que é um erro, entre em contato ou entre com outra conta."
