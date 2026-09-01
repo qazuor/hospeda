@@ -12,6 +12,7 @@ export * from './object';
 export * from './sentry';
 export * from './string';
 export * from './tiptap-renderer';
+export * from './utc-date-math';
 export * from './validation';
 
 // NOTE: `safe-fetch` and `safe-fetch-ip` are intentionally NOT re-exported from
