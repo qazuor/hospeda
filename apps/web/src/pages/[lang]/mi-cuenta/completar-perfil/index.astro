@@ -19,6 +19,8 @@
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { resolveSafeReturnPath } from '@/lib/auth-redirect';
+import { buildSetPasswordRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
@@ -53,6 +55,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const { firstName: initialFirstName, lastName: initialLastName } = splitFullName({
     fullName: user.name
 });
+// HOS-838: the destination the onboarding gate interrupted, carried here as
+// `returnUrl` by the middleware. It is attacker-controlled by the time it
+// reaches this page — anyone can hand-edit the query — so it goes through the
+// shared open-redirect guard, which falls back to `/{locale}/mi-cuenta/`.
+const rawReturnUrl = Astro.url.searchParams.get('returnUrl') ?? '';
+const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
+
+// The next gate in the chain, already carrying the destination forward so it
+// survives the set-password step too. Built here rather than in the island:
+// `buildSetPasswordRedirect` is server-side, and an island must not
+// re-implement URL construction the server owns.
+const setPasswordUrl = buildSetPasswordRedirect({ locale, returnUrl });
+
 ---
 
 <BaseLayout locale={locale} title={title} description={description}>
@@ -73,5 +88,7 @@ const { firstName: initialFirstName, lastName: initialLastName } = splitFullName
         initialFirstName={initialFirstName}
         initialLastName={initialLastName}
         initialAvatarUrl={user.image ?? undefined}
+        returnUrl={returnUrl}
+        setPasswordUrl={setPasswordUrl}
     />
 </BaseLayout>

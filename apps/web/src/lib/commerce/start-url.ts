@@ -34,17 +34,23 @@
  * - **Signed out** → signup renders its form, exactly as it did before. The
  *   top-of-funnel behaviour the landing was built around is untouched.
  *
- * ## Known gap (deliberately NOT closed here)
+ * ## Brand-new registrations (closed by HOS-838)
  *
- * The return destination does not survive a brand-new REGISTRATION. Signing up
- * creates no session — the API requires e-mail verification first — so the flow
- * goes signup → verify-email-sent → (inbox) → signin → `/mi-cuenta/`, and the
- * `returnUrl` is lost at the verification hop. Carrying it through would mean
- * threading state across the verification e-mail, which is a different piece of
- * work. What this module guarantees is that a visitor WITH a session (including
- * one who just verified and signed in, then clicked the CTA again) lands on the
- * form. The "already have an account" link on signup does forward the param, so
- * the existing-user path keeps its destination end to end.
+ * A brand-new registration used to lose the destination: signing up creates no
+ * session — the API requires e-mail verification first — so the flow went
+ * signup → verify-email-sent → (inbox) → signin → `/mi-cuenta/`, dropping the
+ * `returnUrl` at the verification hop. Two things now carry it across:
+ *
+ * 1. The destination travels inside the verification e-mail itself, as the
+ *    link's `callbackURL`. It cannot ride along in the browser, because the
+ *    inbox may well be opened on a different device.
+ * 2. Every onboarding gate that fires afterwards — complete-profile,
+ *    set-password, change-password — forwards it as `returnUrl` instead of
+ *    hard-coding `/mi-cuenta/`. Without that second half the first is useless:
+ *    a new account always hits at least one of those gates.
+ *
+ * The "already have an account" link on signup forwards the param too, so the
+ * existing-user path keeps its destination end to end as it always did.
  */
 
 import type { SupportedLocale } from '../i18n';

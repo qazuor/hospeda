@@ -54,6 +54,20 @@ export interface ProfileCompletionProps {
     readonly initialLastName?: string;
     /** OAuth avatar URL from the provider (users.image). */
     readonly initialAvatarUrl?: string;
+    /**
+     * Where to land once the profile is complete and no further gate applies.
+     *
+     * Resolved and validated server-side by the page (HOS-838): it is the
+     * destination the onboarding gate interrupted, or `/{locale}/mi-cuenta/`
+     * when there was none. Never build it here — the open-redirect guard lives
+     * on the server and an island must not re-implement it.
+     */
+    readonly returnUrl: string;
+    /**
+     * Where to land when the API answers `requiresSetPassword`. Already carries
+     * `returnUrl` forward, so the destination survives that extra step too.
+     */
+    readonly setPasswordUrl: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -83,7 +97,9 @@ export function ProfileCompletion({
     initialDisplayName = '',
     initialFirstName = '',
     initialLastName = '',
-    initialAvatarUrl
+    initialAvatarUrl,
+    returnUrl,
+    setPasswordUrl
 }: ProfileCompletionProps) {
     const { t } = createTranslations(locale);
 
@@ -257,11 +273,11 @@ export function ProfileCompletion({
 
             await refreshBetterAuthSession();
 
-            if (result.data?.requiresSetPassword) {
-                window.location.href = `/${locale}/mi-cuenta/agregar-contrasena/`;
-            } else {
-                window.location.href = `/${locale}/mi-cuenta/`;
-            }
+            // Both destinations are resolved server-side and carry the
+            // interrupted destination forward, so finishing here lands on what
+            // the user actually came to do instead of on `/mi-cuenta/`
+            // (HOS-838).
+            window.location.href = result.data?.requiresSetPassword ? setPasswordUrl : returnUrl;
         } catch {
             setFormError(
                 t(

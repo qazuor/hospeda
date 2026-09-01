@@ -72,10 +72,12 @@ describe('signup.astro', () => {
         // callbackUrl now takes precedence over returnPath for an
         // already-authenticated visitor on THIS page too, mirroring
         // signin.astro — previously signup.astro ignored callbackUrl
-        // entirely. The password-registration destination itself
-        // (verify-email-sent) is UNCHANGED and still never honors either
-        // param — that gap is HOS-838, covered behaviorally in
-        // auth-tabs-config.test.ts, not touched here.
+        // entirely. The browser destination for password registration is
+        // still verify-email-sent, since there is no session to redirect with
+        // at submit time; what HOS-838 changed is that the caller's
+        // destination now travels inside the verification email
+        // (`verificationCallbackUrl`), covered behaviorally in
+        // auth-tabs-config.test.ts, not here.
         it('lets a valid callbackUrl take precedence over returnPath on the auth redirect', () => {
             expect(src).toMatch(
                 /Astro\.redirect\(\s*validatedCallbackUrl\s*\?\?\s*returnPath\s*\)/
