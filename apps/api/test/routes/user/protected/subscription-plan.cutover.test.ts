@@ -75,8 +75,10 @@ vi.mock('../../../../src/middlewares/billing', () => ({
 // Defaults to an empty result set rather than `undefined`: the route
 // destructures its queries (`const [row] = await ...limit(1)`), which is the
 // repo-wide pattern, and destructuring `undefined` throws before any assertion
-// runs. A test that needs rows overrides this per case.
-const mockDbLimit = vi.fn(() => []);
+// runs. A test that needs rows overrides this per case — hence the explicit
+// return type, without which TypeScript infers `never[]` from the empty literal
+// and rejects every such override.
+const mockDbLimit = vi.fn((): Record<string, unknown>[] => []);
 const mockDbOrderBy = vi.fn(() => ({ limit: mockDbLimit }));
 const mockDbWhere = vi.fn(() => ({ orderBy: mockDbOrderBy, limit: mockDbLimit }));
 const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
