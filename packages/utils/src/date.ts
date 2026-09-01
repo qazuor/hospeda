@@ -4,9 +4,6 @@
  */
 
 import {
-    addDays,
-    addMonths,
-    addYears,
     differenceInDays,
     differenceInHours,
     differenceInMinutes,
@@ -213,50 +210,5 @@ export function getMinutesDifference(
         return differenceInMinutes(dateObj1, dateObj2);
     } catch (_error) {
         return 0;
-    }
-}
-
-/**
- * Add days to a date
- * @param date - Date to add days to
- * @param days - Number of days to add
- * @returns New date
- */
-export function addDaysToDate(date: Date | string | number, days: number): Date {
-    try {
-        const dateObj = typeof date === 'string' ? parseISO(date) : date;
-        return addDays(dateObj, days);
-    } catch (_error) {
-        return new Date();
-    }
-}
-
-/**
- * Add months to a date
- * @param date - Date to add months to
- * @param months - Number of months to add
- * @returns New date
- */
-export function addMonthsToDate(date: Date | string | number, months: number): Date {
-    try {
-        const dateObj = typeof date === 'string' ? parseISO(date) : date;
-        return addMonths(dateObj, months);
-    } catch (_error) {
-        return new Date();
-    }
-}
-
-/**
- * Add years to a date
- * @param date - Date to add years to
- * @param years - Number of years to add
- * @returns New date
- */
-export function addYearsToDate(date: Date | string | number, years: number): Date {
-    try {
-        const dateObj = typeof date === 'string' ? parseISO(date) : date;
-        return addYears(dateObj, years);
-    } catch (_error) {
-        return new Date();
     }
 }
