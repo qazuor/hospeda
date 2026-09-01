@@ -39,9 +39,23 @@ const selectWhereMock = vi.fn(() => ({ limit: selectLimitMock }));
 const selectFromMock = vi.fn(() => ({ where: selectWhereMock }));
 const selectMock = vi.fn(() => ({ from: selectFromMock }));
 
+/**
+ * The accommodation lookup and the dedup lookup both go through `db.select()`.
+ * They are told apart by call order: the dedup event query runs first, the
+ * ACTIVE-listing query second.
+ */
+const listingSelectWhereMock = vi.fn();
+
 vi.mock('@repo/db', () => ({
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
+    accommodations: {
+        id: 'id',
+        ownerId: 'owner_id',
+        lifecycleState: 'lifecycle_state',
+        deletedAt: 'deleted_at'
+    },
     billingSubscriptions: { id: 'id' },
     billingSubscriptionEvents: {
         id: 'id',
@@ -51,12 +65,28 @@ vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({ select: selectMock }))
 }));
 
+const unpublishMock = vi.fn();
+const resolveOwnerUserIdMock = vi.fn();
+
+vi.mock('../../../src/services/subscription-pause.service', () => ({
+    resolveOwnerUserId: (...args: unknown[]) => resolveOwnerUserIdMock(...args)
+}));
+
+vi.mock('../../../src/utils/actor', () => ({
+    createSystemActor: () => ({ id: 'system', roles: [], permissions: [] })
+}));
+
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
         withServiceTransaction: (...args: unknown[]) =>
-            (withServiceTransactionMock as (...a: unknown[]) => unknown)(...args)
+            (withServiceTransactionMock as (...a: unknown[]) => unknown)(...args),
+        AccommodationService: class {
+            unpublish(...args: unknown[]) {
+                return unpublishMock(...args);
+            }
+        }
     };
 });
 
@@ -102,6 +132,18 @@ describe('expireLocalTrial', () => {
         vi.clearAllMocks();
         // Default: no prior TRIAL_EXPIRED event.
         selectLimitMock.mockResolvedValue([]);
+        // Default: one ACTIVE listing owned by the customer, and it comes down.
+        resolveOwnerUserIdMock.mockResolvedValue('owner-1');
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }]);
+        unpublishMock.mockResolvedValue({ data: { id: 'accom-1' } });
+        // `.from()` is shared: the dedup query chains `.where().limit()`, the
+        // listing query chains `.where()` alone and awaits it.
+        selectFromMock.mockImplementation(() => ({
+            where: vi.fn((...args: unknown[]) => {
+                const chain = listingSelectWhereMock(...args) as Promise<unknown>;
+                return Object.assign(chain, { limit: selectLimitMock });
+            })
+        }));
     });
 
     describe('the happy path', () => {
@@ -214,5 +256,112 @@ describe('expireLocalTrial', () => {
 
             expect(result.outcome).toBe('expired');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1012 D-3 / T-011 — the listing leaves the site, the data stays.
+// ---------------------------------------------------------------------------
+
+describe('expireLocalTrial — unpublishing the listings (D-3)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        selectLimitMock.mockResolvedValue([]);
+        resolveOwnerUserIdMock.mockResolvedValue('owner-1');
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }]);
+        unpublishMock.mockResolvedValue({ data: { id: 'accom-1' } });
+        selectFromMock.mockImplementation(() => ({
+            where: vi.fn((...args: unknown[]) => {
+                const chain = listingSelectWhereMock(...args) as Promise<unknown>;
+                return Object.assign(chain, { limit: selectLimitMock });
+            })
+        }));
+    });
+
+    it('takes every ACTIVE listing of the owner down', async () => {
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }, { id: 'accom-2' }]);
+
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(unpublishMock).toHaveBeenCalledTimes(2);
+        expect(unpublishMock.mock.calls[0]?.[1]).toBe('accom-1');
+        expect(unpublishMock.mock.calls[1]?.[1]).toBe('accom-2');
+    });
+
+    it('records how many listings came down on the event', async () => {
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }, { id: 'accom-2' }]);
+
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        const meta = insertedEvent().metadata as Record<string, unknown>;
+        expect(meta.listingsUnpublished).toBe(2);
+    });
+
+    it('does NOT seal the expiry when a listing refuses to come down', async () => {
+        // The ordering that matters. Sealing first would leave a live listing
+        // behind a dedup event that stops anyone from ever looking again.
+        unpublishMock.mockResolvedValue({ error: { message: 'db down' } });
+
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('unpublish-failed');
+        expect(withServiceTransactionMock).not.toHaveBeenCalled();
+        expect(clearEntitlementCacheMock).not.toHaveBeenCalled();
+    });
+
+    it('still expires an owner who has no ACTIVE listings', async () => {
+        // A trial that expires before anything was ever published is normal, not
+        // an error: the clock starts at publish, but the listing can come down
+        // in between by the owner's own hand.
+        listingSelectWhereMock.mockResolvedValue([]);
+
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('expired');
+        expect(unpublishMock).not.toHaveBeenCalled();
+    });
+
+    it('expires even when the owner cannot be resolved from the customer', async () => {
+        // A billing customer with no external id should not exist for an owner
+        // subscription. If one does, the subscription still has to stop granting
+        // entitlements — leaving it `trialing` forever is the worse failure.
+        resolveOwnerUserIdMock.mockResolvedValue(null);
+
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('expired');
+        expect(unpublishMock).not.toHaveBeenCalled();
+    });
+
+    it('only looks at ACTIVE listings — this is what makes the retry safe', async () => {
+        // Load-bearing, and it survived a mutation until this test existed.
+        // Without the filter, a retry after a partial failure would try to
+        // unpublish rows that already came down; `unpublish` rejects anything
+        // not ACTIVE, so `failed` would stay above zero and the expiry would
+        // never seal. That is an infinite retry, not a degraded one.
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // Searched across every `where` this run built rather than indexed by
+        // position: the dedup query and the listing query share the mock, and
+        // pinning an index would make this test depend on their order instead
+        // of on the filter it is checking.
+        const allConditions = listingSelectWhereMock.mock.calls.flatMap(
+            (call) => ((call[0] as { args?: unknown[] })?.args ?? []) as unknown[]
+        );
+
+        expect(allConditions).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ col: 'lifecycle_state', val: 'ACTIVE' })
+            ])
+        );
+    });
+
+    it('unpublishes with an actor, so the suspended-owner guard cannot block it', async () => {
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // `checkCanUpdate` refuses an edit on a suspended owner unless the actor
+        // holds ACCOMMODATION_UPDATE_ANY. A lesser actor would be blocked by a
+        // billing guard from performing a billing action.
+        expect(unpublishMock.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ id: 'system' }));
     });
 });

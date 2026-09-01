@@ -22,21 +22,26 @@
  */
 
 import {
+    accommodations,
     and,
     billingSubscriptionEvents,
     billingSubscriptions,
     type DrizzleClient,
     eq,
-    getDb
+    getDb,
+    isNull
 } from '@repo/db';
-import { SubscriptionStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import {
+    AccommodationService,
     BILLING_EVENT_TYPES,
     checkSubscriptionStatusTransition,
     withServiceTransaction
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
+import { createSystemActor } from '../../utils/actor.js';
 import { apiLogger } from '../../utils/logger.js';
+import { resolveOwnerUserId } from '../subscription-pause.service.js';
 
 /**
  * The subset of a `billing_subscriptions` row this expiry needs. Narrowed to
@@ -68,13 +73,110 @@ export type LocalTrialExpiryOutcome =
     /** `trial_end` is absent or still in the future. */
     | 'not-elapsed'
     /** The status transition guard refused the write (the claimed row was stale). */
-    | 'illegal-transition';
+    | 'illegal-transition'
+    /**
+     * A listing refused to come down, so the expiry was NOT sealed. Nothing is
+     * written: the next tick retries rather than leaving a live listing behind
+     * a dedup event that stops anyone from ever looking again.
+     */
+    | 'unpublish-failed';
 
 /**
  * Result of {@link expireLocalTrial}.
  */
 export interface LocalTrialExpiryResult {
     readonly outcome: LocalTrialExpiryOutcome;
+}
+
+/**
+ * Unpublish every ACTIVE accommodation owned by the customer whose trial just
+ * expired (HOS-1012 D-3, T-011).
+ *
+ * The listing leaves the site; the data stays. Photos, texts and prices remain
+ * in the panel and come back online the moment the owner pays. This is
+ * deliberately NOT `applyOwnerServiceSuspension` (`subscription-pause.service`),
+ * which flips `owner_suspended` and takes the edit-lock with it — that is the
+ * degraded mode D-3 explicitly rules out.
+ *
+ * Goes through `AccommodationService.unpublish` rather than a bulk UPDATE, for
+ * one reason that matters more than brevity: that method already schedules ISR
+ * revalidation for the page it just took down. A second write path to the same
+ * state would drift from it, and the first thing to drift would be the
+ * revalidation — leaving Cloudflare serving a listing that no longer exists
+ * (T-3). It also filters to ACTIVE, so re-running after a partial failure skips
+ * what already came down instead of erroring on it.
+ *
+ * The system actor is required, not incidental: `checkCanUpdate` refuses an
+ * edit on a suspended owner unless the actor holds `ACCOMMODATION_UPDATE_ANY`,
+ * so a lesser actor would be blocked by a billing guard from performing a
+ * billing action.
+ *
+ * @param input.customerId - The billing customer whose trial expired.
+ * @param input.db - Drizzle client override for tests.
+ * @returns How many listings came down, and how many refused to.
+ */
+export async function unpublishListingsForExpiredTrial(input: {
+    readonly customerId: string;
+    readonly db?: DrizzleClient;
+}): Promise<{ readonly unpublished: number; readonly failed: number }> {
+    const db = input.db ?? getDb();
+
+    const ownerId = await resolveOwnerUserId({ customerId: input.customerId, db });
+    if (!ownerId) {
+        apiLogger.warn(
+            { customerId: input.customerId },
+            'unpublishListingsForExpiredTrial: customer has no external id — cannot resolve owner'
+        );
+        return { unpublished: 0, failed: 0 };
+    }
+
+    const rows = await db
+        .select({ id: accommodations.id })
+        .from(accommodations)
+        .where(
+            and(
+                eq(accommodations.ownerId, ownerId),
+                eq(accommodations.lifecycleState, LifecycleStatusEnum.ACTIVE),
+                isNull(accommodations.deletedAt)
+            )
+        );
+
+    if (rows.length === 0) {
+        return { unpublished: 0, failed: 0 };
+    }
+
+    const service = new AccommodationService({ logger: apiLogger });
+    const actor = createSystemActor();
+
+    let unpublished = 0;
+    let failed = 0;
+
+    for (const row of rows) {
+        const result = await service.unpublish(actor, row.id);
+
+        if (result.error) {
+            failed++;
+            apiLogger.error(
+                {
+                    accommodationId: row.id,
+                    ownerId,
+                    customerId: input.customerId,
+                    error: result.error.message
+                },
+                'HOS-1012: failed to unpublish a listing on trial expiry'
+            );
+            continue;
+        }
+
+        unpublished++;
+    }
+
+    apiLogger.info(
+        { customerId: input.customerId, ownerId, unpublished, failed },
+        'HOS-1012: unpublished listings for an expired trial'
+    );
+
+    return { unpublished, failed };
 }
 
 /**
@@ -161,6 +263,25 @@ export async function expireLocalTrial(input: {
         return { outcome: 'illegal-transition' };
     }
 
+    // D-3: the listing comes down BEFORE the dedup event is written. Ordering it
+    // the other way would seal the expiry first, so a listing that failed to
+    // unpublish would stay live forever — the next tick would find the event and
+    // skip the row without ever looking at the listing again. This way a partial
+    // failure simply gets retried, and `unpublish` is filtered to ACTIVE rows so
+    // the retry skips whatever already came down.
+    const { unpublished, failed } = await unpublishListingsForExpiredTrial({
+        customerId: subscription.customerId,
+        db
+    });
+
+    if (failed > 0) {
+        apiLogger.warn(
+            { subscriptionId: subscription.id, unpublished, failed },
+            'expireLocalTrial: a listing refused to unpublish — not sealing the expiry, will retry'
+        );
+        return { outcome: 'unpublish-failed' };
+    }
+
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
@@ -185,7 +306,8 @@ export async function expireLocalTrial(input: {
             triggerSource: 'trial-local-expiry-cron',
             metadata: {
                 trialEnd: trialEnd.toISOString(),
-                expiredAt: now.toISOString()
+                expiredAt: now.toISOString(),
+                listingsUnpublished: unpublished
             }
         });
     });
