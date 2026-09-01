@@ -60,6 +60,8 @@
         "cardsHeading": "Escolha o seu público",
         "highlightsLabel": "O que você obtém",
         "from": "A partir de {{price}}",
+        "trial_one": "{{count}} dia de teste grátis",
+        "trial_other": "{{count}} dias de teste grátis",
         "cards": {
             "host": {
                 "title": "Alugar minha acomodação",

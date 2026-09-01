@@ -60,6 +60,8 @@
         "cardsHeading": "Elegí tu audiencia",
         "highlightsLabel": "Qué obtenés",
         "from": "Desde {{price}}",
+        "trial_one": "{{count}} día de prueba gratis",
+        "trial_other": "{{count}} días de prueba gratis",
         "cards": {
             "host": {
                 "title": "Alquilar mi alojamiento",

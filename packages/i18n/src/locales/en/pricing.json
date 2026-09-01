@@ -60,6 +60,8 @@
         "cardsHeading": "Choose your audience",
         "highlightsLabel": "What you get",
         "from": "From {{price}}",
+        "trial_one": "{{count}} day free trial",
+        "trial_other": "{{count}} days free trial",
         "cards": {
             "host": {
                 "title": "List my property",
