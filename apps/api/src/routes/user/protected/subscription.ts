@@ -26,6 +26,7 @@ const planService = new PlanService();
 const SUBSCRIPTION_STATUSES = [
     'active',
     'trial',
+    'courtesy',
     'cancelled',
     'expired',
     'past_due',
@@ -46,6 +47,22 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     comp: 'active',
     trialing: 'trial',
     trial: 'trial',
+    // HOS-1007: a `courtesy` (HOS-180 gifted cycles) subscription gets its OWN
+    // response status rather than following the `comp` precedent above
+    // (map → 'active' + a boolean flag). Two reasons the two cases differ:
+    //   1. A courtesy is a *window*, not a permanent state. The panel has to say
+    //      "sin cargo hasta <courtesyEndsAt>" and badge it "De regalo" — copy it
+    //      can only select on a status of its own. Collapsing it into 'active'
+    //      would need yet another boolean AND would render the honest date under
+    //      a "Próxima facturación" label that is factually wrong.
+    //   2. Unlike a comp, a courtesy IS self-service cancellable
+    //      (`SOFT_CANCELLABLE_STATUSES` in subscription-cancel.service.ts holds
+    //      `active | trialing | courtesy`), so it cannot reuse `isComplimentary`,
+    //      whose whole job is to hide the cancel action.
+    // The web panel already declares 'courtesy' in its status union and consumes
+    // it; without this entry the value fell through to the 'pending' default
+    // below and that branch was unreachable in production.
+    courtesy: 'courtesy',
     canceled: 'cancelled',
     cancelled: 'cancelled',
     expired: 'expired',
