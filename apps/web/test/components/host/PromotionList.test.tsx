@@ -322,7 +322,7 @@ describe('PromotionList', () => {
         // Upgrade banner with a link to the plans page
         const upgradeLinks = screen
             .getAllByRole('link')
-            .filter((el) => el.getAttribute('href')?.includes('suscriptores/planes'));
+            .filter((el) => el.getAttribute('href')?.includes('suscriptores/planes/anfitriones'));
         expect(upgradeLinks.length).toBeGreaterThanOrEqual(1);
     });
 

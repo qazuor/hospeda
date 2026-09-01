@@ -1,134 +1,31 @@
 ---
 /**
  * @file suscriptores/turistas/index.astro
- * @description Tourist pricing page. Thin wrapper around <PricingCardsGrid>;
- * page-specific copy, metadata, and JSON-LD live here, the card UI itself
- * is shared with /suscriptores/planes/.
+ * @description Permanent redirect to the tourist pricing page's new home,
+ * `/suscriptores/planes/turistas/` (HOS-942 AC-4).
  *
- * Fetches pricing from the public API at runtime (SSR) so that operator
- * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
- * The edge caches the rendered HTML; how long for comes from the `pricing`
- * cache class (`lib/cache/cache-classes.ts`), and a plan write purges it via
- * `PlanService.triggerPricingRevalidation`.
+ * The page itself moved under `/suscriptores/planes/` when that path became the
+ * five-audience index. This URL has been the tourist pricing page since
+ * SPEC-096 and is linked from a dozen in-product upsells plus whatever is
+ * bookmarked or indexed, so it changes LOCATION — hence 301, the status that
+ * transfers the ranking signal, rather than a 302 or a 404.
+ *
+ * Contrast `/suscriptores/planes/` itself, which deliberately carries NO
+ * redirect (AC-5): that URL changed CONTENT, not location — it still serves a
+ * page, just the audience index instead of owner pricing.
+ *
+ * `/suscriptores/turistas/comparar/` is untouched and still serves the tourist
+ * comparison table; only this index moved.
  *
  * @route /{lang}/suscriptores/turistas/
- * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
- *   time; edge-cacheable, TTL from the `pricing` cache class.
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
-import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
-import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
-import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { BeachUmbrellaIcon, CompassIcon, SunIcon } from '@repo/icons';
 
 export const prerender = false;
 
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
+const locale = Astro.locals.locale;
 
-// Cache at the edge, tagged so a plan write purges exactly these pages instead
-// of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
-// is the writer that purges `pricing`.
-//
-// This goes through `applyCacheHeaders` rather than setting the header directly
-// (HOS-426): setting `Cache-Control` and declaring the tags as two independent
-// statements meant a namespace that failed to resolve produced a cacheable
-// response with NO purge tag — cached content nothing could evict, and nothing
-// would report it. `applyCacheHeaders` demotes to private in that case.
-applyCacheHeaders({
-	locals: Astro.locals,
-	headers: Astro.response.headers,
-	cacheable: true,
-	cacheClass: 'pricing',
-	tags: [CACHE_TAG_PRICING]
-});
-
-// Fetch active plans from the public API endpoint at runtime.
-const fetchResult = await fetchPublicPlans();
-const touristPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'tourist')
-	: [];
-
-const intlLocale = getIntlLocale(locale);
-const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';
-const hasPlans = touristPlans.length > 0;
-
-// Build absolute URL for each plan (used by JSON-LD Offer entries).
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/turistas' })}`;
-
-const jsonLdPlans = touristPlans.map((plan) => ({
-	name: plan.name,
-	description: plan.description,
-	priceCurrency: 'ARS',
-	price: plan.monthlyPriceArs / 100,
-	url: planPageUrl,
-}));
-
-// Split heading to underline the last word with a handwritten accent.
-const headingFull = t('pricing.tourist.heading', 'Planes para turistas');
-const headingWords = headingFull.trim().split(/\s+/);
-const headingAccent = headingWords.pop() ?? headingFull;
-const headingMain = headingWords.join(' ');
+return Astro.redirect(buildUrl({ locale, path: 'suscriptores/planes/turistas' }), 301);
 ---
-
-<MarketingLayout
-	locale={locale}
-	title={t('pricing.tourist.title', 'Planes para turistas')}
-	description={t(
-		'pricing.tourist.description',
-		'Suscribite y disfrutá de beneficios exclusivos en tus viajes por el litoral.'
-	)}
->
-	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
-
-	<MarketingHero
-		tagline={t('pricing.tourist.tagline', 'Planes y precios')}
-		titleMain={headingMain}
-		titleAccent={headingAccent}
-		subtitle={t(
-			'pricing.tourist.subtitle',
-			'Elegí el plan que mejor se adapte a tu forma de viajar.'
-		)}
-	>
-		<Fragment slot="icon-1"><BeachUmbrellaIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-2"><CompassIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-3"><SunIcon size="md" weight="duotone" /></Fragment>
-	</MarketingHero>
-
-	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
-		<PricingCardsGrid
-			locale={locale}
-			plans={touristPlans}
-			highlightedSlug={highlightedSlug}
-			intlLocale={intlLocale}
-			audience="tourist"
-			sectionHeading={t(
-				'pricing.tourist.cardsHeading',
-				'Comparativa de planes para turistas'
-			)}
-			emptyMessage={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
-			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
-			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
-			ctaText={t('pricing.cta', 'Empezar')}
-		/>
-	</section>
-
-	{hasPlans && (
-		<section class="comparison-link section">
-			<ComparisonLinkTeaser
-				locale={locale}
-				href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
-			/>
-		</section>
-	)}
-</MarketingLayout>

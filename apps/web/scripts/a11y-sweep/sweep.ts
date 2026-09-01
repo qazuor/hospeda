@@ -73,7 +73,14 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/nosotros/', name: 'About' },
     { url: '/es/preguntas-frecuentes/', name: 'FAQ' },
     { url: '/es/contacto/', name: 'Contact' },
-    { url: '/es/suscriptores/planes/', name: 'Pricing' },
+    // HOS-942 split the pricing surface in three: an audience index plus the two
+    // pricing pages it now sits above. All three are swept — the index is a new
+    // card grid nothing had ever audited, and the two pricing pages are the same
+    // markup as before at new URLs, so dropping either would silently retire
+    // coverage this baseline already had.
+    { url: '/es/suscriptores/planes/', name: 'Plans Index' },
+    { url: '/es/suscriptores/planes/anfitriones/', name: 'Pricing Host' },
+    { url: '/es/suscriptores/planes/turistas/', name: 'Pricing Tourist' },
     // HOS-690: the two commerce vertical landings now carry benefits/price/FAQ
     // content (rebuilt from hero+lead-form), and the new dropdown they sit
     // behind in the header is exactly the kind of widget this baseline exists

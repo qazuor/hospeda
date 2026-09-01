@@ -29,6 +29,7 @@ import { createTranslations } from '@/lib/i18n';
 import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 
 interface Props {
@@ -99,6 +100,7 @@ function formatPriceArs(cents: number): string {
 								currency="ARS"
 								ctaText={t('pricing.comparison.cta', 'Elegir plan')}
 								locale={locale}
+								plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
 								showPromo={false}
 								trialDays={plan.hasTrial ? plan.trialDays : 0}
 								ownPreapprovalEnabled={ownPreapprovalEnabled}

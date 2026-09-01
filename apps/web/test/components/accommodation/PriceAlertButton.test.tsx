@@ -153,7 +153,7 @@ describe('PriceAlertButton — resolved gate', () => {
         // BETA-201: the upsell targets the TOURIST plans page, since every owner
         // plan already inherits this entitlement.
         const link = await screen.findByRole('link');
-        expect(link.getAttribute('href')).toContain('suscriptores/turistas');
+        expect(link.getAttribute('href')).toContain('suscriptores/planes/turistas');
     });
 
     it('disables the button when the plan limit is reached', async () => {

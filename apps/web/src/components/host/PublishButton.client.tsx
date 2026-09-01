@@ -261,7 +261,7 @@ export function PublishButton({
     if (!hasActivePlan) {
         return (
             <a
-                href={buildUrl({ locale, path: 'suscriptores/planes' })}
+                href={buildUrl({ locale, path: 'suscriptores/planes/anfitriones' })}
                 className={`${styles.action} ${styles.primary}`}
             >
                 {choosePlanLabel}
@@ -301,7 +301,7 @@ export function PublishButton({
     // Publish failed because the owner has no active plan. Show a banner
     // pointing to the plans page instead of a retryable error.
     if (state === 'subscriptionRequired') {
-        const plansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+        const plansUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
         return (
             <span
                 role="alert"

@@ -83,6 +83,22 @@ export interface PlanPurchaseButtonProps {
      */
     readonly trialDays?: number;
     /**
+     * Locale-agnostic path an unauthenticated visitor returns to after signing
+     * in — i.e. the pricing surface this button is mounted on.
+     *
+     * Added by HOS-942 because there is no longer a single "the pricing page"
+     * to fall back on: `/suscriptores/planes/` is now the five-audience index
+     * and the catalogues live one level below it. It also fixes a pre-existing
+     * mismatch that the split made unignorable — the path used to be hardcoded
+     * to the owner page, so a tourist who signed in from the tourist page came
+     * back on the wrong catalogue.
+     *
+     * Required rather than defaulted: every mount point (both grids, both
+     * comparison tables) knows its own audience, and a default here could only
+     * be a guess that is wrong half the time.
+     */
+    readonly plansPath: string;
+    /**
      * Whether the own-preapproval checkout path
      * (HOS-937 step 4, `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` server-side)
      * is active. Resolved server-side (SSR) by the pricing pages' shared
@@ -233,7 +249,8 @@ interface PromoState {
  * PlanPurchaseButton — interactive CTA island for initiating plan checkout.
  *
  * Behaviour:
- * - **Unauthenticated**: navigates to `/auth/signin?redirect=/suscriptores/planes`
+ * - **Unauthenticated**: navigates to `/auth/signin?redirect=<plansPath>` — the
+ *   pricing surface this button was mounted on, passed in by the caller
  * - **Authenticated (idle)**: displays `ctaText` + formatted `price`
  * - **Authenticated (loading)**: disables button, shows processing spinner + text
  * - **Authenticated (error)**: re-enables button, renders inline error below
@@ -270,6 +287,7 @@ export function PlanPurchaseButton({
     currency,
     ctaText,
     locale,
+    plansPath,
     showPromo = true,
     trialDays = 0,
     ownPreapprovalEnabled = false
@@ -886,8 +904,8 @@ export function PlanPurchaseButton({
         }
 
         if (!isAuthenticated) {
-            const plansPath = buildUrl({ locale, path: 'suscriptores/planes' });
-            const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(plansPath)}`;
+            const returnUrl = buildUrl({ locale, path: plansPath });
+            const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(returnUrl)}`;
             window.location.href = signinPath;
             return;
         }

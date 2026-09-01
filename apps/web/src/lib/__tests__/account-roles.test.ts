@@ -97,13 +97,15 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
     // test/pages/checkout-pages.test.ts); the logic lives here.
     it('routes every host-level role to the owner plans page', () => {
         for (const role of ROLES_WITH_ACCOMMODATIONS_NAV) {
-            expect(resolveSubscriptionPlansPath({ roles: [role] })).toBe('suscriptores/planes');
+            expect(resolveSubscriptionPlansPath({ roles: [role] })).toBe(
+                'suscriptores/planes/anfitriones'
+            );
         }
     });
 
     it('routes a plain USER (tourist) to the tourist plans page', () => {
         expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.USER] })).toBe(
-            'suscriptores/turistas'
+            'suscriptores/planes/turistas'
         );
     });
 
@@ -112,7 +114,7 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
         // accommodation host, so the accommodation-plans upsell treats them as a
         // tourist (consistent with the host-tier predicate).
         expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.COMMERCE_OWNER] })).toBe(
-            'suscriptores/turistas'
+            'suscriptores/planes/turistas'
         );
     });
 
@@ -121,17 +123,17 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
         // user can actually buy from (HOS-296).
         expect(
             resolveSubscriptionPlansPath({ roles: [RoleEnum.COMMERCE_OWNER, RoleEnum.HOST] })
-        ).toBe('suscriptores/planes');
+        ).toBe('suscriptores/planes/anfitriones');
     });
 
     it('routes a null / empty role set (anonymous / MP return with no session cookie) to the tourist page', () => {
-        expect(resolveSubscriptionPlansPath({ roles: null })).toBe('suscriptores/turistas');
-        expect(resolveSubscriptionPlansPath({ roles: [] })).toBe('suscriptores/turistas');
+        expect(resolveSubscriptionPlansPath({ roles: null })).toBe('suscriptores/planes/turistas');
+        expect(resolveSubscriptionPlansPath({ roles: [] })).toBe('suscriptores/planes/turistas');
     });
 
     it('routes an unknown role to the tourist page (safe default)', () => {
         expect(resolveSubscriptionPlansPath({ roles: ['NOT_A_ROLE'] })).toBe(
-            'suscriptores/turistas'
+            'suscriptores/planes/turistas'
         );
     });
 });
@@ -142,13 +144,13 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
     // role set. Both must land on the same two pages.
     it('routes a host audience to the owner plans page', () => {
         expect(resolveSubscriptionPlansPathForAudience({ audience: 'host' })).toBe(
-            'suscriptores/planes'
+            'suscriptores/planes/anfitriones'
         );
     });
 
     it('routes a tourist audience to the tourist plans page', () => {
         expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
-            'suscriptores/turistas'
+            'suscriptores/planes/turistas'
         );
     });
 

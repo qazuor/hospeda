@@ -42,11 +42,20 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
  */
 export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>(['HOST', 'ADMIN', 'SUPER_ADMIN']);
 
-/** Owner (host) pricing page, locale-agnostic. */
-const OWNER_PLANS_PATH = 'suscriptores/planes';
+/**
+ * Owner (host) pricing page, locale-agnostic.
+ *
+ * HOS-942: both constants point one level deeper than they used to.
+ * `suscriptores/planes` is now the five-audience INDEX, not owner pricing, and
+ * `suscriptores/turistas` is a 301. Every caller of
+ * {@link resolveSubscriptionPlansPath} is answering "which catalogue can this
+ * person actually buy from" — a chooser, or a redirect through one, is the wrong
+ * answer to that question.
+ */
+const OWNER_PLANS_PATH = 'suscriptores/planes/anfitriones';
 
 /** Tourist pricing page, locale-agnostic. Also the anonymous default. */
-const TOURIST_PLANS_PATH = 'suscriptores/turistas';
+const TOURIST_PLANS_PATH = 'suscriptores/planes/turistas';
 
 /**
  * Set of roles that grant access to commerce-owner navigation
@@ -84,8 +93,8 @@ export const ROLES_WITH_COMMERCE_NAV = new Set<string>(['COMMERCE_OWNER', 'ADMIN
  *
  * @param params.roles - Every role the user holds, or `null` for
  *   unauthenticated visitors.
- * @returns The locale-agnostic path segment: `'suscriptores/planes'` (owner) or
- *          `'suscriptores/turistas'` (tourist / anonymous).
+ * @returns The locale-agnostic path segment: `'suscriptores/planes/anfitriones'` (owner) or
+ *          `'suscriptores/planes/turistas'` (tourist / anonymous).
  */
 export function resolveSubscriptionPlansPath({
     roles

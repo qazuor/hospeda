@@ -98,12 +98,18 @@ describe('Footer.astro', () => {
             expect(src).toContain('/suscriptores/propietarios/');
         });
 
-        it('includes /suscriptores/turistas/ link', () => {
-            expect(src).toContain('/suscriptores/turistas/');
+        it('includes a single /suscriptores/planes/ link to the audience index', () => {
+            // HOS-942: the two audience-specific plan links were replaced by one
+            // link to the index, which reaches all five audiences. Asserting the
+            // COUNT is what makes this fail if either old entry comes back.
+            expect(src).toContain('t("footer.plans")');
+            expect(src.match(/\/suscriptores\/planes\//g) ?? []).toHaveLength(1);
         });
 
-        it('includes /suscriptores/planes/ link', () => {
-            expect(src).toContain('/suscriptores/planes/');
+        it('no longer links the two pricing pages directly', () => {
+            expect(src).not.toContain('footer.ownerPlans');
+            expect(src).not.toContain('footer.touristPlans');
+            expect(src).not.toContain('/suscriptores/turistas/');
         });
 
         it('uses i18n key for the column title', () => {

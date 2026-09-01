@@ -149,7 +149,7 @@ const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
 // tourist→owner upgrade this banner exists to prompt. Also matches the link
 // `PublishButton.client.tsx` renders on the reactive `subscription_required`
 // error, keeping the whole "publish" journey pointing at one place.
-const ownerPlansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+const ownerPlansUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
 
 const isEmpty = properties.length === 0;
 
@@ -246,7 +246,7 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
                 </a>
             )}
             {usageData.threshold !== 'ok' && (
-                <a href={buildUrl({ locale, path: 'suscriptores/planes' })} class="props-page__usage-upgrade">
+                <a href={buildUrl({ locale, path: 'suscriptores/planes/anfitriones' })} class="props-page__usage-upgrade">
                     {t('host.properties.usage.upgrade', 'Mejorar plan')}
                 </a>
             )}

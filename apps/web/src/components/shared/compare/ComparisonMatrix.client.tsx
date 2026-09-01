@@ -198,7 +198,7 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
 
     const listingHref = `/${locale}/alojamientos/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/turistas/`;
+    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
 
     if (status.kind === 'empty') {
         return (

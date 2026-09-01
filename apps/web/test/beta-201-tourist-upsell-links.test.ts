@@ -31,12 +31,12 @@ describe('BETA-201 — tourist-only upsell links point at the tourist plans page
     it('PriceAlertButton locked state links to suscriptores/turistas, not the owner page', () => {
         // PRICE_ALERTS is a tourist entitlement; the locked state is only shown
         // to free-tier tourists, so the upgrade CTA must target the tourist page.
-        expect(priceAlertSrc).toMatch(/upgradeHref[^\n]*'suscriptores\/turistas'/);
-        expect(priceAlertSrc).not.toContain("path: 'suscriptores/planes'");
+        expect(priceAlertSrc).toMatch(/upgradeHref[^\n]*'suscriptores\/planes\/turistas'/);
+        expect(priceAlertSrc).not.toContain("path: 'suscriptores/planes/anfitriones'");
     });
 
     it('accommodation detail WhatsApp upsell links to suscriptores/turistas, not the owner page', () => {
-        expect(slugSrc).toMatch(/whatsappPlansHref[^\n]*'suscriptores\/turistas'/);
-        expect(slugSrc).not.toMatch(/whatsappPlansHref[^\n]*'suscriptores\/planes'/);
+        expect(slugSrc).toMatch(/whatsappPlansHref[^\n]*'suscriptores\/planes\/turistas'/);
+        expect(slugSrc).not.toMatch(/whatsappPlansHref[^\n]*'suscriptores\/planes\/anfitriones'/);
     });
 });

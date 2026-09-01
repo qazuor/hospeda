@@ -125,8 +125,13 @@ const forYouLinks = [
     { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
     { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: "/publicar-restaurante/" }) },
     { label: t("footer.listExperience"), href: buildUrl({ locale, path: "/publicar-experiencia/" }) },
-    { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
-    { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
+    /* HOS-942: ONE link to the plan index, replacing the separate "Planes para
+       propietarios" / "Planes para turistas" entries. The footer used to
+       enumerate two of the five audiences Hospeda sells to, which meant a
+       restaurant owner, a tour operator and a prospective partner could not
+       reach a price from here at all. The index covers all five, so the footer
+       does not have to grow a row per vertical. */
+    { label: t("footer.plans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
     { label: t("footer.benefits"), href: buildUrl({ locale, path: "/beneficios/" }) },
 ] as const;
 

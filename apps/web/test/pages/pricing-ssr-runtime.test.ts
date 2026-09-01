@@ -24,12 +24,12 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ownerSrc = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/suscriptores/planes/index.astro'),
+    resolve(__dirname, '../../src/pages/[lang]/suscriptores/planes/anfitriones/index.astro'),
     'utf8'
 );
 
 const touristSrc = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/suscriptores/turistas/index.astro'),
+    resolve(__dirname, '../../src/pages/[lang]/suscriptores/planes/turistas/index.astro'),
     'utf8'
 );
 
@@ -39,7 +39,7 @@ const helperSrc = readFileSync(resolve(__dirname, '../../src/lib/billing/fetch-p
 // Owner pricing page
 // ---------------------------------------------------------------------------
 
-describe('Owner pricing page (suscriptores/planes/index.astro)', () => {
+describe('Owner pricing page (suscriptores/planes/anfitriones/index.astro)', () => {
     describe('SSR rendering', () => {
         it('sets prerender = false (no SSG)', () => {
             expect(ownerSrc).toContain('export const prerender = false');
@@ -120,7 +120,7 @@ describe('Owner pricing page (suscriptores/planes/index.astro)', () => {
 // Tourist pricing page
 // ---------------------------------------------------------------------------
 
-describe('Tourist pricing page (suscriptores/turistas/index.astro)', () => {
+describe('Tourist pricing page (suscriptores/planes/turistas/index.astro)', () => {
     describe('SSR rendering', () => {
         it('sets prerender = false (no SSG)', () => {
             expect(touristSrc).toContain('export const prerender = false');

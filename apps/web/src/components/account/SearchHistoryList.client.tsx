@@ -477,7 +477,7 @@ export function SearchHistoryList({
     // convention as `AlertsList.client.tsx` and `PriceAlertButton.tsx`.
     // Points at the tourist pricing page, not the owner one (BETA-174) — this
     // is a tourist-only Área Turista feature.
-    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/turistas' });
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
 
     // ── Loading state ─────────────────────────────────────────────────────────
 

@@ -114,7 +114,7 @@ describe('CalendarSyncLauncher', () => {
         expect(screen.queryByTestId('sync-panel-stub')).not.toBeInTheDocument();
         // Shows the upgrade CTA linking to the plans page.
         const cta = screen.getByRole('link', { name: /Mejorar plan/i });
-        expect(cta).toHaveAttribute('href', '/es/suscriptores/planes/');
+        expect(cta).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
     });
 
     it('closes the dialog on Escape', async () => {

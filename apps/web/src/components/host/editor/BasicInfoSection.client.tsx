@@ -219,7 +219,12 @@ export function BasicInfoSection({
                                         'host.properties.editor.entitlement.richDescriptionHint',
                                         'Texto con formato: negritas, listas y más. Disponible en planes superiores.'
                                     )}{' '}
-                                    <a href={buildUrl({ locale, path: 'suscriptores/planes' })}>
+                                    <a
+                                        href={buildUrl({
+                                            locale,
+                                            path: 'suscriptores/planes/anfitriones'
+                                        })}
+                                    >
                                         {t(
                                             'host.properties.editor.entitlement.upgradeLink',
                                             'Mejorar plan'

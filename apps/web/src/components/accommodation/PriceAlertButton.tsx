@@ -300,7 +300,7 @@ export function PriceAlertButton({
     // free-tier tourist — the upsell must target the tourist pricing page, not
     // the owner one (BETA-201; mirrors the sibling AlertsList.client.tsx).
     if (!gate.canCreateAlerts) {
-        const upgradeHref = buildUrl({ locale, path: 'suscriptores/turistas' });
+        const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
         return (
             <div className={styles.priceAlertWrapper}>
                 <a

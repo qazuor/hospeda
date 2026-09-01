@@ -465,7 +465,7 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         renderDashboard(USER_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
         });
     });
 
@@ -474,7 +474,7 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         renderDashboard(HOST_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
+            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
         });
     });
 
@@ -1014,7 +1014,7 @@ describe('SubscriptionDashboard — empty state', () => {
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
         });
     });
 
@@ -1024,7 +1024,7 @@ describe('SubscriptionDashboard — empty state', () => {
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
+            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
         });
     });
 });
