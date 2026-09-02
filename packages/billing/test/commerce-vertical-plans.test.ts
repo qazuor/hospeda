@@ -20,6 +20,7 @@
  * @module test/commerce-vertical-plans
  */
 import { describe, expect, it } from 'vitest';
+import { ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL } from '../src/config/commerce-entitlements.config.js';
 import {
     ALL_EXPERIENCE_PLANS,
     ALL_GASTRONOMY_PLANS,
@@ -32,6 +33,7 @@ import {
     GASTRONOMY_PREMIUM_PLAN
 } from '../src/config/plans.config.js';
 import { COMMERCE_TRIAL_DAYS } from '../src/constants/billing.constants.js';
+import { EntitlementKey } from '../src/types/entitlement.types.js';
 import { LimitKey } from '../src/types/plan.types.js';
 
 describe('per-vertical commerce catalogues (HOS-688)', () => {
@@ -97,11 +99,45 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         }
     });
 
-    it('grants no entitlement in either vertical', () => {
-        // §6.8: neither vertical grants an entitlement, which is why the create
-        // route runs the limit check with no entitlement gate ahead of it.
-        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
-            expect(plan.entitlements).toEqual([]);
+    it('grants its own vertical pair on ALL THREE tiers, and nothing else (HOS-1074)', () => {
+        // Reversal of §6.8's `entitlements: []` (owner decision, 2026-09-01):
+        // commerce now runs on the same entitlement mechanism accommodation
+        // does, so the create route carries a real `requireEntitlement` ahead
+        // of its limit check.
+        //
+        // Asserted per TIER rather than per catalogue, because the uniformity
+        // is the load-bearing part: a tier that granted a narrower set would
+        // take editing away from the owners on it, and the gate would read as
+        // a billing bug rather than as a catalogue one.
+        for (const plan of ALL_GASTRONOMY_PLANS) {
+            expect([...plan.entitlements].sort()).toEqual(
+                [...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL.gastronomy].sort()
+            );
+        }
+        for (const plan of ALL_EXPERIENCE_PLANS) {
+            expect([...plan.entitlements].sort()).toEqual(
+                [...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL.experience].sort()
+            );
+        }
+    });
+
+    it('never grants the OTHER vertical, nor an accommodation key (HOS-1074)', () => {
+        // The whole reason four new keys exist instead of reusing
+        // `EDIT_ACCOMMODATION_INFO` / `PUBLISH_ACCOMMODATIONS`: the loader
+        // resolves ONE domain, so a shared key answers for the wrong
+        // subscription in both directions. A gastronomy plan leaking an
+        // experience key would rebuild that confusion inside commerce itself.
+        for (const plan of ALL_GASTRONOMY_PLANS) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.EDIT_EXPERIENCE_INFO);
+            expect(plan.entitlements).not.toContain(EntitlementKey.PUBLISH_EXPERIENCE);
+            expect(plan.entitlements).not.toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(plan.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        }
+        for (const plan of ALL_EXPERIENCE_PLANS) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.EDIT_GASTRONOMY_INFO);
+            expect(plan.entitlements).not.toContain(EntitlementKey.PUBLISH_GASTRONOMY);
+            expect(plan.entitlements).not.toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(plan.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         }
     });
 

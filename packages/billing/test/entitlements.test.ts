@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ALL_COMMERCE_ENTITLEMENT_KEYS } from '../src/config/commerce-entitlements.config.js';
 import { ENTITLEMENT_DEFINITIONS } from '../src/config/entitlements.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 
@@ -214,19 +215,45 @@ describe('Entitlement Configuration', () => {
             expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === 'ad_free')).toBeUndefined();
         });
 
-        it('should have all 6 categories totaling to the full definitions count', () => {
+        it('should have 4 commerce vertical entitlements (HOS-1074)', () => {
+            // Arrange — one EDIT/PUBLISH pair per vertical. Cross-checked against
+            // the vertical→keys map that `plans.config.ts` actually grants from,
+            // so this list cannot drift from the catalogue.
+            const commerceKeys: readonly EntitlementKey[] = [
+                EntitlementKey.EDIT_GASTRONOMY_INFO,
+                EntitlementKey.PUBLISH_GASTRONOMY,
+                EntitlementKey.EDIT_EXPERIENCE_INFO,
+                EntitlementKey.PUBLISH_EXPERIENCE
+            ] as const;
+
+            // Act & Assert
+            expect(commerceKeys).toHaveLength(4);
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS].sort()).toEqual([...commerceKeys].sort());
+            for (const key of commerceKeys) {
+                expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
+            }
+        });
+
+        it('should have all 7 categories totaling to the full definitions count', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
-            // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added))
+            // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
+            // HOS-1074: commerce category added at 4)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
             const touristCount = 13;
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
+            const commerceCount = 4; // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical
 
             // Act & Assert
-            expect(ownerCount + accommodationCount + complexCount + touristCount + aiCount).toBe(
-                ENTITLEMENT_DEFINITIONS.length
-            );
+            expect(
+                ownerCount +
+                    accommodationCount +
+                    complexCount +
+                    touristCount +
+                    aiCount +
+                    commerceCount
+            ).toBe(ENTITLEMENT_DEFINITIONS.length);
         });
 
         it('should have 6 AI feature entitlements (SPEC-173 + SPEC-212 + SPEC-222)', () => {

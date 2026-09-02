@@ -56,7 +56,7 @@
 
 ## EntitlementKey Enum
 
-All 39 entitlement keys organized by category. Keys pruned in SPEC-216
+All 43 entitlement keys organized by category. Keys pruned in SPEC-216
 (`API_ACCESS`, `DEDICATED_MANAGER`, `SOCIAL_MEDIA_INTEGRATION`, `WHITE_LABEL`,
 `MULTI_CHANNEL_INTEGRATION`, `EARLY_ACCESS_EVENTS`, `CONCIERGE_SERVICE`,
 `AIRPORT_TRANSFERS`) plus `AD_FREE` (pruned separately in HOS-16) are no longer
