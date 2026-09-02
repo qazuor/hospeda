@@ -144,35 +144,39 @@ Definitions live in `packages/config/src/env-registry.hospeda.ts` (lines ~400-42
 4. Copy the new `api_key` and `api_secret` to a secure scratchpad (do NOT paste in chat or commit anywhere).
 5. Keep the old key active until step 3.4 is done — both keys can authenticate during the rollover.
 
-### 3.2 Update Vercel env vars
+### 3.2 Update the env vars in Coolify
 
-For each affected project (`hospeda-api`, `hospeda-seed` if applicable):
+From the VPS, over SSH. `--target=` is mandatory on every write and goes BEFORE
+the subcommand:
 
 ```bash
-# Pull current env to compare (does not show secret values, just keys)
-vercel env ls --token=$VERCEL_TOKEN
+# See what is set today (keys, not secret values)
+hops --target=prod env-list api
 
-# Remove old values for production / preview
-vercel env rm HOSPEDA_CLOUDINARY_API_KEY production
-vercel env rm HOSPEDA_CLOUDINARY_API_SECRET production
-
-# Add new values (interactive prompt for the value)
-vercel env add HOSPEDA_CLOUDINARY_API_KEY production
-vercel env add HOSPEDA_CLOUDINARY_API_SECRET production
+# Set the new values. --secret prompts for the value instead of taking it
+# from the command line, so it never reaches your shell history.
+hops --target=prod env-set api HOSPEDA_CLOUDINARY_API_KEY --secret
+hops --target=prod env-set api HOSPEDA_CLOUDINARY_API_SECRET --secret
 ```
 
 `HOSPEDA_CLOUDINARY_CLOUD_NAME` does NOT change unless the Cloudinary cloud itself is being migrated.
 
-> If your team uses `pnpm env:push` / `pnpm env:pull`, prefer those — see `docs/guides/environment-variables.md`.
+`env-set` UPDATES the entry for the environment it matched. On a CREATE, Coolify
+v4 mirrors a new var into both production and preview regardless of what was
+asked; drop the preview copy with `hops --target=prod env-delete api <KEY> --preview`
+if you do not want it.
 
 ### 3.3 Redeploy
 
+Setting a var does not restart anything — the process reads its environment at
+boot, so the old key stays live until the app is redeployed:
+
 ```bash
-# Trigger a new production deploy so the new env vars are loaded
-pnpm deploy:api
+hops --target=prod redeploy api
 ```
 
-Wait for the deploy to be live. Vercel runtime functions read env vars at cold start, so a redeploy is required even if the env value is updated.
+Or press Deploy on `hospeda-api-prod` in the [Coolify dashboard](https://coolify.hospeda.com.ar).
+Wait for the deploy to be live before moving on.
 
 ### 3.4 Validate
 
