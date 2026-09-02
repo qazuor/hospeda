@@ -21,8 +21,11 @@ números" block lists, per metric, the way it can be plausibly wrong.
 ## When invoked as a command
 
 ```bash
-node scripts/hops-stats/dist/index.js --section <ids> <repo-path>
+"$(git rev-parse --show-toplevel)/scripts/client-tools/bin/hops-stats" --section <ids>
 ```
+
+The path is resolved rather than written out because it must work from any
+worktree, and because `hops update` moves the tool's home.
 
 Always pass `--section`: this context has no TTY, so without it the CLI falls
 back to `code tests debt` rather than prompting.
@@ -124,13 +127,11 @@ substitute — it is issued for `mcp.linear.app` and `api.linear.app` rejects it
 
 ## Source
 
-`scripts/hops-stats/` — TypeScript, strict. Rebuild after editing:
+`scripts/client-tools/src/commands/stats/` — one command of the local `hops`
+CLI. TypeScript, strict, run on bun: there is no build step, so an edit is live
+on the next run.
 
-```bash
-cd scripts/hops-stats && corepack pnpm install && corepack pnpm build
-```
-
-Every external command runs through `run()` in `src/exec.ts`, which passes an
+Every external command runs through `run()` in `src/lib/exec.ts`, which passes an
 argv array and never a shell string — the class of quoting bug that produced
 three silently wrong zeros in the shell version cannot occur there.
 
