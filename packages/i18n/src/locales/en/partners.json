@@ -10,5 +10,84 @@
         "contactHeading": "Contact",
         "socialHeading": "Social",
         "websiteLabel": "Website"
+    },
+    "landing": {
+        "meta": {
+            "title": "Become a Hospeda partner",
+            "description": "A steady presence on the portal where trips to the Litoral are planned: your logo on the home page, exposure on our social channels and newsletter, and a page of your own depending on the level."
+        },
+        "hero": {
+            "tagline": "For partners",
+            "title": "Back tourism in the Litoral",
+            "desc": "Hospeda is where the trip gets planned: where to sleep, where to eat, what to do. Partners are there for that moment with a steady presence right where the decision is made, not with a banner people scroll past."
+        },
+        "benefits": {
+            "tagline": "What you get",
+            "title": "What the partnership gives you",
+            "item1": {
+                "title": "Your logo on the home page",
+                "desc": "Your brand joins the partner carousel on the home page, exactly where someone is putting their trip to the Litoral together. It is a steady presence, not an ad slot that rotates away."
+            },
+            "item2": {
+                "title": "A page of your own inside Hospeda",
+                "desc": "Depending on the level we agree on, your logo leads to a page of yours on Hospeda with your copy, your contact details and your social profiles. Search engines index it, so it is one more place where people can find you."
+            },
+            "item3": {
+                "title": "You are part of what we publish",
+                "desc": "Hospeda's social posts and newsletter sends include you, with the priority and frequency we agree on."
+            },
+            "item4": {
+                "title": "A record of every appearance",
+                "desc": "Every post you appear in is logged in your dashboard with its date and its link, so you can go and see it for yourself."
+            },
+            "item5": {
+                "title": "You run your own listing",
+                "desc": "Change the logo, the copy, the contact details and the social profiles from your dashboard whenever you like. And if you would rather not, ask us and we will do it for you."
+            }
+        },
+        "steps": {
+            "tagline": "Step by step",
+            "title": "How a partner joins",
+            "1": {
+                "title": "You get in touch",
+                "desc": "Fill in the form telling us who you are and what you have in mind, or call us if you would rather talk before filling anything in."
+            },
+            "2": {
+                "title": "We talk and agree",
+                "desc": "The level is not picked from a form: it comes out of that conversation, along with the terms and the payment method that suits your accounting."
+            },
+            "3": {
+                "title": "We load your material",
+                "desc": "You upload the logo, the copy and the contact details from your dashboard, or you send them over and we load them. Either way we review it with you before it goes live."
+            },
+            "4": {
+                "title": "You go live",
+                "desc": "Your logo joins the home page and, if your level includes it, your page goes online. From then on you are part of the posts and the newsletter."
+            }
+        },
+        "faq": {
+            "tagline": "Questions",
+            "title": "Worth knowing beforehand",
+            "1": {
+                "q": "Who can become a partner?",
+                "a": "It is not only for businesses. Municipalities and tourism offices, chambers and institutions, NGOs and associations, local media and people with a track record all qualify. If you have a stake in the Litoral doing well, it is worth talking."
+            },
+            "2": {
+                "q": "What does it cost and how is it paid?",
+                "a": "We do not publish a price list, and that is deliberate: a municipality and a corner shop are not charged the same even on the same level with the same deliverables. We give you the current figures in the conversation. You pay through a Mercado Pago subscription, or by cash or cheque if that works better for your accounting."
+            },
+            "3": {
+                "q": "What social media numbers do you report?",
+                "a": "None, and we would rather say so before signing: whatever happens inside Instagram or Facebook stays on their side, not ours. What we do give you is a record — the date and the link of every post you appeared in, in your dashboard, so you can check it yourself."
+            },
+            "4": {
+                "q": "What happens if the agreement ends?",
+                "a": "Your logo leaves the home page and your page stops being available. Nothing is deleted: if you come back later, it comes back as it was."
+            }
+        },
+        "cta": {
+            "title": "Shall we talk?",
+            "label": "I want to be a partner"
+        }
     }
 }

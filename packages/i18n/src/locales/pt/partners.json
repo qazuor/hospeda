@@ -10,5 +10,84 @@
         "contactHeading": "Contato",
         "socialHeading": "Redes",
         "websiteLabel": "Site"
+    },
+    "landing": {
+        "meta": {
+            "title": "Torne-se parceiro da Hospeda",
+            "description": "Presença estável no portal onde se planejam as viagens ao Litoral: seu logo na página inicial, divulgação nas nossas redes e na newsletter, e uma página própria conforme o nível."
+        },
+        "hero": {
+            "tagline": "Para parceiros",
+            "title": "Apoie o turismo do Litoral",
+            "desc": "A Hospeda é o portal onde a viagem é planejada: onde dormir, onde comer, o que fazer. Os parceiros acompanham esse momento com presença estável no lugar onde a decisão é tomada, e não com um banner que as pessoas ignoram."
+        },
+        "benefits": {
+            "tagline": "O que você recebe",
+            "title": "O que a parceria lhe dá",
+            "item1": {
+                "title": "Seu logo na página inicial",
+                "desc": "Sua marca entra no carrossel de parceiros da página inicial, justamente onde alguém está montando a viagem ao Litoral. É presença estável, não um anúncio que passa."
+            },
+            "item2": {
+                "title": "Uma página própria dentro da Hospeda",
+                "desc": "Conforme o nível combinado, seu logo leva a uma página sua na Hospeda com seus textos, seu contato e suas redes. Os buscadores a indexam, então você ganha mais um lugar onde ser encontrado."
+            },
+            "item3": {
+                "title": "Você entra no que comunicamos",
+                "desc": "As publicações das redes da Hospeda e os envios da newsletter incluem você, com a prioridade e a frequência que ficarem combinadas."
+            },
+            "item4": {
+                "title": "Registro de cada aparição",
+                "desc": "Cada publicação em que você aparece fica anotada no seu painel com a data e o link, para que você mesmo possa conferir."
+            },
+            "item5": {
+                "title": "Você mesmo gerencia sua ficha",
+                "desc": "Altera o logo, os textos, o contato e as redes pelo seu painel quando quiser. E se preferir não entrar, é só pedir que fazemos por você."
+            }
+        },
+        "steps": {
+            "tagline": "Passo a passo",
+            "title": "Como um parceiro entra",
+            "1": {
+                "title": "Você entra em contato",
+                "desc": "Preenche o formulário contando quem você é e o que tem em mente, ou liga para nós se preferir conversar antes de preencher qualquer coisa."
+            },
+            "2": {
+                "title": "Conversamos e combinamos",
+                "desc": "O nível não se escolhe num formulário: sai dessa conversa, junto com as condições e a forma de pagamento que servir para a sua administração."
+            },
+            "3": {
+                "title": "Carregamos seu material",
+                "desc": "Você sobe o logo, os textos e o contato pelo seu painel, ou nos envia e nós carregamos. Nos dois casos revisamos com você antes de publicar."
+            },
+            "4": {
+                "title": "Você entra no ar",
+                "desc": "Seu logo entra na página inicial e, se o seu nível a incluir, sua página fica publicada. A partir daí você entra nas publicações e na newsletter."
+            }
+        },
+        "faq": {
+            "tagline": "Perguntas",
+            "title": "O que convém saber antes",
+            "1": {
+                "q": "Quem pode ser parceiro?",
+                "a": "Não é só para comércios. Entram prefeituras e secretarias de turismo, câmaras e instituições, ONGs e associações, veículos de imprensa da região e pessoas com trajetória. Se você tem algo a ver com o Litoral ir bem, vale conversar."
+            },
+            "2": {
+                "q": "Quanto custa e como se paga?",
+                "a": "Não publicamos uma tabela, e é de propósito: não se cobra o mesmo de uma prefeitura e de um comércio de bairro, ainda que fiquem no mesmo nível e recebam o mesmo. Os valores vigentes passamos na conversa. Paga-se por assinatura do Mercado Pago, ou em dinheiro ou cheque se isso servir melhor para a sua administração."
+            },
+            "3": {
+                "q": "Que números vocês passam das redes?",
+                "a": "Nenhum, e preferimos dizer antes de assinar: o que acontece dentro do Instagram ou do Facebook fica do lado deles, não do nosso. O que damos é registro — a data e o link de cada publicação em que você apareceu, no seu painel, para você mesmo conferir."
+            },
+            "4": {
+                "q": "O que acontece se o acordo terminar?",
+                "a": "Seu logo sai da página inicial e sua página deixa de estar disponível. Nada é apagado: se você voltar mais adiante, volta como estava."
+            }
+        },
+        "cta": {
+            "title": "Vamos conversar?",
+            "label": "Quero ser parceiro"
+        }
     }
 }

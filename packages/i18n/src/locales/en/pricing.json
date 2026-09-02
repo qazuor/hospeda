@@ -142,6 +142,52 @@
         "cta": {
             "description": "Registrate gratis y comienza a explorar los mejores alojamientos del Litoral argentino.",
             "title": "¿Listo para comenzar tu aventura?"
+        },
+        "hero": {
+            "tagline": "For travellers",
+            "title": "The whole Litoral, in one place",
+            "desc": "Find where to sleep, where to eat and what to do along the Río Uruguay coast. Save what you like and talk straight to your host."
+        },
+        "steps": {
+            "tagline": "How it works",
+            "title": "How do you use Hospeda?",
+            "1": {
+                "title": "Browse",
+                "desc": "Search stays, restaurants and experiences by destination, type or amenities. No account, no cost."
+            },
+            "2": {
+                "title": "Save and compare",
+                "desc": "Bookmark your favourites, sort them into trip collections and put up to five stays side by side."
+            },
+            "3": {
+                "title": "Talk to the owner",
+                "desc": "Message them directly on WhatsApp. Hospeda stays out of the way: you agree with your host."
+            },
+            "4": {
+                "title": "Tell us how it went",
+                "desc": "Leave a review with photos and help the next traveller decide."
+            }
+        },
+        "faq": {
+            "tagline": "Common questions",
+            "title": "Before you start",
+            "1": {
+                "q": "What does Hospeda cost?",
+                "a_one": "Creating an account is free: you save up to 5 favourites and write reviews. The VIP plan adds unlimited favourites and price alerts, collections, the comparison tool and direct WhatsApp contact, with a {{count}}-day trial.",
+                "a_other": "Creating an account is free: you save up to 5 favourites and write reviews. The VIP plan adds unlimited favourites and price alerts, collections, the comparison tool and direct WhatsApp contact, with a {{count}}-day trial."
+            },
+            "2": {
+                "q": "Do you charge a booking fee?",
+                "a": "No. Hospeda does not handle the booking and takes no commission: we put you in touch with the owner and the arrangement is between you."
+            },
+            "3": {
+                "q": "Do I need an account to look around?",
+                "a": "No. You can browse the whole site without signing up. An account is only needed to save favourites, get alerts and write reviews."
+            },
+            "4": {
+                "q": "Can I cancel whenever I want?",
+                "a": "Yes, from your account and with no paperwork. You keep access until the period you already paid for ends."
+            }
         }
     },
     "comparison": {
@@ -168,6 +214,7 @@
     },
     "nav": {
         "backToIndex": "Back to all plans",
-        "ariaLabel": "Plan catalogue navigation"
+        "ariaLabel": "Plan catalogue navigation",
+        "seePlans": "See plans and pricing"
     }
 }

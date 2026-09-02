@@ -1,0 +1,197 @@
+---
+/**
+ * @file planes/anfitriones/index.astro
+ * @description Sales page for the accommodation-host audience — level 2 of
+ * the three that HOS-941 D-7 defines: "why is this worth it", answered
+ * without leaving the page, and one click to "what does it cost".
+ *
+ * @route     /[lang]/planes/anfitriones/
+ * @rendering SSR (no prerender); edge-cacheable via the `pricing` cache class,
+ *   tagged `CACHE_TAG_PRICING`. The middleware is fail-closed and rejects a
+ *   public `Cache-Control` without a declared class and tag (HOS-941 R-5).
+ *
+ * ## What moved, and what stayed behind
+ *
+ * Content-sourced from `/suscriptores/propietarios/`, which this change RETIRES
+ * (HOS-941 D-12): that URL is now a 301 to this page, and its copy was never
+ * copied anywhere — both pages always rendered the same `owners.*` keys.
+ * Unlike the commerce verticals, the host
+ * audience already has a real, working pricing page one level below this one
+ * — `/suscriptores/planes/anfitriones/` (the `PricingCardsGrid` page) — so
+ * this page's CTAs point there directly instead of at a not-yet-built
+ * `/planes/anfitriones/precios/`.
+ *
+ * Built from the same `SalesSection`-based components as
+ * `/planes/gastronomia/` (HOS-985 H6) — see that file's docblock for the
+ * shared-component rationale. The FAQ keeps its existing shape: `owners.faq.*`
+ * answers are resolved through `resolveOwnerFaqAnswer` (shared with
+ * `/publicar/`) because item 1 interpolates the live trial
+ * length read from the plan catalogue (HOS-941 R-2 / H-98) — never a number
+ * written into a locale string.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { HomeIcon, MapIcon, SettingsIcon, ShieldIcon, SparkleIcon, StarIcon } from '@repo/icons';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import BenefitsSection from '@/components/marketing/BenefitsSection.astro';
+import StepsSection from '@/components/marketing/StepsSection.astro';
+import FaqSection from '@/components/marketing/FaqSection.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { OWNER_FAQ_ITEMS, buildOwnerFaqParams, resolveOwnerFaqAnswer } from '@/lib/owner-faq';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+const benefits = [
+    {
+        Icon: MapIcon,
+        title: t('owners.benefits.1.title'),
+        desc: t('owners.benefits.1.desc')
+    },
+    {
+        Icon: SettingsIcon,
+        title: t('owners.benefits.2.title'),
+        desc: t('owners.benefits.2.desc')
+    },
+    {
+        Icon: ShieldIcon,
+        title: t('owners.benefits.3.title'),
+        desc: t('owners.benefits.3.desc')
+    }
+] as const;
+
+const steps = [
+    { num: '01', title: t('owners.steps.1.title'), desc: t('owners.steps.1.desc') },
+    { num: '02', title: t('owners.steps.2.title'), desc: t('owners.steps.2.desc') },
+    { num: '03', title: t('owners.steps.3.title'), desc: t('owners.steps.3.desc') },
+    { num: '04', title: t('owners.steps.4.title'), desc: t('owners.steps.4.desc') }
+] as const;
+
+/**
+ * The trial length in FAQ item 1 is interpolated from the live plan catalogue
+ * via `buildOwnerFaqParams` (HOS-941 R-2 / H-98) — never hardcoded, and never
+ * duplicated: this is the SAME resolver `/publicar/` calls, so both pages can
+ * only ever advertise the same number.
+ */
+const faqParams = await buildOwnerFaqParams();
+
+/**
+ * Every FAQ item resolved here, not left as keys for `FaqSection` — its
+ * contract is `{q, a}` already translated. `resolveOwnerFaqAnswer` is what
+ * interpolates `faqParams` into item 1's answer; every other item is a plain
+ * `t()` lookup with its existing fallback (the key exists in all three
+ * locales, so this is not a new gap in the frozen fallback inventory).
+ */
+const faqs = OWNER_FAQ_ITEMS.map((faq) => ({
+    q: t(faq.qKey, faq.qFb),
+    a: resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams })
+}));
+
+const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: { '@type': 'Answer', text: faq.a }
+    }))
+};
+
+const title = t('owners.hero.title');
+const subtitle = t('owners.hero.desc');
+
+// Split heading to underline the last word with a handwritten accent, as
+// `/publicar/` already does.
+const heroHeadingWords = title.trim().split(/\s+/);
+const heroHeadingAccent = heroHeadingWords.pop() ?? title;
+const heroHeadingMain = heroHeadingWords.join(' ');
+
+// The real pricing page for this audience already exists one level below —
+// unlike the commerce verticals, there is no `precios/` page to build here.
+const pricingHref = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
+---
+
+<MarketingLayout locale={locale} title={title} description={subtitle}>
+    <JsonLd slot="head-extra" data={faqJsonLd} />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <MarketingHero
+        tagline={t('owners.hero.tagline')}
+        titleMain={heroHeadingMain}
+        titleAccent={heroHeadingAccent}
+        subtitle={subtitle}
+    >
+        <Fragment slot="icon-1"><HomeIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-3"><SparkleIcon size="md" weight="duotone" /></Fragment>
+        <GradientButton
+            slot="cta"
+            href={pricingHref}
+            label={t('pricing.nav.seePlans')}
+            variant="primary"
+            icon="true"
+        />
+    </MarketingHero>
+
+    <BenefitsSection
+        tagline={t('owners.benefits.tagline')}
+        title={t('owners.benefits.title')}
+        items={benefits}
+        columns={3}
+    />
+
+    <StepsSection
+        tagline={t('owners.steps.tagline')}
+        title={t('owners.steps.title')}
+        items={steps}
+        columns={4}
+        warm
+    />
+
+    <FaqSection tagline={t('owners.faq.tagline')} title={t('owners.faq.title')} items={faqs} />
+
+    <section class="sales-cta section section--warm">
+        <div class="sales-cta__container section__container">
+            <h2 class="sales-cta__title">{t('owners.cta.title')}</h2>
+            <GradientButton
+                href={pricingHref}
+                label={t('pricing.nav.seePlans')}
+                variant="primary"
+                icon="true"
+            />
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    .sales-cta__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+        text-align: center;
+    }
+
+    .sales-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

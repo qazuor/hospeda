@@ -1,0 +1,149 @@
+---
+/**
+ * @file BenefitsSection.astro
+ * @description The "why this is worth it" grid of a sales page: an icon, a
+ * title and a line of copy per benefit.
+ *
+ * Extracted for HOS-985 (H6 of HOS-941) from five hand-rolled copies.
+ *
+ * ## Why `Icon` is a required per-item prop and never derived
+ *
+ * It is tempting to map an i18n key to an icon and drop the prop. That is
+ * measurably wrong here: `/publicar/` and `/suscriptores/propietarios/` render
+ * the SAME `owners.benefits.*` copy with DIFFERENT icons (`EyeIcon` /
+ * `SettingsIcon` / `ReceiptIcon` against `MapIcon` / `SettingsIcon` /
+ * `ShieldIcon`). Deriving the icon from the key would silently change one of
+ * the two pages.
+ *
+ * ## Why the copy arrives resolved
+ *
+ * Callers pass `title` and `desc` as finished strings, not i18n keys. Two of
+ * the existing surfaces interpolate values into their copy (the trial length,
+ * read from the plan catalogue per HOS-941 R-2), which a component that only
+ * received a key could not do without taking a resolver function as well.
+ * Resolving at the call site keeps one contract instead of two.
+ *
+ * ## `limit` exists so the index and the sales page cannot drift apart
+ *
+ * D-10 of HOS-941: the audience index shows the first three benefits and the
+ * sales page shows all five, from ONE array. Writing a separate "short" copy
+ * for the index is exactly what produced HOS-331. The prop trims; it never
+ * selects a different source.
+ */
+
+import type { ComponentType } from 'react';
+import type { IconProps } from '@repo/icons';
+import SalesSection from './SalesSection.astro';
+
+/** One benefit: an icon plus already-translated copy. */
+export interface BenefitItem {
+    /** Icon component from `@repo/icons`. Never inferred from the copy. */
+    readonly Icon: ComponentType<IconProps>;
+    /** Translated heading. */
+    readonly title: string;
+    /** Translated body copy. */
+    readonly desc: string;
+}
+
+interface Props {
+    readonly tagline: string;
+    readonly title: string;
+    readonly items: readonly BenefitItem[];
+    /**
+     * Render at most this many items. Omit to render all of them.
+     * Used by the audience index to show a teaser of the same array the sales
+     * page renders in full (D-10) — never a second copy of the text.
+     */
+    readonly limit?: number;
+    /**
+     * `3` fixed columns, or `auto-fit` when the item count varies between
+     * consumers. `/beneficios/` needs `auto-fit` because its five audience
+     * blocks carry three to five items each; a fixed grid leaves a hole.
+     */
+    readonly columns?: 3 | 'auto-fit';
+    readonly warm?: boolean;
+}
+
+const { tagline, title, items, limit, columns = 3, warm = false } = Astro.props;
+
+const visible = typeof limit === 'number' ? items.slice(0, limit) : items;
+---
+
+<SalesSection tagline={tagline} title={title} warm={warm}>
+    <slot name="decoration" slot="decoration" />
+    <div class="benefits__grid" data-columns={columns}>
+        {
+            visible.map((item, i) => (
+                <div
+                    class="benefits__card"
+                    data-reveal="up"
+                    data-stagger-index={Math.min(i, 6)}
+                    data-stagger-step="100"
+                >
+                    <div class="benefits__icon" aria-hidden="true">
+                        <item.Icon size={28} weight="regular" />
+                    </div>
+                    <h3 class="benefits__card-title">{item.title}</h3>
+                    <p class="benefits__card-desc">{item.desc}</p>
+                </div>
+            ))
+        }
+    </div>
+</SalesSection>
+
+<style>
+    .benefits__grid {
+        display: grid;
+        gap: var(--space-card-gap);
+        text-align: left;
+    }
+
+    .benefits__grid[data-columns='3'] {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .benefits__grid[data-columns='auto-fit'] {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .benefits__card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        padding: var(--space-6);
+        box-shadow: var(--shadow-card);
+    }
+
+    .benefits__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md);
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
+        margin-bottom: var(--space-4);
+    }
+
+    .benefits__card-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .benefits__card-desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .benefits__grid[data-columns='3'] {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
