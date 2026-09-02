@@ -874,35 +874,35 @@
             "id": "T-027",
             "title": "Retire trial-promise-verification.ts and the pre-checkout warning dialog",
             "description": "HOS-522's detector verifies a promise we no longer delegate, and the pre-checkout dialog warned about a condition that no longer exists. Both go. Also retire `BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER`, now unreachable — check whether removing the enum value trips a frozen inventory the same way ADDING one does (G-3 cuts both ways). TESTS: delete the covering suites; run the four out-of-check:guards CI guards again after touching the event enum.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021", "T-023"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Delete trial-promise-verification.ts and its tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove the pre-checkout warning dialog from the web flow",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove TRIAL_NOT_GRANTED_BY_PROVIDER and re-run the guards",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "billing", "web"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T02:45:00.000Z",
+                "completed": "2026-09-02T03:55:00.000Z"
             }
         },
         {
