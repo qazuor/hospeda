@@ -8,6 +8,8 @@
  * @module services/billing/subscription/courtesy-grant.calc
  */
 
+import { addCalendarMonths, type DayOverflowRule } from '@repo/utils';
+
 /**
  * Minimum days that must remain before the next MercadoPago charge for a grant
  * to be accepted (spec AC-12, R-6).
@@ -61,19 +63,70 @@ export type CourtesyGrantResult =
     | { readonly ok: false; readonly refusal: CourtesyGrantRefusal };
 
 /**
+ * What the courtesy window does when the period end falls on a day the target
+ * month does not have — 31 January plus one month lands on 28 February.
+ *
+ * ## This is our decision, not a copy of MercadoPago's
+ *
+ * The issue that found this bug assumed the rule had to be measured from
+ * MercadoPago and imitated, on the reasoning that our window and the real
+ * charge would otherwise diverge exactly at the boundary. That reasoning does
+ * not apply here, and the mechanism is why: **a courtesy is a PAUSED
+ * preapproval plus a local window**. While the gift runs, MercadoPago is not
+ * charging and is not computing a cycle date at all — `courtesy-expiry.job`
+ * resumes the preapproval when this window closes. There is no provider-side
+ * date to diverge from.
+ *
+ * So the rule decides two things, and both are ours: how many days the gift
+ * lasts, and which day of the month the subscriber is left billing on once the
+ * preapproval resumes.
+ *
+ * ## Why clamp
+ *
+ * The three days are marginal. Where the subscriber ENDS UP is not. Clamping
+ * leaves someone who billed on the 31st billing on the 28th — shifted, but
+ * still anchored to the end of the month. Overflowing moves them to the 3rd of
+ * the following month, which is not a shift but a change of anchor, it does not
+ * revert on its own, and it cannot be stated on a screen: "your one month of
+ * courtesy from 31 January ends on 3 March" is not a sentence a subscriber can
+ * act on. In a feature whose whole purpose is to make someone feel well
+ * treated, that confusion costs more than the days it hands out.
+ *
+ * Searched for documentation before deciding: MercadoPago does not document the
+ * case anywhere (2026-09-01). Its `billing_day` field is reportedly restricted
+ * to days 1-28, which would sidestep the question entirely, but that could not
+ * be confirmed against the reference and we do not use that field.
+ *
+ * Owner decision, 2026-09-01. Every period ending on day 1-28 is identical
+ * under either rule — only day 29-31 is at stake — and changing it stays a
+ * one-line edit here, which is why {@link addCalendarMonths} takes the rule as
+ * an argument instead of assuming one.
+ */
+const COURTESY_DAY_OVERFLOW: DayOverflowRule = 'clamp';
+
+/**
  * Adds `cycles` billing periods to a date.
  *
  * Uses calendar months rather than fixed day counts, so a gift spanning
  * February is still "one month" and lands on the same day-of-month the
- * subscriber is used to being charged. `Date` clamps an overflowing day
- * (31 January + 1 month) to the end of the target month on its own, which is
- * the same behaviour a billing provider applies.
+ * subscriber is used to being charged.
+ *
+ * ## Why this delegates instead of calling `setMonth`
+ *
+ * It used to be `result.setMonth(result.getMonth() + months)`, and that is
+ * wrong in a way that is invisible in CI. `getMonth`/`setMonth` read and write
+ * in the process's LOCAL timezone, while `currentPeriodEnd` arrives from a
+ * `timestamptz` column as a UTC instant. Under `TZ=America/Argentina/Buenos_Aires`,
+ * `2026-02-01T00:00:00.000Z` is 31 January locally, so the arithmetic ran on
+ * the wrong month and the window came out **three days long** — and three days
+ * **short** the following month. Production and CI run in UTC and never saw it.
+ *
+ * See {@link COURTESY_DAY_OVERFLOW} for the end-of-month rule, which is a
+ * separate question and still unmeasured.
  */
 function addCycles(from: Date, cycles: number, cadence: CourtesyCadence): Date {
-    const result = new Date(from.getTime());
     const months = cadence === 'annual' ? cycles * 12 : cycles;
-    result.setMonth(result.getMonth() + months);
-    return result;
+    return addCalendarMonths({ from, months, dayOverflow: COURTESY_DAY_OVERFLOW });
 }
 
 /**

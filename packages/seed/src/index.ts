@@ -24,6 +24,7 @@ import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
 import { errorHistory } from './utils/errorHistory.js';
 import { STATUS_ICONS } from './utils/icons.js';
+import { formatImageTally } from './utils/image-tally.js';
 import { logger } from './utils/logger.js';
 import { createImageProcessingCounters, createSeedContext } from './utils/seedContext.js';
 import { summaryTracker } from './utils/summaryTracker.js';
@@ -335,9 +336,15 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         summaryTracker.print();
         errorHistory.printSummary();
 
-        // Print image processing tally (GAP-078-036)
-        logger.info(
-            `[seed:images] tally uploaded=${imageCounters.uploaded} cached=${imageCounters.cached} failures=${imageCounters.failures} skippedExample=${imageCounters.skippedExample}`
-        );
+        // Print image processing tally (GAP-078-036). A run that tolerated
+        // image failures still succeeds, so the tally is raised to `warn` when
+        // there were any — otherwise a sustained Cloudinary degradation is
+        // invisible in a CI log (HOS-922).
+        const tally = formatImageTally({ counters: imageCounters });
+        if (tally.level === 'warn') {
+            logger.warn(tally.message);
+        } else {
+            logger.info(tally.message);
+        }
     }
 }

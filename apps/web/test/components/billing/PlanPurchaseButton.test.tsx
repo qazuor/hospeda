@@ -121,6 +121,9 @@ const defaultProps = {
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const,
+    // HOS-942: the post-signin return path is a prop now — the component no
+    // longer knows which of the two pricing pages it was mounted on.
+    plansPath: 'suscriptores/planes/anfitriones',
     ownPreapprovalEnabled: true
 };
 
@@ -267,7 +270,9 @@ describe('PlanPurchaseButton', () => {
             // Assert
             expect(window.location.href).toContain('/es/auth/signin/');
             expect(window.location.href).toContain('redirect=');
-            expect(window.location.href).toContain(encodeURIComponent('/es/suscriptores/planes/'));
+            expect(window.location.href).toContain(
+                encodeURIComponent('/es/suscriptores/planes/anfitriones/')
+            );
         });
 
         it('does not call fetch when unauthenticated', async () => {

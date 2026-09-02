@@ -2953,8 +2953,9 @@ describe('processSubscriptionUpdated', () => {
     // The pure derivation (deriveCourtesyStatus) is unit-tested in
     // subscription-status-derive.test.ts. What is missing — and what this block
     // covers — is the REAL handler path: a `paused` webhook arriving while a
-    // local courtesy window (metadata.courtesyEndsAt) is still open must land
-    // the row on COURTESY, not PAUSED (AC-4), and that derived status must NOT
+    // local courtesy window (the typed `courtesyEndsAt` column, HOS-993) is
+    // still open must land the row on COURTESY, not PAUSED (AC-4), and that
+    // derived status must NOT
     // trigger the "your card failed" paused-subscription email (AC-9, HOS-926 —
     // subscription-paused.tsx blames the payment method).
     describe('HOS-180: courtesy window on the paused webhook path', () => {
@@ -2970,7 +2971,7 @@ describe('processSubscriptionUpdated', () => {
             const futureCourtesyEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.ACTIVE,
-                metadata: { courtesyEndsAt: futureCourtesyEnd.toISOString() }
+                courtesyEndsAt: futureCourtesyEnd
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
@@ -3008,7 +3009,7 @@ describe('processSubscriptionUpdated', () => {
             const pastCourtesyEnd = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.ACTIVE,
-                metadata: { courtesyEndsAt: pastCourtesyEnd.toISOString() }
+                courtesyEndsAt: pastCourtesyEnd
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
@@ -3044,7 +3045,7 @@ describe('processSubscriptionUpdated', () => {
             const futureCourtesyEnd = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.ACTIVE,
-                metadata: { courtesyEndsAt: futureCourtesyEnd.toISOString() }
+                courtesyEndsAt: futureCourtesyEnd
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
@@ -3077,7 +3078,7 @@ describe('processSubscriptionUpdated', () => {
 
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.ACTIVE
-                // No metadata.courtesyEndsAt at all — an ordinary real pause.
+                // No courtesyEndsAt column at all — an ordinary real pause.
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);

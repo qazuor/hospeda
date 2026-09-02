@@ -1,7 +1,7 @@
 /**
  * @file pricing-plans.ts
  * @description Shared helpers for the subscriber pricing pages
- * (/suscriptores/planes/, /suscriptores/turistas/).
+ * (/suscriptores/planes/anfitriones/, /suscriptores/planes/turistas/).
  *
  * The pricing pages and the <PricingCardsGrid> component all need to map a
  * supported app locale to a BCP47 tag for Intl currency formatting. Keeping
@@ -9,6 +9,25 @@
  */
 
 import type { SupportedLocale } from './i18n';
+
+/**
+ * Where each pricing audience's catalogue lives, as a locale-agnostic path.
+ *
+ * The single source of truth for the two URLs HOS-942 moved. It sits in this
+ * module — which imports nothing beyond a type — rather than in
+ * `billing/audience-plans.ts`, so the two `.astro` components that mount
+ * `<PlanPurchaseButton>` can read it without pulling the `@repo/billing`
+ * barrel into their graph.
+ *
+ * Keyed by `PricingAudience` (`'owner' | 'tourist'`, from `billing-i18n.ts`).
+ * The key is spelled `owner` and the URL segment `anfitriones`: the former is
+ * the plan CATEGORY, the latter is the Spanish route, and they are not the same
+ * vocabulary.
+ */
+export const PRICING_PAGE_PATH_BY_AUDIENCE = {
+    owner: 'suscriptores/planes/anfitriones',
+    tourist: 'suscriptores/planes/turistas'
+} as const satisfies Readonly<Record<'owner' | 'tourist', string>>;
 
 /** Map app locale codes to BCP47 tags used by Intl.NumberFormat / DateTimeFormat. */
 const BCP47_BY_LOCALE: Record<SupportedLocale, string> = {

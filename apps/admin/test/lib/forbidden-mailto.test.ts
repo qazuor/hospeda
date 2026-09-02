@@ -3,6 +3,10 @@
  * "Contact support" CTA. The visual rendering of the page is covered by
  * manual / integration testing — these tests focus on the deterministic URL
  * assembly logic.
+ *
+ * HOS-609 pruned `'host-missing-permission'` from `ForbiddenReason` (the
+ * `_authed` guard no longer sends HOST accounts here at all), leaving
+ * `'generic'` as the only value every fixture below uses.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -20,7 +24,7 @@ describe('buildSupportMailto', () => {
         const href = buildSupportMailto({
             email: 'lola@example.com',
             userId: 'usr_123',
-            reason: 'host-missing-permission',
+            reason: 'generic',
             originalPath: '/admin',
             subjectLine: SUBJECT,
             bodyTemplate: BODY_TEMPLATE
@@ -32,7 +36,7 @@ describe('buildSupportMailto', () => {
         const href = buildSupportMailto({
             email: 'lola@example.com',
             userId: 'usr_123',
-            reason: 'host-missing-permission',
+            reason: 'generic',
             originalPath: '/admin',
             subjectLine: 'Hola — necesito acceso',
             bodyTemplate: BODY_TEMPLATE
@@ -74,17 +78,17 @@ describe('buildSupportMailto', () => {
         expect(body).toContain('Path: —');
     });
 
-    it('encodes the host-missing-permission reason verbatim', () => {
+    it('encodes the generic reason verbatim', () => {
         const href = buildSupportMailto({
             email: 'lola@example.com',
             userId: 'usr_123',
-            reason: 'host-missing-permission',
+            reason: 'generic',
             originalPath: '/admin',
             subjectLine: SUBJECT,
             bodyTemplate: BODY_TEMPLATE
         });
         const url = new URL(href);
         const body = url.searchParams.get('body') ?? '';
-        expect(body).toContain('Reason: host-missing-permission');
+        expect(body).toContain('Reason: generic');
     });
 });

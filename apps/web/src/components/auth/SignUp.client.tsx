@@ -1,6 +1,6 @@
 /**
  * @file SignUp.client.tsx
- * @description Sign-up form React island for web.
+ * @description Sign-up password form React island for web.
  *
  * Standalone component — no dependency on @repo/auth-ui.
  * Calls auth-client.ts directly, styled with CSS Modules + web design tokens.
@@ -9,6 +9,14 @@
  * The `name` field has been intentionally removed (SPEC-113). Name collection
  * happens in the post-signup profile completion form, where users provide
  * structured firstName + lastName instead of a single free-text name.
+ *
+ * HOS-959: the OAuth block (Google/Facebook buttons, `handleOauth`, and the
+ * icons) moved OUT of this component and into `AuthTabs.client.tsx`, which
+ * now owns the single shared copy — signing up with Google IS signing in
+ * with Google, so that block sits above the tabs, not inside this form. This
+ * component keeps only the password-credential registration path. The
+ * `email` field is now a controlled value owned by `AuthTabs` (so it
+ * survives a tab switch) instead of local state.
  */
 
 import { AnalyticsEvents } from '@repo/analytics';
@@ -18,10 +26,11 @@ import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
-import { signIn, signUp } from '@/lib/auth-client';
+import { signUp } from '@/lib/auth-client';
 import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolvePostAuthRedirectUrl } from '@/lib/post-auth-redirect';
 import styles from './SignUp.module.css';
 
 /** Props for the SignUp component. */
@@ -35,43 +44,47 @@ export interface SignUpProps {
      */
     readonly redirectTo: string;
     /**
-     * Optional URL to redirect to after a successful OAuth sign-up.
-     * OAuth providers (Google, Facebook) verify the email themselves,
-     * so the user is already authenticated and should land on the
-     * account dashboard, NOT the "check your inbox" page that the
-     * email path uses. Defaults to {@link redirectTo} for backwards
-     * compatibility, but pages should override this with the dashboard
-     * path to give OAuth users the correct landing experience.
+     * Absolute URL the verification link should land on once the email is
+     * confirmed. Handed to Better Auth as `callbackURL`, which is what carries
+     * the caller's destination across the inbox hop (HOS-838).
      */
-    readonly oauthRedirectTo?: string;
-    /** Whether to show OAuth provider buttons. Defaults to true. */
-    readonly showOAuth?: boolean;
+    readonly verificationCallbackUrl: string;
+    /** Current email value — owned by `AuthTabs` so it survives a tab switch. */
+    readonly email: string;
+    /** Called with the new value on every keystroke in the email field. */
+    readonly onEmailChange: (value: string) => void;
 }
 
 /**
- * Sign-up form with email, password and optional OAuth providers.
+ * Sign-up form with email + password.
  *
  * The `name` field is intentionally omitted — name is collected later in the
  * profile completion form (SPEC-113) as structured firstName + lastName.
  *
  * Validates password length (min 8 chars) before calling the API.
  * After a successful registration it redirects via `window.location.replace`.
+ * The `email` value itself is controlled by the parent (`AuthTabs`) so it
+ * survives a tab switch to sign-in.
  *
  * @example
- * ```astro
- * <SignUp client:load locale={locale} redirectTo="/es/mi-cuenta/" showOAuth={true} />
+ * ```tsx
+ * <SignUp locale={locale} redirectTo="/es/auth/verify-email-sent/" email={email} onEmailChange={setEmail} />
  * ```
  */
-export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }: SignUpProps) {
+export function SignUp({
+    locale,
+    redirectTo,
+    verificationCallbackUrl,
+    email,
+    onEmailChange
+}: SignUpProps) {
     const { t } = createTranslations(locale);
 
-    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [confirmError, setConfirmError] = useState<string | null>(null);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [oauthLoading, setOauthLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     /**
@@ -169,7 +182,15 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
             // is satisfied with an empty string here; the profile completion
             // form (SPEC-113) collects firstName + lastName and updates the
             // user's display_name afterwards.
-            const result = await signUp.email({ email: trimmedEmail, password, name: '' });
+            // `callbackURL` is what Better Auth stamps into the verification
+            // link, so it is the only channel by which the destination reaches
+            // a person who opens the email on a different device (HOS-838).
+            const result = await signUp.email({
+                email: trimmedEmail,
+                password,
+                name: '',
+                callbackURL: verificationCallbackUrl
+            });
 
             if (result.error) {
                 setError(
@@ -180,90 +201,27 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                     })
                 );
             } else {
-                // Mirror the OAuth host-strip+re-attach below. The
-                // server-built `redirectTo` can carry `https://localhost`
-                // when Astro Node runs behind a reverse proxy that does
-                // not forward the original Host header (observed
-                // 2026-05-14 during SPEC-103 T-012 smoke: POST /sign-up
+                // Mirror the OAuth host-strip+re-attach in AuthTabs (see
+                // resolvePostAuthRedirectUrl for why: a reverse-proxy bug
+                // that can hand back `https://localhost`, observed
+                // 2026-05-14 during SPEC-103 T-012 smoke — POST /sign-up
                 // returned 200 but the subsequent navigation went to
-                // https://localhost/es/auth/verify-email-sent and
-                // failed). Strip the host (if any) and reattach the
-                // browser's real origin so the navigation always lands
-                // on whatever host the user opened.
-                const origin = window.location.origin;
-                let path = redirectTo || '/';
-                if (path.startsWith('http')) {
-                    try {
-                        const parsed = new URL(path);
-                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                    } catch {
-                        path = '/';
-                    }
-                }
-                if (!path.startsWith('/')) {
-                    path = `/${path}`;
-                }
+                // https://localhost/es/auth/verify-email-sent and failed).
                 // NOTE: signup_completed is captured SERVER-SIDE in the Better
                 // Auth `databaseHooks.user.create.after` hook (apps/api) so it
                 // covers email AND OAuth signups uniformly and fires exactly once
                 // per new user. Do NOT re-emit it here or it double-counts.
-                window.location.replace(`${origin}${path}`);
+                window.location.replace(
+                    resolvePostAuthRedirectUrl({
+                        target: redirectTo,
+                        currentOrigin: window.location.origin
+                    })
+                );
             }
         } catch {
             setError(t('auth.signUp.error', 'Error al crear la cuenta'));
         } finally {
             setIsLoading(false);
-        }
-    }
-
-    async function handleOauth(provider: 'google' | 'facebook'): Promise<void> {
-        setError(null);
-        setOauthLoading(provider);
-        trackEvent(AnalyticsEvents.signUpStarted, {
-            auth_method: provider,
-            locale,
-            source_page: 'sign_up'
-        });
-
-        try {
-            // Build the absolute callbackURL on the client so the host
-            // matches the browser's real origin. The server-built
-            // redirectTo can carry 'https://localhost' when Astro Node
-            // runs behind a reverse proxy that doesn't forward the
-            // original Host header — and Better Auth rejects any
-            // callbackURL whose origin isn't in trustedOrigins. Strip
-            // the host (if any) and reattach window.location.origin.
-            //
-            // For OAuth, prefer `oauthRedirectTo` over `redirectTo`:
-            // OAuth providers verify the email themselves, so the
-            // user is already authenticated and should land on the
-            // account dashboard, NOT the "check your inbox" page that
-            // the email signup path uses (`verify-email-sent`).
-            const origin = window.location.origin;
-            const rawTarget = oauthRedirectTo ?? redirectTo ?? window.location.pathname ?? '/';
-            let path = rawTarget;
-            if (path.startsWith('http')) {
-                try {
-                    const parsed = new URL(path);
-                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                } catch {
-                    path = '/';
-                }
-            }
-            if (!path.startsWith('/')) {
-                path = `/${path}`;
-            }
-            const callbackURL = `${origin}${path}`;
-            const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
-            await signIn.social({ provider, callbackURL, errorCallbackURL });
-        } catch (err) {
-            // Surface the actual Better Auth error to console so the
-            // operator can distinguish INVALID_CALLBACKURL vs
-            // account_not_linked vs network errors. Without this,
-            // every OAuth failure looks identical to "user cancelled".
-            console.error(`OAuth ${provider} sign-up failed`, err);
-            setError(t('auth.signUp.error', 'Error al crear la cuenta'));
-            setOauthLoading(null);
         }
     }
 
@@ -313,7 +271,7 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                     type="email"
                     className={styles.input}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => onEmailChange(e.target.value)}
                     placeholder={t('auth.signUp.emailPlaceholder', 'tu@email.com')}
                     required
                     autoComplete="email"
@@ -372,87 +330,6 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
                 aria={{ busy: isLoading }}
                 className={styles.submitButton}
             />
-
-            {showOAuth && (
-                <>
-                    <div
-                        className={styles.divider}
-                        aria-hidden="true"
-                    >
-                        <span className={styles.dividerLine} />
-                        <span>{t('auth.signUp.or', 'o')}</span>
-                        <span className={styles.dividerLine} />
-                    </div>
-
-                    <button
-                        type="button"
-                        className={styles.oauthButton}
-                        onClick={() => handleOauth('google')}
-                        disabled={oauthLoading !== null}
-                        aria-busy={oauthLoading === 'google'}
-                    >
-                        <GoogleIcon />
-                        {t('auth.signUp.withGoogle', 'Continuar con Google')}
-                    </button>
-
-                    <button
-                        type="button"
-                        className={styles.oauthButton}
-                        onClick={() => handleOauth('facebook')}
-                        disabled={oauthLoading !== null}
-                        aria-busy={oauthLoading === 'facebook'}
-                    >
-                        <FacebookIcon />
-                        {t('auth.signUp.withFacebook', 'Continuar con Facebook')}
-                    </button>
-                </>
-            )}
         </form>
-    );
-}
-
-function GoogleIcon() {
-    return (
-        <svg
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            aria-hidden="true"
-            focusable="false"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <path
-                d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
-                fill="#4285F4"
-            />
-            <path
-                d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
-                fill="#34A853"
-            />
-            <path
-                d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-                fill="#FBBC05"
-            />
-            <path
-                d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
-                fill="#EA4335"
-            />
-        </svg>
-    );
-}
-
-function FacebookIcon() {
-    return (
-        <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            focusable="false"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="#1877F2"
-        >
-            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.024 4.388 11.018 10.125 11.927v-8.437H7.078v-3.49h3.047V9.413c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.266h3.328l-.532 3.49h-2.796v8.437C19.612 23.091 24 18.097 24 12.073z" />
-        </svg>
     );
 }

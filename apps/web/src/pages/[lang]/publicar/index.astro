@@ -14,9 +14,13 @@
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
  *
  * @route /{lang}/publicar/
- * @rendering SSR — the page reads `?from=admin` at request time to render an
- * eyebrow line inside the hero for tourists redirected from the admin. SSG
- * is not viable because `Astro.url.searchParams` is unavailable at build time.
+ * @rendering SSR — the page fetches the visitor's owned-accommodation count
+ * and trial status server-side (to decide the existing-host redirect and the
+ * trial callout), both of which require the request's session cookie and are
+ * therefore unavailable at build time. HOS-609 removed the `?from=admin`
+ * eyebrow this page used to render for tourists bounced from the admin panel
+ * (they now land on the web's own `/acceso-denegado/` page instead), but SSR
+ * stays required for the reasons above.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
@@ -31,7 +35,6 @@ import { OWNER_FAQ_ITEMS, buildOwnerFaqParams, resolveOwnerFaqAnswer } from '@/l
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import {
-	InfoIcon,
 	BuildingsIcon,
 	TrendingUpIcon,
 	ChatIcon,
@@ -44,8 +47,6 @@ import {
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
-
-const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 
 // F3: determine if the user is authenticated server-side so auth-aware
 // CTAs can be rendered statically without shipping JavaScript for the
@@ -193,17 +194,6 @@ const faqJsonLd = {
 
 		<div class="publicar-hero__container">
 			<div class="publicar-hero__text" data-reveal="up">
-				{cameFromAdmin && (
-					<p
-						class="publicar-hero__from-admin"
-						role="status"
-						aria-live="polite"
-						data-testid="from-admin-eyebrow"
-					>
-						<InfoIcon size={16} weight="regular" aria-hidden="true" />
-						<span>{t('host.fromAdminBanner.eyebrow', 'Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos.')}</span>
-					</p>
-				)}
 				<p class="publicar-hero__tagline">{t('owners.hero.tagline')}</p>
 				<h1 class="publicar-hero__title">{t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}</h1>
 				<p class="publicar-hero__desc">
@@ -361,29 +351,6 @@ const faqJsonLd = {
 </MarketingLayout>
 
 <style>
-	/* ── From-admin eyebrow line ───────────────────────────────────────── */
-	.publicar-hero__from-admin {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		line-height: 1.4;
-	}
-
-	.publicar-hero__from-admin svg {
-		flex-shrink: 0;
-		color: var(--brand-primary);
-		opacity: 0.7;
-	}
-
-	.publicar-hero__from-admin span {
-		max-width: 52ch;
-	}
-
 	/* ── Hero ──────────────────────────────────────────────────────────── */
 	.publicar-hero {
 		position: relative;

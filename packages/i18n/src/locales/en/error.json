@@ -17,6 +17,14 @@
         "goHome": "Go to home",
         "reportProblem": "Report problem"
     },
+    "forbidden": {
+        "title": "No access to the panel",
+        "heading": "You don't have access to the panel",
+        "description": "Your account doesn't have permission to enter the admin panel. If you think this is a mistake, write to us and we'll take a look.",
+        "goToAccount": "Go to my account",
+        "goHome": "Go to home",
+        "contact": "Contact"
+    },
     "form": {
         "validation-failed": "Form validation failed. Please fix the errors and try again.",
         "error-summary-title": "Review the following fields",

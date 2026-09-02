@@ -95,18 +95,18 @@ export const Route = createFileRoute('/_authed')({
                 // guard already built the absolute web URL with an allowlisted
                 // callbackUrl back into admin.
                 throw redirect({ href: decision.href });
-            case 'redirect-tourist-funnel':
-                // Telemetry: log the original path the tourist was trying to
-                // reach. We deliberately do NOT pass it to the funnel — the
-                // funnel doesn't need it, but we want to see it in logs.
-                adminLogger.info('tourist redirected to host funnel', {
+            case 'redirect-web-forbidden':
+                // Telemetry: log the original path the visitor was trying to
+                // reach. We deliberately do NOT pass it to the access-denied
+                // page — the page doesn't need it, but we want to see it in
+                // logs (HOS-609: single outcome for every non-panel-access
+                // role, replacing the old tourist-funnel + host-forbidden split).
+                adminLogger.info('non-panel-access user redirected to web forbidden page', {
                     userId: authState.userId,
                     originalPath: location.pathname,
                     locale: preferredLocale
                 });
                 throw redirect({ href: decision.href });
-            case 'redirect-forbidden':
-                throw redirect({ to: '/auth/forbidden', search: decision.search });
             case 'redirect-change-password':
                 throw redirect({ to: '/auth/change-password' });
             case 'allow':

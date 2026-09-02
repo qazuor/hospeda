@@ -83,7 +83,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
 
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/turistas/`;
+    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
 
     const label = selected
         ? t('accommodations.comparison.detail.added', 'En comparación')

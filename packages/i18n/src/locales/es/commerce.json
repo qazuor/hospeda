@@ -284,7 +284,7 @@
         "gastronomy": {
             "benefits": {
                 "tagline": "¿Por qué Hospeda?",
-                "title": "Beneficios para tu restaurante",
+                "title": "Beneficios para tu local gastronómico",
                 "item1": {
                     "title": "Visibilidad en la región",
                     "desc": "Aparecé donde miles de viajeros buscan dónde comer en Concepción del Uruguay y el litoral entrerriano."
@@ -318,7 +318,8 @@
                 "tagline": "Un solo plan, simple",
                 "title": "Gastronomía Premium",
                 "priceSuffix": "/mes",
-                "trial": "30 días de prueba gratis",
+                "trial_one": "{{count}} día de prueba gratis",
+                "trial_other": "{{count}} días de prueba gratis",
                 "feature1": "1 ficha de gastronomía publicada",
                 "feature2": "Presencia en el catálogo de Hospeda",
                 "feature3": "Sin comisión por reserva ni consulta",
@@ -328,8 +329,10 @@
             "faq": {
                 "tagline": "Resolvé tus dudas",
                 "title": "Preguntas frecuentes",
-                "q1": "¿Cuánto cuesta publicar mi restaurante en Hospeda?",
-                "a1": "Un pago fijo mensual, con 30 días de prueba gratis. Sin comisión por reserva ni consulta.",
+                "q1": "¿Cuánto cuesta publicar mi local gastronómico en Hospeda?",
+                "a1_one": "Un pago fijo mensual, con {{count}} día de prueba gratis. Sin comisión por reserva ni consulta.",
+                "a1_other": "Un pago fijo mensual, con {{count}} días de prueba gratis. Sin comisión por reserva ni consulta.",
+                "a1NoTrial": "Un pago fijo mensual. Sin comisión por reserva ni consulta.",
                 "q2": "¿Hay algún compromiso de permanencia?",
                 "a2": "No. Podés cancelar tu suscripción cuando quieras desde tu cuenta.",
                 "q3": "¿Cuántas fichas puedo publicar?",
@@ -373,7 +376,8 @@
                 "tagline": "Un solo plan, simple",
                 "title": "Experiencias Premium",
                 "priceSuffix": "/mes",
-                "trial": "30 días de prueba gratis",
+                "trial_one": "{{count}} día de prueba gratis",
+                "trial_other": "{{count}} días de prueba gratis",
                 "feature1": "1 ficha de experiencia publicada",
                 "feature2": "Presencia en el catálogo de Hospeda",
                 "feature3": "Sin comisión por reserva ni consulta",
@@ -384,7 +388,9 @@
                 "tagline": "Resolvé tus dudas",
                 "title": "Preguntas frecuentes",
                 "q1": "¿Cuánto cuesta publicar mi experiencia en Hospeda?",
-                "a1": "Un pago fijo mensual, con 30 días de prueba gratis. Sin comisión por reserva ni consulta.",
+                "a1_one": "Un pago fijo mensual, con {{count}} día de prueba gratis. Sin comisión por reserva ni consulta.",
+                "a1_other": "Un pago fijo mensual, con {{count}} días de prueba gratis. Sin comisión por reserva ni consulta.",
+                "a1NoTrial": "Un pago fijo mensual. Sin comisión por reserva ni consulta.",
                 "q2": "¿Hay algún compromiso de permanencia?",
                 "a2": "No. Podés cancelar tu suscripción cuando quieras desde tu cuenta.",
                 "q3": "¿Cuántas fichas puedo publicar?",

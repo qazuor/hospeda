@@ -39,6 +39,29 @@ import styles from './PayerEmailConfirmDialog.module.css';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
+ * MercadoPago rejects a `payer_email` containing `+` outright, answering
+ * `User bad request` with no field name and no error code (HOS-937,
+ * isolated against a negative control: it is the CHARACTER, not the Gmail
+ * alias). Since `payer_email` became binding, that rejection kills the whole
+ * checkout, so the address has to be corrected here — before the redirect —
+ * rather than at MercadoPago, which never says which email it expected.
+ *
+ * This is the front half of HOS-937 §11 OQ-1 (resolved as option 1: ask for
+ * an alternative). `resolvePayerEmail` (`apps/api/src/services/billing/payer-email.ts`)
+ * keeps throwing `PAYER_EMAIL_UNSUPPORTED_CHARACTER` as defense in depth for
+ * any caller that does not come through this dialog.
+ *
+ * Deliberately NOT auto-corrected: `sanitizeEmailForMercadoPago`
+ * (`apps/api/src/utils/mp-email.ts`) rewrites `+` to `.` and its own docblock
+ * documents that the result is very likely a DEAD MAILBOX (Gmail ignores
+ * dots, so `user.tag@gmail.com` collapses to `usertag@gmail.com`, which is
+ * not `user@gmail.com`). Here that would be worse than elsewhere: this exact
+ * string is what the user must later type at MercadoPago, so silently
+ * rewriting it hands them an address they never wrote and cannot pay with.
+ */
+const MP_REJECTED_CHARACTER = '+';
+
+/**
  * Props for {@link PayerEmailConfirmDialog}.
  */
 export interface PayerEmailConfirmDialogProps {
@@ -92,8 +115,14 @@ export function PayerEmailConfirmDialog({
         }
     }, [isOpen, defaultEmail]);
 
-    const isValid = EMAIL_PATTERN.test(value.trim());
-    const showError = touched && !isValid;
+    const trimmed = value.trim();
+    const hasRejectedCharacter = trimmed.includes(MP_REJECTED_CHARACTER);
+    const isValid = EMAIL_PATTERN.test(trimmed) && !hasRejectedCharacter;
+    // A `+` error surfaces WITHOUT waiting for `touched`: the value that
+    // carries it is usually the one WE pre-filled from the session, so the
+    // user has no reason to touch the field and would otherwise only learn
+    // it is a problem by pressing Continue and having nothing happen.
+    const showError = (touched || hasRejectedCharacter) && !isValid;
 
     const title = t('billing.checkout.payerEmailConfirm.title', 'Con qué email vas a poder pagar');
     const body = t(
@@ -105,15 +134,26 @@ export function PayerEmailConfirmDialog({
         'billing.checkout.payerEmailConfirm.invalidError',
         'Ingresá un email válido'
     );
+    // Deliberately a DIFFERENT message from `invalidError`: the address is
+    // perfectly valid, so "enter a valid email" would tell the user nothing
+    // and leave them retyping the same thing.
+    const plusError = t(
+        'billing.checkout.payerEmailConfirm.plusError',
+        'Mercado Pago no acepta emails con «+». Escribí otra dirección para poder pagar.'
+    );
+    const errorMessage = hasRejectedCharacter ? plusError : invalidError;
     const confirmLabel = t('billing.checkout.payerEmailConfirm.confirm', 'Continuar');
     const cancelLabel = t('billing.checkout.payerEmailConfirm.cancel', 'Cancelar');
 
     function handleConfirm(): void {
         setTouched(true);
-        if (!EMAIL_PATTERN.test(value.trim())) {
+        // Guards on `isValid`, not on the format alone — otherwise a
+        // `+`-bearing address passes here and dies at MercadoPago with an
+        // opaque "User bad request" the user cannot act on.
+        if (!isValid) {
             return;
         }
-        onConfirm(value.trim());
+        onConfirm(trimmed);
     }
 
     return (
@@ -150,7 +190,7 @@ export function PayerEmailConfirmDialog({
                             className={styles.errorMsg}
                             role="alert"
                         >
-                            {invalidError}
+                            {errorMessage}
                         </p>
                     )}
                 </div>

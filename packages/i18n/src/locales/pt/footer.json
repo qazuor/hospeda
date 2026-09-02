@@ -8,8 +8,7 @@
     "listProperty": "Publique seu alojamento",
     "listGastronomy": "Publique seu local gastronômico",
     "listExperience": "Publique sua experiência",
-    "ownerPlans": "Planos para proprietários",
-    "touristPlans": "Planos para turistas",
+    "plans": "Planos e preços",
     "legal": "Legal",
     "aboutUs": "Quem somos",
     "collaborate": "Colabore",
@@ -108,5 +107,5 @@
     },
     "experiences": "Experiências",
     "reportProblem": "Relatar um problema",
-    "allRightsReserved": "Todos los derechos reservados"
+    "allRightsReserved": "Todos os direitos reservados"
 }

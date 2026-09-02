@@ -212,17 +212,27 @@ export function createOwnerListing(
  * when the listing is not publish-ready; `409` when already subscribed;
  * `403` on a non-owner or a still-`mustChangePassword` caller.
  *
- * @param params - Vertical + listing id to start a subscription for.
+ * `payerEmail` (HOS-1008) is the address the owner confirmed on the
+ * pre-redirect screen. It is sent ONLY when the own-preapproval path is
+ * active — the flag that makes `payer_email` binding is the same flag that
+ * makes the screen appear — so with the flag off **no body is sent at all**
+ * and the request is byte-identical to the pre-HOS-1008 one.
+ *
+ * @param params - Vertical + listing id, plus the confirmed payer email when
+ *   the owner went through the confirmation screen.
  */
 export function startOwnerListingCheckout({
     vertical,
-    listingId
+    listingId,
+    payerEmail
 }: {
     readonly vertical: CommerceVertical;
     readonly listingId: string;
+    readonly payerEmail?: string;
 }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
     return apiClient.postProtected<StartPaidSubscriptionResponse>({
         path: `${COMMERCE_LISTINGS_PATH}/${vertical}/${listingId}/start-subscription`,
-        headers: { 'X-Idempotency-Key': crypto.randomUUID() }
+        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+        ...(payerEmail === undefined ? {} : { body: { payerEmail } })
     });
 }

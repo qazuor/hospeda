@@ -46,16 +46,33 @@ import {
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
-/** Marks in metadata that the "your gift started" notification already went out. */
+/**
+ * Marks in metadata that the "your gift started" notification already went out.
+ *
+ * Deliberately left in `metadata` jsonb when HOS-993 moved the three window
+ * fields to typed columns. This is not part of the courtesy window: it is this
+ * job's own bookkeeping about a message it sent, read and written nowhere else.
+ * Promoting it would put a column on a shared upstream table
+ * (`@qazuor/qzpay-drizzle`) that exactly one cron in one consumer would ever
+ * name — and `courtesy-fields.ts` stays the accessor for the WINDOW, which this
+ * is not.
+ */
 const STARTED_NOTIFIED_KEY = 'courtesyStartedNotifiedAt';
 
 /**
  * Runs one sweep over every subscription currently in a courtesy window.
  *
- * Deliberately a plain scan rather than an indexed range query: the courtesy
- * window lives in `metadata` jsonb while spec OQ-1 is open, so there is no
- * column to index. The candidate set is "subscriptions in status courtesy",
- * which is a handful at any realistic volume.
+ * The candidate set is "subscriptions in status courtesy", filtered on an
+ * indexed column, and it is a handful at any realistic volume.
+ *
+ * HOS-993 moved the window into typed columns, which makes
+ * `courtesy_ends_at <= now()` expressible in SQL — and this sweep still does
+ * NOT ask for it. Two things the loop does would disappear if it did: a window
+ * that has STARTED but not ended is what triggers the "your gift began"
+ * notification, and a row sitting in status `courtesy` with no readable window
+ * at all is a corruption this job exists to shout about. Both are invisible to
+ * a query that only returns expired windows, so narrowing the WHERE would not
+ * make the sweep cheaper — it would make it blind.
  *
  * @param args.now - Injected clock; the boundary every window is compared to.
  * @param args.dryRun - When `true`, counts what the sweep WOULD do and writes
@@ -90,7 +107,7 @@ async function sweepCourtesyWindows(args: {
     const failures: string[] = [];
 
     for (const row of rows) {
-        const fields = readCourtesyFields(row.metadata);
+        const fields = readCourtesyFields(row);
 
         // A row in status `courtesy` with no readable window should not exist.
         // Leave it alone and shout: resuming it would end a gift that may still
@@ -156,7 +173,7 @@ async function sweepCourtesyWindows(args: {
                         .update(billingSubscriptions)
                         .set({
                             status: SubscriptionStatusEnum.CANCELLED,
-                            metadata: clearCourtesyFields(row.metadata)
+                            ...clearCourtesyFields()
                         })
                         .where(eq(billingSubscriptions.id, row.id));
                     clearEntitlementCache(row.customerId);
@@ -185,7 +202,7 @@ async function sweepCourtesyWindows(args: {
                     .update(billingSubscriptions)
                     .set({
                         status: SubscriptionStatusEnum.ACTIVE,
-                        metadata: clearCourtesyFields(row.metadata)
+                        ...clearCourtesyFields()
                     })
                     .where(eq(billingSubscriptions.id, row.id));
 

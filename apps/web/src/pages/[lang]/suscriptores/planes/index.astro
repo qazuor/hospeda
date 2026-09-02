@@ -1,49 +1,103 @@
 ---
 /**
  * @file suscriptores/planes/index.astro
- * @description Owner pricing page. Thin wrapper around <PricingCardsGrid>;
- * page-specific copy, metadata, and JSON-LD live here, the card UI itself
- * is shared with /suscriptores/turistas/.
+ * @description The plan INDEX: one card per audience Hospeda sells to
+ * (HOS-942, H1 of the HOS-941 epic).
  *
- * Fetches pricing from the public API at runtime (SSR) so that operator
- * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
- * The edge caches the rendered HTML; how long for comes from the `pricing`
- * cache class (`lib/cache/cache-classes.ts`), and a plan write purges it via
- * `PlanService.triggerPricingRevalidation`.
+ * This URL used to BE the owner pricing page. HOS-942 moved that page down one
+ * level to `/suscriptores/planes/anfitriones/` and gave this path the job of
+ * routing a visitor to the right vertical instead. It therefore carries NO
+ * redirect (AC-5): the URL changed content, not location — anyone who lands
+ * here still gets a page, and it is the one that now covers their case whatever
+ * that case is. `/suscriptores/turistas/`, by contrast, really did move, and
+ * 301s to its new home.
+ *
+ * ## All five cards, always, with no interaction
+ *
+ * There are no tabs, no accordion and no carousel — every card is in the
+ * initial HTML (AC-1). A visitor who does not yet know Hospeda sells to five
+ * audiences cannot be expected to discover the other four behind a control, and
+ * an interaction is exactly what hides them from a crawler too.
+ *
+ * Gastronomy and experience are two separate cards (AC-9), never a single
+ * "commerce" one: `'commerce'` is a RETIRED `ProductDomainEnum` value and
+ * regrouping the verticals under it in the UI would resurrect the vocabulary the
+ * domain split removed.
+ *
+ * ## A card has to sell its vertical, not just link to it (AC-1b / AC-2b)
+ *
+ * The first cut of this page gave every card a title, one line and a price. The
+ * owner read the result back as "a list of links with a border", and he was
+ * right: nothing on a card said what THAT audience gets, and the only thing
+ * separating a restaurant owner's card from a host's was a paragraph. Two
+ * additions fix it, and both are deliberately cheap:
+ *
+ * 1. **Three concrete highlights per card**, from
+ *    `resolveAudienceHighlights` — audience-specific copy sourced from what each
+ *    vertical actually offers, never a line that could be moved between cards.
+ * 2. **A glyph and an accent colour per audience**, keyed off the same
+ *    `data-audience` attribute. There are no illustrations to spend here, so the
+ *    differentiation is built from what the site already ships: `@repo/icons`
+ *    and existing brand tokens. The accent is decoration only — every piece of
+ *    text on the card keeps a foreground/muted/link token, so nothing depends on
+ *    a hue clearing a contrast threshold to be readable.
+ *
+ * ## Prices AND trial lengths are fetched, never written down
+ *
+ * Each "from $X" comes from `GET /api/v1/public/plans` at request time (AC-8),
+ * so an operator's price edit in admin shows up here without a redeploy — same
+ * contract the two pricing pages have had since SPEC-168 D3. When a domain's
+ * fetch fails, `fetchAudienceOffers` yields `null` for that audience and the
+ * card renders WITHOUT a price line, keeping its copy and its CTA. A card that
+ * vanished, or one showing a stale hardcoded figure, would both be worse than a
+ * card with no number on it.
+ *
+ * The trial line obeys the same contract and for a sharper reason (R-2): the
+ * number is resolved PER AUDIENCE from the same payload, never written into the
+ * copy in any language. Host and tourist have carried different trial lengths in
+ * this database, so one generic sentence would necessarily be false for one of
+ * them — which is precisely HOS-525, where marketing promised hosts 30 days and
+ * the product granted 14. An audience with no trial on offer (every partner
+ * tier sits at `trialDays: 0`) gets NO line: never "0 días", never a number
+ * borrowed from a neighbouring card, never a default.
  *
  * @route /{lang}/suscriptores/planes/
- * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
- *   time; edge-cacheable, TTL from the `pricing` cache class.
+ * @rendering SSR (prerender=false) — fetches the public plan catalogue per
+ *   domain at request time; edge-cacheable, TTL from the `pricing` cache class.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
-import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
-import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
 import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import {
+	AUDIENCE_CARD_ORDER,
+	AUDIENCE_CARD_PATHS,
+	fetchAudienceOffers,
+	formatStartingPriceArs
+} from '@/lib/billing/audience-plans';
+import {
+	AUDIENCE_CARD_ICONS,
+	resolveAudienceHighlights
+} from '@/lib/billing/audience-card-content';
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
+import { ArrowRightIcon, BuildingIcon, CheckIcon, CompassIcon, StarIcon } from '@repo/icons';
 
 export const prerender = false;
 
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
+const locale = Astro.locals.locale;
+const { t, tPlural } = createTranslations(locale);
 
-// Cache at the edge, tagged so a plan write purges exactly these pages instead
-// of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
-// is the writer that purges `pricing`.
+// Cache at the edge, tagged so a plan write purges this page along with the two
+// pricing pages instead of flushing the whole zone (HOS-369 W1-1).
 //
-// This goes through `applyCacheHeaders` rather than setting the header directly
-// (HOS-426): setting `Cache-Control` and declaring the tags as two independent
-// statements meant a namespace that failed to resolve produced a cacheable
-// response with NO purge tag — cached content nothing could evict, and nothing
-// would report it. `applyCacheHeaders` demotes to private in that case.
+// Routed through `applyCacheHeaders` rather than by setting `Cache-Control`
+// directly (HOS-426): the helper is fail-CLOSED, demoting the response to
+// `private` when the tag namespace cannot be resolved. Setting the header and
+// declaring the tags as two independent statements would instead produce a
+// cacheable response with NO purge tag — cached content nothing can evict.
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
@@ -52,31 +106,59 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_PRICING]
 });
 
-// Fetch active plans from the public API endpoint at runtime.
-const fetchResult = await fetchPublicPlans();
-const ownerPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'owner')
-	: [];
-
+const { startingPrices, trialDays } = await fetchAudienceOffers();
 const intlLocale = getIntlLocale(locale);
-const highlightedSlug = ownerPlans[1]?.slug ?? 'owner-pro';
-const hasPlans = ownerPlans.length > 0;
 
-// Build absolute URL for each plan (used by JSON-LD Offer entries).
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes' })}`;
+/** Resolve one card's price line, or `null` when the catalogue did not load. */
+function priceLabelFor(id: (typeof AUDIENCE_CARD_ORDER)[number]): string | null {
+	const price = startingPrices[id];
+	if (price === null) return null;
+	if (price.kind === 'free') return t('pricing.free', 'Gratis');
+	return t('pricing.index.from', 'Desde {{price}}', {
+		price: formatStartingPriceArs({ cents: price.monthlyPriceArs, intlLocale })
+	});
+}
 
-const jsonLdPlans = ownerPlans.map((plan) => ({
-	name: plan.name,
-	description: plan.description,
-	priceCurrency: 'ARS',
-	// schema.org `price` expects major currency units (pesos), not cents.
-	price: plan.monthlyPriceArs / 100,
-	url: planPageUrl,
+/**
+ * Resolve one card's trial line, or `null` when the audience has no trial to
+ * advertise.
+ *
+ * `tPlural` and not `t`: the CLDR `_one`/`_other` pair is what makes "1 día de
+ * prueba" and "30 días de prueba" both grammatical, in all three locales,
+ * without the page knowing which one applies. The count is INTERPOLATED into
+ * the string — no locale file contains a trial length, so an operator changing
+ * `trialDays` in admin changes this line too.
+ *
+ * The `null` branch is the one worth reading twice: it covers a failed fetch
+ * AND an audience that genuinely offers no trial, and both render as nothing at
+ * all. `computeMinimumTrialDays` never returns `0`, so this cannot fall through
+ * to "0 días de prueba".
+ */
+function trialLabelFor(id: (typeof AUDIENCE_CARD_ORDER)[number]): string | null {
+	const days = trialDays[id];
+	if (days === null) return null;
+	return tPlural('pricing.index.trial', days);
+}
+
+const highlightsLabel = t('pricing.index.highlightsLabel', 'Qué obtenés');
+
+const cards = AUDIENCE_CARD_ORDER.map((id) => ({
+	id,
+	href: buildUrl({ locale, path: AUDIENCE_CARD_PATHS[id] }),
+	title: t(`pricing.index.cards.${id}.title`),
+	audience: t(`pricing.index.cards.${id}.audience`),
+	cta: t(`pricing.index.cards.${id}.cta`),
+	highlights: resolveAudienceHighlights({ id, t }),
+	icon: AUDIENCE_CARD_ICONS[id],
+	priceLabel: priceLabelFor(id),
+	trialLabel: trialLabelFor(id),
+	/** `/mes` only makes sense next to an amount, not next to the free label. */
+	showPeriod: startingPrices[id]?.kind === 'from'
 }));
 
-// Split heading to underline the last word with a handwritten accent.
-const headingFull = t('pricing.owner.heading', 'Planes para propietarios');
+// Split the heading so the hero can underline its last word, exactly as the two
+// pricing pages do.
+const headingFull = t('pricing.index.heading', 'Un plan para cada audiencia');
 const headingWords = headingFull.trim().split(/\s+/);
 const headingAccent = headingWords.pop() ?? headingFull;
 const headingMain = headingWords.join(' ');
@@ -84,52 +166,553 @@ const headingMain = headingWords.join(' ');
 
 <MarketingLayout
 	locale={locale}
-	title={t('pricing.owner.title', 'Planes para propietarios')}
+	title={t('pricing.index.title', 'Planes de Hospeda')}
 	description={t(
-		'pricing.owner.description',
-		'Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.'
+		'pricing.index.description',
+		'Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.'
 	)}
 >
-	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
-
 	<MarketingHero
-		tagline={t('pricing.owner.tagline', 'Planes y precios')}
+		tagline={t('pricing.index.tagline', 'Planes y precios')}
 		titleMain={headingMain}
 		titleAccent={headingAccent}
 		subtitle={t(
-			'pricing.owner.subtitle',
-			'Elegí el plan que mejor se adapte a tu propiedad y objetivos.'
+			'pricing.index.subtitle',
+			'Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá los precios.'
 		)}
 	>
 		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
 		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><CompassIcon size="md" weight="duotone" /></Fragment>
 	</MarketingHero>
 
-	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
-		<PricingCardsGrid
-			locale={locale}
-			plans={ownerPlans}
-			highlightedSlug={highlightedSlug}
-			intlLocale={intlLocale}
-			audience="owner"
-			sectionHeading={t(
-				'pricing.owner.cardsHeading',
-				'Comparativa de planes para propietarios'
-			)}
-			emptyMessage={t('pricing.owner.empty', 'Planes no disponibles en este momento.')}
-			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
-			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
-			ctaText={t('pricing.cta', 'Empezar')}
-		/>
-	</section>
+	<section class="audiences section" aria-labelledby="audiences-heading">
+		<div class="audiences__container">
+			<h2 class="audiences__heading" id="audiences-heading">
+				{t('pricing.index.cardsHeading', 'Elegí tu audiencia')}
+			</h2>
 
-	{hasPlans && (
-		<section class="comparison-link section">
-			<ComparisonLinkTeaser
-				locale={locale}
-				href={buildUrl({ locale, path: 'suscriptores/planes/comparar' })}
-			/>
-		</section>
-	)}
+			<ul class="audiences__grid" data-audience-count={cards.length}>
+				{cards.map((card) => {
+					// Astro renders a capitalised binding as a component; the map's
+					// block body is what lets the per-audience glyph be a value
+					// rather than five branches in the template.
+					const AudienceIcon = card.icon;
+					return (
+						<li class="audiences__item" data-audience={card.id}>
+							<a class="audiences__card" href={card.href}>
+								{/*
+									`weight="bold"` and not the duotone the hero uses: the
+									factory only forwards `color` (which defaults to
+									`currentColor`) on the non-duotone weights, so this is
+									what lets the glyph take the audience's accent instead
+									of the icon package's own brand blue.
+								*/}
+								<span class="audiences__card-glyph">
+									<AudienceIcon size="md" weight="bold" />
+								</span>
+
+								<h3 class="audiences__card-title">{card.title}</h3>
+								<p class="audiences__card-audience">{card.audience}</p>
+
+								{card.highlights.length > 0 && (
+									<ul class="audiences__card-highlights" aria-label={highlightsLabel}>
+										{card.highlights.map((highlight) => (
+											<li class="audiences__card-highlight">
+												{/*
+													The tick is decoration: the bullet's meaning is
+													its sentence. Wrapped rather than passed an
+													`aria-label` because `@repo/icons` always emits
+													one — fifteen "check icon" announcements on this
+													page would be noise between the lines a reader
+													actually needs.
+												*/}
+												<span class="audiences__card-check" aria-hidden="true">
+													<CheckIcon size="sm" weight="bold" />
+												</span>
+												<span class="audiences__card-highlight-text">{highlight}</span>
+											</li>
+										))}
+									</ul>
+								)}
+
+								{card.priceLabel && (
+									<p class="audiences__card-price">
+										<span class="audiences__card-price-amount">{card.priceLabel}</span>
+										{card.showPeriod && (
+											<span class="audiences__card-price-period">
+												{t('pricing.period.month', '/mes')}
+											</span>
+										)}
+									</p>
+								)}
+
+								{/*
+									Its own guard, independent of the price's: partner has a
+									price and no trial, and a failed fetch takes both. Nesting
+									this inside the price block would tie the two together and
+									make a trial line impossible on any card whose price did
+									not resolve.
+								*/}
+								{card.trialLabel && (
+									<p class="audiences__card-trial">{card.trialLabel}</p>
+								)}
+
+								<span class="audiences__card-cta">
+									{card.cta}
+									<ArrowRightIcon size="sm" weight="bold" />
+								</span>
+							</a>
+						</li>
+					);
+				})}
+			</ul>
+		</div>
+	</section>
 </MarketingLayout>
+
+<style>
+	.audiences {
+		padding-block: clamp(2.5rem, 6vw, 4.5rem);
+		background-color: var(--core-background);
+		/* ONE number spaces the inside of a card. The flex fallback spends it as
+		   the card's `gap`; the subgrid branch spends it as the `row-gap` of the
+		   shared tracks. Declared on the section so both levels inherit it and
+		   there is a single place to change the card's rhythm. */
+		--audience-card-rhythm: var(--space-4, 1rem);
+	}
+
+	.audiences__container {
+		max-width: var(--container-max, 1350px);
+		margin-inline: auto;
+		padding-inline: var(--space-5, 1.25rem);
+	}
+
+	.audiences__heading {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.5rem, 3.5vw, 2rem);
+		color: var(--core-foreground);
+		text-align: center;
+		margin: 0 0 var(--space-8, 2rem);
+		line-height: 1.2;
+	}
+
+	/* Mobile-first single column (AC-2). The wider layouts are additive, so a
+	   375px viewport never has more than one card per row and nothing can push
+	   the body wider than the viewport. */
+	.audiences__grid {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-5, 1.25rem);
+	}
+
+	@media (min-width: 640px) {
+		.audiences__grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.audiences__grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	/* ─── The per-audience accent ────────────────────────────────────
+	   One custom property, set on the list item and inherited by everything
+	   inside the card, so a card's glyph, its top rule, its bullets and its
+	   hover border all move together and there is ONE place to change an
+	   audience's colour.
+
+	   Every value is an existing token: the blue and orange the site already
+	   uses for links and CTAs, the forest green of the `hospeda` palette, that
+	   palette's sand darkened by relative colour (the same technique
+	   `lib/colors.ts` uses throughout), and the deep brand navy. No new hue is
+	   introduced — this is the site's own palette, spread across five cards.
+
+	   The accent is DECORATION. Card text never uses it, so none of these has
+	   to clear a text-contrast threshold; the accent only ever paints a glyph,
+	   a 4px rule, a bullet and a border. */
+	.audiences__item[data-audience='host'] {
+		--audience-ink: var(--brand-primary-link);
+	}
+
+	.audiences__item[data-audience='tourist'] {
+		--audience-ink: var(--brand-accent-text);
+	}
+
+	.audiences__item[data-audience='gastronomy'] {
+		--audience-ink: var(--hospeda-forest-link);
+	}
+
+	.audiences__item[data-audience='experience'] {
+		--audience-ink: oklch(from var(--hospeda-sand) 0.55 c h);
+	}
+
+	.audiences__item[data-audience='partner'] {
+		--audience-ink: var(--brand-primary-text);
+	}
+
+	.audiences__item {
+		/* Without this a long unbroken word in a card would set the track's
+		   minimum width and overflow the row. */
+		min-width: 0;
+		display: flex;
+		/* Any audience whose rule above is missing still gets a defined accent
+		   rather than an invalid `var()` that silently erases the glyph. */
+		--audience-ink: var(--brand-primary-link);
+	}
+
+	.audiences__card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--audience-card-rhythm);
+		width: 100%;
+		min-width: 0;
+		/* The extra 4px on top is the accent rule's own height, so the glyph
+		   sits the same distance from the rule as the copy does from the sides. */
+		padding: calc(var(--space-5, 1.25rem) + 4px) var(--space-5, 1.25rem)
+			var(--space-5, 1.25rem);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-card);
+		background-color: var(--core-card);
+		color: var(--core-foreground);
+		text-decoration: none;
+		/* Clips the accent rule to the card's own corner radius. */
+		overflow: clip;
+		transition:
+			border-color 0.2s ease,
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+
+	/* The accent rule. A pseudo-element rather than a `border-top`, so the
+	   card's 1px outline stays one uniform colour and the rule can sit inside
+	   the rounded corners. */
+	.audiences__card::before {
+		content: '';
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline: 0;
+		height: 4px;
+		background-color: var(--audience-ink);
+	}
+
+	.audiences__card:hover,
+	.audiences__card:focus-visible {
+		border-color: var(--audience-ink);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.audiences__card-glyph {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		flex: none;
+		border-radius: var(--radius-md);
+		background-color: oklch(from var(--audience-ink) l c h / 0.12);
+		color: var(--audience-ink);
+	}
+
+	.audiences__card-title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-h4, 1.125rem);
+		color: var(--core-foreground);
+		margin: 0;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
+	}
+
+	.audiences__card-audience {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-muted-foreground);
+		margin: 0;
+		line-height: 1.55;
+		overflow-wrap: anywhere;
+	}
+
+	/* The three highlights. They are what turns the card from a link into an
+	   offer, so they are plain readable text in the foreground colour — the
+	   accent is spent only on the marker. */
+	.audiences__card-highlights {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		padding-block-start: var(--space-3, 0.75rem);
+		border-block-start: 1px solid var(--border);
+	}
+
+	/* Two columns — tick, then text — rather than a marker hung in the text's
+	   own padding. Two reasons, and the first is what the owner saw: a `ul`
+	   carries a ~40px browser `padding-inline-start`, so anything that does not
+	   reset it starts to the LEFT of the rest of the card. This list has
+	   `padding: 0` above, and the text column therefore lines up exactly with
+	   the title and the paragraph. The second is wrapping: with `flex` and a
+	   `flex: none` tick, a bullet that runs to two lines keeps its second line
+	   in the text column instead of sliding under the icon. */
+	.audiences__card-highlight {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2, 0.5rem);
+		min-width: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		line-height: 1.5;
+		color: var(--core-foreground);
+	}
+
+	.audiences__card-check {
+		display: inline-flex;
+		flex: none;
+		/* Optically centred on the first line rather than on the whole item. */
+		margin-block-start: 0.15em;
+		color: var(--audience-ink);
+	}
+
+	.audiences__card-highlight-text {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.audiences__card-price {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		margin: 0;
+		margin-block-start: auto;
+		padding-block-start: var(--space-3, 0.75rem);
+		font-family: var(--font-sans);
+	}
+
+	/* One step up the shared scale, `--text-h4` → `--text-lg` (owner review
+	   HOS-943: "el precio, un toque más grande"). `--text-lg` is 1.25rem FLAT;
+	   `--text-h4` is a clamp that only reaches 1.125rem past a ~1600px viewport,
+	   so this is roughly +2px on a phone and +2.4px on a 1440px screen — a step,
+	   not a jump.
+
+	   The card TITLE keeps its own size deliberately: the two are the only
+	   700-weight heading-font strings on the card, and the title is what the
+	   visitor is choosing between. The price is a supporting fact with a muted
+	   `/mes` hanging off it, it sits below the title and below the highlights,
+	   and it is not the first thing under the audience's glyph. If it ever needs
+	   to grow again, the title has to grow with it. */
+	.audiences__card-price-amount {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-lg, 1.25rem);
+		color: var(--core-foreground);
+	}
+
+	.audiences__card-price-period {
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-muted-foreground);
+	}
+
+	/* ─── The trial line ─────────────────────────────────────────────
+	   It used to be deliberately quiet — muted ink, small step, sitting under
+	   the amount as a qualifier of it. The owner read that back as "se pierde",
+	   and he is right for a reason that is not about the colour: on a card that
+	   is otherwise five stacked lines of sans-serif text, a sixth stacked line
+	   of sans-serif text cannot stand out however it is coloured. It is now a
+	   PILL — the only enclosed shape on the card — so it separates by SHAPE
+	   first and by colour second, and stays the standout element for a visitor
+	   who cannot tell the hues apart.
+
+	   Same treatment and the same tokens as `.pricing-card__trial` on the two
+	   pricing pages, including the part that looks like an omission and is not:
+	   the chip has NO background fill. `--brand-accent-text` is the
+	   AA-normal-size step of the accent (SPEC-308) — `--brand-accent` is a fill
+	   hue and is not a text token — and measured over `--core-card` it reads
+	   4.53:1 on the light theme, three hundredths above the 4.5:1 floor. Any
+	   tint behind it spends headroom that does not exist: 12% of the ink itself
+	   takes it to 3.86:1, and even 4% takes it to 4.29:1. The dark theme passes
+	   either way; light is what binds. So the chip is built from shape (the only
+	   enclosed box on the card), a 2px outline, 700 weight and a step up in
+	   size, and its text still sits on the bare card at the token's own ratio.
+
+	   The border is mixed from `currentColor` so it tracks the ink; it is
+	   decoration rather than a UI control, so 1.4.11's 3:1 does not apply to it.
+
+	   Note the ink is NOT `--audience-ink`: two of the five audience accents are
+	   decorative tints that do not clear AA as body text, which is the same rule
+	   the CTA below follows.
+
+	   `inline-flex` + `width: fit-content` so the chip is as wide as its text
+	   rather than as wide as the card. It keeps `margin-block-start: auto` for
+	   the FALLBACK layout only (see the note below the CTA); in the subgrid
+	   branch it sits in a shared row and the auto resolves to zero. */
+	.audiences__card-trial {
+		margin: 0;
+		margin-block-start: auto;
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		max-width: 100%;
+		font-family: var(--font-sans);
+		font-size: var(--text-body, 1rem);
+		font-weight: 700;
+		line-height: 1.3;
+		padding: 0.3em 0.9em;
+		border-radius: var(--radius-pill);
+		color: var(--brand-accent-text);
+		border: 2px solid color-mix(in srgb, currentColor 60%, transparent);
+	}
+
+	/* `margin-block-start: auto` on the price, the trial and the CTA: each of
+	   the first two is optional (a domain whose catalogue failed to load renders
+	   without a price; an audience with no trial on offer renders without a
+	   trial), so pinning the block to the bottom cannot depend on any one of
+	   them being present. Whichever comes first absorbs the slack; the later
+	   ones' `auto` then resolves to zero. */
+	.audiences__card-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		margin-block-start: auto;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.9375rem);
+		font-weight: 600;
+		/* `-link` rather than `brand-primary`: this is normal-size text, and the
+		   vibrant brand blue only reaches ~3.5:1 on a light card (SPEC-308). The
+		   CTA deliberately does NOT take `--audience-ink`: two of the five inks
+		   are decorative tints that would not clear AA as body text. */
+		color: var(--brand-primary-link);
+	}
+
+	/* ─── Shared row tracks ──────────────────────────────────────────
+	   Owner review (HOS-943): the prices, and the trial lines, have to fall on
+	   the SAME horizontal line across the cards. Stacking each card
+	   independently cannot do that — a two-line title or a three-line highlight
+	   pushes everything under it down by one line, and with five audiences whose
+	   copy is genuinely different lengths the prices ended up staggered on every
+	   viewport.
+
+	   `subgrid` is the mechanism, and `min-height` is explicitly not: a height
+	   tuned by eye is a guess that breaks on the first copy edit, in the other
+	   two locales, and at any other font size. This is the same fix the two
+	   pricing pages already carry (see `PricingCardsGrid.astro`), with ONE extra
+	   problem to solve that those do not have.
+
+	   ## Five cards do not fit in one band
+
+	   `PricingCardsGrid` has at most three cards in a three-column grid, so
+	   every card can span `1 / -1` of a single row set. Here there are five, so
+	   at three columns the grid is 3 + 2 and at two columns it is 2 + 2 + 1:
+	   `grid-row: 1 / -1` would ask all five to span the same tracks and pile
+	   them into implicit rows.
+
+	   `grid-row: span 7` is what makes it work. Auto-placement gives each card
+	   its own seven tracks in whichever band it lands in, and `subgrid` shares
+	   THOSE seven with the other cards of that band. Alignment is therefore
+	   per-row-of-cards, which is the only place it is visible anyway.
+
+	   ## Every child names its row, and that is the point
+
+	   The rows are assigned explicitly (`grid-row: N`) instead of being filled
+	   in source order, because two of the seven blocks are OPTIONAL and the
+	   whole requirement turns on that: partner's plans are all `hasTrial: false`
+	   so partner renders no trial line, and a card whose catalogue fetch failed
+	   renders no price. Under auto-placement partner's CTA would slide up into
+	   the trial row and stop lining up with the other four. Named rows leave the
+	   missing block's track simply EMPTY in that one card, and everything after
+	   it stays on its line.
+
+	   The tourist card's "Gratis" needs nothing special for the same reason: it
+	   is still a price, in the price row, just without the `/mes` beside it.
+
+	   ## Gutters
+
+	   A subgrid inherits its parent's gutters in the subgridded axis, so the
+	   shorthand `gap` is split here: `column-gap` keeps the 1.25rem meant to sit
+	   BETWEEN cards, and `row-gap` becomes the card's own internal rhythm — the
+	   same one number the flex fallback uses for its `gap`. The visible
+	   consequence, and it is deliberate: rows of cards are separated by the
+	   rhythm (1rem) rather than by the column gutter (1.25rem), because one
+	   property cannot be two values. 4px is under the threshold where the grid
+	   reads as uneven.
+
+	   FALLBACK (no `subgrid`): every rule here is inside `@supports`, so the
+	   cards stay flex columns spaced by the same rhythm, `margin-block-start:
+	   auto` still pins the price/trial/CTA block to the bottom, and the layout
+	   degrades to exactly what shipped before this change. Below 640px there is
+	   one card per row and nothing to align, so the whole block starts at the
+	   first multi-column breakpoint. */
+	@media (min-width: 640px) {
+		@supports (grid-template-rows: subgrid) {
+			.audiences__grid {
+				column-gap: var(--space-5, 1.25rem);
+				row-gap: var(--audience-card-rhythm);
+			}
+
+			/* The `<li>` is the grid item, the `<a>` is the card. Two levels, so
+			   two nested subgrids: the item adopts the grid's tracks and the card
+			   adopts the item's. */
+			.audiences__item {
+				display: grid;
+				grid-row: span 7;
+				grid-template-rows: subgrid;
+				row-gap: var(--audience-card-rhythm);
+			}
+
+			.audiences__card {
+				display: grid;
+				grid-row: 1 / -1;
+				grid-template-rows: subgrid;
+				row-gap: var(--audience-card-rhythm);
+			}
+
+			.audiences__card-glyph {
+				grid-row: 1;
+			}
+
+			.audiences__card-title {
+				grid-row: 2;
+			}
+
+			.audiences__card-audience {
+				grid-row: 3;
+			}
+
+			.audiences__card-highlights {
+				grid-row: 4;
+			}
+
+			.audiences__card-price {
+				grid-row: 5;
+			}
+
+			.audiences__card-trial {
+				grid-row: 6;
+			}
+
+			.audiences__card-cta {
+				grid-row: 7;
+			}
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.audiences__card {
+			transition: none;
+		}
+
+		.audiences__card:hover,
+		.audiences__card:focus-visible {
+			transform: none;
+		}
+	}
+</style>

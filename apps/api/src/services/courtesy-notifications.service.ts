@@ -81,7 +81,15 @@ async function resolveRecipient(subscriptionId: string): Promise<CourtesyRecipie
         .select({
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
-            metadata: billingSubscriptions.metadata
+            metadata: billingSubscriptions.metadata,
+            // The window itself. Before HOS-993 these rode inside `metadata`,
+            // so selecting that column was enough; now they are their own
+            // columns and a projection that omits them reads every gift as
+            // absent — which would send a "your gift started" mail with no
+            // dates in it.
+            courtesyStartsAt: billingSubscriptions.courtesyStartsAt,
+            courtesyEndsAt: billingSubscriptions.courtesyEndsAt,
+            courtesyCyclesGranted: billingSubscriptions.courtesyCyclesGranted
         })
         .from(billingSubscriptions)
         .where(eq(billingSubscriptions.id, subscriptionId))
@@ -107,7 +115,7 @@ async function resolveRecipient(subscriptionId: string): Promise<CourtesyRecipie
         .where(eq(billingPlans.id, row.planId))
         .limit(1);
 
-    const fields = readCourtesyFields(row.metadata);
+    const fields = readCourtesyFields(row);
 
     return {
         email: customer.email,

@@ -183,10 +183,7 @@ describe('grantCourtesyCycles — refusals never reach the provider', () => {
         [
             'a subscription that already has a gift',
             eligibleSubscription({
-                metadata: {
-                    billingInterval: 'monthly',
-                    courtesyEndsAt: '2027-01-01T00:00:00.000Z'
-                }
+                courtesyEndsAt: new Date('2027-01-01T00:00:00.000Z')
             }),
             'ALREADY_COURTESY'
         ],

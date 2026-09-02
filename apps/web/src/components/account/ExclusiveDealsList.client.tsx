@@ -180,7 +180,7 @@ export function ExclusiveDealsList({ locale, apiUrl, userId: _userId }: Exclusiv
 
     // Tourist-only Área Turista feature — the CTA must point at the tourist
     // pricing page, not the owner one (BETA-174).
-    const upgradeHref = buildUrl({ locale, path: 'suscriptores/turistas' });
+    const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
 
     // ── Loading state ─────────────────────────────────────────────────────────
 

@@ -695,9 +695,6 @@
         "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primera propiedad.",
         "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días, sin tarjeta. La prueba arranca sola cuando publicás tu primera propiedad."
     },
-    "fromAdminBanner": {
-        "eyebrow": "Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos."
-    },
     "miniForm": {
         "fields": {
             "name": "Nombre del alojamiento",

@@ -6,10 +6,9 @@
     "about": "About",
     "owners": "Property Owners",
     "listProperty": "List your property",
-    "listGastronomy": "List your restaurant",
+    "listGastronomy": "List your food business",
     "listExperience": "List your experience",
-    "ownerPlans": "Owner plans",
-    "touristPlans": "Tourist plans",
+    "plans": "Plans and pricing",
     "legal": "Legal",
     "aboutUs": "About us",
     "collaborate": "Contribute",
@@ -108,5 +107,5 @@
     },
     "experiences": "Experiences",
     "reportProblem": "Report a problem",
-    "allRightsReserved": "Todos los derechos reservados"
+    "allRightsReserved": "All rights reserved"
 }

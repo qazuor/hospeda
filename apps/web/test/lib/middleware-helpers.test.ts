@@ -1532,3 +1532,117 @@ describe('isAdminBypassUser — role set (HOS-296)', () => {
         await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(false);
     });
 });
+
+describe('HOS-838: onboarding redirects carry the interrupted destination', () => {
+    // The gate interrupts whatever the user was trying to reach. Without
+    // carrying it forward, finishing the gate drops them on /mi-cuenta/ and the
+    // thing they came to do is lost.
+    const DESTINATION = '/es/mi-cuenta/comercios/nuevo/';
+
+    describe('buildProfileCompletionRedirect', () => {
+        it('appends the destination as an encoded returnUrl', () => {
+            // Act
+            const url = buildProfileCompletionRedirect({ locale: 'es', returnUrl: DESTINATION });
+
+            // Assert
+            expect(url).toBe(
+                '/es/mi-cuenta/completar-perfil/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+
+        it('preserves the destination query string', () => {
+            // Act
+            const url = buildProfileCompletionRedirect({
+                locale: 'es',
+                returnUrl: '/es/publicar/?tipo=gastronomia'
+            });
+
+            // Assert — the `?` and `=` must be encoded, or they would be read
+            // as params of the completar-perfil URL itself.
+            expect(url).toContain('%3Ftipo%3Dgastronomia');
+            expect(url.indexOf('?')).toBe(url.lastIndexOf('?'));
+        });
+
+        it('omits returnUrl entirely when there is no destination', () => {
+            // Act + Assert
+            expect(buildProfileCompletionRedirect({ locale: 'es' })).toBe(
+                '/es/mi-cuenta/completar-perfil/'
+            );
+        });
+
+        it('does NOT point the destination back at the form itself', () => {
+            // A self-referential returnUrl would bounce the user onto the form
+            // they just finished.
+            const url = buildProfileCompletionRedirect({
+                locale: 'es',
+                returnUrl: '/es/mi-cuenta/completar-perfil/'
+            });
+
+            // Assert
+            expect(url).toBe('/es/mi-cuenta/completar-perfil/');
+            expect(url).not.toContain('returnUrl');
+        });
+
+        it('carries the destination on every supported locale', () => {
+            // Assert
+            expect(buildProfileCompletionRedirect({ locale: 'en', returnUrl: '/en/x/' })).toBe(
+                '/en/mi-cuenta/completar-perfil/?returnUrl=%2Fen%2Fx%2F'
+            );
+            expect(buildProfileCompletionRedirect({ locale: 'pt', returnUrl: '/pt/x/' })).toBe(
+                '/pt/mi-cuenta/completar-perfil/?returnUrl=%2Fpt%2Fx%2F'
+            );
+        });
+    });
+
+    describe('buildSetPasswordRedirect', () => {
+        it('appends the destination as an encoded returnUrl', () => {
+            // Act + Assert
+            expect(buildSetPasswordRedirect({ locale: 'es', returnUrl: DESTINATION })).toBe(
+                '/es/mi-cuenta/agregar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+
+        it('omits returnUrl entirely when there is no destination', () => {
+            // Act + Assert
+            expect(buildSetPasswordRedirect({ locale: 'es' })).toBe(
+                '/es/mi-cuenta/agregar-contrasena/'
+            );
+        });
+
+        it('does NOT point the destination back at the form itself', () => {
+            // Act + Assert
+            expect(
+                buildSetPasswordRedirect({
+                    locale: 'es',
+                    returnUrl: '/es/mi-cuenta/agregar-contrasena/'
+                })
+            ).toBe('/es/mi-cuenta/agregar-contrasena/');
+        });
+    });
+
+    describe('buildChangePasswordRedirect', () => {
+        it('appends the destination as an encoded returnUrl', () => {
+            // Act + Assert
+            expect(buildChangePasswordRedirect({ locale: 'es', returnUrl: DESTINATION })).toBe(
+                '/es/mi-cuenta/cambiar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+
+        it('omits returnUrl entirely when there is no destination', () => {
+            // Act + Assert
+            expect(buildChangePasswordRedirect({ locale: 'es' })).toBe(
+                '/es/mi-cuenta/cambiar-contrasena/'
+            );
+        });
+
+        it('does NOT point the destination back at the form itself', () => {
+            // Act + Assert
+            expect(
+                buildChangePasswordRedirect({
+                    locale: 'es',
+                    returnUrl: '/es/mi-cuenta/cambiar-contrasena/'
+                })
+            ).toBe('/es/mi-cuenta/cambiar-contrasena/');
+        });
+    });
+});

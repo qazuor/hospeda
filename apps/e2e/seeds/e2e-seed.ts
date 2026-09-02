@@ -88,6 +88,13 @@ async function main(): Promise<void> {
         example: true,
         continueOnError: false,
         rollbackOnError: false,
+        // A transient Cloudinary failure used to abort the whole run and block
+        // a pull request that had touched no code at all (HOS-922). The E2E
+        // database is ephemeral and no test asserts that an image reached
+        // Cloudinary, so in CI the image keeps its original URL and the run
+        // carries on. A local run still fails loudly, so a real breakage in the
+        // image pipeline is not hidden from whoever is working on it.
+        allowRequiredFallback: Boolean(process.env.CI),
         // The example seed creates a known admin user. Allowed in E2E
         // because the database is ephemeral.
         exclude: []

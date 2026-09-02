@@ -273,6 +273,7 @@
             "body": "Mercado Pago solo te va a dejar pagar con este email exacto. Si querés usar otra cuenta de Mercado Pago, cambialo antes de continuar.",
             "label": "Email de pago",
             "invalidError": "Ingresá un email válido",
+            "plusError": "Mercado Pago no acepta emails con «+». Escribí otra dirección para poder pagar.",
             "confirm": "Continuar",
             "cancel": "Cancelar"
         }
@@ -617,5 +618,26 @@
             "max_search_history_entries": "Entradas de historial de búsquedas",
             "max_collections": "Colecciones de favoritos"
         }
+    },
+    "limitHelp": {
+        "max_accommodations": "Cuántos alojamientos podés tener publicados al mismo tiempo. Al llegar al tope necesitás despublicar uno o pasar a un plan mayor para sumar otro.",
+        "max_photos_per_accommodation": "Cuántas fotos podés subir a cada alojamiento. Al llegar al tope tenés que borrar una para subir otra.",
+        "max_active_promotions": "Cuántas promociones podés tener activas a la vez. Al llegar al tope necesitás finalizar una para lanzar otra.",
+        "max_favorites": "Cuántos alojamientos podés guardar como favoritos. Al llegar al tope tenés que quitar uno para guardar otro.",
+        "max_properties": "Cuántas propiedades podés administrar dentro de un complejo. Al llegar al tope necesitás un plan mayor para sumar otra.",
+        "max_staff_accounts": "Cuántas cuentas de tu equipo pueden administrar el complejo. Al llegar al tope tenés que dar de baja una para invitar a otra persona.",
+        "max_active_alerts": "Cuántas alertas de precio podés tener activas a la vez. Al llegar al tope tenés que desactivar una para crear otra.",
+        "max_compare_items": "Cuántos alojamientos podés comparar en una misma pantalla. Al llegar al tope tenés que sacar uno para agregar otro.",
+        "max_ai_text_improve_per_month": "Cuántas veces por mes podés pedirle a la IA que mejore tus textos. La cuota se renueva al empezar cada mes.",
+        "max_ai_chat_per_month": "Cuántas consultas por mes puede responder la IA sobre tus alojamientos. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_consumer_per_month": "Cuántas consultas podés hacerle por mes al asistente de IA. Al agotarla, la cuota se renueva el mes siguiente.",
+        "max_ai_search_per_month": "Cuántas búsquedas con IA podés hacer por mes. Al agotarla, seguís usando la búsqueda tradicional hasta el mes siguiente.",
+        "max_ai_support_per_month": "Cuántas consultas por mes podés hacerle al asistente de soporte con IA. La cuota se renueva al empezar cada mes.",
+        "max_ai_translate_per_month": "Cuántas traducciones automáticas de tu contenido podés pedir por mes. La cuota se renueva al empezar cada mes.",
+        "max_ai_accommodation_import_per_month": "Cuántos alojamientos podés importar por mes desde otra plataforma con ayuda de la IA. La cuota se renueva al empezar cada mes.",
+        "max_search_history_entries": "Cuántas búsquedas anteriores se guardan en tu historial. Al superar el tope se borran las más viejas.",
+        "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
+        "max_gastronomies": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
+        "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra."
     }
 }

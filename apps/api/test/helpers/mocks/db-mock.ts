@@ -211,7 +211,14 @@ export function createDbMock() {
             select: vi.fn().mockReturnThis(),
             from: vi.fn().mockReturnThis(),
             where: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockReturnThis(),
+            // Resolves to an empty result set, not to the chain itself. `limit()`
+            // is terminal in this codebase and callers destructure it
+            // (`const [row] = await ...limit(1)`); returning the builder made
+            // that throw "is not iterable" before any assertion could run, which
+            // reads as a broken suite rather than an unstubbed query. The
+            // `withTransaction` stub below already resolved `[]` here — this is
+            // the same fix, applied to the half that was missing it.
+            limit: vi.fn().mockResolvedValue([]),
             orderBy: vi.fn().mockReturnThis(),
             execute: vi.fn().mockResolvedValue([]),
             insert: vi.fn().mockReturnThis(),

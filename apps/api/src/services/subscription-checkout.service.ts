@@ -61,7 +61,10 @@ import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 // imported here any more. Checkout is the PAID path and nothing else — the trial
 // is Hospeda's own, granted locally at the first publish, and never asked of
 // MercadoPago (see the module docblock).
-import { calculatePromoCodeEffect } from '@repo/service-core';
+import {
+    calculatePromoCodeEffect,
+    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
+} from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { sanitizeEmailForMercadoPago } from '../utils/mp-email.js';
 import {
@@ -512,7 +515,7 @@ export async function initiatePaidMonthlySubscription(
             if (mutation.finalAmount === 0) {
                 throw new SubscriptionCheckoutError(
                     'INVALID_PROMO_CODE',
-                    'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+                    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
                 );
             }
             // Snapshot on the pending-checkout row so F2/F3 stamps promoCodeId,
@@ -708,6 +711,15 @@ export interface InitiateCommerceMonthlySubscriptionInput {
     readonly entityType: string;
     /** UUID of the commerce entity being subscribed (gastronomies.id, etc.). */
     readonly entityId: string;
+    /**
+     * HOS-1008: the email the owner explicitly confirmed on the pre-redirect
+     * screen, overriding {@link resolvePayerEmail}'s other two sources (spec
+     * §6.3). Optional — `undefined` when the owner accepted the pre-filled
+     * default, and ALWAYS `undefined` on the admin-initiated route, which
+     * provisions on the owner's behalf and must never bind a payer email
+     * somebody else typed.
+     */
+    readonly requestedPayerEmail?: string;
     /** Resolved qzpay billing instance. */
     readonly billing: QZPayBilling;
     /** URL builders the route already resolved from env. */
@@ -771,7 +783,8 @@ export interface InitiateCommerceMonthlySubscriptionResult {
 export async function initiateCommerceMonthlySubscription(
     input: InitiateCommerceMonthlySubscriptionInput
 ): Promise<InitiateCommerceMonthlySubscriptionResult> {
-    const { customerId, planSlug, entityType, entityId, billing, urls } = input;
+    const { customerId, planSlug, entityType, entityId, requestedPayerEmail, billing, urls } =
+        input;
 
     // HOS-695: the subscription and its link row are stamped with the
     // listing's OWN vertical, never the retired 'commerce' umbrella — same
@@ -892,12 +905,16 @@ export async function initiateCommerceMonthlySubscription(
     // precedence as the accommodation paths (spec §6.3). The listing owner
     // IS the payer here (both the owner self-checkout and the
     // admin-initiated route resolve the OWNER's billing customer), so this
-    // is a real identity signal, unlike the partner flow below — there is
-    // no pre-redirect screen for commerce yet, so `requestedPayerEmail` is
-    // always undefined and this only prefers a previously-working
-    // `mp_payer_email` over the signup address.
+    // is a real identity signal, unlike the partner flow below.
+    //
+    // HOS-1008: `requestedPayerEmail` is now populated on the OWNER
+    // self-checkout, which finally has its own pre-redirect screen. It stays
+    // `undefined` on the admin-initiated route by design — an admin cannot
+    // know which MercadoPago account the owner pays with, so that path keeps
+    // falling back to a previously-working `mp_payer_email` over the signup
+    // address.
     const { payerEmail } = resolvePayerEmail({
-        requestedPayerEmail: undefined,
+        ...(requestedPayerEmail === undefined ? {} : { requestedPayerEmail }),
         mpPayerEmail: await getMpPayerEmail(customerId, getDb()),
         customerEmail: customer.email
     });

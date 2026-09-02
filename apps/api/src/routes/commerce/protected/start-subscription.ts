@@ -56,6 +56,7 @@ import type {
     StartPaidSubscriptionResponse
 } from '@repo/schemas';
 import {
+    CommerceStartSubscriptionRequestSchema,
     PermissionEnum,
     resolveListingCompleteness,
     ServiceErrorCode,
@@ -198,9 +199,20 @@ async function loadRawListing(
  */
 export async function handleCommerceStartSubscription(
     ctx: Context,
-    input: { entityType: CommerceEntityType; entityId: string }
+    input: {
+        entityType: CommerceEntityType;
+        entityId: string;
+        /**
+         * HOS-1008: the email the owner confirmed on the pre-redirect screen.
+         * `undefined` when they accepted the pre-filled default, or whenever
+         * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` is off — in which case the
+         * front never shows the screen and this route behaves exactly as it
+         * did before.
+         */
+        requestedPayerEmail?: string;
+    }
 ): Promise<StartPaidSubscriptionResponse | Response> {
-    const { entityType, entityId } = input;
+    const { entityType, entityId, requestedPayerEmail } = input;
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
@@ -392,6 +404,7 @@ export async function handleCommerceStartSubscription(
             planSlug,
             entityType,
             entityId,
+            ...(requestedPayerEmail === undefined ? {} : { requestedPayerEmail }),
             billing,
             urls: {
                 paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
@@ -442,6 +455,52 @@ export async function handleCommerceStartSubscription(
  * middleware, rather than via `createProtectedRoute`'s bundling — see that
  * router's docstring for why the ordering matters here.
  */
+/**
+ * Read the payer email the owner confirmed on the pre-redirect screen
+ * (HOS-1008), if any.
+ *
+ * Returns `{}` — not `{ requestedPayerEmail: undefined }` — when there is
+ * nothing to forward, so the caller can spread it under `exactOptionalPropertyTypes`.
+ *
+ * **An absent body is not an error.** This endpoint shipped with no request
+ * body at all, and both the web client (whenever
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` is off, which is production today)
+ * and several existing tests still call it that way. A missing, empty or
+ * unparseable body therefore means "the owner did not confirm an alternative
+ * address" and the checkout proceeds exactly as it did before.
+ *
+ * A body that IS present but carries a malformed `payerEmail` is a different
+ * case and answers 400: the caller tried to bind an address MercadoPago
+ * cannot accept, and silently ignoring it would send them to a checkout only
+ * a mistyped account could pay.
+ *
+ * @param ctx - The Hono request context.
+ * @returns `{ requestedPayerEmail }` when a valid one was sent, `{}` otherwise.
+ * @throws HTTPException 400 when a present body carries an invalid `payerEmail`.
+ *
+ * Exported for its own unit test: the "absent body is not an error" contract
+ * is the risky half of HOS-1008 (every pre-existing caller relies on it) and
+ * route-level tests in this app do not reliably reach the handler.
+ */
+export async function readConfirmedPayerEmail(
+    ctx: Context
+): Promise<{ requestedPayerEmail?: string }> {
+    const raw: unknown = await ctx.req.json().catch(() => undefined);
+    if (raw === undefined || raw === null) {
+        return {};
+    }
+
+    const parsed = CommerceStartSubscriptionRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+        throw new HTTPException(400, {
+            message: 'Invalid payerEmail in request body.'
+        });
+    }
+
+    const { payerEmail } = parsed.data;
+    return payerEmail === undefined ? {} : { requestedPayerEmail: payerEmail };
+}
+
 export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
     method: 'post',
     path: '/listings/{entityType}/{entityId}/start-subscription',
@@ -450,12 +509,21 @@ export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
         "Starts a MercadoPago subscription for the caller's OWN commerce listing. Requires COMMERCE_EDIT_OWN and ownership of the target listing; the listing must be complete (422 otherwise).",
     tags: ['Protected - Commerce', 'Billing'],
     requestParams: StartSubscriptionParamsSchema,
+    // HOS-1008 deliberately does NOT declare `requestBody` here. The factory
+    // only calls `ctx.req.valid('json')` when one is declared, and this
+    // endpoint has always been called with NO body at all — by the web client
+    // and by several existing tests. Declaring a schema would make every one
+    // of those bodyless POSTs parse a body that is not there. The body is
+    // therefore read and validated by hand in
+    // `readConfirmedPayerEmail`, which treats "absent" and "empty" as the same
+    // thing: the pre-HOS-1008 behavior.
     responseSchema: StartPaidSubscriptionResponseSchema,
     successStatusCode: 201,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleCommerceStartSubscription(ctx, {
             entityType: params.entityType as CommerceEntityType,
-            entityId: params.entityId as string
+            entityId: params.entityId as string,
+            ...(await readConfirmedPayerEmail(ctx))
         })
 });
 

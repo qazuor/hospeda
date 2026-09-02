@@ -194,7 +194,7 @@ describe('CompareButton — toggle outcomes', () => {
 
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('info');
-        expect(arg.action?.href).toBe('/es/suscriptores/turistas/');
+        expect(arg.action?.href).toBe('/es/suscriptores/planes/turistas/');
     });
 
     it('shows a warning toast when blocked by the per-plan limit', () => {
@@ -288,7 +288,7 @@ describe('CompareButton — contextual variant (HOS-85)', () => {
 
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('info');
-        expect(arg.action?.href).toBe('/es/suscriptores/turistas/');
+        expect(arg.action?.href).toBe('/es/suscriptores/planes/turistas/');
     });
 
     it('still surfaces the limit toast when blocked (at per-plan cap)', () => {

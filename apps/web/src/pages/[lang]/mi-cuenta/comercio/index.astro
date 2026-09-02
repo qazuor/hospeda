@@ -21,6 +21,7 @@ import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
 import { fetchCommerceUsageByVertical } from '@/lib/commerce/usage-badge';
+import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -66,6 +67,12 @@ const usageByVertical = await fetchCommerceUsageByVertical({
 const verticalsWithSubscription = new Set<CommerceVertical>(
     verticalsWithListings.filter((vertical) => usageByVertical.get(vertical) !== null)
 );
+
+// HOS-1008: gates the payer-email confirmation screen on the commerce
+// checkout. Same source and same fail-closed default the pricing pages use for
+// `PlanPurchaseButton` — on any fetch error this resolves `false`, which is
+// the flag being off, which is today's behavior.
+const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
 
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
 const addonsUrl = buildUrl({ locale, path: 'mi-cuenta/addons' });
@@ -141,6 +148,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                                 listing={listing}
                                 locale={locale}
                                 hasVerticalSubscription={verticalsWithSubscription.has(listing.vertical)}
+                                ownPreapprovalEnabled={ownPreapprovalEnabled}
                             />
 
                             <a

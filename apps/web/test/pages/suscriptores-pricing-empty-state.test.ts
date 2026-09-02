@@ -17,12 +17,12 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const touristSrc = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/suscriptores/turistas/index.astro'),
+    resolve(__dirname, '../../src/pages/[lang]/suscriptores/planes/turistas/index.astro'),
     'utf8'
 );
 
 const ownerSrc = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/suscriptores/planes/index.astro'),
+    resolve(__dirname, '../../src/pages/[lang]/suscriptores/planes/anfitriones/index.astro'),
     'utf8'
 );
 
@@ -31,7 +31,7 @@ const gridSrc = readFileSync(
     'utf8'
 );
 
-describe('Tourist pricing page (turistas/index.astro)', () => {
+describe('Tourist pricing page (planes/turistas/index.astro)', () => {
     it('imports the shared PricingCardsGrid component', () => {
         expect(touristSrc).toContain(
             "import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro'"
@@ -53,7 +53,7 @@ describe('Tourist pricing page (turistas/index.astro)', () => {
     });
 });
 
-describe('Owner pricing page (planes/index.astro)', () => {
+describe('Owner pricing page (planes/anfitriones/index.astro)', () => {
     it('imports the shared PricingCardsGrid component', () => {
         expect(ownerSrc).toContain(
             "import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro'"

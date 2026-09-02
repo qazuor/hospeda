@@ -1,29 +1,36 @@
 /**
- * Courtesy field storage accessor (HOS-180)
+ * Courtesy field accessor (HOS-180; moved to typed columns by HOS-993)
  *
  * The three fields a courtesy window needs — when it starts, when it ends, and
  * how many cycles were gifted — are read and written **only** through this
- * module. Nothing else in the codebase touches their storage.
+ * module. Nothing else in the codebase names their columns.
  *
- * ## Why the indirection exists
+ * ## Where they live
  *
  * `billing_subscriptions` is not defined by Hospeda: it comes from
- * `@qazuor/qzpay-drizzle`, consumed from npm with no local override. Adding
- * typed columns there — the route `product_domain` (HOS-73) and
- * `promo_effect_remaining_cycles` took — requires publishing a new qzpay
- * release, and the five qzpay siblings ship in coordinated waves
- * (`pnpm-workspace.yaml`). That is an owner decision (spec §11, OQ-1), not an
- * implementation detail, so the feature must not block on it.
+ * `@qazuor/qzpay-drizzle`. The three fields are typed columns there as of
+ * 2.1.0 — `courtesy_starts_at`, `courtesy_ends_at`, `courtesy_cycles_granted` —
+ * the same promotion `product_domain` (HOS-73) and
+ * `promo_effect_remaining_cycles` went through. Until that release they were
+ * kept inside the `metadata` jsonb, which is the reason this module was written
+ * in the first place.
  *
- * The provisional backing is therefore the existing `metadata` jsonb column,
- * which needs no migration and no package release. Every other layer —
- * derivation, transitions, endpoint, cron, notifications, UI — is written
- * against the typed interface below and never sees a jsonb path, so moving to
- * real columns later changes **this file only**.
+ * ## Why the indirection stays after the move
  *
- * The one cost worth stating: a jsonb path cannot be indexed the way a column
- * can, so the expiry cron's sweep is a scan. Irrelevant at the current
- * subscription volume, and precisely why this is provisional.
+ * The storage changed; the reason for one accessor did not. Billing has twice
+ * grown a canonical helper and left call sites behind
+ * (`normalizeStoredSubscriptionStatus`, `isEntitlementGrantingStatus`), which is
+ * how two endpoints ended up disagreeing about the same subscription. One
+ * function reads the window, one writes it, one clears it.
+ *
+ * ## The invariant this module protects
+ *
+ * A window that cannot be read in full is **absent**, never live. That is not
+ * tidiness: `deriveCourtesyStatus` compares with `>`, and a comparison against
+ * an `Invalid Date` is silently false — which reads as "the gift lapsed" and
+ * cuts a subscriber off mid-gift with no error anywhere. Reading garbage as a
+ * live gift is the opposite failure and hands out free entitlements. Treating
+ * anything unreadable as "never gifted" avoids both.
  *
  * @module services/billing/subscription/courtesy-fields
  */
@@ -42,6 +49,17 @@ export interface CourtesyFields {
     readonly courtesyCyclesGranted: number | null;
 }
 
+/**
+ * The shape {@link readCourtesyFields} looks for. Exported as documentation of
+ * what a caller should be handing over; the reader itself takes `unknown` — see
+ * why there.
+ */
+export interface CourtesyFieldsSource {
+    readonly courtesyStartsAt?: unknown;
+    readonly courtesyEndsAt?: unknown;
+    readonly courtesyCyclesGranted?: unknown;
+}
+
 /** A courtesy window with nothing in it. */
 const EMPTY: CourtesyFields = {
     courtesyStartsAt: null,
@@ -49,19 +67,16 @@ const EMPTY: CourtesyFields = {
     courtesyCyclesGranted: null
 };
 
-const STARTS_KEY = 'courtesyStartsAt';
-const ENDS_KEY = 'courtesyEndsAt';
-const CYCLES_KEY = 'courtesyCyclesGranted';
-
 /**
  * Parses a stored value into a `Date`, returning `null` for anything that is
  * not a usable timestamp.
  *
- * jsonb round-trips a `Date` as an ISO string, so the stored shape is a string
- * even though the caller wrote a `Date`. An unparseable value yields `null`
- * rather than an `Invalid Date`: `deriveCourtesyStatus` compares with `>`,
- * and a NaN comparison is silently false — which would read as "the gift
- * lapsed" and cut a subscriber off mid-gift with no error anywhere.
+ * A `timestamptz` column arrives as a `Date`, so the first branch is the common
+ * path. The string and number branches stay because the same window is also
+ * read off objects that never went through Drizzle — a decoded JSON payload, a
+ * test fixture — and because an unparseable value must yield `null` rather than
+ * an `Invalid Date`: see the module note on why a silently false comparison is
+ * the dangerous outcome.
  */
 function toDate(value: unknown): Date | null {
     if (value instanceof Date) {
@@ -88,7 +103,7 @@ function toCycles(value: unknown): number | null {
 }
 
 /**
- * Reads the courtesy window out of a subscription's `metadata`.
+ * Reads the courtesy window off a subscription row.
  *
  * Total and fail-safe: any shape that is not a readable window — absent,
  * malformed, half-written — yields an empty window, which every consumer reads
@@ -96,75 +111,84 @@ function toCycles(value: unknown): number | null {
  * fallback: a subscription with no gift is the overwhelmingly common case, and
  * mistaking garbage for a live gift would grant free entitlements.
  *
- * @param metadata - The raw `billing_subscriptions.metadata` value.
+ * ## Why the parameter is `unknown` and not {@link CourtesyFieldsSource}
+ *
+ * Some callers hold a `billing_subscriptions` row typed by Drizzle, which
+ * declares all three columns. Others hold a `QZPaySubscriptionWithHelpers` from
+ * the qzpay-core facade, whose type declares NEITHER — core is storage-agnostic
+ * and knows nothing about columns qzpay-drizzle adds. The columns are on the
+ * object at runtime either way; only the static type differs.
+ *
+ * Against an all-optional parameter type TypeScript rejects the second caller
+ * outright (TS2559, "no properties in common"), so a typed parameter would push
+ * every such call site into a cast. `subscriptionMatchesDomain` reads
+ * `productDomain` off the same facade objects and resolved this the same way,
+ * for the same reason. The runtime checks below are what make it safe: this
+ * function is total, and anything unreadable yields an empty window.
+ *
+ * @param row - The subscription row, or anything carrying the three columns.
  * @returns The parsed window; all-`null` when there is none.
  *
  * @example
  * ```ts
- * const { courtesyEndsAt } = readCourtesyFields(subscription.metadata);
+ * const { courtesyEndsAt } = readCourtesyFields(subscription);
  * const status = deriveCourtesyStatus({ mappedStatus, courtesyEndsAt, now });
  * ```
  */
-export function readCourtesyFields(metadata: unknown): CourtesyFields {
-    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+export function readCourtesyFields(row: unknown): CourtesyFields {
+    if (!row || typeof row !== 'object') {
         return EMPTY;
     }
-    const record = metadata as Record<string, unknown>;
+    const source = row as CourtesyFieldsSource;
     return {
-        courtesyStartsAt: toDate(record[STARTS_KEY]),
-        courtesyEndsAt: toDate(record[ENDS_KEY]),
-        courtesyCyclesGranted: toCycles(record[CYCLES_KEY])
+        courtesyStartsAt: toDate(source.courtesyStartsAt),
+        courtesyEndsAt: toDate(source.courtesyEndsAt),
+        courtesyCyclesGranted: toCycles(source.courtesyCyclesGranted)
     };
 }
 
 /**
- * Returns a new metadata object carrying the given courtesy window, preserving
- * every other key.
+ * Returns the column patch that writes the given window, for spreading into a
+ * Drizzle `.set()`.
  *
- * Never mutates its input: `metadata` is read from a live row and may be shared.
- * Dates are stored as ISO strings, which is what jsonb round-trips anyway.
+ * All three columns are named on every write, never only the ones that changed:
+ * a `.set()` that moves the end date and leaves a stale start behind produces
+ * exactly the half-written record {@link readCourtesyFields} then has to throw
+ * away.
  *
- * @param args.metadata - The existing metadata value (any shape).
- * @param args.fields - The window to write.
- * @returns A new metadata object.
+ * @param fields - The window to write.
+ * @returns A patch naming all three columns.
+ *
+ * @example
+ * ```ts
+ * await db.update(billingSubscriptions)
+ *     .set({ status: SubscriptionStatusEnum.COURTESY, ...writeCourtesyFields(window) })
+ *     .where(eq(billingSubscriptions.id, id));
+ * ```
  */
-export function writeCourtesyFields(args: {
-    readonly metadata: unknown;
-    readonly fields: CourtesyFields;
-}): Record<string, unknown> {
-    const { metadata, fields } = args;
-    const base =
-        metadata && typeof metadata === 'object' && !Array.isArray(metadata)
-            ? { ...(metadata as Record<string, unknown>) }
-            : {};
-
+export function writeCourtesyFields(fields: CourtesyFields): CourtesyFields {
     return {
-        ...base,
-        [STARTS_KEY]: fields.courtesyStartsAt?.toISOString() ?? null,
-        [ENDS_KEY]: fields.courtesyEndsAt?.toISOString() ?? null,
-        [CYCLES_KEY]: fields.courtesyCyclesGranted
+        courtesyStartsAt: fields.courtesyStartsAt,
+        courtesyEndsAt: fields.courtesyEndsAt,
+        courtesyCyclesGranted: fields.courtesyCyclesGranted
     };
 }
 
 /**
- * Returns a new metadata object with the courtesy window removed entirely.
+ * Returns the column patch that removes the courtesy window, for spreading into
+ * a Drizzle `.set()`.
  *
- * The keys are **deleted**, not set to `null`: a lapsed window that lingers is
- * exactly what would make a later, unrelated pause derive as a courtesy and
- * hand out free entitlements. Absence is unambiguous; a stale value is not.
+ * All three columns go to `NULL`. On the jsonb-backed implementation this had
+ * to DELETE the keys rather than null them, because a lapsed window left
+ * lingering is what would make a later, unrelated pause derive as a courtesy
+ * and hand out free entitlements. A nullable column has no such distinction:
+ * `NULL` **is** absence, and {@link readCourtesyFields} reads it as an empty
+ * window. The hazard is closed by the storage now, not by this function.
  *
- * @param metadata - The existing metadata value (any shape).
- * @returns A new metadata object with no courtesy keys.
+ * @returns A patch nulling all three columns.
  */
-export function clearCourtesyFields(metadata: unknown): Record<string, unknown> {
-    const base =
-        metadata && typeof metadata === 'object' && !Array.isArray(metadata)
-            ? { ...(metadata as Record<string, unknown>) }
-            : {};
-    delete base[STARTS_KEY];
-    delete base[ENDS_KEY];
-    delete base[CYCLES_KEY];
-    return base;
+export function clearCourtesyFields(): CourtesyFields {
+    return EMPTY;
 }
 
 /**

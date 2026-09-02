@@ -708,6 +708,13 @@
       "when": 1788215504589,
       "tag": "0100_white_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1788248554813,
+      "tag": "0101_stiff_moonstone",
+      "breakpoints": true
     }
   ]
 }

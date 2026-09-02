@@ -44,6 +44,7 @@ import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 import { captureServerAnalyticsEvent } from './posthog';
+import { resolveVerificationUrl } from './verification-callback';
 
 const logger = createLogger('auth');
 
@@ -355,7 +356,7 @@ function buildAuth() {
         },
 
         emailVerification: {
-            sendVerificationEmail: async ({ user, token }) => {
+            sendVerificationEmail: async ({ user, url }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
                 void (async () => {
                     try {
@@ -387,15 +388,24 @@ function buildAuth() {
                             return;
                         }
                         const client = createEmailClient({ apiKey });
-                        // Use Better Auth's native verify-email handler with a
-                        // callbackURL pointing back to the web sign-in page.
-                        // Better Auth verifies the token server-side and 302s the user
-                        // to the callback URL — no SPA round-trip needed (avoids CORS
-                        // and the lack of POST support on /api/auth/verify-email).
-                        const apiOrigin = env.HOSPEDA_API_URL.replace(/\/$/, '');
+                        // Use Better Auth's native verify-email handler. It
+                        // verifies the token server-side and 302s the user to
+                        // the callbackURL — no SPA round-trip needed (avoids
+                        // CORS and the lack of POST support on
+                        // /api/auth/verify-email). Since
+                        // `autoSignInAfterVerification` is on, that redirect
+                        // carries a session cookie, so the callback can point
+                        // straight at what the person was trying to reach.
+                        //
+                        // HOS-838: forward the callbackURL the client asked for
+                        // instead of hard-coding the sign-in screen. Better Auth
+                        // already validated it against `trustedOrigins`, and it
+                        // is the only way the destination survives the hop out
+                        // of the browser and into the inbox. The hard-coded
+                        // value also pinned the locale to `es`, so anyone
+                        // signing up on /en/ or /pt/ came back to Spanish.
                         const siteOrigin = env.HOSPEDA_SITE_URL.replace(/\/$/, '');
-                        const callbackURL = `${siteOrigin}/es/auth/signin?verified=1`;
-                        const verificationUrl = `${apiOrigin}/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callbackURL)}`;
+                        const verificationUrl = resolveVerificationUrl({ url, siteOrigin });
                         const result = await sendAppEmail({
                             client,
                             to: user.email,

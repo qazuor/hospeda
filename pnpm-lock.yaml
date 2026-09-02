@@ -35,6 +35,7 @@ overrides:
   h3: '>=1.15.6'
   nitro>h3: 2.0.1-rc.22
   minimatch: '>=9.0.7'
+  browserslist: '>=4.28.8'
   lodash: '>=4.17.24'
   lodash-es: '>=4.17.24'
   serialize-javascript: '>=7.0.3'
@@ -170,11 +171,11 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@qazuor/qzpay-core':
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.1.1
+        version: 5.1.1
       '@qazuor/qzpay-react':
-        specifier: ^1.1.26
-        version: 1.1.26(react@19.2.7)
+        specifier: ^1.1.28
+        version: 1.1.28(react@19.2.7)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -447,14 +448,14 @@ importers:
         specifier: ^91.0.0
         version: 91.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.1.1
+        version: 5.1.1
       '@qazuor/qzpay-hono':
-        specifier: ^1.6.11
-        version: 1.6.11(hono@4.13.0)(zod@4.3.6)
+        specifier: ^1.6.13
+        version: 1.6.13(hono@4.13.0)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.9.2
-        version: 2.9.2(mercadopago@2.12.0)
+        specifier: ^2.9.4
+        version: 2.9.4(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1103,11 +1104,11 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.1.1
+        version: 5.1.1
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.9.2
-        version: 2.9.2(mercadopago@2.12.0)
+        specifier: ^2.9.4
+        version: 2.9.4(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1217,11 +1218,11 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.1.1
+        version: 5.1.1
       '@qazuor/qzpay-drizzle':
-        specifier: ^2.0.0
-        version: 2.0.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
+        specifier: ^2.1.0
+        version: 2.1.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -1798,8 +1799,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: ^5.1.0
-        version: 5.1.0
+        specifier: ^5.1.1
+        version: 5.1.1
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -4031,37 +4032,33 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@qazuor/qzpay-core@5.0.0':
-    resolution: {integrity: sha512-3M+D7NW0Jbo3ftZLSFZ3V8adiuPwVv7D0TqoQY4h8eRBQXLDGYAs0DW3z1xH2NO08rH3zdvXQxa+Afr4xbxReQ==}
+  '@qazuor/qzpay-core@5.1.1':
+    resolution: {integrity: sha512-nReQoTda9vkUz/j+qyGLRkERgryhkrFMJJ5JWdlKWfGLBALycCwOZkC8y4Lthji2a9M2PdmAedIveMVueJ5MxA==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-core@5.1.0':
-    resolution: {integrity: sha512-GWLEMqw3oYd+xfnRl5zAhBaixj1WkycMNyHCn0IS+zYao+hRU/cM1g3MrzRF/nwXFJ52fkGHLNyzvc7VSxDDgg==}
-    engines: {node: '>=22'}
-
-  '@qazuor/qzpay-drizzle@2.0.0':
-    resolution: {integrity: sha512-6aibT0HS4Kc2BJfqUnfJMfb7Gl1Yz9tt7YVhIoR46S69zPw2gbLJPZnbBPbHAINEaWlpxIXvBQmR4UNt/84q4Q==}
+  '@qazuor/qzpay-drizzle@2.1.0':
+    resolution: {integrity: sha512-dc8iMx2/b95rPXrgTntLYpD16fxY1RdRFdFyop0+hjxEoXCtoXLrSZCcGHMqcEuDy1sxl0Iz20zieMXcevAEEw==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
       postgres: '>=3.4.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-hono@1.6.11':
-    resolution: {integrity: sha512-6Wc8nalAgqxsRr+Uqb44l2OCzJ/bbckNxBUJqN1pw/YCb1/aldoCFBPX1ShfJSlIPWcMZ3HqG6JODVkuZ1S8mg==}
+  '@qazuor/qzpay-hono@1.6.13':
+    resolution: {integrity: sha512-oPZcL53fhJqGCmzop8dco2HHHUFxp3ia7y8TbS/LU2eUDdgupRJkat6sBKV3F7wyyHXh1gWezM+Wk3M2yXcWcA==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.9.2':
-    resolution: {integrity: sha512-X3Q/5N27Ki87kvy0iUarFTlaxQtd12QWBOp+ygGshXOzquLnsF1X6LUFusH1DSasiJYR4mQBVDyApxhlrB+0jQ==}
+  '@qazuor/qzpay-mercadopago@2.9.4':
+    resolution: {integrity: sha512-xVa3MV45S0PXF2Blotp5w4frwjEeXa6UG3veHE6q9m1L/eLvTZTW9pFKU9Ax3d8CQ0CEWHjSi2MAYwjb4xYxkQ==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
 
-  '@qazuor/qzpay-react@1.1.26':
-    resolution: {integrity: sha512-ofnlC6jhMo8FeqeJzzQis9xl6ARzQ+7Zg/mF9y017JSzHhIq9V0W8WnH8fAaYh847jPkADRHcEY5IBzcSLOlsQ==}
+  '@qazuor/qzpay-react@1.1.28':
+    resolution: {integrity: sha512-qrA4IJCwRHRaC+ACn/URzRbU1JAI9KEqEuR0g7iZsRSn1JPJ6biGGQE3vrhaEZRTSvFRpsO3iVIwMjZ+xEW6wg==}
     engines: {node: '>=22'}
     peerDependencies:
       react: 19.2.7
@@ -7036,8 +7033,8 @@ packages:
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  baseline-browser-mapping@2.10.43:
-    resolution: {integrity: sha512-AjYpR78kDWAY3Efj+cDTFH9t9SCoL7OoTp1BOb0mQV7S+6CiLwnWM3FyxhJtdPufDFKzmCSFoUncKjWgJEZTCQ==}
+  baseline-browser-mapping@2.11.20:
+    resolution: {integrity: sha512-H0ulySigv6icDJ1F7SjtdCD6PrhTpdYCmP0CactWy1+ekh0AFd0o1Wn5T8b+hnTmdBx19u9yhL6wvCylXMY7zw==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -7153,8 +7150,8 @@ packages:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
 
-  browserslist@4.28.6:
-    resolution: {integrity: sha512-FQBYNK15VMslhLHpA7+n+n1GOlF1kId2xcCg7/j95f24AOF6VDYMNH4mFxF7KuaTdv627faazpOAjFzMrfJOUw==}
+  browserslist@4.28.8:
+    resolution: {integrity: sha512-V2NpofLblG64mfOtSgDhOJESZEGogzDMBv/q+W6oc4LXWP/q75eOXoOaaOu1EOadB9U4Bwx/e0yzbvwKH8zalA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
@@ -7243,8 +7240,8 @@ packages:
   camelize@1.0.1:
     resolution: {integrity: sha512-dU+Tx2fsypxTgtLoE36npi3UqcjSSMNYfkqgmoEhtZrraP5VWq0K7FkWVTYa8eMPtnU/G2txVsfdCJTn9uzpuQ==}
 
-  caniuse-lite@1.0.30001805:
-    resolution: {integrity: sha512-52noaS3DubycKSXaU30TwPGIp+POyQSUVa5jBEq3vkRkY0kjyb3LQgvhU6WGyCcyXqVLWO0Cw0Q6BSdD0kUfVA==}
+  caniuse-lite@1.0.30001810:
+    resolution: {integrity: sha512-TITQPUkaz+aVk5GL6NhOdwk1aEaNTSDPsGFWrTuhKGtjTF70jL/Oht2W4c6rXUe5fu7Ie19VIahAXHIIiWWNeg==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -8004,8 +8001,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.5.389:
-    resolution: {integrity: sha512-cEto7aeOqBfU1D+c5py5pE+ooscKE75JifxLBdFUZsqAxRS6y7kebtxAZvICszSl05gPjYHDTjY+lXpyGvpJbg==}
+  electron-to-chromium@1.5.417:
+    resolution: {integrity: sha512-4T+DTDWuMPM4aHlHwWdAVCVWwp7LDilnhzkj+c/Lbj91XSQrLuOmZSLtS9Q4iIqjlPUbPOnC624zDVVHCHaolQ==}
 
   embla-carousel-autoplay@8.6.0:
     resolution: {integrity: sha512-OBu5G3nwaSXkZCo1A6LTaFMZ8EpkYbwIaH+bPqdBnDGQ2fh4+NbzjXjs2SktoPNKCtflfVMc75njaDHOYXcrsA==}
@@ -10025,8 +10022,8 @@ packages:
   node-mock-http@1.0.4:
     resolution: {integrity: sha512-8DY+kFsDkNXy1sJglUfuODx1/opAGJGyrTuFqEoN90oRc2Vk0ZbD4K2qmKXBBEhZQzdKHIVfEJpDU8Ak2NJEvQ==}
 
-  node-releases@2.0.51:
-    resolution: {integrity: sha512-wRNIrw4DmVLKQlbgOMdkMx27Wrpzes2hh5Jtbi2bjPd+4wJstWIqP5A+lscnqbm0xxmT5Bpg8Lec5ItEBwx6BQ==}
+  node-releases@2.0.54:
+    resolution: {integrity: sha512-YHs7BmmcsdAI5Ozuf8JZo6PT0mv2GIWC9vMfvUC3dp65M8hn7Ux8CPL+2oBI7juNuj9d0ndhTcznq2ODBps9cQ==}
     engines: {node: '>=18'}
 
   nodemon@3.1.14:
@@ -11937,11 +11934,11 @@ packages:
   until-async@3.0.2:
     resolution: {integrity: sha512-IiSk4HlzAMqTUseHHe3VhIGyuFmN90zMTpD3Z3y8jeQbzLIq500MVM7Jq2vUAnTKAFPJrqwkzr6PoTcPhGcOiw==}
 
-  update-browserslist-db@1.2.3:
-    resolution: {integrity: sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w==}
+  update-browserslist-db@1.3.2:
+    resolution: {integrity: sha512-UQ+MSxlhRm1bzjhU+DcuXfjFO1FzNtqhK5+9Yvlp90ItDLk5vT932A0rFu619nf7RVS+Y/VeaUW1jaRDqZ8VJw==}
     hasBin: true
     peerDependencies:
-      browserslist: '>= 4.21.0'
+      browserslist: '>=4.28.8'
 
   urlpattern-polyfill@10.1.0:
     resolution: {integrity: sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw==}
@@ -12818,7 +12815,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.29.7
       '@babel/helper-validator-option': 7.29.7
-      browserslist: 4.28.6
+      browserslist: 4.28.8
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -14193,7 +14190,7 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/remapping': 2.3.5
       '@jridgewell/sourcemap-codec': 1.5.5
-      browserslist: 4.28.6
+      browserslist: 4.28.8
       chalk: 4.1.2
       debug: 4.4.3(supports-color@8.1.1)
       getenv: 2.0.0
@@ -14995,33 +14992,31 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@qazuor/qzpay-core@5.0.0': {}
+  '@qazuor/qzpay-core@5.1.1': {}
 
-  '@qazuor/qzpay-core@5.1.0': {}
-
-  '@qazuor/qzpay-drizzle@2.0.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
+  '@qazuor/qzpay-drizzle@2.1.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
     dependencies:
-      '@qazuor/qzpay-core': 5.0.0
+      '@qazuor/qzpay-core': 5.1.1
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(zod@4.3.6)
       postgres: 3.4.8
       zod: 4.3.6
 
-  '@qazuor/qzpay-hono@1.6.11(hono@4.13.0)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.6.13(hono@4.13.0)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.13.0)(zod@4.3.6)
-      '@qazuor/qzpay-core': 5.0.0
+      '@qazuor/qzpay-core': 5.1.1
       hono: 4.13.0
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.9.2(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@2.9.4(mercadopago@2.12.0)':
     dependencies:
-      '@qazuor/qzpay-core': 5.0.0
+      '@qazuor/qzpay-core': 5.1.1
       mercadopago: 2.12.0
 
-  '@qazuor/qzpay-react@1.1.26(react@19.2.7)':
+  '@qazuor/qzpay-react@1.1.28(react@19.2.7)':
     dependencies:
-      '@qazuor/qzpay-core': 5.0.0
+      '@qazuor/qzpay-core': 5.1.1
       react: 19.2.7
 
   '@radix-ui/number@1.1.1': {}
@@ -18576,7 +18571,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.10.43: {}
+  baseline-browser-mapping@2.11.20: {}
 
   basic-ftp@6.0.1: {}
 
@@ -18762,13 +18757,13 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
-  browserslist@4.28.6:
+  browserslist@4.28.8:
     dependencies:
-      baseline-browser-mapping: 2.10.43
-      caniuse-lite: 1.0.30001805
-      electron-to-chromium: 1.5.389
-      node-releases: 2.0.51
-      update-browserslist-db: 1.2.3(browserslist@4.28.6)
+      baseline-browser-mapping: 2.11.20
+      caniuse-lite: 1.0.30001810
+      electron-to-chromium: 1.5.417
+      node-releases: 2.0.54
+      update-browserslist-db: 1.3.2(browserslist@4.28.8)
 
   bser@2.1.1:
     dependencies:
@@ -18844,7 +18839,7 @@ snapshots:
 
   camelize@1.0.1: {}
 
-  caniuse-lite@1.0.30001805: {}
+  caniuse-lite@1.0.30001810: {}
 
   ccount@2.0.1: {}
 
@@ -19117,7 +19112,7 @@ snapshots:
 
   core-js-compat@3.49.0:
     dependencies:
-      browserslist: 4.28.6
+      browserslist: 4.28.8
 
   core-js@3.50.0: {}
 
@@ -19479,7 +19474,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.389: {}
+  electron-to-chromium@1.5.417: {}
 
   embla-carousel-autoplay@8.6.0(embla-carousel@8.6.0):
     dependencies:
@@ -22006,7 +22001,7 @@ snapshots:
 
   node-mock-http@1.0.4: {}
 
-  node-releases@2.0.51: {}
+  node-releases@2.0.54: {}
 
   nodemon@3.1.14:
     dependencies:
@@ -23991,9 +23986,9 @@ snapshots:
 
   until-async@3.0.2: {}
 
-  update-browserslist-db@1.2.3(browserslist@4.28.6):
+  update-browserslist-db@1.3.2(browserslist@4.28.8):
     dependencies:
-      browserslist: 4.28.6
+      browserslist: 4.28.8
       escalade: 3.2.0
       picocolors: 1.1.1
 

@@ -89,9 +89,28 @@ overrides:
   # activation path a purchase has: two approved payments were collected and
   # never recorded. Ships with migration 0093 on our side. FLOOR: core >= 3.1.0.
   #
-  # Current wave (2026-08-21): core 3.1.0 · mercadopago 2.9.0 · drizzle 1.12.0 ·
-  # hono 1.6.9 · react 1.1.24. Declared as `^` ranges in apps/api, apps/admin,
+  # Current wave (2026-09-01): core 5.1.1 · mercadopago 2.9.4 · drizzle 2.1.0 ·
+  # hono 1.6.13 · react 1.1.28. Declared as `^` ranges in apps/api, apps/admin,
   # packages/billing, packages/db and packages/service-core.
+  #
+  # WHAT KEEPS THE WAVE TOGETHER. The rule above is about two DIFFERENT exact
+  # core demands coexisting, which is narrower than "never bump one package".
+  # qzpay's siblings depend on core as `workspace:*`, and changesets rewrites
+  # that to the exact published core at release time. So a changeset that bumps
+  # CORE makes changesets republish every sibling that pins it, and the wave
+  # re-converges on its own — that is the mechanism, not a ritual someone has to
+  # remember.
+  #
+  # This wave is an example of it. HOS-993 needed three additive columns in
+  # drizzle and touched no core at all; it landed in the same release as
+  # HOS-987's core patch, and the core bump alone republished the other four.
+  # Had it shipped by itself, drizzle would have inherited the same exact core
+  # the others already pinned and nothing would have split either — a sibling
+  # release that does not touch core is safe on its own.
+  #
+  # What must never happen is picking up one sibling from a NEWER wave while the
+  # rest stay behind — that is the HOS-232 split, and it is a lockfile decision
+  # here, not something qzpay can prevent.
   # ---------------------------------------------------------------------------
   typescript: "6.0.3"
   "zod@>=4.0.0 <5": "4.3.6"
@@ -138,6 +157,12 @@ overrides:
   h3: ">=1.15.6"
   "nitro>h3": "2.0.1-rc.22"
   minimatch: ">=9.0.7"
+  # GHSA-73wf-gq98-2v4g + companion (2026-09-01): 4.28.6 has unbounded memory
+  # growth on a cache miss and a prototype write reachable from a crafted
+  # query. Transitive only, reached ~100 ways through
+  # @tanstack/react-start > @babel/core > @babel/helper-compilation-targets,
+  # so raising the floor here is the only fix until that tree republishes.
+  browserslist: ">=4.28.8"
   lodash: ">=4.17.24"
   lodash-es: ">=4.17.24"
   serialize-javascript: ">=7.0.3"
@@ -278,8 +303,8 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0 || 5.0.0 || 5.1.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0'
-  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11'
-  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26'
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0 || 5.0.0 || 5.1.0 || 5.1.1'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2 || 2.9.4'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0 || 2.1.0'
+  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11 || 1.6.13'
+  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26 || 1.1.28'

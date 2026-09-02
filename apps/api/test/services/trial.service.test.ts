@@ -1402,7 +1402,9 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'annual'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=annual');
+            expect(url).toBe(
+                'https://example.test/es/suscriptores/planes/anfitriones/?interval=annual'
+            );
         });
 
         it('appends ?interval=monthly for a valid monthly intent', () => {
@@ -1410,12 +1412,14 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'monthly'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=monthly');
+            expect(url).toBe(
+                'https://example.test/es/suscriptores/planes/anfitriones/?interval=monthly'
+            );
         });
 
         it('omits the query param when intendedInterval is undefined', () => {
             const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+            expect(url).toBe('https://example.test/es/suscriptores/planes/anfitriones/');
         });
 
         it('omits the query param for an unrecognized value (defensive against malformed metadata)', () => {
@@ -1423,7 +1427,7 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'weekly'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+            expect(url).toBe('https://example.test/es/suscriptores/planes/anfitriones/');
         });
 
         it('points at the owner pricing page, not /mi-cuenta/suscripcion (which has no toggle)', () => {

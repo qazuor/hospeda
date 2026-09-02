@@ -81,11 +81,12 @@ vi.mock('../../../src/components/ui/PasswordField.client', () => ({
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-const renderIsland = () =>
+const renderIsland = (returnUrl = '/es/mi-cuenta/') =>
     render(
         <SetPassword
             locale="es"
             apiUrl="http://api.test"
+            returnUrl={returnUrl}
         />
     );
 
@@ -201,5 +202,80 @@ describe('SetPassword password validation (HOS-190 slice 3)', () => {
         await waitFor(() => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
+    });
+});
+
+describe('SetPassword — HOS-838: the destination survives both exits', () => {
+    const DESTINATION = '/es/mi-cuenta/comercios/nuevo/';
+
+    /**
+     * Replaces `window.location` with a proxy recording `href` assignments, so
+     * a redirect is observable without a real jsdom navigation.
+     */
+    function spyOnHrefAssignment(): ReturnType<typeof vi.fn> {
+        const hrefAssignSpy = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: {
+                ...originalLocation,
+                set href(v: string) {
+                    hrefAssignSpy(v);
+                }
+            } as Location
+        });
+        return hrefAssignSpy;
+    }
+
+    function fillValidPassword(): void {
+        const valid = 'Aa1!aaaa';
+        fireEvent.change(document.getElementById('sp-password') as HTMLInputElement, {
+            target: { value: valid }
+        });
+        fireEvent.change(document.getElementById('sp-confirm-password') as HTMLInputElement, {
+            target: { value: valid }
+        });
+    }
+
+    it('lands on the destination after setting a password', async () => {
+        // Arrange
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: {} })
+        }) as unknown as typeof fetch;
+        const hrefAssignSpy = spyOnHrefAssignment();
+        renderIsland(DESTINATION);
+        fillValidPassword();
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Establecer contraseña' }));
+
+        // Assert
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalledWith(DESTINATION);
+        });
+    });
+
+    it('lands on the destination after SKIPPING, not only after setting one', async () => {
+        // Skipping is the exit most people take, and it used to hard-code
+        // /mi-cuenta/ just like the submit path did.
+        // Arrange
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: {} })
+        }) as unknown as typeof fetch;
+        const hrefAssignSpy = spyOnHrefAssignment();
+        renderIsland(DESTINATION);
+
+        // Act
+        openSkipModal();
+        fireEvent.click(screen.getByRole('button', { name: 'Sí, saltar' }));
+
+        // Assert
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalledWith(DESTINATION);
+        });
+        expect(hrefAssignSpy).not.toHaveBeenCalledWith('/es/mi-cuenta/');
     });
 });

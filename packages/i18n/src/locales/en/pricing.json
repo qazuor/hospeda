@@ -2,10 +2,28 @@
     "cta": "Get started",
     "free": "Free",
     "recommended": "Recommended",
-    "trial_one": "{{count}} day free",
-    "trial_other": "{{count}} days free",
+    "trial_one": "{{count}} day free trial",
+    "trial_other": "{{count}} days free trial",
     "trialNotEligible": "No trial period",
     "includesEverything": "Everything in {plan}, plus:",
+    "includesAll": "This plan includes:",
+    "limitsLabel": "This plan's limits",
+    "limitLine": "{label}: {value}",
+    "recommendedFor": {
+        "label": "Recommended for",
+        "default": {
+            "owner": "anyone listing their place on Hospeda",
+            "tourist": "anyone travelling around the Litoral who wants more out of the platform"
+        },
+        "plan": {
+            "owner-basico": "someone renting out a single property who is just getting started",
+            "owner-pro": "someone managing several properties who already gets bookings regularly",
+            "owner-premium": "someone who makes a living from renting and needs every tool and the widest reach",
+            "tourist-free": "someone starting to browse places to stay who wants to save a few favourites",
+            "tourist-plus": "someone who travels often and compares several options before deciding",
+            "tourist-vip": "someone who travels often and wants every benefit plus direct contact with the host"
+        }
+    },
     "inheritedSummary_one": "+{{count}} feature from the {{plan}} plan",
     "inheritedSummary_other": "+{{count}} features from the {{plan}} plan",
     "baseHighlightTitle": "Perfect to get started",
@@ -24,13 +42,79 @@
         "monthly": "Monthly",
         "annual": "Annual",
         "annualSaving": "Save {percent}%",
-        "ariaLabel": "Choose billing frequency"
+        "ariaLabel": "Choose billing frequency",
+        "question": "How do you want to pay?",
+        "annualBadge": "Save up to {percent}%"
     },
     "period": {
         "month": "/month",
         "year": "/year"
     },
     "monthlyOnly": "Monthly plan only",
+    "index": {
+        "title": "Hospeda plans",
+        "description": "Pick the audience you belong to and see the plans built for you.",
+        "tagline": "Plans and pricing",
+        "heading": "A plan for every audience",
+        "subtitle": "There are five ways to join Hospeda. Pick yours and see the pricing.",
+        "cardsHeading": "Choose your audience",
+        "highlightsLabel": "What you get",
+        "from": "From {{price}}",
+        "trial_one": "{{count}} day free trial",
+        "trial_other": "{{count}} days free trial",
+        "cards": {
+            "host": {
+                "title": "List my property",
+                "audience": "For hosts with houses, cabins, apartments or hotels to rent.",
+                "cta": "See host plans",
+                "highlights": {
+                    "item1": "Publish your property with photos, amenities and an availability calendar.",
+                    "item2": "Get WhatsApp enquiries and reply to your guests' reviews.",
+                    "item3": "Track your listing's views and create promotions."
+                }
+            },
+            "tourist": {
+                "title": "Travel benefits",
+                "audience": "For travellers who want to compare stays, save favourites and get price alerts.",
+                "cta": "See traveller plans",
+                "highlights": {
+                    "item1": "Save favourites and organise them into travel collections.",
+                    "item2": "Get price alerts and unlock exclusive deals.",
+                    "item3": "Compare places to stay and write your own reviews."
+                }
+            },
+            "gastronomy": {
+                "title": "List my food business",
+                "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
+                "cta": "See gastronomy plans",
+                "highlights": {
+                    "item1": "A listing with photos, menu, opening hours and contact details.",
+                    "item2": "Show up in the dining guide travellers browse.",
+                    "item3": "A fixed monthly price, with no commission per enquiry or booking."
+                }
+            },
+            "experience": {
+                "title": "List my experiences",
+                "audience": "For guides and operators running tours, trips and activities.",
+                "cta": "See experience plans",
+                "highlights": {
+                    "item1": "Publish tours, outings and activities with photos and schedules.",
+                    "item2": "Appear among the experiences travellers look for in the Litoral.",
+                    "item3": "One fixed monthly amount: no booking charges you a separate commission."
+                }
+            },
+            "partner": {
+                "title": "Become a Hospeda partner",
+                "audience": "For brands and businesses that want visibility across the platform.",
+                "cta": "Explore the partner programme",
+                "highlights": {
+                    "item1": "Brand presence in Hospeda's partner carousel.",
+                    "item2": "Joint visibility in our campaigns and outreach channels.",
+                    "item3": "Access to the region's network of verified stays and businesses."
+                }
+            }
+        }
+    },
     "owner": {
         "title": "Plans for owners",
         "description": "Publish your accommodation with the plan that best fits your business.",
@@ -75,5 +159,15 @@
             "title": "Traveler plan comparison",
             "description": "Compare all features, benefits and limits of each traveler plan."
         }
+    },
+    "annualHint": "Paying yearly saves you {percent}%",
+    "seeAll": "See everything included ({count} more)",
+    "seeLess": "Show less",
+    "select": {
+        "aria": "Select the {plan} plan"
+    },
+    "nav": {
+        "backToIndex": "Back to all plans",
+        "ariaLabel": "Plan catalogue navigation"
     }
 }

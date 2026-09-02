@@ -36,7 +36,11 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val }))
 }));
 
-vi.mock('@repo/schemas', () => ({
+// Spread the real schemas package: the real `@repo/service-core` (see the mock
+// below) pulls PermissionEnum and friends out of it, which a whole-module factory
+// would leave undefined.
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     PromoEffectKindEnum: { DISCOUNT: 'discount', TRIAL_EXTENSION: 'trial_extension', COMP: 'comp' }
 }));
 
@@ -45,7 +49,15 @@ const calculatePromoCodeEffectMock = vi.fn();
 const applyPromoCodeMock = vi.fn();
 const resolveFullPlanPriceCentavosMock = vi.fn();
 const loadSubscriptionDiscountStateMock = vi.fn();
-vi.mock('@repo/service-core', () => ({
+// HOS-996: spread the real module before the overrides instead of replacing it
+// wholesale. The seam imports `DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE` from here,
+// and a whole-module factory hands back `undefined` for any export it does not
+// list — which is not a compile error and not an obvious runtime one either: the
+// guard would still fire and still reject, just with an empty message, and a test
+// that only checked "did it refuse" would stay green. Same shape
+// `promo-code-t008.test.ts` uses for this module.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
     getPromoCodeByCode: (...args: unknown[]) => getPromoCodeByCodeMock(...args),
     calculatePromoCodeEffect: (...args: unknown[]) => calculatePromoCodeEffectMock(...args),
     applyPromoCode: (...args: unknown[]) => applyPromoCodeMock(...args),
@@ -190,6 +202,96 @@ describe('applyMultiCycleDiscountToExistingSubscription (fail-closed + B1)', () 
         if (result.success) throw new Error('expected failure');
         expect(result.error.code).toBe('VALIDATION_ERROR');
         expect(applyInitialDiscountMutationMock).not.toHaveBeenCalled();
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-996 — discount-to-zero guard on the existing-subscription path.
+    //
+    // The checkout-signup path has rejected a 100% discount since SPEC-262 L1;
+    // this seam did not, so the code reached `applyInitialDiscountMutation` and
+    // the admin saw whatever MercadoPago answered to a `transaction_amount` of 0
+    // instead of an actionable message. Always fail-closed (MP rejects it), so
+    // the bug was diagnostic, never financial.
+    //
+    // The message is asserted as a LITERAL, not against the imported constant —
+    // comparing the constant to itself would prove nothing. It is a user-facing
+    // contract, so a reword must break this test on purpose.
+    // -----------------------------------------------------------------------
+    it('HOS-996: 100% discount → INVALID_PROMO_CODE with our message, MP never called', async () => {
+        // Arrange — a code whose effect reduces the price all the way to zero.
+        configureDb({
+            subRow: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1'
+            }
+        });
+        calculatePromoCodeEffectMock.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 10000,
+            finalAmount: 0,
+            remainingCycles: DURATION_CYCLES - 1
+        });
+
+        // Act
+        const result = await applyMultiCycleDiscountToExistingSubscription({
+            code: 'TODOGRATIS100',
+            subscriptionId: 'sub-1',
+            billing: billingStub
+        });
+
+        // Assert — our typed error, not MercadoPago's.
+        expect(result.success).toBe(false);
+        if (result.success) throw new Error('expected failure');
+        expect(result.error.code).toBe('INVALID_PROMO_CODE');
+        expect(result.error.message).toBe(
+            'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+        );
+        // The guard must run BEFORE the preapproval mutation — the whole point is
+        // that MercadoPago is never asked for a zero-amount preapproval.
+        expect(applyInitialDiscountMutationMock).not.toHaveBeenCalled();
+        // And the redemption is never committed.
+        expect(applyPromoCodeMock).not.toHaveBeenCalled();
+    });
+
+    // Negative mirror for the guard above: one centavo of remaining price is NOT
+    // zero, so the seam must proceed all the way through the MP mutation. Without
+    // this, a guard written as `finalAmount <= 0`, `< fullPrice`, or an
+    // unconditional reject would still pass the test above.
+    it('HOS-996 mirror: a discount leaving 1 centavo is applied normally', async () => {
+        configureDb({
+            subRow: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1'
+            }
+        });
+        calculatePromoCodeEffectMock.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 9999,
+            finalAmount: 1,
+            remainingCycles: DURATION_CYCLES - 1
+        });
+        applyInitialDiscountMutationMock.mockResolvedValue({ success: true });
+        applyPromoCodeMock.mockResolvedValue({
+            success: true,
+            data: { effectKind: 'discount', remainingCycles: DURATION_CYCLES - 1 }
+        });
+
+        const result = await applyMultiCycleDiscountToExistingSubscription({
+            code: 'CASITODO',
+            subscriptionId: 'sub-1',
+            billing: billingStub
+        });
+
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.discountedAmountCentavos).toBe(1);
+        expect(applyInitialDiscountMutationMock).toHaveBeenCalledOnce();
     });
 
     it('subscription not found → NOT_FOUND', async () => {

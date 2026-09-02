@@ -109,7 +109,14 @@ const { courtesyExpiryJob } = await import('../../src/cron/jobs/courtesy-expiry.
 const PAST = new Date(Date.now() - 24 * 60 * 60 * 1000);
 const FUTURE = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-/** A subscription sitting in a gift whose window has already elapsed. */
+/**
+ * A subscription sitting in a gift whose window has already elapsed.
+ *
+ * HOS-993: the three window fields are typed columns on the row now, not
+ * `metadata` keys — a `timestamptz` column arrives as a `Date`, so the
+ * fixture uses `Date` instances rather than ISO strings. `metadata` still
+ * carries `billingInterval` (untouched by HOS-993).
+ */
 function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
     return {
         id: 'sub-1',
@@ -117,12 +124,10 @@ function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
         status: 'courtesy',
         cancelAtPeriodEnd: false,
         mpSubscriptionId: 'mp-preapproval-1',
-        metadata: {
-            billingInterval: 'monthly',
-            courtesyStartsAt: PAST.toISOString(),
-            courtesyEndsAt: PAST.toISOString(),
-            courtesyCyclesGranted: 2
-        },
+        courtesyStartsAt: PAST,
+        courtesyEndsAt: PAST,
+        courtesyCyclesGranted: 2,
+        metadata: { billingInterval: 'monthly' },
         ...overrides
     };
 }
@@ -130,12 +135,9 @@ function elapsedCourtesyRow(overrides: Record<string, unknown> = {}) {
 /** A subscription whose gift has just begun and was never announced. */
 function openingCourtesyRow(overrides: Record<string, unknown> = {}) {
     return elapsedCourtesyRow({
-        metadata: {
-            billingInterval: 'monthly',
-            courtesyStartsAt: PAST.toISOString(),
-            courtesyEndsAt: FUTURE.toISOString(),
-            courtesyCyclesGranted: 2
-        },
+        courtesyStartsAt: PAST,
+        courtesyEndsAt: FUTURE,
+        courtesyCyclesGranted: 2,
         ...overrides
     });
 }
@@ -244,7 +246,13 @@ describe('courtesy-expiry real run — never reports itself as a rehearsal', () 
     it('marks a FAILED real run as real too', async () => {
         // Arrange — the loud-failure branch has its own return, and its own
         // chance to lie about the mode.
-        subscriptionRows = [elapsedCourtesyRow({ metadata: { billingInterval: 'monthly' } })];
+        subscriptionRows = [
+            elapsedCourtesyRow({
+                courtesyStartsAt: null,
+                courtesyEndsAt: null,
+                courtesyCyclesGranted: null
+            })
+        ];
         const ctx = realRunContext();
 
         // Act
@@ -286,7 +294,7 @@ describe('courtesy-expiry real run — a dead mailer cannot strand a resumed row
         ]);
         const written = updateMock.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(written.status).toBe('active');
-        expect(written.metadata).not.toHaveProperty('courtesyEndsAt');
+        expect(written.courtesyEndsAt).toBeNull();
         expect(insertMock).toHaveBeenCalledTimes(1);
 
         // A subscriber who did not get the mail is a minor problem; the run is

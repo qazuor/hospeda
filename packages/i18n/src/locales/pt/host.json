@@ -695,9 +695,6 @@
         "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica seu primeiro imóvel.",
         "trialCallout_other": "Experimente o Hospeda grátis por {{trialDays}} dias, sem cartão. O teste começa sozinho quando você publica seu primeiro imóvel."
     },
-    "fromAdminBanner": {
-        "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
-    },
     "miniForm": {
         "fields": {
             "name": "Nome da acomodação",

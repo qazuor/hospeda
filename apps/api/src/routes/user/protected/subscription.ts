@@ -5,6 +5,7 @@
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { billingSubscriptions, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { readCourtesyFields, subscriptionMatchesDomain } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -367,6 +368,27 @@ export const userSubscriptionRoute = createProtectedRoute({
                 ? activeSubscription.scheduledPlanChange
                 : null;
 
+        // The courtesy window is read from the ROW, not from `activeSubscription`.
+        //
+        // These objects come from `billing.subscriptions.getByCustomerId()`, and
+        // qzpay-core's subscription mapper builds them field by field from the
+        // fields core itself declares — there is no spread, so a column
+        // qzpay-drizzle adds beyond core's interface never reaches the object.
+        // `courtesy_starts_at` / `courtesy_ends_at` / `courtesy_cycles_granted`
+        // (HOS-993) are exactly such columns, so reading them off the facade
+        // object would yield an empty window on every subscription, silently:
+        // a gifted subscriber would simply never see their gift here.
+        const [courtesyRow] = await getDb()
+            .select({
+                courtesyStartsAt: billingSubscriptions.courtesyStartsAt,
+                courtesyEndsAt: billingSubscriptions.courtesyEndsAt,
+                courtesyCyclesGranted: billingSubscriptions.courtesyCyclesGranted
+            })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, activeSubscription.id))
+            .limit(1);
+        const courtesyWindow = readCourtesyFields(courtesyRow);
+
         return {
             subscription: {
                 id: activeSubscription.id,
@@ -382,9 +404,7 @@ export const userSubscriptionRoute = createProtectedRoute({
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
                 canceledAt: toIsoString(activeSubscription.canceledAt),
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
-                courtesyEndsAt: toIsoString(
-                    readCourtesyFields(activeSubscription.metadata).courtesyEndsAt
-                ),
+                courtesyEndsAt: toIsoString(courtesyWindow.courtesyEndsAt),
                 monthlyPriceArs,
                 paymentMethod: null,
                 gracePeriodDaysRemaining,

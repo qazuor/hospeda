@@ -469,14 +469,18 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
 
         it('should set promo_effect_remaining_cycles=null for a forever discount (durationCycles=null)', async () => {
             // Arrange
+            // HOS-996: 50%, not 100%. This test is about `remainingCycles`
+            // being null for a forever discount — the percentage was only ever
+            // a vehicle, and 100% now takes the price to zero, which
+            // applyPromoCode refuses before it reaches the counter at all.
             const promoCode = makePromoCode({
-                code: 'FOREVER100',
+                code: 'FOREVER50',
                 type: 'percentage',
-                value: 100,
+                value: 50,
                 effect: {
                     kind: 'discount',
                     valueKind: 'percentage',
-                    value: 100,
+                    value: 50,
                     durationCycles: null // forever
                 }
             });
@@ -498,14 +502,14 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
 
             // Act
-            const result = await applyPromoCode('FOREVER100', 'cust-1', 10000, {
+            const result = await applyPromoCode('FOREVER50', 'cust-1', 10000, {
                 subscriptionId: 'sub-abc'
             });
 
             // Assert
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.finalAmount).toBe(0); // 100% off
+                expect(result.data.finalAmount).toBe(5000); // 50% off
                 expect(result.data.effectKind).toBe('discount');
                 if (result.data.effectKind === 'discount') {
                     expect(result.data.remainingCycles).toBeNull(); // null = forever
