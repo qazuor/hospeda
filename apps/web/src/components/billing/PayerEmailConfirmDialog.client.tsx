@@ -17,9 +17,8 @@
  * confirmed is sent as `payerEmail` on the checkout request and wins over
  * both `billing_customers.mp_payer_email` and `.email`.
  *
- * Extracted out of `PlanPurchaseButton.client.tsx` for the same reason as
- * `TrialWarningDialog.client.tsx` (already at the file's 500-line soft
- * ceiling) — reuses the shared `<Dialog>` primitive
+ * Extracted out of `PlanPurchaseButton.client.tsx`, which is already at the
+ * file's 500-line soft ceiling — reuses the shared `<Dialog>` primitive
  * (`@/components/shared/ui/Dialog.client`) for the portal, backdrop, scroll
  * lock, `Escape`-to-close, focus trap and focus-restore-on-close behaviour.
  */

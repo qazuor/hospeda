@@ -757,7 +757,6 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-resolved-1',
             planId: 'plan-1',
             status: 'active',
-            trialStart: null,
             trialEnd: null,
             billingInterval: 'month'
         });
@@ -831,7 +830,6 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-2',
             planId: 'plan-1',
             status: 'active',
-            trialStart: null,
             trialEnd: null,
             billingInterval: 'month'
         });
@@ -958,7 +956,6 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 customerId: 'cust-linked-1',
                 planId: 'plan-1',
                 status: 'pending_provider',
-                trialStart: null,
                 trialEnd: null,
                 billingInterval: 'month'
             });

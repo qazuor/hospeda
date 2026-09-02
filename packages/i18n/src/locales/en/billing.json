@@ -268,12 +268,6 @@
             "errorNewUsersOnly": "This code is only for new customers.",
             "errorMinAmount": "Your purchase doesn't meet the minimum required for this code."
         },
-        "trialWarning": {
-            "title": "The free trial is granted by Mercado Pago",
-            "body": "Mercado Pago grants the trial period only once per account and per plan. If you've already used a trial for this plan with the same Mercado Pago account, Mercado Pago will charge the first period right away instead of applying the trial.",
-            "confirm": "Got it, continue",
-            "cancel": "Cancel"
-        },
         "payerEmailConfirm": {
             "title": "Which email you'll be able to pay with",
             "body": "Mercado Pago will only let you pay with this exact email. If you want to use a different Mercado Pago account, change it before continuing.",
