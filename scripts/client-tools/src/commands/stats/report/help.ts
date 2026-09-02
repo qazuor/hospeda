@@ -136,5 +136,7 @@ export function renderHelp(): void {
         `  ${pc.dim('El archivo importa: una universal de fish no la ve un subproceso ni cron.')}\n`
     );
     process.stdout.write(`\n  ${pc.cyan('historial'.padEnd(26))}${LOG_PATH}\n`);
-    process.stdout.write(`  ${pc.cyan('fuente'.padEnd(26))}~/.claude/tools/hops-stats\n\n`);
+    process.stdout.write(
+        `  ${pc.cyan('fuente'.padEnd(26))}scripts/client-tools/src/commands/stats\n\n`
+    );
 }
