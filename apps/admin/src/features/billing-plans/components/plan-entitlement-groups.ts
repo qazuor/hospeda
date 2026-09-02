@@ -83,6 +83,20 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.AI_TRANSLATE,
             EntitlementKey.AI_ACCOMMODATION_IMPORT
         ]
+    },
+    {
+        // HOS-1074 — both commerce verticals in ONE group rather than a
+        // gastronomy group and an experience group. The editor is a flat
+        // per-plan checklist and a commerce plan only ever belongs to one
+        // vertical, so two single-pair groups would add a header that is empty
+        // on every plan an operator actually opens.
+        labelKey: 'commerce',
+        keys: [
+            EntitlementKey.EDIT_GASTRONOMY_INFO,
+            EntitlementKey.PUBLISH_GASTRONOMY,
+            EntitlementKey.EDIT_EXPERIENCE_INFO,
+            EntitlementKey.PUBLISH_EXPERIENCE
+        ]
     }
 ];
 

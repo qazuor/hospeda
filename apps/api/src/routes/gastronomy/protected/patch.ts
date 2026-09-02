@@ -14,7 +14,14 @@
  *   so any forged keys for those are silently stripped by Zod.
  * - GastronomyService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
  *   per-section COMMERCE_*_EDIT_OWN permission checks.
+ * - HOS-1074: gated on `EDIT_GASTRONOMY_INFO`, the gastronomy mirror of the
+ *   `requireEntitlement(EDIT_ACCOMMODATION_INFO)` gate on
+ *   `accommodation/protected/patch.ts`. The permission check above and this
+ *   entitlement gate answer different questions and both stay: the permission
+ *   says WHO may touch this row, the entitlement says whether their PLAN
+ *   includes editing at all.
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     type GastronomyOwnerUpdateInput,
     GastronomyOwnerUpdateInputSchema,
@@ -23,6 +30,8 @@ import {
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -67,5 +76,16 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1074. The loader MUST come first: the global
+        // `entitlementMiddleware` has already put the ACCOMMODATION set in the
+        // context, and that set never carries a gastronomy key — so a gate
+        // mounted without this ahead of it refuses every caller, including the
+        // ones whose plan grants exactly this.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO)
+        ]
     }
 });

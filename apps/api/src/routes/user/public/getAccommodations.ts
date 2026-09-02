@@ -21,7 +21,7 @@ import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
     filterAccommodationListByOwnerEntitlements,
@@ -56,12 +56,28 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         id: z.string().uuid()
     },
     responseSchema: AccommodationPublicSchema,
-    handler: async (ctx: Context, params: Record<string, unknown>, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>, _body, query) => {
         const ownerId = params.id as string;
         const { page, pageSize } = extractPaginationParams(query ?? {});
 
-        const result = await accommodationService.search(actor, {
+        // HOS-352: resolve visibility against a GUEST actor, never the caller.
+        //
+        // `_executeSearch` derives `excludeOwnerSuspended` / `excludePlanRestricted` /
+        // `activeOnly` from the actor (isOwnScope when `ownerId === actor.id`, or a
+        // VIP/staff entitlement), so the OWNER viewing their own public profile — or
+        // any VIP/staff actor — received DRAFT / owner-suspended / plan-restricted
+        // rows an anonymous visitor must never see. `applyAccommodationLocationPrivacyList`
+        // (called from `_afterSearch`) reads the same real actor to decide whether to
+        // reveal the EXACT street address, so the owner's own request also carried
+        // their unobfuscated coordinates instead of the salted approximate location.
+        //
+        // `/api/v1/public/users` is in `PRIVATE_CACHE_ENDPOINTS` and its cache key
+        // never reads the session COOKIE (only the `Authorization` header, which
+        // browsers don't send), so a browser-authenticated owner collides with every
+        // anonymous visitor in the same `:anonymous` cache slot for the endpoint's
+        // TTL — their widened, address-carrying response would then be replayed to
+        // all of them. Same shape as HOS-353's fix to `accommodation/public/list.ts`.
+        const result = await accommodationService.search(createGuestActor(), {
             ownerId,
             page,
             pageSize,

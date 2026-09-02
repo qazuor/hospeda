@@ -38,16 +38,53 @@
  * they bought as an add-on, and even that is preferable to handing out an
  * uncapped catalogue.
  *
- * ## What it deliberately does NOT copy from the accommodation stack
+ * ## The entitlement half, added by HOS-1074
  *
- * Accommodation's create route stacks `requireEntitlement(PUBLISH_ACCOMMODATIONS)`
- * and *then* `enforceAccommodationLimit()`, in that order and for a stated
- * reason (SPEC-145 T-004). §6.8 states that **neither commerce vertical grants
- * any entitlement today** — visibility is driven by the subscription status via
- * `commerce_listing_subscriptions` + the reconciler, not by the entitlement
- * engine — so there is nothing to put in the first half of that pattern. The
- * commerce create route runs the limit check with no entitlement gate ahead of
- * it, and that is a stated decision rather than an omission.
+ * §6.8 used to say that **neither commerce vertical grants any entitlement**,
+ * so the accommodation pattern — `requireEntitlement(PUBLISH_ACCOMMODATIONS)`
+ * and *then* `enforceAccommodationLimit()` (SPEC-145 T-004) — had nothing to
+ * put in its first half, and this middleware published an EMPTY entitlement
+ * set. Owner decision (2026-09-01) reversed that: one mechanism across the
+ * platform, not two. Each vertical now grants its own
+ * `EDIT_<VERTICAL>_INFO` / `PUBLISH_<VERTICAL>` pair on all three tiers, and
+ * the commerce routes gate on them exactly as `accommodation/protected/patch.ts`
+ * gates on its own.
+ *
+ * ### The set has the same shape of invariant the cap does, pointing the OTHER way
+ *
+ * The cap fails toward a NUMBER because an absent limit key reads as
+ * *unlimited* — silently giving the product away. An entitlement fails the
+ * opposite way: an absent key is a REFUSAL, so the symptom of a mis-wired
+ * entitlement set is not a give-away, it is every commerce owner locked out of
+ * their own listing. Both directions are silent to the person who wired it and
+ * loud to the customer, so both branches below end at a set that is known to be
+ * right rather than at whatever a lookup happened to return.
+ *
+ * Concretely, the floor comes from `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` —
+ * from CODE, in the same binary as the gate — and the subscription's plan row
+ * can only ADD to it. Three states would otherwise refuse a legitimate owner,
+ * and all three are ordinary rather than exotic:
+ *
+ *   1. **No subscription at all.** This is the NORMAL state of a commerce owner
+ *      mid-funnel: `commerce/protected/create.ts` makes the listing
+ *      `PRIVATE`/`DRAFT` and the owner fills it in BEFORE paying. Gating on a
+ *      live subscription would mean nobody could ever reach the checkout,
+ *      which is the HOS-687 lockout shape exactly (a role you can only get by
+ *      doing the thing the role gates).
+ *   2. **A plan row that has not caught up.** `ensureCommercePlan` INSERTS
+ *      ONLY, so every already-seeded environment carries `entitlements: []` on
+ *      all six commerce plans until seed data-migration 0077 runs. A gate
+ *      reading the DB alone would refuse every commerce owner on staging and
+ *      production for the whole window between deploy and migration.
+ *   3. **A lapsed or cancelled subscription.** Resolved to the floor for the
+ *      same reason the CAP is: the vertical's catalogue terms, not nothing.
+ *
+ * None of that makes the gate decorative. It is a real refusal for a plan that
+ * genuinely does not grant the key, it is the seam every later commerce
+ * capability hangs off, and — most of all — it means the grant and the gate
+ * ship as ONE artifact, so the ordering hazard HOS-1074 is written around
+ * cannot occur: there is no window in which the gate exists and the grant does
+ * not.
  *
  * @module middlewares/commerce-entitlement
  */
@@ -55,9 +92,11 @@
 import {
     type CommerceVertical,
     commerceVerticalToProductDomain,
+    ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL,
     type EntitlementKey,
     getUnlimitedEntitlements,
     isEntitlementGrantingStatus,
+    isEntitlementKey,
     isLimitKey,
     LIMIT_KEY_BY_COMMERCE_VERTICAL,
     type LimitKey
@@ -220,17 +259,53 @@ export async function resolveCommerceVerticalCap(input: {
     customerId: string | null | undefined;
     vertical: CommerceVertical;
 }): Promise<number> {
+    return (await resolveCommerceVerticalGrants(input)).cap;
+}
+
+/**
+ * Resolves BOTH halves of what a caller may do in one commerce vertical: the
+ * listing cap they are subject to, and the entitlements they hold (HOS-1074).
+ *
+ * The two are resolved together because they read the SAME subscription and the
+ * SAME plan row — splitting them would double every billing round-trip on the
+ * request path, and would let the two disagree about which subscription was
+ * live.
+ *
+ * The precedence rules differ by half, and deliberately so:
+ *
+ * - **cap** — customer-level override > subscription plan > vertical base cap
+ *   read from the DATABASE. The cap is a `'commercial'` field: an operator
+ *   raising it in the admin UI must take effect without a deploy.
+ * - **entitlements** — the vertical's CONFIG floor, UNIONED with whatever the
+ *   subscription's plan row declares. An entitlement set is a `'capability'`
+ *   field: config wins and the database follows. Union, not replacement, is
+ *   what makes the set monotonic — a lagging or empty plan row can never
+ *   subtract from the catalogue's own terms. See the module docblock for the
+ *   three ordinary states this protects.
+ *
+ * @param input.customerId - The caller's billing customer id, when they have one.
+ * @param input.vertical - The commerce vertical being resolved.
+ * @returns The cap to publish into `userLimits` and the entitlements to publish
+ *   into `userEntitlements`.
+ */
+export async function resolveCommerceVerticalGrants(input: {
+    customerId: string | null | undefined;
+    vertical: CommerceVertical;
+}): Promise<{ cap: number; entitlements: Set<EntitlementKey> }> {
     const { customerId, vertical } = input;
     const limitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
     const baseCap = await loadVerticalBaseLimit(vertical);
 
+    // The floor, from code. Never narrowed below this point — only added to.
+    const entitlements = new Set<EntitlementKey>(ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[vertical]);
+
     if (!customerId) {
-        return baseCap;
+        return { cap: baseCap, entitlements };
     }
 
     const billing = getQZPayBilling();
     if (!billing) {
-        return baseCap;
+        return { cap: baseCap, entitlements };
     }
 
     let cap = baseCap;
@@ -258,6 +333,18 @@ export async function resolveCommerceVerticalCap(input: {
                     'commerce subscription plan does not declare the vertical cap — keeping the base cap'
                 );
             }
+
+            // ADD ONLY (HOS-1074). A plan row is free to grant more than the
+            // catalogue floor — that is how a future premium tier earns its
+            // name — but an empty or lagging row must never take the floor
+            // away. Unknown strings are dropped rather than cast: the column is
+            // `string[]`, and a stale key from a retired grant is not an
+            // entitlement just because it is spelled like one.
+            for (const key of plan?.entitlements ?? []) {
+                if (isEntitlementKey(key)) {
+                    entitlements.add(key);
+                }
+            }
         }
     } catch (error) {
         apiLogger.warn(
@@ -283,16 +370,24 @@ export async function resolveCommerceVerticalCap(input: {
         );
     }
 
-    return cap;
+    return { cap, entitlements };
 }
 
 /**
- * Loads the caller's limits for ONE commerce vertical into the request context.
+ * Loads the caller's entitlements and limits for ONE commerce vertical into the
+ * request context.
  *
- * Mount it per-route, after the global `entitlementMiddleware()` and before the
- * matching `enforceGastronomyLimit()` / `enforceExperienceLimit()`. It replaces
- * `userEntitlements` and `userLimits` wholesale rather than merging into them —
- * see the module docblock on why the two domains are never mixed.
+ * Mount it per-route, after the global `entitlementMiddleware()` and before
+ * anything that reads either context key — `requireEntitlement(...)` for this
+ * vertical's pair (HOS-1074) and/or the matching `enforceGastronomyLimit()` /
+ * `enforceExperienceLimit()`. It replaces `userEntitlements` and `userLimits`
+ * wholesale rather than merging into them — see the module docblock on why the
+ * two domains are never mixed.
+ *
+ * **The order is load-bearing in both directions.** Mounted after the gate, the
+ * gate reads the ACCOMMODATION set, which never carries a commerce key, and
+ * refuses everyone. Omitted entirely, same outcome. There is no arrangement in
+ * which a commerce gate works without this middleware ahead of it.
  *
  * @param vertical - The commerce vertical this route belongs to.
  * @returns A Hono middleware.
@@ -302,6 +397,7 @@ export async function resolveCommerceVerticalCap(input: {
  * options: {
  *   middlewares: [
  *     commerceVerticalEntitlementMiddleware('gastronomy'),
+ *     requireEntitlement(EntitlementKey.PUBLISH_GASTRONOMY),
  *     enforceGastronomyLimit()
  *   ]
  * }
@@ -329,16 +425,18 @@ export function commerceVerticalEntitlementMiddleware(
             return;
         }
 
-        const cap = await resolveCommerceVerticalCap({
+        const { cap, entitlements } = await resolveCommerceVerticalGrants({
             customerId: c.get('billingCustomerId'),
             vertical
         });
 
-        // Commerce plans grant no entitlements (§6.8), so the commerce-domain
-        // entitlement set is empty by definition. Setting it — rather than
-        // leaving the accommodation set in place — is what keeps the two
-        // domains from being read as one on this request.
-        c.set('userEntitlements', new Set<EntitlementKey>());
+        // REPLACE, never merge. The accommodation set arrives here from the
+        // global `entitlementMiddleware`, and leaving any of it in place is
+        // what would let an owner who happens to also host an accommodation
+        // pass a commerce gate for the wrong reason — the exact confusion the
+        // four separate keys exist to prevent (HOS-1074). This vertical's set
+        // is the whole answer for the rest of the request.
+        c.set('userEntitlements', entitlements);
         c.set('userLimits', new Map<LimitKey, number>([[limitKey, cap]]));
         c.set('billingLoadFailed', false);
 

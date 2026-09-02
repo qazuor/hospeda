@@ -173,6 +173,7 @@
         "zodError.adminView.batch.entityIds.empty",
         "zodError.adminView.batch.entityIds.tooMany",
         "zodError.adminView.dailySeries.date.invalid",
+        "zodError.ai.textImprove.entityId.invalidUuid",
         "zodError.allianceLead.adminList.page.positive",
         "zodError.allianceLead.adminList.pageSize.max",
         "zodError.allianceLead.adminList.pageSize.positive",
@@ -1835,7 +1836,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1834,
+    "total": 1835,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1847,6 +1848,7 @@
         "accommodationReview": 3,
         "admin": 50,
         "adminView": 3,
+        "ai": 1,
         "allianceLead": 24,
         "amenity": 46,
         "attraction": 26,

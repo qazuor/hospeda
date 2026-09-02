@@ -6,6 +6,8 @@ import {
 } from '../constants/billing.constants.js';
 import { EntitlementKey } from '../types/entitlement.types.js';
 import { LimitKey, type PlanDefinition } from '../types/plan.types.js';
+import { ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL } from './commerce-entitlements.config.js';
+import { type CommerceVertical, LIMIT_KEY_BY_COMMERCE_VERTICAL } from './commerce-limits.config.js';
 import { LIMIT_METADATA } from './limits.config.js';
 
 /**
@@ -536,10 +538,31 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  * not meter that", which is what is true here. A gastronomy plan has no opinion
  * about photos, promotions or AI quotas.
  *
+ * ## Entitlements (HOS-1074)
+ *
+ * Every tier of a vertical grants that vertical's pair —
+ * `EDIT_<VERTICAL>_INFO` and `PUBLISH_<VERTICAL>` — read from
+ * {@link ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL} rather than spelled out per
+ * tier, so a tier can never be defined that silently grants nothing.
+ *
+ * Uniform across the three tiers ON PURPOSE, and the precedent is exact: all
+ * six accommodation plans grant `EDIT_ACCOMMODATION_INFO` and
+ * `PUBLISH_ACCOMMODATIONS`. Editing and publishing your own listing is not a
+ * tier differentiator in either catalogue — the cap is.
+ *
+ * This replaced the previous `entitlements: []`, whose stated reason was that
+ * commerce visibility runs through `commerce_listing_subscriptions` + the
+ * reconciler rather than the entitlement engine. That remains true of
+ * VISIBILITY; what changed (owner decision, 2026-09-01) is that the platform
+ * now wants ONE mechanism rather than two, so commerce gets real keys and the
+ * commerce routes get real gates.
+ *
  * @param input.slug - Plan slug (`gastronomy-basico`, …).
  * @param input.name - Buyer-visible display name; becomes MercadoPago's `reason`.
  * @param input.description - Admin-facing description.
- * @param input.limitKey - The vertical's cap key.
+ * @param input.vertical - The commerce vertical this tier belongs to. Supplies
+ *   BOTH the cap key and the entitlement pair, so the two can never name
+ *   different verticals.
  * @param input.maxListings - Value of that cap for this tier.
  * @param input.sortOrder - Display order within the vertical.
  * @param input.isActive - Whether the tier is sellable. Only premium is today.
@@ -556,7 +579,7 @@ function commerceVerticalTier(input: {
     slug: string;
     name: string;
     description: string;
-    limitKey: LimitKey;
+    vertical: CommerceVertical;
     maxListings: number;
     sortOrder: number;
     isActive: boolean;
@@ -584,15 +607,12 @@ function commerceVerticalTier(input: {
         isDefault: false,
         sortOrder: input.sortOrder,
         isActive: input.isActive,
-        // Neither vertical grants any entitlement today (§6.8). Commerce
-        // visibility is driven by the subscription status through
-        // `commerce_listing_subscriptions` + the reconciler, not by the
-        // entitlement engine — so the limit check on the create route runs with
-        // no entitlement gate ahead of it, unlike accommodation's
-        // `requireEntitlement(PUBLISH_ACCOMMODATIONS)` + `enforceAccommodationLimit()`
-        // pair. There is simply nothing to put in the first half of that pattern.
-        entitlements: [],
-        limits: [limit(input.limitKey, input.maxListings)]
+        // HOS-1074 — see the "Entitlements" section of this function's doc.
+        // Derived from the vertical rather than passed per tier, so all three
+        // tiers of a vertical are grantwise identical by construction and a
+        // seventh tier cannot be added with an empty set by omission.
+        entitlements: [...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[input.vertical]],
+        limits: [limit(LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.maxListings)]
     };
 }
 
@@ -638,7 +658,7 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-basico',
     name: 'Gastronomía Básico',
     description: 'Gastronomy listing plan — one listing per owner (HOS-688, HOS-818).',
-    limitKey: LimitKey.MAX_GASTRONOMIES,
+    vertical: 'gastronomy',
     maxListings: 1,
     sortOrder: 1,
     isActive: true,
@@ -652,7 +672,7 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-pro',
     name: 'Gastronomía Profesional',
     description: 'Gastronomy listing plan — professional tier (not enabled yet, HOS-688).',
-    limitKey: LimitKey.MAX_GASTRONOMIES,
+    vertical: 'gastronomy',
     maxListings: 1,
     sortOrder: 2,
     isActive: false,
@@ -687,7 +707,7 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-premium',
     name: 'Gastronomía Premium',
     description: 'Gastronomy listing plan — one listing per owner (HOS-688, retired by HOS-818).',
-    limitKey: LimitKey.MAX_GASTRONOMIES,
+    vertical: 'gastronomy',
     maxListings: 1,
     sortOrder: 3,
     isActive: false,
@@ -711,7 +731,7 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-basico',
     name: 'Experiencias Básico',
     description: 'Experience listing plan — one listing per owner (HOS-688, HOS-818).',
-    limitKey: LimitKey.MAX_EXPERIENCES,
+    vertical: 'experience',
     maxListings: 1,
     sortOrder: 1,
     isActive: true,
@@ -725,7 +745,7 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-pro',
     name: 'Experiencias Profesional',
     description: 'Experience listing plan — professional tier (not enabled yet, HOS-688).',
-    limitKey: LimitKey.MAX_EXPERIENCES,
+    vertical: 'experience',
     maxListings: 1,
     sortOrder: 2,
     isActive: false,
@@ -742,7 +762,7 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-premium',
     name: 'Experiencias Premium',
     description: 'Experience listing plan — one listing per owner (HOS-688, retired by HOS-818).',
-    limitKey: LimitKey.MAX_EXPERIENCES,
+    vertical: 'experience',
     maxListings: 1,
     sortOrder: 3,
     isActive: false,

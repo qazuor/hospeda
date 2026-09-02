@@ -522,6 +522,13 @@
             }
         }
     },
+    "ai": {
+        "textImprove": {
+            "entityId": {
+                "invalidUuid": "El ID de la entidad debe ser un UUID válido"
+            }
+        }
+    },
     "allianceLead": {
         "adminList": {
             "page": {

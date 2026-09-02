@@ -51,7 +51,8 @@ vi.mock('@repo/icons', () => ({
     DownloadIcon: () => <span data-testid="icon-download" />,
     CancelIcon: () => <span data-testid="icon-cancel" />,
     PlayIcon: () => <span data-testid="icon-play" />,
-    PowerOffIcon: () => <span data-testid="icon-power-off" />
+    PowerOffIcon: () => <span data-testid="icon-power-off" />,
+    CreditCardIcon: () => <span data-testid="icon-credit-card" />
 }));
 
 // Mock env helper — must match the RESOLVED path that @/lib/env points to
@@ -75,6 +76,7 @@ const mockResumeSubscription = vi.fn();
 // Plan-change flow methods (used by PlanChangeFlow — statically imported)
 const mockChangePlan = vi.fn();
 const mockPreviewDowngrade = vi.fn();
+const mockReplacePaymentMethod = vi.fn();
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     userApi: {
@@ -86,7 +88,8 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
         pauseSubscription: () => mockPauseSubscription(),
         resumeSubscription: () => mockResumeSubscription(),
         changePlan: (...args: unknown[]) => mockChangePlan(...args),
-        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args)
+        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args),
+        replacePaymentMethod: (...args: unknown[]) => mockReplacePaymentMethod(...args)
     }
 }));
 
@@ -101,7 +104,8 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         pauseSubscription: () => mockPauseSubscription(),
         resumeSubscription: () => mockResumeSubscription(),
         changePlan: (...args: unknown[]) => mockChangePlan(...args),
-        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args)
+        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args),
+        replacePaymentMethod: (...args: unknown[]) => mockReplacePaymentMethod(...args)
     }
 }));
 
@@ -170,6 +174,15 @@ const CANCELLED_SUBSCRIPTION = {
     ...ACTIVE_SUBSCRIPTION,
     status: 'cancelled' as const,
     cancelAtPeriodEnd: true
+};
+
+// HOS-348 Part B: a past-due subscription — the ONLY status that offers the
+// "Actualizar medio de pago" self-service action.
+const PAST_DUE_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    status: 'past_due' as const,
+    gracePeriodDaysRemaining: 3,
+    gracePeriodExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
 };
 
 // HOS-236: a genuinely user-paused subscription (no pending cancellation) —
@@ -340,7 +353,19 @@ beforeEach(() => {
             accommodationsUpdated: 0
         }
     });
+    mockReplacePaymentMethod.mockResolvedValue({
+        ok: true,
+        data: { checkoutUrl: 'https://mercadopago.example/checkout/sub-new-001', reused: false }
+    });
     vi.spyOn(window, 'open').mockImplementation(() => null);
+    // Stub window.location.href using Object.defineProperty — JSDOM does not
+    // allow direct assignment to location.href in strict mode (mirrors
+    // PlanPurchaseButton.test.tsx's identical setup).
+    Object.defineProperty(window, 'location', {
+        value: { href: '' },
+        writable: true,
+        configurable: true
+    });
 });
 
 describe('SubscriptionDashboard — loading state', () => {
@@ -887,7 +912,7 @@ describe('SubscriptionDashboard — cancel modal: 404 graceful degradation', () 
 
         // The mailto link must appear (degrade to email support)
         const supportLink = screen.getByRole('link', { name: /soporte/i });
-        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\?subject=/);
+        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\.ar\?subject=/);
     });
 
     it('does not show an error alert on 404 — uses fallback copy instead', async () => {
@@ -1140,6 +1165,74 @@ describe('SubscriptionDashboard — invoice download', () => {
         await waitFor(() => {
             expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'info' }));
         });
+    });
+});
+
+describe('SubscriptionDashboard — replace payment method (HOS-348 Part B)', () => {
+    it('renders the "Actualizar medio de pago" action for a past_due subscription', async () => {
+        mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /actualizar medio de pago/i })
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('does NOT render the action for an active subscription', async () => {
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('button', { name: /actualizar medio de pago/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('calls replacePaymentMethod with the subscription id and redirects to the returned checkoutUrl', async () => {
+        mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /actualizar medio de pago/i })
+            ).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /actualizar medio de pago/i }));
+        });
+
+        expect(mockReplacePaymentMethod).toHaveBeenCalledWith({ localId: 'sub-uuid-1' });
+        await waitFor(() => {
+            expect(window.location.href).toBe('https://mercadopago.example/checkout/sub-new-001');
+        });
+    });
+
+    it('shows an error toast and does NOT redirect when the API call fails', async () => {
+        mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
+        mockReplacePaymentMethod.mockResolvedValue({
+            ok: false,
+            error: { code: 'INTERNAL_ERROR', message: 'nope' }
+        });
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /actualizar medio de pago/i })
+            ).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /actualizar medio de pago/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+        });
+        expect(window.location.href).toBe('');
     });
 });
 

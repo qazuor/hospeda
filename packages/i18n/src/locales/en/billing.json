@@ -465,6 +465,10 @@
     "entitlement": {
         "publish_accommodations": "Publish accommodations",
         "edit_accommodation_info": "Edit accommodation info",
+        "edit_gastronomy_info": "Edit gastronomy info",
+        "publish_gastronomy": "Publish gastronomy listings",
+        "edit_experience_info": "Edit experience info",
+        "publish_experience": "Publish experience listings",
         "view_basic_stats": "Basic statistics",
         "view_advanced_stats": "Advanced statistics",
         "respond_reviews": "Respond to reviews",

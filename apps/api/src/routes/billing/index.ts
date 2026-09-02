@@ -42,6 +42,7 @@ import { linkPreapprovalRouter } from './link-preapproval';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { protectedPlansListRouter } from './protected-plans-list';
+import { replacePaymentMethodRouter } from './replace-payment-method';
 import { startPaidRouter } from './start-paid';
 import { subscriptionCancelRouter } from './subscription-cancel';
 import { subscriptionPauseRouter } from './subscription-pause';
@@ -273,6 +274,13 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // `/subscriptions` prefix, same reasoning as the status router above.
     router.route('/subscriptions', checkoutRetryRouter);
 
+    // Mount the past-due payment-method-replacement recovery route
+    // (HOS-348 Part B). Same `/subscriptions` prefix, same reasoning as the
+    // status/checkout-retry routers above — this one is exempted from
+    // `pastDueGraceMiddleware` above (see GRACE_EXEMPT_PATH_SUFFIXES) since
+    // it IS the customer's own recovery path.
+    router.route('/subscriptions', replacePaymentMethodRouter);
+
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
 
@@ -288,7 +296,7 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, trial-eligibility, plan-change, subscription status, start-paid, link-preapproval, subscription-cancel, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, trial-eligibility, plan-change, subscription status, checkout-retry, replace-payment-method, start-paid, link-preapproval, subscription-cancel, and usage routes'
     );
 
     return router;

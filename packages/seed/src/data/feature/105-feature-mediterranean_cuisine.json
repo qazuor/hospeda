@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "105-feature-mediterranean_cuisine",
+    "slug": "mediterranean_cuisine",
+    "description": {
+        "es": "Cocina mediterránea: platos de las tradiciones culinarias del Mediterráneo",
+        "en": "Mediterranean cuisine: dishes from Mediterranean culinary traditions",
+        "pt": "Cozinha mediterrânea: pratos das tradições culinárias do Mediterrâneo"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "RestaurantIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 59,
+    "lifecycleState": "ACTIVE"
+}

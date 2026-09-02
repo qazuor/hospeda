@@ -500,17 +500,43 @@ export async function assembleAccommodationContext(
 /**
  * Loads FAQs for the given accommodation, falling back to `[]` on any
  * error. Logs the failure with `apiLogger.warn` so ops can investigate.
+ *
+ * HOS-670: `AccommodationService.getFaqs()` runs through
+ * `runWithLoggingAndValidation` — same as `getById` — so it RESOLVES a
+ * `ServiceOutput` envelope (`{ data: { faqs } } | { error }`), it never
+ * returns the unwrapped `{ faqs }` shape directly. This function used to read
+ * `result.faqs` (undefined on the real envelope) and silently fall back to
+ * `[]` via `?? []` — no thrown error, so the `catch` block below never fired
+ * and no warning was ever logged. Every AI-usable FAQ a host marked for the
+ * chat therefore never reached {@link buildMarkdownContext}, regardless of
+ * `isUsableByAi`, while `getById`'s sibling unwrapping a few lines up in
+ * {@link assembleAccommodationContext} worked correctly — this was the exact
+ * asymmetry the F-59 smoke finding observed (description/name reaching the
+ * model, FAQs silently empty, no warning in the logs).
  */
 async function safeLoadFaqs(
-    service: { getFaqs: (actor: Actor, input: { accommodationId: string }) => Promise<unknown> },
+    service: {
+        getFaqs: (
+            actor: Actor,
+            input: { accommodationId: string }
+        ) => Promise<{
+            data?: { faqs?: Array<{ question: string; answer: string; isUsableByAi?: boolean }> };
+            error?: { code?: string; message?: string };
+        }>;
+    },
     actor: Actor,
     accommodationId: string
 ): Promise<Array<{ question: string; answer: string; isUsableByAi?: boolean }>> {
     try {
-        const result = (await service.getFaqs(actor, { accommodationId })) as {
-            faqs?: Array<{ question: string; answer: string; isUsableByAi?: boolean }>;
-        } | null;
-        return result?.faqs ?? [];
+        const result = await service.getFaqs(actor, { accommodationId });
+        if (result.error) {
+            apiLogger.warn(
+                { accommodationId, error: result.error.message ?? result.error.code },
+                'accommodation-ai-context: failed to load FAQs; continuing with empty list'
+            );
+            return [];
+        }
+        return result.data?.faqs ?? [];
     } catch (error) {
         apiLogger.warn(
             { accommodationId, error: error instanceof Error ? error.message : String(error) },

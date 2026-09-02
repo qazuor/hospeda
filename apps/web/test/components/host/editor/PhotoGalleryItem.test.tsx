@@ -136,4 +136,19 @@ describe('PhotoGalleryItem', () => {
         fireEvent.click(screen.getByLabelText('Editar textos de la foto 2'));
         expect(screen.getByLabelText('¿Qué muestra la foto?')).toBeInTheDocument();
     });
+
+    // ── HOS-637: gallery thumbnails must be Cloudinary-transformed ─────────
+
+    it('requests a Cloudinary-transformed thumbnail, not the original upload', () => {
+        const cloudinaryItem: AccommodationMediaItem = {
+            ...ITEM,
+            url: 'https://res.cloudinary.com/hospeda/image/upload/v1699999999/hospeda/prod/accommodation-x/original.jpg'
+        };
+        render(<PhotoGalleryItem {...makeProps({ item: cloudinaryItem })} />);
+        const img = screen.getByRole('img') as HTMLImageElement;
+        expect(img.src).not.toBe(cloudinaryItem.url);
+        expect(img.src).toContain('/upload/w_300,ar_4:3,c_fill');
+        expect(img.src).toContain('q_auto');
+        expect(img.src).toContain('f_auto');
+    });
 });

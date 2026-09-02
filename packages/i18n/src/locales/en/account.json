@@ -689,6 +689,8 @@
             "uncancelButton": "Discard cancellation",
             "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
             "uncancelError": "Could not discard the cancellation.",
+            "replacePaymentMethodButton": "Update payment method",
+            "replacePaymentMethodError": "Could not start the payment method update.",
             "trialExtension": {
                 "title": "Extend your free trial",
                 "help": "If you have a promo code, apply it now to add days to your trial.",
@@ -724,7 +726,7 @@
             "cancelModal": {
                 "title": "Cancel subscription",
                 "emailSubject": "Subscription cancellation",
-                "body": "To cancel your subscription, email us at info@hospeda.com and an agent will process it promptly. Your plan will remain active until the end of the current period.",
+                "body": "To cancel your subscription, email us at info@hospeda.com.ar and an agent will process it promptly. Your plan will remain active until the end of the current period.",
                 "contactSupport": "Contact support",
                 "confirm": "Yes, cancel subscription",
                 "description": "By cancelling your subscription you keep access to your plan until the end of the current period. No further charges will be made.",
@@ -1497,8 +1499,7 @@
             "empty": "Your application was approved. Add your logo and copy so an admin can review them. You are not published yet.",
             "underReview": "We're reviewing your logo and copy. We'll let you know as soon as we're done — there's nothing to pay yet.",
             "rejected": "We reviewed your details and need you to fix something before moving on. The specifics are below, next to the form.",
-            "approved": "Your content is approved. You can activate your subscription now to go live.",
-            "approvedCta": "Go to payment",
+            "approved": "Your content is approved. Our team will send you the payment link to activate your subscription.",
             "revoked": "Your partner listing was taken down and no longer appears on the site.",
             "revokedContact": "If you'd like more details, reach out and we'll explain."
         },
