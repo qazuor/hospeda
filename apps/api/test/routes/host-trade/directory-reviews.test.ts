@@ -73,6 +73,29 @@ const MOCK_ROW = {
     reply: null
 };
 
+/**
+ * The SAME row, but answered — and the reply carries EXACTLY the fields
+ * `HostTradeReviewModel.findAllWithAuthorAndReply` projects for the directory
+ * (`packages/db/src/models/hostTrade/host-trade-review.model.ts`), no more.
+ *
+ * Written out rather than spread from a fixture on purpose: this shape IS the
+ * assertion. HOS-1067 was a response schema that demanded `reviewId` and
+ * `moderationState` on top of these five, so every answered provider returned
+ * 500 from `stripWithSchema` — and the whole page with it, since one failing
+ * item takes the listing down. A fixture that happened to carry the extra keys
+ * would have gone green over the bug.
+ */
+const MOCK_ROW_WITH_APPROVED_REPLY = {
+    ...MOCK_ROW,
+    reply: {
+        id: '44444444-4444-4444-8444-444444444444',
+        content: 'Gracias por la devolución, fue un gusto trabajar con vos.',
+        reviewEditedAfterReply: false,
+        createdAt: new Date('2026-08-02T00:00:00Z').toISOString(),
+        updatedAt: new Date('2026-08-02T00:00:00Z').toISOString()
+    }
+};
+
 function buildApp(
     permissions: PermissionEnum[] = [Permissions.HOST_TRADE_VIEW]
 ): Hono<AppBindings> {
@@ -176,5 +199,56 @@ describe('GET /{id}/reviews', () => {
         const body = await res.json();
 
         expect(body.data.items[0].author.displayName).toBe('Marta Giménez');
+    });
+
+    /**
+     * REGRESSION — HOS-1067.
+     *
+     * An approved answer used to take the entire listing down with a 500:
+     * the response schema reused the reply's PROTECTED shape, which demands
+     * `reviewId` and `moderationState`, while the directory's query projects
+     * neither. `stripWithSchema` is fail-closed, so the item died and
+     * `createPaginatedResponse` died with it — meaning approving a reply so it
+     * would be seen is what stopped everything from being seen.
+     *
+     * The bug was invisible until the first approval: a PENDING reply is
+     * dropped by the join, the endpoint answers `reply: null`, and that
+     * validates. Hence a row that IS answered.
+     */
+    it('serves an approved reply without demanding fields the query never selects', async () => {
+        mockListForDirectory.mockResolvedValue({
+            data: { items: [MOCK_ROW_WITH_APPROVED_REPLY], total: 1 }
+        });
+        const app = buildApp();
+
+        const res = await app.request(`/${HT_ID}/reviews`);
+        const body = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(body.data.items).toHaveLength(1);
+        expect(body.data.items[0].reply.content).toBe(
+            'Gracias por la devolución, fue un gusto trabajar con vos.'
+        );
+        expect(body.data.items[0].reply.reviewEditedAfterReply).toBe(false);
+    });
+
+    /**
+     * The other half of the same contract: the directory says whether an answer
+     * is visible by SHOWING it, never by shipping its moderation state. A
+     * reader who could see `moderationState` could tell a rejected answer from
+     * an absent one, which is exactly what the omission protects.
+     */
+    it('does not leak the reply moderation state or its review id to the directory', async () => {
+        mockListForDirectory.mockResolvedValue({
+            data: { items: [MOCK_ROW_WITH_APPROVED_REPLY], total: 1 }
+        });
+        const app = buildApp();
+
+        const res = await app.request(`/${HT_ID}/reviews`);
+        const body = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(body.data.items[0].reply).not.toHaveProperty('moderationState');
+        expect(body.data.items[0].reply).not.toHaveProperty('reviewId');
     });
 });
