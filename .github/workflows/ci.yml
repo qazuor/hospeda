@@ -278,6 +278,8 @@ jobs:
         run: bash scripts/check-local-date-math.sh
       - name: Check the qzpay wave converges on one core (HOS-232)
         run: bash scripts/check-qzpay-wave-convergence.sh
+      - name: Check published contact addresses use hospeda.com.ar (HOS-928)
+        run: bash scripts/check-hospeda-email-domain.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
