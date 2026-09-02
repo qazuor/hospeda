@@ -1497,8 +1497,7 @@
             "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
             "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
             "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
-            "approved": "Seu conteúdo está aprovado. Já pode ativar sua assinatura para aparecer publicado.",
-            "approvedCta": "Ir para o pagamento",
+            "approved": "Seu conteúdo está aprovado. Nossa equipe vai te enviar o link de pagamento para ativar sua assinatura.",
             "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
             "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
         },
