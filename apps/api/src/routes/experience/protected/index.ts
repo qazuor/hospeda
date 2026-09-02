@@ -21,6 +21,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedAddExperienceFaqRoute } from './addFaq';
 import { protectedAddExperienceMediaRoute } from './addMedia';
+import { protectedGetExperienceBrochureRoute } from './brochure';
 import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
@@ -41,6 +42,12 @@ app.route('/', protectedReorderExperienceFaqsRoute);
 // GET /mine — Owner's own listings. MUST be before /{id} so the literal
 // "mine" segment is not captured as an :id param.
 app.route('/', protectedListMyExperienceRoute);
+
+// GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
+// /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a
+// static segment ahead of a param at the same position regardless of insertion
+// order, so this ordering is belt-and-braces, not load-bearing.
+app.route('/', protectedGetExperienceBrochureRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetExperienceByIdRoute);

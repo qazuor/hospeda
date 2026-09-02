@@ -21,6 +21,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedAddGastronomyFaqRoute } from './addFaq';
 import { protectedAddGastronomyMediaRoute } from './addMedia';
+import { protectedGetGastronomyBrochureRoute } from './brochure';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
 import { protectedGetGastronomyByIdRoute } from './getById';
 import { protectedGetGastronomyMediaRoute } from './getMedia';
@@ -41,6 +42,12 @@ app.route('/', protectedReorderGastronomyFaqsRoute);
 // GET /mine — Owner's own listings. MUST be before /{id} so the literal
 // "mine" segment is not captured as an :id param.
 app.route('/', protectedListMyGastronomyRoute);
+
+// GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
+// /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a
+// static segment ahead of a param at the same position regardless of insertion
+// order, so this ordering is belt-and-braces, not load-bearing.
+app.route('/', protectedGetGastronomyBrochureRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetGastronomyByIdRoute);
