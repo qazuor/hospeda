@@ -329,101 +329,51 @@ pnpm env:push
 
 ## Deploy Commands
 
-### Automatic (Preferred)
+### What CI does, and does not do
 
-The CI/CD pipelines run on push:
+Pushing runs `ci.yml` — lint, typecheck, tests. That is the whole of it: there
+is no CD workflow, and nothing deploys on push. Auto-deploy is disabled by
+policy, so a green CI run means the change is *ready* to deploy, not deployed.
 
-| Branch | Workflow | Vercel mode |
-|--------|----------|-------------|
-| `main` | `.github/workflows/cd-production.yml` | `vercel-args: '--prod'` |
-| `staging` | `.github/workflows/cd-staging.yml` | preview |
+### Deploying
 
-Both workflows:
-
-1. Run `ci.yml` (lint + typecheck + tests) as a quality gate.
-2. Run `pnpm env:check` to validate env vars against the registry.
-3. Deploy each app (api, web, admin) to Vercel via `amondnet/vercel-action@v25`.
-4. On production, run `verify-production` which curls `${HOSPEDA_API_URL}/health/live` and `${HOSPEDA_SITE_URL}` to confirm both services respond.
-
-You should never need to deploy manually under normal circumstances. Push to `main`, watch the GitHub Actions tab.
-
-### Manual (Fallback)
-
-When CI is broken or you need a hotfix push, deploy from your machine:
+Every deploy is manual. There is no deploy command in this repo and no CD
+workflow — press Deploy on the resource in the
+[Coolify dashboard](https://coolify.hospeda.com.ar), or run it from the VPS:
 
 ```bash
-# From repo root
-pnpm deploy:web
-# Equivalent to: vercel deploy --prod --cwd apps/web
+hops --target=prod redeploy web     # --target=staging for staging
 ```
 
-Or from the app directory:
+`--target` is mandatory and goes BEFORE the subcommand.
+
+Deploying does not run the quality gate. Run `pnpm test` and `pnpm typecheck`,
+and wait for CI to be green, before you deploy anything.
+
+There is no "deploy everything" command, and that is deliberate: the apps go up
+one at a time, API first, then web, then admin. Web's runtime requests fail
+while the API is down, so the order is not cosmetic.
+
+### Verifying a Deploy
+
+There is no per-deploy URL to inspect — the app is served from its own domain,
+so verification is against that domain and against the container's logs:
 
 ```bash
-cd apps/web
-
-# Production
-vercel --prod
-
-# Preview (a unique URL, not aliased to the production domain)
-vercel
-```
-
-The local manual deploy still uses the build command and env vars from the linked Vercel project. It does NOT bypass the quality gate. Run `pnpm test` and `pnpm typecheck` yourself before pushing.
-
-There is also a "deploy everything" helper:
-
-```bash
-pnpm deploy:all
-# Runs: deploy:api && deploy:web && deploy:admin
-```
-
-Use this only if you have already validated all three apps build cleanly. The order matters. API first, then web, then admin. If the API is down, web's runtime requests fail.
-
-### Verifying a Manual Deploy
-
-```bash
-# List recent deployments
-vercel ls hospeda-web
-
-# Inspect a specific deployment URL
-curl -I https://hospeda-web-<hash>.vercel.app/es/
+curl -I https://hospeda.com.ar/es/
+hops --target=prod logs web --since 2m
 ```
 
 ---
 
 ## Preview Deployments
 
-Every PR opened against `main` automatically gets a preview deployment.
+**There are none.** Opening a PR builds and tests it; it does not deploy it
+anywhere, and no bot posts a URL on the PR.
 
-### How They Work
-
-1. You push a feature branch and open a PR.
-2. Vercel's GitHub integration detects the push.
-3. It builds and deploys to a unique URL like `https://hospeda-web-git-feature-name-qazuor.vercel.app`.
-4. The PR gets a comment from the Vercel bot with the URL.
-5. Each subsequent push updates the same preview URL.
-
-### What Env Vars Apply
-
-Preview deployments use any env var with the **Preview** scope in Vercel. Set staging-only values for these so you do not accidentally hit production data.
-
-Recommended preview scope:
-
-- `PUBLIC_API_URL=https://api.staging.hospeda.com.ar`
-- `PUBLIC_SITE_URL=https://staging.hospeda.com.ar`
-- `HOSPEDA_BETTER_AUTH_URL=https://api.staging.hospeda.com.ar/api/auth`
-
-### Use Cases
-
-- **PR review**: a reviewer can click the preview URL to see your changes live.
-- **QA**: stage features in a production-like environment before merging.
-- **Stakeholder demo**: share the preview URL with non-engineers for sign-off.
-
-### Limits
-
-- Free Vercel tier: previews are public. Lock down with deployment protection (Settings -> Deployment Protection -> Vercel Authentication) if needed.
-- Previews share the production API by default unless you override `PUBLIC_API_URL` for the preview environment.
+Verify a change against **staging** instead: merge to `staging`, deploy that
+environment, and use `https://staging.hospeda.com.ar`. That is also what the
+manual smoke checklists are run against.
 
 ---
 
@@ -896,21 +846,19 @@ pnpm preview           # serve dist/ locally
 pnpm test              # run tests
 pnpm lighthouse        # local Lighthouse audit
 
-# Deploy
-pnpm deploy:web        # from repo root, --prod
-vercel --prod          # from apps/web/, --prod
-vercel                 # from apps/web/, preview
+# Deploy (from the VPS — nothing in this repo deploys)
+hops --target=prod redeploy web
 
-# Logs and rollback
-vercel ls hospeda-web
-vercel logs --prod --follow
-vercel rollback
-vercel promote <deployment-url>
+# Logs
+hops --target=prod logs web --since 2m
+hops --target=prod logs web -f
 
 # Env management
-pnpm env:check         # validate against registry
-pnpm env:pull          # pull from Vercel
-pnpm env:push          # push local to Vercel
-vercel env add PUBLIC_API_URL production
-vercel env pull .env.local
+pnpm env:check:registry                        # local: app schemas vs the registry
+hops --target=prod env-list web                # remote: what is set
+hops --target=prod env-set web PUBLIC_API_URL <value>
 ```
+
+Rolling back is redeploying the previous commit from the
+[Coolify dashboard](https://coolify.hospeda.com.ar) — there are no immutable
+deployment URLs to promote between.
