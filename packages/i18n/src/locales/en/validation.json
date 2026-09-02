@@ -522,6 +522,13 @@
             }
         }
     },
+    "ai": {
+        "textImprove": {
+            "entityId": {
+                "invalidUuid": "The entity ID must be a valid UUID"
+            }
+        }
+    },
     "allianceLead": {
         "adminList": {
             "page": {
@@ -2808,6 +2815,9 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "cancellationPolicy": {
+            "max": "The cancellation policy cannot exceed {{max}} characters"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -2818,6 +2828,13 @@
             "success": {
                 "required": "El resultado exitoso es obligatorio"
             }
+        },
+        "durationMinutes": {
+            "int": "The duration must be a whole number of minutes",
+            "max": "The duration cannot exceed {{max}} minutes",
+            "max_one": "The duration cannot exceed {{max}} minute",
+            "max_other": "The duration cannot exceed {{max}} minutes",
+            "min": "The duration must be at least {{min}} minute"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
@@ -2847,6 +2864,13 @@
         "priceUnit": {
             "requiredUnlessOnRequest": "Choose a price unit (per day, per hour, per person or per group). If the experience has no fixed price, tick \"Price on request\"."
         },
+        "requirements": {
+            "item": {
+                "max": "Each requirement cannot exceed {{max}} characters",
+                "min": "Requirements cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} requirements"
+        },
         "review": {
             "content": {
                 "max": "El contenido de la reseña no puede superar los {{max}} caracteres",
@@ -2861,6 +2885,15 @@
                 "max": "El título de la reseña no puede superar los {{max}} caracteres",
                 "min": "El título de la reseña debe tener al menos {{min}} caracteres"
             }
+        },
+        "whatToBring": {
+            "item": {
+                "max": "Each what-to-bring item cannot exceed {{max}} characters",
+                "min": "What-to-bring items cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} what-to-bring items",
+            "max_one": "You cannot add more than {{max}} what-to-bring item",
+            "max_other": "You cannot add more than {{max}} what-to-bring items"
         }
     },
     "experienceFeature": {

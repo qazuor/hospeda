@@ -28,13 +28,25 @@
         "featured": "Featured"
     },
     "detail": {
+        "amenities": {
+            "title": "Services and amenities"
+        },
+        "cancellationPolicy": {
+            "title": "If the outing does not run"
+        },
         "contact": "Contact",
-        "contactPhoneAriaLabel": "Call the provider",
         "contactEmailAriaLabel": "Email the provider",
+        "contactPhoneAriaLabel": "Call the provider",
         "contactWebsiteAriaLabel": "Visit the provider's website",
-        "whatsapp": "Enquire via WhatsApp",
-        "whatsappMessage": "Hi, I'm interested in more information about {{name}}",
+        "duration": {
+            "dayShort": "d",
+            "hourShort": "h",
+            "minuteShort": "min"
+        },
         "hours": "Opening hours",
+        "meetingPoint": {
+            "title": "Meeting point"
+        },
         "openingHours": {
             "title": "Opening hours",
             "closed": "Closed",
@@ -48,13 +60,20 @@
             "saturday": "Saturday",
             "sunday": "Sunday"
         },
-        "social": "Social networks",
-        "amenities": {
-            "title": "Services and amenities"
+        "privateGroups": {
+            "title": "Private groups",
+            "body": "We offer special pricing for private groups: large families, companies, or if you want the whole outing to yourselves.",
+            "cta": "Ask us about your group"
         },
-        "meetingPoint": {
-            "title": "Meeting point"
-        }
+        "requirements": {
+            "title": "Requirements"
+        },
+        "social": "Social networks",
+        "whatToBring": {
+            "title": "What to bring"
+        },
+        "whatsapp": "Enquire via WhatsApp",
+        "whatsappMessage": "Hi, I'm interested in more information about {{name}}"
     },
     "type": {
         "CAR_RENTAL": "Car Rental",

@@ -1,16 +1,25 @@
 import { Section, Text } from '@react-email/components';
+import type { Major } from '@repo/billing';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatCurrency } from '../utils/index.js';
+import { formatMajorCurrency } from '../utils/index.js';
 
 /**
  * Props for PaymentSuccess email template
  */
 export interface PaymentSuccessProps {
     recipientName: string;
-    amount: number;
+    /**
+     * Amount in MAJOR units (ARS pesos), NOT centavos. Matches
+     * `PaymentNotificationPayload.amount`'s only producer,
+     * `sendPaymentSuccessNotification`, which types the value {@link Major}
+     * for exactly this reason (HOS-713/HOS-720). Formatted with
+     * {@link formatMajorCurrency}, never `formatCurrency` — that one divides
+     * by 100 (HOS-839).
+     */
+    amount: Major;
     currency: string;
     planName: string;
     /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
@@ -32,7 +41,7 @@ export function PaymentSuccess({
     baseUrl,
     paymentMethod
 }: PaymentSuccessProps) {
-    const formattedAmount = formatCurrency({ amount, currency });
+    const formattedAmount = formatMajorCurrency({ amount, currency });
 
     return (
         <EmailLayout previewText="Pago procesado exitosamente">

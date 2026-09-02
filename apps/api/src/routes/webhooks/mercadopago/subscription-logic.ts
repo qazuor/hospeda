@@ -47,6 +47,7 @@ import {
     PENDING_DISCOUNT_METADATA_KEY,
     PENDING_TRIAL_EXTENSION_METADATA_KEY
 } from '../../../services/billing/own-preapproval-subscription-create.js';
+import { PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY } from '../../../services/billing/past-due-payment-method-replacement.service.js';
 import { persistMpPayerEmailBestEffort } from '../../../services/billing/payer-email.js';
 import type {
     PendingCheckoutDiscount,
@@ -330,11 +331,20 @@ export async function completeReactivationSupersession({
         return;
     }
 
-    // Infer which reactivation flavor this was from the markers T-005/T-006
-    // stamp on the NEW subscription's metadata, so the audit row preserves
-    // the same triggerSource the pre-T-005/T-006 inline code used to write.
+    // Infer which supersession flavor this was from the markers each minting
+    // flow stamps on the NEW subscription's metadata, so the audit row
+    // preserves the right triggerSource:
+    //   - T-005 (`reactivateFromTrial`)      -> convertedFromTrial
+    //   - T-006 (`reactivateSubscription`)   -> (fallback — no marker of its own)
+    //   - HOS-348 (`replacePastDuePaymentMethod`) -> pastDuePaymentMethodReplacement
     const isTrialReactivation = metadata.convertedFromTrial === 'true';
-    const triggerSource = isTrialReactivation ? 'trial-reactivation' : 'subscription-reactivation';
+    const isPastDuePaymentMethodReplacement =
+        metadata[PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY] === 'true';
+    const triggerSource = isTrialReactivation
+        ? 'trial-reactivation'
+        : isPastDuePaymentMethodReplacement
+          ? 'payment-method-replacement'
+          : 'subscription-reactivation';
 
     for (const supersededId of supersededIds) {
         // completeSupersessionPairing never throws — it swallows and reports

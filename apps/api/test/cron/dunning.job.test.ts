@@ -450,6 +450,35 @@ describe('dunningJob', () => {
             });
         });
 
+        it('does NOT count a subscription that HOS-348 payment-method-replacement already cancelled', async () => {
+            // Arrange — `sub_2` was `past_due` and got superseded: once the
+            // customer's replacement preapproval confirmed authorized, the
+            // webhook (`completeSupersessionPairing`) cancelled the old
+            // preapproval and the local row's status flipped to `cancelled`
+            // (see `test/webhooks/subscription-logic.test.ts`'s "HOS-348
+            // Part B" cases). This job's observe-only pass filters by LIVE
+            // status, so it must never keep counting/chasing that row just
+            // because it was `past_due` at some earlier point — DUNNING_MUTATIONS_ENABLED
+            // is `false` today so nothing WOULD retry it anyway, but the
+            // count itself (which drives the "N subscriptions past due"
+            // visibility signal) has to reflect reality.
+            const billing = makeBillingMock([
+                { id: 'sub_still_past_due', status: 'past_due' },
+                { id: 'sub_replaced_by_hos348', status: 'cancelled' },
+                { id: 'sub_active', status: 'active' }
+            ]);
+            mockGetQZPayBilling.mockReturnValue(billing);
+            mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
+
+            const ctx = makeCronContext();
+
+            // Act
+            const result = await dunningJob.handler(ctx);
+
+            // Assert — only the one row still genuinely past_due counts.
+            expect(result.details).toMatchObject({ pastDueCount: 1 });
+        });
+
         it('should return zero counts when no subscriptions need processing', async () => {
             // Arrange
             const billing = makeBillingMock();

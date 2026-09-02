@@ -1329,6 +1329,37 @@ export interface ExperienceDetailData extends ExperienceCardData {
     readonly meetingPointLat: number | null;
     /** Longitude of the meeting point. See {@link meetingPointLat}. */
     readonly meetingPointLong: number | null;
+    /**
+     * How long the experience lasts, in whole minutes (HOS-898), or `null` when
+     * the owner has not declared it.
+     *
+     * A NUMBER all the way to the view, formatted per locale at render time by
+     * `formatDurationMinutes`. The alternative — a pre-formatted string from the
+     * API — would be written once in one language and shown untranslated on the
+     * English and Portuguese fichas.
+     */
+    readonly durationMinutes: number | null;
+    /**
+     * What the traveller has to bring (HOS-1046). `[]` when nothing was
+     * declared — never `null`, so the view has ONE empty value to test.
+     */
+    readonly whatToBring: readonly string[];
+    /** Requirements to take part (HOS-1046). See {@link whatToBring}. */
+    readonly requirements: readonly string[];
+    /**
+     * What happens if the experience does not run (HOS-1047) — free text,
+     * `null` when not declared. Trimmed to `null` by the transform, so a
+     * whitespace-only policy cannot render a heading over nothing.
+     */
+    readonly cancellationPolicy: string | null;
+    /**
+     * Whether the provider takes private groups (HOS-1056).
+     *
+     * Drives a CTA and nothing else — there is no rate card and no group
+     * booking. The CTA anchors into the contact block, so the page also has to
+     * know that block exists before linking to it (`hasPublicContactChannel`).
+     */
+    readonly acceptsPrivateGroups: boolean;
     /** SEO metadata fields. */
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */

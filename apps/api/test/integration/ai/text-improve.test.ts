@@ -424,6 +424,114 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     });
 
     // =========================================================================
+    // HOS-1075 — entityType routes the entitlement gate to the right vertical.
+    //
+    // Reproduces the double-role bug: a HOST who is ALSO a comercio owner has
+    // ACCOMMODATION entitlements that include `AI_TEXT_IMPROVE` (exactly what
+    // the stub below injects, standing in for what `entitlementMiddleware`
+    // would really load for such an actor — see `host-provider@local.test`,
+    // HOS-694). Before this fix the route had no way to know `fieldValue`
+    // belonged to a gastronomy listing and would let the request through on
+    // that accommodation grant. `entityType` now lets
+    // `aiTextImproveEntitlementRouter` swap in the gastronomy vertical's own
+    // entitlements (currently just `EDIT_GASTRONOMY_INFO` /
+    // `PUBLISH_GASTRONOMY` — HOS-1074's floor, no `AI_TEXT_IMPROVE` yet), so
+    // the SAME actor state that passes for their accommodation is correctly
+    // refused for their comercio.
+    // =========================================================================
+
+    describe('HOS-1075 — entityType routes the entitlement gate to the right vertical', () => {
+        it('blocks a gastronomy request even though the actor holds AI_TEXT_IMPROVE from their accommodation plan', async () => {
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'Empanadas caseras, todos los dias.',
+                    entityType: 'gastronomy',
+                    entityId: '11111111-1111-4111-a111-111111111111'
+                })
+            });
+
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as {
+                success: boolean;
+                error: { code: string; message: string };
+            };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
+
+            // The handler must NOT have been reached — no free AI use off the
+            // wrong vertical's plan.
+            expect(streamTextCalls).toHaveLength(0);
+        });
+
+        it('blocks an experience request under the identical actor state', async () => {
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'Tour guiado por el Palacio San Jose.',
+                    entityType: 'experience',
+                    entityId: '22222222-2222-4222-a222-222222222222'
+                })
+            });
+
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { success: boolean; error: { code: string } };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(streamTextCalls).toHaveLength(0);
+        });
+
+        it('still grants access for an explicit accommodation request under the same actor state', async () => {
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'A cozy cabin in the woods near the river.',
+                    entityType: 'accommodation'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(streamTextCalls).toHaveLength(1);
+        });
+
+        it('defaults to the accommodation gate when entityType is omitted (backward compat)', async () => {
+            // Every caller in production today (web host editor, admin
+            // accommodation/FAQ panels) omits entityType entirely. This proves
+            // the fix does not require them to change.
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'A cozy cabin in the woods near the river.'
+                    // entityType intentionally omitted
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(streamTextCalls).toHaveLength(1);
+        });
+    });
+
+    // =========================================================================
     // 403 LIMIT_REACHED — owner-basico at quota (count >= limit).
     // We mock `getMonthlyCallCount` to return the limit value so the real
     // quota middleware's monthly-count comparison fires.

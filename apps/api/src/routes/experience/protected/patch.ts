@@ -44,8 +44,15 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  *
  * Only operational sections are accepted (openingHours, contactInfo,
  * socialNetworks, media, isPriceOnRequest, richDescription,
- * amenityIds, featureIds). The service enforces ownership and per-section
+ * amenityIds, featureIds, the meetingPoint trio, and the practical ficha
+ * fields durationMinutes / whatToBring / requirements / cancellationPolicy /
+ * acceptsPrivateGroups). The service enforces ownership and per-section
  * permission gates internally.
+ *
+ * The accepted set is `ExperienceOwnerUpdateInputSchema` itself, so a new
+ * ficha field reaches this route with no edit here — and a field MISSING from
+ * that schema is stripped in silence while the PATCH still answers 200. None
+ * of the ficha fields is entitlement-gated (owner decision 2026-09-01).
  */
 export const protectedPatchExperienceRoute = createProtectedRoute({
     method: 'patch',

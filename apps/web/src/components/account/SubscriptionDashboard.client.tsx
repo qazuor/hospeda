@@ -7,7 +7,14 @@
  * SUPER_ADMIN sees an additional admin escalation button.
  */
 
-import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
+import {
+    ArrowRightIcon,
+    CancelIcon,
+    CreditCardIcon,
+    DownloadIcon,
+    PlayIcon,
+    PowerOffIcon
+} from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
@@ -251,7 +258,7 @@ function EmptyState({
 }
 
 /** Support email shown in the cancel-instructions modal. Matches footer.contactEmail. */
-const SUPPORT_EMAIL = 'info@hospeda.com';
+const SUPPORT_EMAIL = 'info@hospeda.com.ar';
 
 /** Possible UI states for the cancel modal flow. */
 type CancelModalStep = 'confirm' | 'success' | 'flag_off';
@@ -629,6 +636,7 @@ export function SubscriptionDashboard({
     const [isPausing, setIsPausing] = useState(false);
     const [isUncancelling, setIsUncancelling] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isReplacingPaymentMethod, setIsReplacingPaymentMethod] = useState(false);
 
     const isBillingAdmin = user.roles.some((role) => BILLING_ADMIN_ROLES.has(role));
 
@@ -811,6 +819,45 @@ export function SubscriptionDashboard({
         }
     }
 
+    // HOS-348 Part B: mints a fresh preapproval on the current plan for a
+    // past-due subscription and redirects to MercadoPago to authorize it.
+    // The old preapproval is cancelled server-side only once that new one
+    // confirms authorized (see `past-due-payment-method-replacement.service.ts`)
+    // — this call itself never cancels or charges anything.
+    async function handleReplacePaymentMethod() {
+        if (!subscription) return;
+        setIsReplacingPaymentMethod(true);
+        try {
+            const result = await billingApi.replacePaymentMethod({
+                localId: subscription.id
+            });
+            if (!result.ok || !result.data.checkoutUrl) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.replacePaymentMethodError',
+                        'No se pudo iniciar la actualización del medio de pago.'
+                    )
+                });
+                setIsReplacingPaymentMethod(false);
+                return;
+            }
+            // Redirect to MercadoPago — no local state to update here, the
+            // subscription stays past_due locally until the webhook confirms
+            // the new preapproval, so no `finally` reset before navigating away.
+            window.location.href = result.data.checkoutUrl;
+        } catch {
+            addToast({
+                type: 'error',
+                message: t(
+                    'account.pages.subscription.replacePaymentMethodError',
+                    'No se pudo iniciar la actualización del medio de pago.'
+                )
+            });
+            setIsReplacingPaymentMethod(false);
+        }
+    }
+
     // ── Render guards ──────────────────────────────────────────────────────
 
     if (isLoading) {
@@ -953,6 +1000,12 @@ export function SubscriptionDashboard({
     // already cancelled, while the "Cancelación programada" badge is shown right
     // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
     const canResume = status === 'paused' && !isCancelScheduled;
+    // HOS-348 Part B: the ONE self-service action a past-due subscription
+    // offers — mint a replacement preapproval. `past_due` never carries
+    // `isComplimentary` (a comp is never charged, so it can never fail to
+    // charge), but the check is kept for defense-in-depth symmetry with the
+    // other action gates above.
+    const canReplacePaymentMethod = status === 'past_due' && !isComplimentary;
 
     // HOS-1007: expressed as an INCLUSION list, not a run of exclusions. The old
     // `!isCancelScheduled && !isComplimentary` form defaulted every status to
@@ -1166,6 +1219,31 @@ export function SubscriptionDashboard({
                 </h3>
 
                 <div className={styles.actionsRow}>
+                    {/* Update payment method (past_due only, HOS-348 Part B) —
+                        rendered first: for a past-due customer this IS the
+                        action that matters, everything else is secondary. */}
+                    {canReplacePaymentMethod && (
+                        <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => void handleReplacePaymentMethod()}
+                            disabled={isReplacingPaymentMethod}
+                            aria-busy={isReplacingPaymentMethod}
+                        >
+                            <CreditCardIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {isReplacingPaymentMethod
+                                ? t('common.loading', 'Cargando...')
+                                : t(
+                                      'account.pages.subscription.replacePaymentMethodButton',
+                                      'Actualizar medio de pago'
+                                  )}
+                        </button>
+                    )}
+
                     {/* Download last invoice */}
                     <button
                         type="button"

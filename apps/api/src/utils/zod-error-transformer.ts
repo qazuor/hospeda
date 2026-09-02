@@ -128,7 +128,14 @@ const extractErrorParams = (error: ZodIssue): ParamsWithInternal => {
 
     if (error.code === 'too_big') {
         const sizeIssue = error as ZodSizeIssue;
-        if (sizeIssue.maximum !== undefined) params.max = sizeIssue.maximum;
+        if (sizeIssue.maximum !== undefined) {
+            params.max = sizeIssue.maximum;
+            // `count` mirrors `max` so the web client's `resolveValidationMessage`
+            // can route through `pluralize()` and pick a message's `_one`/`_other`
+            // sibling (HOS-898). No-op for the majority of `.max()` messages, which
+            // have no such pair — `pluralize()` falls back to the base key.
+            params.count = sizeIssue.maximum;
+        }
         if (sizeIssue.inclusive !== undefined) params.inclusive = sizeIssue.inclusive;
     }
 

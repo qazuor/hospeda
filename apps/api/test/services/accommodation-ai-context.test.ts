@@ -778,8 +778,13 @@ describe('assembleAccommodationContext', () => {
         vi.clearAllMocks();
         // Default: getById returns a healthy accommodation, getFaqs returns FAQs,
         // Drizzle queries return empty arrays for amenities/features.
+        // HOS-670: getFaqs resolves the REAL `ServiceOutput` envelope
+        // (`{ data: { faqs } }`), same as getById — NOT the unwrapped `{ faqs }`
+        // shape this mock used before the fix. The pre-fix mock shape matched
+        // the bug instead of the real service, which is why it stayed green
+        // while production silently dropped every FAQ (F-59).
         mockGetById.mockResolvedValue({ success: true, data: makeAccommodation() });
-        mockGetFaqs.mockResolvedValue({ faqs: makeFaqs() });
+        mockGetFaqs.mockResolvedValue({ data: { faqs: makeFaqs() } });
     });
 
     afterEach(() => {
@@ -848,12 +853,9 @@ describe('assembleAccommodationContext', () => {
         ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
     });
 
-    it('should fall back to empty FAQs when getFaqs returns an error Result (graceful degradation)', async () => {
-        // Simulate the case where getFaqs returns an error result (non-throwing
-        // path). Per the design, this should log a warn and continue with [].
-        // The current AccommodationService.getFaqs() THROWS on error (same
-        // pattern as getById), but the design contract is the same: don't
-        // crash the chat request because FAQs are missing.
+    it('should fall back to empty FAQs when getFaqs REJECTS (thrown-error path, graceful degradation)', async () => {
+        // Simulate a thrown error (e.g. a re-thrown DbError) reaching the
+        // caller instead of resolving. Must log a warn and continue with [].
         mockGetFaqs.mockRejectedValueOnce(new Error('db connection refused'));
 
         const out = await assembleAccommodationContext({
@@ -870,20 +872,45 @@ describe('assembleAccommodationContext', () => {
         expect(mockApiLogger.warn).toHaveBeenCalled();
     });
 
+    it('should fall back to empty FAQs when getFaqs RESOLVES a ServiceOutput error Result (HOS-670 — real prod shape)', async () => {
+        // Production shape: `runWithLoggingAndValidation` CATCHES a
+        // ServiceError and (no ctx.tx) RESOLVES `{ error }` — same non-throwing
+        // envelope as `getById`. This is the case the pre-fix code never
+        // checked at all (it only ever read `result.faqs`, which is undefined
+        // on both `{ data }` and `{ error }` envelopes) — asserting it here
+        // pins the explicit `result.error` branch added by the fix.
+        mockGetFaqs.mockResolvedValueOnce({
+            error: { code: 'FORBIDDEN', message: 'not allowed' }
+        });
+
+        const out = await assembleAccommodationContext({
+            actor: ACTOR as never,
+            accommodationId: ACCOMMODATION_ID,
+            resolvedPrompt: RESOLVED_PROMPT,
+            locale: 'es'
+        });
+
+        expect(out.systemMessage).toContain('Cabañas del Río');
+        expect(out.systemMessage).not.toContain('### FAQs');
+        expect(mockApiLogger.warn).toHaveBeenCalled();
+    });
+
     it('propagates isUsableByAi from getFaqs through to the assembled prompt (HOS-393 AC-10)', async () => {
         mockGetFaqs.mockResolvedValueOnce({
-            faqs: [
-                {
-                    question: '¿Se admiten mascotas?',
-                    answer: 'Sí, mascotas pequeñas.',
-                    isUsableByAi: true
-                },
-                {
-                    question: '¿Condiciones exactas de cancelación?',
-                    answer: 'Texto legal exacto, no parafrasear.',
-                    isUsableByAi: false
-                }
-            ]
+            data: {
+                faqs: [
+                    {
+                        question: '¿Se admiten mascotas?',
+                        answer: 'Sí, mascotas pequeñas.',
+                        isUsableByAi: true
+                    },
+                    {
+                        question: '¿Condiciones exactas de cancelación?',
+                        answer: 'Texto legal exacto, no parafrasear.',
+                        isUsableByAi: false
+                    }
+                ]
+            }
         });
 
         const out = await assembleAccommodationContext({

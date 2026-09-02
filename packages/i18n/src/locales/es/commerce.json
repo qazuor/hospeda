@@ -101,7 +101,8 @@
                 "amenities": "Servicios",
                 "price": "Precio",
                 "faqs": "Preguntas frecuentes",
-                "meetingPoint": "Punto de encuentro"
+                "meetingPoint": "Punto de encuentro",
+                "practicalInfo": "Datos prácticos"
             },
             "sections": {
                 "type": "Categoría",
@@ -130,7 +131,21 @@
                 "meetingPointHint": "Dónde arranca la experiencia. Puede ser una dirección o una referencia del lugar.",
                 "meetingPointLat": "Latitud (opcional)",
                 "meetingPointLong": "Longitud (opcional)",
-                "meetingPointCoordsHint": "Si cargás las coordenadas, más adelante podemos mostrar el punto en un mapa. Podés dejarlas vacías."
+                "meetingPointCoordsHint": "Si cargás las coordenadas, más adelante podemos mostrar el punto en un mapa. Podés dejarlas vacías.",
+                "durationHours": "Duración — horas",
+                "durationMinutes": "Duración — minutos",
+                "durationHint": "Cuánto dura la experiencia. Dejá los dos campos vacíos si preferís no publicarlo.",
+                "whatToBring": "Qué llevar",
+                "whatToBringPlaceholder": "Repelente\nCalzado cerrado\nTraje de baño",
+                "whatToBringHint": "Un ítem por línea. Lo que tiene que traer la persona que se anota.",
+                "requirements": "Requisitos",
+                "requirementsPlaceholder": "Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas",
+                "requirementsHint": "Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.",
+                "cancellationPolicy": "Política de cancelación",
+                "cancellationPolicyPlaceholder": "Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.",
+                "cancellationPolicyHint": "Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.",
+                "acceptsPrivateGroups": "Hago precio especial para grupos privados",
+                "acceptsPrivateGroupsHint": "Si lo activás, la ficha invita a escribirte para consultar por grupos. No publicamos ningún tarifario."
             },
             "acceptsEvents": {
                 "label": "Acepto eventos (cumpleaños, empresas, casamientos)",

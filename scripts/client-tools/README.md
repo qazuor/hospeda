@@ -34,6 +34,51 @@ así que `hops stats` y `hops-stats` no pueden divergir. Hay un test que lo exig
 
 Cada uno tiene su propio `--help` con el detalle.
 
+## `hops ci --wait` — esperar el CI en una sola llamada
+
+`hops ci` contesta "¿está verde ahora?". Con `--wait` bloquea hasta que el run
+cierra y devuelve **una línea**. No imprime nada mientras espera: si hubiera que
+leer los estados intermedios para encontrar la respuesta, no habría ahorrado la
+lectura.
+
+```bash
+hops ci --wait                 # techo de 30 minutos
+hops ci --wait --timeout=15    # en minutos, entre 1 y 180
+```
+
+### Códigos de salida
+
+| Código | Titular | Qué pasó |
+|---|---|---|
+| 0 | `VERDE` | Cerró y pasó |
+| 1 | `ROJO` / `CI CORTADO` / `EN CONFLICTO` / `SIN PR` / `NO PUDE CONSULTAR` | Cerró mal, o no se pudo preguntar |
+| 3 | `SIN ARRANCAR` | Cero checks en toda la espera: **no corrió nada** |
+| 4 | `TIMEOUT` | Seguían corriendo al llegar al techo |
+
+**`CI CORTADO` no es un test roto.** Sale cuando *todos* los checks fallados
+fueron cortados (`CANCELLED` / `TIMED_OUT`): el `timeout-minutes` del job, o un
+push nuevo que reemplazó el run. Bloquea el merge igual — los checks no están
+verdes — pero no hay nada que debuggear, se re-corren. Si además hay una falla
+real, el titular vuelve a ser `ROJO`: un fallo genuino nunca se esconde detrás
+de una cancelación.
+
+**3 y 4 no son fallas.** Son las dos formas de no saber, y tienen código propio
+justamente para que no se confundan con una falla: si `TIMEOUT` saliera 1,
+quien lee el resultado se pone a debuggear un rojo que nunca existió. Un 4 se
+reintenta con más `--timeout`; un 3 se resuelve redisparando el workflow (un
+commit vacío alcanza) o resolviendo el conflicto que impide que GitHub lo
+dispare.
+
+### Qué NO cubre
+
+- **No dice por qué falló.** Lista los checks rojos por nombre y nada más; el
+  diagnóstico (job, step, líneas del log) es otro comando.
+- **No mira si el PR se puede mergear.** `BEHIND`, `BLOCKED` y las reglas de la
+  base no entran en el veredicto: esto responde por los checks, no por el merge.
+- **No sirve en `main` ni en `staging`**, que no tienen PR propio.
+- **Depende de que la branch se resuelva.** Si el worktree está en detached
+  HEAD, el comando corta con exit 1 en vez de consultar por una branch inventada.
+
 ## Instalación
 
 ```bash

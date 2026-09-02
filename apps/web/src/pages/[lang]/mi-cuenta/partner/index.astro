@@ -24,9 +24,19 @@
  *   plus the `PartnerEditForm` edit island.
  *
  * The status banner is the visible half of AC-11: it says "load your data",
- * "under review" or "you can pay now", and the payment CTA appears ONLY once
- * `contentApprovedAt` is set — the same column the API gate reads, so the page
- * and the endpoint can never disagree about whether payment is open.
+ * "under review" or "your content is approved", and the approved copy switches
+ * ONLY once `contentApprovedAt` is set — the same column the API gate reads,
+ * so the page and the endpoint can never disagree about whether payment is
+ * open.
+ *
+ * HOS-862: the approved state has NO in-app payment link. Partner payment is
+ * admin-mediated by design (`planes/aliados` says it outright: "a partnership
+ * is agreed in a conversation, not bought") — an admin assigns the partner's
+ * plan and sends a MercadoPago payment link out of band
+ * (`POST /admin/partners/{id}/send-link`). There is no self-service checkout
+ * endpoint for partners to link to, so the approved banner states the fact
+ * (the team will send the payment link) instead of offering a CTA that goes
+ * nowhere.
  *
  * @route     /[lang]/mi-cuenta/partner/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -123,17 +133,12 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
                                 </p>
                             </>
                         ) : isContentApproved ? (
-                            <>
-                                <p>
-                                    {t(
-                                        'account.partner.status.approved',
-                                        'Tu contenido está aprobado. Ya podés activar tu suscripción para aparecer publicado.'
-                                    )}
-                                </p>
-                                <a href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}>
-                                    {t('account.partner.status.approvedCta', 'Ir al pago')}
-                                </a>
-                            </>
+                            <p>
+                                {t(
+                                    'account.partner.status.approved',
+                                    'Tu contenido está aprobado. Nuestro equipo te va a enviar el link de pago para activar tu suscripción.'
+                                )}
+                            </p>
                         ) : isUnderReview ? (
                             <p>
                                 {t(

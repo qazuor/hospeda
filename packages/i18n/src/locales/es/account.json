@@ -689,6 +689,8 @@
             "uncancelButton": "Descartar cancelación",
             "uncancelSuccess": "Cancelación descartada. Tu suscripción sigue activa.",
             "uncancelError": "No se pudo descartar la cancelación.",
+            "replacePaymentMethodButton": "Actualizar medio de pago",
+            "replacePaymentMethodError": "No se pudo iniciar la actualización del medio de pago.",
             "trialExtension": {
                 "title": "Extender tu prueba gratis",
                 "help": "Si tenés un código promocional, aplicalo ahora y sumás días a tu prueba.",
@@ -724,7 +726,7 @@
             "cancelModal": {
                 "title": "Cancelar suscripción",
                 "emailSubject": "Cancelación de suscripción",
-                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
+                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
                 "contactSupport": "Escribir a soporte",
                 "confirm": "Sí, cancelar suscripción",
                 "description": "Al cancelar tu suscripción mantenés el acceso a tu plan hasta el final del período actual. No se realizarán más cobros.",
@@ -1497,8 +1499,7 @@
             "empty": "Tu postulación fue aprobada. Completá tu logo y tus textos para que un admin los revise. Todavía no estás publicado.",
             "underReview": "Estamos revisando tu logo y tus textos. Te avisamos apenas terminemos; todavía no hay nada que pagar.",
             "rejected": "Revisamos tus datos y necesitamos que corrijas algo antes de seguir. El detalle está abajo, junto al formulario.",
-            "approved": "Tu contenido está aprobado. Ya podés activar tu suscripción para aparecer publicado.",
-            "approvedCta": "Ir al pago",
+            "approved": "Tu contenido está aprobado. Nuestro equipo te va a enviar el link de pago para activar tu suscripción.",
             "revoked": "Tu ficha de aliado fue dada de baja y ya no se ve en el sitio.",
             "revokedContact": "Si querés más información, escribinos y te contamos los detalles."
         },

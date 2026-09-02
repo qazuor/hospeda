@@ -9,6 +9,7 @@ function makeWorktree(overrides: Partial<WorktreeEnv> = {}): WorktreeEnv {
         path: '/home/dev/hospeda-hos-1010-ventana-cortesia',
         isMain: false,
         branch: 'fix/hos-1010',
+        detached: false,
         database: 'worktree_hospeda_hos_1010',
         servers: [],
         ...overrides

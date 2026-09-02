@@ -16,6 +16,7 @@ export * from './orphan-payment-queue.schema.js';
 export * from './payment-reconciliation.schema.js';
 export * from './plan-change.schema.js';
 export * from './promo-code.schema.js';
+export * from './replace-payment-method.schema.js';
 export * from './start-paid.schema.js';
 export * from './subscription-cancel.schema.js';
 export * from './subscription-event.schema.js';
