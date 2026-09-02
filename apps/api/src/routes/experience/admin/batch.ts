@@ -27,9 +27,9 @@ export const adminBatchExperiencesRoute = createAdminRoute({
     path: '/batch',
     summary: 'Get multiple experience listings by IDs (admin)',
     description:
-        'Retrieves multiple experience listings by their IDs for entity select components. Requires COMMERCE_VIEW_ALL.',
+        'Retrieves multiple experience listings by their IDs for entity select components. Requires EXPERIENCE_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL).',
     tags: ['Experience'],
-    requiredPermissions: [PermissionEnum.COMMERCE_VIEW_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL]],
     requestBody: ExperienceBatchRequestSchema,
     responseSchema: ExperienceBatchResponseSchema,
     handler: async (

@@ -16,16 +16,18 @@ const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger 
  * GET /api/v1/admin/gastronomies/reviews/:id
  * Get gastronomy review by ID — Admin endpoint.
  *
- * Requires COMMERCE_MODERATE_REVIEW permission.
+ * Requires GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission.
  */
 export const adminGetGastronomyReviewByIdRoute = createAdminRoute({
     method: 'get',
     path: '/{id}',
     summary: 'Get gastronomy review by ID (admin)',
     description:
-        'Retrieves full gastronomy review information including moderation fields. Requires COMMERCE_MODERATE_REVIEW.',
+        'Retrieves full gastronomy review information including moderation fields. Requires GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW).',
     tags: ['Gastronomy Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.COMMERCE_MODERATE_REVIEW],
+    anyOfPermissions: [
+        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+    ],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -26,16 +26,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * Reorder FAQs for an experience listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before
- * applying displayOrder updates. Requires COMMERCE_EDIT_ALL permission.
+ * applying displayOrder updates. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
  */
 export const adminReorderExperienceFaqsRoute = createAdminRoute({
     method: 'patch',
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for an experience listing (admin)',
     description:
-        'Sets displayOrder for a set of FAQs belonging to an experience listing. All faqId values must belong to the given listing. Requires COMMERCE_EDIT_ALL.',
+        'Sets displayOrder for a set of FAQs belonging to an experience listing. All faqId values must belong to the given listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -26,7 +26,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies/:id/media
  * Add photo to gastronomy listing gallery — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `addGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminAddGastronomyMediaRoute = createAdminRoute({
@@ -34,9 +34,9 @@ export const adminAddGastronomyMediaRoute = createAdminRoute({
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery (admin)',
     description:
-        'Registers an already-uploaded URL as a new gastronomy_media row. Requires COMMERCE_EDIT_ALL.',
+        'Registers an already-uploaded URL as a new gastronomy_media row. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

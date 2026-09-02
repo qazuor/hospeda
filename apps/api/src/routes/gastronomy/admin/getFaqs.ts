@@ -16,16 +16,17 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * GET /api/v1/admin/gastronomies/:id/faqs
  * Get gastronomy FAQs — Admin endpoint.
  *
- * Requires COMMERCE_VIEW_ALL. Uses the standalone `listGastronomyFaqs` helper
+ * Requires GASTRONOMY_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL). Uses the standalone `listGastronomyFaqs` helper
  * that mirrors the protected/public FAQ list pattern.
  */
 export const adminGetGastronomyFaqsRoute = createAdminRoute({
     method: 'get',
     path: '/{id}/faqs',
     summary: 'Get gastronomy listing FAQs (admin)',
-    description: 'Retrieve all FAQs for a gastronomy listing. Requires COMMERCE_VIEW_ALL.',
+    description:
+        'Retrieve all FAQs for a gastronomy listing. Requires GASTRONOMY_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL).',
     tags: ['Gastronomy', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_VIEW_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

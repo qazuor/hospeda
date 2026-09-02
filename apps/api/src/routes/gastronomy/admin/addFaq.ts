@@ -22,7 +22,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies/:id/faqs
  * Add FAQ to gastronomy listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `addGastronomyFaq` enforces the same gate via `checkGastronomyCanEditFaqs`.
  */
 export const adminAddGastronomyFaqRoute = createAdminRoute({
@@ -30,9 +30,9 @@ export const adminAddGastronomyFaqRoute = createAdminRoute({
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing (admin)',
     description:
-        'Adds a new frequently asked question to a gastronomy listing. Requires COMMERCE_EDIT_ALL.',
+        'Adds a new frequently asked question to a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

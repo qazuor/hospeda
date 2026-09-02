@@ -26,16 +26,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * Reorder FAQs for a gastronomy listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before
- * applying displayOrder updates. Requires COMMERCE_EDIT_ALL permission.
+ * applying displayOrder updates. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
  */
 export const adminReorderGastronomyFaqsRoute = createAdminRoute({
     method: 'patch',
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for a gastronomy listing (admin)',
     description:
-        'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires COMMERCE_EDIT_ALL.',
+        'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

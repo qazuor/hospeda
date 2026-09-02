@@ -22,16 +22,17 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * PUT /api/v1/admin/experiences/:id/faqs/:faqId
  * Update FAQ in experience listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `updateExperienceFaq` enforces the same gate via `checkExperienceCanEditFaqs`.
  */
 export const adminUpdateExperienceFaqRoute = createAdminRoute({
     method: 'put',
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in experience listing (admin)',
-    description: 'Updates an existing FAQ in an experience listing. Requires COMMERCE_EDIT_ALL.',
+    description:
+        'Updates an existing FAQ in an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

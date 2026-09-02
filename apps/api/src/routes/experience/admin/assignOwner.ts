@@ -29,16 +29,16 @@ const AssignOwnerBodySchema = z.object({
  * Delegates to `ExperienceService.update(actor, id, { ownerId })`.
  * No dedicated service method exists for assign-owner; using `update` with a
  * narrow payload is the established commerce-entity pattern.
- * Requires COMMERCE_EDIT_ALL permission.
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
  */
 export const adminAssignExperienceOwnerRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/assign-owner',
     summary: 'Assign owner to experience listing (admin)',
     description:
-        'Sets or replaces the owner of an experience listing. Requires COMMERCE_EDIT_ALL permission.',
+        'Sets or replaces the owner of an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Experience'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
