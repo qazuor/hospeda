@@ -155,16 +155,18 @@
         }
     },
     "avatar": {
-        "hint": "JPEG, PNG and WebP only · Max. {{maxSize}} MB",
+        "hint": "JPEG, PNG, WebP and HEIC only · Max. {{maxSize}} MB",
         "actions": {
             "change": "Change avatar",
-            "uploading": "Uploading..."
+            "uploading": "Uploading...",
+            "processing": "Optimizing…"
         },
         "alt": "Avatar",
         "success": "Avatar updated successfully",
         "errors": {
-            "invalidType": "Only JPEG, PNG and WebP are accepted",
+            "invalidType": "Only JPEG, PNG, WebP and HEIC are accepted",
             "fileTooLarge": "File too large (max. {{maxSize}} MB)",
+            "compressionUnsupportedTooLarge": "We couldn't automatically optimize this image (your browser can't process this format) and it exceeds the {{maxSize}} MB limit. Try converting it to JPG before uploading, or pick a lighter photo.",
             "uploadFailed": "Failed to upload the image",
             "updateFailed": "Failed to update the profile",
             "unexpectedResponse": "Unexpected server response"
