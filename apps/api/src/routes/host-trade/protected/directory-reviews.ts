@@ -41,14 +41,6 @@ import { createProtectedListRoute } from '../../../utils/route-factory';
 const reviewService = new HostTradeReviewService({ logger: apiLogger });
 
 /**
- * One row of the listing.
- *
- * The author carries a display name and an image, never an email — the same
- * line the linked-hosts selector draws. `reply` is nullable because most
- * reviews have no answer, and because an answer still in moderation reads as no
- * answer here.
- */
-/**
  * The answer AS THE DIRECTORY SERVES IT — its own shape, not the reply's
  * PROTECTED tier (HOS-1067).
  *
@@ -77,6 +69,14 @@ const DirectoryReplySchema = HostTradeReviewReplySchema.pick({
     updatedAt: true
 });
 
+/**
+ * One row of the listing.
+ *
+ * The author carries a display name and an image, never an email — the same
+ * line the linked-hosts selector draws. `reply` is nullable because most
+ * reviews have no answer, and because an answer still in moderation reads as no
+ * answer here.
+ */
 const DirectoryReviewSchema = z.object({
     review: HostTradeReviewProtectedSchema,
     author: z
