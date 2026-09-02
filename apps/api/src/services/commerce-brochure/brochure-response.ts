@@ -50,7 +50,7 @@ export async function buildBrochureResponse(input: {
     slug: string;
 }): Promise<Response> {
     const cover = await loadBrochureCover({ url: input.content.coverImageUrl });
-    const pdf = renderBrochurePdf({ content: input.content, cover });
+    const pdf = await renderBrochurePdf({ content: input.content, cover });
 
     const safeSlug = input.slug.toLowerCase().replace(FILENAME_SAFE, '-').replace(/-+/g, '-');
     const filename = `${FILENAME_PREFIX}-${safeSlug || 'hospeda'}.pdf`;

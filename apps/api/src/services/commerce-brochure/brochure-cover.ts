@@ -5,31 +5,51 @@
  * BEST-EFFORT, ON PURPOSE
  *
  * Every failure here returns `null` and the brochure prints without a photo. A
- * timeout, a 404, a WebP, a progressive JPEG, an oversized file — none of them
- * may cost the owner the document. The photo is the best part of a printed
- * folleto and still not worth a 500.
+ * timeout, a 404, a WebP, an oversized file — none of them may cost the owner
+ * the document. The photo is the best part of a printed folleto and still not
+ * worth a 500.
  *
- * ## Why the URL is transformed rather than used as stored
+ * ## What this module decides, and what it deliberately does not
  *
- * `DCTDecode` embeds JPEG bytes verbatim, so the file we fetch has to BE a
- * baseline JPEG — and what a listing stores is whatever the owner uploaded:
- * PNG, WebP, HEIC, a 12MP original. Routing the URL through
- * {@link getMediaUrl} with an explicit `f_jpg` asks the CDN for the one format
- * this writer can embed, at a width sized for print rather than for the
- * original camera. It also caps what an unbounded fetch could pull into memory
- * long before {@link MAX_COVER_BYTES} has to.
+ * It decides only two things: that the bytes arrived, and which of the two
+ * formats `pdf-lib` can embed they are. It does NOT parse the frame header —
+ * that was the hand-written writer's job, and the reason that job existed was
+ * that `DCTDecode` pass-through only ever received bytes we had vetted
+ * ourselves. `pdf-lib` parses the JPEG and the PNG itself and throws on
+ * anything it cannot embed, so a second decoder here would only be a second
+ * thing to get wrong.
  *
- * A non-Cloudinary URL passes through untouched and is simply fetched; if it
- * turns out not to be an embeddable JPEG, {@link readJpeg} says so and the
- * brochure goes out without it.
+ * The class this stops losing is a *progressive* JPEG, which the old reader
+ * refused outright (`SOF2` → `null` → no photo). It embeds and renders now, and
+ * that is not a small detail: Cloudinary serves progressive JPEGs, so the
+ * refusal was aimed squarely at our own CDN.
+ *
+ * ## Why the URL is still transformed
+ *
+ * What a listing stores is whatever the owner uploaded: PNG, WebP, HEIC, a 12MP
+ * original. Routing the URL through {@link getMediaUrl} with an explicit
+ * `f_jpg` asks the CDN for a format a PDF can carry, at a width sized for print
+ * rather than for the original camera — and caps what an unbounded fetch could
+ * pull into memory long before {@link MAX_COVER_BYTES} has to. `f_auto` would
+ * be wrong here: it answers WebP/AVIF, which no PDF can carry.
+ *
+ * A non-Cloudinary URL passes through untouched and is simply fetched; JPEG and
+ * PNG are both accepted on that path, and anything else is `null`.
  *
  * @module services/commerce-brochure/brochure-cover
  */
 
 import { getMediaUrl } from '@repo/media';
 import { apiLogger } from '../../utils/logger.js';
-import { readJpeg } from '../../utils/pdf/jpeg.js';
-import type { PdfJpeg } from '../../utils/pdf/pdf-document.js';
+
+/** The two raster formats a PDF can carry, and `pdf-lib` can embed. */
+export type BrochureCoverFormat = 'jpeg' | 'png';
+
+/** A cover photo, fetched and typed, ready to hand to `pdf-lib`. */
+export interface BrochureCover {
+    readonly bytes: Uint8Array;
+    readonly format: BrochureCoverFormat;
+}
 
 /**
  * Cloudinary transform requested for the cover.
@@ -48,13 +68,49 @@ const MAX_COVER_BYTES = 3_000_000;
  */
 const FETCH_TIMEOUT_MS = 4_000;
 
+/** `FF D8 FF` — SOI followed by the first marker of any JPEG. */
+const JPEG_SIGNATURE = [0xff, 0xd8, 0xff] as const;
+
+/** The eight-byte PNG signature, which no other format shares. */
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] as const;
+
+/** Tests a magic-number prefix. */
+function startsWith(input: { bytes: Uint8Array; signature: readonly number[] }): boolean {
+    const { bytes, signature } = input;
+    if (bytes.length < signature.length) {
+        return false;
+    }
+    return signature.every((byte, index) => bytes[index] === byte);
+}
+
 /**
- * Fetches and validates the cover photo.
+ * Names the format from the file's magic number.
+ *
+ * The `Content-Type` header is not consulted on purpose: a CDN mislabelling a
+ * body is a real thing, and the first bytes are not.
+ *
+ * @param input.bytes - The fetched file.
+ * @returns The format, or `null` for anything a PDF cannot carry.
+ */
+export function detectCoverFormat(input: { bytes: Uint8Array }): BrochureCoverFormat | null {
+    if (startsWith({ bytes: input.bytes, signature: JPEG_SIGNATURE })) {
+        return 'jpeg';
+    }
+    if (startsWith({ bytes: input.bytes, signature: PNG_SIGNATURE })) {
+        return 'png';
+    }
+    return null;
+}
+
+/**
+ * Fetches and types the cover photo.
  *
  * @param input.url - The image URL from the listing's PUBLIC media payload.
- * @returns An embeddable JPEG, or `null` for every failure mode.
+ * @returns An embeddable image, or `null` for every failure mode.
  */
-export async function loadBrochureCover(input: { url: string | null }): Promise<PdfJpeg | null> {
+export async function loadBrochureCover(input: {
+    url: string | null;
+}): Promise<BrochureCover | null> {
     const source = input.url;
     if (!source) {
         return null;
@@ -102,7 +158,9 @@ export async function loadBrochureCover(input: { url: string | null }): Promise<
             return null;
         }
 
-        return readJpeg({ bytes: new Uint8Array(buffer) });
+        const bytes = new Uint8Array(buffer);
+        const format = detectCoverFormat({ bytes });
+        return format === null ? null : { bytes, format };
     } catch (error) {
         apiLogger.warn(
             {
