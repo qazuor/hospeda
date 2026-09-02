@@ -38,6 +38,7 @@
  */
 
 import { z } from 'zod';
+import { createBooleanQueryParam } from '../http/base-http.schema.js';
 
 /**
  * Which confirmation flow could not book the payment.
@@ -194,8 +195,14 @@ export const OrphanPaymentQueueSearchSchema = z.object({
      * Omitted means both, and the item's own `livemode` still says which is
      * which — the filter is a convenience, never the thing that keeps a sandbox
      * row from being mistaken for a real one.
+     *
+     * `createBooleanQueryParam`, NOT `z.coerce.boolean()`. A query parameter
+     * arrives as a STRING, and `Boolean('false')` is `true` — so the coercing
+     * form would answer `?livemode=false` with the real-money rows, which on
+     * this endpoint specifically means handing back production charges to an
+     * operator who asked to see the sandbox ones.
      */
-    livemode: z.coerce.boolean().optional(),
+    livemode: createBooleanQueryParam('Filter by real-money (true) or sandbox (false) rows'),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20)
 });
