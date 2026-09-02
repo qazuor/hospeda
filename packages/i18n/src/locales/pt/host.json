@@ -692,8 +692,8 @@
         "heroSubheadline": "Publique em minutos e comece a receber hóspedes",
         "primaryCta": "Publicar sua propriedade",
         "secondaryCta": "Ver minhas propriedades",
-        "trialCallout_one": "Experimente o Hospeda gratis por {{trialDays}} dia na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar.",
-        "trialCallout_other": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
+        "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica seu primeiro imóvel.",
+        "trialCallout_other": "Experimente o Hospeda grátis por {{trialDays}} dias, sem cartão. O teste começa sozinho quando você publica seu primeiro imóvel."
     },
     "fromAdminBanner": {
         "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
@@ -909,11 +909,11 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle_one": "{{trialDays}} dia gratis na sua primeira assinatura",
-            "trialCalloutTitle_other": "{{trialDays}} dias gratis na sua primeira assinatura",
+            "trialCalloutTitle_one": "{{trialDays}} dia grátis, sem cartão",
+            "trialCalloutTitle_other": "{{trialDays}} dias grátis, sem cartão",
             "trialCalloutTitleIneligible": "Monte sua propriedade",
-            "trialNote_one": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dia começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
-            "trialNote_other": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
+            "trialNote_one": "Você pode montar sua propriedade agora, sem pressa e sem cartão. O teste gratuito de {{trialDays}} dia começa sozinho quando você publica; quando terminar, você escolhe um plano para continuar publicado.",
+            "trialNote_other": "Você pode montar sua propriedade agora, sem pressa e sem cartão. O teste gratuito de {{trialDays}} dias começa sozinho quando você publica; quando terminar, você escolhe um plano para continuar publicado.",
             "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo.",
             "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel.",
             "precheck": {

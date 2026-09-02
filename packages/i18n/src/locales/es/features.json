@@ -171,7 +171,7 @@
         "banner": {
             "title_one": "{{trialDays}} día gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
             "title_other": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
-            "description": "Empezás a probar todo hoy mismo: elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba de tu primera suscripción. Tus datos quedan guardados aunque decidas esperar."
+            "description": "Empezás a probar todo hoy mismo, sin tarjeta: armás tu propiedad, la publicás y ahí arranca tu prueba gratis. Tus datos quedan guardados aunque decidas esperar."
         },
         "list": {
             "aiImport": {
