@@ -37,7 +37,7 @@
  * they lack DB ids and are display-only.
  */
 
-import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, getMediaUrl } from '@repo/media';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -164,8 +164,14 @@ export function PhotoSection({
 
                 {featuredItem ? (
                     <div className={styles.preview}>
+                        {/* HOS-637: `.previewImage` box is capped at
+                            max-width:400px / max-height:300px (see
+                            PhotoSection.module.css) — this matched the
+                            `card` preset (w_400,h_300) exactly, so it is
+                            reused verbatim instead of a bespoke `raw`
+                            transform. */}
                         <img
-                            src={featuredItem.url}
+                            src={getMediaUrl(featuredItem.url, { preset: 'card' })}
                             alt={
                                 featuredItem.alt ??
                                 t('host.properties.editor.photo.featuredAlt', 'Imagen principal')

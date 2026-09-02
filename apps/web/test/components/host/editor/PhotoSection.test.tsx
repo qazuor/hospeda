@@ -1173,3 +1173,29 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
         });
     });
 });
+
+// ── HOS-637: portada preview must be Cloudinary-transformed ────────────────
+
+describe('PhotoSection — HOS-637 portada thumbnail transform', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('requests a Cloudinary-transformed portada preview, not the original upload', async () => {
+        const cloudinaryFeaturedRow = {
+            ...FEATURED_ROW,
+            url: 'https://res.cloudinary.com/hospeda/image/upload/v1699999999/hospeda/prod/accommodation-x/original.jpg'
+        };
+        mockListMedia.mockReturnValue(makeListOk([cloudinaryFeaturedRow]));
+
+        render(<PhotoSection {...defaultProps} />);
+
+        await waitFor(() => {
+            const img = screen.getByAltText('Imagen principal') as HTMLImageElement;
+            expect(img.src).not.toBe(cloudinaryFeaturedRow.url);
+            expect(img.src).toContain('/upload/w_400,h_300,c_fill');
+            expect(img.src).toContain('q_auto');
+            expect(img.src).toContain('f_auto');
+        });
+    });
+});

@@ -15,6 +15,7 @@
  * free, which a custom drag implementation would have to build by hand.
  */
 
+import { getMediaUrl } from '@repo/media';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -61,12 +62,19 @@ export function PhotoGalleryItem({
 }: PhotoGalleryItemProps) {
     const { t } = createTranslations(locale);
     const canOperate = !disabled && Boolean(item.id);
+    // HOS-637: `.galleryItem` is a `minmax(150px, 1fr)` grid cell at a 4:3
+    // aspect ratio (see PhotoSection.module.css) — the original upload
+    // (frequently several MB, per the F-38 smoke finding) was rendered here
+    // unconditionally. `galleryHalf` is the closest existing 4:3 preset;
+    // `width: 300` matches this grid's realistic cell size instead of the
+    // preset's own 640px default meant for a half-width gallery cell.
+    const thumbnailUrl = getMediaUrl(item.url, { preset: 'galleryHalf', width: 300 });
 
     return (
         <div className={styles.galleryItemWrapper}>
             <div className={styles.galleryItem}>
                 <img
-                    src={item.url}
+                    src={thumbnailUrl}
                     alt={
                         item.alt ??
                         t('host.properties.editor.photo.galleryAlt', undefined, {
