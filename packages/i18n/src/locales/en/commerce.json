@@ -113,7 +113,8 @@
                 "translations": "Translations",
                 "amenities": "Amenities",
                 "price": "Price",
-                "faqs": "FAQs"
+                "faqs": "FAQs",
+                "meetingPoint": "Meeting point"
             },
             "sections": {
                 "type": "Category",
@@ -136,7 +137,13 @@
                 "destination": "City / Destination",
                 "description": "Description",
                 "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
-                "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
+                "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field.",
+                "meetingPoint": "Meeting point",
+                "meetingPointPlaceholder": "E.g. Pier 3 at the port, in front of the blue booth",
+                "meetingPointHint": "Where the experience starts. It can be an address or a landmark.",
+                "meetingPointLat": "Latitude (optional)",
+                "meetingPointLong": "Longitude (optional)",
+                "meetingPointCoordsHint": "If you add the coordinates, we can show the spot on a map later on. You can leave them empty."
             },
             "contactField": {
                 "mobilePhone": "Phone",

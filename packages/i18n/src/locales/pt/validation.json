@@ -2830,6 +2830,17 @@
                 }
             }
         },
+        "meetingPoint": {
+            "max": "O ponto de encontro não pode ultrapassar {{max}} caracteres"
+        },
+        "meetingPointLat": {
+            "max": "A latitude do ponto de encontro não pode ultrapassar {{max}}",
+            "min": "A latitude do ponto de encontro deve ser no mínimo {{min}}"
+        },
+        "meetingPointLong": {
+            "max": "A longitude do ponto de encontro não pode ultrapassar {{max}}",
+            "min": "A longitude do ponto de encontro deve ser no mínimo {{min}}"
+        },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
         },

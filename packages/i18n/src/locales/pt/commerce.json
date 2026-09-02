@@ -113,7 +113,8 @@
                 "translations": "Traduções",
                 "amenities": "Serviços",
                 "price": "Preço",
-                "faqs": "Perguntas frequentes"
+                "faqs": "Perguntas frequentes",
+                "meetingPoint": "Ponto de encontro"
             },
             "sections": {
                 "type": "Categoria",
@@ -136,7 +137,13 @@
                 "destination": "Cidade / Destino",
                 "description": "Descrição",
                 "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
-                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
+                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo.",
+                "meetingPoint": "Ponto de encontro",
+                "meetingPointPlaceholder": "Ex.: Píer 3 do porto, em frente à cabine azul",
+                "meetingPointHint": "Onde a experiência começa. Pode ser um endereço ou uma referência do lugar.",
+                "meetingPointLat": "Latitude (opcional)",
+                "meetingPointLong": "Longitude (opcional)",
+                "meetingPointCoordsHint": "Se você informar as coordenadas, mais adiante podemos mostrar o ponto num mapa. Pode deixá-las vazias."
             },
             "contactField": {
                 "mobilePhone": "Telefone",
