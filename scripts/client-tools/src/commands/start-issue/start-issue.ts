@@ -80,7 +80,7 @@ ${pc.bold('Uso')}
 ${pc.bold('Qué NO hace')}
 
   No levanta los servers. Cuando los necesites, adentro del worktree:
-  ${pc.dim('pnpm cli wt:up')}
+  ${pc.dim('hops servers-up')}
 `;
 }
 
