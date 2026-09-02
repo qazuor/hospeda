@@ -692,8 +692,8 @@
         "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
         "primaryCta": "Publicar tu propiedad",
         "secondaryCta": "Ver mis propiedades",
-        "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primera propiedad.",
-        "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días, sin tarjeta. La prueba arranca sola cuando publicás tu primera propiedad."
+        "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primera propiedad, y es una sola para alojamientos.",
+        "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días, sin tarjeta. La prueba arranca sola cuando publicás tu primera propiedad, y es una sola para alojamientos."
     },
     "miniForm": {
         "fields": {
@@ -906,11 +906,11 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle_one": "{{trialDays}} día gratis, sin tarjeta",
-            "trialCalloutTitle_other": "{{trialDays}} días gratis, sin tarjeta",
+            "trialCalloutTitle_one": "{{trialDays}} día gratis, sin tarjeta — una sola para alojamientos",
+            "trialCalloutTitle_other": "{{trialDays}} días gratis, sin tarjeta — una sola para alojamientos",
             "trialCalloutTitleIneligible": "Armá tu propiedad",
-            "trialNote_one": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} día arranca sola cuando publicás; cuando termine, elegís un plan para seguir publicado.",
-            "trialNote_other": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} días arranca sola cuando publicás; cuando termine, elegís un plan para seguir publicado.",
+            "trialNote_one": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} día arranca sola cuando publicás; es una sola para alojamientos, y cuando termine, elegís un plan para seguir publicado.",
+            "trialNote_other": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} días arranca sola cuando publicás; es una sola para alojamientos, y cuando termine, elegís un plan para seguir publicado.",
             "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {
