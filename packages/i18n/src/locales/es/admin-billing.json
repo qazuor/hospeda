@@ -1069,6 +1069,66 @@
             "previous": "Anterior",
             "next": "Siguiente",
             "pageOf": "Página {{page}} de {{totalPages}}"
+        },
+        "queue": {
+            "title": "Cola de pagos huérfanos",
+            "loading": "Cargando la cola...",
+            "errorLoading": "Error al cargar la cola",
+            "emptyTitle": "No hay pagos en la cola",
+            "emptyHint": "Ningún cobro quedó sin asentar con este filtro. La cola se escribe en el momento de la falla, así que vacía significa vacía.",
+            "unresolvedCount_one": "{{count}} pago sin resolver en total",
+            "unresolvedCount_other": "{{count}} pagos sin resolver en total",
+            "resolveButton": "Resolver",
+            "livemodeReal": "Plata real",
+            "livemodeSandbox": "Sandbox",
+            "columns": {
+                "detectedAt": "Detectado",
+                "providerPaymentId": "ID de pago (MP)",
+                "flow": "Flujo",
+                "reason": "Motivo",
+                "amount": "Monto",
+                "livemode": "Entorno",
+                "subscriptionId": "Suscripción local",
+                "actions": "Acciones"
+            },
+            "flows": {
+                "planChangeUpgrade": "Upgrade de plan",
+                "annualUpfront": "Anual por adelantado",
+                "addonPurchase": "Compra de add-on",
+                "authorizedPaymentRetry": "Reintento de cobro recurrente"
+            },
+            "reasons": {
+                "subscriptionNotFound": "Suscripción inexistente",
+                "statusNotApplicable": "Estado no aplicable",
+                "ledgerWriteFailed": "Falló la escritura del asiento"
+            },
+            "statuses": {
+                "unresolved": "Sin resolver",
+                "resolved": "Resueltos",
+                "dismissed": "Descartados"
+            },
+            "resolutions": {
+                "resolved": "Resuelto — la plata quedó asentada o devuelta",
+                "dismissed": "Descartado — no había nada que hacer"
+            },
+            "filters": {
+                "title": "Filtros de la cola",
+                "statusLabel": "Estado"
+            },
+            "resolveDialog": {
+                "title": "Registrar el veredicto sobre este pago",
+                "description": "Deja constancia de qué se hizo con este cobro. NO asienta el pago: para eso está «Registrar pago» sobre la divergencia correspondiente.",
+                "auditWarning": "Esta acción queda auditada con tu usuario y tu nota. Una fila cerrada no se puede volver a abrir desde acá.",
+                "resolutionLabel": "Veredicto",
+                "resolutionHint": "«Resuelto» significa que la plata quedó contabilizada o devuelta. «Descartado» significa que no se debía nada (un cobro de prueba, un duplicado).",
+                "noteLabel": "Qué se hizo",
+                "notePlaceholder": "Ej: asenté el pago con la herramienta de rescate, referencia MP 174625958196.",
+                "noteHint": "Mínimo 10 caracteres. Es lo único que le va a explicar a quien lea esto en seis meses si el cliente quedó cubierto.",
+                "confirmButton": "Registrar veredicto",
+                "processingButton": "Registrando...",
+                "success": "Veredicto registrado",
+                "error": "No se pudo registrar el veredicto:"
+            }
         }
     },
     "subscriptions": {
