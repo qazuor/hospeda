@@ -132,29 +132,24 @@ function makeChain(resolvesTo: unknown = []) {
     return chain;
 }
 
-/** Sequenced db double: each successive select/update takes the next result. */
+/**
+ * Sequenced db double: each successive select/update takes the next result.
+ *
+ * `db.update` being called AT ALL is the observable this suite asserts on —
+ * a refusal must never reach it, and a permitted edit must.
+ */
 function buildMockDb(selectResults: unknown[] = [], updateResults: unknown[] = []) {
     let selectIdx = 0;
     let updateIdx = 0;
-    const updatePayloads: unknown[] = [];
 
     const db = {
         select: vi.fn().mockImplementation(() => makeChain(selectResults[selectIdx++] ?? [])),
         insert: vi.fn().mockImplementation(() => makeChain([{ id: 'mock-generated-id' }])),
-        update: vi.fn().mockImplementation(() => {
-            const result = updateResults[updateIdx++] ?? [];
-            const chain = makeChain(result);
-            const originalSet = chain.set as ReturnType<typeof vi.fn>;
-            chain.set = vi.fn().mockImplementation((payload: unknown) => {
-                updatePayloads.push(payload);
-                return originalSet(payload);
-            });
-            return chain;
-        }),
+        update: vi.fn().mockImplementation(() => makeChain(updateResults[updateIdx++] ?? [])),
         delete: vi.fn().mockImplementation(() => makeChain([]))
     };
 
-    return { db, updatePayloads };
+    return { db };
 }
 
 /** Minimal `billing_plans` row; `metadata` is what this suite varies. */
