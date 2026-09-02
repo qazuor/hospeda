@@ -4,6 +4,16 @@
 
 Accepted (2026-06-17)
 
+> **Update (HOS-688 / HOS-692 / HOS-695).** This ADR documents the SPEC-239-era
+> design, where a single commerce plan carried `product_domain = 'commerce'`.
+> HOS-688 later split billing into one subscription per owner per vertical
+> (`gastronomy` / `experience`), and HOS-692/HOS-695 retired the `'commerce'`
+> value from `ProductDomainEnum` entirely — a row still carrying it satisfies
+> neither vertical (see the root `CLAUDE.md`'s Commerce subscription isolation
+> section). The design principles below (CORE vs. vertical separation, the
+> `product_domain` isolation mechanism itself) still hold; the specific
+> `'commerce'` value they describe does not exist in production any more.
+
 ## Context
 
 SPEC-239 introduces a new product surface — **paid commerce listings** — to the
