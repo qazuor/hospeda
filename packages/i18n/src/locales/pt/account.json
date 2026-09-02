@@ -877,10 +877,12 @@
             "errors": {
                 "fileTooLarge": "La imagen no puede superar los {{maxSize}} MB.",
                 "invalidType": "El archivo debe ser una imagen JPG, PNG o WebP.",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}} MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
                 "unexpectedResponse": "Respuesta inesperada del servidor.",
                 "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
             },
-            "uploading": "Subiendo..."
+            "uploading": "Subiendo...",
+            "processing": "Otimizando…"
         },
         "fields": {
             "firstName": "Nome",

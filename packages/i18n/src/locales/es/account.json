@@ -876,11 +876,13 @@
             "urlLabel": "URL de avatar",
             "errors": {
                 "fileTooLarge": "La imagen no puede superar los {{maxSize}} MB.",
-                "invalidType": "El archivo debe ser una imagen JPG, PNG o WebP.",
+                "invalidType": "El archivo debe ser una imagen JPG, PNG, WebP o HEIC.",
+                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}} MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.",
                 "unexpectedResponse": "Respuesta inesperada del servidor.",
                 "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
             },
-            "uploading": "Subiendo..."
+            "uploading": "Subiendo...",
+            "processing": "Optimizando…"
         },
         "fields": {
             "firstName": "Nombre",
