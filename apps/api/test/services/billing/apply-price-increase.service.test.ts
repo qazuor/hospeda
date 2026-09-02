@@ -8,17 +8,27 @@
  *  - subscriptions already at the target live amount are skipped (idempotency)
  *  - re-running after a successful apply is a full no-op (idempotent)
  *  - commerce/partner product-domain subscriptions are excluded from `matched`
- *  - retrieve failure → outcome 'failed', does not abort the batch
+ *  - live-amount lookup failure → outcome 'failed', does not abort the batch
  *  - mutation retry: transient failure then success → 'updated'
  *  - mutation exhausts retries → 'failed'
  *
+ * HOS-991: the live amount is read via `fetchLivePreapprovalAmountMajor`
+ * (`GET /preapproval/{id}` directly), NOT via `paymentAdapter.subscriptions.retrieve()`
+ * — that typed method never returns `auto_recurring`, so a fixture built on its
+ * shape would validate a code path that can never happen against real MercadoPago
+ * (exactly the bug this issue fixes). `mockRetrieve` is kept in the adapter stub
+ * ONLY so tests can assert it is never called — see the dedicated regression test.
+ *
  * Mocking strategy mirrors `subscription-poll.job.test.ts`: `@repo/db`'s typed
  * select chain is mocked at the smallest boundary (select().from().where().limit()
- * resolves a per-test-programmable rows array), and `@repo/billing`'s
- * `createMercadoPagoAdapter` returns a stub adapter with per-test-programmable
- * `subscriptions.retrieve` / `subscriptions.update`. `@repo/service-core`'s
- * `isAccommodationSubscription` is the REAL implementation (pure, no I/O) so the
- * product-domain filter is exercised for real rather than re-implemented in a mock.
+ * resolves a per-test-programmable rows array), `@repo/billing`'s
+ * `createMercadoPagoAdapter` returns a stub adapter with a per-test-programmable
+ * `subscriptions.update`, and `mp-preapproval-amount-lookup.js`'s
+ * `fetchLivePreapprovalAmountMajor` is mocked directly (its own real-response
+ * behavior is covered by `test/utils/mp-preapproval-amount-lookup.test.ts`).
+ * `@repo/service-core`'s `isAccommodationSubscription` is the REAL implementation
+ * (pure, no I/O) so the product-domain filter is exercised for real rather than
+ * re-implemented in a mock.
  *
  * Fake timers are used because the service inserts small sleep+jitter delays
  * between subscriptions and between retry attempts (kept realistic in
@@ -51,6 +61,8 @@ vi.mock('../../../src/lib/qzpay-logger.js', () => ({
     }
 }));
 
+// Kept unused by the service under test on purpose — see the module doc above
+// and the dedicated regression test asserting it is never called.
 const mockRetrieve = vi.fn();
 const mockUpdate = vi.fn();
 const mockCreateMercadoPagoAdapter = vi.fn((..._args: unknown[]) => ({
@@ -59,6 +71,15 @@ const mockCreateMercadoPagoAdapter = vi.fn((..._args: unknown[]) => ({
 vi.mock('@repo/billing', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args)
+}));
+
+vi.mock('../../../src/utils/env.js', () => ({
+    env: { HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'TEST-token' }
+}));
+
+const mockFetchLiveAmount = vi.fn();
+vi.mock('../../../src/utils/mp-preapproval-amount-lookup.js', () => ({
+    fetchLivePreapprovalAmountMajor: (...args: unknown[]) => mockFetchLiveAmount(...args)
 }));
 
 const mockSelectRows = vi.fn();
@@ -108,9 +129,13 @@ function buildRow(overrides: Partial<Record<string, unknown>> = {}) {
     };
 }
 
-/** Live MP preapproval fixture with `auto_recurring.transaction_amount`. */
-function buildLivePreapproval(transactionAmountMajor: number) {
-    return { auto_recurring: { transaction_amount: transactionAmountMajor } };
+/**
+ * `fetchLivePreapprovalAmountMajor` success fixture. This is the boundary the
+ * service actually reads from (a raw `GET /preapproval/{id}` response), not
+ * `paymentAdapter.subscriptions.retrieve()`'s output — see the module doc.
+ */
+function buildLiveAmountLookup(transactionAmountMajor: number) {
+    return { kind: 'ok' as const, transactionAmountMajor };
 }
 
 /**
@@ -128,7 +153,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     mockSelectRows.mockResolvedValue([]);
-    mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+    mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
     mockUpdate.mockResolvedValue(undefined);
 });
 
@@ -152,7 +177,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
     it('dryRun (default) reports would-update subscriptions without calling subscriptions.update', async () => {
         // Arrange: one eligible sub, currently at 5000, target 6000.
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
 
         // Act
         const result = await runWithFakeTimers({ planId: PLAN_ID, newAmountCentavos: 600000 });
@@ -176,7 +201,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
     it('dryRun: false performs the real mutation and reports updated', async () => {
         // Arrange
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
 
         // Act
         const result = await runWithFakeTimers({
@@ -227,7 +252,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
             }
         ]);
         // Never touches MP for a discounted subscription.
-        expect(mockRetrieve).not.toHaveBeenCalled();
+        expect(mockFetchLiveAmount).not.toHaveBeenCalled();
         expect(mockUpdate).not.toHaveBeenCalled();
     });
 
@@ -254,7 +279,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
         mockSelectRows.mockResolvedValue([
             buildRow({ id: 'sub-exhausted', promoCodeId: 'promo-3', promoEffectRemainingCycles: 0 })
         ]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
 
         const result = await runWithFakeTimers({
             planId: PLAN_ID,
@@ -270,7 +295,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
     it('skips a subscription already at the target live amount (idempotent re-run)', async () => {
         // Arrange: live amount already matches target (6000).
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(6000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(6000));
 
         // Act
         const result = await runWithFakeTimers({
@@ -292,7 +317,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
 
     it('is idempotent across two runs: second run is a full no-op once amounts are applied', async () => {
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
 
         const firstRun = await runWithFakeTimers({
             planId: PLAN_ID,
@@ -303,7 +328,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
         expect(mockUpdate).toHaveBeenCalledTimes(1);
 
         // Second run: live amount now reflects the applied increase.
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(6000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(6000));
         const secondRun = await runWithFakeTimers({
             planId: PLAN_ID,
             newAmountCentavos: 600000,
@@ -325,7 +350,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
                 productDomain: 'commerce'
             })
         ]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
 
         const result = await runWithFakeTimers({
             planId: PLAN_ID,
@@ -338,13 +363,13 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
         expect(result.details[0]?.subscriptionId).toBe('sub-accom');
     });
 
-    it('reports a failed outcome when retrieving the live preapproval throws, without aborting the batch', async () => {
+    it('reports a failed outcome when the live-amount lookup errors, without aborting the batch', async () => {
         mockSelectRows.mockResolvedValue([
             buildRow({ id: 'sub-broken', mpSubscriptionId: 'mp-broken' }),
             buildRow({ id: 'sub-ok', mpSubscriptionId: 'mp-ok' })
         ]);
-        mockRetrieve.mockImplementationOnce(() => Promise.reject(new Error('MP unreachable')));
-        mockRetrieve.mockResolvedValueOnce(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValueOnce({ kind: 'error', message: 'MP unreachable' });
+        mockFetchLiveAmount.mockResolvedValueOnce(buildLiveAmountLookup(5000));
 
         const result = await runWithFakeTimers({
             planId: PLAN_ID,
@@ -362,7 +387,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
 
     it('retries the mutation on a transient failure and succeeds', async () => {
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
         mockUpdate
             .mockRejectedValueOnce(new Error('transient network error'))
             .mockResolvedValueOnce(undefined);
@@ -380,7 +405,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
 
     it('reports failed once all mutation retry attempts are exhausted', async () => {
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
         mockUpdate.mockRejectedValue(new Error('permanent failure'));
 
         const result = await runWithFakeTimers({
@@ -399,7 +424,7 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
 
     it('uses a longer backoff for a rate-limit-shaped error but still eventually succeeds', async () => {
         mockSelectRows.mockResolvedValue([buildRow()]);
-        mockRetrieve.mockResolvedValue(buildLivePreapproval(5000));
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(5000));
         const rateLimitError = Object.assign(new Error('Too Many Requests'), {
             code: 'rate_limit_error'
         });
@@ -421,5 +446,46 @@ describe('applyPriceIncreaseToPlanSubscribers', () => {
         await runWithFakeTimers({ planId: PLAN_ID, newAmountCentavos: 600000, limit: 10 });
 
         expect(mockLimit).toHaveBeenCalledWith(10);
+    });
+
+    it('HOS-991 regression: never reads the live amount via paymentAdapter.subscriptions.retrieve()', async () => {
+        // Arrange: `mockRetrieve` is programmed with the REAL shape
+        // `subscriptions.retrieve()` returns (qzpay-mercadopago's
+        // `mapToProviderSubscription` — a closed set of fields, NO
+        // `auto_recurring` key at all). If the service ever read the live
+        // amount from `retrieve()` again, it could only ever see `null` here,
+        // and the idempotent skip would never fire — the exact bug this issue
+        // fixes. `fetchLivePreapprovalAmountMajor` (the correct boundary) is
+        // programmed with the live amount already matching the target.
+        mockSelectRows.mockResolvedValue([buildRow()]);
+        mockRetrieve.mockResolvedValue({
+            id: 'mp-sub-1',
+            status: 'active',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(),
+            cancelAtPeriodEnd: false,
+            canceledAt: null,
+            trialStart: null,
+            trialEnd: null,
+            metadata: {}
+        });
+        mockFetchLiveAmount.mockResolvedValue(buildLiveAmountLookup(6000));
+
+        const result = await runWithFakeTimers({
+            planId: PLAN_ID,
+            newAmountCentavos: 600000, // 6000 ARS — matches the live amount above
+            dryRun: false
+        });
+
+        // The idempotent skip fires because the amount came from the raw GET,
+        // never from subscriptions.retrieve() — which was never even called.
+        expect(mockRetrieve).not.toHaveBeenCalled();
+        expect(mockFetchLiveAmount).toHaveBeenCalledWith({
+            preapprovalId: 'mp-sub-1',
+            accessToken: 'TEST-token'
+        });
+        expect(result.skipped).toBe(1);
+        expect(result.updated).toBe(0);
+        expect(mockUpdate).not.toHaveBeenCalled();
     });
 });
