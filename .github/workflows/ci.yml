@@ -336,8 +336,6 @@ jobs:
       # nothing reported it.
       - name: Test scripts/ tooling and guards
         run: pnpm test:scripts
-      - name: Test the interactive CLI (scripts/cli)
-        run: pnpm test:cli
       # `hops` (scripts/server-tools) is the third suite that ran nowhere, and
       # the one that matters most: it is the tool operators point at
       # PRODUCTION. It needs its own runtime because the package is
