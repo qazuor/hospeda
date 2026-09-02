@@ -55,9 +55,11 @@ Y lo que se **lee** en pantalla:
 > realidad sí). Las cuatro son igual de honestas: ninguna inventa un requisito que no
 > esté ni una condición que no exista.
 >
-> ⚠️ **Nunca se dice "sin tarjeta".** La frase final usa la misma fórmula que
-> [V12](../v12/montaje.md): "no se cobra nada", nunca una promesa sobre el medio de
-> pago. **Cero precios** en ningún punto del video.
+> ✅ **"Sin tarjeta" ahora se puede decir** (HOS-1012, 01/09/2026): la prueba dejó de
+> pedir medio de pago. La frase final puede seguir usando la fórmula de
+> [V12](../v12/montaje.md) ("no se cobra nada") o pasar a la promesa directa sobre el
+> medio de pago, que hoy es cierta. **Cero precios** en ningún punto del video — esa
+> regla no cambió.
 
 ---
 

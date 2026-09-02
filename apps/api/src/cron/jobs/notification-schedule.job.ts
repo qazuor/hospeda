@@ -5,8 +5,11 @@
  * Runs daily at 8:00 UTC (5:00 AM Argentina time).
  *
  * Features:
- * - Sends TRIAL_ENDING_REMINDER for trials ending in 3 days
- * - Sends TRIAL_ENDING_REMINDER for trials ending in 1 day
+ * - Runs the nine-send Hospeda-owned trial email series (HOS-1012 §4): three
+ *   warnings at 10, 5 and 1 days before `trial_end`, the expiry mail on the day
+ *   the listing comes down, and win-backs at +1, +5, +10, +30 and +60. The
+ *   offsets are constants, not settings, and every send has its own template;
+ *   the mechanics live in `trial-series-dispatch.ts`.
  * - Sends RENEWAL_REMINDER for subscriptions renewing in 7 days
  * - Sends RENEWAL_REMINDER for subscriptions renewing in 3 days
  * - Sends RENEWAL_REMINDER for subscriptions renewing in 1 day
@@ -17,31 +20,21 @@
  * @module cron/jobs/notification-schedule
  */
 
-import {
-    and,
-    billingNotificationLog,
-    billingSubscriptionEvents,
-    eq,
-    getDb,
-    sql,
-    withTransaction
-} from '@repo/db';
+import { billingNotificationLog, eq, getDb, sql, withTransaction } from '@repo/db';
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
-import { BILLING_EVENT_TYPES, type TrialEndingSubscription } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
-import { buildTrialUpgradeUrl, TrialService } from '../../services/trial.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
-import { env } from '../../utils/env.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import { getRedisClient } from '../../utils/redis.js';
-import type { CronJobContext, CronJobDefinition } from '../types.js';
+import type { CronJobDefinition } from '../types.js';
 import {
     evaluateRenewalReminder,
     RENEWAL_REMINDER_DAYS
 } from './notification-schedule-renewal-window.js';
+import { dispatchTrialSeries } from './trial-series-dispatch.js';
 
 /**
  * In-memory fallback for idempotency keys when Redis is unavailable.
@@ -173,242 +166,6 @@ type CronTransactionResult =
           readonly durationMs: number;
           readonly details?: Record<string, unknown>;
       };
-
-/** `trigger_source` recorded on the durable trial-reminder dedup rows. */
-const TRIAL_DEDUP_TRIGGER_SOURCE = 'cron';
-
-/**
- * Map a trial-reminder variant to its durable dedup event type.
- *
- * - `D3` — the primary "your trial ends soon" reminder (skip-tolerant window).
- * - `D1` — the "your trial ends tomorrow" urgency reminder (exact day-1 match).
- *
- * Reuses the pre-existing `TRIAL_PRE_END_NOTIF_D3/_D1` event types (HOS-121
- * NG-4): audit rows already written on staging/prod reference these strings, so
- * a matching subscription is idempotently treated as "already sent".
- */
-function trialVariantToEventType(variant: 'D3' | 'D1'): string {
-    return variant === 'D3'
-        ? BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D3
-        : BILLING_EVENT_TYPES.TRIAL_PRE_END_NOTIF_D1;
-}
-
-/**
- * Send a single trial-ending reminder guarded by a DURABLE per-variant dedup
- * ledger (`billing_subscription_events`).
- *
- * Unlike the Redis-TTL + in-memory Map dedup used for renewals, a permanent
- * event row survives process restarts and multi-replica races (HOS-121 §4.2).
- * Being per-variant, the skip-tolerant primary window and the exact day-1
- * reminder can never double-send the same variant (HOS-121 §4.3 — the wider
- * window is only safe because of this durable dedup).
- *
- * The dedup select + insert run on the AUTOCOMMIT connection (`getDb()`), NOT on
- * the job's umbrella advisory-lock transaction: the row must persist the instant
- * the email is dispatched, so a later rollback of the (long-running, external-IO)
- * renewal/retry phases cannot strip an already-sent reminder's dedup row and
- * cause the whole batch to be re-sent next run. This mirrors how the renewal
- * branch marks Redis out-of-band. Concurrency across replicas is still serialized
- * by advisory lock 1002 (held by the outer transaction), and a partial UNIQUE
- * index on `(subscription_id, event_type)` for the trial variants backs the
- * `onConflictDoNothing()` insert as an atomic safety net.
- *
- * The send is fire-and-forget (matching the renewal branch); delivery failures
- * are handled by the notification-retry pipeline.
- *
- * @returns `'sent'` when a new reminder was dispatched, `'deduped'` when a prior
- *          row already recorded this variant for the subscription.
- */
-async function sendTrialReminderDurable(params: {
-    readonly trial: TrialEndingSubscription;
-    readonly variant: 'D3' | 'D1';
-    readonly logger: CronJobContext['logger'];
-}): Promise<'sent' | 'deduped'> {
-    const { trial, variant, logger } = params;
-    const db = getDb();
-    const eventType = trialVariantToEventType(variant);
-
-    const existing = await db
-        .select({ id: billingSubscriptionEvents.id })
-        .from(billingSubscriptionEvents)
-        .where(
-            and(
-                eq(billingSubscriptionEvents.subscriptionId, trial.id),
-                eq(billingSubscriptionEvents.eventType, eventType)
-            )
-        )
-        .limit(1);
-
-    if (existing.length > 0) {
-        return 'deduped';
-    }
-
-    // HOS-115 §5 nudge — target the owner pricing page and carry the interval
-    // the customer originally chose (single source of truth in
-    // `buildTrialUpgradeUrl`). This is the CORRECT url; the deleted
-    // trial-pre-end-notif cron's `/cuenta/planes` + `userId: null` url is NOT
-    // ported (HOS-121 NG-1).
-    const upgradeUrl = buildTrialUpgradeUrl({
-        siteUrl: env.HOSPEDA_SITE_URL,
-        intendedInterval: trial.intendedInterval
-    });
-
-    sendNotification({
-        type: NotificationType.TRIAL_ENDING_REMINDER,
-        recipientEmail: trial.userEmail,
-        recipientName: trial.userName,
-        userId: trial.userId,
-        customerId: trial.customerId,
-        // HOS-231: prefer the display name; `planSlug` is the raw slug fallback.
-        planName: trial.planDisplayName ?? trial.planSlug,
-        trialEndDate: trial.trialEnd.toISOString(),
-        daysRemaining: trial.daysRemaining,
-        upgradeUrl,
-        idempotencyKey: `trial-ending-${variant.toLowerCase()}-${trial.id}`
-    }).catch((notifError) => {
-        logger.debug('Trial ending notification failed (will retry)', {
-            customerId: trial.customerId,
-            error: notifError instanceof Error ? notifError.message : String(notifError)
-        });
-    });
-
-    // onConflictDoNothing: atomic backstop against the check-then-act race if a
-    // second writer ever slips past the SELECT (impossible under lock 1002 today,
-    // but keeps the ledger consistent regardless). Relies on the partial UNIQUE
-    // index from migrations/extras (HOS-121).
-    await db
-        .insert(billingSubscriptionEvents)
-        .values({
-            subscriptionId: trial.id,
-            eventType,
-            triggerSource: TRIAL_DEDUP_TRIGGER_SOURCE,
-            metadata: {
-                variant,
-                daysRemaining: trial.daysRemaining,
-                trialEnd: trial.trialEnd.toISOString(),
-                sentAt: new Date().toISOString()
-            }
-        })
-        .onConflictDoNothing();
-
-    return 'sent';
-}
-
-/**
- * Process the trial-ending reminders: a skip-tolerant, config-aware primary
- * window plus the exact day-1 reminder, both backed by the durable dedup above.
- *
- * Primary window (HOS-121 §4.1): covers `[trialReminderDays-1, trialReminderDays]`
- * so a single skipped cron day does not drop the primary reminder. Values below
- * 2 are excluded so the primary window never overlaps the exact day-1 reminder.
- * Because `findTrialsEndingSoon` matches an exact day (its contract is shared
- * and left unchanged — HOS-121 OQ-3), the window is assembled by querying each
- * day in the tolerance range and de-duplicating by subscription id.
- *
- * @returns per-run counters; `processed` counts only newly-sent reminders
- *          (deduped ones are not counted), `errors` counts send/DB failures.
- */
-async function processTrialReminders(params: {
-    readonly trialService: TrialService;
-    readonly trialReminderDays: number;
-    readonly dryRun: boolean;
-    readonly logger: CronJobContext['logger'];
-}): Promise<{
-    processed: number;
-    errors: number;
-    primaryCount: number;
-    oneDayCount: number;
-}> {
-    const { trialService, trialReminderDays, dryRun, logger } = params;
-
-    const primaryDaysAhead = Array.from(new Set([trialReminderDays, trialReminderDays - 1])).filter(
-        (days) => days >= 2
-    );
-
-    // Assemble the primary window, de-duplicating by subscription id so a trial
-    // straddling two adjacent days in the tolerance range is processed once.
-    const primaryById = new Map<string, TrialEndingSubscription>();
-    for (const daysAhead of primaryDaysAhead) {
-        const found = await trialService.findTrialsEndingSoon({ daysAhead });
-        for (const trial of found) {
-            if (!primaryById.has(trial.id)) {
-                primaryById.set(trial.id, trial);
-            }
-        }
-    }
-    const primaryTrials = [...primaryById.values()];
-
-    const oneDayTrials = await trialService.findTrialsEndingSoon({ daysAhead: 1 });
-
-    logger.info('Found trials ending soon', {
-        primaryWindow: primaryDaysAhead,
-        primaryCount: primaryTrials.length,
-        oneDayCount: oneDayTrials.length
-    });
-
-    if (dryRun) {
-        logger.info('Dry run mode - would send trial ending reminders', {
-            primaryCount: primaryTrials.length,
-            oneDayCount: oneDayTrials.length
-        });
-        return {
-            processed: primaryTrials.length + oneDayTrials.length,
-            errors: 0,
-            primaryCount: primaryTrials.length,
-            oneDayCount: oneDayTrials.length
-        };
-    }
-
-    let processed = 0;
-    let errors = 0;
-
-    const batches: ReadonlyArray<{
-        readonly trials: readonly TrialEndingSubscription[];
-        readonly variant: 'D3' | 'D1';
-    }> = [
-        { trials: primaryTrials, variant: 'D3' },
-        { trials: oneDayTrials, variant: 'D1' }
-    ];
-
-    for (const { trials, variant } of batches) {
-        for (const trial of trials) {
-            try {
-                const outcome = await sendTrialReminderDurable({ trial, variant, logger });
-                if (outcome === 'sent') {
-                    processed++;
-                    logger.debug('Sent trial ending reminder', {
-                        customerId: trial.customerId,
-                        subscriptionId: trial.id,
-                        variant,
-                        daysRemaining: trial.daysRemaining
-                    });
-                } else {
-                    logger.debug('Skipping duplicate trial reminder (durable dedup)', {
-                        customerId: trial.customerId,
-                        subscriptionId: trial.id,
-                        variant
-                    });
-                }
-            } catch (error) {
-                errors++;
-                logger.error('Failed to send trial ending notification', {
-                    customerId: trial.customerId,
-                    subscriptionId: trial.id,
-                    variant,
-                    error: error instanceof Error ? error.message : String(error)
-                });
-            }
-        }
-    }
-
-    return {
-        processed,
-        errors,
-        primaryCount: primaryTrials.length,
-        oneDayCount: oneDayTrials.length
-    };
-}
-
 /**
  * Notification schedule cron job definition
  *
@@ -426,9 +183,12 @@ export const notificationScheduleJob: CronJobDefinition = {
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
 
-        // Load settings from DB, falling back to compile-time constants
+        // Load settings from DB, falling back to compile-time constants.
+        // `trialExpiryReminderDays` is GONE (HOS-1012 T-016): the nine offsets
+        // are constants in `trial-notification-offsets.ts` because each email's
+        // copy names its own distance, so an admin able to move the distance is
+        // an admin able to make the copy lie.
         const billingSettings = await loadBillingSettings();
-        const trialReminderDays = billingSettings.trialExpiryReminderDays;
 
         let processed = 0;
         let errors = 0;
@@ -455,7 +215,6 @@ export const notificationScheduleJob: CronJobDefinition = {
                 logger.info('Starting notification schedule job', {
                     dryRun,
                     startedAt: startedAt.toISOString(),
-                    trialReminderDays,
                     sendTrialExpiryReminder: billingSettings.sendTrialExpiryReminder,
                     settingsSource: 'database-with-fallback'
                 });
@@ -475,21 +234,27 @@ export const notificationScheduleJob: CronJobDefinition = {
                     };
                 }
 
-                // Create trial service
-                const trialService = new TrialService(billing);
-
-                // 1-2. Trial-ending reminders: a skip-tolerant, config-aware
-                // primary window plus the exact day-1 reminder, both backed by
-                // the DURABLE per-variant dedup ledger (billing_subscription_events)
-                // instead of the Redis-TTL + in-memory Map used for renewals.
-                // Ported from the now-deleted trial-pre-end-notif cron (HOS-121).
-                const trialResult = await processTrialReminders({
-                    trialService,
-                    trialReminderDays,
+                // 1. The nine-send Hospeda-owned trial series (HOS-1012 §4):
+                // three warnings before `trial_end`, the expiry mail on the day
+                // the listing comes down, and five win-backs after. Each send
+                // has its own template and its own DURABLE dedup row in
+                // `billing_subscription_events`, and every dispatch re-reads
+                // live subscription state first — the series stops the moment
+                // the person pays.
+                //
+                // `sendTrialExpiryReminder` gates the eight REMINDER sends and
+                // NOT the expiry mail. That mail is TRANSACTIONAL: a host whose
+                // listing left the site has to be told it left the site, and an
+                // admin preference about reminders is not consent to withhold
+                // that. Note the toggle was previously logged and never read,
+                // so an admin who turned it off still got every reminder.
+                const trialResult = await dispatchTrialSeries({
+                    billing,
                     dryRun,
-                    logger
+                    logger,
+                    remindersEnabled: billingSettings.sendTrialExpiryReminder
                 });
-                processed += trialResult.processed;
+                processed += trialResult.sent;
                 errors += trialResult.errors;
 
                 // 3. Find subscriptions renewing soon (7, 3, and 1 day reminders)
@@ -803,8 +568,16 @@ export const notificationScheduleJob: CronJobDefinition = {
                     errors,
                     durationMs,
                     details: {
-                        trialsEndingPrimary: trialResult.primaryCount,
-                        trialsEnding1Day: trialResult.oneDayCount,
+                        // Per-offset cohort sizes plus every skip reason. A run
+                        // that reports only what it sent cannot tell "nobody
+                        // was due today" from "everything was skipped".
+                        trialSeries: {
+                            cohortSizes: trialResult.cohortSizes,
+                            sent: trialResult.sent,
+                            deduped: trialResult.deduped,
+                            converted: trialResult.converted,
+                            noCustomer: trialResult.noCustomer
+                        },
                         renewalsSent,
                         retries: {
                             processed: retriesProcessed,

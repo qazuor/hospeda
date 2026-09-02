@@ -33,9 +33,8 @@
  * a direct dependency of the separate bun-standalone `scripts/server-tools`
  * package (see that package's own `env-set.ts` for the `@clack/prompts`
  * wizard, T-019). The established prompt library for root-level interactive
- * scripts is `@inquirer/prompts` (already a root devDependency, used by
- * `scripts/cli/direct.ts` / `interactive.ts`) — this file follows that
- * existing convention instead of introducing a new dependency.
+ * scripts is `@inquirer/prompts` (already a root devDependency) — this file
+ * follows that existing convention instead of introducing a new dependency.
  *
  * WRITE strategy: answers are written back to the app's `.env.local` via
  * `upsertDotenv()`, which updates existing `KEY=` lines IN PLACE (preserving
@@ -102,9 +101,8 @@ class WizardCancelledError extends Error {
 
 /**
  * Duck-typing check for `@inquirer/prompts`' `ExitPromptError`, thrown when
- * the operator cancels a prompt. Mirrors `scripts/cli/utils.ts`'s
- * `isExitPromptError` (kept as a local copy rather than a cross-boundary
- * import — `scripts/cli/` is its own typechecked sub-tree).
+ * the operator cancels a prompt. The library does not export the class, so
+ * the shape is checked by hand.
  */
 function isExitPromptError(error: unknown): boolean {
     return (

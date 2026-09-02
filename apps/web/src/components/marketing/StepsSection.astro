@@ -1,0 +1,124 @@
+---
+/**
+ * @file StepsSection.astro
+ * @description The "how it works" band of a sales page: a numbered step with a
+ * title and a line of copy, repeated.
+ *
+ * Extracted for HOS-985 (H6 of HOS-941) from four hand-rolled copies.
+ *
+ * ## Why the column count is a prop
+ *
+ * The four existing copies do not agree, and both are right for their content:
+ * the owner journey has four steps on a four-column grid, the two commerce
+ * landings have three on a three-column one. A fixed grid would leave a hole in
+ * one of the two. The prop defaults to 4 only because that is the wider case;
+ * neither value is the "real" one.
+ *
+ * ## The number is copy, not an index
+ *
+ * `num` is passed in rather than derived from the array position. The existing
+ * pages render `'01'`, `'02'`… — zero-padded, and a locale could reasonably
+ * want something else. Deriving it would hardcode a format decision here.
+ */
+
+import SalesSection from './SalesSection.astro';
+
+/** One step: its label plus already-translated copy. */
+export interface StepItem {
+    /** Displayed step label, e.g. `'01'`. Copy, not an index. */
+    readonly num: string;
+    /** Translated heading. */
+    readonly title: string;
+    /** Translated body copy. */
+    readonly desc: string;
+}
+
+interface Props {
+    readonly tagline: string;
+    readonly title: string;
+    readonly items: readonly StepItem[];
+    /** Columns on desktop. Collapses to one below 768px either way. */
+    readonly columns?: 3 | 4;
+    readonly warm?: boolean;
+}
+
+const { tagline, title, items, columns = 4, warm = false } = Astro.props;
+---
+
+<SalesSection tagline={tagline} title={title} warm={warm}>
+    <slot name="decoration" slot="decoration" />
+    <div class="steps__grid" data-columns={columns}>
+        {
+            items.map((item, i) => (
+                <div
+                    class="steps__item"
+                    data-reveal="up"
+                    data-stagger-index={Math.min(i, 6)}
+                    data-stagger-step="100"
+                >
+                    <span class="steps__num" aria-hidden="true">
+                        {item.num}
+                    </span>
+                    <h3 class="steps__title">{item.title}</h3>
+                    <p class="steps__desc">{item.desc}</p>
+                </div>
+            ))
+        }
+    </div>
+</SalesSection>
+
+<style>
+    .steps__grid {
+        display: grid;
+        gap: var(--space-card-gap);
+        text-align: center;
+    }
+
+    .steps__grid[data-columns='3'] {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .steps__grid[data-columns='4'] {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .steps__num {
+        font-family: var(--font-heading);
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 700;
+        color: var(--brand-primary-a20);
+        display: block;
+        margin-bottom: var(--space-3);
+    }
+
+    .steps__title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .steps__desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* The four-column grid needs an intermediate two-column state; the
+       three-column one reads fine collapsing straight to a single column. */
+    @media (max-width: 1024px) {
+        .steps__grid[data-columns='4'] {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .steps__grid[data-columns='3'],
+        .steps__grid[data-columns='4'] {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

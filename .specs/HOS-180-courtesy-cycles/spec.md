@@ -439,23 +439,32 @@ payment method (HOS-926). See R-7.
   natural fix belongs with HOS-914 (the state reconciler), which has to
   understand both derived states anyway — see R-4.
 
-- **R-9 — annual subscriptions are unverified, and one sibling refuses them
-  outright.** `subscription-pause.ts` rejects an annual with
+- **R-9 — annual subscriptions are still unverified against MercadoPago.**
+  *Updated by HOS-995 (2026-09-02).* The sibling that refused them outright is
+  gone: `subscription-pause.ts` used to reject an annual with
   `PAUSE_NOT_SUPPORTED_FOR_ANNUAL`, on the pre-HOS-171 premise that an annual is
   a single Checkout Pro payment with no recurring preapproval to pause. Since
-  HOS-171 an annual IS a recurring preapproval, so the premise no longer holds
-  — but nobody has confirmed that `billing.subscriptions.pause()` actually works
-  on one.
+  HOS-171 an annual IS a recurring preapproval, so that guard was retired and
+  replaced by the condition it was actually reaching for — the absence of a
+  `mercadopago` provider id, which is interval-blind.
 
-  The grant does not special-case annuals: it requires an `mp_subscription_id`
-  and lets MercadoPago answer, surfacing a refusal as `PROVIDER_ERROR` rather
-  than pretending the gift landed. Fail-closed, so no money is at risk — but
-  "gift a year" is untested and belongs in the staging smoke.
+  What remains unverified is the provider behaviour itself: nobody has confirmed
+  that `billing.subscriptions.pause()` works on a twelve-month preapproval. That
+  is a manual sandbox observation, so HOS-995 hardened the failure mode instead.
+  The grant still does not special-case annuals — it requires an
+  `mp_subscription_id` and lets MercadoPago answer, surfacing a refusal as
+  `PROVIDER_ERROR` rather than pretending the gift landed — and a refusal now
+  also writes a `SUBSCRIPTION_PAUSE_PROVIDER_REFUSED` row carrying the interval
+  and MP's own message. Fail-closed *and* detectable: if MP does refuse annual
+  pauses, one `GROUP BY` over `billing_subscription_events` says so.
 
-  Related: `resolveCadence` reads `metadata.billingInterval` and falls back to
-  monthly. A subscription that never recorded that key would get a one-MONTH
-  gift where a year was intended. Under-gifting rather than over-gifting, and
-  visible in the response, but worth a look during the smoke.
+  "Gift a year" is still untested end-to-end and belongs in the staging smoke.
+
+  Related: `resolveCadence` used to read `metadata.billingInterval` and fall back
+  to monthly, so a subscription that never recorded that key got a one-MONTH gift
+  where a year was intended. HOS-995 replaced the fallback with a refusal
+  (`UNKNOWN_BILLING_INTERVAL`) — a value that decides whether N cycles means N
+  months or N years must not be guessed.
 
 ## 11. Decisions (owner, 2026-08-31)
 

@@ -208,8 +208,27 @@ export function createDbMock() {
     return {
         // Database client
         getDb: vi.fn(() => ({
+            /**
+             * Makes the builder itself awaitable, resolving to an empty result
+             * set (HOS-1072).
+             *
+             * Without it, awaiting a chain that does not end in `limit()` —
+             * `select().from().innerJoin().where().orderBy()`, which is what a
+             * catalog join looks like — handed the caller the BUILDER OBJECT.
+             * The next line is invariably `rows.map(...)`, so the route threw
+             * "rows.map is not a function" and the failure read as a broken
+             * route rather than an unstubbed query. Chaining is unaffected:
+             * every step still returns `this`, and `limit()` stays terminal.
+             */
+            // biome-ignore lint/suspicious/noThenProperty: a query builder that can be awaited is exactly what this stub must imitate.
+            then: (
+                onFulfilled?: ((value: unknown[]) => unknown) | null,
+                onRejected?: ((reason: unknown) => unknown) | null
+            ) => Promise.resolve([]).then(onFulfilled, onRejected),
             select: vi.fn().mockReturnThis(),
             from: vi.fn().mockReturnThis(),
+            innerJoin: vi.fn().mockReturnThis(),
+            leftJoin: vi.fn().mockReturnThis(),
             where: vi.fn().mockReturnThis(),
             // Resolves to an empty result set, not to the chain itself. `limit()`
             // is terminal in this codebase and callers destructure it
@@ -268,6 +287,10 @@ export function createDbMock() {
         // Re-export drizzle-orm operators (commonly used)
         sql: vi.fn(),
         eq: vi.fn((a: string, b: unknown) => ({ type: 'eq', left: a, right: b })),
+        // HOS-1012 T-022: the trial supersede excludes the row being activated
+        // with `ne(id, activatedId)`; without this export the whole webhook
+        // activation path throws "No 'ne' export is defined on the @repo/db mock".
+        ne: vi.fn((a: string, b: unknown) => ({ type: 'ne', left: a, right: b })),
         and: vi.fn((...args: unknown[]) => ({ type: 'and', conditions: args })),
         or: vi.fn((...args: unknown[]) => ({ type: 'or', conditions: args })),
         ilike: vi.fn((a: string, b: string) => ({ type: 'ilike', column: a, pattern: b })),
@@ -831,6 +854,44 @@ export function createDbMock() {
             firstName: 'first_name',
             lastName: 'last_name',
             deletedAt: 'deleted_at'
+        },
+
+        // Shared amenity/feature catalog and the commerce junction tables the
+        // public detail routes join against (HOS-1072). Column-name stubs only:
+        // this mock replaces the WHOLE `@repo/db` module, so a table it does not
+        // name arrives as `undefined` and the first `eq(table.column, …)` throws
+        // — which surfaces as a 500 from a route whose own logic is fine.
+        amenities: {
+            id: 'id',
+            slug: 'slug',
+            icon: 'icon',
+            displayWeight: 'display_weight'
+        },
+        features: {
+            id: 'id',
+            slug: 'slug',
+            icon: 'icon',
+            displayWeight: 'display_weight'
+        },
+        rGastronomyAmenity: {
+            gastronomyId: 'gastronomy_id',
+            amenityId: 'amenity_id'
+        },
+        rGastronomyFeature: {
+            gastronomyId: 'gastronomy_id',
+            featureId: 'feature_id',
+            hostReWriteName: 'host_rewrite_name',
+            comments: 'comments'
+        },
+        rExperienceAmenity: {
+            experienceId: 'experience_id',
+            amenityId: 'amenity_id'
+        },
+        rExperienceFeature: {
+            experienceId: 'experience_id',
+            featureId: 'feature_id',
+            hostReWriteName: 'host_rewrite_name',
+            comments: 'comments'
         },
 
         // Promo code effect columns (HOS-75 T-022) — typed Drizzle columns as

@@ -17,6 +17,7 @@
 
 import {
     BILLING_CRON_LAG_GRACE_HOURS,
+    composeTrialGrants,
     type EntitlementKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
@@ -24,7 +25,9 @@ import {
     isEntitlementKey,
     isLimitKey,
     isSubscriptionLive,
-    type LimitKey
+    type LimitKey,
+    readTrialComposition,
+    type TrialGrantSource
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import {
@@ -340,6 +343,89 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
 }
 
 /**
+ * Resolves a composed trial plan's grants from its SOURCE plans, live
+ * (HOS-1012 D-5, spec §6.8).
+ *
+ * A trial plan grants nothing of its own. It declares a composition —
+ * entitlements from its vertical's `pro` tier, limits from its `basico` tier —
+ * and both halves are read from the database on every entitlement load. The
+ * `entitlements` / `limits` stored on the trial plan row itself are a SNAPSHOT
+ * for display, and the invariant runs one way only: **the snapshot is for
+ * showing, the composition is for gating**. If the two ever diverge, what goes
+ * stale is a screen, never a door.
+ *
+ * Resolving live rather than copying is not a preference. HOS-39's Model C
+ * makes `entitlements` and `limitsValues` COMMERCIAL fields: the database wins,
+ * the seed deliberately does not sync them from config, and the admin
+ * `PlanDialog` edits them. A copied value would therefore be right in the repo
+ * and wrong in production from the first operator edit to `pro` or `basico`,
+ * with nothing red anywhere.
+ *
+ * Driven by `metadata.trialComposition`, never by a slug comparison against the
+ * accommodation trial plan's name:
+ * with three verticals a hardcoded chain is three chances to forget one, and the
+ * third is always the one forgotten. All three trial plans run this same code;
+ * only the two slugs on their rows differ.
+ *
+ * Precedent, not invention: this module already resolves `owner-basico` by slug
+ * as the draft-phase fallback ({@link buildHostDraftDefaultsResult}).
+ * `planService.getBySlug` is the same lookup, and it mirrors `getPlanBySlug`'s
+ * filter exactly — `billing_plans.name` IS the slug (the table has no `slug`
+ * column) and soft-deleted rows are excluded, while `active` is deliberately
+ * NOT filtered.
+ *
+ * Cost: two extra plan reads, only inside the trial branch, behind the existing
+ * 5-minute entitlement cache.
+ *
+ * @param plan - The resolved plan row for the active subscription.
+ * @returns The composed grants, or `null` when the plan declares no composition
+ *   (the ordinary case) or when a source could not be resolved.
+ */
+async function resolveComposedTrialGrants(
+    plan: TrialGrantSource & { readonly metadata?: unknown; readonly id?: string }
+): Promise<TrialGrantSource | null> {
+    const composition = readTrialComposition(plan.metadata);
+    if (!composition) {
+        return null;
+    }
+
+    try {
+        const [entitlementsResult, limitsResult] = await Promise.all([
+            planService.getBySlug(composition.entitlementsFrom),
+            planService.getBySlug(composition.limitsFrom)
+        ]);
+
+        if (!entitlementsResult.success || !limitsResult.success) {
+            apiLogger.error(
+                {
+                    planId: plan.id,
+                    entitlementsFrom: composition.entitlementsFrom,
+                    limitsFrom: composition.limitsFrom,
+                    entitlementsResolved: entitlementsResult.success,
+                    limitsResolved: limitsResult.success
+                },
+                'HOS-1012: trial plan composition could not be resolved — falling back to the plan snapshot'
+            );
+            return null;
+        }
+
+        return composeTrialGrants({
+            entitlementsSource: entitlementsResult.data,
+            limitsSource: limitsResult.data
+        });
+    } catch (error) {
+        apiLogger.error(
+            {
+                planId: plan.id,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-1012: trial plan composition lookup threw — falling back to the plan snapshot'
+        );
+        return null;
+    }
+}
+
+/**
  * Whether the actor holds the HOST hat (HOS-296).
  *
  * Also a deliberate role check rather than a `PermissionEnum` one, for a
@@ -558,19 +644,36 @@ async function loadEntitlements(
             };
         }
 
-        // Extract entitlements from plan. QZPay returns string[]; filter to known
+        // ── HOS-1012 D-5: composed trial plans (spec §6.8) ────────────────
+        // This is the ONE place a resolved `plan` becomes `entitlements` +
+        // `limits`, which is why the composition is applied here and nowhere
+        // else. For every ordinary plan `composedGrants` is null and the plan
+        // speaks for itself, exactly as before. For a trial plan the two halves
+        // come from two OTHER plans, resolved live — see
+        // {@link resolveComposedTrialGrants}.
+        const composedGrants = await resolveComposedTrialGrants(plan);
+        // A composition that was declared but could not be resolved degrades to
+        // the trial plan's own snapshot — never to an empty grant set, because
+        // an empty `limits` map reads as UNLIMITED downstream. It must not be
+        // cached, though: the next request has to retry rather than serve a
+        // stale-by-construction result for the full 5-minute TTL.
+        const trialCompositionDegraded =
+            composedGrants === null && readTrialComposition(plan.metadata) !== undefined;
+        const grantSource: TrialGrantSource = composedGrants ?? plan;
+
+        // Extract entitlements. QZPay returns string[]; filter to known
         // EntitlementKey values — unexpected strings from a mis-configured plan are
         // silently dropped (filter-out strategy, matching prior cast behaviour for
         // valid values without blindly trusting garbage).
         const entitlements = new Set<EntitlementKey>(
-            (plan.entitlements ?? []).filter(isEntitlementKey)
+            (grantSource.entitlements ?? []).filter(isEntitlementKey)
         );
 
-        // Extract limits from plan. QZPay returns Record<string, number>; filter to
+        // Extract limits. QZPay returns Record<string, number>; filter to
         // known LimitKey values — unknown keys are silently dropped.
         const limits = new Map<LimitKey, number>();
-        if (plan.limits) {
-            for (const [key, value] of Object.entries(plan.limits)) {
+        if (grantSource.limits) {
+            for (const [key, value] of Object.entries(grantSource.limits)) {
                 if (isLimitKey(key)) {
                     limits.set(key, value);
                 }
@@ -581,7 +684,7 @@ async function loadEntitlements(
         // These calls are wrapped in try-catch for graceful degradation:
         // if they fail, plan-only values are returned with shouldCache=false
         // so the next request retries instead of serving stale plan-only data.
-        let shouldCache = true;
+        let shouldCache = !trialCompositionDegraded;
 
         try {
             // Fetch customer-level entitlements and merge with plan entitlements (union).

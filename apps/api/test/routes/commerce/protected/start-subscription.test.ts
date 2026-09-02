@@ -203,7 +203,10 @@ function makeCompleteGastronomyRow(ownerId: string) {
             'La Parrilla del Puerto has served the waterfront for over a decade, specializing in grilled fish and classic asado.',
         destinationId: '00000000-0000-4000-a000-000000000002',
         type: 'RESTAURANT',
-        contactInfo: { personalEmail: 'owner@example.com' },
+        // HOS-924: a business email, not a personal one. This row doubles as the
+        // EXPERIENCE fixture below, and an experience only publishes on a channel
+        // its public page shows (`workPhone` / `mobilePhone` / `workEmail`).
+        contactInfo: { workEmail: 'owner@example.com' },
         openingHours: {
             timezone: 'America/Argentina/Buenos_Aires',
             days: {

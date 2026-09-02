@@ -38,14 +38,78 @@ const { mockDbWithTransactionRenewal } = vi.hoisted(() => {
 
 // Mock @repo/db — required for pg_try_advisory_xact_lock concurrency guard (GAP-034).
 // withTransaction is required because the job now wraps all work in a transaction.
-vi.mock('@repo/db', () => ({
-    getDb: vi.fn().mockReturnValue({
+/**
+ * A drizzle-shaped chain: every builder call answers with itself, and awaiting
+ * it yields an empty result set.
+ *
+ * HOS-1012 widened what this job touches — it now also drives
+ * `trial-series-dispatch`, which reaches `billing_subscriptions` and
+ * `billing_subscription_events` through `select/from/innerJoin/where` and
+ * `insert/values`. The previous stub stopped at `update/set/where`, so the
+ * handler threw and EVERY test in this file failed on `result.success`, which
+ * reads like a renewal-reminder regression and is not one.
+ *
+ * Empty is the correct answer: this file asserts renewal reminders, whose
+ * subscriptions come from the mocked billing client and never from the
+ * database. An empty cohort keeps the trial series inert instead of letting it
+ * interfere with what these tests actually measure.
+ */
+const makeDbChain = () => {
+    const chain: Record<string, unknown> = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
-        update: vi.fn().mockReturnThis(),
-        set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue(undefined)
-    }),
+        // biome-ignore lint/suspicious/noThenProperty: deliberately thenable — a drizzle query builder IS awaited directly, and the stub has to answer `await db.select()...where()` the same way.
+        then: (resolve: (rows: unknown[]) => unknown) => Promise.resolve([]).then(resolve)
+    };
+    for (const method of [
+        'select',
+        'from',
+        'innerJoin',
+        'leftJoin',
+        'where',
+        'orderBy',
+        'limit',
+        'groupBy',
+        'insert',
+        'values',
+        'update',
+        'set',
+        'onConflictDoNothing',
+        'returning'
+    ]) {
+        chain[method] = vi.fn(() => chain);
+    }
+    return chain;
+};
+
+vi.mock('@repo/db', () => ({
+    getDb: vi.fn(() => makeDbChain()),
     withTransaction: mockDbWithTransactionRenewal,
+    // Imported by `trial-series-dispatch` and `trial-series-cohort`; absent from
+    // a whole-module mock they read as undefined and blow up at the first call.
+    and: vi.fn((...conditions: unknown[]) => ({ __and: conditions })),
+    gte: vi.fn((_col: unknown, _val: unknown) => ({ __gte: true })),
+    lte: vi.fn((_col: unknown, _val: unknown) => ({ __lte: true })),
+    isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
+    isNotNull: vi.fn((_col: unknown) => ({ __isNotNull: true })),
+    billingSubscriptions: {
+        id: 'id',
+        customerId: 'customer_id',
+        planId: 'plan_id',
+        status: 'status',
+        trialEnd: 'trial_end',
+        mpSubscriptionId: 'mp_subscription_id',
+        productDomain: 'product_domain',
+        currentPeriodEnd: 'current_period_end',
+        deletedAt: 'deleted_at'
+    },
+    billingSubscriptionEvents: {
+        id: 'id',
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type',
+        previousStatus: 'previous_status',
+        newStatus: 'new_status',
+        createdAt: 'created_at'
+    },
     billingNotificationLog: {
         customerId: 'customer_id',
         type: 'type',
@@ -1025,11 +1089,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             const result = await notificationScheduleJob.handler(ctx);
 
             // Assert
+            // HOS-1012 replaced the two trial-reminder counters with the
+            // nine-offset series' own report. `trialsEndingPrimary` /
+            // `trialsEnding1Day` described the old two-send reminder that no
+            // longer exists; `trialSeries` reports per-offset cohort sizes plus
+            // every skip reason, so a run that sent nothing can still say
+            // whether nobody was due or everything was skipped.
             expect(result.details).toMatchObject({
                 renewalsSent: 2,
-                trialsEndingPrimary: 0,
-                trialsEnding1Day: 0
+                trialSeries: {
+                    sent: 0,
+                    deduped: 0,
+                    converted: 0,
+                    noCustomer: 0
+                }
             });
+            // `toMatchObject` is blind to a key that is simply gone, so pin the
+            // retirement explicitly.
+            expect(result.details).not.toHaveProperty('trialsEndingPrimary');
+            expect(result.details).not.toHaveProperty('trialsEnding1Day');
         });
     });
 

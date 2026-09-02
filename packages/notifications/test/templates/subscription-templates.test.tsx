@@ -154,7 +154,7 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionPaused(validProps));
 
             // Assert
-            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion');
+            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
 
         it('should include Spanish text', () => {
@@ -166,16 +166,22 @@ describe('Subscription Lifecycle Email Templates', () => {
             expect(html).toContain('Hola');
             expect(html).toContain('ha sido pausada');
             expect(html).toContain('Pausada');
-            expect(html).toContain('metodo de pago');
-            expect(html).toContain('Actualizar metodo de pago');
         });
 
-        it('should indicate payment method issue', () => {
+        // Regression test for HOS-926: this template is shared by three pause
+        // origins (self-serve pause, admin pause, and MercadoPago-reported
+        // dunning), and only the dunning case is actually a payment problem. The
+        // copy must not assume the payment method is at fault, since a host who
+        // paused their own subscription (or was paused by an admin) would
+        // otherwise be told their card failed for no reason.
+        it('should not blame the payment method (HOS-926)', () => {
             // Arrange & Act
             const html = renderToStaticMarkup(SubscriptionPaused(validProps));
 
             // Assert
-            expect(html).toContain('problema con tu metodo de pago');
+            expect(html).not.toContain('metodo de pago');
+            expect(html).not.toContain('tarjeta');
+            expect(html).not.toContain('problema con tu');
         });
 
         it('should show paused status in info section', () => {
@@ -198,7 +204,7 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionPaused(propsWithCustomUrl));
 
             // Assert
-            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion');
+            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
     });
 

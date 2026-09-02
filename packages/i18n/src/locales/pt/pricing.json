@@ -142,6 +142,52 @@
         "cta": {
             "description": "Registrate gratis y comienza a explorar los mejores alojamientos del Litoral argentino.",
             "title": "¿Listo para comenzar tu aventura?"
+        },
+        "hero": {
+            "tagline": "Para viajantes",
+            "title": "Todo o Litoral, num só lugar",
+            "desc": "Encontre onde dormir, onde comer e o que fazer na costa do Rio Uruguai. Guarde o que gostar e fale direto com quem recebe você."
+        },
+        "steps": {
+            "tagline": "Como funciona",
+            "title": "Como se usa a Hospeda?",
+            "1": {
+                "title": "Explore",
+                "desc": "Busque hospedagens, gastronomia e experiências por destino, tipo ou serviços. Sem conta e sem custo."
+            },
+            "2": {
+                "title": "Guarde e compare",
+                "desc": "Marque seus favoritos, organize-os em coleções de viagem e coloque até cinco hospedagens lado a lado."
+            },
+            "3": {
+                "title": "Fale com o dono",
+                "desc": "Escreva direto pelo WhatsApp. A Hospeda não entra no meio: você combina com quem recebe você."
+            },
+            "4": {
+                "title": "Conte como foi",
+                "desc": "Deixe sua avaliação com fotos e ajude quem viaja depois."
+            }
+        },
+        "faq": {
+            "tagline": "Dúvidas frequentes",
+            "title": "Antes de começar",
+            "1": {
+                "q": "Quanto custa usar a Hospeda?",
+                "a_one": "Criar sua conta é grátis: você guarda até 5 favoritos e escreve avaliações. O plano VIP soma favoritos e alertas de preço ilimitados, coleções, comparador e contato direto pelo WhatsApp, com {{count}} dia de teste.",
+                "a_other": "Criar sua conta é grátis: você guarda até 5 favoritos e escreve avaliações. O plano VIP soma favoritos e alertas de preço ilimitados, coleções, comparador e contato direto pelo WhatsApp, com {{count}} dias de teste."
+            },
+            "2": {
+                "q": "Cobram comissão pela reserva?",
+                "a": "Não. A Hospeda não intermedia a reserva nem cobra comissão: colocamos você em contato com o proprietário e o acordo é entre vocês."
+            },
+            "3": {
+                "q": "Preciso de conta para olhar?",
+                "a": "Não. Você pode percorrer o site inteiro sem se cadastrar. A conta só é necessária para guardar favoritos, receber alertas e escrever avaliações."
+            },
+            "4": {
+                "q": "Posso cancelar quando quiser?",
+                "a": "Sim, pela sua conta e sem burocracia. Você mantém o acesso até terminar o período que já pagou."
+            }
         }
     },
     "comparison": {
@@ -168,6 +214,7 @@
     },
     "nav": {
         "backToIndex": "Voltar para todos os planos",
-        "ariaLabel": "Navegação do catálogo de planos"
+        "ariaLabel": "Navegação do catálogo de planos",
+        "seePlans": "Ver planos e preços"
     }
 }

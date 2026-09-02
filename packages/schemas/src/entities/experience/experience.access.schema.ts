@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+    CommerceListingAmenityPublicSchema,
+    CommerceListingFeaturePublicSchema
+} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
@@ -183,7 +187,21 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      * Nullish: a listing may reference an unresolvable destination FK in edge cases.
      * Used by the web card transform to show the destination name without an N+1.
      */
-    destination: z.object({ id: z.string().uuid(), name: z.string(), slug: z.string() }).nullish()
+    destination: z.object({ id: z.string().uuid(), name: z.string(), slug: z.string() }).nullish(),
+    /**
+     * Amenities the provider ticked, joined with the shared catalog (HOS-1072).
+     *
+     * This is where "incluye transporte", "incluye guía" and the rest of the
+     * eight `*_included` catalog rows finally reach a reader: they were
+     * storable, editable and typed long before anything rendered them.
+     *
+     * Populated by the public `getBySlug` route only, which is why this is
+     * `.optional()` rather than defaulted: a list payload that never ran the
+     * join must say "not loaded", not "this experience includes nothing".
+     */
+    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    /** Features the provider ticked, joined with the shared catalog (HOS-1072). */
+    features: z.array(CommerceListingFeaturePublicSchema).optional()
 });
 
 /** TypeScript type for {@link ExperiencePublicSchema}. */

@@ -254,6 +254,12 @@ EXTERNAL_BASELINE_FILES=(
 # precedent).
 BILLING_CONFIG_FILES=(
     'packages/billing/src/config/plans.config.ts'
+    # HOS-1012 D-5: the three composed trial plans live in their own file (the
+    # 500-line rule; plans.config.ts is already well past it). Their rows are
+    # seeded exactly like every other plan's, so leaving this path off the list
+    # would reproduce the HOS-789 shape — a baseline edit that moves nothing in
+    # the guarded surface while staging and prod keep the old rows.
+    'packages/billing/src/config/trial-plans.config.ts'
     'packages/billing/src/config/limits.config.ts'
     'packages/billing/src/config/entitlements.config.ts'
     'packages/billing/src/config/addons.config.ts'

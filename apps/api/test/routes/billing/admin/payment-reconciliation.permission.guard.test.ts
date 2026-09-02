@@ -44,6 +44,23 @@ const ROUTE_FILE = 'routes/billing/admin/payment-reconciliation.ts';
 const DIVERGENCE_SERVICE_FILE = 'services/billing/payment-divergence.service.ts';
 
 /**
+ * HOS-1001's two routes, declared in their own file and mounted on the SAME
+ * router.
+ *
+ * Guarded here rather than in a new file because the claim is identical and the
+ * escape is the exact one this kind of guard is prone to: a file-scoped guard
+ * silently stops covering the surface the moment a sibling file joins the
+ * router. The queue's resolve verb moves no money, but it closes the record of
+ * money that moved — and the listing prints real charges beside the
+ * subscription ids they belong to, which is why the report next door is gated on
+ * this permission rather than a softer read one.
+ */
+const QUEUE_ROUTE_FILE = 'routes/billing/admin/orphan-payment-queue.ts';
+
+/** How many routes {@link QUEUE_ROUTE_FILE} is expected to define. */
+const EXPECTED_QUEUE_ROUTE_COUNT = 2;
+
+/**
  * The permission every rescue route must declare.
  *
  * Asserted as a LITERAL rather than imported from `PermissionEnum`. The guard
@@ -139,6 +156,51 @@ describe('HOS-765 rescue routes — permission guard', () => {
                     'Folding these routes into a shared billing grant would mean the permission ' +
                     'that lets someone expire an add-on also lets them move a real charge ' +
                     "from one customer's subscription to another's."
+            ).not.toContain(forbidden);
+        }
+    });
+});
+
+describe('HOS-1001 orphan-queue routes — permission guard', () => {
+    const source = readSrc(QUEUE_ROUTE_FILE);
+    const blocks = routeBlocks(source);
+
+    it('defines exactly the two queue routes', () => {
+        // Same instrument check as above: every per-call-site assertion below
+        // iterates this list, so a parse that found ZERO blocks would make all of
+        // them pass while proving nothing.
+        expect(
+            blocks,
+            'Expected two createAdminRoute({...}) call sites in the orphan-queue route file. ' +
+                'If a route was added, extend EXPECTED_QUEUE_ROUTE_COUNT and confirm the new ' +
+                'one declares BILLING_RECONCILIATION_MANAGE.'
+        ).toHaveLength(EXPECTED_QUEUE_ROUTE_COUNT);
+    });
+
+    it.each([0, 1])('queue route #%i declares BILLING_RECONCILIATION_MANAGE', (index) => {
+        const block = blocks[index] ?? '';
+        expect(
+            block,
+            `createAdminRoute call site #${index} in ${QUEUE_ROUTE_FILE} does not declare ` +
+                `${REQUIRED_PERMISSION_TOKEN}. The queue lists real payers' stranded charges ` +
+                'and closes the record of them; it belongs to the same grant as the rescue ' +
+                'verbs it feeds, not to a shared billing one.'
+        ).toContain(REQUIRED_PERMISSION_TOKEN);
+    });
+
+    it.each([0, 1])('queue route #%i declares requiredPermissions at all', (index) => {
+        const block = blocks[index] ?? '';
+        expect(block).toMatch(/requiredPermissions:\s*\[/);
+    });
+
+    it.each(FORBIDDEN_PERMISSION_TOKENS)('no queue route falls back to %s', (forbidden) => {
+        for (const [index, block] of blocks.entries()) {
+            expect(
+                block,
+                `createAdminRoute call site #${index} in ${QUEUE_ROUTE_FILE} references ` +
+                    `${forbidden}. Folding the queue into a shared billing grant would hand ` +
+                    'everyone who can expire an add-on the list of every stranded charge and ' +
+                    'the ability to mark them settled.'
             ).not.toContain(forbidden);
         }
     });

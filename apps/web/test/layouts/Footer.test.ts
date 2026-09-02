@@ -94,8 +94,10 @@ describe('Footer.astro', () => {
     });
 
     describe('Para vos column', () => {
-        it('includes /suscriptores/propietarios/ link', () => {
-            expect(src).toContain('/suscriptores/propietarios/');
+        it('includes the owner landing link', () => {
+            // HOS-985: `/suscriptores/propietarios/` is redirect-only now, so
+            // the footer links straight to the page that replaced it.
+            expect(src).toContain('/planes/anfitriones/');
         });
 
         it('includes a single /suscriptores/planes/ link to the audience index', () => {

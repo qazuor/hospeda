@@ -1,0 +1,193 @@
+---
+/**
+ * @file planes/turistas/index.astro
+ * @description Sales page for the traveller audience — level 2 of the three
+ * HOS-941 D-7 defines.
+ *
+ * @route     /[lang]/planes/turistas/
+ * @rendering SSR (no prerender); edge-cacheable via the `pricing` cache class,
+ *   tagged `CACHE_TAG_PRICING`. The middleware is fail-closed and rejects a
+ *   public `Cache-Control` without a declared class and tag (HOS-941 R-5).
+ *
+ * ## This audience had no landing at all
+ *
+ * The other four had one; the traveller did not. `/suscriptores/turistas/` 301s
+ * straight to the price grid, so a visitor met three cards before a single line
+ * explaining why any of them was worth it. Everything below the benefits was
+ * written for this page (HOS-985); the benefits themselves already existed as
+ * `benefits.tourist.1..5` and are reused rather than re-written, so the index
+ * and this page cannot drift (D-10).
+ *
+ * ## Every claim here is checked against the catalogue, not assumed
+ *
+ * - **No booking.** There is no booking entitlement and no booking route in the
+ *   app; the traveller contacts the owner (`CAN_CONTACT_WHATSAPP_*`). The copy
+ *   says Hospeda connects, never that it books, and the FAQ says so outright
+ *   because "do you charge a booking fee" is the first thing a traveller asks.
+ * - **The free tier really is 5 favourites plus reviews** (`TOURIST_FREE_PLAN`),
+ *   so the FAQ names that number instead of implying the free plan does
+ *   everything.
+ * - **The trial belongs to the paid plan.** `tourist-free` carries
+ *   `hasTrial: false`; only `tourist-vip` has one. The FAQ therefore attributes
+ *   it to the VIP plan explicitly — writing "free · 30-day trial" side by side
+ *   reads as "free for 30 days", which is the opposite of true and is exactly
+ *   the defect open against the audience index.
+ * - **The number is never written.** It comes from the catalogue through the
+ *   CLDR `_one`/`_other` pair (R-2). `null` renders nothing at all: a failed
+ *   fetch and a plan with no trial must look identical to a visitor.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { BuildingsIcon, ChatIcon, MapIcon, PriceIcon, StarIcon } from '@repo/icons';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import BenefitsSection from '@/components/marketing/BenefitsSection.astro';
+import StepsSection from '@/components/marketing/StepsSection.astro';
+import FaqSection from '@/components/marketing/FaqSection.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { computeMinimumTrialDays } from '@/lib/billing/generic-trial-days';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+const fetchResult = await fetchPublicPlans();
+const touristPlans = fetchResult.ok ? filterPlansByCategory(fetchResult.plans, 'tourist') : [];
+const trialDays = computeMinimumTrialDays({ plans: touristPlans });
+
+const benefits = [
+    {
+        Icon: BuildingsIcon,
+        title: t('benefits.tourist.1.title'),
+        desc: t('benefits.tourist.1.desc')
+    },
+    { Icon: PriceIcon, title: t('benefits.tourist.2.title'), desc: t('benefits.tourist.2.desc') },
+    { Icon: StarIcon, title: t('benefits.tourist.3.title'), desc: t('benefits.tourist.3.desc') },
+    { Icon: MapIcon, title: t('benefits.tourist.4.title'), desc: t('benefits.tourist.4.desc') },
+    { Icon: ChatIcon, title: t('benefits.tourist.5.title'), desc: t('benefits.tourist.5.desc') }
+] as const;
+
+const steps = [
+    { num: '01', title: t('pricing.tourist.steps.1.title'), desc: t('pricing.tourist.steps.1.desc') },
+    { num: '02', title: t('pricing.tourist.steps.2.title'), desc: t('pricing.tourist.steps.2.desc') },
+    { num: '03', title: t('pricing.tourist.steps.3.title'), desc: t('pricing.tourist.steps.3.desc') },
+    { num: '04', title: t('pricing.tourist.steps.4.title'), desc: t('pricing.tourist.steps.4.desc') }
+] as const;
+
+/**
+ * The pricing question drops out entirely when no trial can be promised.
+ *
+ * Not softened, not reworded with the clause spliced out: the trial is embedded
+ * mid-sentence and cutting it mechanically leaves the sentence limping in
+ * whichever locale the splitter was not written for. Losing one FAQ entry is a
+ * smaller cost than shipping a broken sentence in Portuguese.
+ */
+const faqs = [
+    ...(trialDays === null
+        ? []
+        : [{ q: t('pricing.tourist.faq.1.q'), a: tPlural('pricing.tourist.faq.1.a', trialDays) }]),
+    { q: t('pricing.tourist.faq.2.q'), a: t('pricing.tourist.faq.2.a') },
+    { q: t('pricing.tourist.faq.3.q'), a: t('pricing.tourist.faq.3.a') },
+    { q: t('pricing.tourist.faq.4.q'), a: t('pricing.tourist.faq.4.a') }
+];
+
+const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: { '@type': 'Answer', text: faq.a }
+    }))
+};
+
+const title = t('pricing.tourist.title');
+const description = t('pricing.tourist.description');
+const pricingHref = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
+---
+
+<MarketingLayout locale={locale} title={title} description={description}>
+    <JsonLd slot="head-extra" data={faqJsonLd} />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <MarketingHero
+        tagline={t('pricing.tourist.hero.tagline')}
+        titleAccent={t('pricing.tourist.hero.title')}
+        subtitle={t('pricing.tourist.hero.desc')}
+    >
+        <GradientButton
+            slot="cta"
+            href={pricingHref}
+            label={t('pricing.nav.seePlans')}
+            variant="primary"
+            icon="true"
+        />
+    </MarketingHero>
+
+    {/* `auto-fit` and not a fixed 3: this audience has FIVE benefits, and three
+        columns would leave the second row with a hole beside the last two. */}
+    <BenefitsSection
+        tagline={t('benefits.tourist.tagline')}
+        title={t('benefits.tourist.title')}
+        items={benefits}
+        columns="auto-fit"
+    />
+
+    <StepsSection
+        tagline={t('pricing.tourist.steps.tagline')}
+        title={t('pricing.tourist.steps.title')}
+        items={steps}
+        columns={4}
+        warm
+    />
+
+    <FaqSection
+        tagline={t('pricing.tourist.faq.tagline')}
+        title={t('pricing.tourist.faq.title')}
+        items={faqs}
+    />
+
+    <section class="sales-cta section section--warm">
+        <div class="sales-cta__container section__container">
+            <h2 class="sales-cta__title">{t('pricing.tourist.cta.title')}</h2>
+            <GradientButton
+                href={pricingHref}
+                label={t('pricing.nav.seePlans')}
+                variant="primary"
+                icon="true"
+            />
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    .sales-cta__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+        text-align: center;
+    }
+
+    .sales-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

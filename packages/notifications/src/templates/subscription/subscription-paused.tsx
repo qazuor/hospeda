@@ -16,7 +16,14 @@ export interface SubscriptionPausedProps {
 
 /**
  * Subscription paused email template.
- * Sent when a subscription is suspended (usually due to payment issues).
+ *
+ * Sent for every pause origin: a host pausing their own subscription, an
+ * admin pausing it, or MercadoPago reporting a dunning-driven pause. The
+ * copy is deliberately origin-neutral (HOS-926) — nothing in the pause
+ * webhook tells this template WHY the subscription was paused, so it must
+ * never assume a payment problem. Assuming one told hosts who paused
+ * themselves (or were paused by an admin) that their card had failed, which
+ * was never true for them.
  *
  * @param props - Subscription paused data
  */
@@ -34,10 +41,6 @@ export function SubscriptionPaused({ recipientName, planName, baseUrl }: Subscri
                 Tu suscripcion al plan <strong>{planName}</strong> ha sido pausada.
             </Text>
 
-            <Text style={styles.paragraph}>
-                Esto puede deberse a un problema con tu metodo de pago.
-            </Text>
-
             <Section style={styles.warningBox}>
                 <InfoRow
                     label="Plan"
@@ -50,13 +53,12 @@ export function SubscriptionPaused({ recipientName, planName, baseUrl }: Subscri
             </Section>
 
             <Text style={styles.paragraph}>
-                Actualiza tu metodo de pago para reactivar tu suscripcion.
+                Podes revisar el estado de tu suscripcion y reactivarla cuando quieras desde tu
+                cuenta.
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
-                    Actualizar metodo de pago
-                </Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripcion</Button>
             </Section>
         </EmailLayout>
     );

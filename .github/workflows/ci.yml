@@ -266,8 +266,14 @@ jobs:
         run: bash scripts/check-commerce-plan-resolution.sh
       - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
         run: pnpm check:locale-resolution-single-source
-      - name: Check the trial window is not derived from free_trial (HOS-936)
-        run: bash scripts/check-trial-not-derived-from-free-trial.sh
+      # HOS-936's read-direction guard (the trial window must not be derived
+      # from `free_trial`) was retired with the module it protected — HOS-1012
+      # T-026. Not believing a reported trial stopped mattering once we stopped
+      # asking for one; the guard below is what enforces that.
+      - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
+        run: bash scripts/check-no-trial-to-mercadopago.sh
+      - name: Check no binary vertical ternary remains (HOS-1079)
+        run: bash scripts/check-no-binary-vertical-ternary.sh
       - name: Check server code does no local-timezone date math (HOS-1010)
         run: bash scripts/check-local-date-math.sh
       - name: Check for disabled tests (.only/.skip)
@@ -336,8 +342,6 @@ jobs:
       # nothing reported it.
       - name: Test scripts/ tooling and guards
         run: pnpm test:scripts
-      - name: Test the interactive CLI (scripts/cli)
-        run: pnpm test:cli
       # `hops` (scripts/server-tools) is the third suite that ran nowhere, and
       # the one that matters most: it is the tool operators point at
       # PRODUCTION. It needs its own runtime because the package is
@@ -359,6 +363,15 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Test the hops CLI (scripts/server-tools)
         working-directory: scripts/server-tools
+        run: bun test
+      # scripts/client-tools is the local twin of server-tools: same shape, same
+      # runtime, same reason to live outside the pnpm workspace. The bun setup
+      # above is shared, so this only costs its own install + run.
+      - name: Install client-tools dependencies
+        working-directory: scripts/client-tools
+        run: bun install --frozen-lockfile
+      - name: Test the local hops CLI (scripts/client-tools)
+        working-directory: scripts/client-tools
         run: bun test
 
   # ------------------------------------------------------------------

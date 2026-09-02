@@ -66,7 +66,9 @@ describe('beneficios/index.astro — the five audience sections', () => {
     });
 
     it("gives every section a CTA pointing at that audience's own page", () => {
-        expect(src).toContain("path: 'suscriptores/propietarios'");
+        // HOS-985 retired `/suscriptores/propietarios/`; the owner section now
+        // points at the sales page that replaced it.
+        expect(src).toContain("path: 'planes/anfitriones'");
         expect(src).toContain("path: 'publicar-experiencia'");
         expect(src).toContain("path: 'publicar-restaurante'");
         expect(src).toContain("path: 'sumate/partner'");

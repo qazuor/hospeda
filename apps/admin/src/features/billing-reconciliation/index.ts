@@ -11,12 +11,20 @@ export { DivergenceTable } from './DivergenceTable';
 export {
     type DivergenceFilterParams,
     divergenceQueryKeys,
+    type OrphanQueueFilterParams,
+    orphanQueueQueryKeys,
     useBackfillPaymentMutation,
     useDivergencesQuery,
-    useForceLinkMutation
+    useForceLinkMutation,
+    useOrphanQueueQuery,
+    useResolveOrphanPaymentMutation
 } from './hooks';
+export type { OrphanQueueTableProps } from './OrphanQueueTable';
+export { OrphanQueueTable } from './OrphanQueueTable';
 export type { ReconcileActionDialogProps } from './ReconcileActionDialog';
 export { ReconcileActionDialog } from './ReconcileActionDialog';
+export type { ResolveOrphanPaymentDialogProps } from './ResolveOrphanPaymentDialog';
+export { ResolveOrphanPaymentDialog } from './ResolveOrphanPaymentDialog';
 export type { TruncatedBannerProps } from './TruncatedBanner';
 export { TruncatedBanner } from './TruncatedBanner';
 export type {
@@ -25,6 +33,12 @@ export type {
     DivergenceKind,
     DivergenceReport,
     OrphanPreapproval,
+    OrphanQueueFlow,
+    OrphanQueueItem,
+    OrphanQueueReason,
+    OrphanQueueReport,
+    OrphanQueueResolution,
+    OrphanQueueStatus,
     ReconcileAction,
     UnrecordedPayment
 } from './types';
@@ -33,5 +47,7 @@ export {
     formatDate,
     getKindLabel,
     getMatchedOnLabel,
-    getMpStatusVariant
+    getMpStatusVariant,
+    getQueueFlowLabel,
+    getQueueReasonLabel
 } from './utils';

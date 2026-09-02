@@ -21,10 +21,11 @@
  * ## The accommodation option is deliberately excluded
  *
  * `PUBLISH_CTA_OPTIONS` has three entries; only two are checked. The footer's
- * pre-existing `footer.listProperty` link points at
- * `/suscriptores/propietarios/`, not at the chooser's `/publicar/`, and it
- * predates the chooser by a long way. Requiring parity on that entry would fail
- * this guard on day one for a link HOS-826 never asked anyone to move.
+ * pre-existing `footer.listProperty` link points at the owner's own landing —
+ * `/planes/anfitriones/` since HOS-985, `/suscriptores/propietarios/` before
+ * it — not at the chooser's `/publicar/`, and it predates the chooser by a long
+ * way. Requiring parity on that entry would fail this guard on day one for a
+ * link HOS-826 never asked anyone to move.
  *
  * @module test/layouts/footer-publish-parity.guard
  */
@@ -83,8 +84,11 @@ describe('HOS-826 — footer "Para vos" offers every commerce vertical', () => {
         expect(forYouBlock).toContain('t("footer.listExperience")');
     });
 
-    it('leaves the pre-existing accommodation invitation untouched', () => {
+    it('leaves the pre-existing accommodation invitation off the chooser', () => {
         expect(forYouBlock).toContain('t("footer.listProperty")');
-        expect(forYouBlock).toContain('"/suscriptores/propietarios/"');
+        // HOS-985 moved this link from `/suscriptores/propietarios/`, now
+        // redirect-only, to the sales page that replaced it. What the guard
+        // protects is unchanged: it must NOT point at `/publicar/`.
+        expect(forYouBlock).toContain('"/planes/anfitriones/"');
     });
 });

@@ -65,12 +65,32 @@ export interface ResolveInitialModerationStateInput {
      * when omitted (backwards-compatible).
      */
     readonly pendingThreshold?: number;
+
+    /**
+     * Whether the moderation engine failed to reach a verdict, from
+     * `moderateText().degraded` (HOS-1069).
+     *
+     * When `true`, {@link moderationScore} is a placeholder and not a
+     * measurement, so it is not compared against anything: the content goes to
+     * a human. Absent or `false` means the engine answered and the score is
+     * real.
+     *
+     * Optional so an unmigrated caller keeps its current behaviour rather than
+     * flooding the moderation queue — but every caller that reads a real engine
+     * result should pass it.
+     */
+    readonly degraded?: boolean;
 }
 
 /**
  * Resolves the initial `moderationState` for a new review.
  *
  * Decision tree (applied in priority order):
+ * 0. `degraded === true` → `PENDING`
+ *    The engine reached no verdict, so there is no score to compare — see
+ *    {@link ResolveInitialModerationStateInput.degraded}. Ahead of everything
+ *    else on purpose, `verified` authors included: unjudged content is not
+ *    published, whoever wrote it.
  * 1. `moderationScore >= pendingThreshold` → `PENDING`
  *    Content-moderation hit forces human review regardless of entity type.
  *    The effective threshold is `input.pendingThreshold ?? MODERATION_PENDING_THRESHOLD`,
@@ -115,8 +135,19 @@ export interface ResolveInitialModerationStateInput {
 export function resolveInitialModerationState(
     input: ResolveInitialModerationStateInput
 ): ModerationStatusEnum {
-    const { entityType, verificationLevel, moderationScore, pendingThreshold } = input;
+    const { entityType, verificationLevel, moderationScore, pendingThreshold, degraded } = input;
     const effectiveThreshold = pendingThreshold ?? MODERATION_PENDING_THRESHOLD;
+
+    // Priority 0: the engine could not judge → force PENDING.
+    //
+    // Deliberately BEFORE the threshold comparison rather than folded into it:
+    // a degraded result carries a placeholder score, and measuring a
+    // placeholder against a configurable number is what made this guard hold
+    // by coincidence. The two values matched in the shipped config; an admin
+    // raising the threshold would have switched the guard off silently.
+    if (degraded === true) {
+        return ModerationStatusEnum.PENDING;
+    }
 
     // Priority 1: content-moderation hit → force PENDING
     if (moderationScore >= effectiveThreshold) {

@@ -22,6 +22,12 @@ import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHead
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
 import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
+// Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
+// `features` catalog as accommodations, so it shares the i18n namespace
+// (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
+// commerce copy would fork that contract for no gain.
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
@@ -278,6 +284,13 @@ const breadcrumbItems = [
                 locale={locale}
             />
         )}
+
+        <!-- Amenities and features the owner ticked (HOS-1072): medios de pago,
+             delivery, takeaway, reservas, estacionamiento… Both grids self-hide
+             on an empty list, so no guard is needed here. `smokingAllowed` is an
+             accommodation-only column and is passed as null. -->
+        <FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />
+        <AmenitiesGrid amenities={gastronomy.amenities} lang={locale} />
 
         <!-- Contact block (menu URL + social networks) -->
         {(gastronomy.menuUrl || gastronomy.socialNetworks) && (

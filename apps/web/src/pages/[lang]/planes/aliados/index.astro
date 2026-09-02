@@ -1,0 +1,224 @@
+---
+/**
+ * @file planes/aliados/index.astro
+ * @description Sales page for the partner audience — level 2 of the three
+ * HOS-941 D-7 defines.
+ *
+ * @route     /[lang]/planes/aliados/
+ * @rendering SSR (no prerender); edge-cacheable via the `pricing` cache class,
+ *   tagged `CACHE_TAG_PRICING`. The middleware is fail-closed and rejects a
+ *   public `Cache-Control` without a declared class and tag (HOS-941 R-5).
+ *
+ * ## The one audience with no price to show, by decision
+ *
+ * D-13, revised: the tier cards exist and list what each level gives, but where
+ * the number goes they say "Consultar" — and those cards live one level down,
+ * in `/planes/aliados/precios/` (H7), like every other audience's. The reason
+ * no figure is published is the owner's: the Municipality of Concepción del
+ * Uruguay and the corner shop are not charged the same amount for the same
+ * level and the same deliverables. "Desde $15.000" would not be a
+ * simplification, it would be a price half the book will never be quoted.
+ *
+ * The CTA therefore points at the lead form, not at a checkout — a partnership
+ * is agreed in a conversation, not bought. `/sumate/partner/` is that form
+ * today; it is slated for a 301 here (HOS-941), which cannot land until H7
+ * gives the lead form a home inside this family. Pointing at what exists beats
+ * pointing at what is planned: the host page does the same thing with the
+ * pricing grid it links to.
+ *
+ * ## Every promise on this page was checked against the code
+ *
+ * Writing it is what opened HOS-1062 and HOS-1063, so the line between the two
+ * is worth stating:
+ *
+ * - **The mentions log is REAL** — `PartnerMentionsSection.astro` (HOS-377)
+ *   renders it in the partner's own dashboard, each entry with its date and its
+ *   link. So benefit 4 and the third FAQ answer promise it by name.
+ * - **The statistics are NOT** — `partners.analytics` is a `jsonb` that nobody
+ *   writes and no view reads (HOS-1063). Nothing here offers a number, and the
+ *   FAQ says so in the words the presentation uses: constancia, not medición.
+ *   The same reason the mentions copy is guarded against the vocabulary of
+ *   measurement (`scripts/check-partner-mention-copy.sh`), which this page's
+ *   subtree is now registered with.
+ * - **"Access to a network of verified accommodations and businesses" is GONE**
+ *   (D-13). Nothing implements it, and the approved presentation contradicts it
+ *   outright: "no existe un directorio de aliados donde la gente los busque por
+ *   rubro". Joint visibility in campaigns, on the other hand, is real — it is
+ *   the social posts and the newsletter, which is why benefit 3 survives.
+ * - **The tier is never named in public.** Silver and gold appear nowhere on
+ *   this page; the own-page benefit says "según el nivel que acordemos", which
+ *   is true for both without labelling anybody.
+ *
+ * ## No trial, no catalogue fetch
+ *
+ * Unlike the other four, this page reads no plans: there is no price to derive
+ * and no trial to state, so R-2 has nothing to protect here. Fetching the
+ * catalogue only to ignore it would add a failure mode for nothing.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { GlobeIcon, MegaphoneIcon, ReceiptIcon, SettingsIcon, StarIcon } from '@repo/icons';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import BenefitsSection from '@/components/marketing/BenefitsSection.astro';
+import StepsSection from '@/components/marketing/StepsSection.astro';
+import FaqSection from '@/components/marketing/FaqSection.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+const benefits = [
+    {
+        Icon: StarIcon,
+        title: t('partners.landing.benefits.item1.title'),
+        desc: t('partners.landing.benefits.item1.desc')
+    },
+    {
+        Icon: GlobeIcon,
+        title: t('partners.landing.benefits.item2.title'),
+        desc: t('partners.landing.benefits.item2.desc')
+    },
+    {
+        Icon: MegaphoneIcon,
+        title: t('partners.landing.benefits.item3.title'),
+        desc: t('partners.landing.benefits.item3.desc')
+    },
+    {
+        Icon: ReceiptIcon,
+        title: t('partners.landing.benefits.item4.title'),
+        desc: t('partners.landing.benefits.item4.desc')
+    },
+    {
+        Icon: SettingsIcon,
+        title: t('partners.landing.benefits.item5.title'),
+        desc: t('partners.landing.benefits.item5.desc')
+    }
+] as const;
+
+const steps = [
+    {
+        num: '01',
+        title: t('partners.landing.steps.1.title'),
+        desc: t('partners.landing.steps.1.desc')
+    },
+    {
+        num: '02',
+        title: t('partners.landing.steps.2.title'),
+        desc: t('partners.landing.steps.2.desc')
+    },
+    {
+        num: '03',
+        title: t('partners.landing.steps.3.title'),
+        desc: t('partners.landing.steps.3.desc')
+    },
+    {
+        num: '04',
+        title: t('partners.landing.steps.4.title'),
+        desc: t('partners.landing.steps.4.desc')
+    }
+] as const;
+
+const faqs = [
+    { q: t('partners.landing.faq.1.q'), a: t('partners.landing.faq.1.a') },
+    { q: t('partners.landing.faq.2.q'), a: t('partners.landing.faq.2.a') },
+    { q: t('partners.landing.faq.3.q'), a: t('partners.landing.faq.3.a') },
+    { q: t('partners.landing.faq.4.q'), a: t('partners.landing.faq.4.a') }
+] as const;
+
+const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: { '@type': 'Answer', text: faq.a }
+    }))
+};
+
+const title = t('partners.landing.meta.title');
+const description = t('partners.landing.meta.description');
+const leadHref = buildUrl({ locale, path: 'sumate/partner' });
+const ctaLabel = t('partners.landing.cta.label');
+---
+
+<MarketingLayout locale={locale} title={title} description={description}>
+    <JsonLd slot="head-extra" data={faqJsonLd} />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <MarketingHero
+        tagline={t('partners.landing.hero.tagline')}
+        titleAccent={t('partners.landing.hero.title')}
+        subtitle={t('partners.landing.hero.desc')}
+    >
+        <GradientButton
+            slot="cta"
+            href={leadHref}
+            label={ctaLabel}
+            variant="primary"
+            icon="true"
+        />
+    </MarketingHero>
+
+    {/* `auto-fit` and not a fixed 3, same as the traveller page: five items in
+        three columns leave the second row with a hole beside the last two. */}
+    <BenefitsSection
+        tagline={t('partners.landing.benefits.tagline')}
+        title={t('partners.landing.benefits.title')}
+        items={benefits}
+        columns="auto-fit"
+    />
+
+    <StepsSection
+        tagline={t('partners.landing.steps.tagline')}
+        title={t('partners.landing.steps.title')}
+        items={steps}
+        columns={4}
+        warm
+    />
+
+    <FaqSection
+        tagline={t('partners.landing.faq.tagline')}
+        title={t('partners.landing.faq.title')}
+        items={faqs}
+    />
+
+    <section class="sales-cta section section--warm">
+        <div class="sales-cta__container section__container">
+            <h2 class="sales-cta__title">{t('partners.landing.cta.title')}</h2>
+            <GradientButton href={leadHref} label={ctaLabel} variant="primary" icon="true" />
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    .sales-cta__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+        text-align: center;
+    }
+
+    .sales-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

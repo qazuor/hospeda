@@ -44,6 +44,7 @@ import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
+import { expireLocalTrial } from './billing/trial-local-expiry.service.js';
 
 /** Milliseconds in a day. Durations are epoch arithmetic, never local-time setters (HOS-1010). */
 const MS_PER_DAY = 86_400_000;
@@ -763,33 +764,26 @@ export class TrialService {
                         continue;
                     }
 
-                    // A trialing subscription with no preapproval cannot be
-                    // reconciled — there is no provider record to ask. Under
-                    // card-first this should not exist (every trial is created as a
-                    // preapproval), so surface it instead of guessing an outcome.
-                    // Guessing here means either cancelling a paying customer or
-                    // granting a free one; both are worse than an alert.
+                    // ── HOS-1012: a trial with no preapproval is OURS ─────────────
+                    // Before HOS-1012 this was an anomaly worth an alert: under
+                    // card-first every trial was a preapproval, so a missing
+                    // provider id meant something had gone wrong, and guessing an
+                    // outcome would either cut off a paying customer or hand out a
+                    // free one.
+                    //
+                    // It is now the normal shape of a Hospeda-owned trial, and our
+                    // clock is the only clock. The two kinds of row are told apart
+                    // HERE rather than by two jobs competing for the same advisory
+                    // lock: the remaining legacy rows are converted only after this
+                    // ships (T-032), and staging keeps minting new ones until it is
+                    // redeployed.
                     if (!subscription.mpSubscriptionId) {
-                        Sentry.captureException(
-                            new Error(
-                                `Trialing subscription has no provider id: ${subscription.id}`
-                            ),
-                            {
-                                extra: {
-                                    subscriptionId: subscription.id,
-                                    customerId: subscription.customerId,
-                                    trialEnd: trialEnd.toISOString()
-                                },
-                                tags: {
-                                    module: 'trial-service',
-                                    operation: 'reconcileExpiredTrials'
-                                }
-                            }
-                        );
-                        apiLogger.warn(
-                            { subscriptionId: subscription.id },
-                            'reconcileExpiredTrials: trialing subscription has no mpSubscriptionId — cannot reconcile, skipping'
-                        );
+                        const { outcome } = await expireLocalTrial({ subscription });
+
+                        if (outcome === 'expired') {
+                            reconciledCount++;
+                        }
+
                         continue;
                     }
 

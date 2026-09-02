@@ -45,13 +45,17 @@ interface SocialLink {
     readonly icon: string;
 }
 
+// HOS-1076: `whatsapp` was removed from `GastronomySocialNetworks` and MUST
+// NOT be re-added here. It never existed in `SocialNetworkSchema` (the
+// `socialNetworks` JSONB column's shape), so this render path — unlike
+// accommodation's WhatsApp channel — would have published a number with no
+// entitlement gate the instant anything ever wrote that key.
 const SOCIAL_LINKS: readonly SocialLink[] = [
     { key: 'website', label: 'Sitio web', icon: '🌐' },
     { key: 'instagram', label: 'Instagram', icon: '📷' },
     { key: 'facebook', label: 'Facebook', icon: '📘' },
     { key: 'twitter', label: 'Twitter / X', icon: '🐦' },
     { key: 'youtube', label: 'YouTube', icon: '▶️' },
-    { key: 'whatsapp', label: 'WhatsApp', icon: '💬' },
     { key: 'tiktok', label: 'TikTok', icon: '🎵' }
 ] as const;
 

@@ -57,7 +57,7 @@ interface FakeEntityRow {
     destinationId?: string;
     ownerId?: string;
     type?: string;
-    contactInfo?: { personalEmail?: string };
+    contactInfo?: { personalEmail?: string; workEmail?: string };
     openingHours?: {
         timezone: string;
         days: Record<string, { closed: boolean; shifts: { open: string; close: string }[] }>;
@@ -130,7 +130,9 @@ function makeCompleteExperienceRow(base: {
         destinationId: '00000000-0000-4000-a000-000000000002',
         ownerId: '00000000-0000-4000-a000-000000000001',
         type: 'TOUR_GUIDE',
-        contactInfo: { personalEmail: 'guide@example.com' },
+        // HOS-924: an experience only publishes on a channel its public page
+        // shows, and `personalEmail` is not one of them.
+        contactInfo: { workEmail: 'guide@example.com' },
         priceFrom: 1500000,
         isPriceOnRequest: false
     };

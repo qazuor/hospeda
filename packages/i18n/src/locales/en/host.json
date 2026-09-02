@@ -692,8 +692,8 @@
         "heroSubheadline": "List it in minutes and start welcoming guests",
         "primaryCta": "List your property",
         "secondaryCta": "View my properties",
-        "trialCallout_one": "Try Hospeda free for {{trialDays}} day on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends.",
-        "trialCallout_other": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day, no card needed. The trial starts on its own when you publish your first property, and there is only one for accommodation.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days, no card needed. The trial starts on its own when you publish your first property, and there is only one for accommodation."
     },
     "miniForm": {
         "fields": {
@@ -906,11 +906,11 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle_one": "{{trialDays}} free day on your first subscription",
-            "trialCalloutTitle_other": "{{trialDays}} free days on your first subscription",
+            "trialCalloutTitle_one": "{{trialDays}} free day, no card — only one for accommodation",
+            "trialCalloutTitle_other": "{{trialDays}} free days, no card — only one for accommodation",
             "trialCalloutTitleIneligible": "Set up your property",
-            "trialNote_one": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
-            "trialNote_other": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_one": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
+            "trialNote_other": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
             "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {

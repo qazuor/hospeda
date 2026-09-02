@@ -498,8 +498,6 @@
             "receiptHint": "Enviar recibo automaticamente ao processar pagamento",
             "trialReminderLabel": "Lembrete de fim do teste",
             "trialReminderHint": "Avisar antes de o período de teste expirar",
-            "trialReminderDaysLabel": "Dias de antecedência do lembrete",
-            "trialReminderDaysHint": "Enviar o lembrete X dias antes do vencimento",
             "paymentFailedLabel": "Notificar pagamento falhado",
             "paymentFailedHint": "Avisar o cliente quando um pagamento falha",
             "subscriptionCancelledLabel": "Notificar cancelamento de assinatura",
@@ -1071,6 +1069,66 @@
             "previous": "Anterior",
             "next": "Próxima",
             "pageOf": "Página {{page}} de {{totalPages}}"
+        },
+        "queue": {
+            "title": "Fila de pagamentos órfãos",
+            "loading": "Carregando a fila...",
+            "errorLoading": "Erro ao carregar a fila",
+            "emptyTitle": "Nenhum pagamento na fila",
+            "emptyHint": "Nenhuma cobrança ficou sem lançamento com este filtro. A fila é escrita no instante da falha, então vazia significa vazia.",
+            "unresolvedCount_one": "{{count}} pagamento não resolvido no total",
+            "unresolvedCount_other": "{{count}} pagamentos não resolvidos no total",
+            "resolveButton": "Resolver",
+            "livemodeReal": "Dinheiro real",
+            "livemodeSandbox": "Sandbox",
+            "columns": {
+                "detectedAt": "Detectado",
+                "providerPaymentId": "ID do pagamento (MP)",
+                "flow": "Fluxo",
+                "reason": "Motivo",
+                "amount": "Valor",
+                "livemode": "Ambiente",
+                "subscriptionId": "Assinatura local",
+                "actions": "Ações"
+            },
+            "flows": {
+                "planChangeUpgrade": "Upgrade de plano",
+                "annualUpfront": "Anual antecipado",
+                "addonPurchase": "Compra de add-on",
+                "authorizedPaymentRetry": "Nova tentativa de cobrança recorrente"
+            },
+            "reasons": {
+                "subscriptionNotFound": "Assinatura inexistente",
+                "statusNotApplicable": "Status não aplicável",
+                "ledgerWriteFailed": "Falha ao gravar o lançamento"
+            },
+            "statuses": {
+                "unresolved": "Não resolvidos",
+                "resolved": "Resolvidos",
+                "dismissed": "Descartados"
+            },
+            "resolutions": {
+                "resolved": "Resolvido — o dinheiro foi lançado ou devolvido",
+                "dismissed": "Descartado — nada era devido"
+            },
+            "filters": {
+                "title": "Filtros da fila",
+                "statusLabel": "Status"
+            },
+            "resolveDialog": {
+                "title": "Registrar o veredito sobre este pagamento",
+                "description": "Registre o que foi feito com esta cobrança. NÃO lança o pagamento: para isso existe “Registrar pagamento” na divergência correspondente.",
+                "auditWarning": "Esta ação é auditada com o seu usuário e a sua nota. Uma linha fechada não pode ser reaberta aqui.",
+                "resolutionLabel": "Veredito",
+                "resolutionHint": "“Resolvido” significa que o dinheiro foi contabilizado ou devolvido. “Descartado” significa que nada era devido (uma cobrança de teste, uma duplicata).",
+                "noteLabel": "O que foi feito",
+                "notePlaceholder": "ex.: lancei o pagamento pela ferramenta de resgate, referência MP 174625958196.",
+                "noteHint": "Mínimo de 10 caracteres. É a única coisa que vai explicar a quem ler isto daqui a seis meses se o cliente ficou coberto.",
+                "confirmButton": "Registrar veredito",
+                "processingButton": "Registrando...",
+                "success": "Veredito registrado",
+                "error": "Não foi possível registrar o veredito:"
+            }
         }
     },
     "subscriptions": {

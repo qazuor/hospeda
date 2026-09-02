@@ -8,7 +8,9 @@ export type {
     AccommodationHookState,
     AccommodationPublishDeps,
     HostOnboardingResult,
-    PublishEligibility
+    PublishEligibility,
+    PublishTransactionContext,
+    StartLocalTrialResult
 } from './accommodation/accommodation.types';
 export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';

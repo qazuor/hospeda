@@ -54,6 +54,7 @@
 
 import {
     type CommerceVertical,
+    commerceVerticalToProductDomain,
     type EntitlementKey,
     getUnlimitedEntitlements,
     isEntitlementGrantingStatus,
@@ -61,7 +62,7 @@ import {
     LIMIT_KEY_BY_COMMERCE_VERTICAL,
     type LimitKey
 } from '@repo/billing';
-import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
+import type { ProductDomainValue } from '@repo/schemas';
 import { subscriptionMatchesDomain } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import {
@@ -97,15 +98,18 @@ const baseLimitCache = new Map<CommerceVertical, { value: number; cachedAt: numb
 /**
  * The product domain of a commerce vertical.
  *
- * A direct identity — `ProductDomainEnum.GASTRONOMY === 'gastronomy'` — rather
- * than a lookup, because the two vocabularies spell the verticals with the same
- * strings on purpose (see `ProductDomainEnum`'s doc).
+ * Thin wrapper around the shared, exhaustive
+ * {@link commerceVerticalToProductDomain} (`@repo/billing`) — replaced a
+ * local ternary comparing `vertical` against the gastronomy literal
+ * (HOS-1079), which type-checked here only because `vertical` was already
+ * narrowed to {@link CommerceVertical}, and carried no defense of its own if
+ * that ever changed.
  *
  * @param vertical - The commerce vertical.
  * @returns Its `billing_subscriptions.product_domain` value.
  */
 function domainOf(vertical: CommerceVertical): ProductDomainValue {
-    return vertical === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    return commerceVerticalToProductDomain(vertical);
 }
 
 /**

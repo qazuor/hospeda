@@ -14,8 +14,14 @@ import { HostTradeReviewReplySchema } from './host-trade-review-reply.schema.js'
 /**
  * PROTECTED ACCESS SCHEMA
  *
- * What the directory renders under a review, plus what the provider needs to
- * understand the state of his own answer.
+ * What the PROVIDER needs to understand the state of his own answer — the
+ * write path's response shape and his own panel, nothing else.
+ *
+ * The DIRECTORY used to read this too, and no longer does (HOS-1067): it
+ * declares its own narrower shape, because the two readers want opposite
+ * things from `moderationState`. Serving both from here made the directory
+ * demand fields its query never projected, and every answered provider
+ * returned 500. Do not point a directory-side read back at this tier.
  *
  * `moderationState` stays IN because a reply is born PENDING: without it the
  * provider's panel could not tell him his answer is awaiting review rather than
@@ -31,7 +37,7 @@ import { HostTradeReviewReplySchema } from './host-trade-review-reply.schema.js'
  *
  * `authorUserId` stays OUT too. The reply is attributable to the LISTING, which
  * the reader already has; mapping it to the natural person behind the business
- * is data the directory never needs to render.
+ * is data no reader of a reply needs to render.
  */
 export const HostTradeReviewReplyProtectedSchema = HostTradeReviewReplySchema.pick({
     id: true,

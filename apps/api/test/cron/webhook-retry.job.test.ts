@@ -139,6 +139,18 @@ vi.mock('../../src/services/billing/link-preapproval.service', () => ({
     linkPreapprovalToLocalSub: mockLinkPreapprovalToLocalSub
 }));
 
+// HOS-1001: the orphan-payment queue. Mocked so the dead-letter ledger-write
+// failure test can assert WHAT the cron hands to the queue without a live table.
+const { mockRecordOrphanPayment } = vi.hoisted(() => ({
+    mockRecordOrphanPayment: vi
+        .fn()
+        .mockResolvedValue({ queued: true, alreadyQueued: false, failed: false })
+}));
+
+vi.mock('../../src/services/billing/orphan-payment-queue.service', () => ({
+    recordOrphanPayment: mockRecordOrphanPayment
+}));
+
 vi.mock('../../src/utils/mp-authorized-payment', () => ({
     fetchAuthorizedPaymentDetails: vi.fn()
 }));
@@ -757,7 +769,6 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-resolved-1',
             planId: 'plan-1',
             status: 'active',
-            trialStart: null,
             trialEnd: null,
             billingInterval: 'month'
         });
@@ -787,6 +798,84 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         expect(recordArg.amount).toBe(99950); // 999.50 * 100
 
         expect(db.update).toHaveBeenCalled();
+
+        // HOS-1001: nothing to queue when the ledger write succeeded.
+        expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-1001: the dead-letter retry's ledger write failing used to be an
+    // `apiLogger.error` and a `return false`. The retry is real but bounded;
+    // when it runs out the charge is stranded with only that log to show for it.
+    // -------------------------------------------------------------------------
+    it('should queue the charge as ledger-write-failed when the dead-letter record() throws', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-ledger-fail',
+            payload: { data: { id: 'authorized-payment-ledger-fail' } }
+        });
+        arrangeDb([event]);
+
+        const paymentsRecord = vi.fn().mockRejectedValue(new Error('ledger write blew up'));
+        const billing = {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-ledger-fail',
+                preapprovalId: 'preapproval-789',
+                paymentId: 'mp-payment-stranded',
+                transactionAmount: 1234.5,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: '2026-09-01',
+                couponAmount: null,
+                campaignId: null
+            }
+        });
+
+        vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
+            id: 'sub-local-stranded',
+            customerId: 'cust-stranded',
+            planId: 'plan-1',
+            status: 'active',
+            trialEnd: null,
+            billingInterval: 'month'
+        });
+        vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
+
+        const ctx = makeCronContext();
+
+        // Act
+        await webhookRetryJob.handler(ctx);
+
+        // Assert
+        expect(paymentsRecord).toHaveBeenCalledOnce();
+        expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+
+        const queued = mockRecordOrphanPayment.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(queued.flow).toBe('subscription-authorized-payment-retry');
+        expect(queued.reason).toBe('ledger-write-failed');
+        // The MercadoPago PAYMENT id, not the authorized-payment id: it is the
+        // handle the queue dedupes on and the one an operator takes to MP.
+        expect(queued.providerPaymentId).toBe('mp-payment-stranded');
+        expect(queued.subscriptionId).toBe('sub-local-stranded');
+        expect(queued.customerId).toBe('cust-stranded');
+        // `transaction_amount` is MercadoPago's own MAJOR-unit field.
+        expect(queued.amountMajor).toBe(1234.5);
+        expect(queued.currency).toBe('ARS');
+
+        const queuedMetadata = queued.metadata as Record<string, unknown>;
+        expect(queuedMetadata.mpAuthorizedPaymentId).toBe('authorized-payment-ledger-fail');
+        expect(queuedMetadata.ledgerWriteError).toBe('ledger write blew up');
     });
 
     // -------------------------------------------------------------------------
@@ -831,7 +920,6 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-2',
             planId: 'plan-1',
             status: 'active',
-            trialStart: null,
             trialEnd: null,
             billingInterval: 'month'
         });
@@ -958,7 +1046,6 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 customerId: 'cust-linked-1',
                 planId: 'plan-1',
                 status: 'pending_provider',
-                trialStart: null,
                 trialEnd: null,
                 billingInterval: 'month'
             });

@@ -280,10 +280,17 @@ describe('initiatePaidMonthlySubscription', () => {
                 billingInterval: 'monthly',
                 mpPreapprovalPlanId: 'mp_plan_test',
                 payerEmail: CUSTOMER_FIXTURE.email,
-                trialGranted: false,
                 livemode: CUSTOMER_FIXTURE.livemode
             })
         );
+        // HOS-1012: `expect.objectContaining` is blind to a field that is
+        // MISSING, so the absence of a trial window has to be asserted on the
+        // actual argument, not by leaving it out of the matcher above.
+        const pendingArg = vi.mocked(createPendingProviderSubscription).mock.calls[0]?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(pendingArg).not.toHaveProperty('trialGranted');
+        expect(pendingArg).not.toHaveProperty('freeTrialDays');
         // No preapproval / MP subscription is ever created server-side.
         expect(billing.subscriptions).not.toHaveProperty('create');
     });
@@ -448,17 +455,18 @@ describe('initiatePaidMonthlySubscription', () => {
     // -----------------------------------------------------------------------
     // Card-first trial resolution (HOS-171), superseding SPEC-126 D9.
     //
-    // The trial is no longer a separate no-card mechanism that a
-    // `trial_extension` promo topped up afterwards. It is baked into the MP
-    // `preapproval_plan` resolved by `resolveCheckoutMpPlanId` (HOS-191), sized
-    // ONCE by `resolveCheckoutFreeTrialDays`. The full resolution matrix
-    // (kill-switch, summing, one-per-lifetime) is unit-tested against that
-    // function directly in service-core; what these assert is that this
-    // service feeds it the right inputs and wires the answer into the MP plan
-    // resolution + the pending-subscription's `trialGranted` marker.
+    // HOS-1012: the checkout no longer resolves a trial AT ALL. It does not
+    // call `resolveCheckoutFreeTrialDays`, does not read the plan's
+    // `hasTrial`/`trialDays`, and does not query prior-subscription history.
+    // The MP `preapproval_plan` is resolved at the no-trial variant on every
+    // path, because MercadoPago grants a preapproval's free trial once per
+    // `(payer, preapproval_plan)` and reports a spent one identically to a live
+    // one (HOS-522: ARS 18.000 charged 118 seconds after promising 14 free
+    // days). What these assert is that a plan which LOUDLY declares a trial, and
+    // a code which LOUDLY extends one, still produce `trialDays: 0`.
     // -----------------------------------------------------------------------
 
-    it('sends the plan base trial as trialDays with no promo code at all', async () => {
+    it('sends trialDays=0 even when the plan declares a trial (HOS-1012)', async () => {
         const billing = createBillingMock({
             plans: [createPlan([MONTHLY_PRICE, ANNUAL_PRICE], TRIAL_METADATA)]
         });
@@ -471,14 +479,11 @@ describe('initiatePaidMonthlySubscription', () => {
         });
 
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: PLAN_TRIAL_DAYS })
-        );
-        expect(createPendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: true })
+            expect.objectContaining({ trialDays: 0 })
         );
     });
 
-    it('sums the plan base trial and FREEMONTH into ONE trialDays sent to the MP plan resolver', async () => {
+    it('does not sum FREEMONTH into trialDays — it stays 0 (HOS-1012)', async () => {
         const billing = createBillingMock({
             plans: [createPlan([MONTHLY_PRICE, ANNUAL_PRICE], TRIAL_METADATA)]
         });
@@ -491,11 +496,11 @@ describe('initiatePaidMonthlySubscription', () => {
             promoCode: 'FREEMONTH'
         });
 
+        // Would have been PLAN_TRIAL_DAYS + 30 before HOS-1012. FREEMONTH is a
+        // KEPT feature — the code is still valid and still not redeemed here —
+        // but its days can no longer ride on a MercadoPago free_trial.
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: PLAN_TRIAL_DAYS + 30 })
-        );
-        expect(createPendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: true })
+            expect.objectContaining({ trialDays: 0 })
         );
     });
 
@@ -512,12 +517,14 @@ describe('initiatePaidMonthlySubscription', () => {
             promoCode: 'freemonth'
         });
 
+        // Still resolves (a lowercase code is not rejected as invalid), and
+        // still contributes no days to MercadoPago (HOS-1012).
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: PLAN_TRIAL_DAYS + 30 })
+            expect.objectContaining({ trialDays: 0 })
         );
     });
 
-    it('grants no trial to a customer who already had any subscription', async () => {
+    it('resolves trialDays=0 for a customer who already had a subscription too', async () => {
         const billing = createBillingMock({
             plans: [createPlan([MONTHLY_PRICE, ANNUAL_PRICE], TRIAL_METADATA)],
             priorSubscriptions: [{ id: 'sub_from_two_years_ago' }]
@@ -531,41 +538,33 @@ describe('initiatePaidMonthlySubscription', () => {
             promoCode: 'FREEMONTH'
         });
 
-        // Charged immediately, and FREEMONTH cannot resurrect the burnt trial.
+        // Same answer as for a brand-new customer, and reached WITHOUT the
+        // history query: with no trial to grant there is no eligibility to
+        // establish (HOS-1012).
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
             expect.objectContaining({ trialDays: 0 })
         );
-        expect(createPendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: false })
-        );
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
     });
 
-    // HOS-191 F4: end-to-end verification that the one-trial-per-customer
-    // guard (`hasPriorSubscription` -> `resolveCheckoutFreeTrialDays`) still
-    // decides which MP `preapproval_plan` VARIANT the Path C share link
-    // points at. The test above only asserts the `trialDays` argument passed
-    // to `resolveCheckoutMpPlanId`; this one additionally makes the mock
-    // return a DIFFERENT plan id per `trialDays` value (mirroring how
-    // `resolveOrProvisionMpPlan` really behaves -- one MP plan per commercial
-    // plan x trial-day variant) and asserts the returned `checkoutUrl`
-    // actually differs, proving the guard's decision reaches the customer's
-    // browser and not just a mocked call argument.
-    it('routes a customer WITH a prior subscription to the trial_days=0 share link, and a customer WITHOUT one to the trial share link', async () => {
+    // HOS-1012: the counterpart of HOS-191's F4 test, inverted. F4 proved the
+    // one-trial-per-customer guard's decision reached the customer's BROWSER —
+    // that a returning customer and a new one got two DIFFERENT MercadoPago
+    // share links, one per trial-day variant. There is one variant now. This
+    // asserts the two customers land on the SAME link, which is the only
+    // formulation that can catch a trial variant creeping back in: a
+    // call-argument assertion alone would not notice a link built from a
+    // different resolved plan id.
+    it('routes a returning customer and a brand-new one to the SAME no-trial share link', async () => {
         const plans = [createPlan([MONTHLY_PRICE, ANNUAL_PRICE], TRIAL_METADATA)];
 
-        // Two `mockImplementationOnce` calls, consumed strictly in call
-        // order by the two sequential `initiatePaidMonthlySubscription`
-        // invocations below (never by inspecting the `trialDays` argument,
-        // to avoid ever depending on the guard for a "graded" test double).
-        // Once both are consumed the mock reverts to its module-level
-        // default (`mockResolvedValue('mp_plan_test')`), so this cannot
-        // leak into later tests.
+        // Graded doubles, exactly as F4 did: if the service ever resolved two
+        // different variants again, these two calls would hand back two
+        // different plan ids and the URLs below would diverge.
         vi.mocked(resolveCheckoutMpPlanId)
             .mockImplementationOnce(async () => 'mp_plan_no_trial')
-            .mockImplementationOnce(async () => 'mp_plan_with_trial');
+            .mockImplementationOnce(async () => 'mp_plan_no_trial');
 
-        // Customer with ANY prior subscription (any status) is disqualified
-        // from a trial for life (HOS-171) -- even in Path C.
         const returningCustomerBilling = createBillingMock({
             plans,
             priorSubscriptions: [{ id: 'sub_from_two_years_ago' }]
@@ -578,15 +577,6 @@ describe('initiatePaidMonthlySubscription', () => {
             urls: URLS
         });
 
-        expect(resolveCheckoutMpPlanId).toHaveBeenNthCalledWith(
-            1,
-            expect.objectContaining({ trialDays: 0 })
-        );
-        expect(returningResult.checkoutUrl).toContain('mp_plan_no_trial');
-        expect(returningResult.checkoutUrl).not.toContain('mp_plan_with_trial');
-
-        // A brand-new customer (no prior subscriptions at all) is
-        // trial-eligible and must resolve the trial variant instead.
         const newCustomerBilling = createBillingMock({ plans, priorSubscriptions: [] });
 
         const newCustomerResult = await initiatePaidMonthlySubscription({
@@ -597,20 +587,27 @@ describe('initiatePaidMonthlySubscription', () => {
         });
 
         expect(resolveCheckoutMpPlanId).toHaveBeenNthCalledWith(
-            2,
-            expect.objectContaining({ trialDays: PLAN_TRIAL_DAYS })
+            1,
+            expect.objectContaining({ trialDays: 0 })
         );
-        expect(newCustomerResult.checkoutUrl).toContain('mp_plan_with_trial');
-        expect(newCustomerResult.checkoutUrl).not.toContain('mp_plan_no_trial');
+        expect(resolveCheckoutMpPlanId).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({ trialDays: 0 })
+        );
+        expect(returningResult.checkoutUrl).toContain('mp_plan_no_trial');
+        expect(newCustomerResult.checkoutUrl).toContain('mp_plan_no_trial');
     });
 
-    it('grants no trial on a plan that declares none, even with FREEMONTH', async () => {
-        // A plan with no trial gets none regardless of any promo (ADR-009 keeps
-        // trials host-only). The extension has nothing to lengthen, so its days
-        // go nowhere rather than becoming a standalone trial.
+    it('sends trialDays=0 for a plan that declares no trial, with FREEMONTH supplied', async () => {
+        // HOS-1012: `promoCodeIgnored` is no longer asserted here. It used to be
+        // set by `resolveCheckoutFreeTrialDays`, which the checkout no longer
+        // calls, and re-homing the trial-extension effect onto the local trial
+        // row is an open product decision — see the `TODO(HOS-1012)` in the
+        // service. What still holds, and is what this pins, is that the code
+        // contributes nothing to MercadoPago.
         const billing = createBillingMock();
 
-        const result = await initiatePaidMonthlySubscription({
+        await initiatePaidMonthlySubscription({
             customerId: CUSTOMER_ID,
             planSlug: 'owner-premium',
             billing: billing as any,
@@ -621,7 +618,6 @@ describe('initiatePaidMonthlySubscription', () => {
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
             expect.objectContaining({ trialDays: 0 })
         );
-        expect(result.promoCodeIgnored).toBe(true);
     });
 
     it('does NOT grant a trial or forward any effect when neither trial nor promo applies', async () => {
@@ -637,7 +633,6 @@ describe('initiatePaidMonthlySubscription', () => {
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
             expect.objectContaining({ trialDays: 0 })
         );
-        expect(result.trialGranted).toBeUndefined();
         expect(result.appliedEffect).toBeUndefined();
         expect(result.promoCodeIgnored).toBeUndefined();
     });
@@ -795,18 +790,22 @@ describe('initiatePaidAnnualSubscription', () => {
                 billingInterval: 'annual',
                 mpPreapprovalPlanId: 'mp_plan_test',
                 payerEmail: CUSTOMER_FIXTURE.email,
-                trialGranted: false,
                 livemode: CUSTOMER_FIXTURE.livemode
             })
         );
+        const annualPendingArg = vi.mocked(createPendingProviderSubscription).mock.calls[0]?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(annualPendingArg).not.toHaveProperty('trialGranted');
+        expect(annualPendingArg).not.toHaveProperty('freeTrialDays');
         // No preapproval / MP subscription is ever created server-side.
         expect(billing.subscriptions).not.toHaveProperty('create');
     });
 
-    it('gives annual the same card-first trial as monthly', async () => {
-        // Annual is not a different KIND of thing any more -- same preapproval
-        // variant resolution, same single trial decision, just a 12-month
-        // cadence. The trial stays expressed in DAYS regardless of that cadence.
+    it('gives annual the same no-trial treatment as monthly (HOS-1012)', async () => {
+        // Annual is not a different KIND of thing -- same preapproval variant
+        // resolution, just a 12-month cadence. So it gets the same answer: a
+        // plan declaring a trial still resolves the no-trial MP plan.
         const billing = createAnnualBillingMock({
             plans: [
                 {
@@ -826,10 +825,7 @@ describe('initiatePaidAnnualSubscription', () => {
         });
 
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
-            expect.objectContaining({ trialDays: PLAN_TRIAL_DAYS })
-        );
-        expect(createPendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: true })
+            expect.objectContaining({ trialDays: 0 })
         );
     });
 

@@ -426,7 +426,12 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 required: false,
                 modes: ['view', 'edit', 'create'],
                 label: 'WhatsApp',
-                description: 'Número de WhatsApp para contacto',
+                // HOS-924: this number is NOT published on the listing's public
+                // page and does not satisfy the publish gate for an experience.
+                // Saying so here is the only warning the person filling the form
+                // gets before paying for an unreachable listing.
+                description:
+                    'Número de WhatsApp para contacto interno. No se publica en la ficha pública ni cuenta como dato de contacto para publicar: cargá también un teléfono o un email.',
                 placeholder: '+54 11 1234-5678',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],

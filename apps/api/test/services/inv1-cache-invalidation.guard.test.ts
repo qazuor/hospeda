@@ -193,6 +193,15 @@ const LIFECYCLE_SITES: readonly LifecycleSite[] = [
         description: 'trial start/expire/activation (trial.service.ts)',
         file: 'services/trial.service.ts'
     },
+    {
+        description:
+            'HOS-1012 local trial started at publish (accommodation-publish-deps.ts). The row is inserted by subscription-trial-create.service.ts INSIDE the publish transaction, which is why the clear cannot live there: it must run after the commit. This file owns the post-commit hook.',
+        file: 'services/accommodation-publish-deps.ts'
+    },
+    {
+        description: 'HOS-1012 local trial expiry (billing/trial-local-expiry.service.ts)',
+        file: 'services/billing/trial-local-expiry.service.ts'
+    },
 
     // ── REFUND ────────────────────────────────────────────────────────────────
 
@@ -456,9 +465,9 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'HOS-937 step 3. Writes are the compare-and-set claim (`metadata.retryClaimedAt`) and the post-mint stamp (`metadata.retryMintedLocalSubscriptionId`/`retryMintedCheckoutUrl`) on the CANCELLED row being recovered from — pure bookkeeping on a row that never granted entitlements (a checkout that never activated). The fresh preapproval it mints is a brand-new row created through `createOwnPreapprovalSubscription` (already inventoried, requiresCacheClear:false), and any entitlement grant only happens later when the webhook activates THAT new row (subscription-logic.ts, already calls clearEntitlementCache).'
     },
     {
-        file: 'services/billing/trial-window-reconcile.ts',
+        file: 'services/billing/trial-supersede-on-activation.ts',
         requiresCacheClear: false,
-        reason: "Clears trial_start/trial_end (HOS-936) when MercadoPago's own next_payment_date shows it is charging at the creation instant, so the trial we promised was never granted. Writes NEITHER plan_id NOR status — and every call site runs while the row is still pre-authorization, so no entitlement has been granted yet for a cache to hold. The webhook that later activates the row (subscription-logic.ts) already calls clearEntitlementCache. Entitlements gate on status and never on trial_end (the HOS-171 guard), so narrowing the window cannot change what loadEntitlements resolves."
+        reason: "HOS-1012 T-022. Moves the customer's Hospeda-owned trial row to its terminal `superseded` status INSIDE the transaction that activates their paid subscription, so no committed state ever shows both rows granting. It writes `status`, which IS entitlement-bearing — but it cannot clear the cache itself: clearing before the caller's commit would publish an entitlement picture that can still roll back. The single call site is the subscription webhook (subscription-logic.ts:1129), which clears the cache post-commit at line 1199 for that same customerId."
     },
     {
         file: 'services/plan-disable-lifecycle.service.ts',
@@ -479,6 +488,16 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         file: 'services/subscription-cancel.service.ts',
         requiresCacheClear: true,
         reason: 'Subscription cancel — already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/billing/trial-local-expiry.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-1012 T-010: flips an expired local trial to `expired`. The row WAS entitlement-granting (`trialing` is in isEntitlementGrantingStatus) and there is no preapproval and therefore no webhook to clear the cache afterwards, so this is the only place that can. Already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/subscription-trial-create.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-1012 T-003: inserts the Hospeda-owned `trialing` row, which IS entitlement-granting, with no MercadoPago preapproval and therefore no webhook that could ever clear the cache. It clears it itself on the standalone path; when it is handed a caller transaction it deliberately does NOT (clearing before that commit would publish entitlements for a row that can still roll back) and the caller clears it post-commit — see accommodation-publish-deps.ts. The call is present either way, which is what this guard checks.'
     },
     {
         file: 'services/subscription-comp-create.service.ts',

@@ -118,11 +118,14 @@ const exploreLinks = [
  *  files and fails if they ever disagree, which is the drift the import would
  *  have prevented.
  *
- *  `footer.listProperty` deliberately keeps its own
- *  `/suscriptores/propietarios/` destination: it predates the chooser, and
- *  re-pointing an existing link is not what HOS-826 asked for. */
+ *  `footer.listProperty` deliberately keeps its own destination rather than
+ *  the chooser's: it predates it, and re-pointing it at `/publicar/` is not
+ *  what HOS-826 asked for. HOS-985 moved that destination from
+ *  `/suscriptores/propietarios/` to `/planes/anfitriones/` because the old URL
+ *  is now redirect-only (HOS-941 D-12) — the link keeps meaning the same thing,
+ *  it just stops costing every visitor a 301 hop. */
 const forYouLinks = [
-    { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
+    { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/planes/anfitriones/" }) },
     { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: "/publicar-restaurante/" }) },
     { label: t("footer.listExperience"), href: buildUrl({ locale, path: "/publicar-experiencia/" }) },
     /* HOS-942: ONE link to the plan index, replacing the separate "Planes para

@@ -999,13 +999,22 @@ export interface GastronomyOpeningHoursEntry {
 /**
  * Social networks map for a gastronomy listing.
  * Mirrors the `socialNetworks` field from the `GastronomyPublicSchema`.
+ *
+ * NOTE (HOS-1076): `whatsapp` was removed from this shape. It was never part
+ * of `SocialNetworkSchema` (the WRITE/READ shape backing the `socialNetworks`
+ * JSONB column — see `packages/schemas/src/common/social.schema.ts`), so the
+ * key can never be legitimately populated. Keeping it here was dead weight
+ * that would have rendered an ungated WhatsApp number the instant anything
+ * ever wrote that key into the JSONB column — gastronomy's public schema
+ * exposes no phone/WhatsApp channel by design. Do not re-add it; a gated
+ * WhatsApp channel for gastronomy belongs on its own dedicated path, mirroring
+ * accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` entitlement.
  */
 export interface GastronomySocialNetworks {
     readonly facebook?: string | null;
     readonly instagram?: string | null;
     readonly twitter?: string | null;
     readonly youtube?: string | null;
-    readonly whatsapp?: string | null;
     readonly tiktok?: string | null;
     readonly website?: string | null;
 }
@@ -1109,6 +1118,17 @@ export interface GastronomyDetailData extends GastronomyCardData {
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
     readonly tags?: readonly string[];
+    /**
+     * Amenities the owner ticked, catalog-joined (HOS-1072).
+     *
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * twin: both verticals read the SAME `amenities` catalog as accommodations
+     * and render through the same `AmenitiesGrid`, so `name` carries the slug
+     * here too (SPEC-266). Empty when the payload carried none.
+     */
+    readonly amenities: readonly DetailAmenity[];
+    /** Features the owner ticked, catalog-joined (HOS-1072). Empty when none. */
+    readonly features: readonly DetailFeature[];
     /** FAQ items configured by the owner. */
     readonly faqs: readonly DetailFaq[];
     /** Public owner data from the users table JOIN. */
@@ -1149,28 +1169,21 @@ export interface ExperienceSocialNetworks {
 }
 
 /**
- * Contact info subset this app WOULD read from an experience listing, if the
- * public tier exposed one (SPEC-240).
+ * The contact channels an experience listing publishes (HOS-815).
  *
- * NOT CURRENTLY POPULATED (HOS-363). The original JSDoc claimed
- * `ExperiencePublicSchema` surfaces `contactInfo.whatsapp`; it does not —
- * `contactInfo` is absent from that schema's `pick()` entirely
- * (`packages/schemas/src/entities/experience/experience.access.schema.ts`,
- * whose own header documents "Omits: ... contactInfo (direct)"), so every value
- * typed as `ExperienceContactInfo` in this app is `null` at runtime —
- * `normalizeExperienceContactInfo` in `lib/api/transforms.ts` returns `null`
- * for an absent payload, never `undefined` — and `ExperienceContactCTA.astro`
- * never renders. The type is kept so the CTA is already correct the day the
- * field is exposed.
+ * Exactly the keys of `ExperiencePublicContactInfoSchema`
+ * (`packages/schemas/src/entities/experience/experience.access.schema.ts`), and
+ * no more — Zod strips everything else before the payload leaves the API.
+ *
+ * `whatsapp` is deliberately NOT here (HOS-363). The public payload never
+ * carried it (the number is gated by the VIEWER's plan on a separate protected
+ * endpoint — HOS-19 — and this response is shared-cached with no auth in the
+ * cache key), so the CTA that read it never rendered and was deleted along with
+ * this field. HOS-924 is the other half: since a channel that is never shown
+ * cannot make a listing reachable, one of the keys BELOW is now what an
+ * experience needs to publish at all.
  */
 export interface ExperienceContactInfo {
-    /**
-     * WhatsApp number. STILL not exposed on the public tier and still gated by
-     * the VIEWER's plan on a separate protected endpoint (HOS-19) — HOS-815
-     * deliberately left it out of `ExperiencePublicContactInfoSchema`. Kept so
-     * `ExperienceContactCTA` stays correct the day that changes.
-     */
-    readonly whatsapp?: string | null;
     /** Business email — published (HOS-815). */
     readonly workEmail?: string | null;
     /** Business landline — published (HOS-815). */
@@ -1299,6 +1312,17 @@ export interface ExperienceDetailData extends ExperienceCardData {
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
     readonly tags?: readonly string[];
+    /**
+     * Amenities the owner ticked, catalog-joined (HOS-1072).
+     *
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * twin: both verticals read the SAME `amenities` catalog as accommodations
+     * and render through the same `AmenitiesGrid`, so `name` carries the slug
+     * here too (SPEC-266). Empty when the payload carried none.
+     */
+    readonly amenities: readonly DetailAmenity[];
+    /** Features the owner ticked, catalog-joined (HOS-1072). Empty when none. */
+    readonly features: readonly DetailFeature[];
     /** FAQ items configured by the owner. */
     readonly faqs: readonly DetailFaq[];
     /** Public owner data from the users table JOIN. */

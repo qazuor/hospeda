@@ -20,7 +20,11 @@
  */
 
 import type { TrialEligibilityResponse } from '@repo/schemas';
-import { TrialEligibilityQuerySchema, TrialEligibilityResponseSchema } from '@repo/schemas';
+import {
+    ProductDomainEnum,
+    TrialEligibilityQuerySchema,
+    TrialEligibilityResponseSchema
+} from '@repo/schemas';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
@@ -77,7 +81,14 @@ export const handleTrialEligibility = async (
 
     const { eligible } = await resolveTrialEligibility({
         billing,
-        customerId: billingCustomerId
+        customerId: billingCustomerId,
+        // HOS-1012 D-2: eligibility is per vertical. This route backs the
+        // accommodation pricing page — the one place a "N days free" badge is
+        // shown — and the commerce plans are deliberately kept out of
+        // `ALL_PLANS` and out of `GET /public/plans`, so there is no commerce
+        // caller to serve here. A commerce pricing surface would pass its own
+        // domain rather than inherit this one.
+        productDomain: ProductDomainEnum.ACCOMMODATION
     });
 
     return { eligible, planSlug };

@@ -120,6 +120,11 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 }));
 
 // Mock apiLogger
+const expireLocalTrialMock = vi.fn();
+vi.mock('../../src/services/billing/trial-local-expiry.service', () => ({
+    expireLocalTrial: (...args: unknown[]) => expireLocalTrialMock(...args)
+}));
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
         debug: vi.fn(),
@@ -1072,6 +1077,7 @@ describe('TrialService', () => {
             mockTxUpdateChain.where.mockClear();
             mockTxInsertChain.values.mockClear();
             mockTx.execute.mockClear();
+            expireLocalTrialMock.mockReset();
             vi.mocked(clearEntitlementCache).mockClear();
             vi.mocked(Sentry.captureException).mockClear();
 
@@ -1248,18 +1254,50 @@ describe('TrialService', () => {
             expect(Sentry.captureException).toHaveBeenCalled();
         });
 
-        it('skips and alerts when a trialing row has no provider id', async () => {
-            // Arrange — cannot ask the provider, so cannot decide
+        it('HOS-1012: expires a trialing row with no provider id locally instead of alerting', async () => {
+            // Arrange — a row with no preapproval used to be an anomaly worth a
+            // Sentry alert: under card-first every trial WAS a preapproval, so a
+            // missing provider id meant something had gone wrong. It is now the
+            // normal shape of a Hospeda-owned trial, and our clock is the only
+            // clock there is.
             givenClaimedRows([makeClaimedRow({ mpSubscriptionId: null })]);
+            expireLocalTrialMock.mockResolvedValue({ outcome: 'expired' });
 
             // Act
             const result = await trialService.reconcileExpiredTrials(adapterInput());
 
-            // Assert — never guess an outcome; guessing means cancelling a payer
-            // or comping a freeloader
-            expect(result).toBe(0);
+            // Assert — expired locally, and MercadoPago is never consulted about
+            // a trial it does not know exists.
+            expect(expireLocalTrialMock).toHaveBeenCalledOnce();
+            expect(result).toBe(1);
             expect(mockPaymentAdapter.subscriptions.retrieve).not.toHaveBeenCalled();
-            expect(Sentry.captureException).toHaveBeenCalled();
+            expect(Sentry.captureException).not.toHaveBeenCalled();
+        });
+
+        it('HOS-1012: does not count a local trial the expiry refused to touch', async () => {
+            // A run that counts refusals as successes cannot tell "nothing to do"
+            // from "everything was rejected".
+            givenClaimedRows([makeClaimedRow({ mpSubscriptionId: null })]);
+            expireLocalTrialMock.mockResolvedValue({ outcome: 'already-expired' });
+
+            const result = await trialService.reconcileExpiredTrials(adapterInput());
+
+            expect(expireLocalTrialMock).toHaveBeenCalledOnce();
+            expect(result).toBe(0);
+        });
+
+        it('HOS-1012: still reconciles a row that DOES carry a provider id', async () => {
+            // The two kinds of row coexist until the legacy ones are converted
+            // (T-032), and staging keeps minting new ones meanwhile. The branch
+            // must not swallow the legacy path.
+            givenClaimedRows([makeClaimedRow({ mpSubscriptionId: 'mp-preapproval-1' })]);
+
+            await trialService.reconcileExpiredTrials(adapterInput());
+
+            expect(expireLocalTrialMock).not.toHaveBeenCalled();
+            expect(mockPaymentAdapter.subscriptions.retrieve).toHaveBeenCalledWith(
+                'mp-preapproval-1'
+            );
         });
 
         it('leaves the row untouched when the provider call fails', async () => {

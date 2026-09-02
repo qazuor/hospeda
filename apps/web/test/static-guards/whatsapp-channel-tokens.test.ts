@@ -45,9 +45,8 @@
  * result and a `return []` satisfied all of them. It is applied BOTH here, over
  * `OWNING_FILES`, and in each component's own test:
  *   - `test/components/accommodation/WhatsAppContact.test.ts`
- *   - `test/components/experience/ExperienceContactCTA.test.ts`
  *   - `test/components/newsletter/WhatsAppCTA.test.ts`
- * Applying it here is what stops a fourth surface from being admitted with a
+ * Applying it here is what stops a third surface from being admitted with a
  * two-line data edit and zero ink coverage. Ratios live in
  * `packages/design-tokens/src/tokens/channel-contrast.test.ts`.
  *
@@ -99,12 +98,15 @@ const TOKEN_PREFIX = '--channel-whatsapp';
 const BARE_TOKEN_PREFIX = 'channel-whatsapp';
 
 /**
- * The three components that own a WhatsApp surface. Only these may name the
- * tokens; each has its own test asserting how it inks them.
+ * The components that own a WhatsApp surface. Only these may name the tokens;
+ * each has its own test asserting how it inks them.
+ *
+ * There were three until HOS-363 deleted the experience CTA: it was inked
+ * correctly and never rendered, because the public experience payload does not
+ * carry `contactInfo.whatsapp`.
  */
 const OWNING_FILES: readonly string[] = [
     'components/accommodation/WhatsAppContact.module.css',
-    'components/experience/ExperienceContactCTA.astro',
     'components/newsletter/WhatsAppCTA.module.css'
 ];
 
@@ -120,11 +122,6 @@ const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, numbe
         '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-hover': 1,
         '--channel-whatsapp-text': 1
-    },
-    'components/experience/ExperienceContactCTA.astro': {
-        '--channel-whatsapp': 1,
-        '--channel-whatsapp-foreground': 1,
-        '--channel-whatsapp-hover': 1
     },
     'components/newsletter/WhatsAppCTA.module.css': {
         '--channel-whatsapp': 2,

@@ -16,7 +16,9 @@ import type {
     ArticleCardData,
     CardAmenityFeature,
     DestinationCardData,
+    DetailAmenity,
     DetailFaq,
+    DetailFeature,
     EventCardData,
     EventDetailData,
     ExperienceCardData,
@@ -2557,6 +2559,11 @@ function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHo
 /**
  * Normalize a raw `socialNetworks` value from the API.
  * Returns `null` when absent or empty.
+ *
+ * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
+ * payload could carry one (belt and braces — see `GastronomySocialNetworks`).
+ * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
+ * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
 function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -2566,7 +2573,6 @@ function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null 
         instagram: obj.instagram ? String(obj.instagram) : null,
         twitter: obj.twitter ? String(obj.twitter) : null,
         youtube: obj.youtube ? String(obj.youtube) : null,
-        whatsapp: obj.whatsapp ? String(obj.whatsapp) : null,
         tiktok: obj.tiktok ? String(obj.tiktok) : null,
         website: obj.website ? String(obj.website) : null
     };
@@ -2645,6 +2651,69 @@ export function toGastronomyCardProps({
 }
 
 /**
+ * Maps the catalog-joined `amenities` array a commerce detail payload carries
+ * into the item shape `AmenitiesGrid.astro` renders (HOS-1072).
+ *
+ * Two deliberate coercions, both matching what the accommodation transform
+ * already does with the same catalog:
+ *
+ * - `name` receives the **slug**, because the grid uses it as the i18n key
+ *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
+ *   `name` column, so a slug is the only identifier there is.
+ * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
+ *   values. The commerce junction tables have no such columns (see
+ *   `CommerceListingAmenityPublicSchema`), so there is nothing to read; the
+ *   constants keep one grid component serving three verticals instead of
+ *   forking it. `additionalCost: null` is what stops the grid from printing a
+ *   "(costo adicional)" tag no commerce owner could have set.
+ *
+ * Server order is PRESERVED — the API already sorts by the catalog's
+ * `displayWeight` — so the flat `50` here re-sorts nothing.
+ *
+ * @param raw - The payload's `amenities` value, of unknown shape.
+ * @returns Grid-ready amenity items; empty when absent or malformed.
+ */
+function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((item) => ({
+            amenityId: String(item.amenityId ?? ''),
+            name: String(item.slug ?? ''),
+            icon: item.icon == null ? null : String(item.icon),
+            isOptional: false,
+            additionalCost: null,
+            displayWeight: 50
+        }))
+        .filter((item) => item.name.length > 0);
+}
+
+/**
+ * Maps the catalog-joined `features` array a commerce detail payload carries
+ * into the item shape `FeaturesGrid.astro` renders (HOS-1072).
+ *
+ * Unlike the amenity twin, `hostReWriteName` and `comments` are REAL here: the
+ * commerce feature junction tables carry both columns and the owner writes
+ * them, so they are read straight through. `name` holds the slug for the same
+ * i18n reason as above.
+ *
+ * @param raw - The payload's `features` value, of unknown shape.
+ * @returns Grid-ready feature items; empty when absent or malformed.
+ */
+function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((item) => ({
+            featureId: String(item.featureId ?? ''),
+            name: String(item.slug ?? ''),
+            icon: item.icon == null ? null : String(item.icon),
+            hostReWriteName: item.hostReWriteName == null ? null : String(item.hostReWriteName),
+            comments: item.comments == null ? null : String(item.comments),
+            displayWeight: 50
+        }))
+        .filter((item) => item.name.length > 0);
+}
+
+/**
  * Transforms a raw API gastronomy item to GastronomyDetailData props.
  *
  * Used on the gastronomy detail page where the full `GastronomyPublic` shape
@@ -2685,6 +2754,8 @@ export function toGastronomyDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
+        amenities: mapCommerceAmenities(item.amenities),
+        features: mapCommerceFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -2726,10 +2797,10 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
  * the listing form blocks publication without a phone or an email and then the
  * page showed neither, leaving the traveller with no way to reach the provider.
  *
- * `whatsapp` is read but is still absent on the public payload: it is gated by
- * the VIEWER's plan on a separate protected endpoint (HOS-19) and this response
- * is shared-cached. It is mapped so `ExperienceContactCTA` keeps working
- * wherever a payload does carry it.
+ * `whatsapp` is NOT read (HOS-363): the public payload never carries it — the
+ * number is gated by the VIEWER's plan on a separate protected endpoint
+ * (HOS-19) and this response is shared-cached — so mapping it only kept a CTA
+ * alive that could never render.
  *
  * Returns `null` when no publishable channel is present, so the caller renders
  * nothing rather than an empty contact card.
@@ -2745,7 +2816,6 @@ function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | n
     };
 
     const contact: ExperienceContactInfo = {
-        whatsapp: read('whatsapp'),
         workEmail: read('workEmail'),
         workPhone: read('workPhone'),
         mobilePhone: read('mobilePhone'),
@@ -2868,6 +2938,8 @@ export function toExperienceDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
+        amenities: mapCommerceAmenities(item.amenities),
+        features: mapCommerceFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),

@@ -28,10 +28,17 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
     // pastDueGraceMiddleware — mounted on /api/v1/protected/*. Distinct remedy:
     // the customer updates their payment method, they do not buy a plan.
     'GRACE_PERIOD_EXPIRED',
-    // requireActiveSubscription() — NOT mounted anywhere today (it exists only
-    // in its own JSDoc example). Whitelisted so the day it is mounted the copy
-    // already resolves, but treat these two as dormant, not live.
+    // `NO_ACTIVE_SUBSCRIPTION` is LIVE, emitted by the add-on paths
+    // (addon-entitlement.service.ts, addon.checkout.ts) when the customer has a
+    // subscription row that is not active or trialing. It used to be attributed
+    // here to `requireActiveSubscription()`, a middleware that was mounted
+    // nowhere and was deleted by HOS-1012 T-028 — the attribution was wrong
+    // even before the deletion.
     'NO_ACTIVE_SUBSCRIPTION',
+    // `NO_BILLING_ACCOUNT` has NO emitter since that middleware was deleted.
+    // Kept whitelisted rather than removed: its i18n copy still exists and the
+    // web client still branches on it, so a route that starts emitting it lands
+    // on resolving copy instead of a dropped cause.
     'NO_BILLING_ACCOUNT',
     // addon purchase route (routes/billing/addons.ts, HOS-602) — the
     // customer has zero subscription rows at all, distinct from having one

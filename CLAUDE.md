@@ -63,10 +63,12 @@ The API uses a three-tier route architecture:
 ### Key Commands
 
 ```bash
-# Interactive CLI (discover and run all commands)
-pnpm cli              # Interactive menu with fuzzy search
-pnpm cli <command>    # Run a command directly (e.g., pnpm cli db:start)
-pnpm test:cli         # Run CLI tool tests
+# hops — the local CLI (scripts/client-tools, runs on bun)
+hops                  # Interactive picker
+hops <command>        # Run one directly (e.g. hops db-start)
+hops --help           # The 18 commands
+hops run <script>     # Any package.json script in the repo, with search
+hops run <script> -- --flag   # Flags for the script go after `--`
 
 # Development
 pnpm dev              # Start all apps
@@ -167,23 +169,21 @@ Every subscription is a MercadoPago **preapproval**, trial or not:
   first charge to day N. There is no no-card trial and no `TrialService.startTrial`
   path from checkout. `freeTrialDays` is decided ONCE, at checkout, by
   `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
-- **`free_trial` is what we ASK for, `next_payment_date` is what we GET (HOS-936).**
-  MercadoPago grants a preapproval's free trial once per `(payer,
-  preapproval_plan)`, so `auto_recurring.free_trial` and `first_invoice_offset`
-  describe the PLAN'S terms and are byte-identical on a preapproval whose trial
-  will run and one whose trial was already spent. Measured 2026-08-31 on two
-  preapprovals for the same payer, two seconds apart: same `free_trial`, and
-  `next_payment_date` at +30 days on one and at the creation instant on the
-  other. So the local window is derived from `next_payment_date - date_created`
-  and from nothing else (`apps/api/src/services/billing/trial-window-derivation.ts`,
-  threshold documented there); `scripts/check-trial-not-derived-from-free-trial.sh`
-  fails CI if anything reads the untrustworthy fields again. Sending
-  `freeTrialDays` TO MercadoPago stays correct — asking is fine, believing the
-  answer is not. `trial-window-reconcile.ts` runs on both paths that hold a real
-  preapproval and NARROWS ONLY: a `not-granted` verdict clears the window,
-  `granted` and `unknown` leave it alone (re-anchoring `trial_end` to a date that
-  still moves after authorization would shift the very window HOS-522's
-  `classifySettledTrialCharge` measures against).
+- **Nothing is asked of MercadoPago about trials anymore (HOS-1012).** MercadoPago
+  grants a preapproval's free trial once per `(payer, preapproval_plan)`, so
+  `auto_recurring.free_trial` and `first_invoice_offset` describe the PLAN'S terms
+  and are byte-identical on a preapproval whose trial will run and one whose trial
+  was already spent. Measured 2026-08-31 on two preapprovals for the same payer,
+  two seconds apart: same `free_trial`, `next_payment_date` at +30 days on one and
+  at the creation instant on the other. In production that promised fourteen free
+  days and charged ARS 18.000 one hundred and eighteen seconds later (HOS-522).
+  HOS-936's answer was to read the honest field instead
+  (`next_payment_date - date_created`); HOS-1012's is to stop asking at all — a
+  trial we never request is a trial MercadoPago cannot lie about. So checkout is
+  the paid path and nothing else, and `scripts/check-no-trial-to-mercadopago.sh`
+  (guard G-1) fails CI if any checkout payload names a free trial again. The
+  derivation, its reconciler and their read-direction guard were deleted with
+  their subject (T-026); `trial_end` now comes from the local row and nowhere else.
 - **`TRIALING` is derived, never stored at creation.** MercadoPago reports an
   authorized preapproval as `active`; `deriveTrialingStatus` turns that into
   `trialing` in the webhook when the local `trialEnd` is still in the future. Do NOT
@@ -889,10 +889,10 @@ Para correr la app en un worktree (los 3 servers con puertos + DB aislados), **N
 
 Dos pares simétricos:
 
-- `pnpm cli wt:up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
-- `pnpm cli wt:down` — para los servers **solamente** (DB + worktree quedan; `wt:up` reinicia al instante).
-- `pnpm cli wt:remove` — teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
-- `pnpm cli wt:create` — imprime el uso de `wt-create.sh <type> <slug>` (el CLI no pasa args interactivos).
+- `hops servers-up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
+- `hops servers-down` — para los servers **solamente** (DB + worktree quedan; `servers-up` reinicia al instante).
+- `hops wt-clean` — borrado interactivo de worktrees: teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
+- Para crear: `bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>` directo, o `hops start-issue HOS-N`, que arma el worktree del issue.
 
 Bootstrap (una vez por máquina): `bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template` crea `hospeda_template` desde `hospeda_dev` para que los worktrees clonen la DB al instante.
 

@@ -1,0 +1,221 @@
+---
+/**
+ * @file planes/experiencias/index.astro
+ * @description Sales page for the experience vertical — level 2 of the three
+ * that HOS-941 D-7 defines: "why is this worth it", answered without leaving
+ * the page, and one click to "what does it cost".
+ *
+ * @route     /[lang]/planes/experiencias/
+ * @rendering SSR (no prerender); edge-cacheable via the `pricing` cache class,
+ *   tagged `CACHE_TAG_PRICING`. The middleware is fail-closed and rejects a
+ *   public `Cache-Control` without a declared class and tag (HOS-941 R-5).
+ *
+ * ## What moved, and what stayed behind
+ *
+ * Supersedes `/publicar-experiencia/`, which 301s here once H7 lands — not
+ * before, because that page still carries the price block inline and the price
+ * only moves DOWN to `/planes/experiencias/precios/` when H7 builds it. This
+ * mirrors the gastronomy vertical's split at `/planes/gastronomia/`:
+ * a visitor who has already decided to publish should not scroll a brochure
+ * to reach the grid, and "publicar mi experiencia" and "cuánto cuesta
+ * publicar mi experiencia" are two search intents a single URL serves badly.
+ *
+ * Built from the same `SalesSection`-based components as
+ * `/planes/gastronomia/` (HOS-985 H6) — see that file's docblock for the
+ * shared-component rationale. This page reuses the existing
+ * `commerce.landing.experience.*` i18n namespace and
+ * `resolveCommerceLandingOffer` used by `/publicar-experiencia/` unchanged;
+ * only the page shell moved from a hand-rolled `pub-exp__*` layout to the
+ * shared sales-page components.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { MapIcon, SettingsIcon, ShieldIcon } from '@repo/icons';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import BenefitsSection from '@/components/marketing/BenefitsSection.astro';
+import StepsSection from '@/components/marketing/StepsSection.astro';
+import FaqSection from '@/components/marketing/FaqSection.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+/**
+ * The trial length, read from the plan catalogue and never from a string.
+ *
+ * HOS-941 R-2 — see `planes/gastronomia/index.astro` for the full rationale
+ * (HOS-525). `null` renders NOTHING. Never "0 días", never a number borrowed
+ * from the other vertical: a failed fetch and a plan with no trial must be
+ * indistinguishable to a visitor.
+ */
+const plansResult = await fetchPublicPlans({ domain: 'experience' });
+const { trialDays } = resolveCommerceLandingOffer({ plansResult });
+
+const priceFaqAnswer =
+    trialDays === null
+        ? t('commerce.landing.experience.faq.a1NoTrial')
+        : tPlural('commerce.landing.experience.faq.a1', trialDays);
+
+const benefits = [
+    {
+        Icon: MapIcon,
+        title: t('commerce.landing.experience.benefits.item1.title'),
+        desc: t('commerce.landing.experience.benefits.item1.desc')
+    },
+    {
+        Icon: SettingsIcon,
+        title: t('commerce.landing.experience.benefits.item2.title'),
+        desc: t('commerce.landing.experience.benefits.item2.desc')
+    },
+    {
+        Icon: ShieldIcon,
+        title: t('commerce.landing.experience.benefits.item3.title'),
+        desc: t('commerce.landing.experience.benefits.item3.desc')
+    }
+] as const;
+
+const steps = [
+    {
+        num: '01',
+        title: t('commerce.landing.experience.howItWorks.step1.title'),
+        desc: t('commerce.landing.experience.howItWorks.step1.desc')
+    },
+    {
+        num: '02',
+        title: t('commerce.landing.experience.howItWorks.step2.title'),
+        desc: t('commerce.landing.experience.howItWorks.step2.desc')
+    },
+    {
+        num: '03',
+        title: t('commerce.landing.experience.howItWorks.step3.title'),
+        desc: t('commerce.landing.experience.howItWorks.step3.desc')
+    }
+] as const;
+
+/**
+ * Answers resolved here, not left as keys for the template.
+ *
+ * `a1` is the price answer and its shape depends on the catalogue, which a
+ * key-per-question array cannot express. Resolving all three the same way keeps
+ * the rendered page and the `FAQPage` structured data reading from one value
+ * each, so the JSON-LD can never advertise a trial the visible answer omits.
+ */
+const faqs = [
+    { q: t('commerce.landing.experience.faq.q1'), a: priceFaqAnswer },
+    { q: t('commerce.landing.experience.faq.q2'), a: t('commerce.landing.experience.faq.a2') },
+    { q: t('commerce.landing.experience.faq.q3'), a: t('commerce.landing.experience.faq.a3') }
+] as const;
+
+const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: { '@type': 'Answer', text: faq.a }
+    }))
+};
+
+const title = t('commerce.lead.experience.title');
+const subtitle = t('commerce.lead.experience.subtitle');
+/**
+ * Points at the page that HAS the price today — see the same block in
+ * `/planes/gastronomia/index.astro` for the full reasoning. In short:
+ * `/planes/experiencias/precios/` is H7's and does not exist yet, the price
+ * block still lives inside `/publicar-experiencia/` (HOS-690), and pointing
+ * both CTAs at a 404 until H7 lands would break every conversion path on the
+ * page.
+ */
+const pricingHref = buildUrl({ locale, path: 'publicar-experiencia' });
+---
+
+<MarketingLayout
+    locale={locale}
+    title={title}
+    description={subtitle}
+>
+    <JsonLd slot="head-extra" data={faqJsonLd} />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <MarketingHero
+        tagline={t('commerce.landing.experience.benefits.tagline')}
+        titleAccent={title}
+        subtitle={subtitle}
+    >
+        <GradientButton
+            slot="cta"
+            href={pricingHref}
+            label={t('pricing.nav.seePlans')}
+            variant="primary"
+            icon="true"
+        />
+    </MarketingHero>
+
+    <BenefitsSection
+        tagline={t('commerce.landing.experience.benefits.tagline')}
+        title={t('commerce.landing.experience.benefits.title')}
+        items={benefits}
+        columns={3}
+    />
+
+    <StepsSection
+        tagline={t('commerce.landing.experience.howItWorks.tagline')}
+        title={t('commerce.landing.experience.howItWorks.title')}
+        items={steps}
+        columns={3}
+        warm
+    />
+
+    <FaqSection
+        tagline={t('commerce.landing.experience.faq.tagline')}
+        title={t('commerce.landing.experience.faq.title')}
+        items={faqs}
+    />
+
+    <section class="sales-cta section section--warm">
+        <div class="sales-cta__container section__container">
+            <h2 class="sales-cta__title">{t('commerce.landing.experience.price.title')}</h2>
+            <GradientButton
+                href={pricingHref}
+                label={t('pricing.nav.seePlans')}
+                variant="primary"
+                icon="true"
+            />
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    .sales-cta__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+        text-align: center;
+    }
+
+    .sales-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

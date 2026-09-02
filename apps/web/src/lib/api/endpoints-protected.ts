@@ -657,6 +657,32 @@ export interface PlanItem {
     readonly isCurrent?: boolean;
 }
 
+/**
+ * Response of `POST /protected/billing/promo-codes/apply` (HOS-1012 T-039).
+ *
+ * `trialEnd` is present only for a `trial_extension` effect, and it is the
+ * value PERSISTED on the subscription row by the apply — not a projection the
+ * client should recompute.
+ */
+export interface ApplyPromoCodeResult {
+    /** Billing customer the code was applied to */
+    readonly id: string;
+    /** The applied code, echoed back */
+    readonly promoCode: string | null;
+    /** `discount` | `trial_extension` | `comp` */
+    readonly effectKind: string;
+    readonly originalAmount: number;
+    readonly discountAmount: number;
+    readonly finalAmount: number;
+    readonly amount: number;
+    /** Calendar days added — `trial_extension` only */
+    readonly extraDays?: number;
+    /** ISO 8601 persisted trial end — `trial_extension` only */
+    readonly trialEnd?: string;
+    /** True when the subscription became permanently complimentary */
+    readonly comp?: boolean;
+}
+
 /** Protected billing API endpoints for the user dashboard */
 export const billingApi = {
     /**
@@ -1049,6 +1075,49 @@ export const billingApi = {
         }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/promo-codes/validate`,
+            body
+        });
+    },
+
+    /**
+     * Apply a promo code to the authenticated user's own account (HOS-1012 T-039).
+     *
+     * Today the only self-service caller is the trial-extension form on the
+     * account subscription page: a `trial_extension` code applied while a trial
+     * is running pushes `trial_end` on the row and comes back with the date that
+     * was actually PERSISTED (`trialEnd`), never a projection.
+     *
+     * `customerId` is deliberately NOT sent — the endpoint resolves the caller's
+     * own billing customer from the session, which is the only customer a
+     * non-admin may ever target.
+     *
+     * Failure modes worth surfacing to the host: 422 when no trial is running
+     * (the code is NOT consumed and stays valid), 409 when the code was already
+     * used, 404/400 for an unknown, inactive or expired code.
+     *
+     * @param params.code - Promo code string entered by the user
+     * @param params.subscriptionId - Optional explicit subscription to target
+     * @returns The applied effect, including the persisted `trialEnd`
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.applyPromoCode({ code: 'FREEMONTH', subscriptionId });
+     * if (result.ok) console.log(result.data.trialEnd);
+     * ```
+     */
+    applyPromoCode({
+        code,
+        subscriptionId
+    }: {
+        readonly code: string;
+        readonly subscriptionId?: string;
+    }): Promise<ApiResult<ApplyPromoCodeResult>> {
+        const body: { code: string; subscriptionId?: string } = { code };
+        if (subscriptionId !== undefined) {
+            body.subscriptionId = subscriptionId;
+        }
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/promo-codes/apply`,
             body
         });
     },
@@ -2294,17 +2363,32 @@ export interface SavedReviewReply {
 }
 
 /**
- * The provider's answer as the DIRECTORY serves it (HOS-376 T-053).
+ * The provider's answer as the DIRECTORY serves it (HOS-376 T-053, HOS-1067).
  *
- * Structurally identical to {@link SavedReviewReply} — both mirror
- * `HostTradeReviewReplyProtectedSchema` — but arriving here carries a claim the
- * write path cannot make: a moderator cleared it. The endpoint omits an answer
- * that is PENDING or REJECTED, so `null` on a row means "no answer a reader may
- * see", NEVER "no answer exists". That distinction is why the provider's own
- * panel reads a different endpoint with a different shape
- * ({@link OwnerReviewReply}, which keeps the state and the reason).
+ * Narrower than {@link SavedReviewReply} by two fields, and neither absence is
+ * an oversight. Arriving here carries a claim the write path cannot make: a
+ * moderator cleared it. The endpoint omits an answer that is PENDING or
+ * REJECTED, so `null` on a row means "no answer a reader may see", NEVER "no
+ * answer exists" — which is why `moderationState` must not be here. It would be
+ * the constant `'APPROVED'`, and a reader holding it could separate a rejected
+ * answer from an absent one, undoing what the omission protects. `reviewId`
+ * goes because the review is the object this hangs off.
+ *
+ * The provider's own panel reads a different endpoint with a different shape
+ * ({@link OwnerReviewReply}, which keeps the state and the reason) — that is
+ * the reader `moderationState` exists for.
+ *
+ * This used to alias {@link SavedReviewReply}, and the API declared the same
+ * wider shape while its query projected these five: every answered provider
+ * returned 500 (HOS-1067).
  */
-export type DirectoryReviewReply = SavedReviewReply;
+export interface DirectoryReviewReply {
+    readonly id: string;
+    readonly content: string;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
 
 /**
  * One row of a provider's public review list (HOS-376 T-053).

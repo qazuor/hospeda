@@ -44,7 +44,9 @@ Y lo que se **lee** en pantalla, que no se dice en voz:
 
 > El texto sale del [plan de videos](../../plan-videos.md#v9--sin-comisión-por-reserva) y no
 > se cambia acá: si hay que ajustarlo, se ajusta allá primero. Ojo con dos cosas que ya
-> están decididas y no se relitigan: **nunca decir "sin tarjeta"** y **cero precios**.
+> están decididas y no se relitigan: **cero precios**, y **"sin tarjeta" ahora SÍ se dice**
+> (HOS-1012, 01/09/2026 — la prueba dejó de pedir medio de pago; esta línea decía lo
+> contrario hasta esa fecha).
 
 ---
 

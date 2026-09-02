@@ -6,3 +6,4 @@ export * from './model-c-field-split.js';
 export * from './partner-tier-plans.config.js';
 export * from './plans.config.js';
 export * from './promo-codes.config.js';
+export * from './trial-plans.config.js';

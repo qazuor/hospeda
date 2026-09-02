@@ -24,6 +24,14 @@ export function createZeroCategories(): Readonly<Record<ModerationCategory, numb
     });
 }
 
+/**
+ * Builds a provider verdict.
+ *
+ * `degraded` is `false` here and has no parameter, because no PROVIDER is ever
+ * degraded: a provider either answers or throws. Degradation is a conclusion
+ * only the orchestrator can reach, once every provider has failed it, and it
+ * overrides this field when it does (HOS-1069).
+ */
 export function createModerationResult(params: {
     score: number;
     categories: Record<ModerationCategory, number>;
@@ -32,7 +40,8 @@ export function createModerationResult(params: {
     return {
         score: params.score,
         categories: Object.freeze({ ...params.categories }),
-        matchedTerms: Object.freeze([...params.matchedTerms])
+        matchedTerms: Object.freeze([...params.matchedTerms]),
+        degraded: false
     };
 }
 

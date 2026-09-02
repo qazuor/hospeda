@@ -298,4 +298,86 @@ describe('resolveInitialModerationState', () => {
             ).toBe(ModerationStatusEnum.PENDING);
         });
     });
+
+    // ---- Degraded engine (HOS-1069) ---------------------------------------------
+
+    /**
+     * REGRESSION — HOS-1069.
+     *
+     * `degraded` means the engine could not form an opinion, so its score is
+     * not a measurement of the text — it is a placeholder. Comparing a
+     * placeholder against a threshold is how the fail-closed path became a
+     * matter of luck: the degraded score happens to be 0.5 and the shipped
+     * threshold happens to be 0.5, so the guard held only because two
+     * unrelated numbers happened to match. An admin raising the threshold to
+     * 0.6 would have silently turned it off.
+     *
+     * So the check moves ahead of the threshold entirely: unjudged content goes
+     * to a human whatever the numbers say.
+     */
+    describe('a degraded engine forces PENDING regardless of the threshold', () => {
+        it('holds even when the score is far below a raised threshold', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'semi',
+                    moderationScore: 0.5,
+                    pendingThreshold: 0.9,
+                    degraded: true
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        it('holds for a verified author, who otherwise short-circuits to APPROVED', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'verified',
+                    moderationScore: 0,
+                    degraded: true
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        it('holds for hostTrade, the type whose default is APPROVED', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: 0,
+                    degraded: true
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        /**
+         * The control: without the flag, the same inputs publish. This is what
+         * every leak measured in production looked like from here.
+         */
+        it('a NON-degraded engine with the same numbers still approves', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: 0,
+                    degraded: false
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        /**
+         * Omitting the flag must read as "the engine answered", not as
+         * "unknown" — an absent field defaulting to degraded would send every
+         * caller that has not been updated straight to the moderation queue.
+         */
+        it('an absent flag behaves exactly like degraded: false', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: 0
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+        });
+    });
 });

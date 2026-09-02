@@ -32,6 +32,7 @@ import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
 import { seedSystemTags } from './systemTags.seed.js';
 import { seedSystemUser } from './systemUser.seed.js';
 import { seedTestDailyPlan } from './testDailyPlan.seed.js';
+import { seedTrialPlans } from './trialPlans.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -188,6 +189,14 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         //      Always seeded — HOSPEDA_SHOW_TEST_BILLING_PLAN gates
         //      subscribability at checkout time, not seed presence.
         await seedTestDailyPlan(context);
+
+        // 12.4 Load the three composed trial plans (HOS-1012 D-5). Separate
+        //      from ALL_PLANS for the same reason as 12.1-12.3; each is
+        //      stamped with its own product_domain and carries the
+        //      metadata.trialComposition the entitlement seam resolves live.
+        //      Seeded AFTER the plans above because its composition names
+        //      their slugs.
+        await seedTrialPlans(context);
 
         // 13. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);

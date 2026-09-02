@@ -141,27 +141,19 @@ export interface CreatePendingProviderSubscriptionInput {
      * `payer_email = X OR payer_email IS NULL`).
      */
     readonly payerEmail?: string;
-    /**
-     * Whether this checkout granted free trial days (baked into the MP plan
-     * referenced by {@link mpPreapprovalPlanId} — see `resolveCheckoutMpPlanId`).
-     * Stamped into `metadata` since the local subscription cannot carry a real
-     * `trialing` status until the preapproval is linked and confirmed (HOS-171:
-     * `TRIALING` is derived, never stored at creation).
+    /*
+     * HOS-1012: `trialGranted` and `freeTrialDays` are GONE from this input.
+     *
+     * They existed so a checkout could pre-write the trial window it had just
+     * asked MercadoPago for (HOS-211 Option B / HOS-812), because the provider's
+     * own `retrieve()` shape could not be trusted to report it. No checkout asks
+     * for a trial any more, so there is no window to pre-write and no provider
+     * answer to second-guess: a row created here is always born with
+     * `trialStart`/`trialEnd` NULL.
+     *
+     * Hospeda's trial is now local and starts elsewhere — at the owner's first
+     * publish, with no card and no MercadoPago object behind it.
      */
-    readonly trialGranted: boolean;
-    /**
-     * Free trial length in days, resolved once at checkout by
-     * `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
-     * `undefined` when no trial applies. Persisted here (HOS-211 Option B) as
-     * `trialStart`/`trialEnd` on the row itself, so the eventual webhook's
-     * preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd ?? ...`
-     * in `subscription-logic.ts`) can derive `trialing` WITHOUT depending on
-     * `auto_recurring.free_trial` being present on qzpay's `retrieve()` response
-     * — which it is not, on `@qazuor/qzpay-mercadopago@2.6.0`'s mapped shape.
-     * Does NOT change `status`, which stays `pending_provider` regardless (see
-     * the insert below) — entitlements gate on status only (HOS-171).
-     */
-    readonly freeTrialDays?: number;
     /** A resolved-but-not-yet-applied discount (SPEC-262), if a `discount` promo code was used. */
     readonly pendingDiscount?: PendingCheckoutDiscount;
     /**
@@ -258,8 +250,6 @@ export interface CreatePendingProviderSubscriptionResult {
  *   billingInterval: 'monthly',
  *   mpPreapprovalPlanId: providerPriceId,
  *   payerEmail: customer.email,
- *   trialGranted: freeTrialDays !== undefined,
- *   freeTrialDays,
  *   livemode: customer.livemode
  * });
  * ```
@@ -274,8 +264,6 @@ export async function createPendingProviderSubscription(
         billingInterval,
         mpPreapprovalPlanId,
         payerEmail,
-        trialGranted,
-        freeTrialDays,
         pendingDiscount,
         pendingTrialExtension,
         writeDomainLinkRow,
@@ -316,25 +304,16 @@ export async function createPendingProviderSubscription(
             // billing period; `current_period_end` is NOT NULL in the schema.
             currentPeriodEnd: expiresAt,
             status: SubscriptionStatusEnum.PENDING_PROVIDER,
-            // HOS-211 Option B: persist the trial window at creation time, from
-            // the checkout-time-resolved `freeTrialDays`, instead of relying on
-            // the webhook to derive it from a live `auto_recurring.free_trial`
-            // that qzpay's mapped subscription shape does not expose. `status`
-            // intentionally stays `pending_provider` above — a set `trialEnd` on
-            // a pending row grants nothing until the webhook flips status, per
-            // the HOS-171 guard (entitlements gate on status, never trial_end).
-            //
-            // HOS-936: this is Hospeda's PROMISE, not MercadoPago's answer —
-            // no preapproval exists yet at this point, so nothing here can be
-            // verified. The provider gets to contradict it the moment one does:
-            // `link-preapproval.service.ts` reconciles this window against the
-            // real `next_payment_date` and clears it when the provider turns out
-            // to be charging immediately (`trial-window-reconcile.ts`).
-            trialStart: freeTrialDays === undefined ? null : now,
-            trialEnd:
-                freeTrialDays === undefined
-                    ? null
-                    : new Date(now.getTime() + freeTrialDays * 24 * 60 * 60 * 1000),
+            // HOS-1012: a checkout NEVER opens a trial window. HOS-211 Option B
+            // wrote one here from the days the checkout had just asked
+            // MercadoPago for; HOS-936 then had to reconcile that promise back
+            // against the provider's real `next_payment_date`, because the
+            // provider was free to contradict it. Nothing is promised now, so
+            // there is nothing to reconcile: these are hard NULLs, not a
+            // conditional that happens to evaluate to null. Hospeda's own trial
+            // row is opened at the first publish, not here.
+            trialStart: null,
+            trialEnd: null,
             livemode,
             metadata: {
                 source: 'start-paid-share-link',
@@ -342,7 +321,9 @@ export async function createPendingProviderSubscription(
                 intendedInterval: billingInterval,
                 priceId,
                 mpPreapprovalPlanId,
-                trialGranted: String(trialGranted),
+                // HOS-1012: no `trialGranted` key. It could only ever read
+                // `'false'` now, and a metadata key that carries one constant is
+                // noise a reader has to disprove.
                 // Spread LAST so the domain coordinates are unmistakably part of
                 // the same immutable checkout snapshot; absent entirely when the
                 // caller has no domain entity (the accommodation path).
