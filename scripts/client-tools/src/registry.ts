@@ -131,6 +131,11 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/ci/command.ts')).ciCommand
     },
     {
+        name: 'merge',
+        summary: '¿Se puede mergear el PR de esta branch? (dictamina, no mergea)',
+        load: async () => (await import('./commands/merge/command.ts')).mergeCommand
+    },
+    {
         name: 'env',
         summary: 'Chequea las variables de entorno (los seis checks)',
         load: async () => (await import('./commands/env/command.ts')).envCommand
