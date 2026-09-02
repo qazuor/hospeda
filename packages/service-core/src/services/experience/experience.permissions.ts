@@ -21,10 +21,10 @@
  *   SPEC-253 D2=b). The per-section `COMMERCE_*_EDIT_OWN` perms are removed.
  */
 
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import { hasPermission } from '../../utils/permission';
+import type { CommerceVertical } from '../commerce/commerce.permissions';
 import {
     checkCanAdminListCommerce,
     checkCanCreateCommerce,
@@ -33,8 +33,18 @@ import {
     checkCanEditOwn,
     checkCanEditOwnOrAll,
     checkCanModerateReview,
-    checkCanViewAll
+    checkCanViewAll,
+    hasCommercePermission
 } from '../commerce/commerce.permissions';
+
+/**
+ * The vertical every check in this file resolves against (HOS-1077).
+ *
+ * Passing it is what makes `experience.*` permissions pass here while the
+ * other vertical's do not — the whole point of the split. The legacy
+ * `commerce.*` family still passes too (dual-read) until release 2.
+ */
+const VERTICAL: CommerceVertical = 'experience';
 
 // Re-export generic helpers under experience-scoped names so callers inside
 // the experience directory can import from one place.
@@ -61,7 +71,7 @@ export function checkExperienceCanCreate(actor: Actor, data: unknown): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_EDIT_ALL`.
  */
 export function checkExperienceCanEditAll(actor: Actor, entity: unknown): void {
-    checkCanEditAll(actor, entity);
+    checkCanEditAll(actor, entity, VERTICAL);
 }
 
 /**
@@ -81,7 +91,7 @@ export function checkExperienceCanEditOwnOrAll(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwnOrAll(actor, entity);
+    checkCanEditOwnOrAll(actor, entity, VERTICAL);
 }
 
 /**
@@ -94,15 +104,10 @@ export function checkExperienceCanEditOwnOrAll(
  *
  * @param actor - The actor performing the action.
  * @param entity - The experience entity being updated (must carry `ownerId`).
- * @param _ownSectionPermission - Ignored since SPEC-253 D2=b (kept for compatibility).
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
-export function checkExperienceCanEditOwn(
-    actor: Actor,
-    entity: { ownerId?: string | null },
-    _ownSectionPermission?: PermissionEnum
-): void {
-    checkCanEditOwn(actor, entity);
+export function checkExperienceCanEditOwn(actor: Actor, entity: { ownerId?: string | null }): void {
+    checkCanEditOwn(actor, entity, VERTICAL);
 }
 
 /**
@@ -114,7 +119,7 @@ export function checkExperienceCanEditOwn(
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_DELETE`.
  */
 export function checkExperienceCanDelete(actor: Actor, entity: unknown): void {
-    checkCanDeleteCommerce(actor, entity);
+    checkCanDeleteCommerce(actor, entity, VERTICAL);
 }
 
 /**
@@ -125,15 +130,14 @@ export function checkExperienceCanDelete(actor: Actor, entity: unknown): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_VIEW_ALL`.
  */
 export function checkExperienceCanViewAll(actor: Actor): void {
-    checkCanViewAll(actor);
+    checkCanViewAll(actor, VERTICAL);
 }
 
 /**
  * Checks if the actor may use the admin-list path for experience listings.
  *
- * Accepts either `COMMERCE_VIEW_ALL` (staff, unscoped) or
- * `COMMERCE_VIEW_ALL` as view-own fallback (forward-compatible; a dedicated
- * `COMMERCE_EXPERIENCE_VIEW_OWN` can be plugged in when added to the enum).
+ * Requires `experience.viewAll` — or, until release 2, the legacy
+ * `COMMERCE_VIEW_ALL` (HOS-1077 dual-read).
  *
  * Delegates to {@link checkCanAdminListCommerce}.
  *
@@ -141,9 +145,7 @@ export function checkExperienceCanViewAll(actor: Actor): void {
  * @throws {ServiceError} FORBIDDEN when the actor holds neither permission.
  */
 export function checkExperienceCanAdminList(actor: Actor): void {
-    // Forward-compatible: pass COMMERCE_VIEW_ALL as viewOwnPermission until
-    // a per-type COMMERCE_EXPERIENCE_VIEW_OWN enum value is added.
-    checkCanAdminListCommerce(actor, PermissionEnum.COMMERCE_VIEW_ALL);
+    checkCanAdminListCommerce(actor, VERTICAL);
 }
 
 /**
@@ -154,7 +156,7 @@ export function checkExperienceCanAdminList(actor: Actor): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_MODERATE_REVIEW`.
  */
 export function checkExperienceCanModerateReview(actor: Actor): void {
-    checkCanModerateReview(actor);
+    checkCanModerateReview(actor, VERTICAL);
 }
 
 /**
@@ -171,7 +173,7 @@ export function checkExperienceCanEditFaqs(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwn(actor, entity);
+    checkCanEditOwn(actor, entity, VERTICAL);
 }
 
 /**
@@ -191,7 +193,7 @@ export function checkExperienceCanEditMedia(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwn(actor, entity);
+    checkCanEditOwn(actor, entity, VERTICAL);
 }
 
 /**
@@ -218,7 +220,7 @@ export function checkExperienceCanView(_actor: Actor): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_DELETE`.
  */
 export function checkExperienceCanHardDelete(actor: Actor, _entity: unknown): void {
-    if (!hasPermission(actor, PermissionEnum.COMMERCE_DELETE)) {
+    if (!hasCommercePermission(actor, 'delete', VERTICAL)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to permanently delete experience listing'
@@ -235,5 +237,5 @@ export function checkExperienceCanHardDelete(actor: Actor, _entity: unknown): vo
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_EDIT_ALL`.
  */
 export function checkExperienceCanRestore(actor: Actor, _entity: unknown): void {
-    checkCanEditAll(actor, _entity);
+    checkCanEditAll(actor, _entity, VERTICAL);
 }

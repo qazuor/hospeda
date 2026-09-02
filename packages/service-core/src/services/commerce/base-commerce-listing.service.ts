@@ -52,7 +52,12 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
-import { checkCanModerateCommerceListing } from './commerce.permissions';
+import {
+    checkCanModerateCommerceListing,
+    hasCommercePermission,
+    VERTICAL_OWNER_ROLES,
+    verticalPermission
+} from './commerce.permissions';
 import type { CommerceListingHookState } from './commerce.types';
 import { scheduleCommerceListingRevalidation } from './commerce-revalidation.js';
 
@@ -491,7 +496,12 @@ export abstract class BaseCommerceListingService<
             schema: ContentModerationChangeInputSchema,
             ctx,
             execute: async (validated, validatedActor, execCtx) => {
-                checkCanModerateCommerceListing(validatedActor);
+                // HOS-1077: `_revalidationEntityType` is already exactly the
+                // vertical (`'gastronomy' | 'experience'`), so the per-vertical
+                // moderation permission is reachable here without a new abstract
+                // member. The check still accepts the legacy
+                // `COMMERCE_MODERATION_CHANGE` (dual-read).
+                checkCanModerateCommerceListing(validatedActor, this._revalidationEntityType);
 
                 const listing = await this.model.findById(input.id, execCtx?.tx);
                 if (!listing || listing.deletedAt) {
@@ -531,8 +541,8 @@ export abstract class BaseCommerceListingService<
 
     /**
      * Creates a commerce listing on behalf of its own owner and grants that
-     * owner the `COMMERCE_OWNER` hat in the SAME transaction
-     * (HOS-687 / HOS-589 §6.1).
+     * owner the commerce hats in the SAME transaction (HOS-687 / HOS-589 §6.1):
+     * the legacy `COMMERCE_OWNER` and the vertical's own role (HOS-1077).
      *
      * The exact mirror of `AccommodationService.createForOnboarding`: creating
      * the listing is what makes somebody a commerce owner, so there is no
@@ -582,15 +592,28 @@ export abstract class BaseCommerceListingService<
                 );
             }
 
-            const granted = await grantRole({
-                userId: actor.id,
-                role: RoleEnum.COMMERCE_OWNER,
-                grantedBy: null,
-                reason: RoleGrantReason.COMMERCE_LISTING_CREATED,
-                ctx: txCtx
-            });
-            if (granted.error) {
-                throw granted.error;
+            // HOS-1077: BOTH hats, in the same transaction as the listing.
+            //
+            // The vertical role is the one that survives release 2; the legacy
+            // `COMMERCE_OWNER` is what every gate still reads until then. Granting
+            // only the legacy one would mean every listing created during the
+            // migration window produces an account release 2's contract migration
+            // has to sweep up a second time — the expand release exists precisely
+            // so that sweep is a single backfill, not a recurring one.
+            for (const role of [
+                RoleEnum.COMMERCE_OWNER,
+                VERTICAL_OWNER_ROLES[this._revalidationEntityType]
+            ]) {
+                const granted = await grantRole({
+                    userId: actor.id,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.COMMERCE_LISTING_CREATED,
+                    ctx: txCtx
+                });
+                if (granted.error) {
+                    throw granted.error;
+                }
             }
 
             return created.data;
@@ -1132,11 +1155,13 @@ export abstract class BaseCommerceListingService<
         tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+            // HOS-1077 dual-read: the vertical's own `editAll`, or the legacy
+            // `COMMERCE_EDIT_ALL`.
+            if (!hasCommercePermission(actor, 'editAll', this._revalidationEntityType)) {
                 return {
                     error: new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        `Permission denied: ${PermissionEnum.COMMERCE_EDIT_ALL} required to assign a ${this.entityName} owner`
+                        `Permission denied: ${verticalPermission(this._revalidationEntityType, 'editAll')} required to assign a ${this.entityName} owner`
                     )
                 };
             }
