@@ -140,6 +140,18 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'comments.form',
     'comments.thread',
     'commerce.changePassword',
+    // NOT an i18n key — a `PermissionEnum` VALUE (`commerce.editOwn`), named as a
+    // string literal by `UserMenu.client.tsx` to decide the PostHog
+    // `user_type`. Nothing ever passes it to `t()`, and no `editOwn` key exists
+    // under this namespace in es/en/pt.
+    //
+    // It is declared anyway because the guard matches any literal whose head is
+    // a real namespace, on purpose: keys routinely reach `t()` through a data
+    // structure, so a call-site-only scan would miss them and ship a menu of raw
+    // dotted keys. That over-match is worth keeping — the cost here is zero
+    // bytes, since `pickClientNamespaces` copies only keys that exist, and this
+    // prefix matches none. See the `gastronomy.editOwn` / `experience.editOwn`
+    // siblings below, added by HOS-1077 for the same reason.
     'commerce.editOwn',
     'commerce.owner',
     'common.anonymous',
@@ -192,6 +204,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'destinations.rating',
     'destinations.weather',
     'events.categories',
+    // HOS-1077: a `PermissionEnum` value, not a key — same as `commerce.editOwn`
+    // above, whose vertical split created it. `UserMenu.client.tsx` reads all
+    // three so a gastronomy-only or experience-only owner is still segmented as
+    // an `owner` in PostHog rather than a `tourist`.
+    'experience.editOwn',
     'experience.reviews',
     // HOS-822 — the commerce owner form and the public listing page now name
     // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
@@ -208,6 +225,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.snippets',
     'external-reputation.status',
     'footer.newsletter',
+    // HOS-1077: gastronomy half of the permission-value pair described at
+    // `experience.editOwn` above. Not an i18n key.
+    'gastronomy.editOwn',
     // HOS-822 — gastronomy half of the shared listing-type source above.
     'gastronomy.types',
     'home.featuredDestinations',
