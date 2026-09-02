@@ -360,6 +360,15 @@ jobs:
       - name: Test the hops CLI (scripts/server-tools)
         working-directory: scripts/server-tools
         run: bun test
+      # scripts/client-tools is the local twin of server-tools: same shape, same
+      # runtime, same reason to live outside the pnpm workspace. The bun setup
+      # above is shared, so this only costs its own install + run.
+      - name: Install client-tools dependencies
+        working-directory: scripts/client-tools
+        run: bun install --frozen-lockfile
+      - name: Test the local hops CLI (scripts/client-tools)
+        working-directory: scripts/client-tools
+        run: bun test
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
