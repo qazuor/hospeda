@@ -7,7 +7,11 @@ import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
 import { billingSubscriptions, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
-import { readCourtesyFields, subscriptionMatchesDomain } from '@repo/service-core';
+import {
+    hydrateSubscriptionProductDomains,
+    readCourtesyFields,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -225,7 +229,14 @@ export const userSubscriptionRoute = createProtectedRoute({
         let subscriptions: QZPaySubscriptionWithHelpers[] = [];
 
         try {
-            subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+            const rawSubscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+            // HOS-934: `getByCustomerId()` never populates `productDomain` (it is
+            // a qzpay-drizzle column outside core's mapped interface — see
+            // `hydrateSubscriptionProductDomains`'s doc). Without this, every
+            // subscription reaches `subscriptionMatchesDomain` below with
+            // `productDomain = undefined`, which fails OPEN to accommodation for
+            // ALL of them regardless of their real vertical.
+            subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             apiLogger.warn(
