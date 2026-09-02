@@ -156,3 +156,35 @@ describe('status bar · dibujada por el dispatcher', () => {
         expect(result.stderr).toContain('sólo corre en local');
     });
 });
+
+/**
+ * The end-to-end half of the HOS-510 contract. The unit tests prove the parser;
+ * this proves the parser is actually wired to the binary.
+ *
+ * `env:check:rules` is deliberate: it is a read-only checker, so if this guard
+ * ever regresses the test runs something harmless instead of the data-migration
+ * that made the rule necessary.
+ */
+describe('hops run · flags desconocidos', () => {
+    it('should refuse an unknown flag instead of running the script without it', async () => {
+        const result = await runBin({
+            name: 'hops-run',
+            args: ['env:check:rules', '--definitely-not-a-flag']
+        });
+
+        expect(result.code).toBe(1);
+        expect(result.stderr).toContain('No entiendo: --definitely-not-a-flag');
+        // The arrow is written immediately before the script is spawned, so its
+        // absence is what says nothing ran.
+        expect(result.stderr).not.toContain('\u2192 ');
+    });
+
+    it('should point at the -- separator so the flag has somewhere to go', async () => {
+        const result = await runBin({
+            name: 'hops-run',
+            args: ['env:check:rules', '--definitely-not-a-flag']
+        });
+
+        expect(result.stderr).toContain('hops run env:check:rules -- --definitely-not-a-flag');
+    });
+});

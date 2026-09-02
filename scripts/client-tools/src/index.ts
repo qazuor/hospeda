@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { resolveRunContext, runBarContext } from './lib/context.ts';
+import { splitPassthrough } from './lib/passthrough.ts';
 import { renderOpen, withStatusBar } from './lib/statusbar.ts';
 import { extractTarget } from './lib/target.ts';
 import { extractWorktreeFlag } from './lib/wt-flag.ts';
@@ -72,7 +73,10 @@ export async function runCommand({
 
     // No exceptions, not even `--help`: a bar that is sometimes there is a bar
     // you stop reading. Uniform beats clever.
-    const { target } = extractTarget({ argv });
+    // Only the half before `--` is ours; the rest is addressed to whatever the
+    // command ends up running.
+    const { own } = splitPassthrough({ argv });
+    const { target } = extractTarget({ argv: own });
     if (command.scope === 'local' && target !== 'local') {
         process.stderr.write(
             `${pc.red(`«${command.name}» sólo corre en local.`)} Pediste --target=${target}.\n`
@@ -83,7 +87,7 @@ export async function runCommand({
     // Wrapped HERE, once, rather than inside each command: a command that
     // forgets the bar is a command that runs without saying where — which is
     // exactly the confusion the bar exists to prevent.
-    const { name: worktreeName } = extractWorktreeFlag({ argv });
+    const { name: worktreeName } = extractWorktreeFlag({ argv: own });
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
 
     if (worktreeName !== null && context.worktree === null) {

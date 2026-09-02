@@ -1,9 +1,11 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
+import { splitPassthrough } from '../../lib/passthrough.ts';
 import { runnerFor } from '../../lib/runner.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
+import { buildPnpmArgs, parseRunArgs } from './args.ts';
 import { dangerOf, findScripts, type RepoScript, searchScripts } from './scripts.ts';
 
 /** The help page. */
@@ -27,6 +29,16 @@ ${pc.bold('Uso')}
 
   ${pc.bold('--wt <nombre>')}  Correrlo en otro worktree.
   ${pc.bold('--help')}         Esta página.
+
+${pc.bold('Argumentos para el script')}
+
+  ${pc.dim('Van después de `--`, y hops no los mira:')}
+
+  hops run db:seed:migrate -- --status
+
+  ${pc.dim('Un flag que hops no conoce ANTES del `--` frena la corrida en vez de')}
+  ${pc.dim('descartarse. Un flag descartado en silencio ya aplicó diez migraciones')}
+  ${pc.dim('de datos que sólo se querían listar.')}
 `;
 }
 
@@ -52,13 +64,27 @@ function hint({ script }: { readonly script: RepoScript }): string {
  * @returns The process exit code.
  */
 export async function runRun({ argv }: { readonly argv: readonly string[] }): Promise<number> {
-    if (argv.includes('--help') || argv.includes('-h')) {
+    const { own, passthrough } = splitPassthrough({ argv });
+
+    if (own.includes('--help') || own.includes('-h')) {
         process.stdout.write(renderHelp());
         return 0;
     }
 
-    const { target, rest } = extractTarget({ argv });
+    const { target, rest } = extractTarget({ argv: own });
     const { name: worktreeName, rest: args } = extractWorktreeFlag({ argv: rest });
+    const parsed = parseRunArgs({ argv: args });
+
+    if (parsed.unrecognized.length > 0) {
+        const suggestion = `hops run ${parsed.query ?? '<script>'} -- ${parsed.unrecognized.join(' ')}`;
+        process.stderr.write(
+            `${pc.red(`No entiendo: ${parsed.unrecognized.join(', ')}`)}\n` +
+                `${pc.dim('No corrí nada. Lo que es para el script va después de `--`:')}\n` +
+                `  ${pc.dim(suggestion)}\n`
+        );
+        return 1;
+    }
+
     const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
     const runner = runnerFor({ target });
     const cwd = context.worktree?.path ?? context.repoRoot;
@@ -69,10 +95,10 @@ export async function runRun({ argv }: { readonly argv: readonly string[] }): Pr
         return 1;
     }
 
-    const query = args.find((arg) => !arg.startsWith('-'));
+    const query = parsed.query;
     const interactive = process.stdout.isTTY === true && process.stdin.isTTY === true;
 
-    if (args.includes('--list')) {
+    if (parsed.list) {
         for (const script of scripts) {
             process.stdout.write(`${script.id.padEnd(34)}${pc.dim(script.command.slice(0, 70))}\n`);
         }
@@ -133,13 +159,14 @@ export async function runRun({ argv }: { readonly argv: readonly string[] }): Pr
         }
     }
 
-    process.stderr.write(`${pc.dim('→ ')}${chosen.command}\n`);
+    // `pnpm run <script> -- <args>`: the separator is what makes pnpm hand the
+    // arguments to the script rather than read them as its own.
+    process.stderr.write(
+        `${pc.dim('→ ')}${chosen.command}${passthrough.length > 0 ? pc.dim(` -- ${passthrough.join(' ')}`) : ''}\n`
+    );
     return await runner.exec({
         command: 'pnpm',
-        args:
-            chosen.dir === '.'
-                ? ['run', chosen.script]
-                : ['--filter', chosen.packageName, 'run', chosen.script],
+        args: buildPnpmArgs({ script: chosen, passthrough }),
         cwd
     });
 }
