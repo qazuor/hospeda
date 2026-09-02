@@ -141,7 +141,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'comments.thread',
     'commerce.changePassword',
     'commerce.editOwn',
-    'commerce.lead',
     'commerce.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
