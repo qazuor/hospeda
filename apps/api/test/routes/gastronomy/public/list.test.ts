@@ -84,6 +84,63 @@ describe('GET /api/v1/public/gastronomies', () => {
     });
 
     // -------------------------------------------------------------------------
+    // The apto filter (HOS-1054)
+    //
+    // These assert a STRICT 200, unlike the lenient `[200, 500]` above. That
+    // leniency is what let an unstubbed `@repo/db` helper pass unnoticed: the
+    // clause builders reach the route through the globally-mocked `@repo/db`,
+    // and a missing export there throws inside `_executeSearch`/`_executeCount`
+    // rather than returning a wrong answer. Accepting 500 would accept exactly
+    // that.
+    //
+    // What they cannot assert: which rows come back. The DB is mocked, so the
+    // clause is built and handed over but never executed — row-level behaviour
+    // is `packages/db/test/utils/gastronomy-catalog-filters.test.ts` (which
+    // compiles the SQL) plus the staging smoke.
+    // -------------------------------------------------------------------------
+
+    describe('apto filter (HOS-1054)', () => {
+        const GLUTEN_FREE = '11111111-1111-4111-8111-111111111111';
+        const LACTOSE_FREE = '22222222-2222-4222-8222-222222222222';
+        const headers = { 'user-agent': 'vitest', accept: 'application/json' };
+
+        it('answers 200 for a single apto', async () => {
+            const res = await app.request(`${BASE}?features=${GLUTEN_FREE}`, {
+                method: 'GET',
+                headers
+            });
+            expect(res.status).toBe(200);
+        });
+
+        it('answers 200 for two aptos (the intersection path)', async () => {
+            const res = await app.request(`${BASE}?features=${GLUTEN_FREE},${LACTOSE_FREE}`, {
+                method: 'GET',
+                headers
+            });
+            expect(res.status).toBe(200);
+        });
+
+        it('answers 200 for the amenities filter too', async () => {
+            const res = await app.request(`${BASE}?amenities=${GLUTEN_FREE}`, {
+                method: 'GET',
+                headers
+            });
+            expect(res.status).toBe(200);
+        });
+
+        it('answers 400 — not a silently unfiltered 200 — for a non-UUID apto', async () => {
+            // The dangerous failure this route must never have: a filter that is
+            // dropped instead of honoured answers 200 with every listing, and a
+            // celiac reads that page as "these are all sin TACC".
+            const res = await app.request(`${BASE}?features=gluten_free_options`, {
+                method: 'GET',
+                headers
+            });
+            expect(res.status).toBe(400);
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // HTTP method restrictions
     // -------------------------------------------------------------------------
 

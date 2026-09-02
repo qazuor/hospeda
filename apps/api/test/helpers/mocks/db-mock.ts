@@ -259,6 +259,61 @@ export function createDbMock() {
             col,
             term
         })),
+
+        /**
+         * Gastronomy catalog-membership clause builders (HOS-1054).
+         *
+         * This factory is an explicit INVENTORY of `@repo/db`'s surface, not a
+         * passthrough, so any production import it does not name resolves to a
+         * hard vitest error ("No <x> export is defined on the @repo/db mock")
+         * the moment the importing line runs.
+         *
+         * That is not a cosmetic gap. `GastronomyService._executeCount` is on the
+         * path the commerce limits middleware takes to count an owner's listings,
+         * and since HOS-1078 that middleware fails CLOSED — so a missing export
+         * here surfaces as a **503 on listing creation**, which reads as a broken
+         * route rather than as an unstubbed helper. Same species of failure the
+         * awaitable-builder note above documents.
+         *
+         * Shape-only stubs, mirroring `safeIlike`: enough for a WHERE builder to
+         * hold, and inspectable by a test that asserts on the emitted condition.
+         * `buildGastronomyCatalogConditions` reproduces the real contract that
+         * matters to callers — an EMPTY array when no filter is active, so the
+         * no-filter path (every limits-middleware count) stays identical to
+         * before the filter existed.
+         */
+        buildGastronomyFeatureIntersectionClause: vi.fn((featureIds: readonly string[]) => ({
+            type: 'gastronomyFeatureIntersection',
+            featureIds
+        })),
+        buildGastronomyAmenityIntersectionClause: vi.fn((amenityIds: readonly string[]) => ({
+            type: 'gastronomyAmenityIntersection',
+            amenityIds
+        })),
+        buildGastronomyCatalogConditions: vi.fn(
+            ({
+                amenities,
+                features
+            }: {
+                readonly amenities?: readonly string[];
+                readonly features?: readonly string[];
+            }) => {
+                const conditions: unknown[] = [];
+                if (amenities && amenities.length > 0) {
+                    conditions.push({
+                        type: 'gastronomyAmenityIntersection',
+                        amenityIds: amenities
+                    });
+                }
+                if (features && features.length > 0) {
+                    conditions.push({
+                        type: 'gastronomyFeatureIntersection',
+                        featureIds: features
+                    });
+                }
+                return conditions;
+            }
+        ),
         /**
          * Simulates withTransaction by executing the callback with a stub tx client.
          * The stub tx client supports the same chained query builder methods as getDb().
