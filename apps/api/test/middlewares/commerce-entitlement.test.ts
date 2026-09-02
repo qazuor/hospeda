@@ -24,9 +24,26 @@
  */
 
 import { LimitKey } from '@repo/billing';
+import { getDb } from '@repo/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../src/types.js';
+
+/**
+ * Product domains as actually STORED in `billing_subscriptions`, keyed by
+ * subscription id — recovered by `hydrateSubscriptionProductDomains`'s
+ * batched SELECT, mocked via `getDb()` below.
+ *
+ * HOS-934: `getByCustomerId()` (the fake provider above) never populates
+ * `productDomain` on the objects it returns — qzpay-core's mapper builds
+ * them field-by-field from the fields `QZPaySubscription` declares, and
+ * `productDomain` is a qzpay-drizzle column outside that interface. Setting
+ * `productDomain` directly on `fakeSubscriptions` (as this file used to do)
+ * is exactly the lying-fixture shape that would hide a broken/missing
+ * hydration — see `hydrateSubscriptionProductDomains`'s doc in
+ * `@repo/service-core`.
+ */
+let fakeStoredProductDomains: Record<string, string | null> = {};
 
 /** Subscriptions the fake billing provider returns for the customer. */
 let fakeSubscriptions: Array<Record<string, unknown>> = [];
@@ -111,13 +128,34 @@ async function runMiddleware(input: {
     return (await res.json()) as Record<string, number>;
 }
 
+/**
+ * Wires the mocked `getDb()` to answer `hydrateSubscriptionProductDomains`'s
+ * batched recovery SELECT with `fakeStoredProductDomains`.
+ */
+function mockProductDomainRecovery() {
+    vi.mocked(getDb).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue(
+                    Object.entries(fakeStoredProductDomains).map(([id, productDomain]) => ({
+                        id,
+                        productDomain
+                    }))
+                )
+            })
+        })
+    } as never);
+}
+
 describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
     beforeEach(() => {
         fakeSubscriptions = [];
         fakePlans = {};
         fakeCustomerLimits = [];
+        fakeStoredProductDomains = {};
         providerThrows = null;
         _resetCommerceBaseLimitCache();
+        mockProductDomainRecovery();
     });
 
     afterEach(() => {
@@ -147,9 +185,9 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
     });
 
     it("reads the cap off the owner's own vertical subscription", async () => {
-        fakeSubscriptions = [
-            { id: 's1', status: 'active', planId: 'p-gastro', productDomain: 'gastronomy' }
-        ];
+        fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-gastro' }];
+        fakeStoredProductDomains = { s1: 'gastronomy' };
+        mockProductDomainRecovery();
         fakePlans = { 'p-gastro': { limits: { max_gastronomies: 3 } } };
 
         const limits = await runMiddleware({
@@ -163,9 +201,9 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
     it('ignores an ACCOMMODATION subscription when gating a commerce vertical', async () => {
         // The bug SPEC-239's isolation exists to prevent, in the other
         // direction: an accommodation plan must never supply a commerce cap.
-        fakeSubscriptions = [
-            { id: 's1', status: 'active', planId: 'p-owner', productDomain: 'accommodation' }
-        ];
+        fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-owner' }];
+        fakeStoredProductDomains = { s1: 'accommodation' };
+        mockProductDomainRecovery();
         fakePlans = { 'p-owner': { limits: { max_accommodations: 10 } } };
 
         const limits = await runMiddleware({
@@ -178,9 +216,9 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
     });
 
     it("raises the cap by the vertical's add-on and leaves the other alone (AC-15)", async () => {
-        fakeSubscriptions = [
-            { id: 's1', status: 'active', planId: 'p-gastro', productDomain: 'gastronomy' }
-        ];
+        fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-gastro' }];
+        fakeStoredProductDomains = { s1: 'gastronomy' };
+        mockProductDomainRecovery();
         fakePlans = { 'p-gastro': { limits: { max_gastronomies: 1 } } };
         // What `recalculateAddonLimitsForCustomer` writes after an
         // `extra-gastronomies-1` purchase: plan base + the add-on's increase.
@@ -202,6 +240,29 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
         expect(experience[LimitKey.MAX_EXPERIENCES]).toBe(1);
     });
 
+    it('HOS-934: an experience subscription never raises the gastronomy cap (hydration must recover the real domain)', async () => {
+        // The regression this file used to hide: `fakeSubscriptions` never
+        // carries `productDomain` (matching the real SDK shape), so without
+        // `hydrateSubscriptionProductDomains` this experience subscription
+        // would read as `productDomain: undefined` — which
+        // `subscriptionMatchesDomain` fails OPEN to accommodation for, not
+        // gastronomy, but a broken hydration that defaulted differently
+        // would still leak a stray cap across verticals. Assert the isolation
+        // directly: an experience-only owner gets the CATALOGUE gastronomy
+        // cap, never the experience plan's number.
+        fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-experience' }];
+        fakeStoredProductDomains = { s1: 'experience' };
+        mockProductDomainRecovery();
+        fakePlans = { 'p-experience': { limits: { max_experiences: 7 } } };
+
+        const limits = await runMiddleware({
+            vertical: 'gastronomy',
+            billingCustomerId: 'cus-1'
+        });
+
+        expect(limits[LimitKey.MAX_GASTRONOMIES]).toBe(1);
+    });
+
     it('holds the catalogue cap when the billing provider is down', async () => {
         // Fails to the BASE cap, never to an absent key. An outage may cost an
         // owner the extra listing they bought; it must never hand out an
@@ -217,9 +278,9 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
     });
 
     it('ignores a cancelled subscription and falls back to the catalogue cap', async () => {
-        fakeSubscriptions = [
-            { id: 's1', status: 'cancelled', planId: 'p-gastro', productDomain: 'gastronomy' }
-        ];
+        fakeSubscriptions = [{ id: 's1', status: 'cancelled', planId: 'p-gastro' }];
+        fakeStoredProductDomains = { s1: 'gastronomy' };
+        mockProductDomainRecovery();
         fakePlans = { 'p-gastro': { limits: { max_gastronomies: 9 } } };
 
         const limits = await runMiddleware({

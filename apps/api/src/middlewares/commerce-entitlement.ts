@@ -102,7 +102,7 @@ import {
     type LimitKey
 } from '@repo/billing';
 import type { ProductDomainValue } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import {
     CommercePlanNotConfiguredError,
@@ -311,8 +311,13 @@ export async function resolveCommerceVerticalGrants(input: {
     let cap = baseCap;
 
     try {
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-        const activeSubscription = (subscriptions ?? []).find(
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        // HOS-934: hydrate `productDomain` before matching — `getByCustomerId()`
+        // never populates it (see hydrateSubscriptionProductDomains's doc), so
+        // without this every subscription would fail open to accommodation
+        // regardless of its real vertical.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+        const activeSubscription = subscriptions.find(
             (sub: { status: string }) =>
                 isEntitlementGrantingStatus(sub.status) &&
                 subscriptionMatchesDomain(sub, domainOf(vertical))
