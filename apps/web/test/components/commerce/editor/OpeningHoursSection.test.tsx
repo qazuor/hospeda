@@ -72,10 +72,12 @@ describe('OpeningHoursSection', () => {
     it('preserves the other days when one is edited', () => {
         const { onChange } = renderSection({ value: seeded });
 
+        // Monday is absent from `seeded.days`, so it renders at `dayOf()`'s
+        // default — CLOSED since HOS-906 — and this click UNchecks it.
         fireEvent.click(screen.getByLabelText('Lun cerrado'));
 
         const emitted = lastEmitted(onChange);
-        expect(emitted.days.mon.closed).toBe(true);
+        expect(emitted.days.mon.closed).toBe(false);
         // Editing Monday must not wipe Tuesday's configured shift.
         expect(emitted.days.tue).toEqual({
             closed: false,
@@ -110,7 +112,15 @@ describe('OpeningHoursSection', () => {
     });
 
     it('adds a shift with sensible default hours', () => {
-        const { onChange } = renderSection();
+        // HOS-906: an untouched day now defaults to CLOSED, which hides the
+        // add-shift control — seed Monday explicitly as open-with-no-shifts
+        // (the legitimate in-progress state while the host is building it)
+        // to reach the button this test exercises.
+        const openNoShifts = {
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: { mon: { closed: false, shifts: [] } }
+        } as unknown as OpeningHours;
+        const { onChange } = renderSection({ value: openNoShifts });
 
         fireEvent.click(screen.getByLabelText('Agregar turno Lun'));
 
@@ -136,9 +146,15 @@ describe('OpeningHoursSection', () => {
     });
 
     it('hides the shift controls for a closed day', () => {
+        // HOS-906: Tuesday must be seeded explicitly OPEN — an untouched day
+        // now defaults to closed too, which would hide BOTH add-shift buttons
+        // and defeat the "open day still shows it" half of this assertion.
         const closed = {
             timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: true, shifts: [] } }
+            days: {
+                mon: { closed: true, shifts: [] },
+                tue: { closed: false, shifts: [{ open: '09:00', close: '18:00' }] }
+            }
         } as unknown as OpeningHours;
         renderSection({ value: closed });
 
