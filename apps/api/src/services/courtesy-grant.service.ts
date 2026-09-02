@@ -43,6 +43,7 @@ import {
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
+import { recordPauseProviderRefusal } from './billing/pause-refusal-audit.js';
 import { sendCourtesyGrantedNotification } from './courtesy-notifications.service.js';
 
 /** Input for {@link grantCourtesyCycles}. */
@@ -272,15 +273,36 @@ export async function grantCourtesyCycles(
     try {
         await billing.subscriptions.pause(subscriptionId);
     } catch (error) {
+        // HOS-995: a refused pause is fail-closed — nothing below this line
+        // runs, so no subscriber is marked `courtesy` while still being charged.
+        // Fail-closed is not the same as detectable, though, and this is the one
+        // path where the difference has teeth: gifting a full YEAR means pausing
+        // a twelve-month preapproval, and whether MercadoPago accepts that has
+        // never been verified against the sandbox (HOS-180 risk R-9). If it
+        // refuses, the admin sees an error and nothing else in the system knows
+        // — a log line is not queryable weeks later. The seat is, and it carries
+        // the interval, which is the variable in question.
+        await recordPauseProviderRefusal({
+            subscriptionId,
+            triggerSource: 'admin-courtesy-grant',
+            billingInterval: cadence,
+            error
+        });
         apiLogger.error(
-            { subscriptionId, error: error instanceof Error ? error.message : String(error) },
+            {
+                subscriptionId,
+                cadence,
+                cycles,
+                actorId,
+                error: error instanceof Error ? error.message : String(error)
+            },
             'Courtesy grant: MercadoPago pause failed, nothing was written locally'
         );
         return {
             success: false,
             error: {
                 code: 'PROVIDER_ERROR',
-                message: 'MercadoPago refused to pause the preapproval; no gift was recorded'
+                message: `MercadoPago refused to pause the ${cadence} preapproval; no gift was recorded`
             }
         };
     }

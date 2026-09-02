@@ -314,6 +314,31 @@ export const BILLING_EVENT_TYPES = {
      */
     HOST_SUBSCRIPTION_RESUMED: 'HOST_SUBSCRIPTION_RESUMED',
     /**
+     * Fired when MercadoPago REFUSED to pause a preapproval (HOS-995), by any
+     * of the flows that pause one: the host's self-serve pause and the courtesy
+     * grant, distinguished via `triggerSource`.
+     *
+     * The odd one out among the pause events: every sibling records something
+     * that HAPPENED, this one records something that did not. It exists because
+     * all those flows are fail-closed — a refused pause changes nothing locally,
+     * so there is no status transition, no row anywhere, and the only trace was
+     * a log line.
+     *
+     * That mattered the moment HOS-995 retired the guard refusing to pause
+     * annual subscriptions. The guard's premise died with HOS-171 (card-first
+     * made an annual subscription a recurring preapproval, MP `frequency: 12,
+     * frequency_type: 'months'`), but whether MercadoPago's pause endpoint
+     * behaves identically on a twelve-month preapproval is a manual sandbox
+     * observation no test can make. This event is the standing tripwire in the
+     * meantime: `metadata` carries `billingInterval` and the provider's own
+     * message, so "does MP refuse annual pauses?" is one GROUP BY away instead
+     * of a customer complaint.
+     *
+     * Deliberately NOT a status-transition row: `previousStatus`/`newStatus`
+     * stay null because the subscription is exactly where it was.
+     */
+    SUBSCRIPTION_PAUSE_PROVIDER_REFUSED: 'SUBSCRIPTION_PAUSE_PROVIDER_REFUSED',
+    /**
      * Fired by the generic MercadoPago `subscription_preapproval.updated`
      * status mapper (`subscription-logic.ts::processSubscriptionUpdated`,
      * HOS-657) when the provider-reported status resolves to `active`. This

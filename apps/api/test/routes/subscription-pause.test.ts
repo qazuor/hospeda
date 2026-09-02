@@ -3,7 +3,11 @@
  *
  * Covers:
  * - Happy path: monthly active subscription is paused successfully.
- * - Annual guard: annual subscription → 400 PAUSE_NOT_SUPPORTED_FOR_ANNUAL.
+ * - Annual (HOS-995): an annual subscription with a preapproval is paused like
+ *   any other. This block previously asserted the reverse — a 400
+ *   PAUSE_NOT_SUPPORTED_FOR_ANNUAL — on a premise HOS-171 retired.
+ * - No-preapproval guard (HOS-995): the real "nothing to pause" condition.
+ * - Provider refusal (HOS-995): fail-closed 502, plus a durable audit seat.
  * - 503 when billing is not configured.
  * - 400 when no billing account found.
  * - 404 when no active subscription exists.
@@ -35,6 +39,10 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 
 vi.mock('../../src/services/subscription-pause.service', () => ({
     setOwnerServiceSuspension: vi.fn().mockResolvedValue({ accommodationsUpdated: 0 })
+}));
+
+vi.mock('../../src/services/billing/pause-refusal-audit', () => ({
+    recordPauseProviderRefusal: vi.fn().mockResolvedValue(true)
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -110,6 +118,8 @@ import {
     handleSelfServePause,
     handleSelfServeResume
 } from '../../src/routes/billing/subscription-pause';
+import { recordPauseProviderRefusal } from '../../src/services/billing/pause-refusal-audit';
+import { setOwnerServiceSuspension } from '../../src/services/subscription-pause.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -136,7 +146,17 @@ interface SubFixture {
     status?: string;
     metadata?: Record<string, unknown>;
     cancelAtPeriodEnd?: boolean;
+    /**
+     * The provider ids qzpay carries on every subscription. `mercadopago` is the
+     * preapproval the pause acts on; its absence is the only real "there is
+     * nothing to pause" condition (HOS-995), so fixtures that expect to be
+     * paused must declare one.
+     */
+    providerSubscriptionIds?: Record<string, string>;
 }
+
+/** The preapproval id every pausable fixture carries. */
+const MP_PREAPPROVAL = { mercadopago: 'mp-preapproval-1' };
 
 function makeBillingMock(subs: SubFixture[] = []) {
     return {
@@ -173,7 +193,8 @@ describe('handleSelfServePause', () => {
         const sub = {
             id: 'sub-monthly-1',
             status: 'active',
-            metadata: { billingInterval: 'monthly' }
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
         };
         mockBilling(makeBillingMock([sub]));
         const ctx = createMockContext();
@@ -195,7 +216,14 @@ describe('handleSelfServePause', () => {
     });
 
     it('pauses a monthly trialing subscription successfully', async () => {
-        const sub = { id: 'sub-trial-1', status: 'trialing', metadata: {} };
+        // Card-first (HOS-171): a trialing subscription is a real preapproval,
+        // so it carries a `mercadopago` id and is pausable.
+        const sub = {
+            id: 'sub-trial-1',
+            status: 'trialing',
+            metadata: {},
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
         const billing = makeBillingMock([sub]);
         mockBilling(billing);
         const ctx = createMockContext();
@@ -207,43 +235,124 @@ describe('handleSelfServePause', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Annual guard (SPEC-194 T-023)
+    // Annual: pausable like any other preapproval (HOS-995)
+    //
+    // This block used to assert the OPPOSITE — a 400 PAUSE_NOT_SUPPORTED_FOR_ANNUAL
+    // and `pause` never being called (SPEC-194 T-023). That guard rested on
+    // "annual subscriptions are backed by a single MP payment, not a recurring
+    // preapproval", which HOS-171 (card-first) retired: an annual subscription
+    // IS a recurring preapproval today, at MP `frequency: 12,
+    // frequency_type: 'months'`, and `create-annual-subscription.ts` was
+    // deleted. The old tests were green while freezing a refusal the
+    // architecture no longer justifies, on a button the web dashboard offers to
+    // annual subscribers (`canPause` never looked at the interval).
     // -----------------------------------------------------------------------
 
-    it('rejects with 400 PAUSE_NOT_SUPPORTED_FOR_ANNUAL for annual active subscription', async () => {
+    it('pauses an annual active subscription, like any other preapproval', async () => {
         const annualSub = {
             id: 'sub-annual-1',
             status: 'active',
-            metadata: { billingInterval: 'annual' }
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual' }
         };
         const billing = makeBillingMock([annualSub]);
         mockBilling(billing);
         const ctx = createMockContext();
 
-        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+        const result = await handleSelfServePause(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(result.subscriptionId).toBe('sub-annual-1');
+        expect(billing.subscriptions.pause).toHaveBeenCalledWith('sub-annual-1');
+    });
+
+    // -----------------------------------------------------------------------
+    // The real "there is nothing to pause" condition (HOS-995)
+    //
+    // Not the interval — the absence of a preapproval. This is what the old
+    // guard was reaching for and missed: a legacy annual one-time row has no
+    // `mercadopago` provider id, and so does a Hospeda-owned trial, and so does
+    // any pre-HOS-171 leftover. Pausing one of those would suspend the owner's
+    // listings while changing nothing on the billing side — precisely the
+    // "misleading state" the original comment warned about, attached at last to
+    // the condition that actually produces it.
+    // -----------------------------------------------------------------------
+
+    it.each([
+        ['no providerSubscriptionIds at all', undefined],
+        ['an empty providerSubscriptionIds map', {}],
+        ['provider ids without a mercadopago entry', { stripe: 'sub_x' }]
+    ])('refuses to pause a subscription with %s', async (_label, providerSubscriptionIds) => {
+        const sub = {
+            id: 'sub-no-preapproval',
+            status: 'active',
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext();
 
         try {
             await handleSelfServePause(ctx as never);
+            expect.unreachable('the handler must refuse a subscription with no preapproval');
         } catch (err) {
             expect(err).toBeInstanceOf(HTTPException);
             const httpErr = err as HTTPException;
             expect(httpErr.status).toBe(400);
-            expect(httpErr.message).toContain('PAUSE_NOT_SUPPORTED_FOR_ANNUAL');
+            expect(httpErr.message).toContain('PAUSE_NO_PREAPPROVAL');
         }
+
+        // Refused before the provider is touched, and before anything local moves.
+        expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
     });
 
-    it('does not call billing.subscriptions.pause for annual subscriptions', async () => {
+    // -----------------------------------------------------------------------
+    // Provider refusal: fail-closed AND observable (HOS-995)
+    //
+    // Nobody has verified against the MercadoPago sandbox that pause behaves on
+    // a twelve-month preapproval. That is a manual observation, so what code can
+    // do is guarantee the failure mode: nothing local changes, the caller gets a
+    // typed error rather than an opaque 500, and a durable row records the
+    // interval and the provider's own message.
+    // -----------------------------------------------------------------------
+
+    it('fails closed and records a seat when MercadoPago refuses the pause', async () => {
         const annualSub = {
-            id: 'sub-annual-2',
+            id: 'sub-annual-refused',
             status: 'active',
-            metadata: { billingInterval: 'annual' }
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual' }
         };
         const billing = makeBillingMock([annualSub]);
+        billing.subscriptions.pause.mockRejectedValue(new Error('MP: cannot pause preapproval'));
         mockBilling(billing);
         const ctx = createMockContext();
 
-        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
-        expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+        try {
+            await handleSelfServePause(ctx as never);
+            expect.unreachable('a refused pause must not resolve successfully');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            const httpErr = err as HTTPException;
+            expect(httpErr.status).toBe(502);
+            expect(httpErr.message).toContain('PAUSE_PROVIDER_REFUSED');
+        }
+
+        // Fail-closed: the listings are NOT suspended and no PAUSED row is
+        // written for a pause that never happened.
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
+
+        // Observable: the refusal is seated with the interval that caused it.
+        expect(recordPauseProviderRefusal).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(recordPauseProviderRefusal).mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-annual-refused',
+            triggerSource: 'host-pause',
+            billingInterval: 'annual'
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -385,7 +494,8 @@ describe('handleSelfServePause', () => {
             id: 'sub-active-2',
             status: 'active',
             metadata: { billingInterval: 'monthly' },
-            cancelAtPeriodEnd: false
+            cancelAtPeriodEnd: false,
+            providerSubscriptionIds: MP_PREAPPROVAL
         };
         // Ordered soft-cancelled first so the filter must actively skip it.
         const billing = makeBillingMock([softCancelled, pausable]);
@@ -403,18 +513,21 @@ describe('handleSelfServePause', () => {
         expect(billing.subscriptions.pause).not.toHaveBeenCalledWith('sub-softcancel-2');
     });
 
-    // Precedence: a sub that is BOTH annual AND soft-cancelled must surface the
-    // 409 cancellation-scheduled error, NOT the 400 annual error. The soft-cancel
-    // guard runs first, so the annual sub is excluded from target selection before
-    // the annual check is ever reached. Documented decision (HOS-246), not accident.
-    it('returns 409 (not 400 annual) for a subscription that is both annual and soft-cancelled', async () => {
-        const annualSoftCancelled = {
+    // Precedence: a sub that is BOTH unpausable-for-lack-of-preapproval AND
+    // soft-cancelled must surface the 409 cancellation-scheduled error, not the
+    // 400. The soft-cancel guard runs first, so the sub is excluded from target
+    // selection before the preapproval check is ever reached. Documented
+    // decision (HOS-246), not accident. HOS-995 re-aimed this from the retired
+    // annual error onto the guard that replaced it — the precedence is the
+    // invariant, the specific 400 underneath it was not.
+    it('returns 409 (not the 400) for a soft-cancelled sub that also has no preapproval', async () => {
+        const softCancelledNoPreapproval = {
             id: 'sub-annual-softcancel',
             status: 'active',
             metadata: { billingInterval: 'annual' },
             cancelAtPeriodEnd: true
         };
-        const billing = makeBillingMock([annualSoftCancelled]);
+        const billing = makeBillingMock([softCancelledNoPreapproval]);
         mockBilling(billing);
         const ctx = createMockContext();
 
@@ -426,7 +539,7 @@ describe('handleSelfServePause', () => {
             const httpErr = err as HTTPException;
             expect(httpErr.status).toBe(409);
             expect(httpErr.message).toContain('PAUSE_NOT_ALLOWED_CANCELLATION_SCHEDULED');
-            expect(httpErr.message).not.toContain('PAUSE_NOT_SUPPORTED_FOR_ANNUAL');
+            expect(httpErr.message).not.toContain('PAUSE_NO_PREAPPROVAL');
         }
         expect(billing.subscriptions.pause).not.toHaveBeenCalled();
     });

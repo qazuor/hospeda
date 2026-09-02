@@ -21,6 +21,7 @@ const pauseMock = vi.fn();
 const updateMock = vi.fn();
 const insertMock = vi.fn();
 const notifyMock = vi.fn();
+const refusalSeatMock = vi.fn();
 
 let subscriptionRow: Record<string, unknown> | undefined;
 const callOrder: string[] = [];
@@ -33,6 +34,13 @@ vi.mock('../../src/services/courtesy-notifications.service.js', () => ({
     sendCourtesyGrantedNotification: (...args: unknown[]) => {
         callOrder.push('notify');
         return notifyMock(...args);
+    }
+}));
+
+vi.mock('../../src/services/billing/pause-refusal-audit.js', () => ({
+    recordPauseProviderRefusal: (...args: unknown[]) => {
+        callOrder.push('refusal-seat');
+        return refusalSeatMock(...args);
     }
 }));
 
@@ -107,6 +115,91 @@ beforeEach(() => {
     subscriptionRow = eligibleSubscription();
     pauseMock.mockResolvedValue(undefined);
     notifyMock.mockResolvedValue(undefined);
+    refusalSeatMock.mockResolvedValue(true);
+});
+
+/**
+ * HOS-995. A courtesy IS a paused preapproval, so gifting a full YEAR means
+ * pausing a twelve-month preapproval — and whether MercadoPago accepts that has
+ * never been verified against the sandbox (HOS-180 risk R-9). The grant path
+ * deliberately does not special-case annual: it asks MercadoPago and believes
+ * the answer.
+ *
+ * That makes the refusal path the one that has to hold up, and "fail-closed" is
+ * only half of it. A refusal that leaves nothing but a log line cannot answer
+ * "did MP ever refuse an annual pause?" weeks later, which is the exact question
+ * the pending smoke exists to settle. So the refusal must ALSO be seated,
+ * carrying the cadence.
+ */
+describe('grantCourtesyCycles — a refused pause is seated, not just logged (HOS-995)', () => {
+    it.each([
+        ['monthly'],
+        ['annual']
+    ])('seats the refusal with the %s cadence and gifts nothing', async (interval) => {
+        // Arrange
+        subscriptionRow = eligibleSubscription({ metadata: { billingInterval: interval } });
+        pauseMock.mockRejectedValue(new Error('MP: preapproval cannot be paused'));
+
+        // Act
+        const result = await grantCourtesyCycles({
+            billing: makeBilling(),
+            subscriptionId: 'sub-1',
+            cycles: 1,
+            actorId: 'admin-1',
+            now: NOW
+        });
+
+        // Assert — fail-closed, and the message names the cadence so an
+        // annual refusal is distinguishable from a monthly one at a glance.
+        expect(result.success).toBe(false);
+        if (result.success) return;
+        expect(result.error.code).toBe('PROVIDER_ERROR');
+        expect(result.error.message).toContain(interval);
+        expect(callOrder).not.toContain('local-write');
+        expect(callOrder).not.toContain('notify');
+
+        // Observable: the seat is written, and it carries the cadence that
+        // MercadoPago refused.
+        expect(refusalSeatMock).toHaveBeenCalledTimes(1);
+        expect(refusalSeatMock.mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-1',
+            triggerSource: 'admin-courtesy-grant',
+            billingInterval: interval
+        });
+    });
+
+    it('does not seat a refusal when the pause succeeds', async () => {
+        // The seat must mean "MercadoPago said no", not "a pause was attempted".
+        subscriptionRow = eligibleSubscription({ metadata: { billingInterval: 'annual' } });
+
+        const result = await grantCourtesyCycles({
+            billing: makeBilling(),
+            subscriptionId: 'sub-1',
+            cycles: 1,
+            actorId: 'admin-1',
+            now: NOW
+        });
+
+        expect(result.success).toBe(true);
+        expect(refusalSeatMock).not.toHaveBeenCalled();
+    });
+
+    it('seats the refusal BEFORE returning, so the admin error and the row agree', async () => {
+        // Ordering matters for the same reason the grant's does: the caller
+        // surfaces PROVIDER_ERROR to an admin who may immediately go looking for
+        // the row. Awaiting the seat first is what makes it there when they do.
+        pauseMock.mockRejectedValue(new Error('MP: preapproval cannot be paused'));
+
+        await grantCourtesyCycles({
+            billing: makeBilling(),
+            subscriptionId: 'sub-1',
+            cycles: 1,
+            actorId: 'admin-1',
+            now: NOW
+        });
+
+        expect(callOrder).toEqual(['mp-pause', 'refusal-seat']);
+    });
 });
 
 describe('grantCourtesyCycles — ordering (spec R-3)', () => {
@@ -126,7 +219,7 @@ describe('grantCourtesyCycles — ordering (spec R-3)', () => {
         expect(callOrder.indexOf('mp-pause')).toBeLessThan(callOrder.indexOf('local-write'));
     });
 
-    it('writes NOTHING when MercadoPago refuses the pause', async () => {
+    it('records NO GIFT when MercadoPago refuses the pause', async () => {
         // Arrange — the provider rejects
         pauseMock.mockRejectedValue(new Error('MP said no'));
 
@@ -146,8 +239,9 @@ describe('grantCourtesyCycles — ordering (spec R-3)', () => {
         if (result.success) return;
         expect(result.error.code).toBe('PROVIDER_ERROR');
         expect(callOrder).not.toContain('local-write');
-        expect(callOrder).not.toContain('audit');
         expect(callOrder).not.toContain('notify');
+        // The grant audit row belongs to a gift that happened. This one did not.
+        expect(insertMock).not.toHaveBeenCalled();
     });
 
     it('notifies only after the gift is actually recorded', async () => {

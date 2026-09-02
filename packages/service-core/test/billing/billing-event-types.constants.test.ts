@@ -166,8 +166,35 @@ describe('BILLING_EVENT_TYPES', () => {
             // otherwise mail the customer who just paid) = 57,
             // − 1 (HOS-1012 T-027: TRIAL_NOT_GRANTED_BY_PROVIDER, unreachable
             // once no checkout promises a trial for a charge to break — a
-            // removal trips this frozen count exactly as an addition does) = 56.
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(56);
+            // removal trips this frozen count exactly as an addition does) = 56,
+            // + 1 (HOS-995: SUBSCRIPTION_PAUSE_PROVIDER_REFUSED — the only event
+            // here recording something that did NOT happen, seated because every
+            // pause flow is fail-closed and therefore leaves no other trace when
+            // MercadoPago says no) = 57.
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(57);
+        });
+    });
+
+    describe('HOS-995 pause-refusal event type', () => {
+        it('SUBSCRIPTION_PAUSE_PROVIDER_REFUSED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.SUBSCRIPTION_PAUSE_PROVIDER_REFUSED).toBe(
+                'SUBSCRIPTION_PAUSE_PROVIDER_REFUSED'
+            );
+        });
+
+        it('is distinct from the events recording a pause that succeeded', () => {
+            // A refusal must never be mistaken for a pause. Both the host and
+            // admin pause paths write their own event on success; this one means
+            // the opposite thing happened and the subscription did not move.
+            expect(BILLING_EVENT_TYPES.SUBSCRIPTION_PAUSE_PROVIDER_REFUSED).not.toBe(
+                BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_PAUSED
+            );
+            expect(BILLING_EVENT_TYPES.SUBSCRIPTION_PAUSE_PROVIDER_REFUSED).not.toBe(
+                BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED
+            );
+            expect(BILLING_EVENT_TYPES.SUBSCRIPTION_PAUSE_PROVIDER_REFUSED).not.toBe(
+                BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COURTESY_GRANTED
+            );
         });
     });
 
