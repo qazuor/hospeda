@@ -62,8 +62,8 @@
         },
         "eventsCta": {
             "title": "Está procurando um salão para eventos?",
-            "description": "Este lugar aceita aniversários, eventos corporativos e casamentos. Escreva para combinar.",
-            "button": "Contatar pelo WhatsApp"
+            "description": "Este lugar aceita aniversários, eventos corporativos e casamentos. Entre em contato para combinar.",
+            "button": "Entrar em contato"
         }
     },
     "types": {

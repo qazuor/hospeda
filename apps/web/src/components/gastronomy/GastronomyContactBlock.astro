@@ -6,7 +6,15 @@
  *
  * IMPORTANT: The public GastronomyPublicSchema does NOT expose phone or email
  * fields (contactInfo is not part of the public schema). Only `socialNetworks`
- * and `menuUrl` are available publicly and rendered here.
+ * and `menuUrl` are available publicly and rendered here. Gastronomy has no
+ * public phone/WhatsApp channel of any kind — `whatsapp` was removed from
+ * `GastronomySocialNetworks` (HOS-1076) because it was never real. See
+ * HOS-1088 for the open decision on whether gastronomy ever gets one.
+ *
+ * The root `<section>` below carries a stable `id` (HOS-1055): the "accepts
+ * events" CTA on the detail page is an in-page anchor to THIS block rather
+ * than a link of its own, precisely because there is no single channel here
+ * to pick — see `GastronomyEventsCta.astro`'s header.
  */
 
 import type { GastronomySocialNetworks } from '@/data/types';
@@ -63,7 +71,7 @@ const menuLabel = t('gastronomy.detail.menu', 'Ver menú');
 const socialLabel = t('gastronomy.detail.social', 'Redes sociales');
 ---
 
-<section class="gastro-contact">
+<section class="gastro-contact" id="gastro-contact">
     {menuHref && (
         <div class="gastro-contact__menu">
             <a

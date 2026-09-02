@@ -6,12 +6,20 @@
  * (`commerce-amenities-render.test.ts`): Vitest cannot render `.astro` here
  * (no Astro vite plugin in the test pipeline), so these assertions read the
  * comment-stripped SOURCE — accurate for "is this branch declared", blind to
- * "is this branch reached". The behaviour that actually branches at runtime —
- * `resolveSafeExternalUrl`'s scheme allow-list — is pinned separately in
- * `apps/web/test/lib/safe-external-url.test.ts` (mutation-verified); this
- * file only has to prove the page WIRES that primitive in, and does not
- * re-derive the "no private_events column" decision documented in
- * `apps/web/test/components/commerce/editor/AmenitiesSection.test.tsx`.
+ * "is this branch reached".
+ *
+ * ## Why the CTA has no external href (design note, not a hedge)
+ *
+ * A first version of this CTA linked to `socialNetworks.whatsapp`. HOS-1076
+ * (merged the same week) found that field never carried real data — it was
+ * never part of `SocialNetworkSchema` — and removed it from
+ * `GastronomySocialNetworks` entirely: gastronomy has no public phone/WhatsApp
+ * channel by design (HOS-1088 tracks the open question). What remains is a
+ * handful of owner-optional social links plus a menu URL, and picking "the
+ * first one that resolves" would sometimes point an "accepts events" CTA at a
+ * restaurant's YouTube channel. So the CTA is an in-page anchor
+ * (`#gastro-contact`) to `GastronomyContactBlock` instead: no channel to pick,
+ * and no outbound href for the HOS-592/F-02 sanitization guard to apply to.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -31,33 +39,33 @@ const read = (relativePath: string): string =>
 
 const GASTRONOMY_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
 const EVENTS_CTA = read('components/gastronomy/GastronomyEventsCta.astro');
+const CONTACT_BLOCK = read('components/gastronomy/GastronomyContactBlock.astro');
 
 describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
-    it('imports the dedicated CTA component and the safe-URL resolver', () => {
+    it('imports the dedicated CTA component', () => {
         expect(GASTRONOMY_PAGE).toContain(
             "import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro'"
         );
-        expect(GASTRONOMY_PAGE).toContain(
-            "import { resolveSafeExternalUrl } from '@/lib/safe-external-url'"
-        );
     });
 
-    it('resolves the CTA link from socialNetworks.whatsapp — the same public channel GastronomyContactBlock uses, never contactInfo', () => {
-        expect(GASTRONOMY_PAGE).toContain(
-            'resolveSafeExternalUrl(gastronomy.socialNetworks?.whatsapp)'
-        );
-        // No `gastronomy.contactInfo` access anywhere on the page: that field
-        // is not part of GastronomyPublicSchema (see GastronomyContactBlock's
-        // header) — reaching for it would repeat the HOS-363/HOS-924 bug.
+    it('never reads socialNetworks.whatsapp (HOS-1076: the field is gone, it never carried real data) or contactInfo', () => {
+        expect(GASTRONOMY_PAGE).not.toContain('.whatsapp');
+        // `contactInfo` is not part of GastronomyPublicSchema (see
+        // GastronomyContactBlock's header) — reaching for it would repeat the
+        // HOS-363/HOS-924 bug.
         expect(GASTRONOMY_PAGE).not.toContain('gastronomy.contactInfo');
     });
 
-    it('requires BOTH the private_events amenity and a resolvable link before showing the CTA', () => {
+    it('requires BOTH the private_events amenity and an actual contact channel before showing the CTA', () => {
         expect(GASTRONOMY_PAGE).toContain(
             "gastronomy.amenities.find((amenity) => amenity.name === 'private_events')"
         );
+        // Mirrors GastronomyContactBlock's own render gate, duplicated on
+        // purpose rather than imported (see the frontmatter comment) — a CTA
+        // anchored to an empty contact block would be worse than no CTA.
+        expect(GASTRONOMY_PAGE).toContain('resolveSafeExternalUrl(gastronomy.menuUrl)');
         expect(GASTRONOMY_PAGE).toContain(
-            'const showEventsCta = Boolean(acceptsEventsAmenity) && Boolean(eventsCtaHref);'
+            'const showEventsCta = Boolean(acceptsEventsAmenity) && hasGastronomyContact;'
         );
     });
 
@@ -67,18 +75,17 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
             "gastronomy.amenities.filter((amenity) => amenity.name !== 'private_events')"
         );
         // The else branch is the un-filtered listing amenities — the chip
-        // survives when there is no link to show a CTA with instead of it.
+        // survives when there is no contact channel to show a CTA with instead.
         expect(GASTRONOMY_PAGE).toContain(': gastronomy.amenities;');
     });
 
-    it('mounts the CTA guarded by showEventsCta, passing the resolved href', () => {
-        expect(GASTRONOMY_PAGE).toContain('{showEventsCta && eventsCtaHref && (');
+    it('mounts the CTA guarded by showEventsCta, with no href passed in', () => {
         expect(GASTRONOMY_PAGE).toContain(
-            '<GastronomyEventsCta href={eventsCtaHref} locale={locale} />'
+            '{showEventsCta && <GastronomyEventsCta locale={locale} />}'
         );
     });
 
-    it('mounts the CTA after the amenity grids and before the contact block', () => {
+    it('mounts the CTA after the amenity grids and before the contact block it anchors into', () => {
         const amenitiesIdx = GASTRONOMY_PAGE.indexOf('<AmenitiesGrid');
         const ctaIdx = GASTRONOMY_PAGE.indexOf('<GastronomyEventsCta');
         const contactIdx = GASTRONOMY_PAGE.indexOf('<GastronomyContactBlock');
@@ -90,10 +97,17 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
 });
 
 describe('GastronomyEventsCta.astro (HOS-1055)', () => {
-    it('links the button to the href prop, opened in a new tab safely', () => {
-        expect(EVENTS_CTA).toContain('href={href}');
-        expect(EVENTS_CTA).toContain('target="_blank"');
-        expect(EVENTS_CTA).toContain('rel="noopener noreferrer"');
+    it('is a same-page anchor to the contact block, not an external link', () => {
+        expect(EVENTS_CTA).toContain('href="#gastro-contact"');
+        // No outbound markers — this is not an outbound link, so the
+        // HOS-592/F-02 sanitization guard has nothing to check here.
+        expect(EVENTS_CTA).not.toContain('target="_blank"');
+        expect(EVENTS_CTA).not.toContain('noopener');
+    });
+
+    it('never resolves or accepts an external URL — there is no channel to pick', () => {
+        expect(EVENTS_CTA).not.toContain('resolveSafeExternalUrl');
+        expect(EVENTS_CTA).not.toContain('readonly href');
     });
 
     it('renders through the gastronomy.detail.eventsCta i18n namespace, with fallbacks', () => {
@@ -102,7 +116,13 @@ describe('GastronomyEventsCta.astro (HOS-1055)', () => {
         expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.button');
     });
 
-    it('does not re-validate the href — the page is the single resolver (no double scheme-check drift)', () => {
-        expect(EVENTS_CTA).not.toContain('resolveSafeExternalUrl');
+    it('does not promise a specific channel (e.g. WhatsApp) that gastronomy cannot deliver', () => {
+        expect(EVENTS_CTA.toLowerCase()).not.toContain('whatsapp');
+    });
+});
+
+describe('GastronomyContactBlock.astro — the CTA anchor target (HOS-1055)', () => {
+    it('carries the stable id the events CTA anchors into', () => {
+        expect(CONTACT_BLOCK).toContain('id="gastro-contact"');
     });
 });

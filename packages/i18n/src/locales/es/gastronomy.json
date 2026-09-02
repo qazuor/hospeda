@@ -62,8 +62,8 @@
         },
         "eventsCta": {
             "title": "¿Buscás salón para eventos?",
-            "description": "Este lugar acepta cumpleaños, eventos de empresa y casamientos. Escribí para coordinar.",
-            "button": "Contactar por WhatsApp"
+            "description": "Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.",
+            "button": "Contactar"
         }
     },
     "types": {

@@ -182,16 +182,34 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 // Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
 // `gastronomy.amenities`) rather than a new DB column or public-schema field —
 // see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
-// the write side. The dedicated CTA only replaces the generic amenity chip when
-// it can actually render (a resolvable, public WhatsApp link exists): if the
-// owner ticked "accepts events" but never set a WhatsApp link, there is no
-// public-safe channel to point the CTA at (contactInfo/phone is NEVER public
-// here — see `GastronomyContactBlock`'s header, and the exact bug HOS-363 /
-// HOS-924 are fixing on the experience side), so the plain chip stays in
-// `AmenitiesGrid` instead of the signal disappearing entirely.
+// the write side.
+//
+// The CTA has no external `href` of its own — it is an in-page anchor to
+// `GastronomyContactBlock` (see `GastronomyEventsCta.astro`'s header for why:
+// gastronomy has no single public contact channel to pick, especially since
+// HOS-1076 found `socialNetworks.whatsapp` never carried real data and
+// removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
+// channel for gastronomy). That sidesteps picking a channel AND the outbound
+// href-sanitization guard (HOS-592/F-02): there is nothing external to
+// sanitize.
+//
+// `hasGastronomyContact` mirrors the exact condition `GastronomyContactBlock`
+// uses to decide whether it renders anything at all (`hasSocial || menuHref`)
+// — duplicated rather than imported so this file never has to trust that the
+// component's internal gate stayed in sync silently; if that condition ever
+// changes, this one has to change with it on purpose. Without it, the CTA
+// could point at an anchor with nothing behind it, which is worse than no CTA
+// (same principle as HOS-363/HOS-924: never promise a channel that isn't
+// there).
 const acceptsEventsAmenity = gastronomy.amenities.find((amenity) => amenity.name === 'private_events');
-const eventsCtaHref = resolveSafeExternalUrl(gastronomy.socialNetworks?.whatsapp);
-const showEventsCta = Boolean(acceptsEventsAmenity) && Boolean(eventsCtaHref);
+const hasGastronomyContact =
+    Boolean(resolveSafeExternalUrl(gastronomy.menuUrl)) ||
+    (gastronomy.socialNetworks
+        ? Object.values(gastronomy.socialNetworks).some((value) =>
+              Boolean(resolveSafeExternalUrl(value))
+          )
+        : false);
+const showEventsCta = Boolean(acceptsEventsAmenity) && hasGastronomyContact;
 // Excluded from the generic grid ONLY when the dedicated CTA renders in its
 // place — otherwise both would say "accepts events" two centimeters apart.
 const amenitiesForGrid = showEventsCta
@@ -316,10 +334,10 @@ const breadcrumbItems = [
         <FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />
         <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
 
-        <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement. -->
-        {showEventsCta && eventsCtaHref && (
-            <GastronomyEventsCta href={eventsCtaHref} locale={locale} />
-        )}
+        <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement.
+             Anchors into GastronomyContactBlock below; no external href of
+             its own (see GastronomyEventsCta.astro's header). -->
+        {showEventsCta && <GastronomyEventsCta locale={locale} />}
 
         <!-- Contact block (menu URL + social networks) -->
         {(gastronomy.menuUrl || gastronomy.socialNetworks) && (

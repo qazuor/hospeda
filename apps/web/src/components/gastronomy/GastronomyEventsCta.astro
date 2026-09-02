@@ -4,27 +4,40 @@
  * @description "Accepts events" call-to-action for a gastronomy listing
  * (HOS-1055) — birthdays, corporate events, weddings.
  *
- * Deliberately small: a toggle and a contact button, nothing else (no venue
- * calendar, no quote form, no availability). The `href` this renders is
- * ALWAYS `socialNetworks.whatsapp` after `resolveSafeExternalUrl`, resolved
- * by the page — the SAME public-safe channel `GastronomyContactBlock` already
- * renders. `contactInfo` (phone/email) is never part of `GastronomyPublicSchema`
- * (see that component's header), so reaching for it here would repeat the
- * exact bug HOS-363 / HOS-924 are fixing on the experience side: a CTA
- * pointing at a channel the public payload never carries. The page only
- * mounts this component once it already has a resolvable link — see
- * `[slug].astro`'s `showEventsCta`.
+ * Deliberately small: a toggle and a button, nothing else (no venue calendar,
+ * no quote form, no availability).
+ *
+ * ## Why this is an in-page anchor, not an external link
+ *
+ * Gastronomy has no single public "contact this business" channel to pick.
+ * `contactInfo` (phone/email) was never part of `GastronomyPublicSchema`, and
+ * `whatsapp` was removed from `GastronomySocialNetworks` entirely (HOS-1076) —
+ * it never carried real data (see that component's header, and HOS-1088 for
+ * the open question of whether gastronomy ever gets a phone/WhatsApp channel).
+ * What remains is a handful of owner-optional social links plus a menu URL,
+ * any subset of which may be set. Picking one of them (say, the first that
+ * resolves) would sometimes point an "accepts events" CTA at a restaurant's
+ * YouTube channel — technically a link, not a plausible way to ask about a
+ * birthday party.
+ *
+ * So this button does not carry an external `href` at all: it is a same-page
+ * anchor (`#gastro-contact`) to `GastronomyContactBlock`, which already
+ * renders every channel the owner actually set. That also means the outbound
+ * href-sanitization guard (HOS-592/F-02) does not apply here — there is no
+ * outbound link to sanitize, not an exemption from having to.
+ *
+ * The page only mounts this component when `GastronomyContactBlock` will
+ * itself have something to show (see `[slug].astro`'s `showEventsCta`) — a
+ * button anchored to an empty contact block would be worse than no button.
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-    /** Pre-resolved, scheme-safe WhatsApp link (never raw/unvalidated). */
-    readonly href: string;
     readonly locale: SupportedLocale;
 }
 
-const { href, locale } = Astro.props;
+const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
@@ -36,18 +49,15 @@ const { t } = createTranslations(locale);
         <p class="gastro-events-cta__description">
             {t(
                 'gastronomy.detail.eventsCta.description',
-                'Este lugar acepta cumpleaños, eventos de empresa y casamientos. Escribí para coordinar.'
+                'Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.'
             )}
         </p>
     </div>
     <a
-        href={href}
+        href="#gastro-contact"
         class="gastro-events-cta__button"
-        target="_blank"
-        rel="noopener noreferrer"
     >
-        <span aria-hidden="true">💬</span>
-        {t('gastronomy.detail.eventsCta.button', 'Contactar por WhatsApp')}
+        {t('gastronomy.detail.eventsCta.button', 'Contactar')}
     </a>
 </section>
 

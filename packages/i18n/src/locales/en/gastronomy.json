@@ -62,8 +62,8 @@
         },
         "eventsCta": {
             "title": "Looking for a venue for an event?",
-            "description": "This place accepts birthdays, corporate events, and weddings. Send a message to coordinate.",
-            "button": "Contact via WhatsApp"
+            "description": "This place accepts birthdays, corporate events, and weddings. Get in touch to coordinate.",
+            "button": "Get in touch"
         }
     },
     "types": {
