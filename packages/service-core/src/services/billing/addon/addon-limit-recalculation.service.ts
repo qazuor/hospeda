@@ -280,7 +280,29 @@ export async function recalculateAddonLimitsForCustomer(
             // The hand-rolled active/trialing pair dropped `comp`, which landed a
             // complimentary subscriber in the same "skipped, cap raised by
             // nothing" outcome described above.
+            //
+            // HOS-1078: `undefined` means the key is not a `LimitKey` at all —
+            // typically a `billing_addons.affects_limit_key` row that matches
+            // nothing. Refuse rather than resolve it to accommodation: a cap
+            // raised off the wrong plan is the "charge with nothing delivered"
+            // outcome described above, wearing a plausible face.
             const domain = productDomainForLimitKey(limitKey);
+
+            if (!domain) {
+                const unknownKeyResult: ReadPhaseResult = {
+                    skipped: true,
+                    result: {
+                        limitKey,
+                        oldMaxValue: 0,
+                        newMaxValue: 0,
+                        addonCount: 0,
+                        outcome: 'failed',
+                        reason: `Unknown limit key "${limitKey}" — no product domain owns it`
+                    }
+                };
+                return unknownKeyResult;
+            }
+
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
                     isEntitlementGrantingStatus(sub.status) &&

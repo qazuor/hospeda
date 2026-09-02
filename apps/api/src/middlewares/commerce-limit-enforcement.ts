@@ -19,13 +19,20 @@
  *
  * ## 2. A count failure REFUSES, it does not wave the request through
  *
- * `enforceAccommodationLimit` logs and calls `next()` when the count fails
- * ("don't block on count failure"). For commerce that would be handing out the
- * product: the cap is the entire commercial substance of the plan, this
+ * `enforceAccommodationLimit` used to log and call `next()` when the count
+ * failed ("don't block on count failure"). For commerce that would be handing
+ * out the product: the cap is the entire commercial substance of the plan, this
  * middleware is the ONLY gate on the create path, and an uncapped creation is
  * indistinguishable from a working one until somebody counts rows. So a count
  * failure answers 503 — loud, honest, and retryable — rather than silently
  * allowing the listing.
+ *
+ * HOS-1078 closed the same hole on the accommodation side, so this divergence
+ * is now a shared rule instead: both verticals answer a count failure with 503
+ * and the same {@link LIMIT_COUNT_UNAVAILABLE_MESSAGE}. It is recorded here as
+ * a divergence anyway, because that is what it was when it was written and it
+ * is the reason a faithful copy of the accommodation middleware would have been
+ * wrong.
  *
  * The 403 body carries the same `LIMIT_REACHED` shape every other limit uses,
  * so `buildLimitReachedPayload` on the web side resolves the vertical's
@@ -46,7 +53,7 @@ import type { AppMiddleware } from '../types';
 import { getActorFromContext } from '../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
-import { buildLimitReachedDetails } from './limit-enforcement';
+import { buildLimitReachedDetails, LIMIT_COUNT_UNAVAILABLE_MESSAGE } from './limit-enforcement';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 const experienceService = new ExperienceService({ logger: apiLogger });
@@ -121,10 +128,7 @@ function enforceCommerceListingLimit(vertical: CommerceVertical): AppMiddleware 
         if (currentCount === null) {
             // See the module docblock: refusing beats silently granting an
             // uncapped listing.
-            throw new HTTPException(503, {
-                message:
-                    'No pudimos verificar tu plan en este momento. Volvé a intentarlo en unos segundos.'
-            });
+            throw new HTTPException(503, { message: LIMIT_COUNT_UNAVAILABLE_MESSAGE });
         }
 
         const limitCheck = checkLimit({ context: c, limitKey, currentCount });

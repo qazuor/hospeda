@@ -466,9 +466,39 @@ describe('CommerceListingEditor', () => {
         });
     });
 
-    it('PATCHes openingHours when a day is toggled closed', async () => {
+    it('PATCHes openingHours when an open day is toggled closed', async () => {
+        // HOS-906: an untouched day now defaults to CLOSED (dayOf()'s
+        // honest default — see OpeningHoursSection.client.tsx), so a listing
+        // must already carry an OPEN day to exercise toggling it closed. A
+        // real saved listing always has a full, valid week after HOS-906,
+        // so this fixture mirrors that instead of the never-configured
+        // `openingHours: null` `baseData` starts from.
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        const withOpenMonday = {
+            ...baseData,
+            openingHours: {
+                timezone: 'America/Argentina/Buenos_Aires',
+                days: {
+                    mon: { closed: false, shifts: [{ open: '09:00', close: '18:00' }] },
+                    tue: { closed: true, shifts: [] },
+                    wed: { closed: true, shifts: [] },
+                    thu: { closed: true, shifts: [] },
+                    fri: { closed: true, shifts: [] },
+                    sat: { closed: true, shifts: [] },
+                    sun: { closed: true, shifts: [] }
+                }
+            }
+        } as unknown as CommerceListingDetail;
+
+        render(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                listingId="abc"
+                locale="es"
+                initialData={withOpenMonday}
+                destinations={destinationOptions}
+            />
+        );
 
         fireEvent.click(screen.getByLabelText('Lun cerrado'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
@@ -478,6 +508,43 @@ describe('CommerceListingEditor', () => {
             body: { openingHours?: { days?: Record<string, { closed: boolean }> } };
         };
         expect(call.body.openingHours?.days?.mon?.closed).toBe(true);
+    });
+
+    /**
+     * HOS-906 regression — the bug this whole spec closes: a host who opens
+     * the editor on a listing that never had opening hours configured
+     * (`baseData` carries no `openingHours`, so every day starts at
+     * `dayOf()`'s default), touches exactly ONE day, and saves. Before the
+     * fix, the untouched six days rebuilt from `withDay()` as
+     * `{ closed: false, shifts: [] }` and saved that ambiguous state
+     * silently. Now every untouched day resolves CLOSED, so the save must
+     * go through and every day in the payload must be a valid resolution —
+     * never open with zero shifts.
+     */
+    it('HOS-906: touching a single day and saving succeeds, with every other day resolving closed', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        // Open Monday and give it a shift — the minimal real "configure one
+        // day" flow. Every other day is left untouched.
+        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByLabelText('Agregar turno Lun'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const call = mockPatch.mock.calls[0]?.[0] as {
+            body: {
+                openingHours?: {
+                    days?: Record<string, { closed: boolean; shifts: Array<unknown> }>;
+                };
+            };
+        };
+        const days = call.body.openingHours?.days ?? {};
+        expect(days.mon).toEqual({ closed: false, shifts: [{ open: '09:00', close: '18:00' }] });
+        for (const [key, day] of Object.entries(days)) {
+            if (key === 'mon') continue;
+            expect(day).toEqual({ closed: true, shifts: [] });
+        }
     });
 
     it('HOS-372: uploading a featured image persists immediately via commerceMediaApi, NOT deferred to Save', async () => {

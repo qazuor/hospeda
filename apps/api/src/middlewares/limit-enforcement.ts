@@ -39,6 +39,20 @@ import { apiLogger } from '../utils/logger';
 type UpgradeAudience = 'tourist' | 'host';
 
 /**
+ * What a caller is told when the cap could not be evaluated (HOS-1078).
+ *
+ * Shared with `commerce-limit-enforcement.ts` so the two verticals answer a
+ * count failure with the same words as well as the same status — the whole
+ * point of HOS-1078 part 2 being that they did not.
+ *
+ * It is deliberately a retry prompt and not an upgrade prompt: nothing is known
+ * about the caller's usage at this point, so telling them to upgrade would be a
+ * guess, and telling them nothing would be the silent grant this replaced.
+ */
+export const LIMIT_COUNT_UNAVAILABLE_MESSAGE =
+    'No pudimos verificar tu plan en este momento. Volvé a intentarlo en unos segundos.';
+
+/**
  * Maps a limit key to the audience that should be directed to upgrade.
  *
  * - `max_favorites` is a tourist-tier limit.
@@ -93,7 +107,10 @@ export function buildLimitReachedDetails(input: {
  * Enforces accommodation limit before creation
  *
  * Checks if user has reached their max_accommodations limit.
- * Returns 403 if limit reached.
+ * Returns 403 if limit reached, and **503 if the cap could not be evaluated
+ * at all** — see {@link LIMIT_COUNT_UNAVAILABLE_MESSAGE} (HOS-1078). The two
+ * are different answers on purpose: 403 means "your plan says no, upgrade",
+ * 503 means "we do not know, retry".
  *
  * @returns Middleware handler
  *
@@ -137,9 +154,14 @@ export function enforceAccommodationLimit(): AppMiddleware {
                 apiLogger.error(
                     `Failed to count accommodations for limit check: ${countResult.error.message}`
                 );
-                // Continue - don't block on count failure
-                await next();
-                return;
+                // HOS-1078: REFUSE. This used to call next() ("don't block on
+                // count failure"), which handed out an uncapped accommodation
+                // every time the count hiccupped — silently, since an uncapped
+                // creation is indistinguishable from a working one until
+                // somebody counts rows. `enforceCommerceListingLimit` already
+                // answers 503 here for exactly this reason; this is the
+                // accommodation side catching up.
+                throw new HTTPException(503, { message: LIMIT_COUNT_UNAVAILABLE_MESSAGE });
             }
 
             const currentCount = countResult.data?.count || 0;
@@ -188,11 +210,15 @@ export function enforceAccommodationLimit(): AppMiddleware {
                 throw error;
             }
 
-            // Log unexpected errors but don't block
+            // HOS-1078: an unexpected error here means the cap was never
+            // evaluated, which is the same state as a failed count — so it gets
+            // the same answer. This branch used to log and call next(), so a
+            // thrown count (as opposed to a failed `Result`) created the
+            // accommodation too.
             apiLogger.error(
                 `Error in accommodation limit enforcement: ${error instanceof Error ? error.message : String(error)}`
             );
-            await next();
+            throw new HTTPException(503, { message: LIMIT_COUNT_UNAVAILABLE_MESSAGE });
         }
     };
 }

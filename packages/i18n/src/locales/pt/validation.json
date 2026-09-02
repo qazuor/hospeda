@@ -1855,6 +1855,9 @@
             "invalid": "El non_negative_int no es válido"
         },
         "openingHours": {
+            "day": {
+                "notOpenOrClosed": "Marque o dia como fechado ou adicione pelo menos um turno"
+            },
             "shift": {
                 "invalidTime": "O formato de hora não é válido",
                 "sameOpenAndClose": "O horário de fechamento não pode ser igual ao de abertura"

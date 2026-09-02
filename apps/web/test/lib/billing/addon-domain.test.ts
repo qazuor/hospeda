@@ -56,6 +56,20 @@ describe('resolveAddonProductDomain', () => {
         // Assert
         expect(result).toBe(ProductDomainEnum.EXPERIENCE);
     });
+
+    it('resolves NO domain for a key that owns no cap (HOS-1078)', () => {
+        // Arrange — `affectsLimitKey` arrives as a free string off a
+        // `billing_addons` row, so a typo (or a retired key) reaches here. This
+        // used to answer `'accommodation'`, which offered the addon to every
+        // accommodation subscriber and, one layer down, raised a cap read off a
+        // plan that never declared the key.
+        // Act
+        const result = resolveAddonProductDomain({ affectsLimitKey: 'max_gastronomys' });
+
+        // Assert
+        expect(result).toBeUndefined();
+        expect(result).not.toBe(ProductDomainEnum.ACCOMMODATION);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -109,6 +123,25 @@ describe('filterAddonsByHeldDomains', () => {
 
         // Assert
         expect(result).toEqual([]);
+    });
+
+    it('drops an addon whose limit key owns no domain, even for a full holder (HOS-1078)', () => {
+        // Arrange — the caller holds EVERY domain, so the only thing that can
+        // exclude this addon is the unresolvable key itself. With the old
+        // `?? 'accommodation'` default it was offered here.
+        const typoAddon = { slug: 'extra-gastronomys-1', affectsLimitKey: 'max_gastronomys' };
+        const addons = [accommodationAddon, typoAddon];
+        const domainsWithSubscription = new Set([
+            ProductDomainEnum.ACCOMMODATION,
+            ProductDomainEnum.GASTRONOMY,
+            ProductDomainEnum.EXPERIENCE
+        ]);
+
+        // Act
+        const result = filterAddonsByHeldDomains({ addons, domainsWithSubscription });
+
+        // Assert — the real addon survives (non-vacuity), the typo does not.
+        expect(result).toEqual([accommodationAddon]);
     });
 
     it('never sums two verticals into one shared reading (AC-19 parity at the addon layer)', () => {

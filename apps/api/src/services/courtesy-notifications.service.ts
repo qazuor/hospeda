@@ -20,11 +20,12 @@
  *
  * ## What must never happen
  *
- * A courtesy must never be routed to `subscription-paused.tsx`. Its copy blames
- * the subscriber's payment method (HOS-926), so a gifted subscriber would be
- * told their card failed — the worst possible email at the worst possible
- * moment (spec R-7). These three have their own `NotificationType` members and
- * their own templates precisely so the two can never be confused.
+ * A courtesy must never be routed to `subscription-paused.tsx`. Even after
+ * HOS-926 neutralized that template's copy (it no longer blames the payment
+ * method), it still announces a suspension — the worst possible framing for a
+ * gift, at the worst possible moment (spec R-7). These three have their own
+ * `NotificationType` members and their own templates precisely so the two can
+ * never be confused.
  *
  * @module services/courtesy-notifications
  */

@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+    CommerceListingAmenityPublicSchema,
+    CommerceListingFeaturePublicSchema
+} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
@@ -132,7 +136,18 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
             name: z.string(),
             slug: z.string()
         })
-        .nullish()
+        .nullish(),
+    /**
+     * Amenities the owner ticked, joined with the shared catalog (HOS-1072).
+     *
+     * Populated by the public `getBySlug` route only, which is why this is
+     * `.optional()` rather than defaulted: a list payload that never ran the
+     * join must say "not loaded", not "this venue has none". Absent and empty
+     * are different facts and the card grid renders nothing for either.
+     */
+    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    /** Features the owner ticked, joined with the shared catalog (HOS-1072). */
+    features: z.array(CommerceListingFeaturePublicSchema).optional()
 });
 
 /** TypeScript type for {@link GastronomyPublicSchema}. */
