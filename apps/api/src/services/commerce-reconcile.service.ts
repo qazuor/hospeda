@@ -19,6 +19,7 @@
  * @module services/commerce-reconcile.service
  */
 
+import { commerceVerticalToProductDomain, parseCommerceVertical } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     and,
@@ -29,7 +30,7 @@ import {
     getDb
 } from '@repo/db';
 import type { CommerceEntityType } from '@repo/schemas';
-import { ProductDomainEnum, resolveListingCompleteness } from '@repo/schemas';
+import { resolveListingCompleteness } from '@repo/schemas';
 import {
     type CommerceEntityModel,
     type ResolveCommerceListingCompleteness,
@@ -232,11 +233,22 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
 
     // HOS-692: the recovered link row's own `entityType` is the vertical —
     // stamp `productDomain` from it instead of the pre-HOS-685 hardcoded
-    // 'commerce', matching the ternary `commerce-subscription-attach.service.ts`
-    // already uses for the same two-value collision (CommerceEntityTypeEnum
-    // and ProductDomainEnum share 'gastronomy'/'experience' on purpose).
-    const productDomain =
-        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    // 'commerce'.
+    //
+    // HOS-1079: `entityType` here is a raw string read back off the
+    // subscription's JSONB `metadata` column (`readSubscriptionDomainMetadata`
+    // types it as `string | undefined`, not a closed union), so it cannot be
+    // narrowed by the compiler the way `commerce-subscription-attach.service.ts`'s
+    // `CommerceVertical`-typed callers can. `parseCommerceVertical` is the
+    // runtime guard that used to be missing here: it throws — caught by this
+    // function's own non-throwing contract below — instead of quietly
+    // treating any non-gastronomy metadata value (including a foreign
+    // 'accommodation' or corrupted data) as 'experience'.
+    const vertical = parseCommerceVertical(
+        entityType,
+        'commerce-reconcile.recoverCommerceLinkFromSubscriptionMetadata'
+    );
+    const productDomain = commerceVerticalToProductDomain(vertical);
 
     await db
         .insert(commerceListingSubscriptions)

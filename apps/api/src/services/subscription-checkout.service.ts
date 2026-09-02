@@ -49,7 +49,11 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { TEST_DAILY_PLAN } from '@repo/billing';
+import {
+    type CommerceVertical,
+    commerceVerticalToProductDomain,
+    TEST_DAILY_PLAN
+} from '@repo/billing';
 import {
     commerceListingSubscriptions,
     type DrizzleClient,
@@ -707,8 +711,16 @@ export interface InitiateCommerceMonthlySubscriptionInput {
     readonly customerId: string;
     /** Plan slug — matched against `QZPayPlan.name` (the commerce plan slug). */
     readonly planSlug: string;
-    /** Commerce entity discriminator (e.g. `'gastronomy'`). */
-    readonly entityType: string;
+    /**
+     * Commerce entity discriminator.
+     *
+     * Typed {@link CommerceVertical} (not a bare `string`) since HOS-1079: the
+     * two existing callers already pass an already-validated
+     * `CommerceEntityType`, and this narrowing is what turns the productDomain
+     * ternary below into a compiler-checked lookup instead of a silent
+     * fallback for any future caller that widens it.
+     */
+    readonly entityType: CommerceVertical;
     /** UUID of the commerce entity being subscribed (gastronomies.id, etc.). */
     readonly entityId: string;
     /**
@@ -789,8 +801,9 @@ export async function initiateCommerceMonthlySubscription(
     // HOS-695: the subscription and its link row are stamped with the
     // listing's OWN vertical, never the retired 'commerce' umbrella — same
     // idiom as `attachListingToSubscription` (commerce-subscription-attach.service.ts).
-    const productDomain =
-        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    // HOS-1079: computed via the shared, exhaustive mapper rather than a local
+    // ternary — see `entityType`'s JSDoc above for why the ternary was unsafe.
+    const productDomain = commerceVerticalToProductDomain(entityType);
 
     const plan = await resolvePlanBySlug(billing, planSlug);
     if (!plan) {

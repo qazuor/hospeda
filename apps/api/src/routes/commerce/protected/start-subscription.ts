@@ -174,7 +174,25 @@ async function loadRawListing(
     entityType: CommerceEntityType,
     entityId: string
 ): Promise<RawCommerceListingRow> {
-    const model = entityType === 'gastronomy' ? gastronomyModel : experienceModel;
+    // HOS-1079: an exhaustive switch, not a binary ternary — see the module
+    // docblock's note on the resolved entityType always being the schema-
+    // validated enum. The `default` throw is defense-in-depth, not a reachable
+    // path today.
+    let model: typeof gastronomyModel | typeof experienceModel;
+    switch (entityType) {
+        case 'gastronomy':
+            model = gastronomyModel;
+            break;
+        case 'experience':
+            model = experienceModel;
+            break;
+        default: {
+            const exhaustiveCheck: never = entityType;
+            throw new HTTPException(400, {
+                message: `Unsupported commerce entityType: ${exhaustiveCheck}`
+            });
+        }
+    }
     const entity = await model.findById(entityId);
     if (!entity) {
         throw commerceListingNotFound();
@@ -402,7 +420,7 @@ export async function handleCommerceStartSubscription(
         const result = await initiateCommerceMonthlySubscription({
             customerId: billingCustomerId,
             planSlug,
-            entityType,
+            entityType: entityType as CommerceVertical,
             entityId,
             ...(requestedPayerEmail === undefined ? {} : { requestedPayerEmail }),
             billing,

@@ -26,9 +26,13 @@
  * @module services/commerce-subscription-attach
  */
 
-import { type CommerceVertical, isEntitlementGrantingStatus } from '@repo/billing';
+import {
+    type CommerceVertical,
+    commerceVerticalToProductDomain,
+    isEntitlementGrantingStatus
+} from '@repo/billing';
 import { commerceListingSubscriptions, eq, getDb } from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { subscriptionMatchesDomain } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
 import { reconcileCommerceListingForSubscription } from './commerce-reconcile.service.js';
@@ -77,8 +81,7 @@ export async function findOwnerVerticalSubscription(input: {
     vertical: CommerceVertical;
 }): Promise<OwnerVerticalSubscription | null> {
     const { billing, customerId, vertical } = input;
-    const domain =
-        vertical === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    const domain = commerceVerticalToProductDomain(vertical);
 
     const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
     const match = (subscriptions ?? []).find(
@@ -136,8 +139,7 @@ export async function attachListingToSubscription(input: {
     const { subscription, entityType, entityId } = input;
     const db = getDb();
 
-    const productDomain =
-        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    const productDomain = commerceVerticalToProductDomain(entityType);
 
     await db
         .insert(commerceListingSubscriptions)
