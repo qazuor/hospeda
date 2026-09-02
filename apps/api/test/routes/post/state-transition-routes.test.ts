@@ -87,6 +87,7 @@ await import('../../../src/routes/post/admin/moderate');
 await import('../../../src/routes/post/admin/publishState');
 await import('../../../src/routes/post/admin/lifecycleState');
 await import('../../../src/routes/post/protected/publishState');
+await import('../../../src/routes/post/protected/moderate');
 
 const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
@@ -143,6 +144,13 @@ describe('post state-transition routes', () => {
             // the middleware cannot know. Declaring it here would let any holder
             // through on ANY post if the service check were ever relaxed.
             expect(getConfig('protected /{id}/publish-state').requiredPermissions).toBeUndefined();
+        });
+
+        it('protected moderate declares no route permission — the author rule needs the post (HOS-1037)', () => {
+            // POST_PUBLISH_OWN only authorizes on a post the actor authored, and
+            // only when the requested verdict is APPROVED, neither of which the
+            // middleware can know without the row.
+            expect(getConfig('protected /{id}/moderate').requiredPermissions).toBeUndefined();
         });
     });
 
@@ -284,6 +292,67 @@ describe('post state-transition routes', () => {
                     { visibility: VisibilityEnum.PUBLIC }
                 )
             ).rejects.toThrow(/publication state/);
+        });
+    });
+
+    describe('protected moderate (HOS-1037)', () => {
+        it('forwards the moderation state and the acting author to the service', async () => {
+            mockModerate.mockResolvedValue({ data: { id: POST_ID } });
+
+            await getConfig('protected /{id}/moderate').handler(
+                buildMockContext(),
+                { id: POST_ID },
+                { moderationState: ModerationStatusEnum.APPROVED }
+            );
+
+            expect(mockModerate.mock.calls[0]?.[0]).toEqual({
+                actor: ACTOR,
+                id: POST_ID,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+        });
+
+        it('surfaces the service FORBIDDEN for an author lacking POST_PUBLISH_OWN', async () => {
+            mockModerate.mockResolvedValue({
+                error: {
+                    code: ServiceErrorCode.FORBIDDEN,
+                    message: 'Forbidden: cannot moderate post'
+                }
+            });
+
+            await expect(
+                getConfig('protected /{id}/moderate').handler(
+                    buildMockContext(),
+                    { id: POST_ID },
+                    { moderationState: ModerationStatusEnum.APPROVED }
+                )
+            ).rejects.toThrow(/moderate post/);
+        });
+
+        it('surfaces the service NOT_FOUND for a post authored by someone else', async () => {
+            // The route must never distinguish "does not exist" from "exists
+            // but is not mine" — both answer 404 (error-contract.md).
+            mockModerate.mockResolvedValue({
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Post not found' }
+            });
+
+            await expect(
+                getConfig('protected /{id}/moderate').handler(
+                    buildMockContext(),
+                    { id: POST_ID },
+                    { moderationState: ModerationStatusEnum.APPROVED }
+                )
+            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        });
+
+        it('throws when moderationState is missing', async () => {
+            await expect(
+                getConfig('protected /{id}/moderate').handler(
+                    buildMockContext(),
+                    { id: POST_ID },
+                    {}
+                )
+            ).rejects.toThrow();
         });
     });
 });

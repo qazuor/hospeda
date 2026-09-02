@@ -102,6 +102,95 @@ describe('EventService state transitions', () => {
             });
             expectNotFoundError(result);
         });
+
+        it('lets a trusted author approve their own pending event (HOS-1037)', async () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN, PermissionEnum.EVENT_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: trustedAuthor,
+                id: event.id,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+
+            expectSuccess(result);
+            expect(result.data?.moderationState).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        it('refuses a trusted author trying to REJECT their own event — approve is the only author path', async () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: trustedAuthor,
+                id: event.id,
+                moderationState: ModerationStatusEnum.REJECTED
+            });
+
+            // The actor owns the row, so the refusal stays 403 — it is about
+            // the requested state, not existence (HOS-706 rule 3).
+            expectForbiddenError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+
+        it('refuses a trusted author trying to send their own event back to PENDING', async () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: trustedAuthor,
+                id: event.id,
+                moderationState: ModerationStatusEnum.PENDING
+            });
+
+            expectForbiddenError(result);
+        });
+
+        it('refuses a plain author who holds authorship but not EVENT_PUBLISH_OWN', async () => {
+            // The mixed case: authorship alone is not the grant.
+            const plainAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: plainAuthor,
+                id: event.id,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+
+            expectForbiddenError(result);
+        });
+
+        it('masks a trusted editor probing an event they did not author as NOT_FOUND, not FORBIDDEN', async () => {
+            // The other mixed case: holding EVENT_PUBLISH_OWN is not enough
+            // without authorship. HOS-706: a foreign-row refusal must never
+            // confirm the id is real.
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.EVENT_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: stranger,
+                id: event.id,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
     });
 
     describe('setPublishState', () => {

@@ -4,7 +4,12 @@
  * Follows the pattern of other service permission helpers.
  */
 import type { Event } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
@@ -101,15 +106,36 @@ export function checkCanDeleteEvent(actor: Actor, event: Event): void {
  * HOS-374 §7.6.4 — it only decided whether the admin panel rendered a widget,
  * while the write itself rode the generic update behind plain `EVENT_UPDATE`.
  *
- * The verdict belongs to the platform, so there is no author path.
+ * Two independent paths (HOS-1037, mirrors `checkCanModeratePost`):
+ * - `EVENT_MODERATION_CHANGE` is the platform side: any event, any target
+ *   state. Unchanged — this is what the admin moderation queue uses.
+ * - The author side is narrower on purpose: `actor.id === event.authorId`,
+ *   `EVENT_PUBLISH_OWN`, AND `moderationState === APPROVED`. A trusted editor
+ *   may approve their own content but may not self-reject or push it back to
+ *   PENDING; those remain platform-only.
  *
- * Throws ServiceError(FORBIDDEN) if not allowed.
+ * @param actor - The actor requesting the change.
+ * @param event - The event being moderated.
+ * @param moderationState - The verdict being requested.
+ * @throws ServiceError(FORBIDDEN) if not allowed.
  */
-export function checkCanModerateEvent(actor: Actor): void {
+export function checkCanModerateEvent(
+    actor: Actor,
+    event: Event,
+    moderationState: ModerationStatusEnum
+): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (!hasPermission(actor, PermissionEnum.EVENT_MODERATION_CHANGE)) {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to moderate event');
+    if (hasPermission(actor, PermissionEnum.EVENT_MODERATION_CHANGE)) {
+        return;
     }
+    if (
+        actor.id === event.authorId &&
+        hasPermission(actor, PermissionEnum.EVENT_PUBLISH_OWN) &&
+        moderationState === ModerationStatusEnum.APPROVED
+    ) {
+        return;
+    }
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to moderate event');
 }
 
 /**

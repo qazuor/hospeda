@@ -1489,6 +1489,14 @@ export class EventService extends BaseCrudService<
      * on each transition impossible to sidestep by bundling a second state
      * change into the same payload.
      *
+     * `maskForeignRow` defaults to `false`, preserving the pre-HOS-1037 shape
+     * for `setPublishState`/`setLifecycleState`: only `moderate()` opts in, so
+     * a trusted editor probing an event they do not own gets 404 (HOS-706's
+     * `maskForeignRowRefusal`) instead of a 403 that would confirm the id is
+     * real. A refusal aimed at the actor's OWN event (they hold no
+     * `EVENT_PUBLISH_OWN`, or requested a non-`APPROVED` verdict) stays 403 —
+     * they already know the row exists.
+     *
      * @param input - actor, event id, the patch to apply, and the authorization check
      * @param methodName - name reported to the service logger
      * @param ctx - optional service context for transaction propagation
@@ -1499,11 +1507,12 @@ export class EventService extends BaseCrudService<
             readonly id: string;
             readonly patch: Partial<Event>;
             readonly authorize: (actor: Actor, event: Event) => void;
+            readonly maskForeignRow?: boolean;
         },
         methodName: string,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<Event>> {
-        const { actor, id, patch, authorize } = input;
+        const { actor, id, patch, authorize, maskForeignRow = false } = input;
         return this.runWithLoggingAndValidation({
             methodName,
             input: { actor, id },
@@ -1518,7 +1527,16 @@ export class EventService extends BaseCrudService<
                     );
                 }
 
-                authorize(validatedActor, existing as Event);
+                if (maskForeignRow) {
+                    await this._assertWritePermission({
+                        actor: validatedActor,
+                        entity: existing as Event,
+                        entityName: this.entityName,
+                        check: authorize
+                    });
+                } else {
+                    authorize(validatedActor, existing as Event);
+                }
 
                 const updated = await this.model.update(
                     { id: validated.id },
@@ -1555,11 +1573,16 @@ export class EventService extends BaseCrudService<
     }
 
     /**
-     * Applies the platform's moderation verdict to an event.
+     * Applies a moderation verdict to an event.
      *
-     * Gated by `EVENT_MODERATION_CHANGE`. Touches `moderationState` and nothing
-     * else — approving does not publish and rejecting does not unpublish
-     * (HOS-374 §7.6.1).
+     * Gated by `checkCanModerateEvent`, which accepts either
+     * `EVENT_MODERATION_CHANGE` (any event, any verdict — the admin queue) or,
+     * since HOS-1037, authorship plus `EVENT_PUBLISH_OWN` when the requested
+     * verdict is `APPROVED` (the trusted-editor self-approve path). Touches
+     * `moderationState` and nothing else — approving does not publish and
+     * rejecting does not unpublish (HOS-374 §7.6.1). `maskForeignRow: true` so
+     * a caller probing someone else's event gets 404, never a 403 that would
+     * confirm the id is real.
      *
      * @param input - actor, event id, and the new moderation state
      * @param ctx - optional service context for transaction propagation
@@ -1574,7 +1597,9 @@ export class EventService extends BaseCrudService<
                 actor: input.actor,
                 id: input.id,
                 patch: { moderationState: input.moderationState },
-                authorize: (actor) => checkCanModerateEvent(actor)
+                authorize: (actor, event) =>
+                    checkCanModerateEvent(actor, event, input.moderationState),
+                maskForeignRow: true
             },
             'moderate',
             ctx

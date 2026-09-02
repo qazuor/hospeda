@@ -17,6 +17,7 @@ import { protectedGetPostByIdRoute } from './getById';
 import { protectedGetPostMediaRoute } from './getMedia';
 import { protectedLikePostRoute } from './like';
 import { protectedListOwnPostsRoute } from './list';
+import { protectedModeratePostRoute } from './moderate';
 import { protectedPatchPostRoute } from './patch';
 import { protectedSetPostPublishStateRoute } from './publishState';
 import { protectedRemovePostMediaRoute } from './removeMedia';
@@ -54,6 +55,9 @@ app.route('/', protectedUnlikePostRoute);
 
 // POST /:id/publish-state - Publish or unpublish own post (HOS-374)
 app.route('/', protectedSetPostPublishStateRoute);
+
+// POST /:id/moderate - Approve own post, trusted editor only (HOS-1037)
+app.route('/', protectedModeratePostRoute);
 
 // POST /:postId/comments - Create comment (SPEC-165)
 app.route('/', protectedPostCommentRoutes);
