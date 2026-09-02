@@ -29,7 +29,7 @@
  */
 
 import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     and,
@@ -58,6 +58,7 @@ import {
     paymentAlreadyRecorded
 } from '../../routes/webhooks/mercadopago/subscription-payment-handler.js';
 import { linkPreapprovalToLocalSub } from '../../services/billing/link-preapproval.service.js';
+import { recordOrphanPayment } from '../../services/billing/orphan-payment-queue.service.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment.js';
@@ -404,10 +405,38 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         return true;
     } catch (error) {
         const errMessage = error instanceof Error ? error.message : String(error);
-        apiLogger.error(
-            { authorizedPaymentId, error: errMessage },
-            'Failed to record subscription authorized payment during dead-letter retry'
-        );
+
+        // HOS-1001: MercadoPago already took this charge and the ledger row did
+        // not land. Returning `false` leaves the dead-letter event unresolved so
+        // the cron tries again, and that retry is real — but it is bounded, and
+        // when it runs out the payment is stranded with nothing but this log to
+        // show for it. Queue it now rather than at the last attempt: enqueuing
+        // is idempotent on `(provider, providerPaymentId)`, so every subsequent
+        // retry is a no-op skip, and there is no attempt counter reachable from
+        // here that could tell us which attempt is the last one.
+        //
+        // The queue row therefore appears while retries are still in flight and
+        // may be made moot by one of them succeeding. That is the intended
+        // direction of the error: a visible row a human dismisses in ten seconds
+        // costs less than a charge nobody ever learns about.
+        await recordOrphanPayment({
+            providerPaymentId: details.paymentId,
+            flow: 'subscription-authorized-payment-retry',
+            reason: 'ledger-write-failed',
+            // `transaction_amount` is MercadoPago's own field, in MAJOR units —
+            // the same value the `Math.round(x * 100)` above converts.
+            amountMajor: asMajor(details.transactionAmount),
+            currency: details.currencyId || 'ARS',
+            subscriptionId: sub.id,
+            customerId: sub.customerId,
+            source: 'webhook-retry-cron',
+            metadata: {
+                mpAuthorizedPaymentId: details.authorizedPaymentId,
+                mpDebitDate: details.debitDate ?? null,
+                ledgerWriteError: errMessage
+            }
+        });
+
         return false;
     }
 }

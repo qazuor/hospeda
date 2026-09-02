@@ -3,12 +3,20 @@ import {
     type BackfillPaymentResponse,
     BillingDivergenceReportSchema,
     ForceLinkPreapprovalRequestSchema,
-    type ForceLinkPreapprovalResponse
+    type ForceLinkPreapprovalResponse,
+    OrphanPaymentQueueReportSchema,
+    ResolveOrphanPaymentRequestSchema,
+    type ResolveOrphanPaymentResponse
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { z } from 'zod';
 import { fetchApi } from '@/lib/api/client';
-import type { DivergenceKind } from './types';
+import type {
+    DivergenceKind,
+    OrphanQueueFlow,
+    OrphanQueueReason,
+    OrphanQueueStatus
+} from './types';
 
 /**
  * TanStack Query hooks for the orphan-payment rescue screen (HOS-765).
@@ -149,6 +157,112 @@ export const useBackfillPaymentMutation = () => {
         mutationFn: (payload: BackfillPaymentPayload) => backfillPayment(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: divergenceQueryKeys.divergences.lists() });
+            // A backfilled charge is very often the same charge sitting on the
+            // orphan queue, so the queue has to be re-read too — otherwise the
+            // operator books the payment and the row that asked them to still
+            // reads "unresolved" until they reload the page.
+            queryClient.invalidateQueries({ queryKey: orphanQueueQueryKeys.queue.lists() });
+        }
+    });
+};
+
+// ---------------------------------------------------------------------------
+// Orphan-payment queue (HOS-1001)
+// ---------------------------------------------------------------------------
+
+/** Query keys for the orphan-payment queue. */
+export const orphanQueueQueryKeys = {
+    queue: {
+        all: ['billing-reconciliation-orphan-queue'] as const,
+        lists: () => [...orphanQueueQueryKeys.queue.all, 'list'] as const,
+        list: (filters: OrphanQueueFilterParams) =>
+            [...orphanQueueQueryKeys.queue.lists(), filters] as const
+    }
+};
+
+/** Filters accepted by `GET /admin/billing/reconciliation/orphan-queue`. */
+export interface OrphanQueueFilterParams {
+    readonly status?: OrphanQueueStatus;
+    readonly flow?: OrphanQueueFlow;
+    readonly reason?: OrphanQueueReason;
+    readonly livemode?: boolean;
+    readonly page?: number;
+    readonly pageSize?: number;
+}
+
+/**
+ * Fetch the orphan-payment queue.
+ *
+ * Same admin envelope as the divergence report (`result.data.data`): this is
+ * not a `createAdminListRoute` either, because the payload carries
+ * `unresolvedTotal` alongside `items`/`pagination`.
+ */
+async function fetchOrphanQueue(filters: OrphanQueueFilterParams = {}) {
+    const params = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(filters)) {
+        if (value !== undefined && value !== null && value !== '') {
+            params.append(key, String(value));
+        }
+    }
+
+    const result = await fetchApi<{ success: boolean; data: unknown }>({
+        path: `/api/v1/admin/billing/reconciliation/orphan-queue?${params.toString()}`
+    });
+
+    return OrphanPaymentQueueReportSchema.parse(result.data.data);
+}
+
+/**
+ * Hook to fetch the orphan-payment queue.
+ *
+ * `staleTime` is SHORT and `refetchOnWindowFocus` is left on, the opposite of
+ * {@link useDivergencesQuery}. That endpoint costs paced MercadoPago calls and
+ * must not be polled; this one reads a single indexed local table and costs
+ * nothing external — and it is the screen's live incident count, so it should
+ * be current when the operator comes back to the tab.
+ */
+export const useOrphanQueueQuery = (filters: OrphanQueueFilterParams = {}) => {
+    return useQuery({
+        queryKey: orphanQueueQueryKeys.queue.list(filters),
+        queryFn: () => fetchOrphanQueue(filters),
+        staleTime: 30_000,
+        retry: 1
+    });
+};
+
+/** Body accepted by `POST /admin/billing/reconciliation/orphan-queue/resolve`. */
+type ResolveOrphanPaymentPayload = z.infer<typeof ResolveOrphanPaymentRequestSchema>;
+
+/**
+ * Record an operator's verdict on one queued payment.
+ *
+ * Validated with the same schema the API applies, so a note shorter than the
+ * required minimum never reaches the network.
+ */
+async function resolveOrphanPayment(payload: ResolveOrphanPaymentPayload) {
+    const validated = ResolveOrphanPaymentRequestSchema.parse(payload);
+    const result = await fetchApi<{ success: boolean; data: unknown }>({
+        path: '/api/v1/admin/billing/reconciliation/orphan-queue/resolve',
+        method: 'POST',
+        body: validated
+    });
+    return result.data.data as ResolveOrphanPaymentResponse;
+}
+
+/**
+ * Hook to close one queue row as resolved or dismissed.
+ *
+ * Invalidates the queue list on success: the row leaves the default
+ * (`unresolved`) view and the badge count has to follow it.
+ */
+export const useResolveOrphanPaymentMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: ResolveOrphanPaymentPayload) => resolveOrphanPayment(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: orphanQueueQueryKeys.queue.lists() });
         }
     });
 };

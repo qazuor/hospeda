@@ -9,15 +9,21 @@ import { useToast } from '@/components/ui/ToastProvider';
 import {
     DivergenceDetailDialog,
     DivergenceTable,
+    OrphanQueueTable,
     ReconcileActionDialog,
+    ResolveOrphanPaymentDialog,
     TruncatedBanner,
     useBackfillPaymentMutation,
     useDivergencesQuery,
-    useForceLinkMutation
+    useForceLinkMutation,
+    useOrphanQueueQuery,
+    useResolveOrphanPaymentMutation
 } from '@/features/billing-reconciliation';
 import type {
     Divergence,
     DivergenceKind,
+    OrphanQueueItem,
+    OrphanQueueStatus,
     ReconcileAction
 } from '@/features/billing-reconciliation/types';
 import { useTranslations } from '@/hooks/use-translations';
@@ -79,6 +85,38 @@ function BillingReconciliationPage() {
     const forceLinkMutation = useForceLinkMutation();
     const backfillMutation = useBackfillPaymentMutation();
 
+    // HOS-1001 — the orphan-payment queue. Kept as its own section rather than
+    // merged into the divergence list: a divergence is what a MercadoPago sweep
+    // FOUND after the fact, a queue row is what the platform RECORDED at the
+    // instant it failed to book a charge. Presenting them as one list would
+    // suggest the two have the same coverage, and they do not.
+    const [queueStatusFilter, setQueueStatusFilter] = useState<OrphanQueueStatus>('unresolved');
+    const [queuePage, setQueuePage] = useState(1);
+    const [selectedQueueItem, setSelectedQueueItem] = useState<OrphanQueueItem | null>(null);
+    const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+
+    const {
+        data: queue,
+        isLoading: queueLoading,
+        isError: queueError
+    } = useOrphanQueueQuery({
+        status: queueStatusFilter,
+        page: queuePage,
+        pageSize
+    });
+
+    const resolveOrphanMutation = useResolveOrphanPaymentMutation();
+
+    const handleResolveQueueItem = (item: OrphanQueueItem) => {
+        setSelectedQueueItem(item);
+        setResolveDialogOpen(true);
+    };
+
+    const handleQueueStatusFilterChange = (value: OrphanQueueStatus) => {
+        setQueueStatusFilter(value);
+        setQueuePage(1);
+    };
+
     const handleViewDetails = (divergence: Divergence) => {
         setSelectedDivergence(divergence);
         setDetailDialogOpen(true);
@@ -120,6 +158,88 @@ function BillingReconciliationPage() {
                         {t('admin-billing.reconciliation.description')}
                     </p>
                 </div>
+
+                {/*
+                  The queue comes FIRST. It is the cheap, complete, real-time
+                  half — written synchronously by the flow that failed — while
+                  the divergence report below costs paced MercadoPago calls and
+                  can be truncated. An operator opening this screen should see
+                  what the platform already knows is broken before paying for a
+                  sweep that might find the same thing.
+                */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            {t('admin-billing.reconciliation.queue.filters.title')}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <div>
+                                <Label htmlFor="orphan-queue-status-filter">
+                                    {t('admin-billing.reconciliation.queue.filters.statusLabel')}
+                                </Label>
+                                <select
+                                    id="orphan-queue-status-filter"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    value={queueStatusFilter}
+                                    onChange={(e) =>
+                                        handleQueueStatusFilterChange(
+                                            e.target.value as OrphanQueueStatus
+                                        )
+                                    }
+                                >
+                                    <option value="unresolved">
+                                        {t(
+                                            'admin-billing.reconciliation.queue.statuses.unresolved'
+                                        )}
+                                    </option>
+                                    <option value="resolved">
+                                        {t('admin-billing.reconciliation.queue.statuses.resolved')}
+                                    </option>
+                                    <option value="dismissed">
+                                        {t('admin-billing.reconciliation.queue.statuses.dismissed')}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <OrphanQueueTable
+                    items={queue?.items ?? []}
+                    isLoading={queueLoading}
+                    isError={queueError}
+                    unresolvedTotal={queue?.unresolvedTotal ?? 0}
+                    onResolve={handleResolveQueueItem}
+                />
+
+                {queue && queue.pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-end gap-2 text-muted-foreground text-xs">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!queue.pagination.hasPreviousPage}
+                            onClick={() => setQueuePage((p) => Math.max(1, p - 1))}
+                        >
+                            {t('admin-billing.reconciliation.pagination.previous')}
+                        </Button>
+                        <span>
+                            {t('admin-billing.reconciliation.pagination.pageOf', {
+                                page: queue.pagination.page,
+                                totalPages: queue.pagination.totalPages
+                            })}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!queue.pagination.hasNextPage}
+                            onClick={() => setQueuePage((p) => p + 1)}
+                        >
+                            {t('admin-billing.reconciliation.pagination.next')}
+                        </Button>
+                    </div>
+                )}
 
                 {/* truncated banner — MUST be prominent (HOS-765 spec note 3) */}
                 <TruncatedBanner truncated={report?.truncated ?? false} />
@@ -235,6 +355,14 @@ function BillingReconciliationPage() {
                 prefillLocalSubscriptionId={prefillLocalSubscriptionId}
                 forceLinkMutation={forceLinkMutation}
                 backfillMutation={backfillMutation}
+                addToast={addToast}
+            />
+
+            <ResolveOrphanPaymentDialog
+                item={selectedQueueItem}
+                open={resolveDialogOpen}
+                onOpenChange={setResolveDialogOpen}
+                resolveMutation={resolveOrphanMutation}
                 addToast={addToast}
             />
         </SidebarPageLayout>

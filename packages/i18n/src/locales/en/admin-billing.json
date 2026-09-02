@@ -1069,6 +1069,66 @@
             "previous": "Previous",
             "next": "Next",
             "pageOf": "Page {{page}} of {{totalPages}}"
+        },
+        "queue": {
+            "title": "Orphan payment queue",
+            "loading": "Loading the queue...",
+            "errorLoading": "Failed to load the queue",
+            "emptyTitle": "No payments in the queue",
+            "emptyHint": "No charge went unbooked under this filter. The queue is written at the instant of the failure, so empty means empty.",
+            "unresolvedCount_one": "{{count}} unresolved payment in total",
+            "unresolvedCount_other": "{{count}} unresolved payments in total",
+            "resolveButton": "Resolve",
+            "livemodeReal": "Real money",
+            "livemodeSandbox": "Sandbox",
+            "columns": {
+                "detectedAt": "Detected",
+                "providerPaymentId": "Payment ID (MP)",
+                "flow": "Flow",
+                "reason": "Reason",
+                "amount": "Amount",
+                "livemode": "Environment",
+                "subscriptionId": "Local subscription",
+                "actions": "Actions"
+            },
+            "flows": {
+                "planChangeUpgrade": "Plan upgrade",
+                "annualUpfront": "Annual upfront",
+                "addonPurchase": "Add-on purchase",
+                "authorizedPaymentRetry": "Recurring charge retry"
+            },
+            "reasons": {
+                "subscriptionNotFound": "Subscription not found",
+                "statusNotApplicable": "Status not applicable",
+                "ledgerWriteFailed": "Ledger write failed"
+            },
+            "statuses": {
+                "unresolved": "Unresolved",
+                "resolved": "Resolved",
+                "dismissed": "Dismissed"
+            },
+            "resolutions": {
+                "resolved": "Resolved — the money was booked or refunded",
+                "dismissed": "Dismissed — nothing was owed"
+            },
+            "filters": {
+                "title": "Queue filters",
+                "statusLabel": "Status"
+            },
+            "resolveDialog": {
+                "title": "Record the verdict on this payment",
+                "description": "Record what was done about this charge. It does NOT book the payment: that is the “Backfill payment” action on the matching divergence.",
+                "auditWarning": "This action is audited with your user and your note. A closed row cannot be reopened from here.",
+                "resolutionLabel": "Verdict",
+                "resolutionHint": "“Resolved” means the money was accounted for or refunded. “Dismissed” means nothing was owed (a test charge, a duplicate).",
+                "noteLabel": "What was done",
+                "notePlaceholder": "e.g. backfilled through the rescue tool, MP reference 174625958196.",
+                "noteHint": "At least 10 characters. It is the only thing that will tell whoever reads this in six months whether the customer was made whole.",
+                "confirmButton": "Record verdict",
+                "processingButton": "Recording...",
+                "success": "Verdict recorded",
+                "error": "Could not record the verdict:"
+            }
         }
     },
     "subscriptions": {

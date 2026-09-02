@@ -4,7 +4,7 @@ import {
     formatCentsToArs,
     formatDateWithTime as formatDateWithTimeHelper
 } from '@/lib/format-helpers';
-import type { DivergenceCandidate } from './types';
+import type { DivergenceCandidate, OrphanQueueFlow, OrphanQueueReason } from './types';
 
 /**
  * Formatters and small label lookups for the orphan-payment rescue screen (HOS-765).
@@ -103,4 +103,41 @@ export function getKindLabel(
     return kind === 'unrecorded-payment'
         ? t('admin-billing.reconciliation.kinds.unrecordedPayment')
         : t('admin-billing.reconciliation.kinds.orphanPreapproval');
+}
+
+/** Label for one {@link OrphanQueueFlow} value, used on the queue table. */
+export function getQueueFlowLabel(
+    flow: OrphanQueueFlow,
+    t: (key: TranslationKey) => string
+): string {
+    const labels: Record<OrphanQueueFlow, TranslationKey> = {
+        'plan-change-upgrade': 'admin-billing.reconciliation.queue.flows.planChangeUpgrade',
+        'annual-upfront': 'admin-billing.reconciliation.queue.flows.annualUpfront',
+        'addon-purchase': 'admin-billing.reconciliation.queue.flows.addonPurchase',
+        'subscription-authorized-payment-retry':
+            'admin-billing.reconciliation.queue.flows.authorizedPaymentRetry'
+    };
+    return t(labels[flow]);
+}
+
+/**
+ * Label for one {@link OrphanQueueReason} value.
+ *
+ * The map is EXHAUSTIVE over the union rather than falling back to the raw
+ * string, unlike {@link getMatchedOnLabel}. That vocabulary is MercadoPago's and
+ * open; this one is ours and closed, and the API already refuses to serve a row
+ * carrying anything outside it. A fallback here would be dead code pretending
+ * the guard upstream might fail.
+ */
+export function getQueueReasonLabel(
+    reason: OrphanQueueReason,
+    t: (key: TranslationKey) => string
+): string {
+    const labels: Record<OrphanQueueReason, TranslationKey> = {
+        'subscription-not-found': 'admin-billing.reconciliation.queue.reasons.subscriptionNotFound',
+        'subscription-status-not-applicable':
+            'admin-billing.reconciliation.queue.reasons.statusNotApplicable',
+        'ledger-write-failed': 'admin-billing.reconciliation.queue.reasons.ledgerWriteFailed'
+    };
+    return t(labels[reason]);
 }

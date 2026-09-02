@@ -4,7 +4,13 @@ import type {
     BillingDivergenceKind,
     BillingDivergenceOrphanPreapproval,
     BillingDivergenceReport,
-    BillingDivergenceUnrecordedPayment
+    BillingDivergenceUnrecordedPayment,
+    OrphanPaymentFlow,
+    OrphanPaymentQueueItem,
+    OrphanPaymentQueueReport,
+    OrphanPaymentQueueStatus,
+    OrphanPaymentReason,
+    OrphanPaymentResolution
 } from '@repo/schemas';
 
 /**
@@ -50,3 +56,29 @@ export type DivergenceReport = BillingDivergenceReport;
  * unable to express "this payment's preapproval also needs linking first".
  */
 export type ReconcileAction = 'force-link' | 'backfill-payment';
+
+/**
+ * One row of the orphan-payment queue (HOS-1001).
+ *
+ * A DIFFERENT thing from a {@link Divergence}, and the screen must not blur
+ * them. A divergence is what a sweep of MercadoPago FOUND after the fact; a
+ * queue row is what the platform RECORDED at the instant it failed to book a
+ * charge. The first costs paced third-party calls and can miss things; the
+ * second is written synchronously by the flow that failed and cannot.
+ */
+export type OrphanQueueItem = OrphanPaymentQueueItem;
+
+/** The queue listing envelope, including the unfiltered unresolved count. */
+export type OrphanQueueReport = OrphanPaymentQueueReport;
+
+/** Which confirmation flow could not book the payment. */
+export type OrphanQueueFlow = OrphanPaymentFlow;
+
+/** Why it could not be booked. */
+export type OrphanQueueReason = OrphanPaymentReason;
+
+/** Triage state of a queue row. */
+export type OrphanQueueStatus = OrphanPaymentQueueStatus;
+
+/** The two verdicts an operator may record. A row is never reopened. */
+export type OrphanQueueResolution = OrphanPaymentResolution;
