@@ -41,10 +41,11 @@
  *    `transaction_amount` with the blanket new price would silently kill the
  *    discount; those subscriptions need separate, discount-aware treatment.
  * 2. **Idempotent skip.** The LIVE MercadoPago preapproval amount is read via
- *    `subscriptions.retrieve` and compared (±1 ARS major tolerance for
- *    floating-point rounding) against the target. Already-at-target
- *    subscriptions are skipped, so re-running this function twice never
- *    double-applies the increase.
+ *    a direct `GET /preapproval/{id}` call (HOS-991 — `paymentAdapter.subscriptions.retrieve()`
+ *    never returns `auto_recurring`, so it cannot be used for this) and compared
+ *    (±1 ARS major tolerance for floating-point rounding) against the target.
+ *    Already-at-target subscriptions are skipped, so re-running this function
+ *    twice never double-applies the increase.
  * 3. **Dry run (default).** `dryRun: true` (the default) never calls
  *    `subscriptions.update` — every subscription that would be mutated is
  *    still reported with `outcome: 'updated'` and `reason: 'dry_run'` so the
@@ -65,7 +66,9 @@ import { and, billingSubscriptions, eq, getDb, inArray, isNotNull, isNull } from
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { isAccommodationSubscription } from '@repo/service-core';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
+import { fetchLivePreapprovalAmountMajor } from '../../utils/mp-preapproval-amount-lookup.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -214,32 +217,6 @@ function looksLikeRateLimitError(err: unknown): boolean {
 }
 
 /**
- * Extracts the live recurring `transaction_amount` (ARS major units) from a
- * MercadoPago preapproval object returned by `subscriptions.retrieve`.
- *
- * The amount lives under `auto_recurring.transaction_amount`, NOT at the top
- * level (top-level `transaction_amount` only exists on payment objects — see
- * `subscription-poll.job.ts`'s `reconcileActiveDiscountAmounts` for the same
- * extraction, duplicated here rather than imported since it is a 6-line
- * private helper local to each caller's file, not a shared utility).
- *
- * @returns The live amount in major units, or `null` when it cannot be read.
- */
-function extractLiveTransactionAmountMajor(livePreapproval: unknown): number | null {
-    if (typeof livePreapproval !== 'object' || livePreapproval === null) {
-        return null;
-    }
-    const record = livePreapproval as Record<string, unknown>;
-    const autoRecurring =
-        typeof record.auto_recurring === 'object' && record.auto_recurring !== null
-            ? (record.auto_recurring as Record<string, unknown>)
-            : {};
-    return typeof autoRecurring.transaction_amount === 'number'
-        ? autoRecurring.transaction_amount
-        : null;
-}
-
-/**
  * Attempts the `transaction_amount` mutation for a single subscription, with
  * bounded retry + backoff (longer backoff on an apparent rate-limit failure).
  * Never throws — always returns a typed result.
@@ -382,6 +359,13 @@ export async function applyPriceIncreaseToPlanSubscribers(
 
     const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
 
+    // Guaranteed set by createMercadoPagoAdapter() above (it throws otherwise);
+    // re-checked only to satisfy the `string | undefined` env type.
+    const accessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+        throw new Error('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN is not configured');
+    }
+
     for (const row of eligibleRows) {
         // mpSubscriptionId is guaranteed non-null by the WHERE clause above.
         const mpSubscriptionId = row.mpSubscriptionId as string;
@@ -404,13 +388,15 @@ export async function applyPriceIncreaseToPlanSubscribers(
         }
 
         // 2. Idempotent skip — compare the LIVE MP amount against the target.
-        let liveAmountMajor: number | null;
-        try {
-            const live = await paymentAdapter.subscriptions.retrieve(mpSubscriptionId);
-            liveAmountMajor = extractLiveTransactionAmountMajor(live);
-        } catch (retrieveErr) {
+        //    HOS-991: retrieve() never returns auto_recurring, so a direct
+        //    GET /preapproval/{id} is used instead (mp-preapproval-plan-lookup.ts's primitive).
+        const lookup = await fetchLivePreapprovalAmountMajor({
+            preapprovalId: mpSubscriptionId,
+            accessToken
+        });
+        if (lookup.kind !== 'ok') {
             const message =
-                retrieveErr instanceof Error ? retrieveErr.message : String(retrieveErr);
+                lookup.kind === 'error' ? lookup.message : `preapproval lookup: ${lookup.kind}`;
             failed += 1;
             details.push({
                 subscriptionId: row.id,
@@ -425,6 +411,7 @@ export async function applyPriceIncreaseToPlanSubscribers(
             await sleepWithJitter(INTER_SUBSCRIPTION_DELAY_MS);
             continue;
         }
+        const liveAmountMajor = lookup.transactionAmountMajor;
 
         if (
             liveAmountMajor !== null &&
