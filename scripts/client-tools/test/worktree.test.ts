@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
+import { isProtectedBranch } from '../src/commands/wt-clean/selection.ts';
 import { worktreesWithServers } from '../src/lib/context.ts';
 import {
+    buildWorktrees,
     type DbConfig,
     databaseFor,
     parseWorktreePorcelain,
@@ -91,6 +93,75 @@ describe('parseWorktreePorcelain', () => {
 
     it('should return nothing for empty output rather than a phantom worktree', () => {
         expect(parseWorktreePorcelain({ stdout: '' })).toEqual([]);
+    });
+
+});
+
+describe('buildWorktrees', () => {
+    const NO_STATE_FILE = () => ({});
+
+    it('should keep a state-file-less staging worktree protected from wt-clean', () => {
+        // The real one: /home/qazuor/projects/WEBS/hospeda-staging sits on
+        // `staging` and has no state file, because it was not made by the
+        // creation script. While the branch came from that file it resolved to
+        // '(desconocida)', which is not in PROTECTED_BRANCHES — so wt-clean
+        // OFFERED it for deletion, and deleting it tears down servers, the
+        // database, the worktree and the branch. It is also the clone `hops
+        // update` moves the hops home into.
+        const [staging] = buildWorktrees({
+            entries: [{ path: '/home/dev/hospeda-staging', branch: 'staging', detached: false }],
+            readStateFor: NO_STATE_FILE
+        });
+
+        expect(staging?.branch).toBe('staging');
+        expect(isProtectedBranch({ branch: staging?.branch ?? '' })).toBe(true);
+    });
+
+    it('should prefer git over a state file that disagrees', () => {
+        // The state file records the branch at CREATION time. A worktree
+        // switched since would otherwise report the old name with full
+        // confidence.
+        const [worktree] = buildWorktrees({
+            entries: [{ path: '/home/dev/w', branch: 'fix/lo-nuevo', detached: false }],
+            readStateFor: () => ({ branch: 'fix/lo-viejo' })
+        });
+
+        expect(worktree?.branch).toBe('fix/lo-nuevo');
+    });
+
+    it('should fall back to the state file only when git names no branch', () => {
+        const [worktree] = buildWorktrees({
+            entries: [{ path: '/home/dev/w', branch: '', detached: true }],
+            readStateFor: () => ({ branch: 'fix/lo-viejo' })
+        });
+
+        expect({ branch: worktree?.branch, detached: worktree?.detached }).toEqual({
+            branch: 'fix/lo-viejo',
+            detached: true
+        });
+    });
+
+    it('should leave the branch empty when neither source knows it', () => {
+        // Empty, never a placeholder: '(desconocida)' is a string that travels
+        // into `gh pr list --head` and comes back as "no hay PR".
+        const [worktree] = buildWorktrees({
+            entries: [{ path: '/home/dev/w', branch: '', detached: true }],
+            readStateFor: NO_STATE_FILE
+        });
+
+        expect(worktree?.branch).toBe('');
+    });
+
+    it('should mark only git’s first entry as the main clone', () => {
+        const built = buildWorktrees({
+            entries: [
+                { path: '/home/dev/hospeda2', branch: 'staging', detached: false },
+                { path: '/home/dev/hospeda-uno', branch: 'fix/uno', detached: false }
+            ],
+            readStateFor: NO_STATE_FILE
+        });
+
+        expect(built.map((w) => w.isMain)).toEqual([true, false]);
     });
 });
 

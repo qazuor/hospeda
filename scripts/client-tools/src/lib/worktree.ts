@@ -50,7 +50,8 @@ export interface WorktreeEnv {
     readonly servers: readonly WorktreeServer[];
 }
 
-interface RawState {
+/** A worktree's state file, as far as these commands read it. */
+export interface RawState {
     readonly branch?: string;
     readonly db?: string | null;
     readonly servers?: readonly { name?: string; port?: number; pid?: number }[];
@@ -140,8 +141,32 @@ export async function listWorktrees({
     });
     if (!listed.ok) return [];
 
-    return parseWorktreePorcelain({ stdout: listed.stdout }).map((entry, index) => {
-        const state = readState({ worktreePath: entry.path });
+    return buildWorktrees({
+        entries: parseWorktreePorcelain({ stdout: listed.stdout }),
+        readStateFor: (path) => readState({ worktreePath: path })
+    });
+}
+
+/**
+ * Combines git's view of the worktrees with each one's state file.
+ *
+ * Separated from {@link listWorktrees} so the precedence between the two
+ * sources is testable without a repository. It was NOT testable before, which
+ * is why a regression test for the branch bug passed with the bug put back.
+ *
+ * @param input.entries      - Worktrees as git reports them, in git's order.
+ * @param input.readStateFor - Reads one worktree's state file.
+ * @returns The worktrees these commands act on.
+ */
+export function buildWorktrees({
+    entries,
+    readStateFor
+}: {
+    readonly entries: readonly PorcelainWorktree[];
+    readonly readStateFor: (path: string) => RawState;
+}): readonly WorktreeEnv[] {
+    return entries.map((entry, index) => {
+        const state = readStateFor(entry.path);
         const servers = (state.servers ?? [])
             .filter((s) => typeof s.name === 'string' && typeof s.port === 'number')
             .map((s) => ({ name: s.name as string, port: s.port as number, pid: s.pid ?? 0 }));
