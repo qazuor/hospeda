@@ -573,6 +573,12 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  *   and are not sellable, so a trial has nothing to precede.
  * @param input.trialDays - Trial length in days when `hasTrial` is `true`.
  *   Defaults to `0`.
+ * @param input.extraEntitlements - Keys this TIER grants on top of the
+ *   vertical's uniform set (HOS-1058). Empty for every tier but premium. This
+ *   is the one door through which a tier may differ grantwise from its
+ *   siblings, and it is deliberately additive: a tier can add to the vertical's
+ *   set and can never subtract from it, so the "every tier of a vertical grants
+ *   its own pair" invariant above survives whatever is passed here.
  * @returns The tier's {@link PlanDefinition}.
  */
 function commerceVerticalTier(input: {
@@ -586,6 +592,7 @@ function commerceVerticalTier(input: {
     monthlyPriceArs: number;
     hasTrial?: boolean;
     trialDays?: number;
+    extraEntitlements?: readonly EntitlementKey[];
 }): PlanDefinition {
     return {
         slug: input.slug,
@@ -611,7 +618,16 @@ function commerceVerticalTier(input: {
         // Derived from the vertical rather than passed per tier, so all three
         // tiers of a vertical are grantwise identical by construction and a
         // seventh tier cannot be added with an empty set by omission.
-        entitlements: [...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[input.vertical]],
+        //
+        // HOS-1058 appends the tier's own keys AFTER the vertical's, never in
+        // place of them. A tier differentiator (the printable PDF ficha) cannot
+        // live in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the
+        // floor the gate reads from CODE for every tier at once, so putting a
+        // premium-only key there would hand it to básico as well.
+        entitlements: [
+            ...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[input.vertical],
+            ...(input.extraEntitlements ?? [])
+        ],
         limits: [limit(LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.maxListings)]
     };
 }
@@ -713,7 +729,11 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: false,
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-1058, and the first thing that separates this tier from básico by
+    // more than its name: the printable PDF ficha. Owner decision, 2026-09-01
+    // — premium, in both verticals.
+    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF]
 });
 
 /**
@@ -768,7 +788,11 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: false,
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-1058 — R-1: the two verticals are separate domains, so the same
+    // capability is granted to each vertical's premium plan on its own. There
+    // is no "commerce" plan to grant it once.
+    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF]
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */

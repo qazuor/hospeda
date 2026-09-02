@@ -43,6 +43,29 @@ export enum EntitlementKey {
     EDIT_EXPERIENCE_INFO = 'edit_experience_info',
     PUBLISH_EXPERIENCE = 'publish_experience',
 
+    /**
+     * The printable PDF ficha of a commerce listing (HOS-1058).
+     *
+     * ONE key for both verticals, where the four above are one pair per
+     * vertical — and the difference is not an inconsistency. Those four are
+     * asked on routes reached through
+     * `commerceVerticalEntitlementMiddleware(vertical)`, which REPLACES the
+     * request's entitlement set with the one resolved from the subscription of
+     * THAT vertical. A gastronomy owner's set is built from their gastronomy
+     * subscription and nothing else, so a single key cannot be satisfied by the
+     * other vertical's plan: the isolation lives in the loader, not in the
+     * spelling of the key.
+     *
+     * Unlike those four it is a TIER differentiator — premium, in both
+     * verticals (owner decision, 2026-09-01) — so it is deliberately NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, whose contract is "every tier of
+     * this vertical grants this". It is granted by the premium plan rows and
+     * reaches the gate through the union `resolveCommerceVerticalGrants`
+     * already performs over the subscribed plan's `entitlements` column — the
+     * path HOS-1074 called "how a future premium tier earns its name".
+     */
+    DOWNLOAD_LISTING_PDF = 'download_listing_pdf',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

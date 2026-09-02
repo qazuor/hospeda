@@ -29,8 +29,10 @@ import {
     DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
     EXPERIENCE_BASICO_PLAN,
     EXPERIENCE_PREMIUM_PLAN,
+    EXPERIENCE_PRO_PLAN,
     GASTRONOMY_BASICO_PLAN,
-    GASTRONOMY_PREMIUM_PLAN
+    GASTRONOMY_PREMIUM_PLAN,
+    GASTRONOMY_PRO_PLAN
 } from '../src/config/plans.config.js';
 import { COMMERCE_TRIAL_DAYS } from '../src/constants/billing.constants.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
@@ -82,10 +84,16 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(EXPERIENCE_BASICO_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
     });
 
-    it('hands the retired premium tier over unchanged in everything but its flag (HOS-818)', () => {
-        // The rename is only safe because the two tiers are indistinguishable to
-        // a payer. If they ever diverge, the swap stops being a no-op for the
-        // people already paying, and that has to fail loudly here.
+    it('hands the retired premium tier over losing nothing (HOS-818, amended by HOS-1058)', () => {
+        // HOS-818's swap of the sellable role from premium to básico is only
+        // safe if nobody already paying LOSES anything by it. That was
+        // originally asserted as "the two tiers are identical", and HOS-1058
+        // is the change that makes them differ for the first time: premium now
+        // grants the printable ficha and básico does not.
+        //
+        // So the invariant is restated as the direction that actually protects
+        // a payer — premium ⊇ básico — and everything commercial (price, cap,
+        // trial) stays byte-identical.
         for (const [basico, premium] of [
             [GASTRONOMY_BASICO_PLAN, GASTRONOMY_PREMIUM_PLAN],
             [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PREMIUM_PLAN]
@@ -93,13 +101,15 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
             expect(premium.isActive).toBe(false);
             expect(basico.monthlyPriceArs).toBe(premium.monthlyPriceArs);
             expect(basico.limits).toEqual(premium.limits);
-            expect(basico.entitlements).toEqual(premium.entitlements);
             expect(basico.hasTrial).toBe(premium.hasTrial);
             expect(basico.trialDays).toBe(premium.trialDays);
+            for (const key of basico.entitlements) {
+                expect(premium.entitlements).toContain(key);
+            }
         }
     });
 
-    it('grants its own vertical pair on ALL THREE tiers, and nothing else (HOS-1074)', () => {
+    it('grants its own vertical pair on ALL THREE tiers (HOS-1074)', () => {
         // Reversal of §6.8's `entitlements: []` (owner decision, 2026-09-01):
         // commerce now runs on the same entitlement mechanism accommodation
         // does, so the create route carries a real `requireEntitlement` ahead
@@ -110,14 +120,34 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // take editing away from the owners on it, and the gate would read as
         // a billing bug rather than as a catalogue one.
         for (const plan of ALL_GASTRONOMY_PLANS) {
-            expect([...plan.entitlements].sort()).toEqual(
-                [...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL.gastronomy].sort()
-            );
+            for (const key of ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL.gastronomy) {
+                expect(plan.entitlements).toContain(key);
+            }
         }
         for (const plan of ALL_EXPERIENCE_PLANS) {
-            expect([...plan.entitlements].sort()).toEqual(
-                [...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL.experience].sort()
-            );
+            for (const key of ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL.experience) {
+                expect(plan.entitlements).toContain(key);
+            }
+        }
+    });
+
+    it('grants the printable ficha on the PREMIUM tier of each vertical only (HOS-1058)', () => {
+        // The first commerce capability that is a tier differentiator rather
+        // than a vertical-wide one. Both halves are load-bearing and neither is
+        // sufficient alone: the positive half fails if the grant is dropped,
+        // the negative half fails if it is added to the vertical-wide map —
+        // which would hand a premium feature to every entry-plan owner while
+        // still looking, from the gate's side, exactly like it works.
+        expect(GASTRONOMY_PREMIUM_PLAN.entitlements).toContain(EntitlementKey.DOWNLOAD_LISTING_PDF);
+        expect(EXPERIENCE_PREMIUM_PLAN.entitlements).toContain(EntitlementKey.DOWNLOAD_LISTING_PDF);
+
+        for (const plan of [
+            GASTRONOMY_BASICO_PLAN,
+            GASTRONOMY_PRO_PLAN,
+            EXPERIENCE_BASICO_PLAN,
+            EXPERIENCE_PRO_PLAN
+        ]) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.DOWNLOAD_LISTING_PDF);
         }
     });
 
