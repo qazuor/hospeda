@@ -201,12 +201,25 @@ function classifyPriorSubscription(sub: PriorSubscription): PriorSubscriptionCla
  * `newStatus` — checking both catches the authorization transition itself and
  * the later cancel-from-authorized (or comp-revoke) event. A
  * `pending_provider` → `cancelled` row has neither, so it reads as
- * never-authorized and does NOT consume the trial. A cancelled row with NO
- * events (a data-integrity oddity — a real cancel always writes an event) reads
- * as never-authorized, the direction that fixes the bug.
+ * never-authorized and does NOT consume the trial. That is the HOS-230 fix and
+ * it is untouched.
+ *
+ * A cancelled row with NO events AT ALL is a different question, and since
+ * HOS-1012 it fails CLOSED: with an empty audit trail there is no evidence in
+ * either direction, and the two mistakes do not cost the same. Reading it as
+ * never-authorized hands a second free trial to someone who already paid and
+ * cancelled; reading it as consumed asks a real backout to talk to support.
+ * Measured on production the day this changed: zero `cancelled` rows existed at
+ * all, the three `trialing` rows (the real customers) all carry authorization
+ * evidence, and the only history-less rows were `comp` — which is exactly the
+ * hole this closes, since a comp is a direct DB insert that never writes an
+ * event and would silently become trial-eligible the moment it was cancelled.
+ * A real backout is unaffected: it writes its `pending_provider` → `cancelled`
+ * event and takes the branch above.
  *
  * @param subscriptionIds - The ids of the customer's `cancelled` subscriptions.
- * @returns `true` if at least one was ever authorized.
+ * @returns `true` if at least one was ever authorized, or has no history to
+ *   prove otherwise.
  */
 async function anyCancelledSubscriptionWasAuthorized(
     subscriptionIds: readonly string[]
@@ -214,11 +227,21 @@ async function anyCancelledSubscriptionWasAuthorized(
     const db = getDb();
     const events = await db
         .select({
+            subscriptionId: billingSubscriptionEvents.subscriptionId,
             previousStatus: billingSubscriptionEvents.previousStatus,
             newStatus: billingSubscriptionEvents.newStatus
         })
         .from(billingSubscriptionEvents)
         .where(inArray(billingSubscriptionEvents.subscriptionId, [...subscriptionIds]));
+
+    // Fail closed on an absent audit trail, per subscription and not across the
+    // whole set: one row having history says nothing about another that has
+    // none, and collapsing them would let a single well-audited cancellation
+    // vouch for a history-less one.
+    const withHistory = new Set(events.map((event) => event.subscriptionId));
+    if (subscriptionIds.some((id) => !withHistory.has(id))) {
+        return true;
+    }
 
     return events.some(
         (event) =>

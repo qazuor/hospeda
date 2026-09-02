@@ -58,6 +58,13 @@ const CUSTOMER_ID = '00000000-0000-4000-8000-000000000001';
 interface EventRow {
     readonly previousStatus: string | null;
     readonly newStatus: string | null;
+    /**
+     * Which subscription the event belongs to. The real select reads this
+     * column, because an absent audit trail now fails closed PER SUBSCRIPTION.
+     * Defaulted by {@link mockSubscriptionEvents} so the single-row tests below
+     * stay readable.
+     */
+    readonly subscriptionId?: string;
 }
 
 /**
@@ -76,11 +83,19 @@ function makeBilling(subscriptions: ReadonlyArray<Record<string, unknown>>): QZP
  * Point the mocked `getDb()` at a fake query chain that resolves the
  * `billing_subscription_events` select to the given rows.
  */
-function mockSubscriptionEvents(events: ReadonlyArray<EventRow>): void {
+function mockSubscriptionEvents(
+    events: ReadonlyArray<EventRow>,
+    defaultSubscriptionId = 'sub-1'
+): void {
+    const rows = events.map((event) => ({
+        subscriptionId: event.subscriptionId ?? defaultSubscriptionId,
+        previousStatus: event.previousStatus,
+        newStatus: event.newStatus
+    }));
     const chain = {
         select: vi.fn(() => chain),
         from: vi.fn(() => chain),
-        where: vi.fn(() => Promise.resolve(events))
+        where: vi.fn(() => Promise.resolve(rows))
     };
     vi.mocked(getDb).mockReturnValue(chain as never);
 }
@@ -284,7 +299,12 @@ describe('hasAnyPriorSubscription', () => {
         expect(getDb).toHaveBeenCalledOnce();
     });
 
-    it('returns false for a cancelled row with no event history at all (never authorized)', async () => {
+    // HOS-1012: INVERTED. An empty audit trail is not evidence of a backout, it
+    // is the absence of evidence, and the two possible mistakes do not cost the
+    // same: reading it as never-authorized hands a second free trial to someone
+    // who already paid and cancelled. The HOS-230 backout is unaffected — it
+    // writes its `pending_provider` -> `cancelled` event (the test above).
+    it('returns true for a cancelled row with no event history at all (fails closed)', async () => {
         mockSubscriptionEvents([]);
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
@@ -294,7 +314,29 @@ describe('hasAnyPriorSubscription', () => {
                 customerId: CUSTOMER_ID,
                 productDomain: ProductDomainEnum.ACCOMMODATION
             })
-        ).toBe(false);
+        ).toBe(true);
+    });
+
+    // The fail-closed decision is per subscription. A well-audited backout must
+    // not vouch for a second, history-less row: collapsing the two would let one
+    // documented cancellation re-open the trial for a row nothing is known
+    // about, which is the hole this whole branch exists to close.
+    it('fails closed on the history-less row even when a sibling row has a full trail', async () => {
+        mockSubscriptionEvents([
+            { subscriptionId: 'sub-1', previousStatus: 'pending_provider', newStatus: 'cancelled' }
+        ]);
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'cancelled' },
+            { id: 'sub-2', status: 'cancelled' }
+        ]);
+
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe(true);
     });
 
     // A comp (free-forever) grant later revoked (comp -> cancelled, SPEC-262
