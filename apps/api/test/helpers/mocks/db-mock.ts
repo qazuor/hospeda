@@ -261,6 +261,10 @@ export function createDbMock() {
         // Re-export drizzle-orm operators (commonly used)
         sql: vi.fn(),
         eq: vi.fn((a: string, b: unknown) => ({ type: 'eq', left: a, right: b })),
+        // HOS-1012 T-022: the trial supersede excludes the row being activated
+        // with `ne(id, activatedId)`; without this export the whole webhook
+        // activation path throws "No 'ne' export is defined on the @repo/db mock".
+        ne: vi.fn((a: string, b: unknown) => ({ type: 'ne', left: a, right: b })),
         and: vi.fn((...args: unknown[]) => ({ type: 'and', conditions: args })),
         or: vi.fn((...args: unknown[]) => ({ type: 'or', conditions: args })),
         ilike: vi.fn((a: string, b: string) => ({ type: 'ilike', column: a, pattern: b })),
