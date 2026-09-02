@@ -17,6 +17,8 @@ export {
     SortingParamsSchema,
     UuidSchema
 } from './base.schema.js';
+// Public amenity/feature projections shared by both commerce verticals (HOS-1072)
+export * from './commerce-catalog.schema.js';
 // Commerce listing publish-readiness ("complete") contract — single
 // canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
 export * from './commerce-completeness.js';

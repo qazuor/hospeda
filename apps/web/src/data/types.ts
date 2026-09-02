@@ -1109,6 +1109,17 @@ export interface GastronomyDetailData extends GastronomyCardData {
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
     readonly tags?: readonly string[];
+    /**
+     * Amenities the owner ticked, catalog-joined (HOS-1072).
+     *
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * twin: both verticals read the SAME `amenities` catalog as accommodations
+     * and render through the same `AmenitiesGrid`, so `name` carries the slug
+     * here too (SPEC-266). Empty when the payload carried none.
+     */
+    readonly amenities: readonly DetailAmenity[];
+    /** Features the owner ticked, catalog-joined (HOS-1072). Empty when none. */
+    readonly features: readonly DetailFeature[];
     /** FAQ items configured by the owner. */
     readonly faqs: readonly DetailFaq[];
     /** Public owner data from the users table JOIN. */
@@ -1292,6 +1303,17 @@ export interface ExperienceDetailData extends ExperienceCardData {
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
     readonly tags?: readonly string[];
+    /**
+     * Amenities the owner ticked, catalog-joined (HOS-1072).
+     *
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * twin: both verticals read the SAME `amenities` catalog as accommodations
+     * and render through the same `AmenitiesGrid`, so `name` carries the slug
+     * here too (SPEC-266). Empty when the payload carried none.
+     */
+    readonly amenities: readonly DetailAmenity[];
+    /** Features the owner ticked, catalog-joined (HOS-1072). Empty when none. */
+    readonly features: readonly DetailFeature[];
     /** FAQ items configured by the owner. */
     readonly faqs: readonly DetailFaq[];
     /** Public owner data from the users table JOIN. */
