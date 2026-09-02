@@ -90,8 +90,15 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
+    // HOS-1077: the two vertical owner roles reach the same commerce area.
+    // They do NOT hold `commerce.editOwn` — the SSR evaluator asks "does any
+    // held ROLE plausibly carry this permission", and for nav purposes the
+    // answer is yes: each holds its own vertical's `editOwn`. The per-listing
+    // authority is decided by the API, never by this map.
     [PermissionEnum.COMMERCE_EDIT_OWN]: new Set<RoleEnum>([
         RoleEnum.COMMERCE_OWNER,
+        RoleEnum.GASTRONOMY_OWNER,
+        RoleEnum.EXPERIENCE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
@@ -134,6 +141,12 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
     [PermissionEnum.BILLING_ADDON_PURCHASE]: new Set<RoleEnum>([
         RoleEnum.HOST,
         RoleEnum.COMMERCE_OWNER,
+        // HOS-1077: the vertical owner roles hold BILLING_ADDON_PURCHASE too
+        // (verified against `packages/seed/src/required/rolePermissions.seed.ts`,
+        // where their blocks carry it). Omitting them here would hide the add-on
+        // catalog from the very owners who buy `extra-gastronomies-1`.
+        RoleEnum.GASTRONOMY_OWNER,
+        RoleEnum.EXPERIENCE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ])

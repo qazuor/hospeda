@@ -71,10 +71,23 @@ const TOURIST_PLANS_PATH = 'suscriptores/planes/turistas';
  * Mirrored by `PERMISSION_ROLE_MAP[COMMERCE_EDIT_OWN]` in `nav-gating.ts`.
  *
  * Roles:
- * - COMMERCE_OWNER: merchant who owns one or more commerce listings.
+ * - COMMERCE_OWNER: merchant who owns one or more commerce listings. RETIRING
+ *   (HOS-1077) — kept here for the expand window, dropped in release 2.
+ * - GASTRONOMY_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
+ *   (HOS-1077). Both reach the same `/mi-cuenta/comercio` area; which listings
+ *   they can actually edit is decided per listing by the API, not by this set.
+ *   Listing them here is what stops an account holding ONLY a vertical role
+ *   from losing the nav — a set that named just `COMMERCE_OWNER` would send
+ *   the first gastronomy-only owner to an empty sidebar.
  * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
  */
-export const ROLES_WITH_COMMERCE_NAV = new Set<string>(['COMMERCE_OWNER', 'ADMIN', 'SUPER_ADMIN']);
+export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
+    'COMMERCE_OWNER',
+    'GASTRONOMY_OWNER',
+    'EXPERIENCE_OWNER',
+    'ADMIN',
+    'SUPER_ADMIN'
+]);
 
 /**
  * Resolves which subscription pricing page a role-aware upsell or redirect

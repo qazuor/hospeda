@@ -84,7 +84,9 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
     {
         id: 'web.commerce.welcome',
         version: 1,
-        roles: ['COMMERCE_OWNER'],
+        // HOS-1077: the commerce welcome tour belongs to every commerce owner,
+        // whichever hat they hold.
+        roles: ['COMMERCE_OWNER', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         trigger: 'auto-first-visit',
         steps: [
             {

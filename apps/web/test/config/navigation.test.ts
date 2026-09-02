@@ -513,7 +513,18 @@ describe('addons nav item (HOS-726)', () => {
         const roles = PERMISSION_ROLE_MAP[PermissionEnum.BILLING_ADDON_PURCHASE];
         expect(roles).toBeDefined();
         expect([...(roles ?? [])].sort()).toEqual(
-            [RoleEnum.ADMIN, RoleEnum.COMMERCE_OWNER, RoleEnum.HOST, RoleEnum.SUPER_ADMIN].sort()
+            [
+                RoleEnum.ADMIN,
+                RoleEnum.COMMERCE_OWNER,
+                // HOS-1077: the per-vertical owner roles hold
+                // BILLING_ADDON_PURCHASE in the seed too. Leaving them out of
+                // the map would hide the add-on catalog from exactly the owners
+                // who buy `extra-gastronomies-1`.
+                RoleEnum.GASTRONOMY_OWNER,
+                RoleEnum.EXPERIENCE_OWNER,
+                RoleEnum.HOST,
+                RoleEnum.SUPER_ADMIN
+            ].sort()
         );
         expect(roles?.has(RoleEnum.USER)).toBe(false);
     });
