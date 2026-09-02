@@ -131,6 +131,11 @@ el **exit code**, no el texto:
   conflicto, o un evento que GitHub dropeó. Se arregla redisparando, no debuggeando.
 - `4` **TIMEOUT**: seguían corriendo al llegar al techo (`--timeout=<min>`, default 30).
 
+`CI CORTADO` (exit 1) tampoco es un test roto: todos los checks fallados fueron
+cortados por el `timeout-minutes` del job o por un push que los reemplazó. Se
+re-corren; no se debuggean. Con una falla genuina en la mezcla vuelve a decir
+`ROJO`.
+
 `3` y `4` **NO son fallas**: son las dos formas de no saber. Reportar
 cualquiera de las dos como "el CI falló" manda a debuggear un rojo inexistente.
 No dice por qué falló (eso es diagnóstico aparte) ni si el PR se puede mergear

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { Check, PrStatus } from '../src/commands/ci/verdict.ts';
 import {
+    allFailuresInterrupted,
     decideStep,
     exitCodeFor,
     explainWaitOutcome,
@@ -317,6 +318,25 @@ describe('renderWaitHeadline', () => {
         expect(new Set(headlines).size).toBe(kinds.length);
     });
 
+    it('should not call a timed-out job a failing test, but still not call it green', () => {
+        const cut: WaitOutcome = {
+            kind: 'red',
+            status: makeStatus({
+                checks: [passed, { name: 'Integration Tests', outcome: 'failed', detail: 'CANCELLED' }]
+            }),
+            elapsedMs: 1_600_000,
+            polls: 9,
+            error: ''
+        };
+        const headline = renderWaitHeadline({ outcome: cut, branch: 'x' });
+
+        expect(headline).toContain('CI CORTADO');
+        expect(headline).not.toContain('ROJO');
+        // Softer wording, same gate: the checks are not green.
+        expect(exitCodeFor({ kind: cut.kind })).toBe(1);
+        expect(explainWaitOutcome({ outcome: cut })).toContain('no hay nada que debuggear');
+    });
+
     it('should name the branch when there is no PR to name', () => {
         expect(
             renderWaitHeadline({ outcome: outcomeOf('no-pr', null), branch: 'feat/algo' })
@@ -339,6 +359,28 @@ describe('explainWaitOutcome', () => {
                 outcome: { kind: 'green', status: null, elapsedMs: 0, polls: 1, error: '' }
             })
         ).toBeNull();
+    });
+});
+
+describe('allFailuresInterrupted', () => {
+    const cancelled: Check = { name: 'Integration Tests', outcome: 'failed', detail: 'CANCELLED' };
+    const timedOut: Check = { name: 'Build', outcome: 'failed', detail: 'TIMED_OUT' };
+
+    it('should recognise a run that was cut short rather than judged', () => {
+        // Measured on PR #3152: Integration Tests cancelled at 20m 17s against
+        // a 20-minute `timeout-minutes`. Nothing broke; the clock ran out.
+        expect(allFailuresInterrupted({ checks: [passed, cancelled, timedOut] })).toBe(true);
+    });
+
+    it('should still read as red when something genuinely failed too', () => {
+        // The soft headline is only for when there is nothing else to report.
+        // One real failure hiding behind two cancellations would be the exact
+        // fail-open this command exists to prevent.
+        expect(allFailuresInterrupted({ checks: [cancelled, failed] })).toBe(false);
+    });
+
+    it('should not soften a run where nothing failed at all', () => {
+        expect(allFailuresInterrupted({ checks: [passed, pending] })).toBe(false);
     });
 });
 

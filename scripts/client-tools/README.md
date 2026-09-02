@@ -51,9 +51,16 @@ hops ci --wait --timeout=15    # en minutos, entre 1 y 180
 | Código | Titular | Qué pasó |
 |---|---|---|
 | 0 | `VERDE` | Cerró y pasó |
-| 1 | `ROJO` / `EN CONFLICTO` / `SIN PR` / `NO PUDE CONSULTAR` | Cerró mal, o no se pudo preguntar |
+| 1 | `ROJO` / `CI CORTADO` / `EN CONFLICTO` / `SIN PR` / `NO PUDE CONSULTAR` | Cerró mal, o no se pudo preguntar |
 | 3 | `SIN ARRANCAR` | Cero checks en toda la espera: **no corrió nada** |
 | 4 | `TIMEOUT` | Seguían corriendo al llegar al techo |
+
+**`CI CORTADO` no es un test roto.** Sale cuando *todos* los checks fallados
+fueron cortados (`CANCELLED` / `TIMED_OUT`): el `timeout-minutes` del job, o un
+push nuevo que reemplazó el run. Bloquea el merge igual — los checks no están
+verdes — pero no hay nada que debuggear, se re-corren. Si además hay una falla
+real, el titular vuelve a ser `ROJO`: un fallo genuino nunca se esconde detrás
+de una cancelación.
 
 **3 y 4 no son fallas.** Son las dos formas de no saber, y tienen código propio
 justamente para que no se confundan con una falla: si `TIMEOUT` saliera 1,

@@ -1,5 +1,5 @@
 import pc from 'picocolors';
-import { type PrStatus, overallVerdict, type Verdict } from './verdict.ts';
+import { type Check, overallVerdict, type PrStatus, type Verdict } from './verdict.ts';
 
 /**
  * How a wait ended.
@@ -202,6 +202,34 @@ export async function waitForVerdict({
     }
 }
 
+/** Conclusions that mean a job was cut short rather than judged. */
+const INTERRUPTED = new Set(['CANCELLED', 'TIMED_OUT']);
+
+/**
+ * Whether every failing check was cut short rather than actually failing.
+ *
+ * A job killed by its `timeout-minutes`, or cancelled because a newer push
+ * superseded it, is not a broken test. It still blocks a merge — the checks are
+ * not green — but calling it "ROJO" sends the reader hunting for a failure that
+ * does not exist. Measured on PR #3152: `Integration Tests` was cancelled at
+ * exactly 20m 17s against a 20-minute ceiling, and the headline read as a test
+ * breaking.
+ *
+ * A single genuine failure alongside cancelled ones still reads as red: the
+ * softer headline is only for when there is nothing else to report.
+ *
+ * @param input.checks - Every classified check.
+ * @returns `true` when checks failed and all of them were interrupted.
+ */
+export function allFailuresInterrupted({
+    checks
+}: {
+    readonly checks: readonly Check[];
+}): boolean {
+    const failed = checks.filter((check) => check.outcome === 'failed');
+    return failed.length > 0 && failed.every((check) => INTERRUPTED.has(check.detail));
+}
+
 /** What the flags asked for. */
 export interface WaitOptions {
     /** Whether to block until the checks settle. */
@@ -302,8 +330,11 @@ export function renderWaitHeadline({
         return `${pc.green('VERDE')}  ${pc.dim(`${pr} · ${checks} checks · ${elapsed}`)}`;
     }
     if (outcome.kind === 'red') {
-        const failed = outcome.status?.checks.filter((c) => c.outcome === 'failed').length ?? 0;
-        return `${pc.red('ROJO')}  ${pc.dim(`${pr} · ${failed} fallando de ${checks} · ${elapsed}`)}`;
+        const failing = outcome.status?.checks.filter((c) => c.outcome === 'failed') ?? [];
+        if (allFailuresInterrupted({ checks: outcome.status?.checks ?? [] })) {
+            return `${pc.yellow('CI CORTADO')}  ${pc.dim(`${pr} · ${failing.length} cortados de ${checks} · ${elapsed}`)}`;
+        }
+        return `${pc.red('ROJO')}  ${pc.dim(`${pr} · ${failing.length} fallando de ${checks} · ${elapsed}`)}`;
     }
     if (outcome.kind === 'conflict') {
         return `${pc.red('EN CONFLICTO')}  ${pc.dim(`${pr} · ${elapsed}`)}`;
@@ -349,6 +380,15 @@ export function explainWaitOutcome({
     }
     if (outcome.kind === 'conflict') {
         return 'El PR tiene conflictos, así que GitHub no dispara los workflows: los checks que ves son de un push anterior.';
+    }
+    if (
+        outcome.kind === 'red' &&
+        allFailuresInterrupted({ checks: outcome.status?.checks ?? [] })
+    ) {
+        return (
+            'Ningún test falló: los jobs se cortaron (timeout del job, o un push nuevo que los reemplazó). ' +
+            'Bloquea el merge igual, pero no hay nada que debuggear — se re-corren.'
+        );
     }
     return null;
 }
