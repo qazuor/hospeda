@@ -101,6 +101,28 @@ const SERIES = [
 /** The five win-backs, which OQ-1 constrains. */
 const WIN_BACKS = SERIES.slice(4);
 
+// ---------------------------------------------------------------------------
+// The two content checks, as named predicates
+// ---------------------------------------------------------------------------
+//
+// Extracted from the assertions that use them for ONE reason: so the positive
+// control at the bottom of this file can feed them a synthetic series in which
+// one template's copy WAS pasted into another, and prove they report it.
+//
+// A guard that has only ever been observed passing has not been shown to be
+// capable of failing. That is exactly the shape G-4 exists to prevent in the
+// templates themselves, and it applies to the guard just as much.
+
+/** How many of these renders are distinct. Equals the length when all differ. */
+function distinctRenderCount(rendered: readonly string[]): number {
+    return new Set(rendered).size;
+}
+
+/** How many renders contain this phrase. Must be exactly 1 for a fingerprint. */
+function fingerprintOwners(rendered: readonly string[], fingerprint: string): number {
+    return rendered.filter((html) => html.includes(fingerprint)).length;
+}
+
 describe('the nine trial-series email templates (HOS-1012)', () => {
     it('all nine render without throwing', () => {
         for (const send of SERIES) {
@@ -120,7 +142,7 @@ describe('the nine trial-series email templates (HOS-1012)', () => {
         // Literal reuse of a whole template, given identical props, produces
         // identical markup — this is what catches it.
         const rendered = SERIES.map((send) => send.render());
-        expect(new Set(rendered).size).toBe(SERIES.length);
+        expect(distinctRenderCount(rendered)).toBe(SERIES.length);
     });
 
     it('every send says something none of the other eight says', () => {
@@ -129,8 +151,7 @@ describe('the nine trial-series email templates (HOS-1012)', () => {
         const rendered = SERIES.map((send) => send.render());
 
         for (const [index, send] of SERIES.entries()) {
-            const owners = rendered.filter((html) => html.includes(send.fingerprint));
-            expect(owners.length, `${send.name} fingerprint ownership`).toBe(1);
+            expect(fingerprintOwners(rendered, send.fingerprint), `${send.name} ownership`).toBe(1);
             expect(rendered[index], send.name).toContain(send.fingerprint);
         }
     });
@@ -191,5 +212,61 @@ describe('the nine trial-series email templates (HOS-1012)', () => {
         // A series that simply stops leaves the host waiting for the next mail.
         const last = renderToStaticMarkup(TrialWinBack60Days(props));
         expect(last).toContain('último mail');
+    });
+});
+
+describe('G-4: the guard itself can fail (HOS-1012 T-025)', () => {
+    // The positive control. Everything above reports that the nine templates
+    // differ today; none of it shows that the checks are CAPABLE of reporting
+    // that they do not. A guard only ever observed passing is indistinguishable
+    // from a guard that cannot fail — which is the same silence G-4 exists to
+    // break in the templates.
+    //
+    // So: take the real nine, paste one template's copy over another the way a
+    // careless copy-paste would, and assert that each check catches it.
+
+    /** The nine real renders, with `victim` replaced by a copy of `source`. */
+    function seriesWithCopyPaste(sourceIndex: number, victimIndex: number): string[] {
+        const rendered = SERIES.map((send) => send.render());
+        rendered[victimIndex] = rendered[sourceIndex] as string;
+        return rendered;
+    }
+
+    it('the uniqueness check catches a whole template pasted over another', () => {
+        // The crude failure: someone duplicates trial-ending-5d.tsx as
+        // trial-ending-1d.tsx and forgets to rewrite the body.
+        const tampered = seriesWithCopyPaste(1, 2);
+
+        expect(distinctRenderCount(tampered)).toBe(SERIES.length - 1);
+        expect(distinctRenderCount(tampered)).not.toBe(SERIES.length);
+    });
+
+    it('the ownership check catches copy shared by two sends', () => {
+        // The subtler failure, and the one the uniqueness check alone misses:
+        // the two renders still differ (a heading was changed) but a phrase
+        // that should belong to exactly one send now appears in two.
+        const rendered = SERIES.map((send) => send.render());
+        const victim = SERIES[4];
+        const source = SERIES[5];
+        if (!victim || !source) throw new Error('fixture out of range');
+
+        const tampered = [...rendered];
+        // Append the +5 fingerprint to the +1 render: the two are still
+        // different strings, so uniqueness stays satisfied.
+        tampered[4] = `${rendered[4]}<p>${source.fingerprint}</p>`;
+
+        expect(distinctRenderCount(tampered)).toBe(SERIES.length);
+        expect(fingerprintOwners(tampered, source.fingerprint)).toBe(2);
+        expect(fingerprintOwners(tampered, source.fingerprint)).not.toBe(1);
+    });
+
+    it('the promo-code ban catches a commercial hook added to a win-back', () => {
+        // OQ-1 is still open, so this one guards a standing decision rather
+        // than a style preference: no win-back may offer a discount.
+        const banned =
+            /descuento|cup[oó]n|promoci[oó]n|c[oó]digo\s+(de\s+)?(promo|descuento)|promo\s*code|bonificaci[oó]n|oferta\s+especial/i;
+        const tampered = `${WIN_BACKS[0]?.render()}<p>Te dejamos un 20% de descuento</p>`;
+
+        expect(tampered).toMatch(banned);
     });
 });
