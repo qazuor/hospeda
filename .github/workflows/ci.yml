@@ -272,6 +272,8 @@ jobs:
       # asking for one; the guard below is what enforces that.
       - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
         run: bash scripts/check-no-trial-to-mercadopago.sh
+      - name: Check no binary vertical ternary remains (HOS-1079)
+        run: bash scripts/check-no-binary-vertical-ternary.sh
       - name: Check server code does no local-timezone date math (HOS-1010)
         run: bash scripts/check-local-date-math.sh
       - name: Check for disabled tests (.only/.skip)
