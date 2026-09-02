@@ -95,7 +95,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.EDIT_GASTRONOMY_INFO,
             EntitlementKey.PUBLISH_GASTRONOMY,
             EntitlementKey.EDIT_EXPERIENCE_INFO,
-            EntitlementKey.PUBLISH_EXPERIENCE
+            EntitlementKey.PUBLISH_EXPERIENCE,
+            // HOS-1058 — the one commerce key that is NOT uniform across a
+            // vertical's tiers: only each vertical's premium plan grants it,
+            // which is exactly why an operator needs it as a tickable box here.
+            EntitlementKey.DOWNLOAD_LISTING_PDF
         ]
     }
 ];
