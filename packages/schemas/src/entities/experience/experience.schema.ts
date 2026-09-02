@@ -50,6 +50,8 @@ export type ExperienceId = z.infer<typeof ExperienceIdSchema>;
  * - `priceFrom` — starting price in integer centavos (0 = free / on_request)
  * - `priceUnit` — billing unit (per_day / per_hour / per_person / per_group)
  * - `isPriceOnRequest` — when true, hides priceFrom and shows "Consultar precio"
+ * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
+ *   experience starts (HOS-1048); ficha data, never entitlement-gated.
  * - `hasActiveSubscription` — denormalized flag driven by the binary subscription
  *   lifecycle hook from the SPEC-239 core; controls public visibility.
  *
@@ -109,6 +111,50 @@ export const ExperienceSchema = z.object({
      * Store `priceFrom = 0` alongside this flag to avoid confusion.
      */
     isPriceOnRequest: z.boolean().default(false),
+
+    /**
+     * Where the experience starts — the address or the landmark the traveller
+     * has to show up at (HOS-1048).
+     *
+     * Free text, because many meeting points in the region are a reference
+     * rather than a street number ("muelle 3 del puerto", "la rotonda de
+     * acceso"). Nullish: a listing may not have declared one yet.
+     *
+     * NOT entitlement-gated — it is ficha data, present from the basic tier and
+     * published on the public tier. The MAP that draws it and the how-to-get-
+     * there instructions are the paid half (HOS-1049).
+     */
+    meetingPoint: z
+        .string()
+        .max(300, { message: 'zodError.experience.meetingPoint.max' })
+        .nullish(),
+
+    /**
+     * Latitude of the meeting point in decimal degrees (WGS84).
+     *
+     * Plain number matching the `double precision` column, following the
+     * `points_of_interest` precedent (HOS-138) rather than the JSONB/string
+     * coordinate shape `accommodations` and `destinations` use.
+     *
+     * Nullish and independent of {@link meetingPoint}: an owner may describe the
+     * spot in words and never pin it. Null is "no coordinate", not an error.
+     */
+    meetingPointLat: z
+        .number()
+        .min(-90, { message: 'zodError.experience.meetingPointLat.min' })
+        .max(90, { message: 'zodError.experience.meetingPointLat.max' })
+        .nullish(),
+
+    /**
+     * Longitude of the meeting point in decimal degrees (WGS84). Key named
+     * `long` (not `lng`) for consistency with `points_of_interest` and with
+     * `@repo/db`'s `geo.ts` helpers. See {@link meetingPointLat}.
+     */
+    meetingPointLong: z
+        .number()
+        .min(-180, { message: 'zodError.experience.meetingPointLong.min' })
+        .max(180, { message: 'zodError.experience.meetingPointLong.max' })
+        .nullish(),
 
     /**
      * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.
