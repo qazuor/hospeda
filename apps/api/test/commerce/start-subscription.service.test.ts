@@ -210,7 +210,7 @@ const URLS = {
 const BASE_INPUT = {
     customerId: CUSTOMER_ID,
     planSlug: PLAN_SLUG,
-    entityType: 'gastronomy',
+    entityType: 'gastronomy' as const,
     entityId: ENTITY_ID,
     urls: URLS
 };

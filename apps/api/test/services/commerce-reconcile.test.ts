@@ -243,6 +243,37 @@ describe('reconcileCommerceListingForSubscription — double-click orphan', () =
         expect(state.inserts[0]?.values.productDomain).toBe(ProductDomainEnum.EXPERIENCE);
     });
 
+    it('does NOT silently treat an unrecognized commerceEntityType as experience (HOS-1079)', async () => {
+        // Arrange — corrupted/foreign metadata: an entityType that is neither
+        // 'gastronomy' nor 'experience'. Before HOS-1079 the binary ternary
+        // computing `productDomain` silently answered
+        // `ProductDomainEnum.EXPERIENCE` for any value that was not literally
+        // 'gastronomy' — 'accommodation' included.
+        state.linkRows = [];
+        state.holderRows = [
+            { subscriptionId: SUB_B, status: SubscriptionStatusEnum.PENDING_PROVIDER }
+        ];
+        state.subscriptionRows = [
+            { metadata: { commerceEntityType: 'accommodation', commerceEntityId: ENTITY_ID } }
+        ];
+
+        // Act
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        });
+
+        // Assert — the recovery is refused rather than mislabeled: nothing
+        // written, nothing reconciled. The function's own non-throwing
+        // contract catches the guard's throw and logs it instead of leaking
+        // it to the caller (mirrors the "does NOT touch" cases below).
+        expect(state.inserts).toHaveLength(0);
+        expect(state.conflicts).toHaveLength(0);
+        expect(reconcileVisibilityMock).not.toHaveBeenCalled();
+        expect(loggerMock.error).toHaveBeenCalled();
+    });
+
     it('recovers a trialing subscription too, not only an active one', async () => {
         // Arrange
         state.linkRows = [];

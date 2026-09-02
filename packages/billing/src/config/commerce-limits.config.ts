@@ -25,6 +25,17 @@
  * 'experience') { require approval }`. A `Record<domain, LimitKey>` lookup is
  * explicitly NOT that, and AC-7 says so: it is one code path reading a
  * different value.
+ *
+ * A FOURTH question joined these three (HOS-1079): given only a
+ * `CommerceVertical` — no `LimitKey` in hand yet — which product domain does
+ * it map to? {@link commerceVerticalToProductDomain} answers it by composing
+ * the two exhaustive maps above rather than restating the
+ * gastronomy/experience associations a third time: `LIMIT_KEY_BY_COMMERCE_VERTICAL`
+ * turns the vertical into its `LimitKey`, then `PRODUCT_DOMAIN_BY_LIMIT_KEY`
+ * turns that into the domain. It replaced five copies, across `apps/api`, of
+ * a `vertical === 'gastronomy' ? GASTRONOMY : EXPERIENCE` ternary that
+ * silently answered `EXPERIENCE` for any other value — `'accommodation'`
+ * included.
  * ---
  *
  * @module config/commerce-limits
@@ -152,4 +163,57 @@ export function productDomainForLimitKey(
  */
 export function isCommerceVerticalLimitKey(limitKey: LimitKey | string): boolean {
     return COMMERCE_VERTICAL_LIMIT_KEYS.has(limitKey as LimitKey);
+}
+
+/**
+ * Resolves the billing product domain of a commerce vertical.
+ *
+ * Replaces the `vertical === 'gastronomy' ? ProductDomainEnum.GASTRONOMY :
+ * ProductDomainEnum.EXPERIENCE` ternary that used to be copied at five call
+ * sites across `apps/api` (HOS-1079). That ternary type-checked cleanly
+ * everywhere it was fed an already-narrow {@link CommerceVertical}, but
+ * carried no defense of its own: nothing stopped a future caller from
+ * widening the parameter to a bare `string` and silently inheriting "anything
+ * that is not gastronomy is experience".
+ *
+ * Deliberately does NOT restate the gastronomy/experience → domain
+ * associations in a map of its own (that would be a second copy of the same
+ * fact {@link PRODUCT_DOMAIN_BY_LIMIT_KEY} already holds — HOS-1078's own
+ * fix for exactly that kind of drift). Instead it composes the two existing
+ * exhaustive maps: {@link LIMIT_KEY_BY_COMMERCE_VERTICAL} turns the vertical
+ * into its `LimitKey`, and {@link PRODUCT_DOMAIN_BY_LIMIT_KEY} turns that
+ * into the domain. Both indexes are total over their key type, so — unlike
+ * {@link productDomainForLimitKey}'s `LimitKey | string` input — the result
+ * here is never `undefined`.
+ *
+ * @param vertical - The commerce vertical.
+ * @returns Its `billing_subscriptions.product_domain` value.
+ */
+export function commerceVerticalToProductDomain(vertical: CommerceVertical): ProductDomainValue {
+    return PRODUCT_DOMAIN_BY_LIMIT_KEY[LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical]];
+}
+
+/**
+ * Narrows an unchecked string to a {@link CommerceVertical}, throwing for
+ * anything else.
+ *
+ * One call site receives a commerce vertical as a raw, unchecked `string`
+ * rather than an already-narrowed type: `commerce-reconcile.service.ts`
+ * reading it back off a subscription's JSONB `metadata` column. Feeding that
+ * straight into the binary ternary {@link commerceVerticalToProductDomain}
+ * replaced meant an `'accommodation'` value — or plain metadata corruption —
+ * was silently answered as `'experience'` (HOS-1079). This is the guard that
+ * was missing.
+ *
+ * @param value - The unchecked value to narrow.
+ * @param context - A short label identifying the caller, folded into the
+ *   thrown error so a failure is traceable back to its call site.
+ * @returns `value`, narrowed to {@link CommerceVertical}.
+ * @throws {Error} When `value` is not `'gastronomy'` or `'experience'`.
+ */
+export function parseCommerceVertical(value: string, context: string): CommerceVertical {
+    if (value === 'gastronomy' || value === 'experience') {
+        return value;
+    }
+    throw new Error(`${context}: unsupported commerce vertical '${value}'`);
 }

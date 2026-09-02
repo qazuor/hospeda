@@ -75,7 +75,28 @@ async function countOwnListings(input: {
     actor: Actor;
 }): Promise<number | null> {
     const { vertical, actor } = input;
-    const service = vertical === 'gastronomy' ? gastronomyService : experienceService;
+
+    // HOS-1079: an exhaustive switch, not a binary ternary — `vertical` is
+    // typed `CommerceVertical` (exactly 'gastronomy' | 'experience'), so the
+    // `default` throw is defense-in-depth against a future widening of that
+    // type, not a reachable path today.
+    let service: GastronomyService | ExperienceService;
+    switch (vertical) {
+        case 'gastronomy':
+            service = gastronomyService;
+            break;
+        case 'experience':
+            service = experienceService;
+            break;
+        default: {
+            const exhaustiveCheck: never = vertical;
+            apiLogger.error(
+                { vertical: exhaustiveCheck },
+                'countOwnListings: unsupported commerce vertical'
+            );
+            return null;
+        }
+    }
 
     // Type assertion mirrors `enforceAccommodationLimit`: BaseCrudService.count()
     // takes z.infer<TSearchSchema> and TypeScript cannot narrow the generic at

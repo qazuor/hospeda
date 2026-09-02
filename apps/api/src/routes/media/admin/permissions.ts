@@ -107,12 +107,25 @@ export const validateEntityMediaPermission = ({
     }
 
     // For OWN/ANY entities: if actor has ANY variant, skip ownership check.
-    const anyPermission =
-        entityType === 'accommodation'
-            ? PermissionEnum.ACCOMMODATION_UPDATE_ANY
-            : entityType === 'gastronomy' || entityType === 'experience'
-              ? PermissionEnum.COMMERCE_EDIT_ALL
-              : null;
+    //
+    // HOS-1079: an exhaustive switch, not a binary ternary. Reached only for
+    // `entityType` values already confirmed to be in `OWN_ANY_ENTITIES` (the
+    // guard above), i.e. exactly {accommodation, gastronomy, experience} — so
+    // `null` here is a defensive, never-actually-hit fallback for any OTHER
+    // `MediaEntityType`, matching the ownership-required behaviour every
+    // non-OWN/ANY entity already gets.
+    let anyPermission: PermissionEnum | null;
+    switch (entityType) {
+        case 'accommodation':
+            anyPermission = PermissionEnum.ACCOMMODATION_UPDATE_ANY;
+            break;
+        case 'gastronomy':
+        case 'experience':
+            anyPermission = PermissionEnum.COMMERCE_EDIT_ALL;
+            break;
+        default:
+            anyPermission = null;
+    }
 
     if (anyPermission && actor.permissions.includes(anyPermission)) {
         return { allowed: true };
