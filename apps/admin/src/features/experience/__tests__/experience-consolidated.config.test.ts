@@ -4,8 +4,9 @@
  * Unit tests for the experience consolidated entity config (SPEC-240 T-032).
  *
  * Covers:
- *  - Four sections are returned in the correct order (identity, specific,
- *    meeting point, operational) — the third arrived with HOS-1048
+ *  - Five sections are returned in the correct order (identity, specific,
+ *    meeting point, practical details, operational) — the third arrived with
+ *    HOS-1048 and the fourth with HOS-898/1047/1056
  *  - Experience-specific section contains required fields (type, priceFrom, priceUnit, isPriceOnRequest)
  *  - type field has SELECT options for all ExperienceTypeEnum values
  *  - priceUnit field has SELECT options for all billing units
@@ -19,8 +20,9 @@
  * required by AC-4.1 (SPEC-240).
  */
 
-import { ExperienceTypeEnum } from '@repo/schemas';
+import { ExperienceTypeEnum, MAX_EXPERIENCE_DURATION_MINUTES, PermissionEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { createExperienceConsolidatedConfig } from '../config/experience-consolidated.config';
 
 // ---------------------------------------------------------------------------
@@ -35,12 +37,13 @@ const t = (key: string) => key;
 // ---------------------------------------------------------------------------
 
 describe('createExperienceConsolidatedConfig — sections', () => {
-    // 3 → 4 with HOS-1048's meeting-point section. The count stays frozen on
-    // purpose: it is what makes a section silently dropped — or a second one
-    // silently added — fail here rather than on an operator's screen.
-    it('should return exactly 4 sections', () => {
+    // 3 → 4 with HOS-1048's meeting-point section, 4 → 5 with the
+    // practical-details one (HOS-898 / HOS-1047 / HOS-1056). The count stays
+    // frozen on purpose: it is what makes a section silently dropped — or a
+    // second one silently added — fail here rather than on an operator's screen.
+    it('should return exactly 5 sections', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections).toHaveLength(4);
+        expect(config.sections).toHaveLength(5);
     });
 
     it('should have commerce-identity as the first section', () => {
@@ -58,9 +61,14 @@ describe('createExperienceConsolidatedConfig — sections', () => {
         expect(config.sections[2]?.id).toBe('experience-meeting-point');
     });
 
+    it('should have experience-practical-details as the fourth section', () => {
+        const config = createExperienceConsolidatedConfig(t as never);
+        expect(config.sections[3]?.id).toBe('experience-practical-details');
+    });
+
     it('should have commerce-operational as the last section', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections[3]?.id).toBe('commerce-operational');
+        expect(config.sections[4]?.id).toBe('commerce-operational');
     });
 });
 
@@ -228,5 +236,77 @@ describe('createExperienceConsolidatedConfig — metadata', () => {
         const tMock = vi.fn((key: string) => key);
         createExperienceConsolidatedConfig(tMock as never);
         expect(tMock).toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-898 / HOS-1047 / HOS-1056 — practical details
+// ---------------------------------------------------------------------------
+
+describe('createExperienceConsolidatedConfig — practical-details section', () => {
+    function getPracticalDetailsSection() {
+        const config = createExperienceConsolidatedConfig(t as never);
+        return config.sections.find((section) => section.id === 'experience-practical-details');
+    }
+
+    it('should expose durationMinutes, cancellationPolicy and acceptsPrivateGroups', () => {
+        const section = getPracticalDetailsSection();
+        const ids = section?.fields.map((field) => field.id);
+
+        expect(ids).toEqual(['durationMinutes', 'cancellationPolicy', 'acceptsPrivateGroups']);
+    });
+
+    it('should NOT expose the two text[] checklists', () => {
+        // Not an oversight: this form system has no string-list control, and a
+        // TEXTAREA bound to a `string[]` submits a string the owner-update
+        // schema rejects. Both lists are edited from the owner editor. This
+        // assertion is what turns a future "just add a TEXTAREA" into a red
+        // test instead of a validation error on an operator's screen.
+        const ids = getPracticalDetailsSection()?.fields.map((field) => field.id) ?? [];
+
+        expect(ids).not.toContain('whatToBring');
+        expect(ids).not.toContain('requirements');
+    });
+
+    it('should keep every field optional', () => {
+        // All four issues are ficha data an owner fills in over time; requiring
+        // any of them would block staff from saving an existing listing.
+        const section = getPracticalDetailsSection();
+
+        expect(section?.fields.every((field) => field.required === false)).toBe(true);
+    });
+
+    it('should bound the duration to whole minutes within the schema cap', () => {
+        const duration = getPracticalDetailsSection()?.fields.find(
+            (field) => field.id === 'durationMinutes'
+        );
+
+        expect(duration?.type).toBe(FieldTypeEnum.NUMBER);
+        // Read from the schema constant rather than restated: a literal here
+        // would keep passing after the schema raised or lowered the cap, and
+        // the form would silently accept a value the API rejects.
+        expect(duration?.typeConfig).toMatchObject({
+            min: 1,
+            max: MAX_EXPERIENCE_DURATION_MINUTES,
+            step: 1
+        });
+    });
+
+    it('should render the private-groups flag as a switch, not a text input', () => {
+        const flag = getPracticalDetailsSection()?.fields.find(
+            (field) => field.id === 'acceptsPrivateGroups'
+        );
+
+        expect(flag?.type).toBe(FieldTypeEnum.SWITCH);
+    });
+
+    it('should carry ordinary commerce permissions and NO entitlement gate', () => {
+        // Owner decision (2026-09-01): all of this ships from the basic tier.
+        // The HOS-974 audit found three entitlements granted and demanded by no
+        // route; a key per ficha field manufactures exactly that problem.
+        const section = getPracticalDetailsSection();
+
+        expect(section?.permissions?.view).toEqual([PermissionEnum.COMMERCE_VIEW_ALL]);
+        expect(section?.permissions?.edit).toEqual([PermissionEnum.COMMERCE_EDIT_ALL]);
     });
 });

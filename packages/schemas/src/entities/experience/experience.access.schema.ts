@@ -111,6 +111,21 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     meetingPointLat: true,
     meetingPointLong: true,
 
+    // Practical ficha data (HOS-898 / HOS-1046 / HOS-1047 / HOS-1056). All four
+    // are PUBLIC and none is entitlement-gated — owner decision (2026-09-01):
+    // they ship from the basic tier.
+    //
+    // Their presence HERE is the whole point of the exercise. HOS-924 measured
+    // the opposite case: a field the write validator accepts but this schema
+    // omits gets dropped by `stripWithSchema` on the way out, so it is saved,
+    // never shown, and nothing anywhere reports an error. A field added to the
+    // editor and forgotten here would repeat that bug exactly.
+    durationMinutes: true,
+    whatToBring: true,
+    requirements: true,
+    cancellationPolicy: true,
+    acceptsPrivateGroups: true,
+
     // Subscription visibility gate
     hasActiveSubscription: true,
 
@@ -262,6 +277,15 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     meetingPoint: true,
     meetingPointLat: true,
     meetingPointLong: true,
+    // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056: owner-editable, so they must
+    // round-trip to the owner editor for the same reason the meeting point
+    // does — a field the form cannot read back re-opens blank and the next save
+    // clears it silently.
+    durationMinutes: true,
+    whatToBring: true,
+    requirements: true,
+    cancellationPolicy: true,
+    acceptsPrivateGroups: true,
 
     // Protected: ownership
     ownerId: true,

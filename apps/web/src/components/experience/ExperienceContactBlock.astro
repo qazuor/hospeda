@@ -61,6 +61,10 @@ import type { ExperienceContactInfo } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import {
+    EXPERIENCE_CONTACT_ANCHOR_ID,
+    hasPublicContactChannel
+} from '@/lib/experience-contact';
 
 interface Props {
     readonly contactInfo: ExperienceContactInfo | null;
@@ -107,14 +111,20 @@ const phones = [
 
 // Render nothing rather than an empty card — the three seeded experience
 // listings have an empty `contact_info` (noted on HOS-815).
-if (phones.length === 0 && !workEmail && !websiteHref) {
+//
+// The decision is delegated to `hasPublicContactChannel` (HOS-1056) because the
+// private-groups CTA is an ANCHOR into this block: the same predicate has to
+// decide whether the block exists and whether that link is real, or the two
+// drift into an anchor pointing at an element that is not on the page — silent,
+// with no error and no visible symptom.
+if (!hasPublicContactChannel({ contactInfo })) {
     return;
 }
 
 const heading = t('experience.detail.contact', 'Contacto');
 ---
 
-<section class="exp-contact" aria-label={heading}>
+<section class="exp-contact" id={EXPERIENCE_CONTACT_ANCHOR_ID} aria-label={heading}>
     <h3 class="exp-contact__title">{heading}</h3>
 
     <div class="exp-contact__channels">

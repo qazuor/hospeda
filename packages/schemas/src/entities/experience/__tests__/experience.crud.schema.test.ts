@@ -734,3 +734,91 @@ describe('ExperienceOwnerUpdateInputSchema — meeting point (HOS-1048)', () => 
         }
     });
 });
+
+// ============================================================================
+// HOS-898 / HOS-1046 / HOS-1047 / HOS-1056 — the owner writes the practical data
+// ============================================================================
+
+/**
+ * The write side of the four practical ficha fields.
+ *
+ * These parse the real `ExperienceOwnerUpdateInputSchema` — the exact schema
+ * `PATCH /api/v1/protected/experiences/:id` validates its body against. A field
+ * missing there is stripped in silence and the PATCH still answers 200, so
+ * asserting on the parsed OUTPUT (never on `success` alone) is what makes the
+ * assertions mean anything.
+ */
+describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
+    it('should accept all four fields in one patch', () => {
+        // Arrange
+        const input = {
+            durationMinutes: 150,
+            whatToBring: ['Repelente', 'Calzado cerrado'],
+            requirements: ['Edad mínima 12 años'],
+            cancellationPolicy: 'Si hay alerta de viento reprogramamos sin cargo.',
+            acceptsPrivateGroups: true
+        };
+
+        // Act
+        const result = ExperienceOwnerUpdateInputSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.durationMinutes).toBe(150);
+        expect(result.data.whatToBring).toEqual(['Repelente', 'Calzado cerrado']);
+        expect(result.data.requirements).toEqual(['Edad mínima 12 años']);
+        expect(result.data.cancellationPolicy).toBe(
+            'Si hay alerta de viento reprogramamos sin cargo.'
+        );
+        expect(result.data.acceptsPrivateGroups).toBe(true);
+    });
+
+    it('should treat an omitted key as "no change", injecting no defaults', () => {
+        // `stripShapeDefaults` is what makes this true: without it, Zod 4's
+        // `.partial()` keeps the `.default([])` on the checklists and every
+        // unrelated PATCH would silently wipe both lists on the row.
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({ durationMinutes: 60 });
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.whatToBring).toBeUndefined();
+        expect(result.data.requirements).toBeUndefined();
+        expect(result.data.acceptsPrivateGroups).toBeUndefined();
+    });
+
+    it('should accept an empty array as the way to CLEAR a checklist', () => {
+        // Distinct from the case above: `[]` is present and means "remove every
+        // item", while an absent key means "leave them alone".
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({ whatToBring: [] });
+
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.whatToBring).toEqual([]);
+    });
+
+    it('should accept an explicit null, which is how the editor clears the text fields', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            durationMinutes: null,
+            cancellationPolicy: null
+        });
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.durationMinutes).toBeNull();
+        expect(result.data.cancellationPolicy).toBeNull();
+    });
+
+    it('should reject a duration in fractional minutes', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({ durationMinutes: 90.5 });
+
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject a cancellation policy past the column contract', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            cancellationPolicy: 'x'.repeat(1501)
+        });
+
+        expect(result.success).toBe(false);
+    });
+});

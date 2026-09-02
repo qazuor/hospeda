@@ -25,10 +25,11 @@
  */
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { StarIcon, LocationIcon } from '@repo/icons';
+import { StarIcon, LocationIcon, ClockIcon } from '@repo/icons';
 import type { ExperienceDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { formatDurationMinutes } from '@/lib/experience-duration';
 import ExperiencePriceTag from './ExperiencePriceTag.astro';
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 
@@ -52,6 +53,22 @@ const { t, tPlural } = createTranslations(locale);
 const typeLabel = t(`experience.type.${experience.type}`, experience.type);
 
 const fullStars = Math.floor(experience.averageRating);
+
+/**
+ * HOS-898. `null` when the owner declared no duration, which is also what the
+ * formatter returns for a zero or corrupt value — so the single presence check
+ * in the markup is the whole gate. The unit words are resolved here rather than
+ * inside the formatter, which stays pure.
+ */
+const durationLabel = formatDurationMinutes({
+    totalMinutes: experience.durationMinutes,
+    labels: {
+        day: t('experience.detail.duration.dayShort', 'd'),
+        hour: t('experience.detail.duration.hourShort', 'h'),
+        minute: t('experience.detail.duration.minuteShort', 'min')
+    },
+    locale
+});
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = experience.createdAt
@@ -91,7 +108,12 @@ const isNew = experience.createdAt
                 </div>
             )}
 
-            <!-- Pricing -->
+            <!-- Pricing, and the duration beside it (HOS-898). Duration sits
+                 HERE and not in a section further down because it is one of the
+                 two facts that decide whether an excursion fits somebody's day,
+                 and the other one is the price. Renders nothing when the owner
+                 never declared it, and carries no entitlement check — this is
+                 ficha data from the basic tier. -->
             <div class="exp-hero__pricing wh-compact-hide">
                 <ExperiencePriceTag
                     priceFrom={experience.priceFrom}
@@ -99,6 +121,12 @@ const isNew = experience.createdAt
                     isPriceOnRequest={experience.isPriceOnRequest}
                     locale={locale}
                 />
+                {durationLabel && (
+                    <span class="exp-hero__duration">
+                        <ClockIcon size={14} aria-hidden="true" />
+                        <span>{durationLabel}</span>
+                    </span>
+                )}
             </div>
 
             {experience.averageRating > 0 && (
@@ -249,10 +277,28 @@ const isNew = experience.createdAt
     .exp-hero__pricing {
         display: flex;
         align-items: center;
+        /* HOS-898: the duration chip sits beside the price tag, so the row now
+           needs a gap and has to be allowed to wrap on a narrow screen. It
+           still collapses with the rest of `.exp-hero__pricing` in compact
+           mode — the duration hides with the price, which is right, because the
+           two answer the same question together. */
+        flex-wrap: wrap;
+        gap: 10px;
         overflow: hidden;
         max-height: 3em;
         opacity: 1;
         transition: max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), opacity 0.3s ease;
+    }
+
+    .exp-hero__duration {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--core-foreground);
+        opacity: 0.85;
     }
 
     .exp-hero__rating {

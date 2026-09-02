@@ -210,6 +210,10 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
  *   experience starts (HOS-1048; ficha data, no entitlement)
+ * - `durationMinutes` — how long it lasts (HOS-898; ficha data, no entitlement)
+ * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
+ * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
+ * - `acceptsPrivateGroups` — the group-enquiry toggle (HOS-1056)
  * - `amenityIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  * - `featureIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  *
@@ -247,6 +251,15 @@ export const ExperienceOwnerUpdateInputSchema = z
                 meetingPoint: true,
                 meetingPointLat: true,
                 meetingPointLong: true,
+                // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056: the four practical
+                // ficha fields. Owner-declared, like the meeting point, and
+                // like it carrying NO entitlement — they sit with the other
+                // operational fields rather than behind a gate.
+                durationMinutes: true,
+                whatToBring: true,
+                requirements: true,
+                cancellationPolicy: true,
+                acceptsPrivateGroups: true,
                 richDescription: true,
                 nameI18n: true,
                 summaryI18n: true,
