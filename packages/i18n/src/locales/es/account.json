@@ -724,7 +724,7 @@
             "cancelModal": {
                 "title": "Cancelar suscripción",
                 "emailSubject": "Cancelación de suscripción",
-                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
+                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
                 "contactSupport": "Escribir a soporte",
                 "confirm": "Sí, cancelar suscripción",
                 "description": "Al cancelar tu suscripción mantenés el acceso a tu plan hasta el final del período actual. No se realizarán más cobros.",

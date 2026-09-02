@@ -251,7 +251,7 @@ function EmptyState({
 }
 
 /** Support email shown in the cancel-instructions modal. Matches footer.contactEmail. */
-const SUPPORT_EMAIL = 'info@hospeda.com';
+const SUPPORT_EMAIL = 'info@hospeda.com.ar';
 
 /** Possible UI states for the cancel modal flow. */
 type CancelModalStep = 'confirm' | 'success' | 'flag_off';

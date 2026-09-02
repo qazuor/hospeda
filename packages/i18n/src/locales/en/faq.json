@@ -146,11 +146,11 @@
             "items": {
                 "writeArticle": {
                     "question": "I want to pitch an article, how do I do it?",
-                    "answer": "Email info@hospeda.com with the idea (topic, angle, approximate length) and a few previous samples if you have them. If it fits the editorial line we'll get back to you to coordinate and publish it under your name."
+                    "answer": "Email info@hospeda.com.ar with the idea (topic, angle, approximate length) and a few previous samples if you have them. If it fits the editorial line we'll get back to you to coordinate and publish it under your name."
                 },
                 "submitPhotos": {
                     "question": "Can you publish photos I've taken in the area?",
-                    "answer": "Yes, we accept photographs of landscapes, parties, food and local life. We always credit the author and, depending on the case, build a dedicated article or gallery. Send samples to info@hospeda.com."
+                    "answer": "Yes, we accept photographs of landscapes, parties, food and local life. We always credit the author and, depending on the case, build a dedicated article or gallery. Send samples to info@hospeda.com.ar."
                 },
                 "submitEvent": {
                     "question": "How do I submit an event or activity?",
@@ -182,7 +182,7 @@
             "items": {
                 "advertise": {
                     "question": "How can I advertise on Hospeda?",
-                    "answer": "We have formats for brands, institutions and local businesses: home banners, sponsored content, destination features, newsletter presence and section sponsorships. Email partners@hospeda.com with your goal and we'll put together a proposal."
+                    "answer": "We have formats for brands, institutions and local businesses: home banners, sponsored content, destination features, newsletter presence and section sponsorships. Email partners@hospeda.com.ar with your goal and we'll put together a proposal."
                 },
                 "formats": {
                     "question": "What banner or sponsored content formats do you offer?",
@@ -202,7 +202,7 @@
                 },
                 "commercialContact": {
                     "question": "Who do I contact for commercial matters?",
-                    "answer": "Email partners@hospeda.com or use the Contact page selecting \"Commercial inquiry\". We respond within 48 business hours with an initial proposal."
+                    "answer": "Email partners@hospeda.com.ar or use the Contact page selecting \"Commercial inquiry\". We respond within 48 business hours with an initial proposal."
                 },
                 "minBudget": {
                     "question": "Do you have a minimum advertising budget?",
@@ -250,7 +250,7 @@
             "items": {
                 "channels": {
                     "question": "What are the contact channels?",
-                    "answer": "Email (info@hospeda.com), WhatsApp, phone and the contact form on the site. For commercial matters: partners@hospeda.com. Check the Contact page for full details."
+                    "answer": "Email (info@hospeda.com.ar), WhatsApp, phone and the contact form on the site. For commercial matters: partners@hospeda.com.ar. Check the Contact page for full details."
                 },
                 "hours": {
                     "question": "What are your hours?",
@@ -270,7 +270,7 @@
                 },
                 "press": {
                     "question": "What if I'm from press or media?",
-                    "answer": "Email info@hospeda.com with subject \"Press\" or use the contact form. We connect you with the right area and share the press kit with materials for distribution."
+                    "answer": "Email info@hospeda.com.ar with subject \"Press\" or use the contact form. We connect you with the right area and share the press kit with materials for distribution."
                 }
             }
         }

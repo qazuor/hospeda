@@ -7,7 +7,7 @@
     "subtitle": "Tem alguma dúvida ou sugestão? Preencha o formulário e responderemos em breve.",
     "email": {
         "label": "Email",
-        "value": "info@hospeda.com"
+        "value": "info@hospeda.com.ar"
     },
     "phone": {
         "label": "Telefone",
@@ -84,7 +84,7 @@
         },
         "email": {
             "label": "Email",
-            "value": "info@hospeda.com"
+            "value": "info@hospeda.com.ar"
         }
     },
     "channels": {
