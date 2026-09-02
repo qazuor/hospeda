@@ -265,7 +265,8 @@
                 "accommodation": "Alojamiento",
                 "complex": "Complejo",
                 "tourist": "Turista",
-                "ai": "Inteligencia artificial"
+                "ai": "Inteligencia artificial",
+                "commerce": "Comercio"
             },
             "cancelButton": "Cancelar",
             "saveButton": "Guardar cambios",

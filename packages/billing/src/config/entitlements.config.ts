@@ -243,5 +243,35 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'AI accommodation import',
         description:
             'Access to AI-powered accommodation import that extracts structured listing data from an external URL to pre-fill the creation form'
+    },
+    // Commerce vertical entitlements (HOS-1074).
+    //
+    // Appended as their OWN trailing section rather than folded into the owner
+    // block above: `test/entitlements.test.ts` slices this array by category and
+    // asserts each slice's length, so putting a commerce key inside the owner
+    // run would silently move an accommodation key out of its own count.
+    //
+    // See `EntitlementKey`'s doc for why these are four new keys rather than a
+    // reuse of the accommodation pair, and `commerce-entitlements.config.ts`
+    // for which vertical grants which.
+    {
+        key: EntitlementKey.EDIT_GASTRONOMY_INFO,
+        name: 'Edit gastronomy info',
+        description: 'Allows editing the information of owned gastronomy listings'
+    },
+    {
+        key: EntitlementKey.PUBLISH_GASTRONOMY,
+        name: 'Publish gastronomy listings',
+        description: 'Allows publishing gastronomy listings on the platform'
+    },
+    {
+        key: EntitlementKey.EDIT_EXPERIENCE_INFO,
+        name: 'Edit experience info',
+        description: 'Allows editing the information of owned experience listings'
+    },
+    {
+        key: EntitlementKey.PUBLISH_EXPERIENCE,
+        name: 'Publish experience listings',
+        description: 'Allows publishing experience listings on the platform'
     }
 ];
