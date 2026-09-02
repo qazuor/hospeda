@@ -8,7 +8,9 @@
  * Path C — no preapproval is created server-side):
  *   - resolves/provisions the MercadoPago `preapproval_plan`,
  *   - materializes a `pending_provider` subscription + its correlation row,
- *     stamped `billing_subscriptions.product_domain = 'commerce'` (D3),
+ *     stamped `billing_subscriptions.product_domain` with the listing's OWN
+ *     vertical (`'gastronomy'` / `'experience'`), never the retired
+ *     `'commerce'` umbrella (D3, narrowed by HOS-695),
  *   - upserts the `commerce_listing_subscriptions` link row (D4),
  *   - returns MercadoPago's hosted share link as the checkout URL.
  *
