@@ -1218,7 +1218,9 @@
         "093-feature-outdoor_activity.json",
         "094-feature-pregnancy_safe.json",
         "095-feature-private_available.json",
-        "096-feature-senior_friendly.json"
+        "096-feature-senior_friendly.json",
+        "097-feature-lactose_free_options.json",
+        "098-feature-nut_free_options.json"
     ],
     "sponsorshipLevels": [
         "001-level-event-bronze.json",

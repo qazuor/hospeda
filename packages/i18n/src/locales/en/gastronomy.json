@@ -13,6 +13,7 @@
         "type": "Establishment type",
         "priceRange": "Price range",
         "featured": "Featured only",
+        "features": "Dietary options and features",
         "minRating": "Minimum rating",
         "sort": {
             "featured": "Featured first",

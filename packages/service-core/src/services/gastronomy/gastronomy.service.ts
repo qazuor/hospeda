@@ -30,6 +30,7 @@
 
 import {
     AmenityModel,
+    buildGastronomyCatalogConditions,
     FeatureModel,
     type GastronomyMediaModel,
     type GastronomyModel,
@@ -415,11 +416,17 @@ export class GastronomyService extends BaseCommerceListingService<
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
      * `ownerId`, `isFeatured`.
      *
-     * NOTE: `amenities` / `features` (array filters requiring junction-table
-     * JOINs) and `minRating` / `maxRating` are stripped here and NOT applied —
-     * they require a custom SQL query that the current `GastronomyModel.findAll`
-     * does not support.  Junction-level and rating range filtering is tracked as
-     * a follow-up task for the search route layer.
+     * `amenities` / `features` are junction-table filters and are applied as
+     * `additionalConditions` built by `@repo/db`'s
+     * `buildGastronomyCatalogConditions` (HOS-1054). They are what backs the
+     * public "apto" filter — sin TACC, vegano, sin lactosa and the rest are
+     * `features` catalog rows, so filtering by apto IS filtering by feature.
+     * Semantics are intersection: two aptos selected means the listing must
+     * declare BOTH.
+     *
+     * NOTE: `minRating` / `maxRating` are still stripped here and NOT applied —
+     * they read a derived aggregate the current model query does not expose,
+     * and remain a follow-up.
      *
      * @param params - Validated search parameters from `GastronomySearchSchema`.
      * @param _actor - The actor performing the action (public path; unused).
@@ -436,14 +443,16 @@ export class GastronomyService extends BaseCommerceListingService<
             pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            amenities: _amenities,
-            features: _features,
+            amenities,
+            features,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
             includeFeatures: _includeFeatures,
             ...scalarFilters
         } = params;
+
+        const catalogConditions = buildGastronomyCatalogConditions({ amenities, features });
 
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force visibility=PUBLIC + lifecycleState=ACTIVE AFTER
@@ -471,7 +480,10 @@ export class GastronomyService extends BaseCommerceListingService<
                 sortBy: ctx?.pagination?.sortBy,
                 sortOrder: ctx?.pagination?.sortOrder
             },
-            undefined,
+            // `undefined` rather than an empty array when no catalog filter is
+            // active: the base query builder branches on presence, and handing it
+            // `[]` would be a second, needless shape to reason about.
+            catalogConditions.length > 0 ? catalogConditions : undefined,
             ctx?.tx
         );
         return result as unknown as PaginatedListOutput<Gastronomy>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
@@ -495,14 +507,20 @@ export class GastronomyService extends BaseCommerceListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            amenities: _amenities,
-            features: _features,
+            amenities,
+            features,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
             includeFeatures: _includeFeatures,
             ...scalarFilters
         } = params;
+
+        // Mirror _executeSearch, INCLUDING the catalog conditions: a count that
+        // ignored the apto filter would report a total for a different result set
+        // than the one being paginated, so page 2 of "sin TACC" would exist and be
+        // empty.
+        const catalogConditions = buildGastronomyCatalogConditions({ amenities, features });
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
@@ -513,7 +531,7 @@ export class GastronomyService extends BaseCommerceListingService<
                 visibility: VisibilityEnum.PUBLIC,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             },
-            { tx: ctx?.tx }
+            { additionalConditions: catalogConditions, tx: ctx?.tx }
         );
         return { count };
     }
