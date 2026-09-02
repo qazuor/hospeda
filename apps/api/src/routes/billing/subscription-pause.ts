@@ -33,6 +33,7 @@ import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
+import { recordPauseProviderRefusal } from '../../services/billing/pause-refusal-audit';
 import { setOwnerServiceSuspension } from '../../services/subscription-pause.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -62,10 +63,11 @@ function resolveBillingContext(c: Parameters<SimpleRouteInterface['handler']>[0]
  * Handler for the self-serve pause. Pauses the caller's active (or trialing)
  * subscription and applies the full service suspension.
  *
- * Annual one-time subscriptions do not have a MercadoPago preapproval to pause,
- * so attempting to pause them would silently do nothing on the billing side while
- * leaving the user in a misleading state. We reject with a clear error instead
- * (SPEC-194 T-023).
+ * A subscription with no MercadoPago preapproval has nothing to pause on the
+ * billing side, so pausing it would suspend the owner's listings while changing
+ * nothing about their charges. Those are rejected with a clear error
+ * (SPEC-194 T-023, re-aimed at the real condition by HOS-995 — the interval was
+ * never it).
  */
 export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['handler']>[0]) => {
     const { billing, billingCustomerId } = resolveBillingContext(c);
@@ -96,42 +98,84 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
     }
 
     // Precedence note (HOS-246): the soft-cancel guard above runs BEFORE this
-    // annual guard. So a subscription that is BOTH annual AND scheduled for
-    // cancellation surfaces the 409 cancellation-scheduled error, never this
-    // 400 annual error — that is deliberate: "you already cancelled" is the
-    // dominant, user-facing reason and applies regardless of interval. The
-    // annual guard only fires for a still-live (non-cancelling) annual sub.
+    // one. So a subscription that is BOTH unpausable-for-lack-of-preapproval AND
+    // scheduled for cancellation surfaces the 409 cancellation-scheduled error,
+    // never this 400 — that is deliberate: "you already cancelled" is the
+    // dominant, user-facing reason and applies regardless of anything else.
     //
-    // HOS-995: the reason this guard was originally written is GONE. It used to
-    // say annual subscriptions were "backed by a single MP payment, not a
-    // recurring preapproval", so there was nothing to pause. HOS-171 (card-first)
-    // retired that: an annual subscription IS a recurring preapproval today, at
-    // qzpay's 'annual' cadence (MP `frequency: 12, frequency_type: 'months'`),
-    // and `create-annual-subscription.ts` was deleted. There is a preapproval,
-    // and it has a pause endpoint.
+    // HOS-995: this used to reject on `metadata.billingInterval === 'annual'`,
+    // justified by "annual subscriptions are backed by a single MP payment, not
+    // a recurring preapproval, so there is nothing to pause". HOS-171
+    // (card-first) retired that premise outright — an annual subscription IS a
+    // recurring preapproval today, at qzpay's 'annual' cadence (MP
+    // `frequency: 12, frequency_type: 'months'`), and `create-annual-subscription.ts`
+    // was deleted. The refusal outlived its reason, on a button the web
+    // dashboard offers to annual subscribers anyway (`canPause` in
+    // `SubscriptionDashboard.client.tsx` never looked at the interval), so an
+    // annual host clicking Pause got a 400 naming an architecture that no longer
+    // exists.
     //
-    // The guard stays anyway, for a different and narrower reason: nobody has
-    // yet verified against the MercadoPago sandbox that pause/resume actually
-    // behave on an annual preapproval. Until that experiment runs, refusing with
-    // a clear message beats forwarding the call and surfacing whatever MP
-    // answers as a raw provider error.
+    // What replaces it is the condition the old guard was reaching for and
+    // missed: **there is no preapproval to pause**. That is a property of the
+    // row, not of the interval. It catches the legacy annual one-time rows the
+    // old comment described, and equally a Hospeda-owned trial or any other
+    // pre-HOS-171 leftover carrying no `mercadopago` provider id — all of which
+    // the interval check waved straight through. Pausing one of those suspends
+    // the owner's listings while changing nothing on the billing side, which is
+    // exactly the misleading state the original guard set out to prevent.
     //
-    // When the experiment runs: if pause works, this guard should either go away
-    // or be narrowed to `mp_subscription_id IS NULL` — which is the real "there
-    // is nothing to pause" condition, and has nothing to do with the interval.
-    // If it does not work, keep the guard and record what MP answered here.
-    //
-    // This also blocks verifying a courtesy gift of a full year (spec HOS-180,
-    // risk R-9), since a courtesy is a paused preapproval.
-    if (target.metadata?.billingInterval === 'annual') {
+    // Still NOT verified: that MercadoPago's pause endpoint behaves the same on
+    // a twelve-month preapproval as on a one-month one. That is a manual sandbox
+    // observation (see `status-needs-smoke-staging` on HOS-995), not something
+    // this route can assert. What the route does instead is guarantee the
+    // failure mode — see the try/catch below.
+    if (!target.providerSubscriptionIds?.mercadopago) {
         throw new HTTPException(400, {
-            message: 'PAUSE_NOT_SUPPORTED_FOR_ANNUAL: Annual subscriptions cannot be paused'
+            message:
+                'PAUSE_NO_PREAPPROVAL: This subscription has no MercadoPago preapproval to pause, ' +
+                'so pausing it would suspend your listings without stopping any billing'
         });
     }
 
     // 1. Billing dimension: qzpay pauses the MP preapproval and flips the local
     //    status (no charges during the pause).
-    const paused = await billing.subscriptions.pause(target.id);
+    //
+    //    Wrapped so the failure is BOTH fail-closed and observable (HOS-995).
+    //    Fail-closed it already was — throwing here skips the service suspension
+    //    and the audit row below, so a pause MercadoPago refused never
+    //    half-lands. What was missing is that the refusal left no trace beyond a
+    //    log line, and an uncaught provider error surfaced as an opaque 500. Now
+    //    it is a durable row carrying the interval and MP's own message, plus a
+    //    typed 502 that names the provider as the cause.
+    let paused: Awaited<ReturnType<typeof billing.subscriptions.pause>>;
+    try {
+        paused = await billing.subscriptions.pause(target.id);
+    } catch (error) {
+        await recordPauseProviderRefusal({
+            subscriptionId: target.id,
+            triggerSource: 'host-pause',
+            billingInterval:
+                typeof target.metadata?.billingInterval === 'string'
+                    ? target.metadata.billingInterval
+                    : null,
+            error
+        });
+        apiLogger.error(
+            {
+                subscriptionId: target.id,
+                customerId: billingCustomerId,
+                userId: actor.id,
+                billingInterval: target.metadata?.billingInterval,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Host self-pause: MercadoPago refused the pause, nothing was changed'
+        );
+        throw new HTTPException(502, {
+            message:
+                'PAUSE_PROVIDER_REFUSED: MercadoPago refused to pause this subscription. ' +
+                'Nothing was changed; your listings are still online and billing continues.'
+        });
+    }
 
     // 2. Service dimension: a self-pause is always full, so suspend the owner's
     //    listings. actor.id is the owner user id (billing_customers.external_id).
