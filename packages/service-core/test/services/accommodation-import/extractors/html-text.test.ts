@@ -88,6 +88,57 @@ describe('stripHtmlToParagraphText', () => {
         expect(result).not.toContain('Titulo SEO');
     });
 
+    it('does not anchor the body-scope on a <head> comment that mentions "<body>" (HOS-1029)', () => {
+        // Arrange — the exact case measured in staging: a <head> comment whose
+        // prose mentions "<body>" AND contains a stray ">" inside its text.
+        // Before the fix, BODY_CONTENT_RE matched the literal "<body>" INSIDE
+        // this comment (not the real <body> tag below), so extraction started
+        // inside the head, and the generic tag-strip regex — which stops at
+        // the first ">" — left the comment's own text, including the closing
+        // "-->", as literal output.
+        const html =
+            '<html><head>' +
+            '<title>Casa Rio | Alquiler</title>' +
+            '<!-- TICKET-1234: from <body> it would sit after the islands rendered ' +
+            'above it, see also step > 2 in the runbook -->' +
+            '</head>' +
+            '<body><nav><a href="/">Inicio</a></nav>' +
+            '<main><p>La casa tiene pileta y parrilla.</p></main>' +
+            '</body></html>';
+
+        // Act
+        const result = stripHtmlToParagraphText({ html, maxChars: 1000 });
+
+        // Assert — only the real body content survives.
+        expect(result).toBe('La casa tiene pileta y parrilla.');
+        expect(result).not.toContain('-->');
+        expect(result).not.toContain('TICKET-1234');
+        expect(result).not.toContain('runbook');
+        expect(result).not.toContain('Casa Rio');
+    });
+
+    it('does not leak page chrome when the triggering head comment is absent (HOS-1029 control)', () => {
+        // Arrange — same markup as the case above, MINUS the <head> comment,
+        // to isolate whether the chrome leak was a side effect of the bad
+        // body-scope anchor or a defect of PAGE_CHROME_RE itself.
+        const html =
+            '<html><head>' +
+            '<title>Casa Rio | Alquiler</title>' +
+            '</head>' +
+            '<body><nav><a href="/">Inicio</a></nav>' +
+            '<main><p>La casa tiene pileta y parrilla.</p></main>' +
+            '</body></html>';
+
+        // Act
+        const result = stripHtmlToParagraphText({ html, maxChars: 1000 });
+
+        // Assert — with the scope anchored correctly, the chrome filter alone
+        // removes the <nav>. If this fails, PAGE_CHROME_RE has an independent
+        // defect that the comment-stripping fix does not cover.
+        expect(result).toBe('La casa tiene pileta y parrilla.');
+        expect(result).not.toContain('Inicio');
+    });
+
     it('strips <head> when the markup has no <body> element', () => {
         // Arrange
         const html = '<html><head><title>Titulo</title></head><p>Contenido suelto.</p></html>';
@@ -189,6 +240,19 @@ describe('stripHtmlToText (unchanged flattening behaviour)', () => {
         // Assert — the AI prompt path must keep collapsing everything.
         expect(result).toBe('Primera parte. Segunda parte.');
         expect(result).not.toContain('\n');
+    });
+
+    it('does not leak a comment containing ">" into the output (HOS-1029)', () => {
+        // Arrange
+        const html = '<html><body><!-- internal note: step > 2 --><p>Visible.</p></body></html>';
+
+        // Act
+        const result = stripHtmlToText({ html, maxChars: 1000 });
+
+        // Assert
+        expect(result).toBe('Visible.');
+        expect(result).not.toContain('-->');
+        expect(result).not.toContain('internal note');
     });
 });
 
