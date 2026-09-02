@@ -91,6 +91,8 @@ export async function moderateText(input: ModerateTextInput): Promise<Moderation
         score: result.score,
         categories: result.categories,
         matchedTerms: result.matchedTerms,
-        degraded: result.source === 'degraded'
+        // Read, not recomputed from `source`: two derivations of the same fact
+        // can drift, and this is the one consumers get.
+        degraded: result.degraded
     };
 }
