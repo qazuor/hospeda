@@ -51,6 +51,9 @@
         "social": "Redes sociais",
         "amenities": {
             "title": "Serviços e comodidades"
+        },
+        "meetingPoint": {
+            "title": "Ponto de encontro"
         }
     },
     "type": {

@@ -9,6 +9,7 @@ import type {
 import { relations } from 'drizzle-orm';
 import {
     boolean,
+    doublePrecision,
     index,
     integer,
     jsonb,
@@ -87,6 +88,44 @@ export const experiences = pgTable(
          * Store priceFrom = 0 alongside this flag.
          */
         isPriceOnRequest: boolean('is_price_on_request').notNull().default(false),
+        /**
+         * Where the experience starts — the address or the landmark the traveller
+         * has to show up at (HOS-1048).
+         *
+         * Neither `destinationId` nor `contactInfo` could answer this: the first
+         * is the CITY (it lists and filters, it does not tell anyone where to
+         * stand), and the second is the provider's own phone and mail. Before
+         * this column `experiences` carried no address and no coordinate at all.
+         *
+         * Free text on purpose: many meeting points in the region are a landmark
+         * rather than a street number ("muelle 3 del puerto", "la rotonda de
+         * acceso"), and a structured address would force the owner to invent a
+         * street for a place that has none.
+         *
+         * NOT gated by any entitlement — this is ficha data, available from the
+         * basic tier. Only the MAP that draws it and the how-to-get-there
+         * instructions are the paid half of the feature (HOS-1049).
+         */
+        meetingPoint: text('meeting_point'),
+        /**
+         * Latitude of the meeting point in decimal degrees (WGS84), nullable.
+         *
+         * Plain `double precision` following the `points_of_interest` precedent
+         * (HOS-138) — deliberately NOT the JSONB/string coordinate shape
+         * `accommodations` and `destinations` use, which costs a `::numeric`
+         * cast at every read and invites the `long`/`lng` confusion.
+         *
+         * Null means "no coordinate", not an error: an owner may describe the
+         * meeting point in words and never pin it. Consumers must render the
+         * text on its own in that case.
+         */
+        meetingPointLat: doublePrecision('meeting_point_lat'),
+        /**
+         * Longitude of the meeting point in decimal degrees (WGS84), nullable.
+         * Named `long` (not `lng`) for consistency with `@repo/db`'s `geo.ts`
+         * helpers and with `points_of_interest`. See {@link meetingPointLat}.
+         */
+        meetingPointLong: doublePrecision('meeting_point_long'),
         /**
          * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.
          * When false, the experience is hidden from public listing and detail pages.

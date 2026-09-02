@@ -19,6 +19,7 @@
  *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
  *   T-014 structured fields (openingHours)
  *   T-014 price group (gastronomy: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   HOS-1048 meeting point (experience only: meetingPoint + optional lat/long)
  *   T-015 media gallery
  *   T-016 amenities / features
  */
@@ -67,6 +68,7 @@ import {
     OPENING_HOURS_AGGREGATE_FIELDS
 } from './editor/field-ids';
 import { MediaSection } from './editor/MediaSection.client';
+import { MeetingPointSection } from './editor/MeetingPointSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
@@ -155,6 +157,17 @@ function strField(source: Record<string, unknown>, key: string): string {
     return typeof value === 'string' ? value : '';
 }
 
+/**
+ * Read a nullable numeric field as `number | null` (HOS-1048).
+ *
+ * Deliberately NOT `Number(value) || null`: a persisted `0` is a legitimate
+ * coordinate and the falsy check would erase it into "no pin".
+ */
+function numField(source: Record<string, unknown>, key: string): number | null {
+    const value = source[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 /** Drop empty-string entries, mapping them to undefined for the payload. */
 function nonEmpty(value: string): string | undefined {
     return value || undefined;
@@ -197,6 +210,10 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *    — the old omit-instead-of-null rule (T-021) meant the owner could never
  *    actually clear a unit once set. Experience's `priceFrom` is still NOT
  *    nullable and keeps omitting the key.
+ *  - Experience's three `meetingPoint*` fields (HOS-1048) follow the `priceUnit`
+ *    rule, not the `priceFrom` one: all three are `.nullish()`, so clearing one
+ *    sends an explicit `null`. They ship only on the experience branch, because
+ *    they exist only on `ExperienceOwnerUpdateInputSchema`.
  *  - `media` is absent by design (HOS-372): photos are persisted per operation
  *    by `MediaSection` against the relational media endpoints, so re-sending a
  *    buffered `media` block here would overwrite the rows the owner just saved.
@@ -301,6 +318,21 @@ function buildPatchPayload({
             // silently dropped the change and the stale unit stayed on the row.
             payload.priceUnit = current.priceUnit || null;
         }
+        // HOS-1048: the meeting point clears to an explicit `null`, like the
+        // gastronomy price fields and unlike `priceFrom`. The column is nullable
+        // and the schema is `.nullish()`, so `null` is the only way to say "I
+        // removed the address I had" — omitting the key would mean "no change"
+        // and the stale meeting point would survive the save silently, which is
+        // exactly the bug H-156 had to fix for `priceUnit`.
+        if (current.meetingPoint !== baseline.meetingPoint) {
+            payload.meetingPoint = current.meetingPoint || null;
+        }
+        if (current.meetingPointLat !== baseline.meetingPointLat) {
+            payload.meetingPointLat = current.meetingPointLat;
+        }
+        if (current.meetingPointLong !== baseline.meetingPointLong) {
+            payload.meetingPointLong = current.meetingPointLong;
+        }
     }
 
     return payload;
@@ -403,6 +435,11 @@ export function CommerceListingEditor({
         // T-021: experience-only pricing fields
         priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
         priceUnit: strField(data, 'priceUnit'),
+        // HOS-1048: experience-only; a gastronomy listing simply reads them as
+        // empty/null and `buildPatchPayload` never emits them for that vertical.
+        meetingPoint: strField(data, 'meetingPoint'),
+        meetingPointLat: numField(data, 'meetingPointLat'),
+        meetingPointLong: numField(data, 'meetingPointLong'),
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
@@ -616,6 +653,22 @@ export function CommerceListingEditor({
                 id: 'editor-basicInfo',
                 label: t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')
             },
+            // HOS-1048: experience-only, and inserted here rather than appended
+            // because the section renders directly after BasicInfo. The
+            // scrollspy resolves ties by taking the FIRST entry of this array
+            // that is visible, so an entry out of DOM order highlights the wrong
+            // link whenever two sections share the viewport.
+            ...(vertical === 'experience'
+                ? [
+                      {
+                          id: 'editor-meetingPoint',
+                          label: t(
+                              'commerce.owner.editor.sectionNav.meetingPoint',
+                              'Punto de encuentro'
+                          )
+                      }
+                  ]
+                : []),
             {
                 id: 'editor-contact',
                 label: t('commerce.owner.editor.sectionNav.contactInfo', 'Contacto')
@@ -659,7 +712,7 @@ export function CommerceListingEditor({
         }
 
         return sections;
-    }, [t, hasCatalogs, hasFaqSection]);
+    }, [t, hasCatalogs, hasFaqSection, vertical]);
 
     // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
@@ -700,6 +753,24 @@ export function CommerceListingEditor({
                         onFieldChange={onFieldChange}
                         shouldOfferSlugRefresh={shouldOfferSlugRefresh}
                     />
+
+                    {/*
+                     * HOS-1048: experience-only. The gate is the SHAPE of the
+                     * schema, not an entitlement — `meetingPoint` exists on
+                     * `ExperienceOwnerUpdateInputSchema` and not on the
+                     * gastronomy one, so rendering it for a restaurant would
+                     * offer a field every save silently strips. The meeting
+                     * point itself is free from the basic tier; only the map
+                     * that draws it is paid (HOS-1049).
+                     */}
+                    {vertical === 'experience' && (
+                        <MeetingPointSection
+                            locale={locale}
+                            data={formData}
+                            errors={fieldErrors}
+                            onFieldChange={onFieldChange}
+                        />
+                    )}
 
                     <ContactSection
                         locale={locale}

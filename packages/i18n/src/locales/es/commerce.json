@@ -100,7 +100,8 @@
                 "translations": "Traducciones",
                 "amenities": "Servicios",
                 "price": "Precio",
-                "faqs": "Preguntas frecuentes"
+                "faqs": "Preguntas frecuentes",
+                "meetingPoint": "Punto de encuentro"
             },
             "sections": {
                 "type": "Categoría",
@@ -123,7 +124,13 @@
                 "destination": "Ciudad / Destino",
                 "description": "Descripción",
                 "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.",
-                "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo."
+                "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.",
+                "meetingPoint": "Punto de encuentro",
+                "meetingPointPlaceholder": "Ej: Muelle 3 del puerto, frente a la caseta azul",
+                "meetingPointHint": "Dónde arranca la experiencia. Puede ser una dirección o una referencia del lugar.",
+                "meetingPointLat": "Latitud (opcional)",
+                "meetingPointLong": "Longitud (opcional)",
+                "meetingPointCoordsHint": "Si cargás las coordenadas, más adelante podemos mostrar el punto en un mapa. Podés dejarlas vacías."
             },
             "acceptsEvents": {
                 "label": "Acepto eventos (cumpleaños, empresas, casamientos)",

@@ -51,6 +51,9 @@
         "social": "Social networks",
         "amenities": {
             "title": "Services and amenities"
+        },
+        "meetingPoint": {
+            "title": "Meeting point"
         }
     },
     "type": {

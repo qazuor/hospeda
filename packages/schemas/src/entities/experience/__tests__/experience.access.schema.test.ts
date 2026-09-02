@@ -339,3 +339,136 @@ describe('ExperienceAdminListItemSchema', () => {
         }
     });
 });
+
+// ============================================================================
+// HOS-1048 — the meeting point survives the tier projections
+// ============================================================================
+
+/**
+ * These run the FULL tier parse, not a parse of some field-level schema.
+ *
+ * That is the whole point. `stripWithSchema` hands the WHOLE payload to the
+ * tier schema and Zod object schemas drop unknown keys, so a field the handler
+ * attaches and the tier does not declare disappears from the response with no
+ * error anywhere — the page renders nothing and the route looks innocent. A
+ * test over a `MeetingPointSchema` would pass happily while that happened; only
+ * a parse of the real public/protected schema can tell.
+ */
+describe('meeting point across the access tiers (HOS-1048)', () => {
+    const MEETING_POINT = 'Muelle 3 del puerto, frente a la caseta azul';
+
+    it('publishes the meeting point on the PUBLIC tier, coordinates included', () => {
+        // Arrange — the field is NOT entitlement-gated (owner decision
+        // 2026-09-01): an anonymous visitor must be able to read where the
+        // experience starts. Only the map that draws the pair is paid
+        // (HOS-1049).
+        const raw = buildPublicExperience({
+            meetingPoint: MEETING_POINT,
+            meetingPointLat: -32.4825,
+            meetingPointLong: -58.2333
+        });
+
+        // Act
+        const result = ExperiencePublicSchema.safeParse(raw);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPoint).toBe(MEETING_POINT);
+            expect(result.data.meetingPointLat).toBe(-32.4825);
+            expect(result.data.meetingPointLong).toBe(-58.2333);
+        }
+    });
+
+    it('accepts a meeting point with no coordinates at all', () => {
+        // A landmark an owner never pinned is a valid listing, not an error.
+        const raw = buildPublicExperience({ meetingPoint: MEETING_POINT });
+
+        const result = ExperiencePublicSchema.safeParse(raw);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPoint).toBe(MEETING_POINT);
+            expect(result.data.meetingPointLat ?? null).toBeNull();
+        }
+    });
+
+    it('accepts an explicit null meeting point (nothing declared yet)', () => {
+        const raw = buildPublicExperience({
+            meetingPoint: null,
+            meetingPointLat: null,
+            meetingPointLong: null
+        });
+
+        const result = ExperiencePublicSchema.safeParse(raw);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPoint).toBeNull();
+        }
+    });
+
+    it('keeps a coordinate of 0 rather than treating it as absent', () => {
+        // 0/0 is a real point in the Gulf of Guinea. Any falsy-based handling
+        // downstream would erase it, so the schema must at least preserve it.
+        const raw = buildPublicExperience({
+            meetingPoint: MEETING_POINT,
+            meetingPointLat: 0,
+            meetingPointLong: 0
+        });
+
+        const result = ExperiencePublicSchema.safeParse(raw);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPointLat).toBe(0);
+            expect(result.data.meetingPointLong).toBe(0);
+        }
+    });
+
+    it('rejects coordinates outside the WGS84 ranges', () => {
+        const badLat = ExperiencePublicSchema.safeParse(
+            buildPublicExperience({ meetingPointLat: 91 })
+        );
+        const badLong = ExperiencePublicSchema.safeParse(
+            buildPublicExperience({ meetingPointLong: -181 })
+        );
+
+        expect(badLat.success).toBe(false);
+        expect(badLong.success).toBe(false);
+    });
+
+    it('rejects a meeting point longer than the column contract', () => {
+        const result = ExperiencePublicSchema.safeParse(
+            buildPublicExperience({ meetingPoint: 'x'.repeat(301) })
+        );
+
+        expect(result.success).toBe(false);
+    });
+
+    it('round-trips the meeting point on the PROTECTED tier for the owner editor', () => {
+        // Arrange — the owner editor seeds its form from this tier. If the
+        // projection dropped the field, the form would re-open blank and the
+        // next save would clear a meeting point the owner never touched.
+        const raw = {
+            ...buildPublicExperience({
+                meetingPoint: MEETING_POINT,
+                meetingPointLat: -32.4825,
+                meetingPointLong: -58.2333
+            }),
+            ownerId: VALID_UUID,
+            lifecycleState: 'ACTIVE'
+        };
+
+        // Act
+        const result = ExperienceProtectedSchema.safeParse(raw);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPoint).toBe(MEETING_POINT);
+            expect(result.data.meetingPointLat).toBe(-32.4825);
+            expect(result.data.meetingPointLong).toBe(-58.2333);
+        }
+    });
+});

@@ -102,6 +102,15 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     priceUnit: true,
     isPriceOnRequest: true,
 
+    // Where the experience starts (HOS-1048). PUBLIC by owner decision: knowing
+    // where you have to show up cannot be a paid feature — without it the ficha
+    // does not do its job. The coordinates travel with the text because they are
+    // the same fact expressed twice; what HOS-1049 gates is the MAP that draws
+    // them and the how-to-get-there instructions, not the data.
+    meetingPoint: true,
+    meetingPointLat: true,
+    meetingPointLong: true,
+
     // Subscription visibility gate
     hasActiveSubscription: true,
 
@@ -247,6 +256,12 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     isPriceOnRequest: true,
     hasActiveSubscription: true,
     openingHours: true,
+    // HOS-1048: owner-editable, so it must round-trip to the owner editor —
+    // omitting it here would make the form re-open with the field blank and
+    // silently clear the meeting point on the next save.
+    meetingPoint: true,
+    meetingPointLat: true,
+    meetingPointLong: true,
 
     // Protected: ownership
     ownerId: true,

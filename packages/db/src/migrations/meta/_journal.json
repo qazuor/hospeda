@@ -715,6 +715,13 @@
       "when": 1788248554813,
       "tag": "0101_stiff_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1788344527281,
+      "tag": "0102_natural_rick_jones",
+      "breakpoints": true
     }
   ]
 }

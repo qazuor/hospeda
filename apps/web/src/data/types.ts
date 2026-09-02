@@ -1308,6 +1308,27 @@ export interface ExperienceDetailData extends ExperienceCardData {
     readonly contactInfo: ExperienceContactInfo | null;
     /** Social network links provided by the owner. */
     readonly socialNetworks: ExperienceSocialNetworks | null;
+    /**
+     * Where the experience starts — the address or the landmark the traveller
+     * has to show up at (HOS-1048). `null` when the owner has not declared one.
+     *
+     * NOT entitlement-gated: it ships from the basic tier, because a listing
+     * that never says where to be does not do its job. The paid half is the MAP
+     * that draws {@link meetingPointLat}/{@link meetingPointLong} plus the
+     * how-to-get-there instructions (HOS-1049).
+     */
+    readonly meetingPoint: string | null;
+    /**
+     * Latitude of the meeting point in decimal degrees, or `null` when the
+     * owner described the spot without pinning it.
+     *
+     * Carried here because the public payload carries it, but deliberately NOT
+     * rendered by this page: nothing draws a map yet (that is HOS-1049), and a
+     * raw decimal tells a traveller nothing.
+     */
+    readonly meetingPointLat: number | null;
+    /** Longitude of the meeting point. See {@link meetingPointLat}. */
+    readonly meetingPointLong: number | null;
     /** SEO metadata fields. */
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */

@@ -208,6 +208,8 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `media`           — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
  * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_EDIT_OWN`)
  * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
+ * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
+ *   experience starts (HOS-1048; ficha data, no entitlement)
  * - `amenityIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  * - `featureIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  *
@@ -238,6 +240,13 @@ export const ExperienceOwnerUpdateInputSchema = z
                 isPriceOnRequest: true,
                 priceFrom: true,
                 priceUnit: true,
+                // HOS-1048: the meeting point is the owner's to declare — they
+                // are the only one who knows where their group gathers. It is
+                // ficha data with no entitlement attached, so it sits with the
+                // other operational fields rather than behind a gate.
+                meetingPoint: true,
+                meetingPointLat: true,
+                meetingPointLong: true,
                 richDescription: true,
                 nameI18n: true,
                 summaryI18n: true,

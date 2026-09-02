@@ -98,6 +98,28 @@ describe('experiencias/[slug].astro', () => {
         it('renders ImageGallery for the photo gallery', () => {
             expect(src).toContain('ImageGallery');
         });
+
+        // HOS-1048. A SOURCE read, so it proves only that the page IMPORTS the
+        // component and hands it the right prop — it cannot tell a rendered
+        // block from a declared one (Vitest does not render `.astro` here).
+        // Whether anything appears is decided by the VALUE of that prop, and
+        // that is covered where it executes: the null-collapsing in
+        // `test/lib/api/transform-experience-meeting-point.test.ts`, and whether
+        // the field survives the projection at all in the full public-tier parse
+        // under `packages/schemas`.
+        it('wires ExperienceMeetingPoint to the transformed meeting point', () => {
+            expect(src).toContain('ExperienceMeetingPoint');
+            expect(src).toContain('meetingPoint={experience.meetingPoint}');
+        });
+
+        it('draws no map on this page — the map is the paid half (HOS-1049)', () => {
+            // The meeting point ships from the basic tier; the map that draws
+            // its coordinates does not. A map here would hand every visitor the
+            // feature HOS-1049 exists to gate, and this page has no entitlement
+            // check to stop it.
+            expect(src).not.toContain('LocationMap');
+            expect(src).not.toContain('meetingPointLat');
+        });
     });
 
     describe('gallery images', () => {
