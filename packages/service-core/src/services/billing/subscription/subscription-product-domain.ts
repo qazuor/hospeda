@@ -43,21 +43,6 @@ import {
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 
 /**
- * The product-domain values that denote a commerce vertical.
- *
- * HOS-695 (release C) retired the transitional `COMMERCE` umbrella: every
- * commerce row was rewritten to its own vertical in release B (HOS-692), and
- * the value no longer exists in {@link ProductDomainEnum} at all. A row that
- * still somehow carries the old `'commerce'` string (it should not, past
- * release B) is no longer recognised as a commerce subscription by anything
- * in this file — that is the narrowing this release exists to make.
- */
-const COMMERCE_DOMAINS: readonly ProductDomainValue[] = [
-    ProductDomainEnum.GASTRONOMY,
-    ProductDomainEnum.EXPERIENCE
-];
-
-/**
  * Discount-relevant state for a single subscription, as loaded by
  * {@link loadSubscriptionDiscountState}.
  */
@@ -127,10 +112,6 @@ export function isAccommodationSubscription(sub: unknown): boolean {
  * unrecognised value is **a dark listing, never a granted entitlement** — the
  * isolation SPEC-239 exists to guarantee.
  *
- * To test membership across every commerce vertical at once, use
- * {@link isCommerceSubscription} rather than re-deriving that union at the
- * call site.
- *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
  * @param domain - The domain to test membership of.
  * @returns `true` when the subscription belongs to `domain`.
@@ -162,42 +143,6 @@ export function subscriptionMatchesDomain(sub: unknown, domain: ProductDomainVal
     }
 
     return value === domain;
-}
-
-/**
- * Returns `true` when the subscription belongs to **any** commerce vertical
- * (SPEC-239 commerce-listing subscriptions).
- *
- * Unlike {@link isAccommodationSubscription}, this predicate is deliberately
- * **fail-closed**: `null`/`undefined`/non-object input, or a `productDomain`
- * outside {@link COMMERCE_DOMAINS}, returns `false`. A commerce subscription is
- * always created with an explicit domain (there is no legacy-row ambiguity to
- * resolve in this domain's favor the way there is for accommodation), so
- * silently including an unrelated row here would leak an accommodation/partner
- * subscription into a commerce-scoped read (HOS-259).
- *
- * Answers `true` for `'gastronomy'` and `'experience'` — the two live
- * verticals — by delegating to {@link subscriptionMatchesDomain} for each and
- * OR-ing the results, so this stays a thin composition rather than a second
- * place that reads `productDomain` itself. **Narrowed in HOS-695 (release
- * C)**: it no longer answers `true` for the retired `'commerce'` umbrella —
- * that string is not a member of {@link ProductDomainEnum} any more, and a
- * row still carrying it (it should not, past release B / HOS-692) is treated
- * as unrecognised, not as commerce. To scope a read to **one** vertical, call
- * {@link subscriptionMatchesDomain} with that vertical instead.
- *
- * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
- * @returns `true` when the row's `productDomain` is any commerce vertical.
- *
- * @example
- * ```ts
- * const commerceSub = subscriptions.find(
- *   (sub) => isEntitlementGrantingStatus(sub.status) && isCommerceSubscription(sub)
- * );
- * ```
- */
-export function isCommerceSubscription(sub: unknown): boolean {
-    return COMMERCE_DOMAINS.some((domain) => subscriptionMatchesDomain(sub, domain));
 }
 
 /**

@@ -43,7 +43,6 @@ import type { DrizzleClient } from '@repo/db';
 import * as dbModule from '@repo/db';
 import {
     isAccommodationSubscription,
-    isCommerceSubscription,
     isOwnerCategorySubscription,
     loadSubscriptionDiscountState,
     subscriptionMatchesDomain
@@ -272,41 +271,30 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
             expect(isAccommodationSubscription({ productDomain: 'accommodation' })).toBe(true);
         });
 
-        it('still keeps a partner row out of both domains', () => {
+        it('still keeps a partner row out of the accommodation domain', () => {
             expect(isAccommodationSubscription({ productDomain: 'partner' })).toBe(false);
-            expect(isCommerceSubscription({ productDomain: 'partner' })).toBe(false);
         });
 
-        it('still treats a legacy row with no domain as accommodation, never as commerce', () => {
+        it('still treats a legacy row with no domain as accommodation', () => {
             for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
                 expect(isAccommodationSubscription(legacy)).toBe(true);
-                expect(isCommerceSubscription(legacy)).toBe(false);
             }
         });
 
-        it('still answers accommodation-open / commerce-closed for a non-object', () => {
+        it('still answers accommodation-open for a non-object', () => {
             for (const value of [null, undefined, 42, 'commerce']) {
                 expect(isAccommodationSubscription(value)).toBe(true);
-                expect(isCommerceSubscription(value)).toBe(false);
             }
         });
 
         it('still rejects a non-string productDomain in every domain', () => {
             const row = { productDomain: 42 };
             expect(isAccommodationSubscription(row)).toBe(false);
-            expect(isCommerceSubscription(row)).toBe(false);
             expect(subscriptionMatchesDomain(row, 'gastronomy')).toBe(false);
         });
     });
 
     describe('HOS-695 — the retired commerce umbrella is no longer recognised', () => {
-        it('does NOT recognise a legacy commerce row as a commerce subscription any more', () => {
-            // Pre-HOS-695 this was `true` (the transitional umbrella). Release C
-            // narrows it: a row still carrying the retired string (it should not,
-            // past release B / HOS-692) is now unrecognised, not commerce.
-            expect(isCommerceSubscription({ productDomain: 'commerce' })).toBe(false);
-        });
-
         it('still keeps a commerce-stringed row out of the accommodation domain too', () => {
             // Fails closed both ways: an unrecognised value grants nothing.
             expect(isAccommodationSubscription({ productDomain: 'commerce' })).toBe(false);
@@ -320,13 +308,6 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
     });
 
     describe('the live verticals', () => {
-        it.each([
-            'gastronomy',
-            'experience'
-        ] as const)('counts a %s row as a commerce subscription', (domain) => {
-            expect(isCommerceSubscription({ productDomain: domain })).toBe(true);
-        });
-
         it.each([
             'gastronomy',
             'experience'
@@ -351,11 +332,10 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
             // never a granted entitlement.
             const unknownRow = { productDomain: 'retail' };
             expect(isAccommodationSubscription(unknownRow)).toBe(false);
-            expect(isCommerceSubscription(unknownRow)).toBe(false);
         });
     });
 
-    describe('the two exported predicates are wrappers, not copies', () => {
+    describe('the exported predicate is a wrapper, not a copy', () => {
         it('agrees with the canonical helper on every domain value', () => {
             const rows = [
                 {},
@@ -371,13 +351,6 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
             for (const row of rows) {
                 expect(isAccommodationSubscription(row)).toBe(
                     subscriptionMatchesDomain(row, 'accommodation')
-                );
-                // isCommerceSubscription ORs the canonical helper across both live
-                // verticals (COMMERCE_DOMAINS) — it is no longer a single-value
-                // lookup, since 'commerce' is not a domain that exists any more.
-                expect(isCommerceSubscription(row)).toBe(
-                    subscriptionMatchesDomain(row, 'gastronomy') ||
-                        subscriptionMatchesDomain(row, 'experience')
                 );
             }
         });
