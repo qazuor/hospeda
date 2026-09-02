@@ -20,8 +20,24 @@ export interface WorktreeEnv {
     readonly path: string;
     /** Whether this is the main clone. */
     readonly isMain: boolean;
-    /** Checked-out branch. */
+    /**
+     * Checked-out branch, as git reports it.
+     *
+     * Read from `git worktree list --porcelain`, NOT from the state file. The
+     * state file is written by the creation script, so a worktree made by hand
+     * has none — and the placeholder that used to fill the gap travelled intact
+     * into `gh pr list --head '(desconocida)'`, which answers "no pull request"
+     * for a branch that has one.
+     */
     readonly branch: string;
+    /**
+     * Whether git reports a detached HEAD rather than a branch.
+     *
+     * Its own field because "no branch" is a fact a command must be able to act
+     * on: asking GitHub about a branch that does not exist gets a confident,
+     * wrong answer instead of an error.
+     */
+    readonly detached: boolean;
     /**
      * Postgres database this worktree uses.
      *
@@ -51,6 +67,58 @@ function readState({ worktreePath }: { readonly worktreePath: string }): RawStat
     }
 }
 
+/** One worktree as git's porcelain describes it. */
+export interface PorcelainWorktree {
+    /** Absolute path. */
+    readonly path: string;
+    /** Branch name without the `refs/heads/` prefix, empty when detached. */
+    readonly branch: string;
+    /** Whether git reported a detached HEAD. */
+    readonly detached: boolean;
+}
+
+/**
+ * Parses `git worktree list --porcelain`.
+ *
+ * Records are separated by a blank line and each opens with `worktree <path>`,
+ * so the branch is attributed to the record it belongs to rather than to
+ * whichever path was seen last.
+ *
+ * @param input.stdout - Raw porcelain output.
+ * @returns One entry per worktree, in git's order.
+ */
+export function parseWorktreePorcelain({
+    stdout
+}: {
+    readonly stdout: string;
+}): readonly PorcelainWorktree[] {
+    const found: PorcelainWorktree[] = [];
+    let path: string | null = null;
+    let branch = '';
+    let detached = false;
+
+    const flush = () => {
+        if (path !== null) found.push({ path, branch, detached });
+        path = null;
+        branch = '';
+        detached = false;
+    };
+
+    for (const line of stdout.split('\n')) {
+        if (line.startsWith('worktree ')) {
+            flush();
+            path = line.slice('worktree '.length).trim();
+        } else if (line.startsWith('branch ')) {
+            branch = line.slice('branch '.length).trim().replace(/^refs\/heads\//, '');
+        } else if (line.trim() === 'detached') {
+            detached = true;
+        }
+    }
+    flush();
+
+    return found.filter((worktree) => worktree.path.length > 0);
+}
+
 /**
  * Lists every worktree of the repository, main clone included.
  *
@@ -72,22 +140,20 @@ export async function listWorktrees({
     });
     if (!listed.ok) return [];
 
-    const paths = listed.stdout
-        .split('\n')
-        .filter((line) => line.startsWith('worktree '))
-        .map((line) => line.slice('worktree '.length).trim())
-        .filter((line) => line.length > 0);
-
-    return paths.map((path, index) => {
-        const state = readState({ worktreePath: path });
+    return parseWorktreePorcelain({ stdout: listed.stdout }).map((entry, index) => {
+        const state = readState({ worktreePath: entry.path });
         const servers = (state.servers ?? [])
             .filter((s) => typeof s.name === 'string' && typeof s.port === 'number')
             .map((s) => ({ name: s.name as string, port: s.port as number, pid: s.pid ?? 0 }));
         return {
-            name: path.slice(path.lastIndexOf('/') + 1),
-            path,
+            name: entry.path.slice(entry.path.lastIndexOf('/') + 1),
+            path: entry.path,
             isMain: index === 0,
-            branch: state.branch ?? '(desconocida)',
+            // Git first, state file only as a last resort: the state file
+            // records what the branch was at creation, and a worktree that was
+            // switched since would report the old name with full confidence.
+            branch: entry.branch !== '' ? entry.branch : (state.branch ?? ''),
+            detached: entry.detached,
             database: state.db ?? null,
             servers
         };
