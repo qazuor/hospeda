@@ -10,6 +10,19 @@
  * feature; there is no allergen-specific column and deliberately so (a new apto
  * is a new catalog row, not a migration).
  *
+ * ## Why these live under `models/`, NOT under `utils/`
+ *
+ * They import three dbschema modules, and a dbschema calls `pgTable(...)` and
+ * `relations(...)` from `drizzle-orm` at MODULE-LOAD time. Every one of the six
+ * modules in `src/utils/` imports zero dbschemas — an invariant nobody wrote
+ * down, and one that matters: dozens of suites mock `drizzle-orm` wholesale, so
+ * the moment the utils barrel pulls in a schema graph those suites die on
+ * import with `No "relations" export is defined on the "drizzle-orm" mock`,
+ * pointing at an unrelated file (`tag.dbschema.ts`) in an unrelated package.
+ * `models/` already imports dbschemas, so putting them here adds no coupling
+ * that was not already there. `test/db-utils-barrel-stays-schema-free.test.ts`
+ * is the guard that keeps the invariant from being broken silently again.
+ *
  * ## Why these live here and not in `GastronomyModel.search`
  *
  * `GastronomyService._executeSearch` does not call `GastronomyModel.search` — it
@@ -41,9 +54,9 @@
  */
 
 import { type SQL, sql } from 'drizzle-orm';
-import { gastronomies } from '../schemas/gastronomy/gastronomy.dbschema.ts';
-import { rGastronomyAmenity } from '../schemas/gastronomy/r_gastronomy_amenity.dbschema.ts';
-import { rGastronomyFeature } from '../schemas/gastronomy/r_gastronomy_feature.dbschema.ts';
+import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema.ts';
+import { rGastronomyAmenity } from '../../schemas/gastronomy/r_gastronomy_amenity.dbschema.ts';
+import { rGastronomyFeature } from '../../schemas/gastronomy/r_gastronomy_feature.dbschema.ts';
 
 /**
  * Build a WHERE clause restricting gastronomy listings to those linked to ALL
