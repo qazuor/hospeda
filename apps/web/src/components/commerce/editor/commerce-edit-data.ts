@@ -72,6 +72,22 @@ export interface CommerceEditData {
     readonly isPriceOnRequest: boolean;
     readonly priceFrom: number | null;
     readonly priceUnit: string;
+    /**
+     * Where the experience starts (HOS-1048) — experience vertical only, since
+     * `meetingPoint` is on `ExperienceOwnerUpdateInputSchema` and not on the
+     * gastronomy one. It lives on the shared state object anyway, exactly as
+     * gastronomy's `priceRange`/`menuUrl` do: this type is the union of both
+     * verticals, and `buildPatchPayload` decides what actually ships.
+     */
+    readonly meetingPoint: string;
+    /**
+     * Latitude of the meeting point, or `null` when nothing is pinned. `null`
+     * rather than `0`, which is a real place off the coast of Africa — see
+     * `parseCoordinateInput`.
+     */
+    readonly meetingPointLat: number | null;
+    /** Longitude of the meeting point, or `null`. See {@link meetingPointLat}. */
+    readonly meetingPointLong: number | null;
     readonly amenityIds: ReadonlySet<string>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: CommerceI18nValues;
