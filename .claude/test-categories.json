@@ -1,0 +1,125 @@
+{
+    "$comment": "Mapa de categoría → tests, consumido por `hops test <categoría>` (scripts/client-tools). Cada `include` es una lista de globs sobre la RUTA de cada archivo de test del repo. Las categorías NO particionan: un test de checkout de gastronomía cae en `billing` y en `gastronomy`, y está bien — correr de más es barato, correr de menos es el problema. `hops test --orphans` lista los tests que no caen en ninguna, que es como se detecta que este archivo quedó viejo.",
+
+    "billing": {
+        "description": "Checkout, suscripciones, add-ons, promos, webhooks de MercadoPago",
+        "include": [
+            "packages/billing/**",
+            "**/services/billing/**",
+            "apps/api/src/routes/billing/**",
+            "**/*subscription*",
+            "**/*promo-code*",
+            "**/*dunning*",
+            "**/*entitlement*",
+            "**/*addon*",
+            "**/*checkout*",
+            "**/*mercadopago*",
+            "**/*exchange-rate*"
+        ]
+    },
+    "auth": {
+        "description": "Sesión, login, registro, onboarding",
+        "include": [
+            "packages/auth-ui/**",
+            "apps/api/src/routes/auth/**",
+            "**/*auth*",
+            "**/*session*",
+            "**/*onboarding*"
+        ]
+    },
+    "permissions": {
+        "description": "PermissionEnum, roles y los guards que los aplican",
+        "include": ["**/*permission*", "**/*user-role*", "**/*actor*", "**/*role*"]
+    },
+    "accommodations": {
+        "description": "Alojamientos, amenities, reseñas y reputación externa",
+        "include": [
+            "**/*accommodation*",
+            "**/*amenit*",
+            "**/services/feature/**",
+            "**/*owner-promotion*"
+        ]
+    },
+    "destinations": {
+        "description": "Destinos, puntos de interés y atractivos",
+        "include": ["**/*destination*", "**/*point-of-interest*", "**/*poi*", "**/*attraction*"]
+    },
+    "gastronomy": {
+        "description": "Vertical de gastronomía",
+        "include": ["**/*gastronom*"]
+    },
+    "experiences": {
+        "description": "Vertical de experiencias",
+        "include": ["**/*experience*"]
+    },
+    "partners": {
+        "description": "Partners, sponsors y alliances — un mismo circuito",
+        "include": ["**/*partner*", "**/*sponsor*", "**/*alliance*"]
+    },
+    "host-trade": {
+        "description": "Canjes anfitrión ↔ proveedor: declaración, confirmación y beneficios",
+        "include": ["**/*host-trade*", "**/*hostTrade*", "**/*benefit*"]
+    },
+    "events": {
+        "description": "Eventos, organizadores y ubicaciones",
+        "include": ["**/*event*"]
+    },
+    "posts": {
+        "description": "Posts, autores y sponsorships de post",
+        "include": ["**/*post*", "**/*author*"]
+    },
+    "reviews": {
+        "description": "Reseñas y moderación de contenido",
+        "include": ["**/*review*", "**/*moderation*", "**/*comment*"]
+    },
+    "users": {
+        "description": "Usuarios, perfiles, bookmarks e historial",
+        "include": ["**/*user*", "**/*profile*", "**/*bookmark*", "**/*search-history*"]
+    },
+    "media": {
+        "description": "Imágenes, Cloudinary y sus consumidores",
+        "include": ["packages/media/**", "**/*media*", "**/*cloudinary*", "**/*image*"]
+    },
+    "notifications": {
+        "description": "Notificaciones y emails",
+        "include": [
+            "packages/notifications/**",
+            "packages/email/**",
+            "**/*notification*",
+            "**/*email*",
+            "**/*newsletter*"
+        ]
+    },
+    "cache": {
+        "description": "cache-tags, revalidación y purga",
+        "include": ["packages/cache-tags/**", "**/*cache*", "**/*revalidat*"]
+    },
+    "cron": {
+        "description": "Los jobs programados",
+        "include": ["**/cron/**", "**/*cron*"]
+    },
+    "search": {
+        "description": "Búsqueda y recomendaciones",
+        "include": ["**/*search*", "**/*recommendation*"]
+    },
+    "ai": {
+        "description": "ai-core y sus consumidores",
+        "include": ["packages/ai-core/**", "apps/api/src/routes/ai/**", "**/*ai-*"]
+    },
+    "analytics": {
+        "description": "PostHog, métricas y stats",
+        "include": ["packages/analytics/**", "**/*posthog*", "**/*analytics*", "**/*metric*"]
+    },
+    "i18n": {
+        "description": "Traducciones, locales y resolución de idioma",
+        "include": ["packages/i18n/**", "**/*i18n*", "**/*locale*", "**/*translat*"]
+    },
+    "seed": {
+        "description": "Seed, data-migrations y usuarios de prueba",
+        "include": ["packages/seed/**", "**/*seed*"]
+    },
+    "env": {
+        "description": "Registro de variables de entorno y sus guards",
+        "include": ["packages/config/**", "**/*env*"]
+    }
+}

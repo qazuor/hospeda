@@ -61,6 +61,24 @@ export type ModerationResult = {
      * or surface hints to human moderators.
      */
     readonly matchedTerms: readonly string[];
+
+    /**
+     * Whether the engine failed to reach a verdict and this result is a
+     * placeholder rather than a measurement of the text (HOS-1069).
+     *
+     * `true` means every provider was unavailable — the remote one errored or
+     * timed out and the local blocklist had nothing to judge against. The
+     * `score` that comes with it is a stand-in, so **comparing it against a
+     * threshold is meaningless**: callers must branch on this flag BEFORE they
+     * look at the number.
+     *
+     * That is not a style preference. Before this field existed, the
+     * fail-closed path worked only because the placeholder score and the
+     * shipped threshold happened to be the same value; raising the threshold
+     * from the admin would have turned the guard off with nothing to show for
+     * it.
+     */
+    readonly degraded: boolean;
 };
 
 /**

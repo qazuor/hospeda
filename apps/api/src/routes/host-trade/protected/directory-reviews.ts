@@ -27,7 +27,7 @@
 
 import {
     HostTradeReviewProtectedSchema,
-    HostTradeReviewReplyProtectedSchema,
+    HostTradeReviewReplySchema,
     PermissionEnum
 } from '@repo/schemas';
 import { HostTradeReviewService, ServiceError } from '@repo/service-core';
@@ -39,6 +39,35 @@ import { extractPaginationParams, getPaginationResponse } from '../../../utils/p
 import { createProtectedListRoute } from '../../../utils/route-factory';
 
 const reviewService = new HostTradeReviewService({ logger: apiLogger });
+
+/**
+ * The answer AS THE DIRECTORY SERVES IT — its own shape, not the reply's
+ * PROTECTED tier (HOS-1067).
+ *
+ * Picked field by field from the entity schema rather than derived from
+ * `HostTradeReviewReplyProtectedSchema`, and the difference is the whole point:
+ * that tier serves TWO readers, and the second one is the provider's own panel,
+ * which needs `moderationState` to tell him his answer is awaiting review
+ * rather than lost. The directory needs the opposite. It only ever receives
+ * answers a moderator already cleared, so the state is a constant here — and
+ * one a reader must not have, because seeing it would separate a REJECTED
+ * answer from an absent one, which is precisely what omitting the row protects.
+ * `reviewId` goes for a duller reason: the review is the object this hangs off.
+ *
+ * These five ARE what `HostTradeReviewModel.findAllWithAuthorAndReply`
+ * projects. Reusing the wider tier is what made every answered provider return
+ * 500 from the fail-closed `stripWithSchema` — approving an answer so it would
+ * be seen was what stopped the whole listing from being seen. Deriving by
+ * `.omit()` would have left the same trap armed: a field added to the protected
+ * tier later would land here again, unasked and unprojected.
+ */
+const DirectoryReplySchema = HostTradeReviewReplySchema.pick({
+    id: true,
+    content: true,
+    reviewEditedAfterReply: true,
+    createdAt: true,
+    updatedAt: true
+});
 
 /**
  * One row of the listing.
@@ -57,7 +86,7 @@ const DirectoryReviewSchema = z.object({
             image: z.string().nullable()
         })
         .nullable(),
-    reply: HostTradeReviewReplyProtectedSchema.nullable()
+    reply: DirectoryReplySchema.nullable()
 });
 
 /** Reads a provider's public reviews. Exported standalone for testability. */

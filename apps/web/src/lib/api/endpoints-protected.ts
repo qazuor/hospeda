@@ -2363,17 +2363,32 @@ export interface SavedReviewReply {
 }
 
 /**
- * The provider's answer as the DIRECTORY serves it (HOS-376 T-053).
+ * The provider's answer as the DIRECTORY serves it (HOS-376 T-053, HOS-1067).
  *
- * Structurally identical to {@link SavedReviewReply} — both mirror
- * `HostTradeReviewReplyProtectedSchema` — but arriving here carries a claim the
- * write path cannot make: a moderator cleared it. The endpoint omits an answer
- * that is PENDING or REJECTED, so `null` on a row means "no answer a reader may
- * see", NEVER "no answer exists". That distinction is why the provider's own
- * panel reads a different endpoint with a different shape
- * ({@link OwnerReviewReply}, which keeps the state and the reason).
+ * Narrower than {@link SavedReviewReply} by two fields, and neither absence is
+ * an oversight. Arriving here carries a claim the write path cannot make: a
+ * moderator cleared it. The endpoint omits an answer that is PENDING or
+ * REJECTED, so `null` on a row means "no answer a reader may see", NEVER "no
+ * answer exists" — which is why `moderationState` must not be here. It would be
+ * the constant `'APPROVED'`, and a reader holding it could separate a rejected
+ * answer from an absent one, undoing what the omission protects. `reviewId`
+ * goes because the review is the object this hangs off.
+ *
+ * The provider's own panel reads a different endpoint with a different shape
+ * ({@link OwnerReviewReply}, which keeps the state and the reason) — that is
+ * the reader `moderationState` exists for.
+ *
+ * This used to alias {@link SavedReviewReply}, and the API declared the same
+ * wider shape while its query projected these five: every answered provider
+ * returned 500 (HOS-1067).
  */
-export type DirectoryReviewReply = SavedReviewReply;
+export interface DirectoryReviewReply {
+    readonly id: string;
+    readonly content: string;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
 
 /**
  * One row of a provider's public review list (HOS-376 T-053).

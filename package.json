@@ -29,7 +29,6 @@
         "test:integration": "turbo run test:integration",
         "check": "biome check --write .",
         "typecheck": "turbo run typecheck",
-        "typecheck:cli": "tsc --noEmit --project scripts/cli/tsconfig.json",
         "check:circular": "bash scripts/check-circular-deps.sh",
         "check:cloudinary-isolation": "bash scripts/check-cloudinary-isolation.sh",
         "check:bare-cloudinary-img": "bash scripts/check-bare-cloudinary-img.sh",
@@ -94,8 +93,6 @@
         "env:set": "tsx scripts/env-set-wizard.ts",
         "gen:env-examples": "tsx scripts/generate-env-examples.ts",
         "gen:env-registry-json": "tsx scripts/generate-env-registry-json.ts",
-        "cli": "tsx scripts/cli.ts",
-        "test:cli": "vitest run --config scripts/cli/vitest.config.ts",
         "test:scripts": "vitest run --config scripts/vitest.config.ts"
     },
     "devDependencies": {

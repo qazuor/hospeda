@@ -63,10 +63,12 @@ The API uses a three-tier route architecture:
 ### Key Commands
 
 ```bash
-# Interactive CLI (discover and run all commands)
-pnpm cli              # Interactive menu with fuzzy search
-pnpm cli <command>    # Run a command directly (e.g., pnpm cli db:start)
-pnpm test:cli         # Run CLI tool tests
+# hops — the local CLI (scripts/client-tools, runs on bun)
+hops                  # Interactive picker
+hops <command>        # Run one directly (e.g. hops db-start)
+hops --help           # The 18 commands
+hops run <script>     # Any package.json script in the repo, with search
+hops run <script> -- --flag   # Flags for the script go after `--`
 
 # Development
 pnpm dev              # Start all apps
@@ -887,10 +889,10 @@ Para correr la app en un worktree (los 3 servers con puertos + DB aislados), **N
 
 Dos pares simétricos:
 
-- `pnpm cli wt:up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
-- `pnpm cli wt:down` — para los servers **solamente** (DB + worktree quedan; `wt:up` reinicia al instante).
-- `pnpm cli wt:remove` — teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
-- `pnpm cli wt:create` — imprime el uso de `wt-create.sh <type> <slug>` (el CLI no pasa args interactivos).
+- `hops servers-up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
+- `hops servers-down` — para los servers **solamente** (DB + worktree quedan; `servers-up` reinicia al instante).
+- `hops wt-clean` — borrado interactivo de worktrees: teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
+- Para crear: `bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>` directo, o `hops start-issue HOS-N`, que arma el worktree del issue.
 
 Bootstrap (una vez por máquina): `bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template` crea `hospeda_template` desde `hospeda_dev` para que los worktrees clonen la DB al instante.
 

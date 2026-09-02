@@ -78,7 +78,8 @@ const CLEAN_MODERATION_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 0
     }),
-    matchedTerms: Object.freeze([])
+    matchedTerms: Object.freeze([]),
+    degraded: false
 };
 
 /** Blocked ModerationResult for simulating a word/domain hit. */
@@ -92,7 +93,8 @@ const BLOCKED_MODERATION_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 1.0
     }),
-    matchedTerms: Object.freeze(['badword'])
+    matchedTerms: Object.freeze(['badword']),
+    degraded: false
 };
 
 /** Cast helper for Vitest mock access */
@@ -654,7 +656,8 @@ describe('MessageService', () => {
                     harassment: 0,
                     other: 1.0
                 }),
-                matchedTerms: Object.freeze(['spam.com'])
+                matchedTerms: Object.freeze(['spam.com']),
+                degraded: false
             };
             asMock(contentModeration.moderateText).mockResolvedValue(domainBlockedResult);
 
@@ -695,7 +698,8 @@ describe('MessageService', () => {
                     harassment: 0,
                     other: 0
                 }),
-                matchedTerms: Object.freeze([])
+                matchedTerms: Object.freeze([]),
+                degraded: false
             };
             asMock(contentModeration.moderateText).mockResolvedValue(openAiResult);
             // reject threshold = 0.85 (default mock)
@@ -728,7 +732,8 @@ describe('MessageService', () => {
                     harassment: 0,
                     other: 0.6
                 }),
-                matchedTerms: Object.freeze(['badword'])
+                matchedTerms: Object.freeze(['badword']),
+                degraded: false
             };
             asMock(contentModeration.moderateText).mockResolvedValue(localResult);
             const conversation = makeConversation();
@@ -760,7 +765,8 @@ describe('MessageService', () => {
                     harassment: 0,
                     other: 0.1
                 }),
-                matchedTerms: Object.freeze([])
+                matchedTerms: Object.freeze([]),
+                degraded: false
             };
             asMock(contentModeration.moderateText).mockResolvedValue(cleanOpenAiResult);
             const conversation = makeConversation();
@@ -791,7 +797,8 @@ describe('MessageService', () => {
                     harassment: 0,
                     other: 0
                 }),
-                matchedTerms: Object.freeze([])
+                matchedTerms: Object.freeze([]),
+                degraded: false
             };
             asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
             asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({

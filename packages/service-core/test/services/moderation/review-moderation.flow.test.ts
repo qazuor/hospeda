@@ -304,7 +304,8 @@ const CLEAN_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 0
     }),
-    matchedTerms: Object.freeze([])
+    matchedTerms: Object.freeze([]),
+    degraded: false
 };
 
 /** Content-moderation result for blocked-word hit — forces PENDING on either entity type. */
@@ -318,7 +319,34 @@ const BLOCKED_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 1.0
     }),
-    matchedTerms: Object.freeze(['badword'])
+    matchedTerms: Object.freeze(['badword']),
+    degraded: false
+};
+
+/**
+ * What the engine returns when it reached NO verdict (HOS-1069).
+ *
+ * The score is deliberately WELL BELOW the pending threshold — not the 0.5 the
+ * orchestrator happens to emit today. At 0.5 this fixture would resolve PENDING
+ * through the threshold comparison whether or not the service forwards
+ * `degraded`, and the test would pass over a broken wire. Measured: with 0.5 it
+ * did exactly that.
+ *
+ * At 0.1, `degraded` is the ONLY thing that can hold this review, which is what
+ * makes the assertion mean something.
+ */
+const DEGRADED_RESULT: contentModeration.ModerationResult = {
+    score: 0.1,
+    categories: Object.freeze({
+        spam: 0,
+        sexual: 0,
+        violence: 0,
+        hate: 0,
+        harassment: 0,
+        other: 0
+    }),
+    matchedTerms: Object.freeze([]),
+    degraded: true
 };
 
 /** Rating object required by both review types (accommodation dimensions). */
@@ -503,6 +531,57 @@ describe('Flow 1: accommodation review + clean text → APPROVED by entity defau
 
         // Assert
         expect(result.moderationState).toBe(ModerationStatusEnum.APPROVED);
+        expect(contentModeration.moderateText).toHaveBeenCalledOnce();
+    });
+});
+
+// ===========================================================================
+// Scenario 1b: Degraded engine → PENDING, through the service (HOS-1069)
+// ===========================================================================
+
+describe('Flow 1b: accommodation review + degraded engine → PENDING (HOS-1069)', () => {
+    /**
+     * The accommodation type is the one that matters here: its entity default
+     * is APPROVED, so it is the path that PUBLISHED unjudged text before the
+     * fix. The fixture scores 0.1, far under any threshold, so if the service
+     * stopped forwarding `degraded` this review would go straight out — which
+     * is the regression `degraded-is-forwarded.guard.test.ts` also watches for,
+     * from the other side.
+     */
+    it('holds the review for a human when the engine reached no verdict', async () => {
+        // Arrange
+        asMock(contentModeration.moderateText).mockResolvedValue(DEGRADED_RESULT);
+        const service = makeAccService();
+        const actor = makePublicActor();
+
+        // Act
+        const result = await (
+            service as unknown as {
+                _beforeCreate: (
+                    data: AccommodationReview,
+                    actor: unknown,
+                    ctx: unknown
+                ) => Promise<Partial<AccommodationReview>>;
+            }
+        )._beforeCreate(
+            {
+                id: getMockId('accommodationReview', 'acc-flow-1b'),
+                userId: getMockId('user', 'user-1') as AccommodationReview['userId'],
+                accommodationId: getMockId(
+                    'accommodation',
+                    'acc-1'
+                ) as AccommodationReview['accommodationId'],
+                title: 'Unjudged text',
+                content: 'Whatever this says, nobody was able to read it.',
+                rating: ACC_RATING,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            } as unknown as AccommodationReview,
+            actor,
+            {}
+        );
+
+        // Assert
+        expect(result.moderationState).toBe(ModerationStatusEnum.PENDING);
         expect(contentModeration.moderateText).toHaveBeenCalledOnce();
     });
 });

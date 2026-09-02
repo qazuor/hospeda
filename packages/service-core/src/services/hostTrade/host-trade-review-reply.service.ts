@@ -51,7 +51,8 @@ async function resolveReplyModerationState(content: string) {
         entityType: 'hostTradeReply',
         verificationLevel: 'none',
         moderationScore: moderationResult.score,
-        pendingThreshold: thresholds.pending
+        pendingThreshold: thresholds.pending,
+        degraded: moderationResult.degraded
     });
 }
 

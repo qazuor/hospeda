@@ -911,7 +911,8 @@ async function resolveReviewModerationState(content: string | null | undefined) 
     const [moderationResult, thresholds] = await Promise.all([
         content
             ? moderateText({ text: content, context: 'review' })
-            : Promise.resolve({ score: 0 }),
+            : // No text is not a failed verdict: there is nothing to judge.
+              Promise.resolve({ score: 0, degraded: false }),
         getThresholdForContext({ context: 'review' })
     ]);
 
@@ -919,7 +920,8 @@ async function resolveReviewModerationState(content: string | null | undefined) 
         entityType: 'hostTrade',
         verificationLevel: 'none',
         moderationScore: moderationResult.score,
-        pendingThreshold: thresholds.pending
+        pendingThreshold: thresholds.pending,
+        degraded: moderationResult.degraded
     });
 }
 
