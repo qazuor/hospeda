@@ -139,7 +139,7 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('USER_UNCANCELED');
         });
 
-        it('the total number of event types is 56', () => {
+        it('the total number of event types is 57', () => {
             // 25 (this test's original baseline) + 5 (HOS-657 refund/admin-cancel/
             // preapproval-expiry writers: PAYMENT_PARTIAL_REFUND,
             // PAYMENT_FULL_REFUND, PAYMENT_FULL_REFUND_NO_TRANSITION,
@@ -159,8 +159,12 @@ describe('BILLING_EVENT_TYPES', () => {
             // + 9 (HOS-1012 T-016: the nine TRIAL_SERIES_NOTIF_* dedup guards,
             // one per send of the trial email series — nine and not one,
             // because dedup keys on `(subscription_id, event_type)` and an
-            // offset living in metadata could not be part of that index) = 56.
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(56);
+            // offset living in metadata could not be part of that index) = 56,
+            // + 1 (HOS-1012 T-022: TRIAL_SUPERSEDED_BY_PAID — the audit row for
+            // a trial ended by conversion, kept distinct from TRIAL_EXPIRED
+            // because the win-back cohort query joins on THAT event and would
+            // otherwise mail the customer who just paid) = 57.
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(57);
         });
     });
 

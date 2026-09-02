@@ -65,6 +65,27 @@ export const BILLING_EVENT_TYPES = {
      */
     TRIAL_EXPIRED: 'TRIAL_EXPIRED',
     /**
+     * Fired when a Hospeda-owned trial is superseded by the customer's own
+     * newly-activated paid subscription, inside the SAME transaction as that
+     * activation (HOS-1012 T-022).
+     *
+     * Deliberately NOT a reuse of `TRIAL_EXPIRED`, and the distinction is
+     * load-bearing rather than cosmetic: `findPostExpiryCohorts`
+     * (`services/billing/trial-series-cohort.ts`) selects the win-back series
+     * cohort by INNER JOINing on a `TRIAL_EXPIRED` row. Stamping a converted
+     * trial with that event would enrol the customer who just paid into the
+     * six-send "tu publicación salió del sitio" series — the single worst mail
+     * this system can send. This event says the opposite thing: the trial ended
+     * because it succeeded.
+     *
+     * Also distinct from `REACTIVATION_SUPERSESSION_COMPLETED`, which records
+     * HOS-114's provider-mediated supersession (a preapproval is cancelled at
+     * MercadoPago, after the transaction, with a reconcile cron behind it).
+     * This one is a purely local write on a row that never had a preapproval,
+     * and it commits or rolls back with the activation itself.
+     */
+    TRIAL_SUPERSEDED_BY_PAID: 'TRIAL_SUPERSEDED_BY_PAID',
+    /**
      * Fired when the trial reconciler settles an elapsed card-first trial against
      * the provider (HOS-171), recording the outcome it reconciled the local row
      * to — converted to active, mirrored to cancelled/paused, or routed to

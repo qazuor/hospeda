@@ -11,6 +11,7 @@
 import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import {
     billingSubscriptionEvents,
     billingSubscriptions,
@@ -53,6 +54,7 @@ import type {
 } from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
+import { supersedeLocalTrialsOnActivation } from '../../../services/billing/trial-supersede-on-activation.js';
 import { readTrialWindowFromPreapprovalPayload } from '../../../services/billing/trial-window-derivation.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
@@ -1118,6 +1120,44 @@ export async function processSubscriptionUpdated({
             .update(billingSubscriptions)
             .set(updateData)
             .where(eq(billingSubscriptions.id, localSubscription.id));
+
+        // Step 7b (HOS-1012 T-022): end the customer's Hospeda-owned trial in
+        // THIS transaction, so the overlap never outlives it.
+        //
+        // Since HOS-1012 a trial is a local row (`trialing`,
+        // `mp_subscription_id = NULL`) minted at first publish, and the paid
+        // checkout creates its own separate row — so the instant this webhook
+        // activates that row, the customer holds TWO entitlement-granting rows.
+        // `loadEntitlements` takes the FIRST one it finds, so a committed
+        // overlap resolves a nondeterministic plan.
+        //
+        // Gated on a transition INTO an entitlement-granting status from one
+        // that was not granting — the activation, whatever its shape. Read off
+        // `freshStatus`, the FOR-UPDATE-locked value, and not the stale
+        // pre-transaction snapshot, for the same reason every other guard in
+        // this block is. Every early `return` above therefore skips it too: a
+        // refused activation must leave the trial granting, because the
+        // customer got nothing in exchange for it.
+        //
+        // Deliberately NOT placed after `withServiceTransaction` next to
+        // `completeReactivationSupersession` (HOS-114): that one cancels a
+        // MercadoPago preapproval and cannot be transactional, which is why it
+        // needs a reconcile cron behind it. This one is a purely local write
+        // with nothing to reconcile — and its failure MUST roll the activation
+        // back rather than commit the two-row state.
+        if (
+            !isEntitlementGrantingStatus(freshStatus) &&
+            isEntitlementGrantingStatus(mappedStatus)
+        ) {
+            await supersedeLocalTrialsOnActivation({
+                tx,
+                activatedSubscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                productDomain: localSubscription.productDomain,
+                providerEventId,
+                source: source ?? 'webhook'
+            });
+        }
 
         // Step 8: Insert audit log within the transaction (non-blocking on failure)
         try {
