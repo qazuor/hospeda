@@ -84,6 +84,21 @@ export function getSiteUrl(): string {
 }
 
 /**
+ * Get the Hospeda brand contact phone number, as configured.
+ *
+ * Server-only. Returns `HOSPEDA_BRAND_PHONE` (Zod default: `'+54 3442
+ * 453797'`) — the call/display form, WITHOUT the AR mobile `9`. Callers
+ * needing a `tel:` href, a display string, or a `wa.me` deep link should go
+ * through `@/lib/brand-phone` rather than parsing this value themselves
+ * (HOS-364).
+ *
+ * @returns The configured brand phone number, in call/display form
+ */
+export function getBrandPhoneRaw(): string {
+    return getEnv().HOSPEDA_BRAND_PHONE;
+}
+
+/**
  * Get the admin panel base URL.
  *
  * Used to redirect hosts to the admin app after creating a property draft

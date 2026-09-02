@@ -32,6 +32,16 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_API_URL: z.url().optional(),
     PUBLIC_API_URL: z.url().optional(),
     /**
+     * Hospeda's brand contact phone number (HOS-364), in call/display form —
+     * WITHOUT the AR mobile 9. Single source of truth for every phone surface
+     * in the web app (footer, contact page, FAQ WhatsApp CTA, the six
+     * presentation pages, the schema.org Organization telephone). See
+     * `src/lib/brand-phone.ts` for the derived display / `tel:` / `wa.me`
+     * forms — nothing else should hardcode this number again. Defaults to the
+     * currently published number so the app runs locally with no env var set.
+     */
+    HOSPEDA_BRAND_PHONE: z.string().min(1).default('+54 3442 453797'),
+    /**
      * Internal API base URL for server-to-server SSR fetches (HOS-103).
      *
      * When set, the API client uses it as the base URL for GET requests issued

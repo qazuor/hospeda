@@ -51,6 +51,22 @@
       "howToObtainEs": "Donde corre el dashboard de admin (TanStack Start). Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar (o tu subdominio real). La API la usa para CORS."
     },
     {
+      "name": "HOSPEDA_BRAND_PHONE",
+      "description": "Hospeda's brand contact phone number (HOS-364), in call/display form — WITHOUT the AR mobile 9 (e.g. '+54 3442 453797'). Single source of truth for every phone surface in apps/web: the footer, the contact page, the FAQ WhatsApp CTA, the six presentation pages, and the schema.org Organization telephone. web derives the display text, the tel: href, and the wa.me WhatsApp link (which inserts the AR mobile 9) all from this one value via apps/web/src/lib/brand-phone.ts — no call site should hardcode the number again.",
+      "descriptionEs": "Teléfono de contacto de la marca Hospeda (HOS-364), en formato de llamada/display — SIN el 9 móvil argentino (ej: '+54 3442 453797'). Fuente única para toda superficie de teléfono en apps/web: el footer, la página de contacto, el CTA de WhatsApp de las FAQ, las seis páginas de presentación y el telephone del Organization de schema.org. web deriva el texto a mostrar, el href tel: y el link de WhatsApp wa.me (que inserta el 9 móvil) a partir de este único valor vía apps/web/src/lib/brand-phone.ts — ningún call site debería volver a hardcodear el número.",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "defaultValue": "+54 3442 453797",
+      "exampleValue": "+54 3442 453797",
+      "apps": [
+        "web"
+      ],
+      "category": "core",
+      "howToObtain": "Hospeda's own published contact number, in '+<country code> <area> <number>' form, WITHOUT the AR mobile 9 — apps/web/src/lib/brand-phone.ts inserts it only for the wa.me link. Change this ONE value (and redeploy) to change the number everywhere it is shown.",
+      "howToObtainEs": "El número de contacto publicado por Hospeda, en formato '+<código país> <área> <número>', SIN el 9 móvil argentino — apps/web/src/lib/brand-phone.ts lo inserta solo para el link de wa.me. Cambiar este ÚNICO valor (y redeployar) cambia el número en todos lados donde se muestra."
+    },
+    {
       "name": "HOSPEDA_INTERNAL_API_URL",
       "description": "Internal API base URL for the web app server-to-server SSR fetches (HOS-103). When set, SSR GETs use this instead of PUBLIC_API_URL, keeping traffic off the public Cloudflare hostname. Server-only; browser calls always use the public URL. Leave unset in local dev.",
       "descriptionEs": "URL base interna de la API para los fetches server-to-server del SSR del web (HOS-103). Cuando está seteada, los GET del SSR la usan en vez de PUBLIC_API_URL, manteniendo el tráfico fuera del hostname público de Cloudflare. Solo server; el browser siempre usa la URL pública. Dejar sin setear en dev local.",
