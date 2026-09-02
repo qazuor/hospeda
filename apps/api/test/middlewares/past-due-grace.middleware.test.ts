@@ -705,6 +705,30 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.json).not.toHaveBeenCalled();
         });
 
+        it('should call next() for the replace-payment-method recovery path even with expired grace (HOS-348 Part B)', async () => {
+            // Arrange — this IS the payment path the gate is meant to funnel
+            // a past-due customer toward, so it must stay reachable even
+            // after the grace period has fully expired.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -6
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath:
+                    '/api/v1/protected/billing/subscriptions/11111111-1111-1111-1111-111111111111/replace-payment-method'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            await middleware(ctx as never, next);
+
+            // Assert
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
         it('should still block a mutating billing path that merely CONTAINS "subscription" (HOS-348)', async () => {
             // Arrange — the exemption above is a suffix match on
             // `/me/subscription`; it must not accidentally widen to any path

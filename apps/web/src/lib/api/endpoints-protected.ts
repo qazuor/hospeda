@@ -29,6 +29,7 @@ import type {
     PlanChangeResponse,
     PriceAlertResponse,
     PurchaseAddonResponse,
+    ReplacePaymentMethodResponse,
     StartPaidSubscriptionResponse,
     SubscriptionStatusResponse,
     UserBookmark,
@@ -1034,6 +1035,45 @@ export const billingApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/${localId}/checkout-retry`,
             body: {}
+        });
+    },
+
+    /**
+     * Replace the payment method on a `past_due` subscription (HOS-348 Part B).
+     *
+     * Mints a fresh MercadoPago preapproval on the subscription's CURRENT
+     * plan and returns its `checkoutUrl` — the caller MUST redirect the
+     * browser there. The old (past-due) preapproval is cancelled only once
+     * the new one confirms authorized; nothing is charged or cancelled by
+     * this call itself. The unpaid period on the old subscription is
+     * deliberately not collected (owner decision — see
+     * `apps/api/src/services/billing/past-due-payment-method-replacement.service.ts`).
+     *
+     * `/replace-payment-method` is wrapped by `idempotencyKeyMiddleware`
+     * (same contract as `/start-paid`), so a fresh UUID v4 per click means a
+     * double-click retry gets the cached response instead of a second
+     * preapproval.
+     *
+     * @param params.localId - The past-due subscription's local UUID
+     *   (`subscription.id` from `userApi.getSubscription`).
+     * @returns The new preapproval's `checkoutUrl` to redirect to, and
+     *   whether an already-in-flight attempt was reused.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.replacePaymentMethod({ localId });
+     * if (result.ok) window.location.href = result.data.checkoutUrl;
+     * ```
+     */
+    replacePaymentMethod({
+        localId
+    }: {
+        readonly localId: string;
+    }): Promise<ApiResult<ReplacePaymentMethodResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${localId}/replace-payment-method`,
+            body: {},
+            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
         });
     },
 

@@ -371,6 +371,44 @@ describe('reactivation-supersession-reconcile cron job', () => {
         });
     });
 
+    describe('HOS-348: payment-method-replacement orphan (superseded sub was past_due)', () => {
+        it('infers the payment-method-replacement triggerSource, not subscription-reactivation', async () => {
+            // A HOS-348 replacement whose webhook confirmation never arrived
+            // (or arrived and failed) is exactly the orphan shape this cron
+            // exists to correct. It must be labeled with ITS OWN
+            // triggerSource — mislabeling it 'subscription-reactivation'
+            // would write `reactivatedFromCanceled: 'true'` on a row that
+            // was never `canceled` (it was `past_due`).
+            queueSelectResults([
+                [
+                    {
+                        id: 'sub-new-hos348',
+                        customerId: 'cust-hos348',
+                        planId: 'plan-001',
+                        metadata: {
+                            pastDuePaymentMethodReplacement: 'true',
+                            supersedesSubscriptionId: 'sub-old-past-due'
+                        }
+                    }
+                ],
+                [] // audit peek: none found — genuinely orphaned
+            ]);
+            mockCompleteSupersessionPairing.mockResolvedValue('completed');
+
+            const result = await reactivationSupersessionReconcileJob.handler(buildCtx());
+
+            expect(result.success).toBe(true);
+            expect(mockCompleteSupersessionPairing).toHaveBeenCalledOnce();
+            expect(mockCompleteSupersessionPairing).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    supersededId: 'sub-old-past-due',
+                    triggerSource: 'payment-method-replacement'
+                })
+            );
+            expect(result.details).toMatchObject({ corrected: 1 });
+        });
+    });
+
     describe('already-correctly-superseded (audit row exists)', () => {
         it('leaves the pairing alone without calling completeSupersessionPairing', async () => {
             queueSelectResults([

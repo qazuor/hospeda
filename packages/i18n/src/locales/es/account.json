@@ -689,6 +689,8 @@
             "uncancelButton": "Descartar cancelación",
             "uncancelSuccess": "Cancelación descartada. Tu suscripción sigue activa.",
             "uncancelError": "No se pudo descartar la cancelación.",
+            "replacePaymentMethodButton": "Actualizar medio de pago",
+            "replacePaymentMethodError": "No se pudo iniciar la actualización del medio de pago.",
             "trialExtension": {
                 "title": "Extender tu prueba gratis",
                 "help": "Si tenés un código promocional, aplicalo ahora y sumás días a tu prueba.",

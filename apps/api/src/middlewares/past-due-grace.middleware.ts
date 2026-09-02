@@ -65,8 +65,8 @@ const GRACE_EXEMPT_PATH_SUFFIXES = [
     '/trial/reactivate-subscription',
     '/checkout',
     '/subscriptions/reactivate',
-    // HOS-348: read-only. `GET /users/me/subscription` is the ONLY endpoint
-    // that renders `apps/web`'s `/mi-cuenta/suscripcion` page
+    // HOS-348 Part A: read-only. `GET /users/me/subscription` is the ONLY
+    // endpoint that renders `apps/web`'s `/mi-cuenta/suscripcion` page
     // (`SubscriptionDashboard.client.tsx`'s `fetchData`) — without this
     // exemption a past-due customer whose grace period expired got a 402 on
     // the one screen that could show them *why* and let them act, and the
@@ -74,12 +74,18 @@ const GRACE_EXEMPT_PATH_SUFFIXES = [
     // request into the same 402 forever. This is a READ: it reports status,
     // it does not grant anything the gate is meant to withhold. There used
     // to be a `/payment-methods` suffix here too, added for the same
-    // "let them fix it" intent, but no route in this codebase has ever
-    // matched it (grep confirms) — an exemption that matches nothing is
-    // worse than no exemption, so it was removed rather than kept as
-    // decoration. It comes back once a real update-payment-method endpoint
-    // exists, scoped to that endpoint's own path.
+    // "let them fix it" intent, but no route in this codebase ever matched
+    // it (grep confirmed) — an exemption that matches nothing is worse than
+    // no exemption, so it was removed rather than kept as decoration.
     '/me/subscription',
+    // HOS-348 Part B: the actual remedy `/me/subscription` above only lets
+    // the customer SEE. `POST .../subscriptions/:id/replace-payment-method`
+    // (`replace-payment-method.ts`) mints a fresh preapproval on their
+    // current plan — it does not skip payment, it IS the payment path this
+    // whole gate exists to funnel a past-due customer toward. Safe as a bare
+    // suffix for the same reason `/start-subscription` below is: this
+    // middleware only runs on `/api/v1/protected/*`.
+    '/replace-payment-method',
     // HOS-166: commerce owner self-checkout. `billing_customers` is one row
     // per user shared across accommodation + commerce (ADR-035), so a host
     // whose ACCOMMODATION subscription is past-due/grace-expired must still

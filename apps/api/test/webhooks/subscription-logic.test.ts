@@ -3770,6 +3770,130 @@ describe('processSubscriptionUpdated', () => {
             );
         });
 
+        it('cancels the superseded PAST-DUE subscription and writes the audit row with the payment-method-replacement triggerSource on confirm (HOS-348 Part B)', async () => {
+            // Arrange: mirrors `replacePastDuePaymentMethod`
+            // (`past-due-payment-method-replacement.service.ts`) markers.
+            // Unlike the trial/lapsed flavors above, the superseded row here
+            // is `past_due` — never `canceled` — which is exactly what this
+            // test proves generalizes safely: `completeSupersessionPairing`'s
+            // re-verify treats `past_due` as non-terminal (Step 4), so the
+            // cancel attempt below is genuinely required to make it terminal
+            // before the audit row can be written.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: 'incomplete',
+                metadata: {
+                    pastDuePaymentMethodReplacement: 'true',
+                    replacedAt: new Date().toISOString(),
+                    previousPlanId: 'plan-past-due-001',
+                    unpaidPeriodForgiven: 'true',
+                    supersedesSubscriptionId: 'sub-old-past-due-001'
+                }
+            });
+            const dbMock = makeSupersessionDbMock({
+                localSub,
+                subsequentSelectResults: [
+                    [], // existing-audit-row check: none found
+                    // superseded row lookup — starts past_due, confirmed
+                    // cancelled by mockGet below AFTER the cancel attempt.
+                    [{ id: 'sub-old-past-due-001', status: SubscriptionStatusEnum.PAST_DUE }]
+                ]
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+            mockGet.mockResolvedValue({ status: 'canceled' });
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos348-confirm-past-due-replacement'
+            });
+
+            // Assert: the old past-due preapproval IS cancelled now that the
+            // new one confirmed authorized, and the audit row records the
+            // HOS-348-specific triggerSource + debt-forgiveness metadata —
+            // never `reactivatedFromCanceled` (the row was never `canceled`).
+            expect(result.success).toBe(true);
+            expect(mockCancel).toHaveBeenCalledTimes(1);
+            expect(mockCancel).toHaveBeenCalledWith('sub-old-past-due-001');
+            expect(dbMock.topLevelInsertValues).toHaveBeenCalledTimes(1);
+            expect(dbMock.topLevelInsertValues).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: localSub.id,
+                    previousStatus: SubscriptionStatusEnum.PAST_DUE,
+                    triggerSource: 'payment-method-replacement',
+                    newStatus: SubscriptionStatusEnum.ACTIVE,
+                    metadata: expect.objectContaining({
+                        supersededSubscriptionId: 'sub-old-past-due-001',
+                        pastDuePaymentMethodReplaced: 'true',
+                        unpaidPeriodForgiven: 'true'
+                    })
+                })
+            );
+            // Never mislabel this flavor as a canceled-subscription reactivation.
+            const insertedRow = dbMock.topLevelInsertValues.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(insertedRow.metadata).not.toHaveProperty('reactivatedFromCanceled');
+            expect(insertedRow.metadata).not.toHaveProperty('convertedFromTrial');
+        });
+
+        it('does NOT cancel the old past-due subscription while the new preapproval is still pending (HOS-348 Part B invariant)', async () => {
+            // Arrange: this is the abandoned-authorization scenario the whole
+            // "cancel old only once new is confirmed" design exists to
+            // protect against. The new preapproval carries the SAME
+            // supersedesSubscriptionId metadata a confirmed replacement
+            // would, but MercadoPago's live read still reports it `pending`
+            // (the customer has not finished authorizing it yet) — Step 4's
+            // `providerStatus === null` early-return must fire BEFORE any DB
+            // lookup or `completeReactivationSupersession` call, so the old
+            // past-due subscription is never touched.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('pending'));
+
+            const dbMock = makeSupersessionDbMock({
+                localSub: makeLocalSubscription({
+                    status: 'incomplete',
+                    metadata: {
+                        pastDuePaymentMethodReplacement: 'true',
+                        supersedesSubscriptionId: 'sub-old-past-due-002'
+                    }
+                })
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: {
+                    ...mockBilling,
+                    subscriptions: { cancel: mockCancel, get: mockGet }
+                } as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos348-pending-not-confirmed'
+            });
+
+            // Assert — the old subscription stays exactly as past-due as
+            // before: no cancel, no audit row. Leaving the customer stuck
+            // between two subscriptions (one dead, one uncollectable) would
+            // be worse than leaving them exactly where they started.
+            expect(result.success).toBe(true);
+            expect(mockCancel).not.toHaveBeenCalled();
+            expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
+        });
+
         it('T-015a: does NOT write the audit row when a transient cancel failure leaves the superseded subscription still active', async () => {
             // Arrange: the provider cancel throws (simulating a transient MP
             // 5xx/timeout), and the re-fetch confirms the superseded
