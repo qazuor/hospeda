@@ -130,16 +130,22 @@ export function formatInventoryNote({
         (w) => !w.isMain && w.state !== 'missing' && !isProtectedBranch({ branch: w.branch })
     );
     const missing = worktrees.filter((w) => w.state === 'missing');
-    const reclaimable = removable
+    // Both figures add up `du` per worktree, so they are APPARENT sizes and
+    // they overlap: a file hardlinked from another tree or from the pnpm store
+    // is charged to every worktree holding a link, while deleting one of them
+    // returns nothing. Useful for ranking which worktree is big; not a promise
+    // about disk. The real number is measured with `df` after the removal.
+    const finished = removable
         .filter((w) => w.state === 'merged')
         .reduce((sum, w) => sum + w.mb, 0);
     const total = removable.reduce((sum, w) => sum + w.mb, 0);
 
     const lines = [
         `${worktrees.length} worktrees · ${removable.length} borrables · ${formatSize({ mb: total })} ocupados`,
-        `${pc.green(formatSize({ mb: reclaimable }))} en worktrees terminados`,
+        `${pc.green(formatSize({ mb: finished }))} en worktrees terminados`,
         pc.dim('«terminado» = sin commits propios sobre la base y sin cambios locales.'),
-        pc.dim('Se decide con estado LOCAL: no se consulta el estado del PR.')
+        pc.dim('Se decide con estado LOCAL: no se consulta el estado del PR.'),
+        pc.dim('Los tamaños se solapan: lo que se libera de verdad se mide al borrar.')
     ];
     if (missing.length > 0) {
         lines.push(
@@ -188,7 +194,10 @@ export function formatRiskWarning({ risky }: { readonly risky: readonly Worktree
  *
  * @param input.removed - Worktrees removed successfully.
  * @param input.failed  - Worktrees whose removal exited non-zero.
- * @param input.freedMb - Disk space attributable to the removed worktrees.
+ * @param input.freedMb - Space actually returned to the filesystems, measured
+ *                          with `df` before and after, or `null` when it could
+ *                          not be measured. NOT the sum of the worktrees'
+ *                          apparent sizes — those overlap.
  * @returns A multi-line summary.
  */
 export function formatSummary({
@@ -198,11 +207,13 @@ export function formatSummary({
 }: {
     readonly removed: readonly WorktreeInfo[];
     readonly failed: readonly WorktreeInfo[];
-    readonly freedMb: number;
+    readonly freedMb: number | null;
 }): string {
-    const lines = [
-        `${pc.green('borrados:')} ${removed.length}  ${pc.dim(`(${formatSize({ mb: freedMb })} liberados)`)}`
-    ];
+    const freed =
+        freedMb === null
+            ? pc.dim('(no pude medir el espacio liberado)')
+            : pc.dim(`(${formatSize({ mb: freedMb })} liberados en disco)`);
+    const lines = [`${pc.green('borrados:')} ${removed.length}  ${freed}`];
     if (failed.length > 0) {
         lines.push(`${pc.red('fallaron:')} ${failed.length}`);
         for (const worktree of failed) lines.push(pc.dim(`  ${worktree.path}`));
