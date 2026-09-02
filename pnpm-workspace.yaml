@@ -89,6 +89,27 @@ overrides:
   # activation path a purchase has: two approved payments were collected and
   # never recorded. Ships with migration 0093 on our side. FLOOR: core >= 3.1.0.
   #
+  # 2026-09-01: the split above happened AGAIN, and this time nothing failed.
+  # `pnpm-lock.yaml` held two core versions — 5.1.0, declared directly by the
+  # five workspace packages after core was raised on its own to pick up
+  # `payerEmail` (HOS-937), and 5.0.0, still pinned by drizzle 2.0.0, hono
+  # 1.6.11, react 1.1.26 and mercadopago 2.9.2. npm already had all four
+  # republished against the new core; nobody had installed them. The tell was in
+  # this very file: `minimumReleaseAgeExclude` listed `qzpay-core@5.1.0` while
+  # every sibling line stopped one version short.
+  #
+  # It was benign — 5.1.0 adds one optional field, so both `QZPayBilling`
+  # identities were structurally compatible, `tsc` passed on api, admin and web,
+  # and the billing suites were green. That is the part worth remembering:
+  # HOS-232 is not detected by a red build. It is detected by COUNTING.
+  #
+  #     grep "'@qazuor/qzpay-core@" pnpm-lock.yaml   # must print ONE line
+  #
+  # Which is now a guard rather than a habit —
+  # `scripts/check-qzpay-wave-convergence.sh`, wired into both `check:guards`
+  # and its own CI step. It proves one core version resolves, not WHICH one; the
+  # floors above stay prose, and are not machine-checked.
+  #
   # Current wave (2026-09-01): core 5.1.1 · mercadopago 2.9.4 · drizzle 2.1.0 ·
   # hono 1.6.13 · react 1.1.28. Declared as `^` ranges in apps/api, apps/admin,
   # packages/billing, packages/db and packages/service-core.
