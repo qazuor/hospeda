@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "098-feature-nut_free_options",
+    "slug": "nut_free_options",
+    "description": {
+        "es": "Opciones del menú sin frutos secos para personas alérgicas",
+        "en": "Nut-free menu options for people with an allergy",
+        "pt": "Opções do cardápio sem frutos secos para pessoas alérgicas"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "ShieldIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}
