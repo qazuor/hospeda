@@ -887,7 +887,7 @@ describe('SubscriptionDashboard — cancel modal: 404 graceful degradation', () 
 
         // The mailto link must appear (degrade to email support)
         const supportLink = screen.getByRole('link', { name: /soporte/i });
-        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\?subject=/);
+        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\.ar\?subject=/);
     });
 
     it('does not show an error alert on 404 — uses fallback copy instead', async () => {

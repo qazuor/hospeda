@@ -724,7 +724,7 @@
             "cancelModal": {
                 "title": "Cancelar assinatura",
                 "emailSubject": "Cancelamento de assinatura",
-                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
+                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com.ar e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
                 "contactSupport": "Contatar suporte",
                 "confirm": "Sim, cancelar assinatura",
                 "description": "Ao cancelar sua assinatura você mantém o acesso ao seu plano até o final do período atual. Nenhuma cobrança adicional será feita.",

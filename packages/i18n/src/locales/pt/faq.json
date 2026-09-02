@@ -146,11 +146,11 @@
             "items": {
                 "writeArticle": {
                     "question": "Quero propor uma matéria, como faço?",
-                    "answer": "Mande um e-mail para info@hospeda.com com a ideia (tema, abordagem, tamanho aproximado) e algumas amostras anteriores se tiver. Se encaixar na linha editorial, retornamos para coordenar e publicar com sua assinatura."
+                    "answer": "Mande um e-mail para info@hospeda.com.ar com a ideia (tema, abordagem, tamanho aproximado) e algumas amostras anteriores se tiver. Se encaixar na linha editorial, retornamos para coordenar e publicar com sua assinatura."
                 },
                 "submitPhotos": {
                     "question": "Vocês podem publicar fotos minhas da região?",
-                    "answer": "Sim, recebemos fotografias de paisagens, festas, gastronomia e vida local. Sempre creditamos o autor e, conforme o caso, fazemos uma matéria ou galeria específica. Mande amostras para info@hospeda.com."
+                    "answer": "Sim, recebemos fotografias de paisagens, festas, gastronomia e vida local. Sempre creditamos o autor e, conforme o caso, fazemos uma matéria ou galeria específica. Mande amostras para info@hospeda.com.ar."
                 },
                 "submitEvent": {
                     "question": "Como aviso sobre um evento ou atividade?",
@@ -182,7 +182,7 @@
             "items": {
                 "advertise": {
                     "question": "Como posso anunciar na Hospeda?",
-                    "answer": "Temos formatos para marcas, instituições e comércios locais: banners na home, conteúdo patrocinado, destaques por destino, presença na newsletter e patrocínio de seções. Mande um e-mail para partners@hospeda.com com seu objetivo e montamos uma proposta."
+                    "answer": "Temos formatos para marcas, instituições e comércios locais: banners na home, conteúdo patrocinado, destaques por destino, presença na newsletter e patrocínio de seções. Mande um e-mail para partners@hospeda.com.ar com seu objetivo e montamos uma proposta."
                 },
                 "formats": {
                     "question": "Quais formatos de banner ou conteúdo patrocinado vocês oferecem?",
@@ -202,7 +202,7 @@
                 },
                 "commercialContact": {
                     "question": "Com quem falo sobre temas comerciais?",
-                    "answer": "Mande um e-mail para partners@hospeda.com ou pela página Contato selecionando \"Consulta comercial\". Respondemos em até 48 horas úteis com uma proposta inicial."
+                    "answer": "Mande um e-mail para partners@hospeda.com.ar ou pela página Contato selecionando \"Consulta comercial\". Respondemos em até 48 horas úteis com uma proposta inicial."
                 },
                 "minBudget": {
                     "question": "Tem orçamento mínimo para anunciar?",
@@ -250,7 +250,7 @@
             "items": {
                 "channels": {
                     "question": "Quais são os canais de contato?",
-                    "answer": "E-mail (info@hospeda.com), WhatsApp, telefone e formulário de contato do site. Para temas comerciais: partners@hospeda.com. Veja a página de Contato para todos os detalhes."
+                    "answer": "E-mail (info@hospeda.com.ar), WhatsApp, telefone e formulário de contato do site. Para temas comerciais: partners@hospeda.com.ar. Veja a página de Contato para todos os detalhes."
                 },
                 "hours": {
                     "question": "Quais são os horários de atendimento?",
@@ -270,7 +270,7 @@
                 },
                 "press": {
                     "question": "E se eu for de imprensa ou mídia?",
-                    "answer": "Mande um e-mail para info@hospeda.com com assunto \"Imprensa\" ou pelo formulário de contato. Conectamos você com a área correspondente e enviamos o press kit com materiais para divulgação."
+                    "answer": "Mande um e-mail para info@hospeda.com.ar com assunto \"Imprensa\" ou pelo formulário de contato. Conectamos você com a área correspondente e enviamos o press kit com materiais para divulgação."
                 }
             }
         }
