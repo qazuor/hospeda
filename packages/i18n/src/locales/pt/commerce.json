@@ -54,6 +54,14 @@
         "hidden": "Oculto",
         "pending": "Pendente"
     },
+    "brochure": {
+        "qrHint": "Escaneie o código para ver a ficha completa, com fotos e avaliações.",
+        "footer": "Ficha gerada por Hospeda — hospeda.com.ar",
+        "download": "Baixar ficha em PDF",
+        "downloading": "Gerando a ficha…",
+        "error": "Não conseguimos gerar a ficha. Tente novamente em instantes.",
+        "locked": "A ficha em PDF está disponível no plano Premium do seu ramo."
+    },
     "owner": {
         "nav": "Meu comércio",
         "list": {
