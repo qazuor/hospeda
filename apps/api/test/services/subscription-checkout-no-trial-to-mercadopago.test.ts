@@ -104,12 +104,6 @@ vi.mock('../../src/services/billing/pending-provider-subscription-create', () =>
         createPendingProviderSubscriptionMock(...args)
 }));
 
-// HOS-936's post-create reconciliation reaches MercadoPago and the DB. Out of
-// scope here.
-vi.mock('../../src/services/billing/trial-window-reconcile', () => ({
-    reconcileTrialWindowAgainstProvider: vi.fn().mockResolvedValue(undefined)
-}));
-
 // Commerce/partner in-flight-checkout reuse reads the DB before the branch this
 // suite exercises. Always "no reusable checkout".
 vi.mock('../../src/services/billing/checkout-idempotency', () => ({

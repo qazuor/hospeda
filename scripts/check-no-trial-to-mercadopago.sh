@@ -76,9 +76,9 @@
 #      a typed field (`readonly freeTrialDays?: number`), or a quoted key
 #      (`'free_trial':`). Reading a same-named property off something else —
 #      `body.free_trial` on a provider payload we are inspecting — is a member
-#      access, not a payload field being BUILT, and does not match. (The read
-#      direction has its own guard: check-trial-not-derived-from-free-trial.sh,
-#      HOS-936. This one is the write direction.)
+#      access, not a payload field being BUILT, and does not match. (HOS-936 used
+#      to guard the read direction too; that guard was retired with its module in
+#      HOS-1012 T-026, because nothing reads a provider trial window anymore.)
 #
 #   EVERY REGEX IS ANCHORED. Another repo precedent: an unanchored guard
 #   watching `data-astro-reload` happily let `data-astro-reloadX` through. Here

@@ -30,12 +30,13 @@
  *   "granted".
  *
  * That second point is a statement about WHEN, not about trustworthiness, and
- * HOS-936 acts on the other half of it: at creation the field is not merely
- * usable, it is the only honest one, so
- * {@link ./trial-window-derivation | `trial-window-derivation.ts`} derives the
- * window from `next_payment_date - date_created` right where the preapproval is
- * born. This module is what still has to hold afterwards, once that window has
- * rolled and the question can no longer be asked of the provider.
+ * HOS-936 acted on the other half of it: at creation the field was not merely
+ * usable, it was the only honest one, so a companion module derived the window
+ * from `next_payment_date - date_created` right where the preapproval was born.
+ * That module is gone (HOS-1012 T-026) — no checkout asks MercadoPago for a
+ * trial anymore, so there is no provider window to derive. This module is what
+ * still has to hold afterwards, once that window has rolled and the question can
+ * no longer be asked of the provider.
  *
  * A **settled charge that lands before the promised trial could plausibly have
  * elapsed** has neither problem. It is recorded in our own database, it cannot

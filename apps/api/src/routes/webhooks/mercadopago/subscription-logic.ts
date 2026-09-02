@@ -55,7 +55,6 @@ import type {
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { supersedeLocalTrialsOnActivation } from '../../../services/billing/trial-supersede-on-activation.js';
-import { readTrialWindowFromPreapprovalPayload } from '../../../services/billing/trial-window-derivation.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -370,21 +369,12 @@ export async function completeReactivationSupersession({
  * two seconds apart on 2026-08-31, reported the same `free_trial` and the same
  * `first_invoice_offset` while only one of them was actually being deferred.
  *
- * The replacement is `readTrialWindowFromPreapprovalPayload`, which derives the
- * window from `next_payment_date - date_created` — the only field on the
- * response that is a statement about THIS subscription. See
- * `services/billing/trial-window-derivation.ts` for the measurement and the
- * threshold.
- *
- * Behaviour against real traffic is unchanged by the swap: qzpay's
- * `mapToProviderSubscription()` builds a closed camelCase object carrying
- * neither `auto_recurring` nor `next_payment_date`, so the old helper always
- * returned `false` and the new one always returns `unknown`. Both leave
- * `resolvedTrialEnd` to the preserve-if-set value persisted at creation time
- * (`services/billing/pending-provider-subscription-create.ts`, HOS-211
- * Option B). What changes is that a payload which DOES carry the fields — a
- * future qzpay version, a raw retrieve, a test double — is now read honestly
- * instead of being believed.
+ * HOS-936 replaced it with a reader that derived the window from
+ * `next_payment_date - date_created`. HOS-1012 removed that too (T-026), and
+ * with it the whole `trial-window-derivation.ts` module: Hospeda no longer asks
+ * MercadoPago for a free trial at all (guard G-1), so no preapproval defers its
+ * first charge and there is no provider-side window left to read or to disbelieve.
+ * `resolvedTrialEnd` in Step 5c now comes from the local row and nothing else.
  */
 
 /**
@@ -619,36 +609,23 @@ export async function processSubscriptionUpdated({
     // Step 5c: Derive TRIALING from the provider status + the local trial window
     // (HOS-171 / HOS-211).
     //
-    // MercadoPago has no trial status: a card-first trial is an `authorized`
-    // preapproval whose first charge is deferred, which arrives here as `active`.
-    // `trialEnd` normally comes straight from the row already fetched above (no
-    // extra query) — EXCEPT for a share-link (Path C) subscription just linked
-    // by Step 5 above, whose row was inserted with `trialEnd = null` (qzpay's
-    // `mode: 'paid'` insert never knows about a trial that only the live
-    // preapproval reports). HOS-211: resolve it once here, PRESERVE-IF-SET.
+    // MercadoPago has no trial status: a preapproval whose first charge is
+    // deferred arrives here as `active`, so a row still inside its window has to
+    // be recognised locally.
     //
-    // `resolvedTrialEnd` is only ever COMPUTED when the stored value is still
-    // null — an already-set `trialEnd` always wins untouched. This is load
-    // bearing, not a simplification: recomputing it on every webhook would flip
-    // the row back to `trialing` forever, because MercadoPago keeps advertising
-    // the plan's trial terms long after the day-N charge. Fixing `trialEnd`
-    // once, only while it is still null, is what lets `deriveTrialingStatus`'s
-    // own past-date rule settle the row to `ACTIVE` when the real trial elapses.
-    //
-    // HOS-936: the window is derived from `next_payment_date - date_created`,
-    // never from `auto_recurring.free_trial` — the latter describes the plan and
-    // reads identically on a preapproval MercadoPago is charging right now. See
-    // `services/billing/trial-window-derivation.ts`.
+    // HOS-1012 T-026: the window is now read from the local row and NOTHING
+    // ELSE. Until this task the value could also be derived from the
+    // preapproval's own `next_payment_date` (HOS-936), for the one case where a
+    // share-link row was linked with `trialEnd = null` and only MercadoPago knew
+    // about the trial. That case cannot occur anymore: Hospeda never asks
+    // MercadoPago for a free trial (guard G-1,
+    // `scripts/check-no-trial-to-mercadopago.sh`), so a preapproval never defers
+    // its first charge and there is no provider window left to read. Hospeda's
+    // trial is its own local row with no preapproval behind it, and a paid
+    // activation supersedes it rather than inheriting its dates (T-022).
     const now = new Date();
     const periodEnd = mpSubscription.currentPeriodEnd ?? null;
-    const providerTrialWindow = readTrialWindowFromPreapprovalPayload(mpSubscription);
-    const resolvedTrialEnd =
-        localSubscription.trialEnd ??
-        (providerTrialWindow.outcome === 'granted' &&
-        providerTrialWindow.trialEnd &&
-        providerTrialWindow.trialEnd.getTime() > now.getTime()
-            ? providerTrialWindow.trialEnd
-            : null);
+    const resolvedTrialEnd = localSubscription.trialEnd ?? null;
 
     // This deliberately lands BEFORE every consumer of `mappedStatus` — the
     // planId safety net, the Step 6 fast-path guard and the in-transaction guard

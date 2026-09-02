@@ -465,9 +465,9 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'HOS-937 step 3. Writes are the compare-and-set claim (`metadata.retryClaimedAt`) and the post-mint stamp (`metadata.retryMintedLocalSubscriptionId`/`retryMintedCheckoutUrl`) on the CANCELLED row being recovered from — pure bookkeeping on a row that never granted entitlements (a checkout that never activated). The fresh preapproval it mints is a brand-new row created through `createOwnPreapprovalSubscription` (already inventoried, requiresCacheClear:false), and any entitlement grant only happens later when the webhook activates THAT new row (subscription-logic.ts, already calls clearEntitlementCache).'
     },
     {
-        file: 'services/billing/trial-window-reconcile.ts',
+        file: 'services/billing/trial-supersede-on-activation.ts',
         requiresCacheClear: false,
-        reason: "Clears trial_start/trial_end (HOS-936) when MercadoPago's own next_payment_date shows it is charging at the creation instant, so the trial we promised was never granted. Writes NEITHER plan_id NOR status — and every call site runs while the row is still pre-authorization, so no entitlement has been granted yet for a cache to hold. The webhook that later activates the row (subscription-logic.ts) already calls clearEntitlementCache. Entitlements gate on status and never on trial_end (the HOS-171 guard), so narrowing the window cannot change what loadEntitlements resolves."
+        reason: "HOS-1012 T-022. Moves the customer's Hospeda-owned trial row to its terminal `superseded` status INSIDE the transaction that activates their paid subscription, so no committed state ever shows both rows granting. It writes `status`, which IS entitlement-bearing — but it cannot clear the cache itself: clearing before the caller's commit would publish an entitlement picture that can still roll back. The single call site is the subscription webhook (subscription-logic.ts:1129), which clears the cache post-commit at line 1199 for that same customerId."
     },
     {
         file: 'services/plan-disable-lifecycle.service.ts',

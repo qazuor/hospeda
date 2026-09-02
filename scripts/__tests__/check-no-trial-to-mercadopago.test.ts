@@ -196,9 +196,9 @@ describe('check-no-trial-to-mercadopago.sh — its regexes are anchored', () => 
     });
 
     it('does not trip on a member READ of a provider payload', () => {
-        // The read direction is HOS-936's guard
-        // (check-trial-not-derived-from-free-trial.sh). This one is the write
-        // direction: a payload being BUILT, not one being inspected.
+        // This guard covers the write direction only: a payload being BUILT,
+        // not one being inspected. Reading a provider payload is inert now that
+        // nothing derives a trial window from one (HOS-1012 T-026).
         const file = fixture(
             'member-read.ts',
             [

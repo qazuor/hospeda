@@ -2418,19 +2418,18 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Judgment-day remediation: the state machine has no ACTIVE→TRIALING
-        // edge. A legacy row already mis-activated by the pre-HOS-211 bug
-        // (status=active, trial_end=null) now correctly re-derives TRIALING
-        // from the live preapproval's free trial, hits that guard forever, and
-        // must NOT page Sentry on every webhook — owner decision: warn only.
+        // edge. A row that is already `active` while still carrying a FUTURE
+        // `trial_end` re-derives TRIALING on every webhook, hits that guard
+        // forever, and must NOT page Sentry each time — owner decision: warn only.
         //
-        // NOTE: this is the ONE scenario where the provider-derived trial window
-        // on the fixture is legitimate — a genuinely legacy row (predates
-        // HOS-211 Option B) has NO pre-populated local `trialEnd` to fall back
-        // on, so the only way to derive a future trialEnd at all is the
-        // defensive fallback. HOS-936: that fallback now reads
-        // `next_payment_date - date_created`, never `auto_recurring.free_trial`,
-        // so the fixture carries the honest fields. It does not represent real
-        // qzpay traffic today (which carries neither), only a legacy-data case.
+        // HOS-1012 T-026 rewrote the fixture. It used to reach TRIALING through
+        // the provider fallback (`next_payment_date - date_created`, HOS-936) on
+        // a row whose local `trial_end` was null. That fallback is gone with the
+        // module that housed it — no checkout asks MercadoPago for a trial, so
+        // there is no provider window left to read — and the local row is now
+        // the ONLY source of a trial window. The shape that still reaches this
+        // guard is therefore a legacy row mis-activated while its window was
+        // open, which is what is set up here.
         it('should warn (not error/capture) and no-op on the expected legacy ACTIVE→TRIALING no-op case', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2438,18 +2437,16 @@ describe('processSubscriptionUpdated', () => {
 
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                // Defensive-fallback-only shape — see note above. The charge is
-                // deferred by 10 days, which is what makes it a real trial.
-                date_created: new Date(),
-                next_payment_date: livePeriodEnd
+                currentPeriodEnd: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
-            // Legacy row: mis-activated by the pre-HOS-211 bug.
+            // Legacy row: mis-activated while its local trial window was still
+            // open, so `deriveTrialingStatus` keeps resolving TRIALING.
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.ACTIVE,
-                trialEnd: null
+                trialStart: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+                trialEnd: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
@@ -2492,12 +2489,10 @@ describe('processSubscriptionUpdated', () => {
         // trialEnd) but caught by the in-tx guard instead. This locks the
         // branch a refactor could otherwise silently break.
         //
-        // NOTE: like the sibling legacy carve-out test above, this row has NO
-        // pre-populated local `trialEnd` (a pending_provider row created without
-        // `freeTrialDays`, or a pre-Option-B legacy row), so deriving a future
-        // trialEnd at all requires the defensive fallback — hence the
-        // provider-date override here is intentional, not a stand-in for the
-        // primary Option-B path.
+        // NOTE: like the sibling legacy carve-out above, the trial window comes
+        // from the LOCAL row — since HOS-1012 T-026 there is no other source.
+        // The row therefore carries a future `trial_end` here, which is what
+        // makes TRIALING the derived target on both reads.
         it('should warn (not error/capture) and no-op when the IN-TX guard catches the same ACTIVE→TRIALING case (concurrent mis-activation race)', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2505,19 +2500,17 @@ describe('processSubscriptionUpdated', () => {
 
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                // Defensive-fallback-only shape — see note above.
-                date_created: new Date(),
-                next_payment_date: livePeriodEnd
+                currentPeriodEnd: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
-            // Outer SELECT: legitimate pending_provider row — previousStatus ->
-            // TRIALING is valid, so Step 6b's fast-path guard passes and the
-            // transaction opens.
+            // Outer SELECT: legitimate pending_provider row with an open local
+            // trial window — previousStatus -> TRIALING is valid, so Step 6b's
+            // fast-path guard passes and the transaction opens.
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.PENDING_PROVIDER,
-                trialEnd: null
+                trialStart: new Date(),
+                trialEnd: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
             });
             // FOR UPDATE re-read: another replica already flipped the row
             // straight to `active` between the outer SELECT and the lock —
@@ -2555,71 +2548,16 @@ describe('processSubscriptionUpdated', () => {
             expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
         });
 
-        // Payloads that cannot support a trial verdict must all be treated as
-        // "no trial" — none of these should derive TRIALING or write a trialEnd.
-        //
-        // HOS-936: the last case is the measured one, and it is the reason this
-        // list exists in this shape. The provider advertises a 30-day
-        // `free_trial` while `next_payment_date` equals `date_created` — i.e. it
-        // is charging at the creation instant. Believing `auto_recurring` writes
-        // a 30-day trial onto a subscription being charged right now; the honest
-        // fields refuse it. The `auto_recurring` key is left ON that fixture on
-        // purpose: it is what a regression would read.
-        it.each([
-            ['no provider dates at all (qzpay’s real mapped shape)', {}],
-            ['next_payment_date absent', { date_created: new Date() }],
-            [
-                'next_payment_date is unparseable',
-                { date_created: new Date(), next_payment_date: 'tomorrow' }
-            ],
-            [
-                'next_payment_date EQUALS date_created while free_trial claims 30 days',
-                (() => {
-                    const created = new Date();
-                    return {
-                        date_created: created,
-                        next_payment_date: created,
-                        auto_recurring: { free_trial: { frequency: 30, frequency_type: 'days' } }
-                    };
-                })()
-            ]
-        ])('should treat %s as no trial', async (_label, providerFields) => {
-            // Arrange
-            const mpPreapprovalId = 'preapproval-mp-001';
-            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
-
-            const livePeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-            const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                ...providerFields
-            });
-            mockRetrieve.mockResolvedValue(mpSubscription);
-
-            const localSub = makeLocalSubscription({
-                status: SubscriptionStatusEnum.PENDING_PROVIDER,
-                trialEnd: null
-            });
-            const dbMock = makeDbMock([localSub]);
-            vi.mocked(getDb).mockReturnValue(dbMock as never);
-
-            // Act
-            const result = await processSubscriptionUpdated({
-                event: makeWebhookEvent() as never,
-                billing: mockBilling as never,
-                paymentAdapter: mockPaymentAdapter as never,
-                providerEventId: 'evt-hos211-malformed'
-            });
-
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
-
-            const txUpdateChain = dbMock.tx.update({});
-            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
-            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
-            expect(lastUpdateData).not.toHaveProperty('trialEnd');
-            expect(lastUpdateData.currentPeriodEnd).toEqual(livePeriodEnd);
-        });
+        // REMOVED, HOS-1012 T-026: an `it.each` over four provider payloads
+        // that "must be treated as no trial" (no dates, absent/unparseable
+        // `next_payment_date`, and the measured case where `next_payment_date`
+        // equals `date_created` while `auto_recurring.free_trial` claims 30
+        // days). Every one of them asserted that the HOS-936 derivation refused
+        // to invent a window. That derivation no longer exists, so the four
+        // fixtures had become the same vacuous case — a row with a null local
+        // `trial_end` settling to ACTIVE — and could not fail for the reason
+        // they were written. The `currentPeriodEnd` sync they also covered is
+        // asserted by the ordinary-activation test above.
 
         // Judgment-day remediation (round 2): currentPeriodEnd sync IS scoped
         // to the pending→activation transition only. Writing it on every
