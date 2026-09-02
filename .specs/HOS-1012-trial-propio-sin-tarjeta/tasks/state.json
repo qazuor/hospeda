@@ -842,32 +842,32 @@
         {
             "id": "T-026",
             "title": "Retire trial-window-derivation.ts and its CI guard script",
-            "description": "HOS-936's derivation exists to survive MercadoPago lying about a trial we no longer ask for. TRAP T-4: PR #3071 must still MERGE — while the old path runs in production it is the only defense against a repeat of the ARS 18.000 charge. It is deleted when the Hospeda-owned trial is LIVE, not before, which is why this task is blocked by T-023. Delete `trial-window-derivation.ts`, `scripts/check-trial-not-derived-from-free-trial.sh`, and the guard's CI wiring together — a guard left behind pointing at a deleted file is a red CI nobody can fix. TESTS: remove the suites that covered the deleted unit; confirm no remaining import resolves to it.",
-            "status": "pending",
+            "description": "HOS-936's derivation exists to survive MercadoPago lying about a trial we no longer ask for. TRAP T-4: PR #3071 must still MERGE — while the old path runs in production it is the only defense against a repeat of the ARS 18.000 charge. It is deleted when the Hospeda-owned trial is LIVE, not before, which is why this task is blocked by T-023. Delete `trial-window-derivation.ts`, `scripts/check-trial-not-derived-from-free-trial.sh`, and the guard's CI wiring together — a guard left behind pointing at a deleted file is a red CI nobody can fix. TESTS: remove the suites that covered the deleted unit; confirm no remaining import resolves to it. DONE: the deletion had to take the whole subtree — `trial-window-reconcile.ts` and `utils/mp-preapproval-trial-window.ts` existed only to feed the derivation, so both went with it, along with the two reconcile call sites (link-preapproval step 8, paid-subscription-create). In the webhook `resolvedTrialEnd` now reads the local row and nothing else; mutating it to a constant null kills 8 tests. Two HOS-211 tests reached TRIALING through the provider fallback and were re-fixtured onto a local window; an it.each over four provider payloads was deleted rather than kept, because with no derivation left all four collapsed to the same vacuous case. Also fixed an inherited red: T-022 added `trial-supersede-on-activation.ts` without an INV-1 inventory entry, so that auto-discovery guard had been failing since 4ed89f92f.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021", "T-023"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Delete the module, its tests and the guard script together",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm no dangling import or CI reference",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "billing"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T02:10:00.000Z",
+                "completed": "2026-09-02T02:40:00.000Z"
             }
         },
         {
