@@ -9,6 +9,10 @@
  *   - priceUnit (SELECT, optional — per_day | per_hour | per_person | per_group)
  *   - isPriceOnRequest (BOOLEAN, optional)
  *
+ * plus a meeting-point section (HOS-1048) covering where the experience starts:
+ *   - meetingPoint (TEXT, optional — address or landmark)
+ *   - meetingPointLat / meetingPointLong (NUMBER, optional — WGS84 degrees)
+ *
  * Used by both the view/edit flow (`EntityPageBase`) and the create flow
  * (`EntityCreatePageBase`).
  */
@@ -159,6 +163,100 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
 }
 
 // ---------------------------------------------------------------------------
+// Meeting-point section (HOS-1048)
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the meeting-point section — where the experience STARTS.
+ *
+ * Its own section rather than three more fields in "Detalles de Experiencia",
+ * because it answers a different question from type and price, and staff
+ * correcting an address should not have to read past the pricing to find it.
+ *
+ * Fields:
+ *  - `meetingPoint`     — address or landmark (TEXT, optional).
+ *  - `meetingPointLat`  — latitude in decimal degrees (NUMBER, optional).
+ *  - `meetingPointLong` — longitude in decimal degrees (NUMBER, optional).
+ *
+ * All three are optional and independent: an experience may describe its
+ * meeting point in words and never pin it. Null is "no coordinate", not an
+ * error — the columns are nullable all the way down.
+ *
+ * The permissions are the ordinary commerce ones. There is NO entitlement gate
+ * here and there must not be one: the owner decided (2026-09-01) that the
+ * meeting point is ficha data available from the basic tier. Only the map that
+ * draws these coordinates is paid (HOS-1049).
+ *
+ * @returns A `ConsolidatedSectionConfig` for the meeting-point fields.
+ */
+function createMeetingPointSection(): ConsolidatedSectionConfig {
+    return {
+        id: 'experience-meeting-point',
+        title: 'Punto de Encuentro',
+        description: 'Dónde arranca la experiencia',
+        layout: LayoutTypeEnum.GRID,
+        modes: ['view', 'edit', 'create'],
+        permissions: {
+            view: [PermissionEnum.COMMERCE_VIEW_ALL],
+            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+        },
+        fields: [
+            {
+                id: 'meetingPoint',
+                type: FieldTypeEnum.TEXT,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Punto de Encuentro',
+                description:
+                    'Dirección o referencia del lugar donde arranca la experiencia. Puede ser un punto de referencia y no una calle.',
+                placeholder: 'Ej: Muelle 3 del puerto, frente a la caseta azul',
+                permissions: {
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
+                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                },
+                typeConfig: {}
+            },
+            {
+                id: 'meetingPointLat',
+                type: FieldTypeEnum.NUMBER,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Latitud',
+                description: 'Latitud en grados decimales (WGS84). Opcional.',
+                placeholder: '-32.4825',
+                permissions: {
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
+                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                },
+                typeConfig: {
+                    min: -90,
+                    max: 90,
+                    step: 0.000001
+                }
+            },
+            {
+                id: 'meetingPointLong',
+                type: FieldTypeEnum.NUMBER,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Longitud',
+                description: 'Longitud en grados decimales (WGS84). Opcional.',
+                placeholder: '-58.2333',
+                permissions: {
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
+                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                },
+                typeConfig: {
+                    min: -180,
+                    max: 180,
+                    step: 0.000001
+                }
+            }
+        ]
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Public factory
 // ---------------------------------------------------------------------------
 
@@ -168,7 +266,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
  * Section order:
  *  1. Commerce identity section (shared — name, slug, summary, description, …)
  *  2. Experience-specific section (type, priceUnit, priceFrom, isPriceOnRequest)
- *  3. Commerce operational section (shared — contact, social, media, hours, …)
+ *  3. Meeting-point section (HOS-1048 — meetingPoint + optional lat/long)
+ *  4. Commerce operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
@@ -182,6 +281,7 @@ export const createExperienceConsolidatedConfig = (
     sections: [
         createCommerceIdentitySection(),
         createExperienceSpecificSection(),
+        createMeetingPointSection(),
         createCommerceOperationalSection()
     ],
     metadata: {

@@ -4,7 +4,8 @@
  * Unit tests for the experience consolidated entity config (SPEC-240 T-032).
  *
  * Covers:
- *  - Three sections are returned in the correct order (identity, specific, operational)
+ *  - Four sections are returned in the correct order (identity, specific,
+ *    meeting point, operational) — the third arrived with HOS-1048
  *  - Experience-specific section contains required fields (type, priceFrom, priceUnit, isPriceOnRequest)
  *  - type field has SELECT options for all ExperienceTypeEnum values
  *  - priceUnit field has SELECT options for all billing units
@@ -34,9 +35,12 @@ const t = (key: string) => key;
 // ---------------------------------------------------------------------------
 
 describe('createExperienceConsolidatedConfig — sections', () => {
-    it('should return exactly 3 sections', () => {
+    // 3 → 4 with HOS-1048's meeting-point section. The count stays frozen on
+    // purpose: it is what makes a section silently dropped — or a second one
+    // silently added — fail here rather than on an operator's screen.
+    it('should return exactly 4 sections', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections).toHaveLength(3);
+        expect(config.sections).toHaveLength(4);
     });
 
     it('should have commerce-identity as the first section', () => {
@@ -49,9 +53,77 @@ describe('createExperienceConsolidatedConfig — sections', () => {
         expect(config.sections[1]?.id).toBe('experience-specific');
     });
 
-    it('should have commerce-operational as the third section', () => {
+    it('should have experience-meeting-point as the third section', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections[2]?.id).toBe('commerce-operational');
+        expect(config.sections[2]?.id).toBe('experience-meeting-point');
+    });
+
+    it('should have commerce-operational as the last section', () => {
+        const config = createExperienceConsolidatedConfig(t as never);
+        expect(config.sections[3]?.id).toBe('commerce-operational');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1048 — meeting point
+// ---------------------------------------------------------------------------
+
+describe('createExperienceConsolidatedConfig — meeting-point section (HOS-1048)', () => {
+    function getMeetingPointSection() {
+        const config = createExperienceConsolidatedConfig(t as never);
+        return config.sections.find((s) => s.id === 'experience-meeting-point');
+    }
+
+    it('should declare exactly the three meeting-point fields, in order', () => {
+        // Arrange
+        const section = getMeetingPointSection();
+
+        // Act
+        const ids = section?.fields.map((field) => field.id);
+
+        // Assert
+        expect(ids).toEqual(['meetingPoint', 'meetingPointLat', 'meetingPointLong']);
+    });
+
+    it('should leave every meeting-point field optional', () => {
+        // Arrange
+        const section = getMeetingPointSection();
+
+        // Act
+        const required = (section?.fields ?? []).map((field) => field.required);
+
+        // Assert — an experience may describe where to meet in words and never
+        // pin it, and one that has not filled the address in must stay savable.
+        expect(required).toEqual([false, false, false]);
+    });
+
+    it('should expose the meeting point in view, edit and create modes', () => {
+        // Arrange
+        const section = getMeetingPointSection();
+
+        // Act
+        const fieldModes = (section?.fields ?? []).map((field) => field.modes);
+
+        // Assert
+        expect(section?.modes).toEqual(['view', 'edit', 'create']);
+        expect(fieldModes).toEqual([
+            ['view', 'edit', 'create'],
+            ['view', 'edit', 'create'],
+            ['view', 'edit', 'create']
+        ]);
+    });
+
+    it('should clamp the coordinates to the real WGS84 ranges', () => {
+        // Arrange
+        const section = getMeetingPointSection();
+
+        // Act
+        const lat = section?.fields.find((field) => field.id === 'meetingPointLat');
+        const long = section?.fields.find((field) => field.id === 'meetingPointLong');
+
+        // Assert
+        expect(lat?.typeConfig).toMatchObject({ min: -90, max: 90 });
+        expect(long?.typeConfig).toMatchObject({ min: -180, max: 180 });
     });
 });
 
