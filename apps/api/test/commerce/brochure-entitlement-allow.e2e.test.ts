@@ -115,4 +115,92 @@ describe('commerce brochure entitlement gate — allow side (HOS-1058)', () => {
             expect(witness).toHaveBeenCalledTimes(1);
         });
     }
+
+    it('answers a real PDF file, end to end, for a published listing', async () => {
+        // The whole point of the feature, asserted through the real route: a
+        // body a viewer opens, under a download header. The route returns a raw
+        // `Response`, so nothing about this shape is validated by the schema
+        // machinery — if it were broken, every test above would still pass.
+        vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: LISTING_ID,
+                slug: 'la-parrilla-del-puerto',
+                name: 'La Parrilla del Puerto',
+                type: 'PARRILLA',
+                summary: 'Parrilla a la vista sobre el río Uruguay.',
+                description: 'Una descripción suficientemente larga para el tier público.',
+                visibility: 'PUBLIC',
+                ownerId: OWNER_ID,
+                openingHours: {
+                    days: { mon: { closed: true, shifts: [] } }
+                },
+                // No cover: the fetch is deliberately not exercised here, so the
+                // test stays offline and deterministic.
+                media: null
+            },
+            error: undefined
+        } as never);
+
+        const res = await app.request(`/api/v1/protected/gastronomies/${LISTING_ID}/brochure`, {
+            headers: ownerHeaders
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.headers.get('content-type')).toBe('application/pdf');
+        expect(res.headers.get('content-disposition')).toBe(
+            'attachment; filename="ficha-la-parrilla-del-puerto.pdf"'
+        );
+
+        const bytes = Buffer.from(await res.arrayBuffer());
+        expect(bytes.subarray(0, 8).toString('latin1')).toBe('%PDF-1.4');
+        expect(bytes.toString('latin1')).toContain('%%EOF');
+        // The listing's own name reached the page, so this is that listing's
+        // sheet rather than an empty template.
+        expect(bytes.toString('latin1')).toContain('La Parrilla del Puerto');
+    });
+
+    it('refuses to print a listing that has no public page', async () => {
+        // A draft has no ficha to print, and its QR would send every reader to
+        // a 404. NOT_FOUND, never a sheet.
+        vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: LISTING_ID,
+                slug: 'borrador',
+                name: 'Borrador',
+                type: 'PARRILLA',
+                visibility: 'PRIVATE',
+                ownerId: OWNER_ID
+            },
+            error: undefined
+        } as never);
+
+        const res = await app.request(`/api/v1/protected/gastronomies/${LISTING_ID}/brochure`, {
+            headers: ownerHeaders
+        });
+
+        expect(res.status).toBe(404);
+        expect(res.headers.get('content-type')).not.toBe('application/pdf');
+    });
+
+    it('answers NOT_FOUND for a listing that belongs to somebody else', async () => {
+        // 404 rather than 403: a 403 would confirm the id exists
+        // (`apps/api/docs/error-contract.md`).
+        vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: LISTING_ID,
+                slug: 'de-otro',
+                name: 'De otro',
+                type: 'PARRILLA',
+                visibility: 'PUBLIC',
+                ownerId: '99999999-9999-4999-8999-999999999999'
+            },
+            error: undefined
+        } as never);
+
+        const res = await app.request(`/api/v1/protected/gastronomies/${LISTING_ID}/brochure`, {
+            headers: ownerHeaders
+        });
+
+        expect(res.status).toBe(404);
+    });
 });
