@@ -204,6 +204,10 @@ const REACHABLE_CONTACT_CHANNELS: Readonly<
 /**
  * `true` when `contactInfo` carries at least one channel the vertical's public
  * page actually publishes — see {@link REACHABLE_CONTACT_CHANNELS}.
+ *
+ * Fails CLOSED on a vertical the map does not know. TypeScript makes that
+ * unreachable, but this function is fed rows read out of a database, and the
+ * wrong answer here publishes an unreachable listing — cheaper to refuse.
  */
 function hasReachableContactChannel(
     entityType: CommerceEntityType,
@@ -212,7 +216,8 @@ function hasReachableContactChannel(
     if (!contactInfo) {
         return false;
     }
-    return REACHABLE_CONTACT_CHANNELS[entityType].some((key) => isNonEmptyString(contactInfo[key]));
+    const channels = REACHABLE_CONTACT_CHANNELS[entityType] ?? [];
+    return channels.some((key) => isNonEmptyString(contactInfo[key]));
 }
 
 /**
