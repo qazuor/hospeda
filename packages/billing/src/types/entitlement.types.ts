@@ -23,6 +23,26 @@ export enum EntitlementKey {
     CAN_CONTACT_WHATSAPP_DIRECT = 'can_contact_whatsapp_direct',
     HAS_VERIFICATION_BADGE = 'has_verification_badge',
 
+    /**
+     * Commerce vertical entitlements (HOS-1074).
+     *
+     * One PAIR PER VERTICAL, deliberately NOT a reuse of
+     * `EDIT_ACCOMMODATION_INFO` / `PUBLISH_ACCOMMODATIONS`. `loadEntitlements`
+     * resolves the ACCOMMODATION subscription, so an accommodation key asked on
+     * a commerce route breaks in both directions: a commerce owner with no
+     * accommodation plan is always refused, and an owner who happens to hold
+     * both is always allowed — for the wrong reason.
+     *
+     * Every tier of a vertical grants its own pair, exactly as all six
+     * accommodation plans grant the accommodation pair. A key that is uniform
+     * across a catalogue's tiers is the platform's existing convention, not an
+     * exception invented here.
+     */
+    EDIT_GASTRONOMY_INFO = 'edit_gastronomy_info',
+    PUBLISH_GASTRONOMY = 'publish_gastronomy',
+    EDIT_EXPERIENCE_INFO = 'edit_experience_info',
+    PUBLISH_EXPERIENCE = 'publish_experience',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',
