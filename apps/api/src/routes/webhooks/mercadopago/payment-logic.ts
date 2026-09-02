@@ -417,15 +417,34 @@ export async function confirmAnnualSubscription(input: {
                 }
             });
         } catch (recordErr) {
-            apiLogger.error(
-                {
+            // HOS-1001: the charge cleared, the subscription IS applicable, and
+            // our own write to the ledger failed. This used to be an
+            // `apiLogger.error` and nothing else — money collected, no
+            // accounting entry, and no record anywhere that one was owed.
+            //
+            // The status flip below still runs: the customer paid for the year
+            // and must get the plan. What changes is that the missing ledger row
+            // is queued as an incident instead of scrolling past in a log.
+            // `recordOrphanPayment` owns the `error` + `capture: true` alert and
+            // never throws, so this branch's disposition is unchanged.
+            await recordOrphanPayment({
+                providerPaymentId,
+                flow: 'annual-upfront',
+                reason: 'ledger-write-failed',
+                amountMajor: amount,
+                currency,
+                subscriptionId: sub.id,
+                customerId: sub.customerId,
+                observedStatus: sub.status,
+                source,
+                metadata: {
                     annualSubscriptionId,
-                    providerPaymentId,
-                    source,
-                    error: recordErr instanceof Error ? recordErr.message : String(recordErr)
-                },
-                'Annual subscription confirmation: failed to record billing_payments row — continuing with status flip'
-            );
+                    checkoutSessionId,
+                    amountInCentavos,
+                    ledgerWriteError:
+                        recordErr instanceof Error ? recordErr.message : String(recordErr)
+                }
+            });
         }
     } else {
         apiLogger.debug(
@@ -960,15 +979,34 @@ async function confirmPlanUpgrade(input: {
                 }
             });
         } catch (recordErr) {
-            apiLogger.error(
-                {
+            // HOS-1001: the prorated delta was charged, the plan change is
+            // already persisted, and our own write to the ledger failed. The old
+            // answer was an `apiLogger.error` calling itself "non-blocking",
+            // which was true of the plan change and false of the books: the
+            // customer paid a delta that nothing records.
+            //
+            // The upgrade is NOT rolled back — the customer is on the plan they
+            // paid for. The missing ledger row is queued as an incident so a
+            // human can backfill it through the HOS-765 rescue screen.
+            await recordOrphanPayment({
+                providerPaymentId,
+                flow: 'plan-change-upgrade',
+                reason: 'ledger-write-failed',
+                amountMajor: amount,
+                currency,
+                subscriptionId: planChangeUpgradeId,
+                customerId: changeResult.subscription.customerId,
+                observedStatus: changeResult.subscription.status,
+                source,
+                metadata: {
                     planChangeUpgradeId,
-                    providerPaymentId,
-                    source,
-                    error: recordErr instanceof Error ? recordErr.message : String(recordErr)
-                },
-                'Plan upgrade confirmation: failed to record billing_payments row — non-blocking, plan change already persisted'
-            );
+                    oldPlanId,
+                    newPlanId,
+                    amountInCentavos,
+                    ledgerWriteError:
+                        recordErr instanceof Error ? recordErr.message : String(recordErr)
+                }
+            });
         }
     } else {
         apiLogger.debug(

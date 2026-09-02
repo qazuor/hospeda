@@ -2380,6 +2380,92 @@ describe('processPaymentUpdated', () => {
                 );
             });
         });
+
+        // HOS-1001 — a failed ledger write used to be an `apiLogger.error` and
+        // nothing else: money collected, the plan granted, no accounting entry,
+        // and nothing anywhere recording that one was owed. These tests fail if
+        // that swallow comes back.
+        describe('HOS-1001: a failed billing_payments write is queued, not swallowed', () => {
+            it('queues the payment as ledger-write-failed when record() throws', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                annualDbState.paymentDedupeRows = [];
+                (mockBilling.payments.record as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+                    new Error('billing_payments insert exploded')
+                );
+
+                await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+                const queued = mockRecordOrphanPayment.mock.calls[0]?.[0] as Record<
+                    string,
+                    unknown
+                >;
+                expect(queued.flow).toBe('annual-upfront');
+                expect(queued.reason).toBe('ledger-write-failed');
+                expect(queued.providerPaymentId).toBe(MP_PAYMENT_ID);
+                expect(queued.subscriptionId).toBe(ANNUAL_SUB_ID);
+                expect(queued.customerId).toBe('cust-1');
+                // MAJOR units, as the queue's branded parameter requires.
+                expect(queued.amountMajor).toBe(350_000);
+                expect((queued.metadata as Record<string, unknown>).ledgerWriteError).toBe(
+                    'billing_payments insert exploded'
+                );
+            });
+
+            it('still flips the subscription to active — the customer paid for the year', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                annualDbState.paymentDedupeRows = [];
+                (mockBilling.payments.record as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+                    new Error('billing_payments insert exploded')
+                );
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                expect(annualDbState.updateCalls).toHaveLength(1);
+                const updateValues = annualDbState.updateCalls[0]?.values as Record<
+                    string,
+                    unknown
+                >;
+                expect(updateValues.status).toBe('active');
+            });
+
+            it('does NOT queue anything when the ledger write succeeds', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                annualDbState.paymentDedupeRows = [];
+
+                await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+            });
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -2534,6 +2620,66 @@ describe('processPaymentUpdated', () => {
             expect(recordArg.amount).toBe(100_000); // 1000 major → centavos
             expect(recordArg.subscriptionId).toBe(UPGRADE_SUB_ID);
             expect(recordArg.providerPaymentId).toBe(MP_PAYMENT_ID);
+        });
+
+        // HOS-1001 — the delta charge is real money; "non-blocking" was true of
+        // the plan change and false of the books. A failed ledger write is now
+        // an incident on the queue instead of a log line nobody reads.
+        describe('HOS-1001: a failed delta ledger write is queued, not swallowed', () => {
+            it('queues the delta as ledger-write-failed when record() throws', async () => {
+                approvedUpgradePayment();
+                annualDbState.subRows = [];
+                annualDbState.paymentDedupeRows = [];
+                const billing = makeUpgradeBilling();
+                billing.payments.record.mockRejectedValueOnce(
+                    new Error('delta insert hit a constraint')
+                );
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                    },
+                    billing
+                });
+
+                // The upgrade is NOT rolled back — the customer paid for it.
+                expect(result.planUpgradeConfirmed).toBe(true);
+                expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
+
+                expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+                const queued = mockRecordOrphanPayment.mock.calls[0]?.[0] as Record<
+                    string,
+                    unknown
+                >;
+                expect(queued.flow).toBe('plan-change-upgrade');
+                expect(queued.reason).toBe('ledger-write-failed');
+                expect(queued.providerPaymentId).toBe(MP_PAYMENT_ID);
+                expect(queued.subscriptionId).toBe(UPGRADE_SUB_ID);
+                expect(queued.customerId).toBe('cust-1');
+                expect(queued.amountMajor).toBe(1_000);
+                const queuedMetadata = queued.metadata as Record<string, unknown>;
+                expect(queuedMetadata.ledgerWriteError).toBe('delta insert hit a constraint');
+                expect(queuedMetadata.oldPlanId).toBe(OLD_PLAN_ID);
+                expect(queuedMetadata.newPlanId).toBe(NEW_PLAN_ID);
+            });
+
+            it('does NOT queue anything when the delta ledger write succeeds', async () => {
+                approvedUpgradePayment();
+                annualDbState.subRows = [];
+                annualDbState.paymentDedupeRows = [];
+                const billing = makeUpgradeBilling();
+
+                await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                    },
+                    billing
+                });
+
+                expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+            });
         });
 
         // HOS-75 T-018: resolveDiscountAwareUpgradeAmount's SELECT now goes

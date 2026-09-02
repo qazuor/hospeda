@@ -212,6 +212,20 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// HOS-1001: the orphan-payment queue. Mocked so the ledger-write-failure tests
+// can assert WHAT the add-on flow hands to the queue without needing a live
+// table. The service's own persistence + alerting is covered by
+// `test/services/billing/orphan-payment-queue.service.test.ts`.
+const { mockRecordOrphanPayment } = vi.hoisted(() => ({
+    mockRecordOrphanPayment: vi
+        .fn()
+        .mockResolvedValue({ queued: true, alreadyQueued: false, failed: false })
+}));
+
+vi.mock('../../src/services/billing/orphan-payment-queue.service', () => ({
+    recordOrphanPayment: mockRecordOrphanPayment
+}));
+
 // SPEC-149 T-005: mock captureBillingError so tests can assert on Sentry calls
 // without initialising the real Sentry SDK (which requires a DSN).
 vi.mock('../../src/lib/sentry', async (importOriginal) => {
@@ -1231,6 +1245,55 @@ describe('confirmAddonPurchase', () => {
             expect(vi.mocked(captureBillingError).mock.calls[0]?.[1]?.operation).toBe(
                 'addon_payment_record'
             );
+        });
+
+        // HOS-1001 — this branch's own log used to say "money collected without
+        // a ledger entry; reconcile manually", and nothing in the codebase would
+        // ever tell anyone to, nor give them anywhere to look. It enqueues now.
+        it('queues the charge on the orphan-payment queue when the ledger write throws', async () => {
+            // Arrange
+            mockPaymentsRecord.mockImplementation(async () => {
+                throw new Error('billing_payments insert failed');
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                settledCharge
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+
+            const queued = mockRecordOrphanPayment.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(queued.flow).toBe('addon-purchase');
+            expect(queued.reason).toBe('ledger-write-failed');
+            expect(queued.providerPaymentId).toBe(settledCharge.paymentId);
+            expect(queued.customerId).toBe(settledCharge.customerId);
+            expect(queued.currency).toBe('ARS');
+            // The queue takes MAJOR units and converts once. This flow holds
+            // CENTAVOS, so 500_000 centavos MUST arrive as 5_000 pesos — handing
+            // it the raw centavos would book a charge 100x too large.
+            expect(queued.amountMajor).toBe(5_000);
+
+            const queuedMetadata = queued.metadata as Record<string, unknown>;
+            expect(queuedMetadata.addonSlug).toBe(settledCharge.addonSlug);
+            expect(queuedMetadata.amountInCents).toBe(500_000);
+            expect(queuedMetadata.ledgerWriteError).toBe('billing_payments insert failed');
+        });
+
+        it('does NOT queue anything when the ledger write succeeds', async () => {
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                settledCharge
+            );
+
+            expect(result.success).toBe(true);
+            expect(mockPaymentsRecord).toHaveBeenCalledOnce();
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
     });
 

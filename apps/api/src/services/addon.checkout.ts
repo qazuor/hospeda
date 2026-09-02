@@ -9,7 +9,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
-import { isEntitlementGrantingStatus } from '@repo/billing';
+import { asCentavos, isEntitlementGrantingStatus, toMajor } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { AccommodationModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
@@ -32,6 +32,7 @@ import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
+import { recordOrphanPayment } from './billing/orphan-payment-queue.service';
 import { resolveRecipientLocale } from './notification-recipient-locale';
 import { PromoCodeService } from './promo-code.service';
 
@@ -853,18 +854,40 @@ async function recordAddonPayment(params: {
             'Add-on payment recorded in billing_payments'
         );
     } catch (recordError) {
-        apiLogger.error(
-            {
-                customerId,
+        // HOS-1001: this branch used to say, in its own log message, "money
+        // collected without a ledger entry; reconcile manually" — and there was
+        // nothing in the codebase that would ever tell anyone to, nor anywhere
+        // for them to look. The queue is that place.
+        //
+        // Enqueued BEFORE the Sentry call on purpose: the row is the durable
+        // record an operator acts on, the Sentry event is the notification. If
+        // only one of the two survives it must be the one you can work from.
+        //
+        // `recordOrphanPayment` never throws, so a confirmed purchase is still
+        // never turned into a failed one by bookkeeping.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'addon-purchase',
+            reason: 'ledger-write-failed',
+            // HOS-720: the queue takes MAJOR units and converts once. This flow
+            // holds CENTAVOS, so the crossing is spelled out rather than
+            // implied — `toMajor`/`toCentavos` round-trip to the same integer
+            // centavo by construction (see their JSDoc), and a bare
+            // `amountInCents` here would book a charge 100× too large.
+            amountMajor: toMajor(asCentavos(amountInCents)),
+            currency,
+            subscriptionId,
+            customerId,
+            source: 'addon-checkout',
+            metadata: {
                 addonSlug,
                 purchaseId,
-                providerPaymentId,
                 amountInCents,
-                currency,
-                error: recordError instanceof Error ? recordError.message : String(recordError)
-            },
-            'Failed to record billing_payments row for add-on purchase — money collected without a ledger entry; reconcile manually'
-        );
+                ledgerWriteError:
+                    recordError instanceof Error ? recordError.message : String(recordError)
+            }
+        });
+
         captureBillingError(
             recordError instanceof Error ? recordError : new Error(String(recordError)),
             {
