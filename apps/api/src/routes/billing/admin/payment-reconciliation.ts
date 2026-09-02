@@ -7,6 +7,13 @@
  * - `POST /force-link`       — bind a preapproval to a local subscription.
  * - `POST /backfill-payment` — write the `billing_payments` row for a settled charge.
  *
+ * HOS-1001 mounted two more onto the same router, declared in
+ * `orphan-payment-queue.ts`: `GET /orphan-queue` and
+ * `POST /orphan-queue/resolve`. They read and close the rows that
+ * `recordOrphanPayment` writes at the instant a payment fails to book, which is
+ * what makes those payments reach this screen without anyone sweeping
+ * MercadoPago by hand for them.
+ *
  * ## Why these do not hang off `BILLING_MANAGE`
  *
  * Every one of them is gated on {@link PermissionEnum.BILLING_RECONCILIATION_MANAGE},
@@ -59,6 +66,10 @@ import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { MpPacedClient } from '../../../utils/mp-reconciliation-search';
 import { createAdminRoute } from '../../../utils/route-factory';
+import {
+    adminBillingOrphanQueueRoute,
+    adminBillingResolveOrphanPaymentRoute
+} from './orphan-payment-queue';
 
 /**
  * Build the paced MercadoPago client for one request.
@@ -230,3 +241,7 @@ export const adminBillingReconciliationRouter = createRouter();
 adminBillingReconciliationRouter.route('/', adminBillingDivergencesRoute);
 adminBillingReconciliationRouter.route('/', adminBillingForceLinkRoute);
 adminBillingReconciliationRouter.route('/', adminBillingBackfillPaymentRoute);
+// HOS-1001 — the orphan-payment queue's reader, on the same router and the same
+// permission as the rescue verbs it feeds.
+adminBillingReconciliationRouter.route('/', adminBillingOrphanQueueRoute);
+adminBillingReconciliationRouter.route('/', adminBillingResolveOrphanPaymentRoute);
