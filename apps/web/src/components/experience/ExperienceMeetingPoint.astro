@@ -1,0 +1,80 @@
+---
+/**
+ * @file ExperienceMeetingPoint.astro
+ * @description Where the experience starts (HOS-1048).
+ *
+ * The listing used to carry no address of its own. `destinationId` names the
+ * CITY — enough to list and filter, useless for showing up somewhere — and
+ * `contactInfo` is the provider's phone and mail. A traveller who booked had
+ * nowhere on the page telling them where to be.
+ *
+ * ## Not a map, and not paid
+ *
+ * This renders the owner's TEXT and nothing else. The map that draws
+ * `meetingPointLat`/`meetingPointLong` and the how-to-get-there instructions are
+ * the paid half of the feature (HOS-1049) and are deliberately absent here.
+ * Owner decision (2026-09-01): the meeting point itself ships from the basic
+ * tier, so this block carries no entitlement check of any kind — adding one
+ * would be the bug, not the fix.
+ *
+ * Renders NOTHING when there is no meeting point. `toExperienceDetailPageProps`
+ * already collapses an empty/whitespace string to `null`, so the single
+ * presence check below is the whole gate.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** The owner's meeting-point text, or `null` when none was declared. */
+    readonly meetingPoint: string | null;
+    readonly locale: SupportedLocale;
+}
+
+const { meetingPoint, locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+{meetingPoint && (
+    <section class="exp-meeting">
+        <h3 class="exp-meeting__title">
+            {t('experience.detail.meetingPoint.title', 'Punto de encuentro')}
+        </h3>
+        <p class="exp-meeting__address">
+            <span class="exp-meeting__icon" aria-hidden="true">📍</span>
+            <span>{meetingPoint}</span>
+        </p>
+    </section>
+)}
+
+<style>
+    .exp-meeting {
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card, 24px);
+        padding: var(--space-5, 20px);
+    }
+
+    .exp-meeting__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 8px);
+    }
+
+    .exp-meeting__address {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-meeting__icon {
+        flex-shrink: 0;
+        line-height: 1.6;
+    }
+</style>

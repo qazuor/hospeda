@@ -2898,6 +2898,24 @@ export function toExperienceCardProps({
 }
 
 /**
+ * Collapses a raw `meetingPoint` value to `string | null` (HOS-1048).
+ *
+ * Three inputs mean "the owner has not said where to meet" and they must all
+ * arrive at the view as ONE value: the key absent, the column `null`, and a
+ * string that is empty or only whitespace. Leaving the last one as `''` would
+ * make the section render its heading over nothing, because `''` is a string
+ * and the view's guard is a presence check.
+ *
+ * @param raw - The value as it came off the public payload.
+ * @returns The trimmed meeting point, or `null` when there is nothing to show.
+ */
+function normalizeMeetingPoint(raw: unknown): string | null {
+    if (typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
  * Transforms a raw API experience item to ExperienceDetailData props.
  *
  * Used on the experience detail page where the full public schema shape
@@ -2930,6 +2948,14 @@ export function toExperienceDetailPageProps({
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         contactInfo: normalizeExperienceContactInfo(item.contactInfo),
         socialNetworks: normalizeExperienceSocialNetworks(item.socialNetworks),
+        // HOS-1048. A blank/whitespace string collapses to `null` so the view
+        // has ONE "nothing to show" value to test: a listing whose meeting point
+        // is an empty string must not render a heading over nothing.
+        meetingPoint: normalizeMeetingPoint(item.meetingPoint),
+        // `typeof === 'number'`, NOT `Number(x) || null`: a coordinate of 0 is a
+        // real place (the Gulf of Guinea) and the falsy check would erase it.
+        meetingPointLat: typeof item.meetingPointLat === 'number' ? item.meetingPointLat : null,
+        meetingPointLong: typeof item.meetingPointLong === 'number' ? item.meetingPointLong : null,
         seo: seoObj
             ? {
                   title: seoObj.title == null ? null : String(seoObj.title),
