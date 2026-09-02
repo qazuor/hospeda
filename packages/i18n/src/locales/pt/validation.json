@@ -2825,6 +2825,8 @@
         "durationMinutes": {
             "int": "A duração deve ser um número inteiro de minutos",
             "max": "A duração não pode ultrapassar {{max}} minutos",
+            "max_one": "A duração não pode ultrapassar {{max}} minuto",
+            "max_other": "A duração não pode ultrapassar {{max}} minutos",
             "min": "A duração deve ser de pelo menos {{min}} minuto"
         },
         "featureIds": {
@@ -2882,7 +2884,9 @@
                 "max": "Cada item do que levar não pode ultrapassar {{max}} caracteres",
                 "min": "Os itens do que levar não podem ficar vazios"
             },
-            "max": "Você não pode adicionar mais de {{max}} itens do que levar"
+            "max": "Você não pode adicionar mais de {{max}} itens do que levar",
+            "max_one": "Você não pode adicionar mais de {{max}} item do que levar",
+            "max_other": "Você não pode adicionar mais de {{max}} itens do que levar"
         }
     },
     "experienceFeature": {

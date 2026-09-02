@@ -2825,6 +2825,8 @@
         "durationMinutes": {
             "int": "La duración debe ser un número entero de minutos",
             "max": "La duración no puede superar los {{max}} minutos",
+            "max_one": "La duración no puede superar {{max}} minuto",
+            "max_other": "La duración no puede superar los {{max}} minutos",
             "min": "La duración debe ser de al menos {{min}} minuto"
         },
         "featureIds": {
@@ -2882,7 +2884,9 @@
                 "max": "Cada ítem de qué llevar no puede superar los {{max}} caracteres",
                 "min": "Los ítems de qué llevar no pueden quedar vacíos"
             },
-            "max": "No podés cargar más de {{max}} ítems de qué llevar"
+            "max": "No podés cargar más de {{max}} ítems de qué llevar",
+            "max_one": "No podés cargar más de {{max}} ítem de qué llevar",
+            "max_other": "No podés cargar más de {{max}} ítems de qué llevar"
         }
     },
     "experienceFeature": {

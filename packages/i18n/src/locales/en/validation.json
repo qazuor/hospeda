@@ -2825,6 +2825,8 @@
         "durationMinutes": {
             "int": "The duration must be a whole number of minutes",
             "max": "The duration cannot exceed {{max}} minutes",
+            "max_one": "The duration cannot exceed {{max}} minute",
+            "max_other": "The duration cannot exceed {{max}} minutes",
             "min": "The duration must be at least {{min}} minute"
         },
         "featureIds": {
@@ -2882,7 +2884,9 @@
                 "max": "Each what-to-bring item cannot exceed {{max}} characters",
                 "min": "What-to-bring items cannot be empty"
             },
-            "max": "You cannot add more than {{max}} what-to-bring items"
+            "max": "You cannot add more than {{max}} what-to-bring items",
+            "max_one": "You cannot add more than {{max}} what-to-bring item",
+            "max_other": "You cannot add more than {{max}} what-to-bring items"
         }
     },
     "experienceFeature": {
