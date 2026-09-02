@@ -721,6 +721,7 @@
         "zodError.common.minRating.tooHigh",
         "zodError.common.minRating.tooLow",
         "zodError.common.non_negative_int.invalid",
+        "zodError.common.openingHours.day.notOpenOrClosed",
         "zodError.common.openingHours.shift.invalidTime",
         "zodError.common.openingHours.shift.sameOpenAndClose",
         "zodError.common.options.limit.max",
@@ -1824,7 +1825,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1823,
+    "total": 1824,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1841,7 +1842,7 @@
         "attraction": 26,
         "billing": 237,
         "commerce": 14,
-        "common": 244,
+        "common": 245,
         "contact": 7,
         "conversation": 6,
         "dateRange": 11,
