@@ -689,6 +689,8 @@
             "uncancelButton": "Discard cancellation",
             "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
             "uncancelError": "Could not discard the cancellation.",
+            "replacePaymentMethodButton": "Update payment method",
+            "replacePaymentMethodError": "Could not start the payment method update.",
             "trialExtension": {
                 "title": "Extend your free trial",
                 "help": "If you have a promo code, apply it now to add days to your trial.",

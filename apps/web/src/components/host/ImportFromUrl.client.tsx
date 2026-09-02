@@ -181,13 +181,22 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                         })
                     );
                     // An expired trial is fixed by choosing a plan, so it gets a
-                    // link. An overdue payment deliberately gets NONE: the only
-                    // page that could resolve it (`mi-cuenta/suscripcion`) is
-                    // itself behind this same gate, and no self-service
-                    // update-card flow exists yet — the `/payment-methods`
-                    // exemption in the middleware matches no route. A button
-                    // into a dead end is worse than no button (HOS-348).
-                    if (result.error?.reason !== 'GRACE_PERIOD_EXPIRED') {
+                    // link there. An overdue payment now has its own real
+                    // destination too (HOS-348 Part B): the account subscription
+                    // page lets the customer mint a replacement preapproval and
+                    // fix their card themselves. It gets its OWN link with copy
+                    // that says what it actually does — a past-due customer isn't
+                    // shopping for a plan, they're fixing a payment method, and
+                    // the generic "Ver planes" CTA would be misleading here.
+                    if (result.error?.reason === 'GRACE_PERIOD_EXPIRED') {
+                        setErrorAction({
+                            label: t(
+                                'host.importFromUrl.errors.pastDueCta',
+                                'Actualizar medio de pago'
+                            ),
+                            href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' })
+                        });
+                    } else {
                         setErrorAction({
                             label: t('host.importFromUrl.errors.entitlementCta', 'Ver planes'),
                             href: buildUrl({
