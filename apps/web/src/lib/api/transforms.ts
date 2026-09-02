@@ -2557,6 +2557,11 @@ function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHo
 /**
  * Normalize a raw `socialNetworks` value from the API.
  * Returns `null` when absent or empty.
+ *
+ * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
+ * payload could carry one (belt and braces — see `GastronomySocialNetworks`).
+ * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
+ * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
 function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -2566,7 +2571,6 @@ function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null 
         instagram: obj.instagram ? String(obj.instagram) : null,
         twitter: obj.twitter ? String(obj.twitter) : null,
         youtube: obj.youtube ? String(obj.youtube) : null,
-        whatsapp: obj.whatsapp ? String(obj.whatsapp) : null,
         tiktok: obj.tiktok ? String(obj.tiktok) : null,
         website: obj.website ? String(obj.website) : null
     };
