@@ -1,6 +1,7 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { parseArgs } from './args.ts';
+import { freedMb, readFree } from './disk.ts';
 import {
     formatInventoryNote,
     formatRiskWarning,
@@ -166,6 +167,11 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
     const removed: WorktreeInfo[] = [];
     const failed: WorktreeInfo[] = [];
 
+    // Read free space BEFORE anything is unlinked. This, and not the sum of
+    // per-worktree `du`, is what the summary reports: see freedMb() for why the
+    // arithmetic version cannot be right.
+    const freeBefore = await readFree({ paths: selected.map((worktree) => worktree.path) });
+
     p.log.step(`Borrando ${selected.length} worktree(s)…`);
     for (const worktree of orderForRemoval({ worktrees: selected })) {
         process.stdout.write('\n');
@@ -179,11 +185,15 @@ export async function runWtClean({ argv }: { readonly argv: readonly string[] })
         else failed.push(worktree);
     }
 
+    // Re-read the same filesystems by their mount points; the worktree paths
+    // themselves are gone.
+    const freeAfter = await readFree({ paths: [...freeBefore.keys()] });
+
     p.note(
         formatSummary({
             removed,
             failed,
-            freedMb: removed.reduce((sum, worktree) => sum + worktree.mb, 0)
+            freedMb: freedMb({ before: freeBefore, after: freeAfter })
         }),
         'Resultado'
     );

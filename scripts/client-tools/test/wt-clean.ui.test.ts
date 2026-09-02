@@ -185,7 +185,7 @@ describe('formatInventoryNote', () => {
         expect(text).toContain('1 borrables');
     });
 
-    it('should report only finished worktrees as reclaimable space', () => {
+    it('should size the finished worktrees separately from the rest', () => {
         // Arrange
         const worktrees = [
             makeWorktree({ name: 'done', state: 'merged', mb: 1024 }),
