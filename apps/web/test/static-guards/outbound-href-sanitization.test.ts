@@ -94,8 +94,6 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         "module constant 'https://www.google.com/maps', required by the Google Places display policy",
     'components/accommodation/WhatsAppContact.client.tsx#{waUrl}':
         '`buildWhatsAppLink` composes `https://wa.me/<digits>`; a non-dialable number yields null, not a URL',
-    'components/experience/ExperienceContactCTA.astro#{waUrl}':
-        'same `buildWhatsAppLink` output as the accommodation CTA',
     'components/account/ProfileCompletionConsentFields.tsx#{`/${locale}/legal/terminos/`}':
         'an internal path literal; it carries `rel="noopener"` only because it opens in a new tab',
     'components/account/SubscriptionDashboard.client.tsx#{adminUrl}':

@@ -74,8 +74,16 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('ExperienceInfo');
         });
 
-        it('renders ExperienceContactCTA with WhatsApp link', () => {
-            expect(src).toContain('ExperienceContactCTA');
+        it('renders ExperienceContactBlock with the provider channels', () => {
+            expect(src).toContain('ExperienceContactBlock');
+        });
+
+        it('no longer renders the dormant WhatsApp CTA (HOS-363)', () => {
+            // It read `contactInfo.whatsapp`, which the public payload never
+            // carries, so it never rendered. What remains is
+            // `ExperienceContactBlock`, and HOS-924 made one of the channels it
+            // shows a publish requirement.
+            expect(src).not.toContain('ExperienceContactCTA');
         });
 
         it('renders ExperienceReviews as an interactive island', () => {

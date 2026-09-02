@@ -20,7 +20,6 @@ import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.as
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
-import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.astro';
 import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
@@ -256,16 +255,6 @@ const breadcrumbItems = [
              narrowed by `ExperiencePublicContactInfoSchema`. -->
         <ExperienceContactBlock
             contactInfo={experience.contactInfo}
-            locale={locale}
-        />
-
-        <!-- WhatsApp CTA — still dormant, and deliberately so: HOS-815 did NOT
-             expose `contactInfo.whatsapp`. That number stays gated by the
-             VIEWER's plan on a separate protected endpoint (HOS-19), and this
-             page is shared-cached with no auth in the cache key. -->
-        <ExperienceContactCTA
-            contactInfo={experience.contactInfo}
-            experienceName={experience.name}
             locale={locale}
         />
 

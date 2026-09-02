@@ -7,9 +7,10 @@
  * DROPS an attribute whose value is `null`. Passing that result straight into
  * `href={...}` therefore ships a fully-styled `<a>` that is not a link and
  * takes no keyboard focus — visually identical to a working one, with no
- * feedback. The two other call sites already degrade (`WhatsAppContact`
- * falls through to the number as text, `ExperienceContactCTA.astro`
- * early-returns); this page did not.
+ * feedback. The other call site already degrades (`WhatsAppContact` falls
+ * through to the number as text); this page did not. A third call site, the
+ * experience CTA, also early-returned — it was deleted by HOS-363, having
+ * never rendered.
  *
  * Source-read for the markup, matching the convention of the other
  * `.astro` tests in this suite; behavioural for the configured number.

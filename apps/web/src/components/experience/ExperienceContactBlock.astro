@@ -33,10 +33,14 @@
  *
  * Deliberate. The repo's precedent keeps WhatsApp a SEPARATE, entitlement-gated
  * channel sourced only from `contactInfo.whatsapp` — `AccommodationContactBlock`
- * never derives one from `phone`, and `ExperienceContactCTA` builds its link
- * only from `contactInfo.whatsapp`. Assuming a mobile line accepts WhatsApp
- * would invent a channel the provider never opted into, so mobiles render as a
- * plain `tel:` link.
+ * never derives one from `phone`. Assuming a mobile line accepts WhatsApp would
+ * invent a channel the provider never opted into, so mobiles render as a plain
+ * `tel:` link.
+ *
+ * HOS-363 removed the experience WhatsApp CTA that used to sit next to this
+ * block: it read `contactInfo.whatsapp`, which the public payload never carries,
+ * so it never rendered. This block is now the WHOLE contact surface of the page,
+ * and HOS-924 made one of the channels it renders a publish requirement.
  *
  * ## Anti-scraping
  *

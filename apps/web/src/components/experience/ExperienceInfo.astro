@@ -67,8 +67,8 @@ const openingHours =
 
 <!-- Social networks. No longer the page's only contact affordance: HOS-815
      added `ExperienceContactBlock`, which publishes the phone / email /
-     website the provider filled in. `ExperienceContactCTA` stays dormant —
-     `contactInfo.whatsapp` is still not on the public tier (HOS-19). -->
+     website the provider filled in — and HOS-924 made one of those channels a
+     publish requirement, so a live experience always has one. -->
 {experience.socialNetworks && Object.values(experience.socialNetworks).some(Boolean) && (
     <section class="exp-info__social">
         <h3 class="exp-info__social-title">{t('experience.detail.social', 'Redes sociales')}</h3>
