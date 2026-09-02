@@ -28,14 +28,23 @@ import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
  * called with `null`, so that case is handled explicitly rather than coerced
  * into the function's `string` overload.
  *
+ * An `affectsLimitKey` that is neither `null` nor a known `LimitKey` resolves
+ * to `undefined` (HOS-1078). `affectsLimitKey` arrives as a free string from a
+ * `billing_addons` row, so a typo or a retired key lands here; it used to be
+ * answered `'accommodation'`, which offered the add-on to every accommodation
+ * subscriber. `undefined` means "no domain gates this", and
+ * {@link filterAddonsByHeldDomains} drops it — the catalog is the wrong place
+ * to guess.
+ *
  * @param addon - The addon's own `affectsLimitKey`, as returned by
  *   `GET /billing/addons` (see `AddonCardData` in
  *   `apps/web/src/lib/api/endpoints-protected.ts`).
- * @returns The product domain that owns this addon's gate.
+ * @returns The product domain that owns this addon's gate, or `undefined` when
+ *   the key resolves to no domain.
  */
 export function resolveAddonProductDomain(addon: {
     readonly affectsLimitKey: string | null;
-}): ProductDomainValue {
+}): ProductDomainValue | undefined {
     if (addon.affectsLimitKey === null) {
         return ProductDomainEnum.ACCOMMODATION;
     }
@@ -53,7 +62,8 @@ export function resolveAddonProductDomain(addon: {
  *   `mi-cuenta/addons/index.astro` per the HOS-594 static guard, which
  *   requires that call to live in the page's own source).
  * @returns The subset of `addons` whose gating domain is in
- *   `domainsWithSubscription`.
+ *   `domainsWithSubscription`. An addon whose domain cannot be resolved is
+ *   dropped (HOS-1078) — not offered on the assumption it is accommodation.
  */
 export function filterAddonsByHeldDomains<T extends { readonly affectsLimitKey: string | null }>({
     addons,
@@ -62,5 +72,8 @@ export function filterAddonsByHeldDomains<T extends { readonly affectsLimitKey: 
     readonly addons: readonly T[];
     readonly domainsWithSubscription: ReadonlySet<ProductDomainValue>;
 }): readonly T[] {
-    return addons.filter((addon) => domainsWithSubscription.has(resolveAddonProductDomain(addon)));
+    return addons.filter((addon) => {
+        const domain = resolveAddonProductDomain(addon);
+        return domain !== undefined && domainsWithSubscription.has(domain);
+    });
 }
