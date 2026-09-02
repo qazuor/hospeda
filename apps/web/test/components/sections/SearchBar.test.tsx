@@ -471,6 +471,135 @@ describe('<SearchBar /> submit flow', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Regression: HOS-979 — the destination/type panel search inputs filter on
+// the raw substring, so a visitor typing without accents (the norm on a
+// phone keyboard) gets zero results for "Colon" or "cabana" even though the
+// list holds "Colón" and "Cabaña".
+// ---------------------------------------------------------------------------
+
+describe('<SearchBar /> diacritic-insensitive filtering (HOS-979)', () => {
+    const DIACRITIC_DESTINATIONS = [
+        { id: 'dest-colon', slug: 'colon', name: 'Colón' },
+        { id: 'dest-cdu', slug: 'concepcion-del-uruguay', name: 'Concepción del Uruguay' },
+        { id: 'dest-gchu', slug: 'gualeguaychu', name: 'Gualeguaychú' }
+    ] as const;
+
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('finds "Colón" when the visitor types "Colon" without the accent', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={DIACRITIC_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /destino/i }));
+        const input = screen.getByRole('textbox', { name: /buscar entre los destinos/i });
+        await user.type(input, 'Colon');
+
+        expect(screen.getByRole('option', { name: 'Colón' })).toBeInTheDocument();
+        expect(screen.queryByRole('option', { name: 'Concepción del Uruguay' })).toBeNull();
+    });
+
+    it('finds "Gualeguaychú" when the visitor types "Gualeguaychu"', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={DIACRITIC_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /destino/i }));
+        const input = screen.getByRole('textbox', { name: /buscar entre los destinos/i });
+        await user.type(input, 'Gualeguaychu');
+
+        expect(screen.getByRole('option', { name: 'Gualeguaychú' })).toBeInTheDocument();
+    });
+
+    it('finds "Concepción del Uruguay" when the visitor types "Concepcion"', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={DIACRITIC_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /destino/i }));
+        const input = screen.getByRole('textbox', { name: /buscar entre los destinos/i });
+        await user.type(input, 'Concepcion');
+
+        expect(screen.getByRole('option', { name: 'Concepción del Uruguay' })).toBeInTheDocument();
+    });
+
+    it('negative control: a non-existent term still yields zero destination results', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={DIACRITIC_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /destino/i }));
+        const input = screen.getByRole('textbox', { name: /buscar entre los destinos/i });
+        await user.type(input, 'zzzzznoexiste');
+
+        expect(screen.queryAllByRole('option')).toHaveLength(0);
+    });
+
+    it('finds the "Cabaña" accommodation type when the visitor types "cabana"', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /tipo/i }));
+        const input = screen.getByRole('textbox', { name: /buscar entre los tipos/i });
+        await user.type(input, 'cabana');
+
+        expect(screen.getByRole('option', { name: 'Cabaña' })).toBeInTheDocument();
+    });
+
+    it('negative control: a non-existent term still yields zero type results', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /tipo/i }));
+        const input = screen.getByRole('textbox', { name: /buscar entre los tipos/i });
+        await user.type(input, 'zzzzznoexiste');
+
+        expect(screen.queryAllByRole('option')).toHaveLength(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Regression: BETA-26 — guests selector appears to "not save" the value 2
 // ---------------------------------------------------------------------------
 
