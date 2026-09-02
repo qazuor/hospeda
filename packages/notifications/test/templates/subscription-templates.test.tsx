@@ -63,7 +63,7 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionCancelled(validProps));
 
             // Assert
-            expect(html).toContain('https://hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
 
         it('should contain formatted period end date when provided', () => {
@@ -114,7 +114,7 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionCancelled(propsWithCustomUrl));
 
             // Assert
-            expect(html).toContain('https://staging.hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
     });
 
@@ -154,7 +154,7 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionPaused(validProps));
 
             // Assert
-            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion');
+            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
 
         it('should include Spanish text', () => {
@@ -204,7 +204,7 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionPaused(propsWithCustomUrl));
 
             // Assert
-            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion');
+            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
     });
 

@@ -96,7 +96,7 @@ export function PaymentFailure({
                 {isCancelledCheckoutRetry && retryUrl ? (
                     <Button href={retryUrl}>Ir a mi cuenta</Button>
                 ) : (
-                    <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>
+                    <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
                         Actualizar método de pago
                     </Button>
                 )}

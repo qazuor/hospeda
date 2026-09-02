@@ -58,7 +58,7 @@ export function SubscriptionPaused({ recipientName, planName, baseUrl }: Subscri
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver mi suscripcion</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripcion</Button>
             </Section>
         </EmailLayout>
     );
