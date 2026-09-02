@@ -1,16 +1,25 @@
 import { Section, Text } from '@react-email/components';
+import type { Major } from '@repo/billing';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatCurrency } from '../utils/index.js';
+import { formatMajorCurrency } from '../utils/index.js';
 
 /**
  * Props for PaymentFailure email template
  */
 export interface PaymentFailureProps {
     recipientName: string;
-    amount: number;
+    /**
+     * Amount in MAJOR units (ARS pesos), NOT centavos. Matches
+     * `PaymentNotificationPayload.amount`'s only producer,
+     * `sendPaymentFailureNotifications`, which types the value {@link Major}
+     * for exactly this reason (HOS-713/HOS-720). Formatted with
+     * {@link formatMajorCurrency}, never `formatCurrency` — that one divides
+     * by 100 (HOS-839).
+     */
+    amount: Major;
     currency: string;
     /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
     baseUrl: string;
@@ -52,7 +61,7 @@ export function PaymentFailure({
     failureReason,
     retryUrl
 }: PaymentFailureProps) {
-    const formattedAmount = formatCurrency({ amount, currency });
+    const formattedAmount = formatMajorCurrency({ amount, currency });
     const isCancelledCheckoutRetry = Boolean(retryUrl);
 
     return (

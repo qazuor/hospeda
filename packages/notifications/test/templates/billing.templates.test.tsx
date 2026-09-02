@@ -10,6 +10,7 @@
  * @module test/templates/billing.templates.test
  */
 
+import { asMajor } from '@repo/billing';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
@@ -35,9 +36,11 @@ import {
 
 describe('Billing Email Templates', () => {
     describe('PaymentSuccess', () => {
+        // `amount` is MAJOR units (pesos), matching `PaymentNotificationPayload`'s
+        // only producer, `sendPaymentSuccessNotification` — see HOS-839.
         const validProps: PaymentSuccessProps = {
             recipientName: 'Juan Pérez',
-            amount: 10000, // $100.00 ARS
+            amount: asMajor(100), // $100,00 ARS
             currency: 'ARS',
             planName: 'Plan Standard',
             baseUrl: 'https://hospeda.com.ar',
@@ -94,7 +97,7 @@ describe('Billing Email Templates', () => {
             // Arrange
             const props: PaymentSuccessProps = {
                 ...validProps,
-                amount: 150050, // $1,500.50
+                amount: asMajor(1500.5), // $1.500,50
                 currency: 'ARS'
             };
 
@@ -109,7 +112,7 @@ describe('Billing Email Templates', () => {
             // Arrange
             const props: PaymentSuccessProps = {
                 ...validProps,
-                amount: 5000, // USD 50.00
+                amount: asMajor(50), // USD 50.00
                 currency: 'USD'
             };
 
@@ -128,12 +131,33 @@ describe('Billing Email Templates', () => {
             expect(html).toContain('Ver recibo');
             expect(html).toContain('/es/mi-cuenta/suscripcion');
         });
+
+        it('renders the exact pesos amount without dividing by 100 (regression, HOS-839)', () => {
+            // Arrange — a four-figure charge is where the /100 bug hid: a
+            // two-figure amount reads plausibly under both the correct value
+            // and the amount/100 bug, which is exactly how this went
+            // unnoticed until an annual-plan-sized charge exposed it.
+            const props: PaymentSuccessProps = {
+                ...validProps,
+                amount: asMajor(5000), // $5.000 pesos
+                currency: 'ARS'
+            };
+
+            // Act
+            const html = renderToStaticMarkup(PaymentSuccess(props));
+
+            // Assert — must read the real charge, not amount / 100
+            expect(html).toContain('$5.000,00');
+            expect(html).not.toContain('$50,00');
+        });
     });
 
     describe('PaymentFailure', () => {
+        // `amount` is MAJOR units (pesos), matching `PaymentNotificationPayload`'s
+        // only producer, `sendPaymentFailureNotifications` — see HOS-839.
         const validProps: PaymentFailureProps = {
             recipientName: 'María González',
-            amount: 15000,
+            amount: asMajor(150), // $150,00 ARS
             currency: 'ARS',
             baseUrl: 'https://hospeda.com.ar',
             failureReason: 'Fondos insuficientes'
@@ -189,6 +213,25 @@ describe('Billing Email Templates', () => {
 
             // Assert
             expect(render).not.toThrow();
+        });
+
+        it('renders the exact pesos amount without dividing by 100 (regression, HOS-839)', () => {
+            // Arrange — a four-figure charge is where the /100 bug hid: a
+            // two-figure amount reads plausibly under both the correct value
+            // and the amount/100 bug, which is exactly how this went
+            // unnoticed until an annual-plan-sized charge exposed it.
+            const props: PaymentFailureProps = {
+                ...validProps,
+                amount: asMajor(5000), // $5.000 pesos
+                currency: 'ARS'
+            };
+
+            // Act
+            const html = renderToStaticMarkup(PaymentFailure(props));
+
+            // Assert — must read the real charge, not amount / 100
+            expect(html).toContain('$5.000,00');
+            expect(html).not.toContain('$50,00');
         });
     });
 

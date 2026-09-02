@@ -1596,6 +1596,9 @@ importers:
       '@react-email/render':
         specifier: ^2.1.0
         version: 2.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@repo/billing':
+        specifier: workspace:*
+        version: link:../billing
       '@repo/config':
         specifier: workspace:*
         version: link:../config
