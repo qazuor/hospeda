@@ -39,11 +39,12 @@
 
 import type { JSX } from 'react';
 import { TextField } from '@/components/ui/TextField';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { CommerceEditData, CommerceFieldChange } from './commerce-edit-data';
 import styles from './editor-fields.module.css';
-import { COMMERCE_FIELD_PREFIX } from './field-ids';
+import { COMMERCE_FIELD_ID_SUFFIXES, COMMERCE_FIELD_PREFIX } from './field-ids';
 
 /**
  * Splits a textarea's contents into checklist items.
@@ -172,14 +173,26 @@ export function PracticalInfoSection({
             className={styles.section}
             id="editor-practicalInfo"
         >
-            {/* Duration (HOS-898) — two boxes, one stored number. */}
+            {/*
+             * Duration (HOS-898) — TWO controls, ONE Zod field, exactly like
+             * `contactInfo.mobilePhone`'s country+number pair. Both carry the
+             * schema's name `durationMinutes` so the derived ids stay inside
+             * that field's family, and the minutes box takes its suffix from
+             * COMMERCE_FIELD_ID_SUFFIXES rather than a literal — the same map
+             * `focusFirstInvalidField` reads, so the control the error points at
+             * and the one focus lands on cannot drift. Hard-coding the suffix at
+             * either end compiles, renders, and silently focuses nothing.
+             *
+             * `onFieldChange` still writes the two INDEPENDENT state keys: the
+             * shared name is an id concern, not a state one.
+             */}
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
-                name="durationHours"
+                name="durationMinutes"
+                suffix="hours"
                 label={t('commerce.owner.editor.sections.durationHours', 'Duración — horas')}
                 labelClassName={styles.label}
                 className={styles.input}
-                error={errors.durationMinutes}
                 type="number"
                 min={0}
                 step={1}
@@ -195,10 +208,14 @@ export function PracticalInfoSection({
 
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
-                name="durationMinutesPart"
+                name="durationMinutes"
+                suffix={COMMERCE_FIELD_ID_SUFFIXES.durationMinutes}
                 label={t('commerce.owner.editor.sections.durationMinutes', 'Duración — minutos')}
                 labelClassName={styles.label}
                 className={styles.input}
+                // The error lives on the focus target: a rejected duration is
+                // reported in minutes, which is what this box holds.
+                error={errors.durationMinutes}
                 type="number"
                 min={0}
                 step={1}
@@ -310,10 +327,23 @@ export function PracticalInfoSection({
                 )}
             </p>
 
-            {/* Private groups (HOS-1056) — a toggle and nothing else. */}
+            {/*
+             * Private groups (HOS-1056) — a toggle and nothing else.
+             *
+             * It carries a DERIVED id even though a checkbox bound to
+             * `z.boolean()` has no invalid state to report. `PriceSection`'s
+             * `isPriceOnRequest` toggle is exempted from the field-id guard for
+             * exactly that reason, and the exemption is what makes the guard
+             * unable to notice if the field ever grows a validation message.
+             * An id costs one attribute and closes that hole here.
+             */}
             <label className={styles.checkbox}>
                 <input
                     type="checkbox"
+                    id={buildFieldId({
+                        prefix: COMMERCE_FIELD_PREFIX,
+                        name: 'acceptsPrivateGroups'
+                    })}
                     checked={data.acceptsPrivateGroups}
                     onChange={(event) => {
                         onFieldChange('acceptsPrivateGroups', event.target.checked);
