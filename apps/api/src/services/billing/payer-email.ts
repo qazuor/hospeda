@@ -17,6 +17,33 @@
  * typed directly. Both read and write here go through raw SQL for that
  * reason.
  *
+ * ## Source of truth (HOS-971)
+ *
+ * The **Hospeda account email is the source of truth**; `mp_payer_email` is a
+ * non-authoritative CACHE of the last address MercadoPago happened to accept.
+ * The two are not peers, and the precedence in {@link resolvePayerEmail} is
+ * not a contradiction of that: the cache is preferred only for as long as it
+ * is still known to describe this account.
+ *
+ * What makes it stop describing the account is one event — the person changing
+ * their email in Hospeda — and {@link clearMpPayerEmailBestEffort} is what
+ * invalidates it there (called from
+ * `apps/api/src/services/billing-customer-sync.ts`, on the Better Auth
+ * `user.update.after` hook, which is the single choke point: `email` is not a
+ * field `ProfileEditSchema` or the admin user-update schema can write).
+ *
+ * Invalidation is deliberately event-driven rather than derived from comparing
+ * `mp_payer_email` against `billing_customers.email`. The two values also
+ * diverge legitimately — whoever pays with a MercadoPago account registered
+ * under a different address (HOS-208), or who had to supply an alternative
+ * because theirs carries a `+` (HOS-1021) — and a comparison cannot tell that
+ * apart from staleness. The event can.
+ *
+ * Nothing here ever tries to REPOINT an existing preapproval: HOS-937 measured
+ * that MercadoPago ignores a `PUT` on `payer_email`. A live subscription keeps
+ * charging under the binding it was born with, which is exactly what must not
+ * break; only the NEXT preapproval picks up the new address.
+ *
  * @module services/billing/payer-email
  */
 
@@ -40,6 +67,11 @@ export interface ResolvePayerEmailInput {
      * `billing_customers.mp_payer_email` — the last email MercadoPago
      * actually accepted for this customer, if any (spec §6.3 resolution
      * order, step 1).
+     *
+     * A CACHE, not an identity (HOS-971): it is dropped by
+     * {@link clearMpPayerEmailBestEffort} as soon as the account email
+     * changes, so a value present here is one still known to belong to this
+     * account. See the module docblock.
      */
     readonly mpPayerEmail?: string | null;
     /**
@@ -204,6 +236,70 @@ export async function persistMpPayerEmailBestEffort(
                 error: error instanceof Error ? error.message : String(error)
             },
             'HOS-937: failed to persist billing_customers.mp_payer_email (best-effort, non-blocking)',
+            { capture: true }
+        );
+    }
+}
+
+/**
+ * Input for {@link clearMpPayerEmailBestEffort}.
+ */
+export interface ClearMpPayerEmailInput {
+    /** The qzpay/Hospeda billing customer id whose cached MP email to drop. */
+    readonly customerId: string;
+    /** Drizzle client override for tests. Defaults to {@link getDb}. */
+    readonly db?: DrizzleClient;
+}
+
+/**
+ * Invalidate `billing_customers.mp_payer_email` because the account email it
+ * was cached against has changed (HOS-971).
+ *
+ * This is a LOCAL write and nothing else. It does not call MercadoPago, does
+ * not cancel anything, and does not touch a live preapproval — HOS-937
+ * measured that `payer_email` is immutable there (a `PUT` returns 200 and
+ * changes nothing), so an existing subscription necessarily keeps charging
+ * under the address it was authorized with. That is the outcome to protect,
+ * not to repair.
+ *
+ * What it does buy is the NEXT preapproval. Without it, the stale cache
+ * outranks `billing_customers.email` in {@link resolvePayerEmail}, so a
+ * checkout with no user-supplied address would bind a brand-new preapproval
+ * to an email the person no longer owns — and MercadoPago will not say which
+ * email it expected, it just tells them to contact the seller.
+ *
+ * Writes EXCLUSIVELY the `mp_payer_email` column, by construction: the UPDATE
+ * statement names no other column, so `billing_customers.email` — the address
+ * eight of our own sends read — cannot be collateral damage (same guarantee
+ * as {@link persistMpPayerEmailBestEffort}, AC-9/HOS-581).
+ *
+ * Best-effort, like both its siblings: a failure is logged with Sentry capture
+ * and swallowed. It runs inside a Better Auth `user.update.after` hook, where
+ * throwing would turn a failed cache invalidation into a failed profile save.
+ * The cost of a swallowed failure is bounded and self-healing — the user is
+ * asked to confirm the payer email on the pre-redirect screen anyway, and
+ * whatever they confirm is re-persisted here on the next activation.
+ *
+ * The `WHERE mp_payer_email IS NOT NULL` clause keeps this a no-op row-wise
+ * for the overwhelming majority of customers, who never completed a checkout
+ * under the own-preapproval flow at all.
+ *
+ * @param input - See {@link ClearMpPayerEmailInput}.
+ */
+export async function clearMpPayerEmailBestEffort(input: ClearMpPayerEmailInput): Promise<void> {
+    const { customerId, db = getDb() } = input;
+
+    try {
+        await db.execute(
+            sql`UPDATE billing_customers SET mp_payer_email = NULL WHERE id = ${customerId} AND mp_payer_email IS NOT NULL`
+        );
+    } catch (error) {
+        apiLogger.error(
+            {
+                customerId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-971: failed to invalidate billing_customers.mp_payer_email after an account email change (best-effort, non-blocking)',
             { capture: true }
         );
     }

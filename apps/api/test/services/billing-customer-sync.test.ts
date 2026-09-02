@@ -40,6 +40,21 @@ vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: (...args: unknown[]) => clearEntitlementCacheMock(...args)
 }));
 
+/**
+ * HOS-971. Mocked wholesale so this suite never drags `payer-email.ts`'s own
+ * `@repo/db` imports (`getDb`/`sql`) into the narrow `@repo/db` mock above.
+ * The SQL that function issues is covered by
+ * `test/services/billing/payer-email.test.ts`; what belongs HERE is only
+ * WHETHER the sync service calls it, and on which transition.
+ */
+const clearMpPayerEmailBestEffortMock = vi.fn(
+    async (_input: { readonly customerId: string }): Promise<void> => undefined
+);
+vi.mock('../../src/services/billing/payer-email.js', () => ({
+    clearMpPayerEmailBestEffort: (input: { readonly customerId: string }) =>
+        clearMpPayerEmailBestEffortMock(input)
+}));
+
 // ─── Imports — after mocks ────────────────────────────────────────────────────
 
 import type { QZPayBilling, QZPayCustomer } from '@qazuor/qzpay-core';
@@ -426,6 +441,126 @@ describe('BillingCustomerSyncService', () => {
             // Assert
             expect(result).toBe('cus_123');
             expect(mockBilling.customers!.update).toHaveBeenCalled();
+        });
+    });
+
+    // ─── HOS-971 — the account email is the source of truth ────────────────────
+
+    describe('syncCustomerData — mp_payer_email invalidation (HOS-971)', () => {
+        it('invalidates mp_payer_email when the account email changes', async () => {
+            // A MercadoPago `payer_email` is BINDING and NOT mutable — a PUT on
+            // an existing preapproval is ignored (HOS-937). So a stored
+            // `mp_payer_email` stops describing this account the moment the
+            // account email changes: the NEXT checkout would bind a brand-new
+            // preapproval to an address the person no longer owns, and
+            // MercadoPago never tells them which address it expected.
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+            vi.mocked(mockBilling.customers!.update).mockResolvedValue({
+                ...mockCustomer,
+                email: 'moved@empresa.com'
+            });
+
+            // Act
+            await service.syncCustomerData({
+                userId: 'user_123',
+                email: 'moved@empresa.com',
+                name: 'Test User'
+            });
+
+            // Assert
+            expect(clearMpPayerEmailBestEffortMock).toHaveBeenCalledWith({
+                customerId: 'cus_123'
+            });
+        });
+
+        it('leaves mp_payer_email alone when only the name changes', async () => {
+            // The stored MercadoPago email is a legitimate cache for everyone
+            // who never moved address — including whoever deliberately pays
+            // with a DIFFERENT MercadoPago account than their Hospeda one
+            // (HOS-208). Only the email-change event invalidates it.
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+            vi.mocked(mockBilling.customers!.update).mockResolvedValue({
+                ...mockCustomer,
+                name: 'Updated User'
+            });
+
+            // Act
+            await service.syncCustomerData({
+                userId: 'user_123',
+                email: 'test@example.com',
+                name: 'Updated User'
+            });
+
+            // Assert
+            expect(clearMpPayerEmailBestEffortMock).not.toHaveBeenCalled();
+        });
+
+        it('leaves mp_payer_email alone when nothing changed at all', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+
+            // Act
+            await service.syncCustomerData({
+                userId: 'user_123',
+                email: 'test@example.com',
+                name: 'Test User'
+            });
+
+            // Assert
+            expect(clearMpPayerEmailBestEffortMock).not.toHaveBeenCalled();
+        });
+
+        it('invalidates mp_payer_email even when the provider-side update fails', async () => {
+            // The invalidation is what stops the NEXT checkout from binding a
+            // preapproval to a dead address. It must not be collateral damage
+            // of a MercadoPago outage: `billing_customers.email` may still hold
+            // the old value after a failed update, and falling back to THAT is
+            // survivable — falling back to a stale `mp_payer_email` is not,
+            // because it outranks it in `resolvePayerEmail`'s precedence.
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+            vi.mocked(mockBilling.customers!.update).mockRejectedValue(
+                new Error('MercadoPago is down')
+            );
+
+            // Act
+            const result = await service.syncCustomerData({
+                userId: 'user_123',
+                email: 'moved@empresa.com',
+                name: 'Test User'
+            });
+
+            // Assert — the sync itself degrades to null (throwOnError defaults
+            // to false), but the stale binding is already gone.
+            expect(result).toBeNull();
+            expect(clearMpPayerEmailBestEffortMock).toHaveBeenCalledWith({
+                customerId: 'cus_123'
+            });
+        });
+
+        it('does not touch mp_payer_email when the customer row has to be CREATED', async () => {
+            // A row created right now cannot carry a stale MercadoPago email:
+            // the column is written only once a preapproval reaches
+            // `authorized`. Clearing here would be a pointless write on every
+            // first-time sync.
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
+            vi.mocked(mockBilling.customers!.create).mockResolvedValue({
+                ...mockCustomer,
+                id: 'cus_new'
+            });
+
+            // Act
+            await service.syncCustomerData({
+                userId: 'user_456',
+                email: 'new@example.com',
+                name: 'New User'
+            });
+
+            // Assert
+            expect(clearMpPayerEmailBestEffortMock).not.toHaveBeenCalled();
         });
     });
 
