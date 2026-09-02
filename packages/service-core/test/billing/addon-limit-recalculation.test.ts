@@ -617,4 +617,55 @@ describe('recalculateAddonLimitsForCustomer — commerce verticals (HOS-688 AC-1
         expect(result.outcome).toBe('success');
         expect(result.newMaxValue).toBe(8); // base(3) + addon(5)
     });
+
+    it('refuses a limit key that owns no product domain (HOS-1078)', async () => {
+        // `limitKey` reaches this service as a free string off a
+        // `billing_addons.affects_limit_key` row, so a typo gets here. It used
+        // to resolve to `'accommodation'` via a `??`: this exact call would then
+        // have found the owner's accommodation subscription below, read a plan
+        // that does not declare the key, and computed a cap off a base of zero
+        // — a charge with nothing delivered, and nothing raised.
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        setExecResult([
+            {
+                addonSlug: 'extra-gastronomys-1',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_gastronomys', increase: 1 }]
+            }
+        ]);
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-gastronomys-1',
+                affectsLimitKey: 'max_gastronomys',
+                limitIncrease: 1
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-owner',
+                slug: 'owner-premium',
+                limits: { max_accommodations: 3 }
+            }
+        });
+        const billing = buildMockBilling(
+            [{ status: 'active', planId: 'owner-premium', productDomain: 'accommodation' }],
+            { setFn: mockSet }
+        );
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-typo-addon',
+            limitKey: 'max_gastronomys',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).toBe('failed');
+        // Naming the key in the reason is what makes this diagnosable at all —
+        // the old path produced no reason because it produced no failure.
+        expect(result.reason).toContain('max_gastronomys');
+        expect(mockSet).not.toHaveBeenCalled();
+    });
 });
