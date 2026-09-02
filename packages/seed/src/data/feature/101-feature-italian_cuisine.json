@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "101-feature-italian_cuisine",
+    "slug": "italian_cuisine",
+    "description": {
+        "es": "Cocina italiana: pastas, pizzas y platos de la tradición italiana",
+        "en": "Italian cuisine: pasta, pizza and traditional Italian dishes",
+        "pt": "Cozinha italiana: massas, pizzas e pratos da tradição italiana"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "RestaurantIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 63,
+    "lifecycleState": "ACTIVE"
+}

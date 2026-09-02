@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "104-feature-asian_cuisine",
+    "slug": "asian_cuisine",
+    "description": {
+        "es": "Cocina asiática: platos de las tradiciones culinarias de Asia",
+        "en": "Asian cuisine: dishes from Asian culinary traditions",
+        "pt": "Cozinha asiática: pratos das tradições culinárias da Ásia"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "RestaurantIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 60,
+    "lifecycleState": "ACTIVE"
+}
