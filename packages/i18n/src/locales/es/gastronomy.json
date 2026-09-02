@@ -59,6 +59,11 @@
         "social": "Redes sociales",
         "amenities": {
             "title": "Servicios y comodidades"
+        },
+        "eventsCta": {
+            "title": "¿Buscás salón para eventos?",
+            "description": "Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.",
+            "button": "Contactar"
         }
     },
     "types": {

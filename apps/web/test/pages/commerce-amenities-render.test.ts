@@ -63,8 +63,12 @@ describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () 
     });
 
     it("binds AmenitiesGrid to the LISTING's own amenities", () => {
+        // HOS-1055: `amenitiesForGrid` is `gastronomy.amenities` with
+        // `private_events` excluded ONLY when the dedicated events CTA renders
+        // in its place (see `apps/web/test/pages/gastronomy-events-cta.test.ts`)
+        // — still the listing's own amenities, not a different source.
         expect(GASTRONOMY_PAGE).toContain(
-            '<AmenitiesGrid amenities={gastronomy.amenities} lang={locale} />'
+            '<AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />'
         );
     });
 
