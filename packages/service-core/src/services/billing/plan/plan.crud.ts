@@ -11,7 +11,7 @@
  * @module services/billing/plan/plan.crud
  */
 
-import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
+import { ENTITLEMENT_GRANTING_STATUSES, readTrialComposition } from '@repo/billing';
 import {
     and,
     asc,
@@ -588,6 +588,42 @@ export async function updatePlan(
             }
 
             const existingMeta = (existingPlan.metadata ?? {}) as Record<string, unknown>;
+
+            // HOS-1012 T-038: a composed trial plan is not editable here.
+            //
+            // This dialog is precisely what makes `entitlements` and
+            // `limitsValues` commercial/DB-wins, and a trial plan's stored
+            // values are a SNAPSHOT of two OTHER plans — kept so the admin
+            // billing view and the downgrade preview show something sensible
+            // instead of an empty plan, which would read as unlimited. Editing
+            // it here would not change what the trial grants (gating resolves
+            // the composition live, every time); it would only make the screen
+            // lie about it. This is the last door through which the snapshot
+            // could be hand-edited into disagreeing with its sources.
+            //
+            // The refusal is the WRITE, not a list filter. Hiding these plans
+            // from the admin list is the cheap version and leaves the endpoint
+            // open: the id is still guessable, still returned by
+            // `GET /plans/{id}`, and still accepted by any caller that skips
+            // the UI. Refusing here covers every caller of `PlanService.update`,
+            // present and future, and it costs the operator nothing they should
+            // have been able to do — the trial's real values are edited on
+            // `owner-pro` / `owner-basico`, which stay fully editable and are
+            // reflected the moment they change.
+            //
+            // Keyed on the composition in metadata, never on a slug list, for
+            // the same reason the gating path is: three verticals means three
+            // chances to forget one.
+            if (readTrialComposition(existingMeta)) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message:
+                            'This is a composed trial plan: its entitlements and limits are resolved live from its source plans, and the stored values are only a display snapshot. Edit the source plans instead.'
+                    }
+                };
+            }
 
             // HOS-176: collect the price-change propagation effect(s) triggered by this
             // update (monthly and/or annual) so the admin response can surface "affects N
