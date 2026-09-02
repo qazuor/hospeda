@@ -33,7 +33,7 @@ import {
 } from '@repo/billing';
 import { commerceListingSubscriptions, eq, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
 import { reconcileCommerceListingForSubscription } from './commerce-reconcile.service.js';
 
@@ -83,8 +83,13 @@ export async function findOwnerVerticalSubscription(input: {
     const { billing, customerId, vertical } = input;
     const domain = commerceVerticalToProductDomain(vertical);
 
-    const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-    const match = (subscriptions ?? []).find(
+    const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+    // HOS-934: hydrate `productDomain` before matching — `getByCustomerId()`
+    // never populates it (see hydrateSubscriptionProductDomains's doc), so
+    // without this every subscription would fail open to accommodation
+    // regardless of its real vertical.
+    const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+    const match = subscriptions.find(
         (sub: { status: string }) =>
             isEntitlementGrantingStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
     );
