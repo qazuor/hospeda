@@ -108,7 +108,8 @@ const CLEAN_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 0
     }),
-    matchedTerms: Object.freeze([])
+    matchedTerms: Object.freeze([]),
+    degraded: false
 };
 
 const BLOCKED_RESULT: contentModeration.ModerationResult = {
@@ -121,7 +122,8 @@ const BLOCKED_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 1.0
     }),
-    matchedTerms: Object.freeze(['badword'])
+    matchedTerms: Object.freeze(['badword']),
+    degraded: false
 };
 
 function makeReview(overrides: Partial<DestinationReview> = {}): DestinationReview {
@@ -306,7 +308,8 @@ describe('DestinationReviewService — _beforeCreate content-moderation wiring (
                 harassment: 0,
                 other: 0.6
             }),
-            matchedTerms: Object.freeze([])
+            matchedTerms: Object.freeze([]),
+            degraded: false
         };
         asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
         asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({
@@ -353,7 +356,8 @@ describe('DestinationReviewService — _beforeCreate content-moderation wiring (
                 harassment: 0,
                 other: 0.9
             }),
-            matchedTerms: Object.freeze([])
+            matchedTerms: Object.freeze([]),
+            degraded: false
         };
         asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
         asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({

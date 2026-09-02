@@ -304,7 +304,8 @@ const CLEAN_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 0
     }),
-    matchedTerms: Object.freeze([])
+    matchedTerms: Object.freeze([]),
+    degraded: false
 };
 
 /** Content-moderation result for blocked-word hit — forces PENDING on either entity type. */
@@ -318,7 +319,8 @@ const BLOCKED_RESULT: contentModeration.ModerationResult = {
         harassment: 0,
         other: 1.0
     }),
-    matchedTerms: Object.freeze(['badword'])
+    matchedTerms: Object.freeze(['badword']),
+    degraded: false
 };
 
 /** Rating object required by both review types (accommodation dimensions). */
