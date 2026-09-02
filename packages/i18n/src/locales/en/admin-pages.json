@@ -730,6 +730,28 @@
                         "cap5": "View their commerce analytics"
                     }
                 },
+                "GASTRONOMY_OWNER": {
+                    "name": "Gastronomy Owner",
+                    "description": "Owner of a restaurant, bar or café who manages their own listing (no access to experiences)",
+                    "capabilities": {
+                        "cap1": "Manage their gastronomy listing",
+                        "cap2": "Update opening hours and contact details",
+                        "cap3": "Upload photos",
+                        "cap4": "Reply to reviews",
+                        "cap5": "View their gastronomy analytics"
+                    }
+                },
+                "EXPERIENCE_OWNER": {
+                    "name": "Experience Owner",
+                    "description": "Owner of a tour or activity who manages their own listing (no access to gastronomy)",
+                    "capabilities": {
+                        "cap1": "Manage their experience listing",
+                        "cap2": "Update schedules and contact details",
+                        "cap3": "Upload photos",
+                        "cap4": "Reply to reviews",
+                        "cap5": "View their experience analytics"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Sponsor",
                     "description": "External business sponsor with access to sponsorship management and analytics",

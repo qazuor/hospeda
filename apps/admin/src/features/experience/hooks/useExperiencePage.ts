@@ -50,10 +50,13 @@ export const useExperiencePage = (entityId: string) => {
 
     const permissions = useMemo(
         () => ({
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL],
-            create: [PermissionEnum.COMMERCE_CREATE],
-            delete: [PermissionEnum.COMMERCE_DELETE]
+            // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
+            // so naming both families IS the dual-read — no new mechanism.
+            // Release 2 drops the COMMERCE_* entries.
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL],
+            create: [PermissionEnum.EXPERIENCE_CREATE, PermissionEnum.COMMERCE_CREATE],
+            delete: [PermissionEnum.EXPERIENCE_DELETE, PermissionEnum.COMMERCE_DELETE]
         }),
         []
     );

@@ -730,6 +730,28 @@
                         "cap5": "Ver análises do seu comércio"
                     }
                 },
+                "GASTRONOMY_OWNER": {
+                    "name": "Dono de Gastronomia",
+                    "description": "Titular de um restaurante, bar ou café que gerencia seu próprio perfil (sem acesso a experiências)",
+                    "capabilities": {
+                        "cap1": "Gerenciar seu perfil gastronômico",
+                        "cap2": "Atualizar horários e contato",
+                        "cap3": "Enviar fotos",
+                        "cap4": "Responder avaliações",
+                        "cap5": "Ver análises da sua gastronomia"
+                    }
+                },
+                "EXPERIENCE_OWNER": {
+                    "name": "Dono de Experiência",
+                    "description": "Titular de um passeio ou atividade que gerencia seu próprio perfil (sem acesso a gastronomia)",
+                    "capabilities": {
+                        "cap1": "Gerenciar seu perfil de experiência",
+                        "cap2": "Atualizar horários e contato",
+                        "cap3": "Enviar fotos",
+                        "cap4": "Responder avaliações",
+                        "cap5": "Ver análises da sua experiência"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa com acesso a gerenciamento e análises de patrocínios",
