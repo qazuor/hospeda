@@ -13,6 +13,7 @@
         "type": "Tipo de estabelecimento",
         "priceRange": "Faixa de preço",
         "featured": "Somente destaques",
+        "features": "Opções alimentares e características",
         "minRating": "Avaliação mínima",
         "sort": {
             "featured": "Destaques primeiro",

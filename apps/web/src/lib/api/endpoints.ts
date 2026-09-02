@@ -1639,6 +1639,15 @@ export const gastronomyApi = {
         readonly maxRating?: number;
         readonly sortBy?: string;
         readonly sortOrder?: 'asc' | 'desc';
+        /** Comma-separated amenity UUIDs the listing must ALL carry. */
+        readonly amenities?: string;
+        /**
+         * Comma-separated feature UUIDs the listing must ALL carry. This is the
+         * "apto" filter (HOS-1054): sin TACC, vegano, vegetariano, sin lactosa
+         * and sin frutos secos are gastronomy-scoped `features` catalog rows,
+         * not columns of their own.
+         */
+        readonly features?: string;
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<GastronomyPublic>>> {

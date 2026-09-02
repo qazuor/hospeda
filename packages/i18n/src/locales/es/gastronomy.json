@@ -13,6 +13,7 @@
         "type": "Tipo de establecimiento",
         "priceRange": "Rango de precio",
         "featured": "Solo destacados",
+        "features": "Aptos y características",
         "minRating": "Calificación mínima",
         "sort": {
             "featured": "Destacados primero",
