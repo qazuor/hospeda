@@ -13,11 +13,14 @@
  * `packages/billing/src/config/model-c-field-split.ts` — the seed sync never
  * overwrites them once a value exists in the DB, and the commerce plan's own
  * seed (`packages/seed/src/required/commercePlan.seed.ts`) only INSERTs the
- * plan/price rows when they do not exist yet. So raising
- * `COMMERCE_LISTING_PLAN.monthlyPriceArs` in `plans.config.ts` alone corrects
- * only a FRESH `db:fresh`/`db:fresh-dev` run; any already-seeded environment
- * (staging/prod) keeps charging the `500000` placeholder forever without this
- * explicit, repeatable UPDATE.
+ * plan/price rows when they do not exist yet. So raising the price in the
+ * plan's config definition alone corrects only a FRESH `db:fresh`/
+ * `db:fresh-dev` run; any already-seeded environment (staging/prod) keeps
+ * charging the `500000` placeholder forever without this explicit, repeatable
+ * UPDATE. (The pre-HOS-688 `COMMERCE_LISTING_PLAN` config constant this
+ * migration originally targeted was retired by HOS-1081 once every
+ * production row moved to the per-vertical plans; this migration itself
+ * stays — it is a historical, ledgered fix for rows that predate that split.)
  *
  * ## What it updates
  *
