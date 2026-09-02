@@ -711,66 +711,66 @@
             "id": "T-022",
             "title": "Supersede the trial row on activation — same transaction, never mutate",
             "description": "Spec §6.6: the checkout creates its own pending_provider row as today; on the activation webhook the old trialing row for the same (customer, product_domain) moves to a terminal state IN THE SAME TRANSACTION as the activation. Do NOT mutate the trial row into a paid one — that would require it to acquire an mp_subscription_id mid-life, which is exactly the correlation problem HOS-937 spent ~4.750 lines solving. Rows keep their provenance. The overlap must not outlive the transaction: `loadEntitlements` picks the FIRST entitlement-granting accommodation subscription it finds (`entitlement.ts:446`), so two live rows resolve a nondeterministic plan. TESTS: see T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-021"],
             "blocks": ["T-023"],
             "subtasks": [
                 {
                     "title": "Terminal-state the trial row inside the activation transaction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Never write mp_subscription_id onto the trial row",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "webhook", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T02:01:39.000Z",
+                "completed": "2026-09-02T02:01:39.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Prove two entitlement-granting rows never coexist past the transaction",
             "description": "Tests for T-022. `TrialService.reconcileDuplicateSubscriptions` (`trial.service.ts:1663`) exists as a backstop but is NOT the design — a test that relies on the backstop to reach a single row is asserting the wrong thing. TESTS: immediately after the activation transaction commits, exactly one entitlement-granting row exists for (customer, accommodation); a failed activation leaves the trial row still granting; mutate by moving the supersede outside the transaction and confirm a test dies.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-026", "T-027"],
             "subtasks": [
                 {
                     "title": "Exactly one granting row post-commit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Failed activation leaves the trial intact",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: supersede outside the transaction",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T02:01:39.000Z",
+                "completed": "2026-09-02T02:01:39.000Z"
             }
         },
         {
