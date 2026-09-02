@@ -65,8 +65,20 @@ export enum PermissionCategoryEnum {
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
-    /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
+    /**
+     * Commerce listings (gastronomy, experience). Added in SPEC-239.
+     *
+     * RETIRING (HOS-1077): a category that names two verticals at once is the
+     * reason gastronomy could not be granted without experience. Split into
+     * {@link PermissionCategoryEnum.GASTRONOMY} and
+     * {@link PermissionCategoryEnum.EXPERIENCE}; kept through the expand release
+     * because the `commerce.*` permissions it classifies are still live.
+     */
     COMMERCE = 'COMMERCE',
+    /** Gastronomy listings — the gastronomy half of the commerce split (HOS-1077). */
+    GASTRONOMY = 'GASTRONOMY',
+    /** Experience listings — the experience half of the commerce split (HOS-1077). */
+    EXPERIENCE = 'EXPERIENCE',
     HOST_TRADE = 'HOST_TRADE',
     /** Partners program (SPEC-271). */
     PARTNER = 'PARTNER',
@@ -960,6 +972,56 @@ export enum PermissionEnum {
     // third segment here would add a fourteenth dual-spelled family to the
     // baseline frozen by `permission-naming-convention.guard.test.ts`.
     COMMERCE_MODERATION_CHANGE = 'commerce.moderationChange', // Allows changing the moderation state of a commerce LISTING (gastronomy/experience).
+
+    // GASTRONOMY / EXPERIENCE: the per-vertical split of the `commerce.*` family (HOS-1077).
+    //
+    // ## Why these exist
+    //
+    // `commerce.*` names TWO product verticals at once, so it is impossible to
+    // grant edit rights over gastronomy without also granting them over
+    // experiences: a restaurant moderator moderates excursions, by construction.
+    // Accommodation never had that problem — it is one vertical with its own
+    // family. These 14 give gastronomy and experience the same vocabulary.
+    //
+    // ## Deliberate shape: 7 each, NOT 64 each
+    //
+    // This is a SPLIT of the seven, not an alignment with accommodation's 64.
+    // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
+    // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
+    // that SPEC-253 D2=b deliberately collapsed into the single
+    // `COMMERCE_EDIT_OWN` — re-creating them here would revert that decision.
+    // Others correspond to functionality commerce does not have
+    // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
+    // permission no route ever demands is dead letter.
+    //
+    // ## Spelling
+    //
+    // Two segments, camelCase second segment — identical to the `commerce.*`
+    // family they mirror, and for the same reason: a dotted third segment would
+    // add a dual-spelled family to the baseline frozen by
+    // `permission-naming-convention.guard.test.ts`.
+    //
+    // ## Migration state (HOS-1077 release 1 = EXPAND)
+    //
+    // These coexist with `commerce.*`. Every gate reads BOTH (the vertical value
+    // OR the legacy one), so nobody loses access while live `role_permission`
+    // rows are backfilled. Release 2 (contract) removes the `commerce.*` seven,
+    // the `COMMERCE_OWNER` role and the dual-read.
+    GASTRONOMY_EDIT_OWN = 'gastronomy.editOwn', // Allows a GASTRONOMY_OWNER to edit their own gastronomy listing.
+    GASTRONOMY_CREATE = 'gastronomy.create', // Allows creating a new gastronomy listing.
+    GASTRONOMY_VIEW_ALL = 'gastronomy.viewAll', // Allows viewing all gastronomy listings (including private/draft).
+    GASTRONOMY_EDIT_ALL = 'gastronomy.editAll', // Allows editing any gastronomy listing regardless of ownership.
+    GASTRONOMY_DELETE = 'gastronomy.delete', // Allows soft-deleting any gastronomy listing.
+    GASTRONOMY_MODERATE_REVIEW = 'gastronomy.moderateReview', // Allows moderating reviews written ABOUT a gastronomy listing.
+    GASTRONOMY_MODERATION_CHANGE = 'gastronomy.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
+
+    EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
+    EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.
+    EXPERIENCE_VIEW_ALL = 'experience.viewAll', // Allows viewing all experience listings (including private/draft).
+    EXPERIENCE_EDIT_ALL = 'experience.editAll', // Allows editing any experience listing regardless of ownership.
+    EXPERIENCE_DELETE = 'experience.delete', // Allows soft-deleting any experience listing.
+    EXPERIENCE_MODERATE_REVIEW = 'experience.moderateReview', // Allows moderating reviews written ABOUT an experience listing.
+    EXPERIENCE_MODERATION_CHANGE = 'experience.moderationChange', // Allows changing the moderation state of an experience LISTING.
 
     // PARTNER: Partners program (SPEC-271)
     PARTNER_CREATE = 'partner.create', // Allows creating a new partner.
