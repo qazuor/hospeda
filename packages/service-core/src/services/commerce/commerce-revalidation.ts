@@ -23,8 +23,15 @@ import { getRevalidationService } from '../../revalidation/revalidation-init.js'
 /** Logger for the media entry point, which has no service instance to borrow one from. */
 const mediaRevalidationLogger = createLogger('commerce-media-revalidation');
 
-/** The commerce entity types that have a cached public detail page. */
-export type CommerceRevalidationEntityType = 'gastronomy' | 'experience';
+/**
+ * The commerce entity types that have a cached public detail page.
+ *
+ * Not exported: every consumer of {@link scheduleCommerceListingRevalidation}
+ * and {@link scheduleCommerceMediaRevalidation} passes a `'gastronomy'` /
+ * `'experience'` literal directly rather than importing this type — it exists
+ * only to name the parameter here.
+ */
+type CommerceRevalidationEntityType = 'gastronomy' | 'experience';
 
 /**
  * The listing fields a purge needs. Typed structurally rather than against a
