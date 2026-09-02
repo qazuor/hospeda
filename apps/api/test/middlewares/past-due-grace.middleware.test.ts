@@ -679,6 +679,57 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.json).not.toHaveBeenCalled();
         });
 
+        it('should call next() for GET /users/me/subscription even with expired grace (HOS-348)', async () => {
+            // Arrange — this is the ONLY endpoint the account subscription
+            // page reads on mount. Before the fix, a past-due customer whose
+            // grace period expired got a 402 here too, so the one screen
+            // that could show them their own billing status (and let them
+            // act on it) was itself behind the same gate — the page's
+            // "Reintentar" button just re-triggered the same 402 forever.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -4
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/users/me/subscription'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            await middleware(ctx as never, next);
+
+            // Assert
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should still block a mutating billing path that merely CONTAINS "subscription" (HOS-348)', async () => {
+            // Arrange — the exemption above is a suffix match on
+            // `/me/subscription`; it must not accidentally widen to any path
+            // that happens to mention "subscription". A cancel/pause/etc.
+            // mutation must stay gated.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -2
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123/cancel'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            // Assert
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+        });
+
         it('should call next() for the alliance protected tier even with expired grace (HOS-278)', async () => {
             // Arrange — dual-persona user: the ACCOMMODATION subscription is
             // past-due and grace-expired, but they are asking whether their
