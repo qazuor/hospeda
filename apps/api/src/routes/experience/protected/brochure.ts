@@ -24,7 +24,11 @@
 
 import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
-import { ExperienceService, entityNotFoundError, ServiceError } from '@repo/service-core';
+import { ExperienceService, entityNotFoundError } from '@repo/service-core';
+// Same module instance `utils/response-helpers` compares against: importing
+// `ServiceError` from the package ROOT yields a DIFFERENT class under the test
+// resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
+import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
@@ -60,10 +64,10 @@ export async function handleGetExperienceBrochure(
     }
 
     if (entity.visibility !== VisibilityEnum.PUBLIC) {
-        throw new ServiceError(
-            ServiceErrorCode.NOT_FOUND,
-            'experience listing has no public page to print'
-        );
+        // Same canonical message as the branch above, deliberately: the error
+        // contract's anti-enumeration rule wants one spelling of a 404, and two
+        // would let a caller tell "not yours" from "not published" (HOS-600).
+        throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
 
     const parsed = ExperienceBrochureSourceSchema.safeParse(entity);

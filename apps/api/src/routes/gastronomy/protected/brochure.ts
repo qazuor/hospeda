@@ -36,7 +36,11 @@
 
 import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
-import { entityNotFoundError, GastronomyService, ServiceError } from '@repo/service-core';
+import { entityNotFoundError, GastronomyService } from '@repo/service-core';
+// Same module instance `utils/response-helpers` compares against: importing
+// `ServiceError` from the package ROOT yields a DIFFERENT class under the test
+// resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
+import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
@@ -76,10 +80,10 @@ export async function handleGetGastronomyBrochure(
     // The brochure is a print of the PUBLIC ficha. A listing with no public
     // ficha has nothing to print, and its QR would send every reader to a 404.
     if (entity.visibility !== VisibilityEnum.PUBLIC) {
-        throw new ServiceError(
-            ServiceErrorCode.NOT_FOUND,
-            'gastronomy listing has no public page to print'
-        );
+        // Same canonical message as the branch above, deliberately: the error
+        // contract's anti-enumeration rule wants one spelling of a 404, and two
+        // would let a caller tell "not yours" from "not published" (HOS-600).
+        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
     const parsed = GastronomyBrochureSourceSchema.safeParse(entity);
