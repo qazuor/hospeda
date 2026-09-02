@@ -67,9 +67,19 @@ describe('logging util', () => {
         expect(loggerMock.info).not.toHaveBeenCalled();
     });
 
-    it('logs error', () => {
+    // HOS-858: logError now logs a structured `data` payload as the first
+    // argument (so postgres-cause fields land as their own keys, not
+    // concatenated into a string) and a short label as the second argument.
+    it('logs error with a structured data payload and a short label', () => {
         logging.logError(mockMethodName, mockError, mockInput, mockActor);
-        expect(loggerMock.error).toHaveBeenCalledWith(expect.stringContaining('Error in'));
+        expect(loggerMock.error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                input: mockInput,
+                actor: expect.objectContaining({ id: mockActor.id }),
+                errorMessage: mockError.message
+            }),
+            expect.stringContaining('Error in')
+        );
     });
 
     // HOS-109 / OQ-1: expected client outcomes (401/403/404) must not pollute
@@ -77,30 +87,84 @@ describe('logging util', () => {
     it('logs an expected 404 ServiceError at info, not error', () => {
         const error = new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         logging.logError(mockMethodName, error, mockInput, mockActor);
-        expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining('Error in'));
+        expect(loggerMock.info).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.stringContaining('Error in')
+        );
         expect(loggerMock.error).not.toHaveBeenCalled();
     });
 
     it('logs an expected 401 ServiceError at info, not error', () => {
         const error = new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
         logging.logError(mockMethodName, error, mockInput, mockActor);
-        expect(loggerMock.info).toHaveBeenCalledWith(expect.stringContaining('Error in'));
+        expect(loggerMock.info).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.stringContaining('Error in')
+        );
         expect(loggerMock.error).not.toHaveBeenCalled();
     });
 
     it('logs an expected 403 ServiceError at warn, not error', () => {
         const error = new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only self or USER_READ_ALL');
         logging.logError(mockMethodName, error, mockInput, mockActor);
-        expect(loggerMock.warn).toHaveBeenCalledWith(expect.stringContaining('Error in'));
+        expect(loggerMock.warn).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.stringContaining('Error in')
+        );
         expect(loggerMock.error).not.toHaveBeenCalled();
     });
 
     it('keeps a real 500 ServiceError at error level', () => {
         const error = new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'boom');
         logging.logError(mockMethodName, error, mockInput, mockActor);
-        expect(loggerMock.error).toHaveBeenCalledWith(expect.stringContaining('Error in'));
+        expect(loggerMock.error).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.stringContaining('Error in')
+        );
         expect(loggerMock.info).not.toHaveBeenCalled();
         expect(loggerMock.warn).not.toHaveBeenCalled();
+    });
+
+    // HOS-858 AC-1 + AC-3, exercised through the public logError entry point
+    // (not just the extractor unit — see postgres-error-cause.test.ts for
+    // deeper coverage of the chain-walk itself, including the RED-before-fix
+    // case). Mirrors the exact ServiceError -> DrizzleQueryError ->
+    // pg.DatabaseError wrapping `BaseService.runWithLoggingAndValidation`
+    // produces for a real query failure.
+    it('persists the Postgres SQLSTATE as its own data field and keeps the SQL out of the message', () => {
+        const driverError = new Error(
+            'duplicate key value violates unique constraint "users_email_unique"'
+        ) as Error & { code?: string; constraint?: string; table?: string };
+        driverError.code = '23505';
+        driverError.constraint = 'users_email_unique';
+        driverError.table = 'users';
+
+        const drizzleError = new Error(
+            'Failed query: insert into "users" ("id", "email") values ($1, $2)\nparams: 1,alice@example.com',
+            { cause: driverError }
+        );
+
+        const serviceError = new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            `An unexpected error occurred: ${drizzleError.message}`,
+            drizzleError
+        );
+
+        logging.logError(mockMethodName, serviceError, mockInput, mockActor);
+
+        expect(loggerMock.error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                postgresErrorCode: '23505',
+                postgresErrorConstraint: 'users_email_unique',
+                postgresErrorTable: 'users'
+            }),
+            expect.any(String)
+        );
+
+        const [, label] = asMock(loggerMock.error).mock.calls[0] as [unknown, string];
+        expect(label).not.toContain('Failed query');
+        expect(label).not.toContain('insert into');
+        expect(label).toContain('23505');
     });
 
     it('logs permission', () => {
