@@ -2956,8 +2956,9 @@ describe('processSubscriptionUpdated', () => {
     // local courtesy window (the typed `courtesyEndsAt` column, HOS-993) is
     // still open must land the row on COURTESY, not PAUSED (AC-4), and that
     // derived status must NOT
-    // trigger the "your card failed" paused-subscription email (AC-9, HOS-926 —
-    // subscription-paused.tsx blames the payment method).
+    // trigger the "your subscription is paused" email (AC-9, HOS-926 —
+    // subscription-paused.tsx announces a suspension, the wrong framing for a
+    // gift regardless of copy).
     describe('HOS-180: courtesy window on the paused webhook path', () => {
         it('derives COURTESY (not PAUSED) when a paused webhook arrives during an active courtesy window (AC-4)', async () => {
             // Arrange — admin gifted a cycle on an ACTIVE subscription; MP's
@@ -3035,9 +3036,10 @@ describe('processSubscriptionUpdated', () => {
 
         it('does NOT send the paused-subscription email when a paused webhook derives COURTESY (AC-9, regression, HOS-926)', async () => {
             // Arrange — identical courtesy scenario to the AC-4 test above.
-            // subscription-paused.tsx blames the payment method for the pause,
-            // so sending it here would tell a just-gifted subscriber their card
-            // failed.
+            // subscription-paused.tsx announces a suspension (even with the
+            // HOS-926 copy fix, it is still "your subscription is paused"), so
+            // sending it here would tell a just-gifted subscriber the wrong
+            // thing about a benefit.
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
             mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
