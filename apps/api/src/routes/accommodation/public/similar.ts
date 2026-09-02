@@ -2,9 +2,9 @@
  * GET /api/v1/public/accommodations/:id/similar
  * Returns accommodations similar to the given one, matched by type or destination.
  */
-import { accommodations, getDb } from '@repo/db';
+import { accommodationMediaModel, accommodations, getDb } from '@repo/db';
 import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { composeAccommodationMedia, ServiceError } from '@repo/service-core';
 import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -155,7 +155,14 @@ export const publicGetSimilarRoute = createPublicRoute({
                 isVerified: true,
                 averageRating: true,
                 reviewsCount: true,
-                media: true,
+                // HOS-963: the `media` JSONB column was dropped in HOS-372 — `media`
+                // is now a relation (`many(accommodationMedia)`), not a selectable
+                // column, so `media: true` here silently selected nothing and every
+                // similar-card served a placeholder. Photos are composed below from
+                // the relational `accommodation_media` table instead; `videos` (a
+                // real column, never migrated — see `accommodation.media-compose.ts`)
+                // is selected so `composeAccommodationMedia` can fold it back in.
+                videos: true,
                 price: true,
                 location: true,
                 seo: true,
@@ -206,6 +213,17 @@ export const publicGetSimilarRoute = createPublicRoute({
             limit
         });
 
+        // HOS-963: this route runs a raw relational query on `getDb()` (see the
+        // @remarks above), so it never reaches `AccommodationService._afterSearch` —
+        // the chokepoint that normally composes `media` from the relational
+        // `accommodation_media` table (SPEC-204). Load the media rows for this page
+        // in ONE batch query and compose them explicitly, the same way
+        // `SocialPublicDataService.fetchAccommodations` does for its own raw-query
+        // bypass (see `accommodation.media-read.ts` module doc, "Direct consumers").
+        const mediaByAccommodationId = await accommodationMediaModel.findByAccommodations({
+            accommodationIds: rows.map((row) => row.id)
+        });
+
         // Project the loaded `destination` relation as `cityDestination` to
         // match the public API response shape used by listByOwner / list.
         // The Web transform's `deriveCityFields()` reads `cityDestination`
@@ -223,7 +241,12 @@ export const publicGetSimilarRoute = createPublicRoute({
             const { destination, ...rest } = stripRichDescriptionFields(
                 row as Record<string, unknown> & { destination?: unknown }
             );
-            return destination ? { ...rest, cityDestination: destination } : rest;
+            const media = composeAccommodationMedia({
+                rows: mediaByAccommodationId.get(row.id) ?? [],
+                videos: row.videos
+            });
+            const withMedia = { ...rest, media };
+            return destination ? { ...withMedia, cityDestination: destination } : withMedia;
         });
 
         // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
