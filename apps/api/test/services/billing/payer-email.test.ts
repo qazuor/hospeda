@@ -16,6 +16,10 @@
  * - `getMpPayerEmail` degrades a FAILED read to `null` rather than throwing
  *   (HOS-1028), so that a dead read costs the payer-email optimization and
  *   not the whole checkout.
+ * - `clearMpPayerEmailBestEffort` (HOS-971) nulls ONLY `mp_payer_email`,
+ *   skips the write when it is already NULL, issues no provider call at all,
+ *   and swallows failures — it runs inside a Better Auth `user.update.after`
+ *   hook where a throw would fail the user's profile save.
  *
  * @module test/services/billing/payer-email
  */
@@ -52,6 +56,7 @@ vi.mock('../../../src/utils/logger.js', () => ({
 
 // Import after mocks.
 import {
+    clearMpPayerEmailBestEffort,
     getMpPayerEmail,
     persistMpPayerEmailBestEffort,
     resolvePayerEmail
@@ -228,6 +233,99 @@ describe('persistMpPayerEmailBestEffort', () => {
             persistMpPayerEmailBestEffort({
                 customerId: 'cust_1',
                 payerEmail: 'authorized@example.com',
+                db: { execute: mockExecute } as never
+            })
+        ).resolves.toBeUndefined();
+
+        expect(apiLogger.error).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('clearMpPayerEmailBestEffort (HOS-971)', () => {
+    beforeEach(() => {
+        mockExecute.mockReset();
+        vi.mocked(apiLogger.error).mockClear();
+    });
+
+    /**
+     * Reads back the raw SQL text of the Nth `db.execute` call, with every
+     * interpolated value collapsed to `<value>` — same technique the AC-9
+     * assertion above uses.
+     */
+    const rawSqlOfCall = (index: number): string => {
+        const sqlCall = mockExecute.mock.calls[index]?.[0] as { queryChunks: unknown[] };
+        const [stringsArray] = sqlCall.queryChunks as [readonly string[], ...unknown[]];
+        return stringsArray.join('<value>');
+    };
+
+    it('nulls mp_payer_email for the given customer', async () => {
+        mockExecute.mockResolvedValueOnce({ rows: [] });
+
+        await clearMpPayerEmailBestEffort({
+            customerId: 'cust_1',
+            db: { execute: mockExecute } as never
+        });
+
+        expect(mockExecute).toHaveBeenCalledTimes(1);
+        const rawSql = rawSqlOfCall(0);
+        expect(rawSql).toContain('UPDATE billing_customers');
+        expect(rawSql).toMatch(/SET\s+mp_payer_email\s*=\s*NULL/i);
+        expect(rawSql).toContain('WHERE id = <value>');
+    });
+
+    it('skips the write when the column is already NULL', async () => {
+        // The overwhelming majority of customers never completed a checkout
+        // under the own-preapproval flow, so this keeps an email change from
+        // issuing a pointless row write for every one of them.
+        mockExecute.mockResolvedValueOnce({ rows: [] });
+
+        await clearMpPayerEmailBestEffort({
+            customerId: 'cust_1',
+            db: { execute: mockExecute } as never
+        });
+
+        expect(rawSqlOfCall(0)).toMatch(/mp_payer_email\s+IS\s+NOT\s+NULL/i);
+    });
+
+    it('AC-9: never writes the bare `email` column', async () => {
+        // `billing_customers.email` is the address Hospeda's own sends read.
+        // Invalidating the MercadoPago cache must not be able to touch it,
+        // exactly as for `persistMpPayerEmailBestEffort` (HOS-581).
+        mockExecute.mockResolvedValueOnce({ rows: [] });
+
+        await clearMpPayerEmailBestEffort({
+            customerId: 'cust_1',
+            db: { execute: mockExecute } as never
+        });
+
+        const rawSql = rawSqlOfCall(0);
+        expect(rawSql).not.toMatch(/\bSET\s+email\b/i);
+        expect(rawSql).not.toMatch(/,\s*email\s*=/i);
+    });
+
+    it('never asks MercadoPago anything: the only side effect is one local UPDATE', async () => {
+        // `payer_email` is immutable on an existing preapproval (HOS-937
+        // measured the PUT being ignored), so there is nothing to repair
+        // provider-side and a live subscription keeps charging untouched.
+        mockExecute.mockResolvedValueOnce({ rows: [] });
+
+        await clearMpPayerEmailBestEffort({
+            customerId: 'cust_1',
+            db: { execute: mockExecute } as never
+        });
+
+        expect(mockExecute).toHaveBeenCalledTimes(1);
+        expect(rawSqlOfCall(0)).not.toMatch(/preapproval|subscription/i);
+    });
+
+    it('is best-effort: swallows a failed UPDATE instead of throwing', async () => {
+        // It runs inside a Better Auth `user.update.after` hook — throwing
+        // would turn a failed cache invalidation into a failed profile save.
+        mockExecute.mockRejectedValueOnce(new Error('connection reset'));
+
+        await expect(
+            clearMpPayerEmailBestEffort({
+                customerId: 'cust_1',
                 db: { execute: mockExecute } as never
             })
         ).resolves.toBeUndefined();
