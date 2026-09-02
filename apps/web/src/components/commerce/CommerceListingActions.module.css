@@ -49,6 +49,26 @@
     text-decoration: underline;
 }
 
+/*
+ * The brochure download is a <button>, not an <a>: the file is fetched with
+ * credentials and handed over as a blob (HOS-1058). It should read as the
+ * sibling action of "Ver ficha pública", so it borrows `.link` and only resets
+ * what the user agent puts on a button.
+ */
+.link:is(button) {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.link:is(button):disabled {
+    cursor: progress;
+    opacity: 0.7;
+}
+
 .hint {
     margin: 0;
     font-size: var(--text-body-sm, 0.9375rem);

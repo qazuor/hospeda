@@ -33,6 +33,7 @@ import { startOwnerListingCheckout } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+import { BrochureDownloadButton } from './BrochureDownloadButton.client';
 import styles from './CommerceListingActions.module.css';
 
 export interface CommerceListingActionsProps {
@@ -247,6 +248,19 @@ export function CommerceListingActions({
                 >
                     {t('commerce.owner.list.state.viewPublic', 'Ver ficha pública')}
                 </a>
+                {/*
+                 * HOS-1058. Only in the `published` state, and that is not a
+                 * styling choice: the sheet is a print of the PUBLIC ficha, so
+                 * a draft has nothing to print and its QR would lead to a 404.
+                 * The API enforces the same rule; this just avoids offering a
+                 * button that could only ever answer 404.
+                 */}
+                <BrochureDownloadButton
+                    vertical={listing.vertical}
+                    listingId={listing.id}
+                    slug={listing.slug}
+                    locale={locale}
+                />
             </div>
         );
     }
