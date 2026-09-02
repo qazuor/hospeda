@@ -1220,7 +1220,15 @@
         "095-feature-private_available.json",
         "096-feature-senior_friendly.json",
         "097-feature-lactose_free_options.json",
-        "098-feature-nut_free_options.json"
+        "098-feature-nut_free_options.json",
+        "099-feature-argentine_cuisine.json",
+        "100-feature-river_cuisine.json",
+        "101-feature-italian_cuisine.json",
+        "102-feature-peruvian_cuisine.json",
+        "103-feature-international_cuisine.json",
+        "104-feature-asian_cuisine.json",
+        "105-feature-mediterranean_cuisine.json",
+        "106-feature-fusion_cuisine.json"
     ],
     "sponsorshipLevels": [
         "001-level-event-bronze.json",

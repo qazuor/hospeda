@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "103-feature-international_cuisine",
+    "slug": "international_cuisine",
+    "description": {
+        "es": "Cocina internacional: platos de distintas tradiciones culinarias del mundo",
+        "en": "International cuisine: dishes from different culinary traditions around the world",
+        "pt": "Cozinha internacional: pratos de diferentes tradições culinárias do mundo"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "GlobeIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 61,
+    "lifecycleState": "ACTIVE"
+}
