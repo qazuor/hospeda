@@ -49,11 +49,13 @@ vi.mock('@repo/db', () => ({
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     OWNER_TRIAL_DAYS: 30
 }));
 
-vi.mock('@repo/schemas', () => ({
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     ProductDomainEnum: {
         ACCOMMODATION: 'accommodation',
         GASTRONOMY: 'gastronomy',

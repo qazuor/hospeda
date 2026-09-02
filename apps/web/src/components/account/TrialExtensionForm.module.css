@@ -51,7 +51,7 @@
     min-width: 0;
     padding: 0.6rem 0.85rem;
     border: 1px solid var(--border, oklch(0.8 0 0));
-    border-radius: var(--radius-input, 12px);
+    border-radius: var(--radius-button, 12px);
     background-color: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -88,7 +88,7 @@
 .error {
     font-family: var(--font-sans);
     font-size: 0.85rem;
-    color: var(--core-destructive, oklch(0.55 0.2 25));
+    color: var(--destructive, oklch(0.55 0.2 25));
     margin: 0;
 }
 
