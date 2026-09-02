@@ -28,6 +28,7 @@
 
 import { ExperienceService, GastronomyService } from '@repo/service-core';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { drawsText } from '../helpers/pdf-text.ts';
 
 vi.mock('@repo/billing', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/billing')>();
@@ -152,11 +153,17 @@ describe('commerce brochure entitlement gate — allow side (HOS-1058)', () => {
         );
 
         const bytes = Buffer.from(await res.arrayBuffer());
-        expect(bytes.subarray(0, 8).toString('latin1')).toBe('%PDF-1.4');
+        // The header, not the version. Which PDF version comes out is the
+        // renderer's business: the hand-written writer emitted 1.4 and pdf-lib
+        // emits 1.7, both equally valid. Pinning it turns swapping the library
+        // into a test failure rather than a decision.
+        expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
         expect(bytes.toString('latin1')).toContain('%%EOF');
         // The listing's own name reached the page, so this is that listing's
-        // sheet rather than an empty template.
-        expect(bytes.toString('latin1')).toContain('La Parrilla del Puerto');
+        // sheet rather than an empty template. Read it through the inflated
+        // streams: pdf-lib Flate-compresses content, so a raw-bytes search
+        // would be false no matter what the sheet says.
+        expect(drawsText(bytes, 'La Parrilla del Puerto')).toBe(true);
     });
 
     it('refuses to print a listing that has no public page', async () => {
