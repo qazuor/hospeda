@@ -16,9 +16,25 @@
  * `visibility`, `moderationState` and `lifecycleState` are not accepted by the
  * generic PATCH payload, by design — leaving them in it would make every gate
  * in §7.6 bypassable by editing the field directly. Publication moves through
- * its own single-purpose endpoint (`POST /protected/{posts,events}/:id/publish-state`),
- * which touches `visibility` and leaves the moderation verdict intact, so
- * unpublish → edit → republish never re-enters the review queue.
+ * its own single-purpose endpoints — `POST /protected/{posts,events}/:id/publish-state`
+ * (touches `visibility`) and, since HOS-1037,
+ * `POST /protected/{posts,events}/:id/moderate` (touches `moderationState`,
+ * author path accepts only `APPROVED`) — so unpublish → edit → republish never
+ * re-enters the review queue.
+ *
+ * ## One button, two actions (HOS-1037)
+ *
+ * Content is actually live only when APPROVED + PUBLIC (+ ACTIVE), not merely
+ * `visibility === 'PUBLIC'` — `visibility` defaults to `PUBLIC` from creation,
+ * so a brand-new PENDING post/event was already "public" by that column alone.
+ * Before HOS-1037 the single toggle read `visibility` only, so a trusted
+ * editor's PENDING content showed "Despublicar" — the opposite of the action
+ * they needed, and the one action that actually clears PENDING (approving)
+ * had no route at all. The button now branches on `moderationState`:
+ * - Not yet `APPROVED` → label is `publish`, action is `onApprove` (moderate
+ *   to APPROVED; visibility is untouched).
+ * - `APPROVED` → the original toggle, `onSetPublishState` between PUBLIC and
+ *   PRIVATE.
  *
  * ## Why the controls are absent rather than disabled
  *
@@ -76,6 +92,13 @@ export interface PublicationSectionProps {
     readonly onSetPublishState: (params: {
         readonly visibility: 'PUBLIC' | 'PRIVATE';
     }) => Promise<ApiResult<unknown>>;
+    /**
+     * Approves the entity (HOS-1037): moves `moderationState` to `APPROVED`.
+     * Injected the same way as {@link onSetPublishState} so this component
+     * never imports an entity-specific endpoint. Only called while
+     * `moderationState !== 'APPROVED'`.
+     */
+    readonly onApprove: () => Promise<ApiResult<unknown>>;
     /** Soft-deletes the entity. */
     readonly onDelete: () => Promise<ApiResult<unknown>>;
     /** Where to land after a successful delete (already locale-prefixed). */
@@ -96,6 +119,8 @@ export interface PublicationSectionProps {
     readonly hasUnsavedChanges: boolean;
     /** Called with the new visibility after a successful publish-state change. */
     readonly onVisibilityChange: (visibility: EditorContentVisibility) => void;
+    /** Called with `'APPROVED'` after a successful approve action (HOS-1037). */
+    readonly onModerationStateChange: (moderationState: EditorContentModerationState) => void;
 }
 
 /** Inline-confirmation state machine for the delete action. */
@@ -141,6 +166,7 @@ export function PublicationSection({
     locale,
     labels,
     onSetPublishState,
+    onApprove,
     onDelete,
     listHref,
     visibility,
@@ -149,16 +175,42 @@ export function PublicationSection({
     canPublish,
     canDelete,
     hasUnsavedChanges,
-    onVisibilityChange
+    onVisibilityChange,
+    onModerationStateChange
 }: PublicationSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [isPublishing, setIsPublishing] = useState(false);
     const [deleteState, setDeleteState] = useState<DeleteState>('idle');
 
     const isPublic = visibility === 'PUBLIC';
+    const isApproved = moderationState === 'APPROVED';
+    /*
+     * "Live" tracks the real public-read floor (APPROVED + PUBLIC), not
+     * `visibility` alone (HOS-1037). `visibility` defaults to PUBLIC from
+     * creation, so a PENDING post/event is not live even though that one
+     * column already reads PUBLIC — the button must offer "Publicar"
+     * (approve), never "Despublicar" (which would only move a column that
+     * was never the blocker).
+     */
+    const isLive = isApproved && isPublic;
 
-    const handleTogglePublish = useCallback(async () => {
+    const handlePrimaryAction = useCallback(async () => {
         setIsPublishing(true);
+
+        if (!isApproved) {
+            const result = await onApprove();
+            setIsPublishing(false);
+
+            if (result.ok) {
+                onModerationStateChange('APPROVED');
+                addToast({ type: 'success', message: labels.publishedToast });
+                return;
+            }
+
+            addToast({ type: 'error', message: labels.publishErrorToast });
+            return;
+        }
+
         const next: EditorContentVisibility = isPublic ? 'PRIVATE' : 'PUBLIC';
         const result = await onSetPublishState({ visibility: next });
         setIsPublishing(false);
@@ -173,7 +225,15 @@ export function PublicationSection({
         }
 
         addToast({ type: 'error', message: labels.publishErrorToast });
-    }, [isPublic, onSetPublishState, onVisibilityChange, labels]);
+    }, [
+        isApproved,
+        isPublic,
+        onApprove,
+        onSetPublishState,
+        onModerationStateChange,
+        onVisibilityChange,
+        labels
+    ]);
 
     const handleDelete = useCallback(async () => {
         setDeleteState('pending');
@@ -227,11 +287,11 @@ export function PublicationSection({
                         <button
                             type="button"
                             className={styles.publishButton}
-                            onClick={handleTogglePublish}
+                            onClick={handlePrimaryAction}
                             disabled={isPublishing || hasUnsavedChanges}
                             data-testid="content-publish-toggle"
                         >
-                            {isPublic ? labels.unpublish : labels.publish}
+                            {isLive ? labels.unpublish : labels.publish}
                         </button>
                     )}
 

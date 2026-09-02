@@ -53,7 +53,8 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     postEditApi: {
         update: vi.fn(),
         softDelete: vi.fn(),
-        setPublishState: vi.fn()
+        setPublishState: vi.fn(),
+        moderate: vi.fn()
     },
     /*
      * HOS-390: the editor now renders `ContentMediaSection`, which reaches for
@@ -76,6 +77,7 @@ import { addToast } from '../../../../src/store/toast-store';
 const mockUpdate = vi.mocked(postEditApi.update);
 const mockSoftDelete = vi.mocked(postEditApi.softDelete);
 const mockSetPublishState = vi.mocked(postEditApi.setPublishState);
+const mockModerate = vi.mocked(postEditApi.moderate);
 
 const DESTINATION_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -88,8 +90,11 @@ const BASE_POST: PostEditDetail = {
     category: 'CULTURE',
     readingTimeMinutes: 5,
     relatedDestinationId: DESTINATION_ID,
+    // Real-world default at creation (HOS-1037): `visibility` starts PUBLIC
+    // while `moderationState` starts PENDING — the exact combination that
+    // used to show "Despublicar" on content that was never actually live.
     moderationState: 'PENDING',
-    visibility: 'PRIVATE',
+    visibility: 'PUBLIC',
     lifecycleState: 'ACTIVE'
 };
 
@@ -188,6 +193,7 @@ describe('PostEditor — capability-gated controls', () => {
         mockUpdate.mockReset();
         mockSoftDelete.mockReset();
         mockSetPublishState.mockReset();
+        mockModerate.mockReset();
     });
     afterEach(() => vi.clearAllMocks());
 
@@ -218,27 +224,35 @@ describe('PostEditor — capability-gated controls', () => {
         expect(screen.queryByTestId('content-delete')).not.toBeInTheDocument();
     });
 
-    it('publishes through the publish-state endpoint, never through the PATCH', async () => {
-        mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
+    it('approves a pending post through the moderate endpoint, never publish-state (HOS-1037)', async () => {
+        // BASE_POST is PENDING + PUBLIC — visibility was never the blocker,
+        // so the control must call `moderate`, not `setPublishState`.
+        mockModerate.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor({ canPublish: true });
+
+        expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Publicar');
 
         fireEvent.click(screen.getByTestId('content-publish-toggle'));
 
-        await waitFor(() => expect(mockSetPublishState).toHaveBeenCalledTimes(1));
-        expect(mockSetPublishState).toHaveBeenCalledWith({
-            id: 'post-1',
-            visibility: 'PUBLIC'
-        });
+        await waitFor(() => expect(mockModerate).toHaveBeenCalledTimes(1));
+        expect(mockModerate).toHaveBeenCalledWith({ id: 'post-1' });
+        expect(mockSetPublishState).not.toHaveBeenCalled();
         expect(mockUpdate).not.toHaveBeenCalled();
-        // The control reflects the new state without a page reload.
+        // The control reflects the new state without a page reload: approved
+        // and already PUBLIC means it is now live.
         await waitFor(() =>
             expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Despublicar')
         );
     });
 
-    it('unpublishes an already-public post', async () => {
+    it('unpublishes an already-live (approved + public) post', async () => {
         mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor({ post: { visibility: 'PUBLIC' }, canPublish: true });
+        renderEditor({
+            post: { moderationState: 'APPROVED', visibility: 'PUBLIC' },
+            canPublish: true
+        });
+
+        expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Despublicar');
 
         fireEvent.click(screen.getByTestId('content-publish-toggle'));
 
@@ -248,6 +262,27 @@ describe('PostEditor — capability-gated controls', () => {
                 visibility: 'PRIVATE'
             })
         );
+        expect(mockModerate).not.toHaveBeenCalled();
+    });
+
+    it('republishes an approved post the author had made private', async () => {
+        mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor({
+            post: { moderationState: 'APPROVED', visibility: 'PRIVATE' },
+            canPublish: true
+        });
+
+        expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Publicar');
+
+        fireEvent.click(screen.getByTestId('content-publish-toggle'));
+
+        await waitFor(() =>
+            expect(mockSetPublishState).toHaveBeenCalledWith({
+                id: 'post-1',
+                visibility: 'PUBLIC'
+            })
+        );
+        expect(mockModerate).not.toHaveBeenCalled();
     });
 
     it('blocks publishing while the form holds unsaved edits', () => {
