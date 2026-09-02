@@ -824,7 +824,7 @@
                 "grantOverrides": "Granted Permissions",
                 "denyOverrides": "Denied Permissions",
                 "trustedEditor": "Trusted editor",
-                "trustedEditorDesc": "Can publish and delete their own posts and events without prior approval",
+                "trustedEditorDesc": "Can approve, publish, and delete their own posts and events without going through moderator review",
                 "trustedEditorEnabled": "Marked as trusted editor",
                 "trustedEditorDisabled": "Trusted editor unmarked",
                 "addOverride": "Add override",
