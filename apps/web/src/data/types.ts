@@ -999,13 +999,22 @@ export interface GastronomyOpeningHoursEntry {
 /**
  * Social networks map for a gastronomy listing.
  * Mirrors the `socialNetworks` field from the `GastronomyPublicSchema`.
+ *
+ * NOTE (HOS-1076): `whatsapp` was removed from this shape. It was never part
+ * of `SocialNetworkSchema` (the WRITE/READ shape backing the `socialNetworks`
+ * JSONB column — see `packages/schemas/src/common/social.schema.ts`), so the
+ * key can never be legitimately populated. Keeping it here was dead weight
+ * that would have rendered an ungated WhatsApp number the instant anything
+ * ever wrote that key into the JSONB column — gastronomy's public schema
+ * exposes no phone/WhatsApp channel by design. Do not re-add it; a gated
+ * WhatsApp channel for gastronomy belongs on its own dedicated path, mirroring
+ * accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` entitlement.
  */
 export interface GastronomySocialNetworks {
     readonly facebook?: string | null;
     readonly instagram?: string | null;
     readonly twitter?: string | null;
     readonly youtube?: string | null;
-    readonly whatsapp?: string | null;
     readonly tiktok?: string | null;
     readonly website?: string | null;
 }

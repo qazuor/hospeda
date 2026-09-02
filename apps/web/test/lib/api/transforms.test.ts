@@ -11,6 +11,7 @@ import {
     toDestinationCardProps,
     toEventCardProps,
     toEventDetailProps,
+    toGastronomyDetailPageProps,
     toPartnerData,
     toTestimonialCardProps,
     transformFavoritesBreakdown,
@@ -1254,6 +1255,43 @@ describe('toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118
             }
         });
         expect(result.socialNetworks).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// toGastronomyDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)
+// ---------------------------------------------------------------------------
+//
+// `GastronomySocialNetworks` (the web-side type) used to declare a `whatsapp`
+// key that has never existed in `SocialNetworkSchema` (the shape backing the
+// `socialNetworks` JSONB column). Nothing writes it today, but the render
+// path (`GastronomyContactBlock.astro`) rendered it with zero entitlement
+// gate — unlike accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` channel. This
+// regression test reproduces the leak at the transform layer: before the
+// fix, `normalizeSocialNetworks` copied `whatsapp` straight from the raw API
+// item into the object handed to the render layer.
+
+describe('toGastronomyDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)', () => {
+    it('never surfaces socialNetworks.whatsapp even if present on the raw payload', () => {
+        const result = toGastronomyDetailPageProps({
+            item: {
+                slug: 'la-parrilla',
+                name: 'La Parrilla',
+                socialNetworks: {
+                    facebook: 'https://facebook.com/laparrilla',
+                    whatsapp: '+5493441234567'
+                }
+            }
+        });
+        expect(result.socialNetworks).toEqual({
+            facebook: 'https://facebook.com/laparrilla',
+            instagram: null,
+            twitter: null,
+            youtube: null,
+            tiktok: null,
+            website: null
+        });
+        expect(result.socialNetworks).not.toHaveProperty('whatsapp');
     });
 });
 
