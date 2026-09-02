@@ -2808,6 +2808,9 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "cancellationPolicy": {
+            "max": "La política de cancelación no puede superar los {{max}} caracteres"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -2818,6 +2821,11 @@
             "success": {
                 "required": "El resultado exitoso es obligatorio"
             }
+        },
+        "durationMinutes": {
+            "int": "La duración debe ser un número entero de minutos",
+            "max": "La duración no puede superar los {{max}} minutos",
+            "min": "La duración debe ser de al menos {{min}} minuto"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
@@ -2847,6 +2855,13 @@
         "priceUnit": {
             "requiredUnlessOnRequest": "Elegí la unidad de precio (por día, por hora, por persona o por grupo). Si la experiencia no tiene precio fijo, marcá «Precio a consultar»."
         },
+        "requirements": {
+            "item": {
+                "max": "Cada requisito no puede superar los {{max}} caracteres",
+                "min": "Los requisitos no pueden quedar vacíos"
+            },
+            "max": "No podés cargar más de {{max}} requisitos"
+        },
         "review": {
             "content": {
                 "max": "El contenido de la reseña no puede superar los {{max}} caracteres",
@@ -2861,6 +2876,13 @@
                 "max": "El título de la reseña no puede superar los {{max}} caracteres",
                 "min": "El título de la reseña debe tener al menos {{min}} caracteres"
             }
+        },
+        "whatToBring": {
+            "item": {
+                "max": "Cada ítem de qué llevar no puede superar los {{max}} caracteres",
+                "min": "Los ítems de qué llevar no pueden quedar vacíos"
+            },
+            "max": "No podés cargar más de {{max}} ítems de qué llevar"
         }
     },
     "experienceFeature": {

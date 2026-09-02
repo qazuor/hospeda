@@ -2808,6 +2808,9 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "cancellationPolicy": {
+            "max": "A política de cancelamento não pode ultrapassar {{max}} caracteres"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -2818,6 +2821,11 @@
             "success": {
                 "required": "El resultado exitoso es obligatorio"
             }
+        },
+        "durationMinutes": {
+            "int": "A duração deve ser um número inteiro de minutos",
+            "max": "A duração não pode ultrapassar {{max}} minutos",
+            "min": "A duração deve ser de pelo menos {{min}} minuto"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
@@ -2847,6 +2855,13 @@
         "priceUnit": {
             "requiredUnlessOnRequest": "Escolha a unidade de preço (por dia, por hora, por pessoa ou por grupo). Se a experiência não tem preço fixo, marque «Preço sob consulta»."
         },
+        "requirements": {
+            "item": {
+                "max": "Cada requisito não pode ultrapassar {{max}} caracteres",
+                "min": "Os requisitos não podem ficar vazios"
+            },
+            "max": "Você não pode adicionar mais de {{max}} requisitos"
+        },
         "review": {
             "content": {
                 "max": "El contenido de la reseña no puede superar los {{max}} caracteres",
@@ -2861,6 +2876,13 @@
                 "max": "El título de la reseña no puede superar los {{max}} caracteres",
                 "min": "El título de la reseña debe tener al menos {{min}} caracteres"
             }
+        },
+        "whatToBring": {
+            "item": {
+                "max": "Cada item do que levar não pode ultrapassar {{max}} caracteres",
+                "min": "Os itens do que levar não podem ficar vazios"
+            },
+            "max": "Você não pode adicionar mais de {{max}} itens do que levar"
         }
     },
     "experienceFeature": {
