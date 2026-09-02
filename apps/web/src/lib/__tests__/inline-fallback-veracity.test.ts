@@ -80,12 +80,21 @@ const BANNED_PHRASES: readonly string[] = [
     'airport transfer',
     'acceso a la api',
     'api access',
-    // card-first (HOS-171): the card is collected on day 1
-    'sin tarjeta',
-    'sin poner la tarjeta',
-    'no pedimos método de pago',
-    'no credit card',
-    'sem cartão',
+    // HOS-1012 REMOVED the card-first block that used to sit here
+    // ('sin tarjeta', 'sin poner la tarjeta', 'no pedimos método de pago',
+    // 'no credit card', 'sem cartão'). It was added by HOS-171, when the trial
+    // WAS a MercadoPago preapproval and the card was collected on day 1, so
+    // promising otherwise was a claim the product did not honour.
+    //
+    // Since HOS-1012 the trial is a local `billing_subscriptions` row with
+    // `mp_subscription_id = NULL`, born when the host publishes their first
+    // listing. No card is collected and no checkout is involved, so those five
+    // phrases are now TRUE and banning them would forbid the copy from saying
+    // the most load-bearing thing it has to say.
+    //
+    // The positive half of that invariant is enforced where the copy actually
+    // lives: `packages/i18n/test/owners-trial-copy-i18n.test.ts` requires the
+    // no-card promise in every trial key, in all three locales.
     // availability: /contacto publishes office hours (Sundays closed) and the
     // owners FAQ says "en horario de oficina", so round-the-clock wording is
     // contradicted by the site itself, no entitlement reasoning required

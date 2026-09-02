@@ -144,7 +144,6 @@ describe('createPaidSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
-            freeTrialDays: 7,
             metadata: { source: 'unit-test' }
         });
 
@@ -158,12 +157,14 @@ describe('createPaidSubscription', () => {
             billingInterval: 'monthly',
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
-            freeTrialDays: 7,
             metadata: { source: 'unit-test' }
         });
     });
 
-    it('omits freeTrialDays and metadata from the create payload when not supplied', async () => {
+    // HOS-1012: `freeTrialDays` is no longer part of the input at all, so this
+    // is now unconditional rather than a "when not supplied" case — there is no
+    // supplied case left. See `check-no-trial-to-mercadopago.sh` (guard G-1).
+    it('never puts a trial field in the create payload, and omits metadata when not supplied', async () => {
         const billing = createBillingMock();
 
         await createPaidSubscription({
@@ -177,6 +178,9 @@ describe('createPaidSubscription', () => {
 
         const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(call).not.toHaveProperty('freeTrialDays');
+        expect(call).not.toHaveProperty('free_trial');
+        expect(call).not.toHaveProperty('startDate');
+        expect(call).not.toHaveProperty('start_date');
         expect(call).not.toHaveProperty('metadata');
     });
 

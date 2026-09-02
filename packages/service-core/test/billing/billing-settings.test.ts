@@ -30,7 +30,6 @@ const DEFAULT = {
     maxPaymentRetries: 3,
     retryIntervalHours: 24,
     sendTrialExpiryReminder: true,
-    trialExpiryReminderDays: 3,
     sendPaymentFailedNotification: true,
     sendSubscriptionCancelledNotification: true
 };

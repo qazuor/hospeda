@@ -24,6 +24,7 @@ import { addToast } from '@/store/toast-store';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
 import { PlanUsageSection } from './PlanUsageSection.client';
 import styles from './SubscriptionDashboard.module.css';
+import { TrialExtensionForm } from './TrialExtensionForm.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1137,6 +1138,23 @@ export function SubscriptionDashboard({
                 roles={user.roles}
                 productDomain={productDomain}
             />
+
+            {/* ── Trial extension (HOS-1012 T-039) ──
+               The only self-service surface where a host can spend a
+               trial-extension code (FREEMONTH / LANZAMIENTO60) while the trial
+               is still running — the plan purchase button is the PAID path,
+               reached after the trial is over. Rendered only for a live trial:
+               the endpoint refuses (422, code unburnt) in every other state,
+               so offering the field there would only produce a dead end. */}
+            {status === 'trial' && !isComplimentary && (
+                <TrialExtensionForm
+                    locale={locale}
+                    subscriptionId={subscription.id}
+                    onApplied={() => {
+                        void refreshSilently();
+                    }}
+                />
+            )}
 
             {/* ── Actions card ── */}
             <section

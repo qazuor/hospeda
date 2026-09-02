@@ -7,8 +7,8 @@
  *
  * All 25 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
  * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004 + 1 added by HOS-171
- * + 1 added by HOS-232 (USER_UNCANCELED) + 1 added by H-137
- * (TRIAL_NOT_GRANTED_BY_PROVIDER)).
+ * + 1 added by HOS-232 (USER_UNCANCELED)). H-137's
+ * TRIAL_NOT_GRANTED_BY_PROVIDER was retired by HOS-1012 T-027.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -139,7 +139,7 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('USER_UNCANCELED');
         });
 
-        it('the total number of event types is 44', () => {
+        it('the total number of event types is 56', () => {
             // 25 (this test's original baseline) + 5 (HOS-657 refund/admin-cancel/
             // preapproval-expiry writers: PAYMENT_PARTIAL_REFUND,
             // PAYMENT_FULL_REFUND, PAYMENT_FULL_REFUND_NO_TRANSITION,
@@ -152,8 +152,22 @@ describe('BILLING_EVENT_TYPES', () => {
             // WEBHOOK_SUBSCRIPTION_CANCELLED, WEBHOOK_SUBSCRIPTION_EXPIRED,
             // WEBHOOK_SUBSCRIPTION_PAST_DUE, WEBHOOK_SUBSCRIPTION_STATUS_OTHER,
             // REACTIVATION_SUPERSESSION_COMPLETED) = 44, + 2 (HOS-180:
-            // ADMIN_SUBSCRIPTION_COURTESY_GRANTED, COURTESY_WINDOW_ENDED) = 46.
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(46);
+            // ADMIN_SUBSCRIPTION_COURTESY_GRANTED, COURTESY_WINDOW_ENDED) = 46,
+            // + 1 (HOS-1012 T-010: TRIAL_EXPIRED, the local-expiry dedup guard
+            // — added in that task WITHOUT bumping this count, which left this
+            // assertion red on the branch until T-016 hit it)
+            // + 9 (HOS-1012 T-016: the nine TRIAL_SERIES_NOTIF_* dedup guards,
+            // one per send of the trial email series — nine and not one,
+            // because dedup keys on `(subscription_id, event_type)` and an
+            // offset living in metadata could not be part of that index) = 56,
+            // + 1 (HOS-1012 T-022: TRIAL_SUPERSEDED_BY_PAID — the audit row for
+            // a trial ended by conversion, kept distinct from TRIAL_EXPIRED
+            // because the win-back cohort query joins on THAT event and would
+            // otherwise mail the customer who just paid) = 57,
+            // − 1 (HOS-1012 T-027: TRIAL_NOT_GRANTED_BY_PROVIDER, unreachable
+            // once no checkout promises a trial for a charge to break — a
+            // removal trips this frozen count exactly as an addition does) = 56.
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(56);
         });
     });
 
@@ -233,27 +247,13 @@ describe('BILLING_EVENT_TYPES', () => {
         });
     });
 
-    describe('H-137 new event type — stable contract value', () => {
-        it('TRIAL_NOT_GRANTED_BY_PROVIDER is exported with the exact string value', () => {
-            // Persisted on billing_subscription_events rows for every customer
-            // charged instead of receiving the trial they were shown, so a
-            // rename would orphan the audit trail of a money incident.
-            expect(BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER).toBe(
-                'TRIAL_NOT_GRANTED_BY_PROVIDER'
-            );
-        });
-
-        it('TRIAL_NOT_GRANTED_BY_PROVIDER is assignable to BillingEventType', () => {
-            const value: BillingEventType = BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER;
-            expect(value).toBe('TRIAL_NOT_GRANTED_BY_PROVIDER');
-        });
-
-        it('is distinct from TRIAL_RECONCILED', () => {
-            // The whole point of minting a new type: a broken promise must not
-            // hide inside ordinary conversion traffic.
-            expect(BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER).not.toBe(
-                BILLING_EVENT_TYPES.TRIAL_RECONCILED
-            );
+    describe('H-137 retired event type (HOS-1012 T-027)', () => {
+        it('TRIAL_NOT_GRANTED_BY_PROVIDER is no longer exported', () => {
+            // Retired, not renamed. Nothing in code may write it again, so the
+            // key must be absent — not present with a different value. The
+            // frozen count above catches the arithmetic; this catches a
+            // reintroduction that keeps the count right by dropping another.
+            expect(Object.keys(BILLING_EVENT_TYPES)).not.toContain('TRIAL_NOT_GRANTED_BY_PROVIDER');
         });
     });
 

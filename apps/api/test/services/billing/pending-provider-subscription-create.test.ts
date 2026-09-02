@@ -7,10 +7,10 @@
  *    (`'monthly' -> 'month'`, `'annual' -> 'year'`).
  *  - stamps `product_domain` (default `'accommodation'`, override respected)
  *    via a typed UPDATE, mirroring `createCompSubscription`'s two-step stamp.
- *  - persists `trialStart`/`trialEnd` from `freeTrialDays` at insert time
- *    (HOS-211 Option B) while `status` stays `pending_provider` regardless —
- *    a set `trial_end` on a pending row grants nothing until the webhook
- *    flips status (HOS-171 guard).
+ *  - NEVER writes a trial window: `trialStart`/`trialEnd` are always NULL and
+ *    no `trialGranted` metadata key is stamped (HOS-1012). A checkout is the
+ *    paid path and nothing else; the local trial row is opened at the owner's
+ *    first publish instead.
  *  - inserts the `billing_pending_checkouts` correlation row, INSIDE the same
  *    transaction, carrying `mpPreapprovalPlanId` / `payerEmail` /
  *    `pendingDiscount` (when supplied) / a 32-hex-char `nonce`.
@@ -93,7 +93,6 @@ const BASE_INPUT = {
     billingInterval: 'monthly' as const,
     mpPreapprovalPlanId: 'mp-plan-1',
     payerEmail: 'host@hospeda.test',
-    trialGranted: false,
     livemode: false
 };
 
@@ -145,7 +144,8 @@ describe('createPendingProviderSubscription', () => {
         expect(metadata.intendedInterval).toBe('monthly');
         expect(metadata.priceId).toBe('price-m');
         expect(metadata.mpPreapprovalPlanId).toBe('mp-plan-1');
-        expect(metadata.trialGranted).toBe('false');
+        // HOS-1012: the key is gone entirely, not written as 'false'.
+        expect(metadata).not.toHaveProperty('trialGranted');
 
         // product_domain stamped via a typed UPDATE, defaulting to accommodation.
         expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'accommodation' });
@@ -233,42 +233,17 @@ describe('createPendingProviderSubscription', () => {
         expect(metadata).not.toHaveProperty('partnerId');
     });
 
-    it('stamps trialGranted=true into metadata when the checkout granted a trial', async () => {
-        await createPendingProviderSubscription({ ...BASE_INPUT, trialGranted: true });
-
-        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        const metadata = inserted.metadata as Record<string, unknown>;
-        expect(metadata.trialGranted).toBe('true');
-    });
-
-    it('persists trialStart/trialEnd from freeTrialDays, status stays pending_provider (HOS-211 Option B)', async () => {
-        const before = Date.now();
-        await createPendingProviderSubscription({
-            ...BASE_INPUT,
-            trialGranted: true,
-            freeTrialDays: 14
-        });
-        const after = Date.now();
-
-        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        // A set trialEnd on a pending row must NOT change status — entitlements
-        // gate on status only (HOS-171 guard); the webhook is still the one
-        // that flips it once the preapproval is confirmed.
-        expect(inserted.status).toBe('pending_provider');
-
-        const trialStart = inserted.trialStart as Date;
-        const trialEnd = inserted.trialEnd as Date;
-        expect(trialStart.getTime()).toBeGreaterThanOrEqual(before - 2000);
-        expect(trialStart.getTime()).toBeLessThanOrEqual(after + 2000);
-
-        const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-        expect(trialEnd.getTime() - trialStart.getTime()).toBe(fourteenDaysMs);
-    });
-
-    it('leaves trialStart/trialEnd null when freeTrialDays is not provided', async () => {
+    // HOS-1012: the pre-written trial window is GONE. `freeTrialDays` and
+    // `trialGranted` were removed from this helper's input, so a checkout row is
+    // born with a null window no matter what the caller does — the reason being
+    // that MercadoPago reports a spent free trial identically to a live one
+    // (HOS-522: ARS 18.000 charged 118 seconds after promising 14 free days).
+    // `status` still stays `pending_provider`, unchanged.
+    it('never writes a trial window, whatever the caller passes (HOS-1012)', async () => {
         await createPendingProviderSubscription(BASE_INPUT);
 
         const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(inserted.status).toBe('pending_provider');
         expect(inserted.trialStart).toBeNull();
         expect(inserted.trialEnd).toBeNull();
     });
@@ -338,8 +313,6 @@ describe('createPendingProviderSubscription', () => {
     it('HOS-240: snapshots pendingTrialExtension on the correlation row (redemption deferred to link time)', async () => {
         await createPendingProviderSubscription({
             ...BASE_INPUT,
-            trialGranted: true,
-            freeTrialDays: 44,
             pendingTrialExtension: { promoCodeId: 'pc-trial-1', code: 'FREEMONTH' }
         });
 

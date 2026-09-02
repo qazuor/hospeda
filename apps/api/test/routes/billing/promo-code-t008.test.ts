@@ -47,6 +47,7 @@ const {
     mockGetByCode,
     mockApply,
     mockApplySeam,
+    mockApplyTrialExt,
     mockAssertSubOwnership,
     mockBillingCustomerIdCell,
     mockQZPayBillingCell
@@ -55,6 +56,7 @@ const {
     mockGetByCode: vi.fn(),
     mockApply: vi.fn(),
     mockApplySeam: vi.fn(),
+    mockApplyTrialExt: vi.fn(),
     /**
      * Controls what assertSubscriptionOwnership returns.
      * Default: success (no cross-customer violation).
@@ -137,6 +139,13 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 // Mock the T-007 seam
 vi.mock('../../../src/services/promo-discount-apply.service', () => ({
     applyMultiCycleDiscountToExistingSubscription: mockApplySeam
+}));
+
+// Mock the HOS-1012 T-039 trial-extension seam. The route imports it
+// unconditionally, so leaving it real would reach the database.
+vi.mock('../../../src/services/promo-trial-extension-apply.service', () => ({
+    NO_ACTIVE_TRIAL_ERROR_CODE: 'NO_ACTIVE_TRIAL',
+    applyTrialExtensionToRunningTrial: (...args: unknown[]) => mockApplyTrialExt(...args)
 }));
 
 // Billing middleware — getQZPayBilling reads the mutable cell (null by default)
@@ -532,6 +541,13 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1012 T-039 made the effect-kind peek unconditional, so EVERY
+        // request through this route now calls getByCode. Without a default it
+        // resolves undefined and the handler answers 500. It belongs in this
+        // describe and not the one above: `vi.clearAllMocks` does not drop
+        // implementations, so a default set in another block would leak in here
+        // and make these tests pass for reasons of ordering.
+        mockGetByCode.mockResolvedValue({ success: true, data: makePromoCodeStub() });
         // Default: subscription ownership check passes (no cross-customer violation)
         mockAssertSubOwnership.mockResolvedValue({ success: true });
         // Default: caller is looking up their own customer
@@ -633,6 +649,25 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     it('trial_extension effect → effectKind=trial_extension, extraDays present', async () => {
         // Arrange
+        // HOS-1012 T-039: this effect no longer goes through `applyPromoCode`.
+        // It is applied against the local trial row, and the `trialEnd` in the
+        // answer is the one now PERSISTED there — the old path burnt the code
+        // and answered a date projected from `new Date()` that was never
+        // written anywhere. `mockApply` below stays only to prove the route
+        // does NOT reach it for this kind.
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: makePromoCodeStub({ effect: { kind: 'trial_extension', extraDays: 30 } })
+        });
+        mockApplyTrialExt.mockResolvedValue({
+            success: true,
+            data: {
+                subscriptionId: randomUUID(),
+                newTrialEnd: new Date('2026-10-15T00:00:00.000Z'),
+                daysAdded: 30,
+                usageRecordId: 'usage-row-1'
+            }
+        });
         mockApply.mockResolvedValue({
             success: true,
             data: {
@@ -665,7 +700,10 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         const data = body.data!;
         expect(data.effectKind).toBe('trial_extension');
         expect(data.extraDays).toBe(30);
-        expect(typeof data.trialEnd).toBe('string');
+        // The PERSISTED date, not a projection from now.
+        expect(data.trialEnd).toBe('2026-10-15T00:00:00.000Z');
+        // T-039: the old redeem path must not run for this effect kind.
+        expect(mockApply).not.toHaveBeenCalled();
     });
 
     // ── AC-6.2: non-admin cannot use a different customerId ──────────────────

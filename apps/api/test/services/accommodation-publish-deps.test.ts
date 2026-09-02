@@ -9,7 +9,12 @@ const mocks = vi.hoisted(() => ({
     // pre-existing "any live sub = has_active_sub" tests keep working
     // unchanged via a default resolved-true, with dedicated tests below
     // overriding it to false for the HOS-217 tourist-plan case.
-    isOwnerCategorySubscription: vi.fn()
+    isOwnerCategorySubscription: vi.fn(),
+    // HOS-1012 T-007: the `first_publish` branch is now answered by the shared
+    // per-vertical trial-eligibility resolver, not by "this owner has zero
+    // subscription rows". Mocked so this file tests the BRANCHING, and
+    // `trial-eligibility.service`'s own suite tests the rule.
+    resolveTrialEligibility: vi.fn()
 }));
 
 vi.mock('@repo/db', () => ({
@@ -27,7 +32,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return { ...actual, isOwnerCategorySubscription: mocks.isOwnerCategorySubscription };
 });
 
+vi.mock('../../src/services/billing/trial-eligibility.service', () => ({
+    resolveTrialEligibility: mocks.resolveTrialEligibility
+}));
+
 import { buildAccommodationPublishDeps } from '../../src/services/accommodation-publish-deps';
+
+/**
+ * Non-null billing getter. `checkEligibility` refuses to resolve trial
+ * eligibility without a client (answering `subscription_required`), so every
+ * case that is not specifically about billing being disabled hands it this.
+ */
+const getBillingStub = () => ({}) as never;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -82,18 +98,21 @@ function setupDbMock(customerRows: unknown[], subscriptionRows: unknown[]) {
 // ---------------------------------------------------------------------------
 // checkEligibility tests
 //
-// HOS-171 removed `startTrial` / `cancelTrial` from this factory entirely —
-// publishing an accommodation no longer creates anything at MercadoPago, so
-// `buildAccommodationPublishDeps()` now takes zero arguments and returns a
-// single `checkEligibility` member. `checkEligibility`'s own logic (reading
-// the local billing tables + `isSubscriptionLive`) is unchanged by HOS-171,
-// so this coverage carries over as-is, only updated for the new zero-arg
-// factory signature. The behavioral consequence of `first_publish` /
-// `subscription_required` — that `AccommodationService.publish()` now
-// rejects BOTH with FORBIDDEN `subscription_required` — is covered at the
-// service layer (`packages/service-core/test/services/accommodation/
-// publish.test.ts`), not here: this file only tests the dependency factory
-// that resolves eligibility, not what the caller does with the result.
+// The `has_active_sub` half of this suite (local billing tables +
+// `isSubscriptionLive` + the HOS-217 owner-category filter) is unchanged by
+// HOS-1012 and carries over verbatim.
+//
+// What HOS-1012 T-007 changed is the OTHER half. `first_publish` used to mean
+// "no customer row, or zero subscription rows"; it now means "no live owner
+// subscription AND this owner still has their ACCOMMODATION trial", answered by
+// the shared per-vertical resolver (mocked here — its own suite owns the rule).
+// Two consequences this file pins down: a missing customer row now answers
+// `subscription_required` rather than `first_publish`, and an owner whose only
+// prior subscription is in another vertical keeps their accommodation trial
+// (D-2, absorbing HOS-931).
+//
+// What `publish()` DOES with the answer is covered at the service layer
+// (`packages/service-core/test/services/accommodation/publish.test.ts`).
 // ---------------------------------------------------------------------------
 
 describe('buildAccommodationPublishDeps.checkEligibility', () => {
@@ -104,6 +123,12 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
         // host plan"). Tests exercising the new tourist-plan rejection path
         // override this per-case.
         mocks.isOwnerCategorySubscription.mockResolvedValue(true);
+        // Default: the trial is already spent. Every pre-existing case below
+        // hands the owner a prior subscription, which is exactly the shape the
+        // real resolver classifies as consuming, so this default keeps their
+        // `subscription_required` expectations honest. The cases that are ABOUT
+        // an unspent trial override it.
+        mocks.resolveTrialEligibility.mockResolvedValue({ eligible: false });
         // checkEligibility -> isSubscriptionLive uses Date.now() internally (no nowMs
         // param). Freeze time at NOW_MS so the date-relative grace cases are
         // deterministic regardless of wall-clock time of day.
@@ -115,27 +140,85 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
         vi.useRealTimers();
     });
 
-    it('returns first_publish when no billing customer row exists', async () => {
-        // Arrange: customer query returns empty
+    it('returns subscription_required when no billing customer row exists (HOS-1012)', async () => {
+        // This used to answer `first_publish`. The customer row is created
+        // eagerly at signup (`lib/auth.ts`) and again in
+        // `host-onboarding/start`, so its absence is an edge, not the normal
+        // first-publish shape — and with no customer there is no trial to
+        // create, so the plans page is the correct degradation. The resolver is
+        // never even asked: it is keyed on a customer id we do not have.
         setupDbMock([], []);
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
-        // Act
         const result = await deps.checkEligibility('owner-1');
 
-        // Assert
-        expect(result).toBe('first_publish');
+        expect(result).toBe('subscription_required');
+        expect(mocks.resolveTrialEligibility).not.toHaveBeenCalled();
     });
 
-    it('returns first_publish when customer exists but has zero subscriptions', async () => {
-        // Arrange
+    it('returns first_publish when the customer has zero subscriptions and the trial is unspent', async () => {
         setupDbMock([CUSTOMER], []);
-        const deps = buildAccommodationPublishDeps();
+        mocks.resolveTrialEligibility.mockResolvedValue({ eligible: true });
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
-        // Act
         const result = await deps.checkEligibility('owner-1');
 
-        // Assert
+        expect(result).toBe('first_publish');
+        // D-2: the question asked is per-vertical, and this factory only ever
+        // speaks for accommodation.
+        expect(mocks.resolveTrialEligibility).toHaveBeenCalledWith(
+            expect.objectContaining({ customerId: CUSTOMER.id, productDomain: 'accommodation' })
+        );
+    });
+
+    it('returns subscription_required when the customer has zero subscriptions but the trial is spent', async () => {
+        // The mirror of the case above, and the one that stops a lapsed host
+        // from re-publishing free forever by cancelling and starting over.
+        setupDbMock([CUSTOMER], []);
+        mocks.resolveTrialEligibility.mockResolvedValue({ eligible: false });
+        const deps = buildAccommodationPublishDeps(getBillingStub);
+
+        const result = await deps.checkEligibility('owner-1');
+
+        expect(result).toBe('subscription_required');
+    });
+
+    it('returns subscription_required without consulting the resolver when billing is disabled', async () => {
+        // A null billing client means eligibility cannot be RESOLVED. Granting a
+        // trial on a guess is the one outcome that cannot be undone, so the
+        // degradation is to reject.
+        setupDbMock([CUSTOMER], []);
+        const deps = buildAccommodationPublishDeps(() => null);
+
+        const result = await deps.checkEligibility('owner-1');
+
+        expect(result).toBe('subscription_required');
+        expect(mocks.resolveTrialEligibility).not.toHaveBeenCalled();
+    });
+
+    it('returns first_publish for an owner whose only prior subscription is another vertical (D-2)', async () => {
+        // HOS-931, absorbed by D-2: this owner has a live gastronomy
+        // subscription. It is not an accommodation subscription, so it neither
+        // permits publishing nor consumes the accommodation trial — the
+        // resolver, which is domain-scoped, still answers eligible.
+        const futureEnd = new Date(NOW_MS + hoursMs(24));
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'active',
+                    trialEnd: null,
+                    currentPeriodEnd: futureEnd,
+                    planId: 'plan-gastronomy-basico',
+                    productDomain: 'gastronomy'
+                }
+            ]
+        );
+        mocks.resolveTrialEligibility.mockResolvedValue({ eligible: true });
+        const deps = buildAccommodationPublishDeps(getBillingStub);
+
+        const result = await deps.checkEligibility('owner-1');
+
         expect(result).toBe('first_publish');
     });
 
@@ -146,7 +229,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'active', trialEnd: null, currentPeriodEnd: futureEnd }]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -162,7 +245,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'active', trialEnd: null, currentPeriodEnd: recentPast }]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -179,7 +262,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'active', trialEnd: null, currentPeriodEnd: expiredEnd }]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act — pass nowMs so the predicate uses the same fixed clock
         // isSubscriptionLive uses Date.now() by default; we must control it
@@ -200,7 +283,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'trialing', trialEnd: recentTrialEnd, currentPeriodEnd: null }]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         vi.useFakeTimers();
         vi.setSystemTime(NOW_MS);
@@ -221,7 +304,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             [CUSTOMER],
             [{ status: 'trialing', trialEnd: expiredTrialEnd, currentPeriodEnd: null }]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         vi.useFakeTimers();
         vi.setSystemTime(NOW_MS);
@@ -247,7 +330,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
                 }
             ]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -281,7 +364,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             ]
         );
         mocks.isOwnerCategorySubscription.mockResolvedValue(false);
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -323,7 +406,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
         );
         // isOwnerCategorySubscription default mock resolves true — if the
         // product-domain filter is missing, this sub would incorrectly pass.
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -350,13 +433,16 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
                 }
             ]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
 
         // Assert
         expect(result).toBe('has_active_sub');
+        // A live owner subscription settles it: no trial question is asked, so a
+        // paying host cannot be handed a second trial by a resolver hiccup.
+        expect(mocks.resolveTrialEligibility).not.toHaveBeenCalled();
     });
 
     // -----------------------------------------------------------------------
@@ -384,7 +470,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
                 }
             ]
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -411,7 +497,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
             ]
         );
         mocks.isOwnerCategorySubscription.mockResolvedValue(false);
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');
@@ -445,7 +531,7 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
         mocks.isOwnerCategorySubscription.mockImplementation(
             async ({ planId }: { planId: string }) => planId === 'plan-owner-basico'
         );
-        const deps = buildAccommodationPublishDeps();
+        const deps = buildAccommodationPublishDeps(getBillingStub);
 
         // Act
         const result = await deps.checkEligibility('owner-1');

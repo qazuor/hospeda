@@ -458,9 +458,18 @@ function collectProseCopy(): ReadonlyArray<{
  * `resolveCheckoutFreeTrialDays` actually gates on.
  */
 const FIRST_SUBSCRIPTION_HINTS: Record<Locale, readonly string[]> = {
-    es: ['primera suscripción'],
-    en: ['first subscription'],
-    pt: ['primeira assinatura']
+    // The second hint in each language is HOS-1012's: eligibility is keyed on
+    // `(customer, product domain)`, so the honest qualifier names the VERTICAL,
+    // not the subscription. "one per account" would now be false in the
+    // generous direction (someone who spent their accommodation trial does get
+    // one in gastronomy) and "first subscription" false in the strict one
+    // (within accommodation the trial is one, whichever plan is chosen). Both
+    // spellings are accepted because the older copy is still true wherever it
+    // survives. "primera propiedad" / "first property" stay REJECTED: they say
+    // WHEN the trial starts, never WHO still has one.
+    es: ['primera suscripción', 'una sola para alojamientos'],
+    en: ['first subscription', 'only one for accommodation'],
+    pt: ['primeira assinatura', 'uma só para hospedagens']
 };
 
 const PLAN_COPY = collectPlanCopy();

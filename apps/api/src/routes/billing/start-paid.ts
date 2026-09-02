@@ -379,13 +379,13 @@ export const handleStartPaidSubscription = async (
         // is emitted when `initiatePaid*Subscription` throws (the outer catch
         // handles that path).
         try {
-            // `trialGranted` is checked BEFORE falling back to 'paid': a card-first
-            // trial has no appliedEffect (it is an ordinary MP redirect), so without
-            // this the funnel would report every trial signup as a plain paid one and
-            // trial→paid conversion (HOS-130) would have nothing to measure.
-            // `comp`/`discount` still win — they describe what the money did, which is
-            // the more specific fact when both are true.
-            const outcome = result.appliedEffect ?? (result.trialGranted ? 'trial' : 'paid');
+            // HOS-1012: there is no `trialGranted` term here any more. A checkout
+            // cannot produce a trial — it is the paid path and nothing else — so
+            // the outcome is `comp` / `discount` when an effect applied, and
+            // `paid` otherwise. Trial→paid conversion (HOS-130) has to be
+            // measured off the LOCAL trial row's own lifecycle now, not off a
+            // checkout event, because the trial no longer starts at checkout.
+            const outcome = result.appliedEffect ?? 'paid';
             captureServerAnalyticsEvent({
                 distinctId: actor.id,
                 name: AnalyticsEvents.subscriptionCreated,
@@ -395,17 +395,12 @@ export const handleStartPaidSubscription = async (
                     billing_period: body.billingInterval === 'annual' ? 'annual' : 'monthly',
                     checkout_outcome: outcome,
                     /**
-                     * Whether MercadoPago will defer the first charge, as its OWN
-                     * dimension rather than folded into `outcome`.
-                     *
-                     * `outcome` is a single scalar, so when a checkout is both a
-                     * trial and a discount it has to pick one — and it picks the
-                     * money (`'discount'`), which would silently drop the trial
-                     * from the funnel for exactly the customers most worth
-                     * tracking. Since HOS-171 a trial COEXISTS with a discount, so
-                     * that combination is normal, not an edge case.
+                     * HOS-1012: a constant `false`, and honestly so — no checkout
+                     * grants a trial any more. The property is kept rather than
+                     * dropped so the funnel's schema stays stable across the
+                     * cutover and a historical `true` still means what it meant.
                      */
-                    trial_granted: result.trialGranted ?? false,
+                    trial_granted: false,
                     promotion_code: body.promoCode ?? null,
                     promotion_code_ignored: result.promoCodeIgnored ?? false,
                     amount: amountMajor,

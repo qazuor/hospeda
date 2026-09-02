@@ -6,6 +6,7 @@
  */
 
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import { getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
@@ -489,21 +490,29 @@ function makeDbMock(selectRows: unknown[], insertShouldFail = false, txFreshRows
     // By default returns the same status row as the outer SELECT so existing
     // tests stay green. Override with txFreshRows to simulate a stale-read.
     const freshRows = txFreshRows ?? selectRows;
-    const txSelectForChain = {
-        for: vi.fn().mockResolvedValue(freshRows)
-    };
-    const txSelectWhereChain = {
-        where: vi.fn().mockReturnValue(txSelectForChain)
-    };
+    // Two DIFFERENT in-transaction SELECT … FOR UPDATE queries run here and they
+    // must not share a canned result. The TOCTOU guard re-reads the row being
+    // activated (projection includes `cancelAtPeriodEnd`); the HOS-1012 T-022
+    // trial supersede claims the customer's provider-less `trialing` rows
+    // (projection is `{id, status}`). Handing the supersede the activated row
+    // would make it expire the very subscription this webhook just activated.
+    // Fixtures built with this helper carry no local trial, so its claim is
+    // empty; the T-022 tests use their own stateful db double.
+    const txSelectFor = vi.fn();
     const txSelectFromChain = {
-        from: vi.fn().mockReturnValue(txSelectWhereChain)
+        from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({ for: txSelectFor })
+        })
     };
 
     /** Transaction object passed to the callback of db.transaction() */
     const tx = {
         insert: vi.fn().mockReturnValue(txInsertValuesChain),
         update: vi.fn().mockReturnValue(txUpdateSetChain),
-        select: vi.fn().mockReturnValue(txSelectFromChain)
+        select: vi.fn((projection: Record<string, unknown> = {}) => {
+            txSelectFor.mockResolvedValue('cancelAtPeriodEnd' in projection ? freshRows : []);
+            return txSelectFromChain;
+        })
     };
 
     const selectChain = {
@@ -2409,19 +2418,18 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Judgment-day remediation: the state machine has no ACTIVE→TRIALING
-        // edge. A legacy row already mis-activated by the pre-HOS-211 bug
-        // (status=active, trial_end=null) now correctly re-derives TRIALING
-        // from the live preapproval's free trial, hits that guard forever, and
-        // must NOT page Sentry on every webhook — owner decision: warn only.
+        // edge. A row that is already `active` while still carrying a FUTURE
+        // `trial_end` re-derives TRIALING on every webhook, hits that guard
+        // forever, and must NOT page Sentry each time — owner decision: warn only.
         //
-        // NOTE: this is the ONE scenario where the provider-derived trial window
-        // on the fixture is legitimate — a genuinely legacy row (predates
-        // HOS-211 Option B) has NO pre-populated local `trialEnd` to fall back
-        // on, so the only way to derive a future trialEnd at all is the
-        // defensive fallback. HOS-936: that fallback now reads
-        // `next_payment_date - date_created`, never `auto_recurring.free_trial`,
-        // so the fixture carries the honest fields. It does not represent real
-        // qzpay traffic today (which carries neither), only a legacy-data case.
+        // HOS-1012 T-026 rewrote the fixture. It used to reach TRIALING through
+        // the provider fallback (`next_payment_date - date_created`, HOS-936) on
+        // a row whose local `trial_end` was null. That fallback is gone with the
+        // module that housed it — no checkout asks MercadoPago for a trial, so
+        // there is no provider window left to read — and the local row is now
+        // the ONLY source of a trial window. The shape that still reaches this
+        // guard is therefore a legacy row mis-activated while its window was
+        // open, which is what is set up here.
         it('should warn (not error/capture) and no-op on the expected legacy ACTIVE→TRIALING no-op case', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2429,18 +2437,16 @@ describe('processSubscriptionUpdated', () => {
 
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                // Defensive-fallback-only shape — see note above. The charge is
-                // deferred by 10 days, which is what makes it a real trial.
-                date_created: new Date(),
-                next_payment_date: livePeriodEnd
+                currentPeriodEnd: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
-            // Legacy row: mis-activated by the pre-HOS-211 bug.
+            // Legacy row: mis-activated while its local trial window was still
+            // open, so `deriveTrialingStatus` keeps resolving TRIALING.
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.ACTIVE,
-                trialEnd: null
+                trialStart: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+                trialEnd: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
@@ -2483,12 +2489,10 @@ describe('processSubscriptionUpdated', () => {
         // trialEnd) but caught by the in-tx guard instead. This locks the
         // branch a refactor could otherwise silently break.
         //
-        // NOTE: like the sibling legacy carve-out test above, this row has NO
-        // pre-populated local `trialEnd` (a pending_provider row created without
-        // `freeTrialDays`, or a pre-Option-B legacy row), so deriving a future
-        // trialEnd at all requires the defensive fallback — hence the
-        // provider-date override here is intentional, not a stand-in for the
-        // primary Option-B path.
+        // NOTE: like the sibling legacy carve-out above, the trial window comes
+        // from the LOCAL row — since HOS-1012 T-026 there is no other source.
+        // The row therefore carries a future `trial_end` here, which is what
+        // makes TRIALING the derived target on both reads.
         it('should warn (not error/capture) and no-op when the IN-TX guard catches the same ACTIVE→TRIALING case (concurrent mis-activation race)', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2496,19 +2500,17 @@ describe('processSubscriptionUpdated', () => {
 
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                // Defensive-fallback-only shape — see note above.
-                date_created: new Date(),
-                next_payment_date: livePeriodEnd
+                currentPeriodEnd: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
-            // Outer SELECT: legitimate pending_provider row — previousStatus ->
-            // TRIALING is valid, so Step 6b's fast-path guard passes and the
-            // transaction opens.
+            // Outer SELECT: legitimate pending_provider row with an open local
+            // trial window — previousStatus -> TRIALING is valid, so Step 6b's
+            // fast-path guard passes and the transaction opens.
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.PENDING_PROVIDER,
-                trialEnd: null
+                trialStart: new Date(),
+                trialEnd: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
             });
             // FOR UPDATE re-read: another replica already flipped the row
             // straight to `active` between the outer SELECT and the lock —
@@ -2546,71 +2548,16 @@ describe('processSubscriptionUpdated', () => {
             expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
         });
 
-        // Payloads that cannot support a trial verdict must all be treated as
-        // "no trial" — none of these should derive TRIALING or write a trialEnd.
-        //
-        // HOS-936: the last case is the measured one, and it is the reason this
-        // list exists in this shape. The provider advertises a 30-day
-        // `free_trial` while `next_payment_date` equals `date_created` — i.e. it
-        // is charging at the creation instant. Believing `auto_recurring` writes
-        // a 30-day trial onto a subscription being charged right now; the honest
-        // fields refuse it. The `auto_recurring` key is left ON that fixture on
-        // purpose: it is what a regression would read.
-        it.each([
-            ['no provider dates at all (qzpay’s real mapped shape)', {}],
-            ['next_payment_date absent', { date_created: new Date() }],
-            [
-                'next_payment_date is unparseable',
-                { date_created: new Date(), next_payment_date: 'tomorrow' }
-            ],
-            [
-                'next_payment_date EQUALS date_created while free_trial claims 30 days',
-                (() => {
-                    const created = new Date();
-                    return {
-                        date_created: created,
-                        next_payment_date: created,
-                        auto_recurring: { free_trial: { frequency: 30, frequency_type: 'days' } }
-                    };
-                })()
-            ]
-        ])('should treat %s as no trial', async (_label, providerFields) => {
-            // Arrange
-            const mpPreapprovalId = 'preapproval-mp-001';
-            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
-
-            const livePeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-            const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                ...providerFields
-            });
-            mockRetrieve.mockResolvedValue(mpSubscription);
-
-            const localSub = makeLocalSubscription({
-                status: SubscriptionStatusEnum.PENDING_PROVIDER,
-                trialEnd: null
-            });
-            const dbMock = makeDbMock([localSub]);
-            vi.mocked(getDb).mockReturnValue(dbMock as never);
-
-            // Act
-            const result = await processSubscriptionUpdated({
-                event: makeWebhookEvent() as never,
-                billing: mockBilling as never,
-                paymentAdapter: mockPaymentAdapter as never,
-                providerEventId: 'evt-hos211-malformed'
-            });
-
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
-
-            const txUpdateChain = dbMock.tx.update({});
-            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
-            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
-            expect(lastUpdateData).not.toHaveProperty('trialEnd');
-            expect(lastUpdateData.currentPeriodEnd).toEqual(livePeriodEnd);
-        });
+        // REMOVED, HOS-1012 T-026: an `it.each` over four provider payloads
+        // that "must be treated as no trial" (no dates, absent/unparseable
+        // `next_payment_date`, and the measured case where `next_payment_date`
+        // equals `date_created` while `auto_recurring.free_trial` claims 30
+        // days). Every one of them asserted that the HOS-936 derivation refused
+        // to invent a window. That derivation no longer exists, so the four
+        // fixtures had become the same vacuous case — a row with a null local
+        // `trial_end` settling to ACTIVE — and could not fail for the reason
+        // they were written. The `currentPeriodEnd` sync they also covered is
+        // asserted by the ordinary-activation test above.
 
         // Judgment-day remediation (round 2): currentPeriodEnd sync IS scoped
         // to the pending→activation transition only. Writing it on every
@@ -4156,6 +4103,341 @@ describe('processSubscriptionUpdated', () => {
             expect(mockCancel).toHaveBeenCalledTimes(1);
             expect(dbMockFirstDelivery.topLevelInsertValues).toHaveBeenCalledTimes(1);
             expect(dbMockSecondDelivery.topLevelInsertValues).not.toHaveBeenCalled();
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // HOS-1012 T-022/T-023: the local trial is superseded INSIDE the activation
+    // transaction.
+    //
+    // Since HOS-1012 a free trial is a local `billing_subscriptions` row
+    // (`trialing`, `mp_subscription_id = NULL`) minted at first publish, and the
+    // paid checkout creates its OWN `pending_provider` row. The moment this
+    // webhook activates that row the customer holds two entitlement-granting
+    // rows, and `loadEntitlements` takes the FIRST one it finds — so a committed
+    // overlap resolves a nondeterministic plan.
+    //
+    // These tests use a STATEFUL db double: `transaction(cb)` snapshots the row
+    // store, rolls it back if the callback throws, and records a snapshot of the
+    // store on every successful commit. The invariant is asserted over those
+    // COMMIT snapshots, not over the final state — which is the whole point.
+    // Moving the supersede out of the transaction still reaches one row
+    // eventually, and every "final state" assertion would happily stay green;
+    // what it cannot do is avoid publishing an intermediate commit in which both
+    // rows grant.
+    //
+    // `TrialService.reconcileDuplicateSubscriptions` is not reachable from this
+    // file: `processSubscriptionUpdated` never calls it, and `TrialService` is
+    // not imported here. The single row these tests observe therefore cannot
+    // have come from that backstop.
+    // ---------------------------------------------------------------------------
+    describe('HOS-1012 T-022: supersede the local trial in the activation transaction', () => {
+        /**
+         * Collects every string that appears anywhere inside a WHERE predicate,
+         * so the fake can tell which row an `update(...).where(...)` targets
+         * without the production code having to hand it over. Column stubs come
+         * back too (`'id'`, `'status'`, ...); they simply never match a row id.
+         *
+         * Deliberately shape-agnostic: apps/api's global `@repo/db` mock builds
+         * `{type,left,right}` objects, not Drizzle `SQL` nodes.
+         */
+        function collectStrings(node: unknown, out: string[]): void {
+            if (typeof node === 'string') {
+                out.push(node);
+                return;
+            }
+            if (Array.isArray(node)) {
+                for (const child of node) collectStrings(child, out);
+                return;
+            }
+            if (!node || typeof node !== 'object') return;
+            for (const value of Object.values(node as Record<string, unknown>)) {
+                collectStrings(value, out);
+            }
+        }
+
+        type StoreRow = Record<string, unknown> & { id: string };
+
+        interface StatefulDbOptions {
+            /** Make the activated row's UPDATE throw, to exercise rollback. */
+            readonly failActivationUpdate?: boolean;
+            /**
+             * Status the FOR-UPDATE re-read reports for the activated row,
+             * diverging from what the Step 5 read returned (another replica
+             * wrote in between).
+             */
+            readonly freshStatusOverride?: string;
+        }
+
+        /**
+         * A db double with real transaction semantics over an in-memory row
+         * store: writes land immediately, a throwing callback restores the
+         * pre-transaction snapshot, and every successful commit is recorded.
+         */
+        function makeStatefulDbMock(initialRows: StoreRow[], options: StatefulDbOptions = {}) {
+            let store: StoreRow[] = initialRows.map((row) => ({ ...row }));
+            const commits: StoreRow[][] = [];
+            const events: Record<string, unknown>[] = [];
+            const snapshot = () => store.map((row) => ({ ...row }));
+
+            const providerRows = () => store.filter((row) => row.mpSubscriptionId != null);
+
+            /**
+             * The write/read surface. Used for BOTH the transaction handle and
+             * the top-level `db`, so a supersede moved out of the transaction
+             * still runs — and lands as its own separate commit, which is
+             * exactly what the invariant assertion catches.
+             */
+            function makeHandle(autoCommit: boolean) {
+                const commitIfLoose = () => {
+                    if (autoCommit) commits.push(snapshot());
+                };
+
+                return {
+                    select: (projection: Record<string, unknown> = {}) => ({
+                        from: () => ({
+                            where: () => ({
+                                // The TOCTOU guard projects cancelAtPeriodEnd;
+                                // the supersede claim projects id.
+                                for: async () =>
+                                    'cancelAtPeriodEnd' in projection
+                                        ? providerRows().map((row) => ({
+                                              status: options.freshStatusOverride ?? row.status,
+                                              cancelAtPeriodEnd: row.cancelAtPeriodEnd
+                                          }))
+                                        : store
+                                              .filter(
+                                                  (row) =>
+                                                      row.status ===
+                                                          SubscriptionStatusEnum.TRIALING &&
+                                                      row.mpSubscriptionId == null &&
+                                                      row.deletedAt == null
+                                              )
+                                              .map((row) => ({ id: row.id, status: row.status })),
+                                limit: async () => providerRows()
+                            })
+                        })
+                    }),
+                    update: () => ({
+                        set: (payload: Record<string, unknown>) => ({
+                            where: async (predicate: unknown) => {
+                                const ids: string[] = [];
+                                collectStrings(predicate, ids);
+                                const target = store.find((row) => ids.includes(row.id));
+                                if (!target) return;
+                                if (
+                                    options.failActivationUpdate &&
+                                    target.mpSubscriptionId != null
+                                ) {
+                                    throw new Error('activation update failed');
+                                }
+                                Object.assign(target, payload);
+                                commitIfLoose();
+                            }
+                        })
+                    }),
+                    insert: () => ({
+                        values: async (row: Record<string, unknown>) => {
+                            events.push(row);
+                            commitIfLoose();
+                        }
+                    })
+                };
+            }
+
+            const loose = makeHandle(true);
+
+            return {
+                ...loose,
+                transaction: vi.fn(async (cb: (tx: unknown) => Promise<void>) => {
+                    const before = snapshot();
+                    try {
+                        await cb(makeHandle(false));
+                    } catch (error) {
+                        store = before;
+                        throw error;
+                    }
+                    commits.push(snapshot());
+                }),
+                /** Snapshot of the store after each successful commit. */
+                commits,
+                /** Every `billing_subscription_events` row written. */
+                events,
+                /** The live store. */
+                rows: () => store
+            };
+        }
+
+        const paidRow = (): StoreRow =>
+            makeLocalSubscription({
+                id: 'sub-paid-1',
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                mpSubscriptionId: 'preapproval-mp-001',
+                productDomain: 'accommodation',
+                trialEnd: null,
+                metadata: {}
+            }) as StoreRow;
+
+        const trialRow = (): StoreRow =>
+            makeLocalSubscription({
+                id: 'sub-trial-1',
+                status: SubscriptionStatusEnum.TRIALING,
+                mpSubscriptionId: null,
+                productDomain: 'accommodation',
+                trialStart: new Date('2026-08-01T00:00:00.000Z'),
+                trialEnd: new Date('2026-08-31T00:00:00.000Z'),
+                metadata: { source: 'first-publish-trial' }
+            }) as StoreRow;
+
+        /** How many rows in a snapshot would hand `loadEntitlements` a plan. */
+        const grantingCount = (snapshot: StoreRow[]) =>
+            snapshot.filter((row) => isEntitlementGrantingStatus(row.status as string)).length;
+
+        beforeEach(() => {
+            mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+        });
+
+        it('leaves exactly one entitlement-granting row the instant the activation commits', async () => {
+            const dbMock = makeStatefulDbMock([paidRow(), trialRow()]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos1012-supersede'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+
+            // The invariant, asserted on EVERY committed state and not only the
+            // last one: a supersede performed in a second transaction publishes
+            // an intermediate commit carrying two granting rows, and that is the
+            // nondeterministic-plan window this task exists to close.
+            expect(dbMock.commits.length).toBeGreaterThan(0);
+            for (const commit of dbMock.commits) {
+                expect(grantingCount(commit)).toBe(1);
+            }
+
+            const final = dbMock.rows();
+            expect(final.find((row) => row.id === 'sub-paid-1')?.status).toBe(
+                SubscriptionStatusEnum.ACTIVE
+            );
+            expect(final.find((row) => row.id === 'sub-trial-1')?.status).toBe(
+                SubscriptionStatusEnum.EXPIRED
+            );
+        });
+
+        it('never mutates the trial row into the paid one — it keeps its NULL provider id', async () => {
+            const dbMock = makeStatefulDbMock([paidRow(), trialRow()]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos1012-provenance'
+            });
+
+            const trial = dbMock.rows().find((row) => row.id === 'sub-trial-1');
+            // Acquiring an mp_subscription_id mid-life is the correlation
+            // problem HOS-937 spent ~4.750 lines solving.
+            expect(trial?.mpSubscriptionId).toBeNull();
+            expect(trial?.trialConverted).toBe(true);
+        });
+
+        it('audits the supersede as TRIAL_SUPERSEDED_BY_PAID, so the win-back series never claims this listing came down', async () => {
+            const dbMock = makeStatefulDbMock([paidRow(), trialRow()]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos1012-audit'
+            });
+
+            const trialEvents = dbMock.events.filter((row) => row.subscriptionId === 'sub-trial-1');
+            expect(trialEvents).toHaveLength(1);
+            expect(trialEvents[0]?.eventType).toBe(BILLING_EVENT_TYPES.TRIAL_SUPERSEDED_BY_PAID);
+            expect(
+                dbMock.events.some((row) => row.eventType === BILLING_EVENT_TYPES.TRIAL_EXPIRED)
+            ).toBe(false);
+        });
+
+        it('a failed activation leaves the trial row still granting', async () => {
+            const dbMock = makeStatefulDbMock([paidRow(), trialRow()], {
+                failActivationUpdate: true
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await expect(
+                processSubscriptionUpdated({
+                    event: makeWebhookEvent() as never,
+                    billing: mockBilling as never,
+                    paymentAdapter: mockPaymentAdapter as never,
+                    providerEventId: 'evt-hos1012-rollback'
+                })
+            ).rejects.toThrow('activation update failed');
+
+            const final = dbMock.rows();
+            const trial = final.find((row) => row.id === 'sub-trial-1');
+            // The customer got nothing in exchange for the trial, so the trial
+            // must survive intact — status, window and all.
+            expect(trial?.status).toBe(SubscriptionStatusEnum.TRIALING);
+            expect(isEntitlementGrantingStatus(trial?.status as string)).toBe(true);
+            expect(trial?.trialConverted).toBeUndefined();
+            expect(final.find((row) => row.id === 'sub-paid-1')?.status).toBe(
+                SubscriptionStatusEnum.PENDING_PROVIDER
+            );
+            expect(dbMock.commits).toHaveLength(0);
+            expect(dbMock.events).toHaveLength(0);
+        });
+
+        it('an activation another replica already applied leaves the trial row still granting', async () => {
+            // The FOR-UPDATE re-read finds the row already `active`: the
+            // in-transaction idempotent skip commits nothing. A supersede that
+            // ran outside — or ahead of — that guard would kill the trial on a
+            // webhook redelivery that changed nothing.
+            const dbMock = makeStatefulDbMock([paidRow(), trialRow()], {
+                freshStatusOverride: SubscriptionStatusEnum.ACTIVE
+            });
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos1012-redelivery'
+            });
+
+            expect(result.statusChanged).toBe(false);
+            const trial = dbMock.rows().find((row) => row.id === 'sub-trial-1');
+            expect(trial?.status).toBe(SubscriptionStatusEnum.TRIALING);
+            expect(dbMock.events).toHaveLength(0);
+        });
+
+        it('supersedes nothing when the customer never had a local trial', async () => {
+            const dbMock = makeStatefulDbMock([paidRow()]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos1012-no-trial'
+            });
+
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+            expect(
+                dbMock.events.some(
+                    (row) => row.eventType === BILLING_EVENT_TYPES.TRIAL_SUPERSEDED_BY_PAID
+                )
+            ).toBe(false);
+            for (const commit of dbMock.commits) {
+                expect(grantingCount(commit)).toBe(1);
+            }
         });
     });
 });

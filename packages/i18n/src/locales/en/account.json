@@ -689,6 +689,17 @@
             "uncancelButton": "Discard cancellation",
             "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
             "uncancelError": "Could not discard the cancellation.",
+            "trialExtension": {
+                "title": "Extend your free trial",
+                "help": "If you have a promo code, apply it now to add days to your trial.",
+                "label": "Promo code",
+                "placeholder": "Enter your code",
+                "apply": "Apply",
+                "applying": "Applying...",
+                "success": "Done. Your free trial was extended.",
+                "successWithDate": "Done. Your free trial now ends on {{date}}.",
+                "errorGeneric": "We could not apply the code. Check it and try again."
+            },
             "status": {
                 "active": "Active",
                 "trial": "Trial",

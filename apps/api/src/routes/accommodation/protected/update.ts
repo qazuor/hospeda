@@ -14,6 +14,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { requireEntitlement } from '../../../middlewares/entitlement';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
@@ -26,7 +27,7 @@ const accommodationService = new AccommodationService(
     undefined,
     null,
     undefined,
-    buildAccommodationPublishDeps()
+    buildAccommodationPublishDeps(() => getQZPayBilling())
 );
 
 /**

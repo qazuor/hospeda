@@ -11,10 +11,14 @@
  * `GET /trial-eligibility` route now call through this one function, so the
  * two can never drift on how they answer the same question.
  *
- * "One trial per customer, for life": any prior subscription that consumed a
- * trial-equivalent benefit — one authorized by the provider at least once
- * (active, trialing, past_due, paused, expired), or an explicit `comp` grant —
- * disqualifies, in any product domain (accommodation or commerce). A user who
+ * "One trial per customer per PRODUCT DOMAIN" (HOS-1012 D-2, absorbing
+ * HOS-931 — it used to be one per customer for life, across every vertical):
+ * any prior subscription that consumed a trial-equivalent benefit — one
+ * authorized by the provider at least once (active, trialing, past_due, paused,
+ * expired), or an explicit `comp` grant — disqualifies **within its own
+ * vertical only**. Someone who spent their accommodation trial starts clean
+ * when they enter gastronomy; in a market of 22 destinations the same people
+ * own the cabin and the restaurant. A user who
  * has never checked out at all (e.g. every user on the implicit `tourist-free`
  * default, which never creates a `billing_subscriptions` row) is eligible — and
  * so is one whose only rows are checkouts they backed out of before
@@ -28,8 +32,8 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { billingSubscriptionEvents, getDb } from '@repo/db';
-import { SubscriptionStatusEnum } from '@repo/schemas';
-import { normalizeStoredSubscriptionStatus } from '@repo/service-core';
+import { type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
+import { normalizeStoredSubscriptionStatus, subscriptionMatchesDomain } from '@repo/service-core';
 import { inArray } from 'drizzle-orm';
 
 /**
@@ -41,6 +45,22 @@ export interface TrialEligibilityInput {
     readonly billing: QZPayBilling;
     /** Local billing customer id (the qzpay customer id). */
     readonly customerId: string;
+    /**
+     * The vertical whose trial is being asked about (HOS-1012 D-2, absorbing
+     * HOS-931).
+     *
+     * Eligibility is keyed on `(customerId, productDomain)`: someone who spent
+     * their accommodation trial starts clean when they enter gastronomy. In a
+     * market of 22 destinations the same people own the cabin AND the
+     * restaurant, so a lifetime-per-account rule denies a trial the owner has
+     * never actually had in that vertical.
+     *
+     * Deliberately REQUIRED rather than defaulting to accommodation: a default
+     * would let a commerce call site that forgets to pass it silently consume
+     * the accommodation trial instead, which is the failure this parameter
+     * exists to prevent. The compiler makes every call site decide.
+     */
+    readonly productDomain: ProductDomainValue;
 }
 
 /**
@@ -181,12 +201,25 @@ function classifyPriorSubscription(sub: PriorSubscription): PriorSubscriptionCla
  * `newStatus` — checking both catches the authorization transition itself and
  * the later cancel-from-authorized (or comp-revoke) event. A
  * `pending_provider` → `cancelled` row has neither, so it reads as
- * never-authorized and does NOT consume the trial. A cancelled row with NO
- * events (a data-integrity oddity — a real cancel always writes an event) reads
- * as never-authorized, the direction that fixes the bug.
+ * never-authorized and does NOT consume the trial. That is the HOS-230 fix and
+ * it is untouched.
+ *
+ * A cancelled row with NO events AT ALL is a different question, and since
+ * HOS-1012 it fails CLOSED: with an empty audit trail there is no evidence in
+ * either direction, and the two mistakes do not cost the same. Reading it as
+ * never-authorized hands a second free trial to someone who already paid and
+ * cancelled; reading it as consumed asks a real backout to talk to support.
+ * Measured on production the day this changed: zero `cancelled` rows existed at
+ * all, the three `trialing` rows (the real customers) all carry authorization
+ * evidence, and the only history-less rows were `comp` — which is exactly the
+ * hole this closes, since a comp is a direct DB insert that never writes an
+ * event and would silently become trial-eligible the moment it was cancelled.
+ * A real backout is unaffected: it writes its `pending_provider` → `cancelled`
+ * event and takes the branch above.
  *
  * @param subscriptionIds - The ids of the customer's `cancelled` subscriptions.
- * @returns `true` if at least one was ever authorized.
+ * @returns `true` if at least one was ever authorized, or has no history to
+ *   prove otherwise.
  */
 async function anyCancelledSubscriptionWasAuthorized(
     subscriptionIds: readonly string[]
@@ -194,11 +227,21 @@ async function anyCancelledSubscriptionWasAuthorized(
     const db = getDb();
     const events = await db
         .select({
+            subscriptionId: billingSubscriptionEvents.subscriptionId,
             previousStatus: billingSubscriptionEvents.previousStatus,
             newStatus: billingSubscriptionEvents.newStatus
         })
         .from(billingSubscriptionEvents)
         .where(inArray(billingSubscriptionEvents.subscriptionId, [...subscriptionIds]));
+
+    // Fail closed on an absent audit trail, per subscription and not across the
+    // whole set: one row having history says nothing about another that has
+    // none, and collapsing them would let a single well-audited cancellation
+    // vouch for a history-less one.
+    const withHistory = new Set(events.map((event) => event.subscriptionId));
+    if (subscriptionIds.some((id) => !withHistory.has(id))) {
+        return true;
+    }
 
     return events.some(
         (event) =>
@@ -234,11 +277,27 @@ async function anyCancelledSubscriptionWasAuthorized(
  *   abandoned/pending/never-activated-cancelled checkouts).
  */
 export async function hasAnyPriorSubscription(input: TrialEligibilityInput): Promise<boolean> {
-    const { billing, customerId } = input;
+    const { billing, customerId, productDomain } = input;
     const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
 
     const cancelledSubscriptionIds: string[] = [];
     for (const sub of subscriptions) {
+        // HOS-1012 D-2 / HOS-931: a prior subscription consumes the trial only
+        // for its OWN vertical. `subscriptionMatchesDomain` is the single place
+        // in the codebase allowed to compare a domain, and it reads
+        // asymmetrically on purpose: accommodation fails OPEN (the column
+        // post-dates most rows) while every other domain fails CLOSED.
+        //
+        // The cast is deliberate and matches the precedent in
+        // `commerce-subscription-attach.service.ts`: qzpay's
+        // `QZPaySubscription` type does not declare `productDomain`, but its
+        // repository reads the row with a bare `select()` over a schema whose
+        // `product_domain` column is NOT NULL with a default, so the property
+        // IS present at runtime. The type is behind the schema, not the data.
+        if (!subscriptionMatchesDomain(sub as unknown, productDomain)) {
+            continue;
+        }
+
         const classification = classifyPriorSubscription(sub);
         if (classification === 'consumed') {
             // An unambiguously-authorized subscription settles it — no need to

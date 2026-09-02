@@ -105,8 +105,8 @@
                 },
                 "cost": {
                     "question": "How much does it cost to publish?",
-                    "answer_one": "Publishing your accommodation requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial: you add your card up front and nothing is charged until the trial ends. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page.",
-                    "answer_other": "Publishing your accommodation requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial: you add your card up front and nothing is charged until the trial ends. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page."
+                    "answer_one": "Publishing your accommodation requires a host plan. The trial is free and takes no card: it starts on its own when you publish and runs for {{trialDays}} day. There is only one for accommodation. When it ends, you pick a plan to stay online. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page.",
+                    "answer_other": "Publishing your accommodation requires a host plan. The trial is free and takes no card: it starts on its own when you publish and runs for {{trialDays}} days. There is only one for accommodation. When it ends, you pick a plan to stay online. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page."
                 },
                 "commission": {
                     "question": "Do you charge commission on bookings?",

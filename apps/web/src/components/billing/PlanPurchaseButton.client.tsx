@@ -23,7 +23,6 @@ import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
 import { PayerEmailConfirmDialog } from './PayerEmailConfirmDialog.client';
 import styles from './PlanPurchaseButton.module.css';
-import { TrialWarningDialog } from './TrialWarningDialog.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,18 +69,6 @@ export interface PlanPurchaseButtonProps {
      * target. The discount can still be applied later at checkout.
      */
     readonly showPromo?: boolean;
-    /**
-     * Trial length in days this plan offers, or `0` when the plan has no
-     * trial at all. Drives the trial-warning confirmation dialog (owner
-     * decision, real-money incident): MercadoPago grants its free trial once
-     * per (MercadoPago account, plan) pair, a rule Hospeda's own
-     * `billingApi.getTrialEligibility()` check cannot see. When this is `> 0`
-     * and the user has not already been marked ineligible, clicking the CTA
-     * opens {@link TrialWarningDialog} instead of going straight to checkout.
-     * Defaults to `0` (no dialog) so existing callers that do not pass it
-     * keep today's direct-checkout behaviour.
-     */
-    readonly trialDays?: number;
     /**
      * Locale-agnostic path an unauthenticated visitor returns to after signing
      * in — i.e. the pricing surface this button is mounted on.
@@ -289,15 +276,12 @@ export function PlanPurchaseButton({
     locale,
     plansPath,
     showPromo = true,
-    trialDays = 0,
     ownPreapprovalEnabled = false
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
-    // Controls the MercadoPago trial-warning dialog (see `promisesTrial` below).
-    const [showTrialWarning, setShowTrialWarning] = useState(false);
     // HOS-937 step 2: controls the pre-redirect payer-email confirmation
     // dialog (spec §8.1) — shown right before `runCheckout` fires, after any
     // trial warning has already been accepted (or skipped).
@@ -616,13 +600,6 @@ export function PlanPurchaseButton({
     const isPlanChange =
         isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
 
-    // Whether this checkout actually promises a trial to the user right now.
-    // `trialDays > 0` is the plan-level offer; `trialEligible !== false` mirrors
-    // the badge-suppression effect above — `null` (unauthenticated, still
-    // loading, or the lookup failed) leaves the SSR-promised trial standing, so
-    // the warning must show for it too. Only a confirmed `false` skips it.
-    const promisesTrial = trialDays > 0 && trialEligible !== false;
-
     // Show the promo section only when the user can interact with checkout
     // (never in the plan-change case — promo codes apply at checkout, not here).
     // HOS-451/H-90: never on a free ($0) plan — a promo code has no semantics
@@ -877,9 +854,8 @@ export function PlanPurchaseButton({
 
     /**
      * Handle button click.
-     * Redirects unauthenticated users to sign-in; opens the trial-warning
-     * dialog when this checkout promises a trial (see `promisesTrial`);
-     * otherwise fires the checkout POST directly for authenticated users.
+     * Redirects unauthenticated users to sign-in; otherwise fires the checkout
+     * POST for authenticated users.
      */
     async function handleClick(): Promise<void> {
         // Clear any previous error on each attempt.
@@ -924,15 +900,6 @@ export function PlanPurchaseButton({
             return;
         }
 
-        // MercadoPago-vs-Hospeda trial-eligibility mismatch (real-money incident
-        // in prod): stop here and require explicit confirmation instead of
-        // going straight to MercadoPago. `handleTrialWarningConfirm` opens the
-        // payer-email confirm dialog once the user accepts, same as below.
-        if (promisesTrial) {
-            setShowTrialWarning(true);
-            return;
-        }
-
         // HOS-937 step 2 (spec §8.1): show the payer-email confirm dialog
         // right before actually creating the MercadoPago preapproval — but
         // ONLY on the checkout path that actually binds payer_email
@@ -962,9 +929,9 @@ export function PlanPurchaseButton({
      * `apps/api/src/routes/partners/admin/send-link.ts` respectively), so
      * they are unaffected by this gate either way.
      *
-     * Shared by `handleClick` (the direct-checkout path) and
-     * `handleTrialWarningConfirm` (after the trial-warning dialog is
-     * accepted) — both reach the same fork.
+     * Reached from `handleClick`, the only checkout path this component has
+     * since HOS-1012 T-027 removed the trial-warning dialog that used to sit
+     * in front of it.
      */
     function proceedPastPayerEmailStep(): void {
         if (ownPreapprovalEnabled) {
@@ -1049,25 +1016,6 @@ export function PlanPurchaseButton({
         } finally {
             setLoading(false);
         }
-    }
-
-    /**
-     * User accepted the trial-warning dialog — close it and continue past the
-     * payer-email step that was held back, subject to the SAME gate
-     * `handleClick` applies (`proceedPastPayerEmailStep`) when no trial
-     * warning is needed.
-     */
-    function handleTrialWarningConfirm(): void {
-        setShowTrialWarning(false);
-        proceedPastPayerEmailStep();
-    }
-
-    /**
-     * User dismissed the trial-warning dialog (Cancel, Escape, or overlay
-     * click) — close it without starting a checkout.
-     */
-    function handleTrialWarningCancel(): void {
-        setShowTrialWarning(false);
     }
 
     /**
@@ -1282,13 +1230,6 @@ export function PlanPurchaseButton({
                     )}
                 </div>
             )}
-
-            <TrialWarningDialog
-                isOpen={showTrialWarning}
-                locale={locale}
-                onCancel={handleTrialWarningCancel}
-                onConfirm={handleTrialWarningConfirm}
-            />
 
             <PayerEmailConfirmDialog
                 isOpen={showPayerEmailConfirm}

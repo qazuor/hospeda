@@ -246,10 +246,21 @@ export const ApplyPromoCodeSchema = z.object({
     code: z
         .string({ message: 'zodError.billing.promoCode.apply.code.invalidType' })
         .min(1, { message: 'zodError.billing.promoCode.apply.code.min' }),
-    /** The billing customer ID to apply the code to */
+    /**
+     * The billing customer ID to apply the code to.
+     *
+     * OPTIONAL since HOS-1012 T-039: a self-service caller applying a code to
+     * their own account (the account page's trial-extension form) has no way to
+     * discover its billing customer UUID, and the route already refuses any id
+     * other than the caller's own unless the actor holds `ACCESS_API_ADMIN`.
+     * Omitting it therefore means "my own billing customer" — the route falls
+     * back to the `billingCustomerId` the middleware resolved from the session.
+     * An explicitly supplied foreign id is still rejected with 403.
+     */
     customerId: z
         .string({ message: 'zodError.billing.promoCode.apply.customerId.invalidType' })
-        .uuid({ message: 'zodError.billing.promoCode.apply.customerId.invalid' }),
+        .uuid({ message: 'zodError.billing.promoCode.apply.customerId.invalid' })
+        .optional(),
     /** Optional base amount in cents used to compute fixed discounts */
     amount: z
         .number({ message: 'zodError.billing.promoCode.apply.amount.invalidType' })

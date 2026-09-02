@@ -35,7 +35,6 @@ const billingSettingsSchema = z.object({
     maxPaymentRetries: z.number().int().min(0).max(10),
     retryIntervalHours: z.number().int().min(1).max(168),
     sendTrialExpiryReminder: z.boolean(),
-    trialExpiryReminderDays: z.number().int().min(1).max(30),
     sendPaymentFailedNotification: z.boolean(),
     sendSubscriptionCancelledNotification: z.boolean()
 });

@@ -83,6 +83,22 @@ vi.mock('../../src/services/trial.service', () => ({
     )
 }));
 
+// Mock the trial series dispatch (HOS-1012 T-016). This suite is about the
+// Redis/in-memory idempotency mechanism, which as of HOS-121 serves ONLY the
+// renewal reminders — the nine-send trial series has its own durable ledger and
+// its own suite (`test/cron/trial-series-dispatch.test.ts`). Stubbing it here
+// keeps the renewal assertions from depending on the series' DB query shapes.
+vi.mock('../../src/cron/jobs/trial-series-dispatch', () => ({
+    dispatchTrialSeries: vi.fn().mockResolvedValue({
+        sent: 0,
+        deduped: 0,
+        converted: 0,
+        noCustomer: 0,
+        errors: 0,
+        cohortSizes: {}
+    })
+}));
+
 // Mock customer lookup used by the renewal branch.
 vi.mock('../../src/utils/customer-lookup', () => ({
     lookupCustomerDetails: vi.fn().mockResolvedValue({
@@ -113,7 +129,6 @@ vi.mock('../../src/utils/billing-settings', () => ({
         gracePeriodDays: 7,
         maxPaymentRetries: 3,
         retryIntervalHours: 24,
-        trialExpiryReminderDays: 3,
         sendTrialExpiryReminder: true,
         sendPaymentFailedNotification: true
     })

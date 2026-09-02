@@ -498,8 +498,6 @@
             "receiptHint": "Enviar recibo automaticamente ao processar pagamento",
             "trialReminderLabel": "Lembrete de fim do teste",
             "trialReminderHint": "Avisar antes de o período de teste expirar",
-            "trialReminderDaysLabel": "Dias de antecedência do lembrete",
-            "trialReminderDaysHint": "Enviar o lembrete X dias antes do vencimento",
             "paymentFailedLabel": "Notificar pagamento falhado",
             "paymentFailedHint": "Avisar o cliente quando um pagamento falha",
             "subscriptionCancelledLabel": "Notificar cancelamento de assinatura",

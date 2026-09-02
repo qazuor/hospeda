@@ -28,8 +28,6 @@ export interface CronBillingSettings {
     readonly maxPaymentRetries: number;
     /** Interval between retry attempts (in hours) */
     readonly retryIntervalHours: number;
-    /** Days before trial expiry to send reminder */
-    readonly trialExpiryReminderDays: number;
     /** Whether to send trial expiry reminders */
     readonly sendTrialExpiryReminder: boolean;
     /** Whether to send payment failed notifications */
@@ -41,7 +39,6 @@ const FALLBACK_DEFAULTS: CronBillingSettings = {
     gracePeriodDays: DUNNING_GRACE_PERIOD_DAYS,
     maxPaymentRetries: DUNNING_RETRY_INTERVALS.length,
     retryIntervalHours: 24,
-    trialExpiryReminderDays: 3,
     sendTrialExpiryReminder: true,
     sendPaymentFailedNotification: true
 } as const;
@@ -73,7 +70,6 @@ export async function loadBillingSettings(): Promise<CronBillingSettings> {
             gracePeriodDays: dbSettings.gracePeriodDays,
             maxPaymentRetries: dbSettings.maxPaymentRetries,
             retryIntervalHours: dbSettings.retryIntervalHours,
-            trialExpiryReminderDays: dbSettings.trialExpiryReminderDays,
             sendTrialExpiryReminder: dbSettings.sendTrialExpiryReminder,
             sendPaymentFailedNotification: dbSettings.sendPaymentFailedNotification
         };

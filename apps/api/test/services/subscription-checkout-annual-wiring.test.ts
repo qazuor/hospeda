@@ -188,10 +188,16 @@ describe('initiatePaidAnnualSubscription wiring (HOS-171 AC-11, HOS-191 Path C)'
                 priceId: ANNUAL_PRICE_ID,
                 billingInterval: 'annual',
                 mpPreapprovalPlanId: 'mp_plan_test',
-                payerEmail: CUSTOMER_FIXTURE.email,
-                trialGranted: false
+                payerEmail: CUSTOMER_FIXTURE.email
             })
         );
+        // HOS-1012: `objectContaining` cannot see a MISSING field, so the
+        // absence of the trial inputs is asserted on the argument itself.
+        const pendingArg = vi.mocked(createPendingProviderSubscription).mock.calls[0]?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(pendingArg).not.toHaveProperty('trialGranted');
+        expect(pendingArg).not.toHaveProperty('freeTrialDays');
         expect(result.checkoutUrl).toBe(EXPECTED_SHARE_LINK);
         expect(result.localSubscriptionId).toBe(LOCAL_SUB_ID);
         expect(result.appliedEffect).toBeUndefined();
@@ -221,42 +227,42 @@ describe('initiatePaidAnnualSubscription wiring (HOS-171 AC-11, HOS-191 Path C)'
         );
     });
 
-    it('carries the plan trial into the annual MP plan resolution and the pending subscription marker', async () => {
-        // Arrange — a trial-eligible customer (no prior subscriptions) on a
-        // 14-day plan: card-first means the trial is baked into the resolved
-        // MP plan (the pending subscription just carries the boolean marker).
+    it('does NOT carry the plan trial into the annual MP plan resolution (HOS-1012)', async () => {
+        // Arrange — a customer with no prior subscriptions (trial-eligible under
+        // the OLD rules) on a plan that declares 14 days. Both halves matter: if
+        // the checkout still resolved a trial, this is the fixture that would
+        // produce a nonzero `trialDays`.
         const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: true, trialDays: 14 });
 
         // Act
         await callAnnual(billing);
 
-        // Assert — trialDays is expressed regardless of the 12-month cadence
+        // Assert — the plan's declared trial reaches MercadoPago on no cadence.
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
-            expect.objectContaining({ billingInterval: 'annual', trialDays: 14 })
+            expect.objectContaining({ billingInterval: 'annual', trialDays: 0 })
         );
-        expect(createPendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: true })
-        );
+        const pendingArg = vi.mocked(createPendingProviderSubscription).mock.calls[0]?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(pendingArg).not.toHaveProperty('trialGranted');
+        expect(pendingArg).not.toHaveProperty('freeTrialDays');
     });
 
-    it('grants no trial on annual when the customer already has an authorized subscription', async () => {
-        // Arrange — one trial per customer, for life, cross-interval. `expired` is
-        // an authorized subscription that ran its course; post-HOS-230 the gate no
-        // longer counts never-authorized backouts, but this one is unambiguous.
+    it('does not even query subscription history on annual (HOS-1012)', async () => {
+        // The one-trial-per-customer-for-life gate lived here. With no trial to
+        // grant there is no eligibility to establish, so the query is not made —
+        // which is the cheapest possible proof that the trial branch is gone
+        // rather than merely producing zero.
         const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: true, trialDays: 14 });
         billing.subscriptions.getByCustomerId.mockResolvedValue([
             { id: 'sub-prior', status: 'expired' }
         ]);
 
-        // Act
         await callAnnual(billing);
 
-        // Assert
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
         expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
             expect.objectContaining({ trialDays: 0 })
-        );
-        expect(createPendingProviderSubscription).toHaveBeenCalledWith(
-            expect.objectContaining({ trialGranted: false })
         );
     });
 });

@@ -48,6 +48,44 @@ export const BILLING_EVENT_TYPES = {
     /** Fired when a trial subscription is blocked due to expiry (idempotency dedup guard) */
     TRIAL_BLOCKED: 'TRIAL_BLOCKED',
     /**
+     * Fired when a Hospeda-owned trial reaches its `trial_end` and is expired
+     * locally: status to `expired`, listings unpublished, data left intact
+     * (HOS-1012 D-3). Doubles as the idempotency dedup guard for that job.
+     *
+     * Deliberately NOT a reuse of `TRIAL_BLOCKED`, whose own docblock defines it
+     * as "we cancelled this customer" — the pre-HOS-171 no-card trial cut off
+     * access outright. D-3 does the opposite: the listing leaves the site and
+     * everything loaded stays editable in the panel, coming back online the
+     * moment they pay. Two different things happening to the customer deserve
+     * two different events, for the same reason `TRIAL_RECONCILED` was not
+     * folded into `TRIAL_BLOCKED`.
+     *
+     * Also distinct from `TRIAL_RECONCILED`, which means "the provider told us
+     * how this trial ended". Nobody tells us this one: there is no provider.
+     */
+    TRIAL_EXPIRED: 'TRIAL_EXPIRED',
+    /**
+     * Fired when a Hospeda-owned trial is superseded by the customer's own
+     * newly-activated paid subscription, inside the SAME transaction as that
+     * activation (HOS-1012 T-022).
+     *
+     * Deliberately NOT a reuse of `TRIAL_EXPIRED`, and the distinction is
+     * load-bearing rather than cosmetic: `findPostExpiryCohorts`
+     * (`services/billing/trial-series-cohort.ts`) selects the win-back series
+     * cohort by INNER JOINing on a `TRIAL_EXPIRED` row. Stamping a converted
+     * trial with that event would enrol the customer who just paid into the
+     * six-send "tu publicación salió del sitio" series — the single worst mail
+     * this system can send. This event says the opposite thing: the trial ended
+     * because it succeeded.
+     *
+     * Also distinct from `REACTIVATION_SUPERSESSION_COMPLETED`, which records
+     * HOS-114's provider-mediated supersession (a preapproval is cancelled at
+     * MercadoPago, after the transaction, with a reconcile cron behind it).
+     * This one is a purely local write on a row that never had a preapproval,
+     * and it commits or rolls back with the activation itself.
+     */
+    TRIAL_SUPERSEDED_BY_PAID: 'TRIAL_SUPERSEDED_BY_PAID',
+    /**
      * Fired when the trial reconciler settles an elapsed card-first trial against
      * the provider (HOS-171), recording the outcome it reconciled the local row
      * to — converted to active, mirrored to cancelled/paused, or routed to
@@ -61,26 +99,18 @@ export const BILLING_EVENT_TYPES = {
      * the audit trail lie about which behavior ran.
      */
     TRIAL_RECONCILED: 'TRIAL_RECONCILED',
-    /**
-     * Fired when a settled charge proves the provider never granted the free
-     * trial Hospeda promised at checkout (H-137).
+    /*
+     * REMOVED, HOS-1012 T-027: `TRIAL_NOT_GRANTED_BY_PROVIDER`.
      *
-     * MercadoPago grants a preapproval's `free_trial` once per
-     * `(payer, preapproval_plan)`, while Hospeda decides trial eligibility per
-     * billing customer. A payer who already spent the trial on a shared plan is
-     * therefore shown a trial offer and charged the first cycle minutes later —
-     * observed in production on 2026-08-14, $18.000 charged 118 seconds after
-     * the promise.
-     *
-     * Deliberately a NEW event type rather than a `TRIAL_RECONCILED` with
-     * different metadata, for the same reason `TRIAL_RECONCILED` was not folded
-     * into `TRIAL_BLOCKED`: this one means "we sold a free period the customer
-     * never received", which is a broken commercial promise and not a lifecycle
-     * transition. Conflating them would hide every occurrence inside the normal
-     * conversion traffic, which is precisely how this went unnoticed until a
-     * manual smoke found it.
+     * It recorded a settled charge that proved MercadoPago had never granted
+     * the free trial Hospeda promised at checkout (H-137, observed in
+     * production 2026-08-14: ARS 18.000 charged 118 seconds after the promise).
+     * Hospeda no longer promises a trial at checkout at all, so the event has
+     * become unreachable. Historical rows in `billing_subscription_events` keep
+     * the literal string — the column is free text, so they are unaffected —
+     * but nothing in code may write it again. Do NOT reintroduce the key to
+     * "support" those rows: reading them needs the string, not the constant.
      */
-    TRIAL_NOT_GRANTED_BY_PROVIDER: 'TRIAL_NOT_GRANTED_BY_PROVIDER',
     /** Fired when the reactivation audit-log insert fails; used by Sentry and reconciliation jobs */
     REACTIVATION_AUDIT_FAILED: 'REACTIVATION_AUDIT_FAILED',
     /**
@@ -108,6 +138,51 @@ export const BILLING_EVENT_TYPES = {
      * variant twice (HOS-121; originally SPEC-126 D5).
      */
     TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1',
+    /**
+     * The nine durable dedup guards of the Hospeda-owned trial email series
+     * (HOS-1012 §4) — one per send, replacing the two-variant D3/D1 pair above.
+     *
+     * NINE event types rather than one carrying the offset in `metadata`, for a
+     * mechanical reason: dedup is a check-then-insert on
+     * `(subscription_id, event_type)`, backed at the DB level by a partial
+     * UNIQUE index on exactly that pair. An offset that lived in `metadata`
+     * could not be part of that index, so the atomic backstop would collapse to
+     * "at most one email of the whole series per subscription" — the ledger
+     * would silently swallow eight of the nine sends.
+     *
+     * It also makes the pre-1-day and post-1-day sends impossible to conflate.
+     * Both talk about a distance of one day in opposite directions, and both
+     * previously produced the idempotency suffix `:d1` (HOS-1012 T-019); here
+     * they are two different strings and no refactor can collapse them.
+     *
+     * `TRIAL_PRE_END_NOTIF_D3`/`_D1` are deliberately NOT reused. Audit rows
+     * carrying them already exist on staging and production for the two-reminder
+     * scheme, and reusing either would make an existing row read as "the T−10
+     * mail already went out" for a trial that never received it.
+     */
+    TRIAL_SERIES_NOTIF_PRE_10D: 'TRIAL_SERIES_NOTIF_PRE_10D',
+    /** Dedup guard for the T−5 warning. */
+    TRIAL_SERIES_NOTIF_PRE_5D: 'TRIAL_SERIES_NOTIF_PRE_5D',
+    /** Dedup guard for the T−1 warning. */
+    TRIAL_SERIES_NOTIF_PRE_1D: 'TRIAL_SERIES_NOTIF_PRE_1D',
+    /**
+     * Dedup guard for the expiry-day mail. Distinct from `TRIAL_EXPIRED`, which
+     * records that the trial WAS expired and the listings came down: this one
+     * records that the customer was TOLD. The expiry must be able to succeed
+     * with the mail still pending, and a retry of the mail must not read as a
+     * second expiry.
+     */
+    TRIAL_SERIES_NOTIF_EXPIRY: 'TRIAL_SERIES_NOTIF_EXPIRY',
+    /** Dedup guard for the +1 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_1D: 'TRIAL_SERIES_NOTIF_POST_1D',
+    /** Dedup guard for the +5 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_5D: 'TRIAL_SERIES_NOTIF_POST_5D',
+    /** Dedup guard for the +10 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_10D: 'TRIAL_SERIES_NOTIF_POST_10D',
+    /** Dedup guard for the +30 day win-back. */
+    TRIAL_SERIES_NOTIF_POST_30D: 'TRIAL_SERIES_NOTIF_POST_30D',
+    /** Dedup guard for the +60 day win-back, the last send of the series. */
+    TRIAL_SERIES_NOTIF_POST_60D: 'TRIAL_SERIES_NOTIF_POST_60D',
     /**
      * Fired when a user explicitly requests cancellation of their subscription
      * via the self-service cancellation flow (SPEC-147). Persisted immediately

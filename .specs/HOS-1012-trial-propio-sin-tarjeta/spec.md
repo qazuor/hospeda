@@ -45,12 +45,28 @@ still subscribes against a **shared `preapproval_plan`**. The `(payer, preapprov
 limit survives `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` untouched. Turning the flag on
 fixes the `external_reference` correlation; the trial stays exactly as broken.
 
-**2.3 There is no production traffic to measure against.** `billing_subscriptions` in
-production holds **7 rows total** — 2 `comp`, 2 `trialing`, 3 `abandoned`, all owner test
-data from 2026-07-24 to 2026-08-28 — and `billing_subscription_events` holds 2 rows, both
-`WEBHOOK_SUBSCRIPTION_TRIALING`, with **zero** `TRIAL_NOT_GRANTED_BY_PROVIDER`. The
-abandonment rate, conversion rate and abuse rate HOS-956 asked for cannot be collected
-today. The decision rests on the structural argument, and is recorded as such.
+**2.3 There is almost no production traffic to measure against — but it is not zero.**
+`billing_subscriptions` in production holds **7 rows total** — 2 `comp`, 2 `trialing`,
+3 `abandoned`, from 2026-07-24 to 2026-08-28 — and `billing_subscription_events` holds 2
+rows, both `WEBHOOK_SUBSCRIPTION_TRIALING`, with **zero**
+`TRIAL_NOT_GRANTED_BY_PROVIDER`. The abandonment rate, conversion rate and abuse rate
+HOS-956 asked for cannot be collected today. The decision rests on the structural
+argument, and is recorded as such.
+
+> **CORRECTION (2026-09-01).** An earlier revision of this section called all seven rows
+> owner test data. **The two `trialing` rows are real customers** — confirmed by the owner,
+> who knows them personally. Both were created 2026-08-27 and both hold a live MercadoPago
+> preapproval:
+>
+> | customer | trial window | length |
+> | -- | -- | -- |
+> | `peychauxchristian@gmail.com` | 2026-08-27 → **2026-09-26** | 30 days |
+> | `pri.laupc@hotmail.com` | 2026-08-27 → **2026-11-25** | 90 days |
+>
+> The 90-day window is **explained** (owner, 2026-09-01): it comes from `LANZAMIENTO60`, a
+> `trial_extension` promo code live in production that adds 60 days to the default 30. Not
+> an annual plan and not a bug — and the reason extending a trial stays a supported feature
+> after this spec (see T-039). See OQ-3, now decided.
 
 **The argument that settled it**: keeping MercadoPago's trial — whether by moving the
 clock (Option B) or by dropping the shared plan (Option C) — keeps betting on a mechanism
@@ -83,6 +99,12 @@ the moment they pay. No degraded rendering mode, no read-only panel.
 
 **D-4 · Nine emails**, three before and five after (§4), and the whole series stops the
 moment they pay.
+
+**D-5 · The trial runs on a DEDICATED plan per vertical: the entitlements of `pro`, the
+limits of `basico`** (owner decision, 2026-09-01). Not on `basico`, not on a tier the host
+picks. Three new plans — `owner-trial`, `gastronomy-trial`, `experience-trial` — invisible
+on every pricing surface, whose entitlements and limits are **composed from the live
+`pro`/`basico` rows at read time rather than copied**. Full design in §6.8.
 
 ## 4. The email series
 
@@ -281,6 +303,143 @@ Nothing about trials, ever. Concretely: no checkout passes `freeTrialDays`, no
 are the same mechanism, so both are banned), and no code reads `free_trial`,
 `first_invoice_offset` or `next_payment_date` to decide anything about a trial.
 
+### 6.8 Which plan the trial runs on — D-5
+
+#### The question, and why the obvious answer is wrong
+
+Every owner, gastronomy and experience plan declares `hasTrial: true`. Under card-first the
+host picked a tier at checkout and trialled THAT tier. With the trial moved to first
+publish there is no checkout and no picker, so a tier has to be chosen for them — and the
+obvious choice, the entry tier, is the one that costs the most.
+
+`owner-basico` allows **one** accommodation and grants none of what actually sells:
+no `FEATURED_LISTING`, no `CAN_SYNC_EXTERNAL_CALENDAR` (Airbnb/Booking), no
+`CAN_CONTACT_WHATSAPP_DIRECT`, no video, no rich description. A trial on it shows the host
+a version of Hospeda that is not the one anyone pays for, and on day 30 asks them to pay
+for **exactly what they already had** — nothing is lost when the trial ends, so there is
+nothing to convert on. Every upsell has to be argued in the abstract, which is the weakest
+form of selling there is.
+
+Asking the host to pick a tier at publish time is worse: it demands a three-way price
+comparison from someone who has not yet published, has never seen a single visit, and has
+no information to decide with. Most would take the default (`basico`) anyway, so the
+friction buys nothing.
+
+#### The decision
+
+**A dedicated trial plan per vertical, carrying the entitlements of `pro` and the limits
+of `basico`.** This is the industry's **reverse trial** pattern — full paid features for a
+window, then a drop to a lower tier — used by Airtable, Canva and Asana, and reported at
+7–21% conversion against freemium's baseline. Two properties matter here:
+
+- **Zero friction.** The host publishes and is in. Nothing to choose, nothing to compare.
+- **Nobody can ever end up over a limit.** The trial's limits ARE the smallest paid tier's,
+  so whatever the host loaded during the trial fits inside any plan they subsequently buy.
+  The downgrade problem does not need mitigating — it cannot occur.
+
+The residual cost, stated plainly: a host with three cabins trials with one. That is
+identical to what a `basico` trial would have given them, so nothing is lost against the
+baseline; what is gained is that they experience the features.
+
+Deliberately **`pro` and not `premium`**: `premium` adds `CUSTOM_BRANDING`,
+`HAS_VERIFICATION_BADGE` and `VIEW_ADVANCED_STATS` — things appreciated once you have
+decided to stay, not things that decide you. It is also what the market does; almost
+nobody trials their top tier.
+
+**Partner is excluded.** `partner-listing`, `partner-silver` and `partner-gold` are
+`hasTrial: false`. Three verticals, three plans:
+
+| Plan | Entitlements from | Limits from |
+|---|---|---|
+| `owner-trial` | `owner-pro` | `owner-basico` |
+| `gastronomy-trial` | `gastronomy-pro` | `gastronomy-basico` |
+| `experience-trial` | `experience-pro` | `experience-basico` |
+
+This closes **OQ-2** (gastronomy and experiences DO get a trial).
+
+#### Why copying the values is not an option
+
+The instinct is to write the trial plan's entitlements and limits as literals, or to derive
+them in `plans.config.ts` (`limits: OWNER_BASICO_PLAN.limits`). **Both are silently wrong in
+production**, and the reason is HOS-39's Model C split, implemented in
+`packages/seed/src/required/billingPlans.seed.ts`:
+
+- `limitsKeysPresent` (WHICH limit keys exist) is **capability** — config wins, the seed
+  syncs it.
+- `limitsValues` (the numbers) is **commercial** — **the DB wins**. The seed explicitly
+  preserves the DB value.
+- `entitlements` is **commercial too**. The seed's own comment: *"the admin `PlanDialog.tsx`
+  already lets operators edit it, so the seed must not sync it from config. No handling
+  here; DB wins."*
+
+So editing `owner-basico`'s numbers, or `owner-pro`'s entitlements, from the admin panel is
+a **supported and expected action**. A config-level derivation would keep the two identical
+in the repo forever while being false in production from the first such edit — with nothing
+red anywhere. A guard that only compares config to config would agree with itself and prove
+nothing.
+
+#### The mechanism: compose, do not copy
+
+The trial plan is declared as a **composition** and stores the composition in its
+`metadata`:
+
+```ts
+trialComposition: {
+    entitlementsFrom: 'owner-pro',
+    limitsFrom: 'owner-basico'
+}
+```
+
+`loadEntitlements` (`apps/api/src/middlewares/entitlement.ts`) has exactly ONE place where
+it goes from a resolved `plan` to `entitlements` + `limits` — they are read from the same
+object, one after the other. That is the seam. When the plan carries `trialComposition`,
+both source plans are resolved **by slug, live** and each contributes its half.
+
+Three properties this buys:
+
+- **Drift is impossible, not merely detected.** The sources are read live on every
+  resolution, so an operator's edit to `pro` or `basico` is reflected with nothing to
+  re-sync.
+- **Data, not an `if`-chain.** With three verticals a hardcoded
+  `if (slug === 'owner-trial')` is three chances to forget one, and the third is always the
+  one forgotten. All three plans run the same code; only the two slugs on their rows differ.
+- **Precedent, not invention.** The same file already resolves `owner-basico` by slug as
+  the draft-phase fallback for a host with no subscription (`entitlement.ts:253`). Reading
+  another plan by slug at entitlement-load time is an idiom this module already speaks.
+
+Cost, stated honestly: two extra plan reads, only inside the trial branch, behind the
+existing 5-minute entitlement cache.
+
+#### Snapshot for display, composition for gating
+
+The trial plan row **also** stores a snapshot — `pro`'s entitlements and `basico`'s limits,
+written by the seed. Not for gating: for any reader that shows plan information to a human
+(the admin billing view, the downgrade preview) so it sees something sensible instead of an
+empty plan, which would read as *unlimited*.
+
+The invariant, and it only runs one way:
+
+> **The snapshot is for showing. The composition is for gating.** If the two ever diverge,
+> what goes stale is a screen, never a door.
+
+A guard freezes that the snapshot matches what the composition resolves.
+
+#### What this costs to build
+
+Not free, and not inside the original 32 tasks:
+
+1. Three plan definitions, kept **out of `ALL_PLANS`** — the established idiom for a plan
+   that exists and grants but is invisible to the public pricing page, with four existing
+   precedents (`COMMERCE_LISTING_PLAN`, `PARTNER_LISTING_PLAN`, `TEST_DAILY_PLAN`, the
+   commerce verticals).
+2. Three numbered seed data-migrations. Plans live in the DB and since HOS-39 the DB wins,
+   so editing `plans.config.ts` alone reaches neither staging nor production. This is
+   **trap T-2 of this very spec**, and the fail-closed CI guard enforces it.
+3. The composition resolution at the `loadEntitlements` seam.
+4. The snapshot-vs-composition guard.
+5. The three trial plans kept **out of the admin-editable surface**, closing the last door
+   through which a snapshot could be hand-edited into disagreeing with its sources.
+
 ## 7. Guards
 
 Static guards, because "N call sites must remember X" is a guard, not N tests.
@@ -297,9 +456,26 @@ Static guards, because "N call sites must remember X" is a guard, not N tests.
   `npx tsx scripts/extract-zod-keys.ts --verify` (without `--verify` it always exits 0),
   `corepack pnpm --filter @repo/i18n check-locales`, `corepack pnpm check:soft-delete-actor`,
   `corepack pnpm check:locale-resolution-single-source`.
-- **G-4 · i18n parity does not prove translation.** The parity guard checks that es/en/pt
-  hold the same keys; all three missing the same key passes. Nine new email templates × 3
-  locales is exactly the shape that slips through.
+- **G-4 · The nine emails must actually differ from each other.** *(Rewritten 2026-09-01
+  after measuring the codebase — the original guard vigilaba something that does not
+  exist.)*
+
+  The original text worried about i18n parity across es/en/pt. **Email templates do not go
+  through i18n at all**: all 57 of them are React components with Spanish embedded
+  directly (`packages/notifications/src/templates/**`), and only two files in the whole
+  package import `@repo/i18n`, neither a template. There are no keys for a parity guard to
+  check.
+
+  Owner decision (2026-09-01): the nine new templates follow the existing convention —
+  **Spanish only**. The recipient is a host in Entre Ríos, not a tourist. Internationalising
+  email is a separate concern from this spec and is not started here.
+
+  What the guard actually has to protect is the requirement that made §4 worth writing:
+  each of the nine carries its own tone, and shipping one template reused nine times passes
+  every structural check while failing the requirement silently. So the guard asserts the
+  nine subjects and bodies differ PAIRWISE, with a positive control that copying one into
+  another makes it fail. The three that land within 48 hours of each other — T−1, the
+  expiry mail, and +1 — are the ones that most need it.
 
 ## 8. Traps
 
@@ -328,12 +504,47 @@ Static guards, because "N call sites must remember X" is a guard, not N tests.
 - **OQ-1 · Do the win-back emails carry a commercial hook** (a targeted discount)? Not
   decided, and not assumed. The standing rule is that coupons are never published; a
   coupon sent by directed email is a different case and needs its own decision.
-- **OQ-2 · Trial length per vertical.** `owner-basico` uses `OWNER_TRIAL_DAYS`. D-2 makes a
-  per-domain trial possible; whether gastronomy and experiences get one, and of what
-  length, is a product decision (related: HOS-1004).
-- **OQ-3 · What happens to a trial that is running when this ships?** Production holds 2
-  `trialing` rows, both owner test data, so the migration is close to theoretical there.
-  Staging generates real ones. Decide: convert in place, or let them run out on the old path.
+- **OQ-2 · Trial length per vertical — DECIDED 2026-09-01.** Gastronomy and experiences DO
+  get a trial, each on its own dedicated trial plan (D-5, §6.8). Length keeps each
+  vertical's existing constant — the trial plan inherits it from the vertical it composes
+  from, so there is no fourth number to keep in sync (related: HOS-1004).
+- **OQ-3 · What happens to a trial that is running when this ships? — DECIDED
+  2026-09-01.** The two production `trialing` rows are **real customers**, not test data
+  (see the correction in §2.3). They are **converted in place, deliberately AFTER the
+  deploy and the smokes**, and NOT left to run out on the old path: the owner contacts
+  each one first, then the conversion runs. Nothing is touched before then.
+
+  **Order of operations, per customer — it is not negotiable:**
+
+  1. `UPDATE billing_subscriptions SET mp_subscription_id = NULL WHERE id = '<id>'`. The
+     status stays `trialing` and `trial_start`/`trial_end` are preserved untouched.
+  2. Only then, `PUT /preapproval/<id>` with `{"status":"cancelled"}`.
+  3. Verify the row is still `trialing`, with a NULL provider id and the same `trial_end`.
+
+  **Doing it in the other order breaks the customer's trial.** MercadoPago maps
+  `canceled → CANCELLED`; the `preapproval.updated` webhook finds the row by
+  `mp_subscription_id` and settles it to `cancelled`, which revokes entitlements and
+  unpublishes the listing. With the correct order the webhook finds nothing, attempts the
+  HOS-191 relink fallback — whose CAS requires `pending_provider`/`abandoned` and a NULL
+  provider id, so a `trialing` row can never match — and returns 200 with a warn. Nothing
+  is overwritten and MercadoPago does not retry.
+
+  **What the customer experiences:** nothing at all during the trial. The listing stays
+  published, the panel is unchanged, the date is the same. The one thing they may see is
+  a cancellation email from MercadoPago — **unverified, do not assume either way**; it can
+  be measured by cancelling a sandbox canary and watching the test buyer's inbox. At
+  expiry they must re-authorize a card in the checkout, which is the real cost of
+  converting: today MercadoPago would have charged them automatically.
+
+  **Hard deadline.** Converting removes their preapproval, so nothing charges them any
+  more — and if the new trial is not yet deployed, nothing mails them or unpublishes them
+  either. They would sit published for free, silently. The 30-day customer expires
+  **2026-09-26**. Either the Hospeda-owned trial is live in production before that date,
+  or that customer is left on the old path and only the November one is converted.
+
+  **Until the conversion runs, both kinds of row coexist**, and staging keeps minting new
+  legacy ones while it runs the old code. That is why the expiry job branches on
+  `mp_subscription_id` (T-010) rather than assuming every `trialing` row is a local one.
 
 ## 10. Issues to close — AFTER the smokes, not before
 
