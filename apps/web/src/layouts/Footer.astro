@@ -24,6 +24,7 @@ import { Image } from "astro:assets";
 import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import { statsApi } from "@/lib/api/endpoints";
+import { getBrandPhoneDisplay, getBrandPhoneTelHref } from "@/lib/brand-phone";
 import { getApiUrl } from "@/lib/env";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
@@ -42,6 +43,12 @@ interface Props {
 
 const { locale } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+
+// Brand contact phone, single source of truth (HOS-364) — was previously a
+// hand-typed i18n key here that had already drifted from the contact page's
+// number in the en/pt bundles.
+const brandPhoneDisplay = getBrandPhoneDisplay();
+const brandPhoneTelHref = getBrandPhoneTelHref();
 
 // Auth state for the NewsletterForm island (SPEC-101 T-101-33). The App.Locals
 // type does not yet declare `user` — narrowed cast matches the workaround used
@@ -362,11 +369,11 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     </svg>
                     <span>{t("footer.contactEmail")}</span>
                 </a>
-                <a class="footer__contact-link" href={`tel:${t("footer.contactPhone").replace(/\s+/g, "")}`}>
+                <a class="footer__contact-link" href={brandPhoneTelHref}>
                     <svg class="footer__contact-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M22 16.92V20a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2H7.2a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>{t("footer.contactPhone")}</span>
+                    <span>{brandPhoneDisplay}</span>
                 </a>
             </div>
 

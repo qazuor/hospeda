@@ -228,9 +228,11 @@ describe('Footer.astro', () => {
             expect(src).toContain('mailto:');
         });
 
-        it('renders the contact phone link', () => {
-            expect(src).toContain('footer.contactPhone');
-            expect(src).toContain('tel:');
+        it('renders the contact phone link from the single source of truth (HOS-364)', () => {
+            // No longer a hand-typed i18n key — see @/lib/brand-phone.
+            expect(src).toContain('getBrandPhoneDisplay');
+            expect(src).toContain('getBrandPhoneTelHref');
+            expect(src).not.toContain('footer.contactPhone');
         });
 
         it('renders the legal links (terms, privacy, cookies)', () => {
