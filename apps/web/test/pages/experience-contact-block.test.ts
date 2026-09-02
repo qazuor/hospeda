@@ -27,6 +27,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ExperiencePublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { toExperienceDetailPageProps } from '@/lib/api/transforms';
 
 const COMPONENT_SRC = readFileSync(
     resolve(__dirname, '../../src/components/experience/ExperienceContactBlock.astro'),
@@ -235,5 +236,70 @@ describe('HOS-815 wiring — the component follows the site conventions', () => 
         expect(COMPONENT_CODE).toMatch(
             /if\s*\(phones\.length === 0 && !workEmail && !websiteHref\)\s*\{\s*return;/
         );
+    });
+});
+
+// ============================================================================
+// 4. HOS-363 — the WhatsApp CTA that could never render is gone
+// ============================================================================
+
+/**
+ * `ExperienceContactCTA.astro` early-returned on `!contactInfo?.whatsapp`, and
+ * the public payload never carries `whatsapp` — that number is gated by the
+ * VIEWER's plan on a separate protected endpoint (HOS-19) and this response is
+ * shared-cached with no auth in the cache key. So the block never rendered in
+ * production while looking, in the source, like a working contact affordance.
+ *
+ * It was deleted rather than wired up: exposing the number here would serve a
+ * gated value to everyone. What replaces it is HOS-924 — a listing can no
+ * longer publish on a channel this page does not show, so the contact block
+ * below is now guaranteed to have something to render.
+ */
+describe('HOS-363 — the dormant WhatsApp CTA no longer exists', () => {
+    it('is not imported or rendered by the detail page', () => {
+        expect(PAGE_CODE).not.toContain('ExperienceContactCTA');
+    });
+
+    it('leaves the page with no wa.me affordance of its own', () => {
+        // The site-wide WhatsApp button (Hospeda's own number) lives in the
+        // layout, not here. Nothing on this page builds a provider link.
+        expect(PAGE_CODE).not.toContain('buildWhatsAppLink');
+    });
+
+    it('drops whatsapp from the transformed detail payload', () => {
+        // Behavioural, not a source read: even if a payload DID carry the key
+        // (an admin-tier response reused by mistake, say), the web transform
+        // must not carry it into a component's props.
+        const detail = toExperienceDetailPageProps({
+            item: {
+                id: '4d2b0b1a-0000-4000-a000-000000000001',
+                slug: 'kayak-al-atardecer',
+                name: 'Kayak al atardecer',
+                contactInfo: {
+                    whatsapp: '+54 9 3447 412233',
+                    mobilePhone: '+54 3447 412233'
+                }
+            },
+            locale: 'es'
+        });
+
+        expect(detail.contactInfo).not.toHaveProperty('whatsapp');
+        expect(detail.contactInfo?.mobilePhone).toBe('+54 3447 412233');
+    });
+
+    it('returns null when the only channel carried was the unpublished one', () => {
+        // A whatsapp-only payload now normalizes to "no contact at all", which
+        // is what makes HOS-924's publish gate the thing that prevents it.
+        const detail = toExperienceDetailPageProps({
+            item: {
+                id: '4d2b0b1a-0000-4000-a000-000000000002',
+                slug: 'kayak-solo-whatsapp',
+                name: 'Kayak solo WhatsApp',
+                contactInfo: { whatsapp: '+54 9 3447 412233' }
+            },
+            locale: 'es'
+        });
+
+        expect(detail.contactInfo).toBeNull();
     });
 });

@@ -2726,10 +2726,10 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
  * the listing form blocks publication without a phone or an email and then the
  * page showed neither, leaving the traveller with no way to reach the provider.
  *
- * `whatsapp` is read but is still absent on the public payload: it is gated by
- * the VIEWER's plan on a separate protected endpoint (HOS-19) and this response
- * is shared-cached. It is mapped so `ExperienceContactCTA` keeps working
- * wherever a payload does carry it.
+ * `whatsapp` is NOT read (HOS-363): the public payload never carries it — the
+ * number is gated by the VIEWER's plan on a separate protected endpoint
+ * (HOS-19) and this response is shared-cached — so mapping it only kept a CTA
+ * alive that could never render.
  *
  * Returns `null` when no publishable channel is present, so the caller renders
  * nothing rather than an empty contact card.
@@ -2745,7 +2745,6 @@ function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | n
     };
 
     const contact: ExperienceContactInfo = {
-        whatsapp: read('whatsapp'),
         workEmail: read('workEmail'),
         workPhone: read('workPhone'),
         mobilePhone: read('mobilePhone'),
