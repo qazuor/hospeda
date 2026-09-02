@@ -3,20 +3,26 @@
  *
  * ## Why this exists
  *
- * Three Hospeda features are the same provider call underneath — `pause` on a
+ * Two Hospeda-owned flows are the same provider call underneath — `pause` on a
  * preapproval:
  *
  * - the host's self-serve pause (`routes/billing/subscription-pause.ts`),
- * - an admin pause (`qzpay-admin-hooks.ts`),
  * - a courtesy gift, which IS a paused preapproval plus a local window
  *   (`services/courtesy-grant.service.ts`, HOS-180).
  *
- * All three are fail-closed: if MercadoPago refuses, nothing is written to the
+ * Both are fail-closed: if MercadoPago refuses, nothing is written to the
  * subscription and nobody is left marked paused/courtesy while still being
  * charged. But fail-closed is not the same as *detectable*. Until this module,
  * a refusal produced one `apiLogger.error` line and no row anywhere — and log
  * lines are not queryable after the fact (they are shipped, sampled, and in this
  * repo a redirected `hops logs` is known to drop ERROR and WARN entirely).
+ *
+ * The admin pause is a third caller of the same MercadoPago endpoint, but it
+ * runs inside qzpay-hono's own admin routes (`qzpay-admin-hooks.ts` only sees
+ * the AFTER hook, so a refusal never reaches Hospeda code). It is deliberately
+ * NOT seated here — {@link PauseRefusalSource} lists only what this module
+ * actually records, so the absence of an `admin-pause` value is the honest
+ * signal that the path is uncovered rather than an oversight.
  *
  * ## What it is actually for
  *
