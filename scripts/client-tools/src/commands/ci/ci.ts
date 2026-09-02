@@ -1,17 +1,9 @@
 import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
-import { run } from '../../lib/exec.ts';
+import { findPr } from '../../lib/github.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
-import {
-    type Check,
-    classifyCheck,
-    explainVerdict,
-    groupChecks,
-    overallVerdict,
-    type PrStatus,
-    type RawCheck
-} from './verdict.ts';
+import { type Check, explainVerdict, groupChecks, overallVerdict } from './verdict.ts';
 import {
     exitCodeFor,
     explainWaitOutcome,
@@ -50,73 +42,6 @@ ${pc.bold('Códigos de salida con --wait')}
   ${pc.dim('3  SIN ARRANCAR: cero checks en toda la espera, no corrió nada')}
   ${pc.dim('4  TIMEOUT: seguían corriendo. NO es rojo — no se supo el resultado')}
 `;
-}
-
-/**
- * Runs `gh` with the ambient token cleared.
- *
- * A stale `GITHUB_TOKEN` in the shell wins over `gh`'s own stored credentials
- * and every call answers 401 — which, read as "no data", becomes a confident
- * "no hay PR" for a branch that has one. Measured: this repo's flows all clear
- * it for the same reason.
- */
-async function gh({
-    args,
-    cwd
-}: {
-    readonly args: readonly string[];
-    readonly cwd: string;
-}): Promise<{ readonly ok: boolean; readonly stdout: string; readonly error: string }> {
-    return await run({ command: 'gh', args, cwd, timeoutMs: 120_000, env: { GITHUB_TOKEN: '' } });
-}
-
-/** Reads the pull request for a branch, if there is one. */
-async function findPr({
-    branch,
-    cwd
-}: {
-    readonly branch: string;
-    readonly cwd: string;
-}): Promise<PrStatus | 'none' | { readonly error: string }> {
-    const listed = await gh({
-        args: [
-            'pr',
-            'list',
-            '--head',
-            branch,
-            '--state',
-            'all',
-            '--limit',
-            '1',
-            '--json',
-            'number,state,mergeable,statusCheckRollup'
-        ],
-        cwd
-    });
-    // A failed query is NOT "no pull request": saying so would report a branch
-    // as PR-less because a credential expired.
-    if (!listed.ok) return { error: listed.error };
-
-    let parsed: readonly {
-        number?: number;
-        state?: string;
-        mergeable?: string;
-        statusCheckRollup?: readonly RawCheck[] | null;
-    }[];
-    try {
-        parsed = JSON.parse(listed.stdout) as typeof parsed;
-    } catch {
-        return { error: 'gh devolvió algo que no pude interpretar' };
-    }
-    const pr = parsed[0];
-    if (pr?.number === undefined) return 'none';
-
-    return {
-        number: pr.number,
-        state: pr.state ?? 'UNKNOWN',
-        mergeable: pr.mergeable ?? 'UNKNOWN',
-        checks: (pr.statusCheckRollup ?? []).map((raw) => classifyCheck({ raw }))
-    };
 }
 
 /** Renders one check line. */
