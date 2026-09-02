@@ -812,31 +812,31 @@
             "id": "T-025",
             "title": "G-4: prove the nine templates are translated, not merely present",
             "description": "Spec guard G-4, rewritten 2026-09-01 after measuring: email templates do NOT go through i18n (all 57 are React components with Spanish embedded; only two files in the package import @repo/i18n and neither is a template), so there is no parity to check and nothing to translate. What the guard must protect instead is the requirement that made section 4 worth writing: each of the nine carries its own tone, and one template reused nine times passes every structural check while failing the requirement silently. Assert the nine subjects and bodies differ PAIRWISE. The three that land within 48 hours of each other - T-1, the expiry mail and +1 - are the ones that most need it. TESTS: a positive control that copying one template's copy into another makes the guard fail.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-015", "T-031"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Per-template cross-locale difference assertion",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Positive control: duplicated locale string fails",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "guards", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T01:34:19.000Z",
+                "completed": "2026-09-02T01:34:19.000Z"
             }
         },
         {
@@ -940,35 +940,35 @@
             "id": "T-029",
             "title": "T-6: lift the 'sin tarjeta' copy ban in both places",
             "description": "Spec trap T-6: CLAUDE.md and HOS-941 (R-1) forbid the copy saying 'sin tarjeta' under card-first. This decision lifts that prohibition, and it must be lifted EXPLICITLY in both places — if only one is updated the copy keeps lying, now in the other direction. Update the CLAUDE.md rule and comment on HOS-941 recording that R-1 is superseded by HOS-1012. Then audit the live copy for statements that still assume card-first.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update the rule in CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Record the supersession on HOS-941",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Audit live copy for card-first assumptions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "content"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T07:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T01:34:19.000Z",
+                "completed": "2026-09-02T01:34:19.000Z"
             }
         },
         {
