@@ -335,3 +335,27 @@ describe('defaults', () => {
         expect(DEFAULT_COMPRESSION_SKIP_BELOW_BYTES).toBe(1_000_000);
     });
 });
+
+describe('real default decode/encode path (no injected seams — HOS-332 verification requirement)', () => {
+    it('MANDATORY: falls back to the original file, with no error, when the environment cannot decode the image', async () => {
+        // No `decodeImage`/`encodeCanvas` overrides here: this exercises the
+        // REAL `createImageBitmap`-based default. jsdom provides no such API
+        // (nor a real canvas), which is exactly the same failure shape as
+        // Chrome trying to decode a HEIC file — so this doubles as a live
+        // regression test for the mandatory "never blocks the upload" case,
+        // without needing to fake a specific unsupported format.
+        const file = new File(
+            [new Uint8Array(new ArrayBuffer(DEFAULT_COMPRESSION_SKIP_BELOW_BYTES + 1))],
+            'photo.jpg',
+            { type: 'image/jpeg' }
+        );
+
+        const outcome = await compressImageForUpload({ file });
+
+        expect(outcome.wasCompressed).toBe(false);
+        expect(outcome.file).toBe(file);
+        if (!outcome.wasCompressed) {
+            expect(['decode-unsupported', 'encode-unsupported']).toContain(outcome.reason);
+        }
+    });
+});
