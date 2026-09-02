@@ -257,4 +257,79 @@ describe('AmenitiesSection', () => {
             expect(screen.getByLabelText('pet_friendly')).toBeInTheDocument();
         });
     });
+
+    describe('accepts-events dedicated toggle (HOS-1055)', () => {
+        const EVENTS_AMENITY = '55555555-5555-4555-8555-555555555555';
+
+        it('does not render when the catalog carries no private_events amenity', () => {
+            renderSection();
+
+            expect(
+                screen.queryByText('Acepto eventos (cumpleaños, empresas, casamientos)')
+            ).toBeNull();
+        });
+
+        it('renders a dedicated toggle, outside the accordion, when private_events is present', () => {
+            renderSection({
+                amenities: [
+                    ...amenities,
+                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
+                ]
+            });
+
+            const toggle = screen.getByLabelText(
+                'Acepto eventos (cumpleaños, empresas, casamientos)'
+            );
+            expect(toggle).toBeInTheDocument();
+            // Not duplicated inside a details accordion — it renders exactly
+            // once, as a standalone control.
+            expect(toggle.closest('details')).toBeNull();
+        });
+
+        it('excludes private_events from the generic accordion (no double control)', () => {
+            renderSection({
+                amenities: [
+                    ...amenities,
+                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
+                ]
+            });
+
+            // Only one checkbox is labeled by this amenity in the whole form —
+            // the dedicated toggle, not a second copy inside "Servicios".
+            expect(
+                screen.getAllByLabelText('Acepto eventos (cumpleaños, empresas, casamientos)')
+            ).toHaveLength(1);
+        });
+
+        it('reflects the selected set as checked state', () => {
+            renderSection({
+                amenities: [
+                    ...amenities,
+                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
+                ],
+                selectedAmenityIds: new Set([EVENTS_AMENITY])
+            });
+
+            expect(
+                screen.getByLabelText('Acepto eventos (cumpleaños, empresas, casamientos)')
+            ).toBeChecked();
+        });
+
+        it('reports a toggle through the same onToggleAmenity callback as any other amenity', () => {
+            const { onToggleAmenity, onToggleFeature } = renderSection({
+                amenities: [
+                    ...amenities,
+                    { id: EVENTS_AMENITY, slug: 'private_events', category: 'SERVICES' }
+                ]
+            });
+
+            fireEvent.click(
+                screen.getByLabelText('Acepto eventos (cumpleaños, empresas, casamientos)')
+            );
+
+            // No new PATCH field: it flows through the existing amenityIds diff.
+            expect(onToggleAmenity).toHaveBeenCalledWith(EVENTS_AMENITY);
+            expect(onToggleFeature).not.toHaveBeenCalled();
+        });
+    });
 });

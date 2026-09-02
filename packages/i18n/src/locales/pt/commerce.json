@@ -138,6 +138,10 @@
                 "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
                 "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
             },
+            "acceptsEvents": {
+                "label": "Aceito eventos (aniversários, empresas, casamentos)",
+                "hint": "Mostramos um botão de contato na sua ficha para que entrem em contato para esse tipo de consulta."
+            },
             "contactField": {
                 "mobilePhone": "Telefone",
                 "workEmail": "E-mail"
