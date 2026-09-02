@@ -75,9 +75,47 @@ dispare.
   diagnóstico (job, step, líneas del log) es otro comando.
 - **No mira si el PR se puede mergear.** `BEHIND`, `BLOCKED` y las reglas de la
   base no entran en el veredicto: esto responde por los checks, no por el merge.
+  Para eso está `hops merge`.
 - **No sirve en `main` ni en `staging`**, que no tienen PR propio.
 - **Depende de que la branch se resuelva.** Si el worktree está en detached
   HEAD, el comando corta con exit 1 en vez de consultar por una branch inventada.
+
+## `hops merge` — el gate, en un veredicto
+
+Dictamina si el PR de la branch se puede mergear. **No mergea**: el merge sigue
+siendo una decisión tuya. Devuelve **una sola razón**, la primera que bloquea —
+una lista de seis problemas es una lista para triar; la primera razón es la
+cosa que hay que ir a arreglar.
+
+```bash
+hops merge
+```
+
+| Código | Titular | Qué pasó |
+|---|---|---|
+| 0 | `LISTO` | Abierto, a staging, `CLEAN`, y todos los checks verdes |
+| 1 | `BLOQUEADO` | Hay una razón concreta, y te la dice |
+| 3 | `NO SÉ` | GitHub nunca terminó de calcular la mergeabilidad |
+
+### Por qué reconsulta
+
+`mergeable` y `mergeStateStatus` se calculan **de forma perezosa**: GitHub
+arranca el cálculo cuando se los pedís y contesta `UNKNOWN` mientras tanto.
+Medido acá: **3 de 8 PRs abiertos dieron `UNKNOWN` en la primera consulta y 0
+de 8 en la segunda**. Leer ese `UNKNOWN` como "se puede mergear" es fail-open;
+leerlo como conflicto es mentira. Por eso se reconsulta, y si aun así no
+resuelve, el veredicto es `NO SÉ` con código propio.
+
+### Qué mira, y qué no
+
+- **`BEHIND` bloquea aunque esté todo verde.** Esos checks corrieron sobre otro
+  merge-base: no dicen nada del código que realmente se mergearía.
+- **Los checks se juzgan uno por uno**, no por `UNSTABLE`: ese estado dice "no
+  está verde" sin distinguir un test roto de uno que todavía corre, y esas dos
+  cosas se responden distinto.
+- **No mira el título.** De eso ya se ocupa el check `Validate PR Title`, y su
+  resultado llega con los demás checks. Re-derivar ese regex acá crearía una
+  segunda fuente de verdad que diverge apenas alguien toque el workflow.
 
 ## Instalación
 
