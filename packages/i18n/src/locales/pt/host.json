@@ -343,13 +343,13 @@
                 "featured": "Imagem principal",
                 "featuredAlt": "Imagem principal",
                 "featuredFailed": "Não foi possível definir a imagem como capa",
-                "formats": "JPG, PNG ou WebP — máx. {{maxSize}}MB",
+                "formats": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
                 "gallery": "Galeria de fotos (máx. {{cap}})",
                 "galleryAlt": "Foto {{index}}",
                 "galleryCapExceededOnSelect": "Você escolheu {{pickedPhrase}}, mas resta(m) apenas {{remainingPhrase}} (máx. {{cap}} no total)",
                 "galleryCapLabel": "Galeria cheia",
                 "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
-                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "invalidType": "Apenas arquivos JPG, PNG, WebP ou HEIC são permitidos",
                 "metadataSaveFailed": "Não foi possível salvar os dados da foto",
                 "metadataSavedConfirmation": "Salvo",
                 "moveDownAria": "Mover foto {{index}} para baixo",
@@ -373,7 +373,9 @@
                 "galleryCapExceededOnSelectPicked_one": "{{count}} foto",
                 "galleryCapExceededOnSelectPicked_other": "{{count}} fotos",
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} espaço livre",
-                "galleryCapExceededOnSelectRemaining_other": "{{count}} espaços livres"
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} espaços livres",
+                "processingImage": "Otimizando imagem…",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}}MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve."
             },
             "video": {
                 "sectionTitle": "Vídeos",

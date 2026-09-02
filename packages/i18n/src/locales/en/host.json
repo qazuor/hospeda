@@ -343,13 +343,13 @@
                 "featured": "Featured image",
                 "featuredAlt": "Featured image",
                 "featuredFailed": "The photo could not be set as the cover",
-                "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
+                "formats": "JPG, PNG, WebP or HEIC — max {{maxSize}}MB",
                 "gallery": "Photo gallery (max {{cap}})",
                 "galleryAlt": "Photo {{index}}",
                 "galleryCapExceededOnSelect": "You picked {{pickedPhrase}} but only {{remainingPhrase}} free (max. {{cap}} in total)",
                 "galleryCapLabel": "Gallery full",
                 "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
-                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "invalidType": "Only JPG, PNG, WebP or HEIC files are allowed",
                 "metadataSaveFailed": "Couldn't save the photo's details",
                 "metadataSavedConfirmation": "Saved",
                 "moveDownAria": "Move photo {{index}} down",
@@ -373,7 +373,9 @@
                 "galleryCapExceededOnSelectPicked_one": "{{count}} photo",
                 "galleryCapExceededOnSelectPicked_other": "{{count}} photos",
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} slot is",
-                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are"
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are",
+                "processingImage": "Optimizing image…",
+                "compressionUnsupportedTooLarge": "We couldn't automatically optimize this image (your browser can't process this format) and it exceeds the {{maxSize}}MB limit. Try converting it to JPG before uploading, or pick a lighter photo."
             },
             "video": {
                 "sectionTitle": "Videos",

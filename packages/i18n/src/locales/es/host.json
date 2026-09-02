@@ -343,13 +343,13 @@
                 "featured": "Imagen principal",
                 "featuredAlt": "Imagen principal",
                 "featuredFailed": "No se pudo marcar la imagen como portada",
-                "formats": "JPG, PNG o WebP — máx. {{maxSize}}MB",
+                "formats": "JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB",
                 "gallery": "Galería de fotos (máx. {{cap}})",
                 "galleryAlt": "Foto {{index}}",
                 "galleryCapExceededOnSelect": "Elegiste {{pickedPhrase}} pero solo queda(n) {{remainingPhrase}} (máx. {{cap}} en total)",
                 "galleryCapLabel": "Galería llena",
                 "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
-                "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
+                "invalidType": "Solo se permiten archivos JPG, PNG, WebP o HEIC",
                 "metadataSaveFailed": "No se pudieron guardar los datos de la foto",
                 "metadataSavedConfirmation": "Guardado",
                 "moveDownAria": "Mover foto {{index}} hacia abajo",
@@ -373,7 +373,9 @@
                 "galleryCapExceededOnSelectPicked_one": "{{count}} foto",
                 "galleryCapExceededOnSelectPicked_other": "{{count}} fotos",
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} lugar libre",
-                "galleryCapExceededOnSelectRemaining_other": "{{count}} lugares libres"
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} lugares libres",
+                "processingImage": "Optimizando imagen…",
+                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana."
             },
             "video": {
                 "sectionTitle": "Videos",
