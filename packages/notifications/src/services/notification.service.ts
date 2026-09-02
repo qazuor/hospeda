@@ -1,3 +1,4 @@
+import { asMajor } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { billingNotificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
@@ -398,7 +399,13 @@ export class NotificationService {
                 const p = payload as PaymentNotificationPayload;
                 return PaymentSuccess({
                     recipientName,
-                    amount: p.amount,
+                    // `PaymentNotificationPayload.amount` is untyped `number`
+                    // (it is shared by the whole notification union), but its
+                    // only producer (`sendPaymentSuccessNotification`) already
+                    // asserts it MAJOR (pesos) at the source. Re-asserting the
+                    // brand here is what lets `PaymentSuccess` require `Major`
+                    // instead of silently accepting centavos (HOS-839).
+                    amount: asMajor(p.amount),
                     currency: p.currency,
                     planName: p.planName,
                     baseUrl: this.deps.siteUrl,
@@ -410,7 +417,8 @@ export class NotificationService {
                 const p = payload as PaymentNotificationPayload;
                 return PaymentFailure({
                     recipientName,
-                    amount: p.amount,
+                    // See the HOS-839 note in the 'payment_success' case above.
+                    amount: asMajor(p.amount),
                     currency: p.currency,
                     baseUrl: this.deps.siteUrl,
                     failureReason: p.failureReason,
