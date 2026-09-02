@@ -59,6 +59,11 @@
         "social": "Redes sociais",
         "amenities": {
             "title": "Serviços e comodidades"
+        },
+        "eventsCta": {
+            "title": "Está procurando um salão para eventos?",
+            "description": "Este lugar aceita aniversários, eventos corporativos e casamentos. Escreva para combinar.",
+            "button": "Contatar pelo WhatsApp"
         }
     },
     "types": {

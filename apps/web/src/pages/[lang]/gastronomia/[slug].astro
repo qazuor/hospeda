@@ -28,6 +28,7 @@ import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlo
 // commerce copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro';
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
@@ -36,6 +37,7 @@ import { getApiUrl } from '@/lib/env';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
 import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
@@ -176,6 +178,26 @@ try {
 
 const descriptionText = renderPlain({ raw: gastronomy.description });
 
+// --- "Accepts events" CTA (HOS-1055) ---
+// Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
+// `gastronomy.amenities`) rather than a new DB column or public-schema field —
+// see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
+// the write side. The dedicated CTA only replaces the generic amenity chip when
+// it can actually render (a resolvable, public WhatsApp link exists): if the
+// owner ticked "accepts events" but never set a WhatsApp link, there is no
+// public-safe channel to point the CTA at (contactInfo/phone is NEVER public
+// here — see `GastronomyContactBlock`'s header, and the exact bug HOS-363 /
+// HOS-924 are fixing on the experience side), so the plain chip stays in
+// `AmenitiesGrid` instead of the signal disappearing entirely.
+const acceptsEventsAmenity = gastronomy.amenities.find((amenity) => amenity.name === 'private_events');
+const eventsCtaHref = resolveSafeExternalUrl(gastronomy.socialNetworks?.whatsapp);
+const showEventsCta = Boolean(acceptsEventsAmenity) && Boolean(eventsCtaHref);
+// Excluded from the generic grid ONLY when the dedicated CTA renders in its
+// place — otherwise both would say "accepts events" two centimeters apart.
+const amenitiesForGrid = showEventsCta
+    ? gastronomy.amenities.filter((amenity) => amenity.name !== 'private_events')
+    : gastronomy.amenities;
+
 const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
 
 // Sign-in URL (with return path) for the anonymous review CTA.
@@ -288,9 +310,16 @@ const breadcrumbItems = [
         <!-- Amenities and features the owner ticked (HOS-1072): medios de pago,
              delivery, takeaway, reservas, estacionamiento… Both grids self-hide
              on an empty list, so no guard is needed here. `smokingAllowed` is an
-             accommodation-only column and is passed as null. -->
+             accommodation-only column and is passed as null. `private_events` is
+             excluded from `amenitiesForGrid` when the dedicated events CTA below
+             renders instead (HOS-1055) — see the frontmatter comment. -->
         <FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />
-        <AmenitiesGrid amenities={gastronomy.amenities} lang={locale} />
+        <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
+
+        <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement. -->
+        {showEventsCta && eventsCtaHref && (
+            <GastronomyEventsCta href={eventsCtaHref} locale={locale} />
+        )}
 
         <!-- Contact block (menu URL + social networks) -->
         {(gastronomy.menuUrl || gastronomy.socialNetworks) && (

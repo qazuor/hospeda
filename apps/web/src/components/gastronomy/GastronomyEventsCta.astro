@@ -1,0 +1,116 @@
+---
+/**
+ * @file GastronomyEventsCta.astro
+ * @description "Accepts events" call-to-action for a gastronomy listing
+ * (HOS-1055) — birthdays, corporate events, weddings.
+ *
+ * Deliberately small: a toggle and a contact button, nothing else (no venue
+ * calendar, no quote form, no availability). The `href` this renders is
+ * ALWAYS `socialNetworks.whatsapp` after `resolveSafeExternalUrl`, resolved
+ * by the page — the SAME public-safe channel `GastronomyContactBlock` already
+ * renders. `contactInfo` (phone/email) is never part of `GastronomyPublicSchema`
+ * (see that component's header), so reaching for it here would repeat the
+ * exact bug HOS-363 / HOS-924 are fixing on the experience side: a CTA
+ * pointing at a channel the public payload never carries. The page only
+ * mounts this component once it already has a resolvable link — see
+ * `[slug].astro`'s `showEventsCta`.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Pre-resolved, scheme-safe WhatsApp link (never raw/unvalidated). */
+    readonly href: string;
+    readonly locale: SupportedLocale;
+}
+
+const { href, locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="gastro-events-cta">
+    <div class="gastro-events-cta__text">
+        <h2 class="gastro-events-cta__title">
+            {t('gastronomy.detail.eventsCta.title', '¿Buscás salón para eventos?')}
+        </h2>
+        <p class="gastro-events-cta__description">
+            {t(
+                'gastronomy.detail.eventsCta.description',
+                'Este lugar acepta cumpleaños, eventos de empresa y casamientos. Escribí para coordinar.'
+            )}
+        </p>
+    </div>
+    <a
+        href={href}
+        class="gastro-events-cta__button"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        <span aria-hidden="true">💬</span>
+        {t('gastronomy.detail.eventsCta.button', 'Contactar por WhatsApp')}
+    </a>
+</section>
+
+<style>
+    .gastro-events-cta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4, 16px);
+        padding: var(--space-5, 20px);
+        border-radius: var(--radius-md, 0.625rem);
+        border: 1px solid var(--border);
+        background: var(--surface-warm, var(--core-card));
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .gastro-events-cta__text {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        min-width: 0;
+    }
+
+    .gastro-events-cta__title {
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-events-cta__description {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    /* Same button recipe as GastronomyContactBlock's menu CTA (SPEC-308: dark
+       ink on the vibrant orange fill — white fails AA). */
+    .gastro-events-cta__button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 24px;
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 200ms ease-out;
+    }
+
+    .gastro-events-cta__button:hover {
+        opacity: 0.85;
+    }
+
+    .gastro-events-cta__button:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>
