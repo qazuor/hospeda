@@ -467,6 +467,10 @@
     "entitlement": {
         "publish_accommodations": "Publicar hospedagens",
         "edit_accommodation_info": "Editar informações da hospedagem",
+        "edit_gastronomy_info": "Editar informações do estabelecimento gastronômico",
+        "publish_gastronomy": "Publicar estabelecimentos gastronômicos",
+        "edit_experience_info": "Editar informações da experiência",
+        "publish_experience": "Publicar experiências",
         "view_basic_stats": "Estatísticas básicas",
         "view_advanced_stats": "Estatísticas avançadas",
         "respond_reviews": "Responder avaliações",
