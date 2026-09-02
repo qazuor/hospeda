@@ -1084,225 +1084,225 @@
             "id": "T-033",
             "title": "Define the three trial plans, out of ALL_PLANS",
             "description": "Spec D-5 / section 6.8. Add `owner-trial`, `gastronomy-trial` and `experience-trial` to `packages/billing/src/config/plans.config.ts`. Each carries the SNAPSHOT of its sources (entitlements of its vertical's `pro`, limits of its vertical's `basico`) and, in metadata, the COMPOSITION `{ entitlementsFrom, limitsFrom }` that the runtime actually resolves. Keep all three OUT of `ALL_PLANS` — the established idiom for a plan that exists and grants but never shows on the public pricing page, with four precedents (COMMERCE_LISTING_PLAN, PARTNER_LISTING_PLAN, TEST_DAILY_PLAN, the commerce verticals). `ALL_PLANS` drives the public /plans endpoint, the accommodation seed loop AND the grant-matrix snapshot tests, so inclusion would break all three. Trial length is NOT a fourth constant: each plan inherits its vertical's existing one. Partner is excluded — its plans are hasTrial:false. TESTS: assert the three are absent from ALL_PLANS and from the public plans response; assert each snapshot equals its two sources at config level (that is the WEAK half of the guard — see T-036 for the half that matters).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-034", "T-035", "T-036"],
             "subtasks": [
                 {
                     "title": "Three plan definitions with snapshot + trialComposition metadata",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Kept out of ALL_PLANS, asserted",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "plans", "config"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Ship the three trial plans to the DB via seed data-migrations",
             "description": "Spec trap T-2, which this task is the textbook case of: since HOS-39 the plan config is the commercial layer and THE DB WINS. Editing plans.config.ts passes every local test and changes NOTHING in staging or production. So the same PR must both edit the baseline (T-033) AND add numbered data-migrations via `pnpm db:seed:make <slug>`. The fail-closed CI guard (scripts/check-seed-dual-write.sh) enforces this, and it reads the COMMITTED diff — an uncommitted working tree returns a vacuous OK, so verify against the commit. MEASURED: the guard's CHANGED_FILES_OVERRIDE expects `STATUS<TAB>PATH` lines, not bare paths; a bare path yields a silent pass and is NOT a positive control. TESTS: run the dual-write guard against the committed change, plus a positive control in the correct format.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-033"],
             "blocks": ["T-037"],
             "subtasks": [
                 {
                     "title": "Three numbered data-migrations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Dual-write guard verified on the COMMITTED diff",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "seed", "migration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Compose entitlements and limits from the live source plans",
             "description": "Spec section 6.8. `loadEntitlements` (apps/api/src/middlewares/entitlement.ts, ~:548-578) has exactly ONE place where it goes from a resolved `plan` to `entitlements` + `limits` — they are read off the same object one after the other. That is the seam. When the plan carries `metadata.trialComposition`, resolve BOTH source plans BY SLUG, LIVE, and take entitlements from one and limits from the other. Drive it from the metadata, NEVER from `if (slug === 'owner-trial')`: with three verticals a hardcoded chain is three chances to forget one and the third is always the one forgotten. Precedent, not invention: the same file already resolves `owner-basico` by slug as the draft-phase fallback (~:253). NOTE `billing_plans` has NO slug column — `name` IS the slug; mirror `getPlanBySlug`'s filter exactly (name + deletedAt IS NULL, deliberately not `active`). TESTS: a trialing subscription on `owner-trial` resolves FEATURED_LISTING (pro) and MAX_ACCOMMODATIONS=1 (basico); mutate by swapping the two sources and confirm a test dies; mutate by reading the snapshot instead of composing and confirm a test dies.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-033"],
             "blocks": ["T-036", "T-037"],
             "subtasks": [
                 {
                     "title": "Metadata-driven composition at the single seam",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: swap the sources",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: read the snapshot instead of composing",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "entitlements", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         },
         {
             "id": "T-036",
             "title": "Guard: the snapshot is for showing, the composition is for gating",
             "description": "Spec section 6.8. The invariant runs ONE WAY: if snapshot and composition ever diverge, what goes stale is a screen, never a door. Assert that what the composition resolves for each of the three trial plans equals that plan's stored snapshot. CRITICAL — a guard that compares CONFIG to CONFIG agrees with itself and proves nothing: HOS-39's Model C makes `limitsValues` and `entitlements` COMMERCIAL (the DB wins, the seed deliberately does not sync them from config, and the admin PlanDialog edits them), so the drift this guard exists to catch is an operator edit that only ever appears in the DB. The assertion must therefore run against resolved plan ROWS, not against the config constants. Verify with a positive control: make one source diverge and confirm the guard fails. TESTS: the guard itself, exercised with the positive control.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-033", "T-035"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Guard over resolved rows, not config constants",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Positive control: diverge a source, guard fails",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "guard", "ci"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         },
         {
             "id": "T-037",
             "title": "Point the local trial creator at its vertical trial plan",
             "description": "T-008 resolved the trial plan by `DEFAULT_TRIAL_PLAN_SLUG` (= `owner-basico`), which was the correct placeholder before D-5 was decided. Repoint it: the accommodation publish path starts the trial on `owner-trial`, and the per-domain resolution must be by VERTICAL so gastronomy and experiences reach their own trial plans rather than falling back to the accommodation one. `createTrialSubscription` already takes `planId` and already throws when the plan's product_domain does not match the requested one — that check is what turns a wrong mapping into a loud failure instead of a silent cross-vertical trial. TESTS: each vertical resolves its own trial plan; mutate by pointing two verticals at the same plan and confirm the domain check kills it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-034", "T-035"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Per-vertical trial plan resolution",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation: cross-vertical plan is rejected",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "Keep the trial plans out of the admin-editable surface",
             "description": "Spec section 6.8, the last door. The three trial plans are already invisible on public pricing (out of ALL_PLANS). They must also not be hand-editable in the admin PlanDialog: that dialog is exactly what makes `entitlements` and `limitsValues` commercial/DB-wins, so an operator editing a trial plan's snapshot there is the one remaining way to make it disagree with its sources. Hiding them from the admin plan list is the cheap version; refusing the write is the correct one — decide and document which, since a list filter alone leaves the endpoint open. TESTS: a write to a trial plan's entitlements/limits is refused (or the plan is not listed, per the decision taken).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-033"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Decide list-filter vs refuse-write, and document it",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test the refusal",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "admin", "guard"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         },
         {
             "id": "T-039",
             "title": "Restore trial extension against the local trial row",
             "description": "OWNER DECISION 2026-09-01, reversing what T-021 shipped as a placeholder: extending a trial is a feature that STAYS. `FREEMONTH` (30 extra days) and `LANZAMIENTO60` (60 extra, live in production — it is what explains the real customer holding a 90-day window) must keep working. T-021 removed the checkout's ability to sum extra days into MercadoPago's `free_trial`, which was correct; what is missing is the replacement. The mechanism ALREADY EXISTS: `extendExistingSubscriptionTrial` (packages/service-core/src/services/billing/promo-code/promo-code.trial-extension.ts) pushes `trial_end` on the row and records the usage, and it already returns `mpReconciliationPending: false` when `mp_subscription_id IS NULL` — so against a Hospeda-owned trial it is a single-row update with NOTHING to reconcile against MercadoPago. That is strictly simpler than what it replaces. OPEN: the entry point. Today the ONLY surface in the whole web that collects a code is the plan purchase button (`PlanPurchaseButton.client.tsx`), which is now the paid path. The owner accepted both candidates as valid and asked for the simpler one first: (a) applied against the already-running trial from the account page, reusing `POST /billing/promo-codes/apply` — note its trial_extension branch today only PROJECTS a date and never calls the mutator, so that gap is the actual work; or (b) captured before the trial exists and read at creation. Ship (a), file (b). The TODO left by T-021 is at subscription-checkout.service.ts:474-495. TESTS: a code applied to a local trialing row moves trial_end and records the usage; a second application is refused; a code applied with no trial does nothing and says so.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Wire the apply route to the real mutator, not a projection",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Self-service entry point for a running trial",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "File the capture-before-trial variant as a follow-up",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "promo-codes"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-01T20:11:50.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-02T00:26:16.000Z",
+                "completed": "2026-09-02T00:26:16.000Z"
             }
         }
     ],
