@@ -6,6 +6,7 @@ export * from './normalizer';
 export * from './not-found';
 export * from './ownership';
 export * from './permission';
+export * from './postgres-error-cause';
 export * from './relations';
 export * from './service-logger';
 export * from './transaction';
