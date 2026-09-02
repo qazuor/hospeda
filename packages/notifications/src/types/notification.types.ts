@@ -587,8 +587,10 @@ export interface ContactSubmissionPayload extends BaseNotificationPayload {
  *
  * Kept separate from {@link SubscriptionLifecyclePayload} on purpose: a gift is
  * not a lifecycle event, and sharing the payload would make it far too easy for
- * a courtesy to be routed to `subscription-paused.tsx`, whose copy blames the
- * subscriber's payment method (HOS-926).
+ * a courtesy to be routed to `subscription-paused.tsx`, which announces a
+ * suspension. HOS-926 neutralized that template's copy (it no longer blames
+ * the payment method), but "your subscription has been paused" is still the
+ * wrong framing for a gift regardless of wording.
  */
 export interface CourtesyPayload extends BaseNotificationPayload {
     readonly type:
