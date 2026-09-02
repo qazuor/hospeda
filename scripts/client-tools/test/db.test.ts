@@ -18,6 +18,7 @@ function makeWorktree(overrides: Partial<WorktreeEnv> = {}): WorktreeEnv {
         path: '/home/dev/hospeda-hos-1-thing',
         isMain: false,
         branch: 'feat/HOS-1',
+        detached: false,
         database: 'worktree_hospeda_hos_1_thing',
         servers: [],
         ...overrides

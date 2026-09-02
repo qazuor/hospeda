@@ -112,6 +112,36 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 # Remote env management lives in hops env-* on the VPS (see docs/guides/env-management.md).
 ```
 
+### Comandos de `hops` que reemplazan trabajo manual
+
+Estos existen porque hacerlo a mano cuesta decenas de llamadas de herramienta.
+**Usá el comando; no rehagas el método manual.** Cada uno se verificó contra la
+realidad antes de entrar acá: unit con casos-trampa, mutación de sus guards
+centrales, y los modos degradados forzados a mano.
+
+| En vez de | Corré | Ahorro |
+|---|---|---|
+| Pollear el CI con monitores y notificaciones sueltas | `hops ci --wait` | ~20 llamadas → 1 |
+
+**`hops ci --wait`** bloquea hasta que el run cierra y devuelve una línea. Leé
+el **exit code**, no el texto:
+
+- `0` verde · `1` rojo, conflicto, sin PR o error de consulta
+- `3` **SIN ARRANCAR**: cero checks en toda la espera. No corrió nada — PR en
+  conflicto, o un evento que GitHub dropeó. Se arregla redisparando, no debuggeando.
+- `4` **TIMEOUT**: seguían corriendo al llegar al techo (`--timeout=<min>`, default 30).
+
+`CI CORTADO` (exit 1) tampoco es un test roto: todos los checks fallados fueron
+cortados por el `timeout-minutes` del job o por un push que los reemplazó. Se
+re-corren; no se debuggean. Con una falla genuina en la mezcla vuelve a decir
+`ROJO`.
+
+`3` y `4` **NO son fallas**: son las dos formas de no saber. Reportar
+cualquiera de las dos como "el CI falló" manda a debuggear un rojo inexistente.
+No dice por qué falló (eso es diagnóstico aparte) ni si el PR se puede mergear
+(`BEHIND`/`BLOCKED` no entran en el veredicto). Detalle completo en
+[`scripts/client-tools/README.md`](scripts/client-tools/README.md).
+
 ### Coding Standards
 
 - **TypeScript strict mode** with no `any` types
