@@ -33,6 +33,51 @@ describe('GastronomySearchHttpSchema', () => {
     it('should reject invalid type value', () => {
         expect(() => GastronomySearchHttpSchema.parse({ type: 'TAQUERIA' })).toThrow(ZodError);
     });
+
+    // HOS-1054: the "apto" filter. Sin TACC / vegano / sin lactosa are rows of
+    // the shared `features` catalog scoped to the gastronomy vertical, so the
+    // filter travels as feature UUIDs — not as a dedicated allergen param.
+    describe('features (the "apto" filter, HOS-1054)', () => {
+        const GLUTEN_FREE = '11111111-1111-4111-8111-111111111111';
+        const LACTOSE_FREE = '22222222-2222-4222-8222-222222222222';
+
+        it('accepts a comma-separated list and splits it into UUIDs', () => {
+            const result = GastronomySearchHttpSchema.parse({
+                features: `${GLUTEN_FREE},${LACTOSE_FREE}`
+            });
+            expect(result.features).toEqual([GLUTEN_FREE, LACTOSE_FREE]);
+        });
+
+        it('accepts a repeated query param (array form)', () => {
+            const result = GastronomySearchHttpSchema.parse({
+                features: [GLUTEN_FREE, LACTOSE_FREE]
+            });
+            expect(result.features).toEqual([GLUTEN_FREE, LACTOSE_FREE]);
+        });
+
+        it('trims whitespace and drops empty segments', () => {
+            const result = GastronomySearchHttpSchema.parse({
+                features: ` ${GLUTEN_FREE} , , ${LACTOSE_FREE} `
+            });
+            expect(result.features).toEqual([GLUTEN_FREE, LACTOSE_FREE]);
+        });
+
+        it('REJECTS a non-UUID rather than silently dropping the filter', () => {
+            // A silently-dropped filter answers 200 with an unfiltered page,
+            // which for an allergen filter is the dangerous failure: the visitor
+            // reads the result as "these places are all sin TACC".
+            expect(() =>
+                GastronomySearchHttpSchema.parse({ features: 'gluten_free_options' })
+            ).toThrow(ZodError);
+        });
+
+        it('applies the same shape to the amenities filter', () => {
+            const result = GastronomySearchHttpSchema.parse({
+                amenities: `${GLUTEN_FREE},${LACTOSE_FREE}`
+            });
+            expect(result.amenities).toEqual([GLUTEN_FREE, LACTOSE_FREE]);
+        });
+    });
 });
 
 describe('GastronomyCreateHttpSchema', () => {
@@ -96,6 +141,30 @@ describe('httpToDomainGastronomySearch', () => {
         const result = httpToDomainGastronomySearch(httpInput);
         expect(result.type).toBe('RESTAURANT');
         expect(result.page).toBe(1);
+    });
+
+    // HOS-1054. This mapper used to end with a comment saying amenities and
+    // features "exist in domain but not in HTTP schema, so they are not mapped
+    // here" — the reason the apto filter was accepted by the domain schema and
+    // then never reached the service.
+    it('forwards the apto (features) filter to the domain search input', () => {
+        const GLUTEN_FREE = '11111111-1111-4111-8111-111111111111';
+        const httpInput = GastronomySearchHttpSchema.parse({ features: GLUTEN_FREE });
+        const result = httpToDomainGastronomySearch(httpInput);
+        expect(result.features).toEqual([GLUTEN_FREE]);
+    });
+
+    it('forwards the amenities filter to the domain search input', () => {
+        const WIFI = '33333333-3333-4333-8333-333333333333';
+        const httpInput = GastronomySearchHttpSchema.parse({ amenities: WIFI });
+        const result = httpToDomainGastronomySearch(httpInput);
+        expect(result.amenities).toEqual([WIFI]);
+    });
+
+    it('leaves both undefined when neither is requested', () => {
+        const result = httpToDomainGastronomySearch(GastronomySearchHttpSchema.parse({}));
+        expect(result.features).toBeUndefined();
+        expect(result.amenities).toBeUndefined();
     });
 });
 
