@@ -90,7 +90,7 @@ if [ -n "$MATCHES" ]; then
     echo ""
     echo "  Fix by deriving from the vocabulary instead of restating it:"
     echo "    - types/schemas -> ProductDomainEnum / ProductDomainScope"
-    echo "    - dispatch      -> subscriptionMatchesDomain(sub, domain) / isCommerceSubscription(sub)"
+    echo "    - dispatch      -> subscriptionMatchesDomain(sub, domain)"
     exit 1
 fi
 

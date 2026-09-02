@@ -1,8 +1,8 @@
 /**
  * @file AllianceLead.module.css
  * @description Styles for the AllianceLead React island (HOS-277).
- * Cloned from `CommerceLead.module.css` — all values use CSS custom
- * properties from global.css.
+ * Originally cloned from the (since-removed, HOS-1081) commerce lead form's
+ * stylesheet — all values use CSS custom properties from global.css.
  */
 
 /* ─── Form layout ───────────────────────────────────────────────────────────── */

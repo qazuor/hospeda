@@ -22,7 +22,6 @@
 import { ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
-    isCommerceVerticalLimitKey,
     LIMIT_KEY_BY_COMMERCE_VERTICAL,
     productDomainForLimitKey
 } from '../../src/config/commerce-limits.config.js';
@@ -88,17 +87,5 @@ describe('productDomainForLimitKey', () => {
         expect(new Set(keysInACommerceDomain)).toEqual(
             new Set(Object.values(LIMIT_KEY_BY_COMMERCE_VERTICAL))
         );
-    });
-});
-
-describe('isCommerceVerticalLimitKey', () => {
-    it('is true for the two vertical caps and false for everything else', () => {
-        expect(isCommerceVerticalLimitKey(LimitKey.MAX_GASTRONOMIES)).toBe(true);
-        expect(isCommerceVerticalLimitKey(LimitKey.MAX_EXPERIENCES)).toBe(true);
-        // The regression the exhaustive map invites: reading membership off the
-        // domain map, which now answers for every key, would make these true.
-        expect(isCommerceVerticalLimitKey(LimitKey.MAX_ACCOMMODATIONS)).toBe(false);
-        expect(isCommerceVerticalLimitKey(LimitKey.MAX_FAVORITES)).toBe(false);
-        expect(isCommerceVerticalLimitKey('max_gastronomys')).toBe(false);
     });
 });

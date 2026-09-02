@@ -342,7 +342,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
         // The path the user was actually trying to reach, carried through every
         // onboarding gate below so finishing them lands there instead of on
         // `/mi-cuenta/` (HOS-838). Includes the query string: a destination
-        // like `/es/mi-cuenta/comercios/nuevo?tipo=gastronomia` is only useful
+        // like `/es/mi-cuenta/comercio/gastronomy?foo=bar` is only useful
         // with its params intact. `buildLoginRedirect` above deliberately keeps
         // using the bare pathname — changing that is a separate decision.
         const interruptedDestination = `${path}${context.url.search}`;

@@ -15,21 +15,8 @@
             "message": "Conte-nos sobre seu negócio (opcional)"
         },
         "prefillNotice": "Preenchemos seu nome e seu e-mail com os dados da sua conta. Você pode editá-los se o contato do negócio for outro: é para esse e-mail que vamos responder.",
-        "process": {
-            "title": "Como segue depois de enviar",
-            "step1": "Você envia o formulário com os dados do seu negócio.",
-            "step2": "Nossa equipe revisa sua solicitação e entra em contato para combinar os próximos passos. Costuma levar de 24 a 48 horas úteis.",
-            "step3": "Escrevemos por e-mail para combinar como incluir seu negócio na plataforma.",
-            "step4": "Você cria sua conta, completa a publicação e contrata o plano."
-        },
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
-        "successDetail": {
-            "title": "Pronto! Recebemos sua solicitação.",
-            "sentTo": "Vamos escrever para você em {{email}}.",
-            "processTitle": "O que acontece agora",
-            "closing": "Se tiver dúvidas ou passarem alguns dias sem novidades, entre em contato que vamos verificar."
-        },
         "error": "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
         "rateLimited": "Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.",
         "validation": {

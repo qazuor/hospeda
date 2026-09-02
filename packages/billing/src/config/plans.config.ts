@@ -510,64 +510,15 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     limits: [...TOURIST_VIP_LIMITS]
 };
 
-// ─── COMMERCE PLAN (SPEC-239) ──────────────────────────────────
-
-/**
- * Commerce-listing plan (SPEC-239 T-049).
- *
- * A single flat subscription that makes a commerce listing (gastronomy,
- * experience, etc.) visible. It is **deliberately NOT part of {@link ALL_PLANS}**:
- * the accommodation seed loop, the public/accommodation plan list, and the
- * grant-matrix snapshot tests all operate on `ALL_PLANS` and must stay
- * accommodation-only. This plan is seeded by its own helper
- * (`seedCommercePlan`) which stamps `billing_plans.product_domain='commerce'`
- * so the public plans endpoint and the web pricing pages exclude it.
- *
- * `category` is set to `'owner'` ONLY to satisfy the {@link PlanCategory} type
- * (D-ISOLATION forbids widening `PlanCategory` to add `'commerce'`, which would
- * ripple through every `Record<PlanCategory>` usage). The real domain
- * discriminator is the `product_domain` column, not this field — nothing in the
- * accommodation flow ever reads this plan because it is excluded from
- * `ALL_PLANS` and filtered out by product_domain.
- *
- * NOTE (owner): `monthlyPriceArs` below is CONFIRMED at ARS 15,000.00 (owner
- * 2026-07-22, HOS-166 OQ-2). It is still a commercial-layer field — the seed
- * never overwrites it once a value exists in the DB — so any operator
- * override made afterward via the admin UI stands.
- *
- * `hasTrial=false`, `entitlements=[]`, `limits=[]`: commerce visibility is
- * driven by the subscription status via the `commerce_listing_subscriptions`
- * link table + the visibility reconciler, NOT by the billing entitlement engine.
- */
-export const COMMERCE_LISTING_PLAN: PlanDefinition = {
-    slug: 'commerce-listing',
-    name: 'Commerce Listing',
-    description: 'Subscription that makes a commerce listing visible (SPEC-239).',
-    // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain is
-    // the real discriminator. Do NOT widen PlanCategory to add 'commerce'.
-    category: 'owner',
-    // CONFIRMED price (owner 2026-07-22, HOS-166 OQ-2): ARS 15,000.00 in cents.
-    monthlyPriceArs: 1500000,
-    annualPriceArs: null,
-    monthlyPriceUsdRef: 15,
-    hasTrial: false,
-    trialDays: 0,
-    isDefault: false,
-    sortOrder: 1,
-    isActive: true,
-    entitlements: [],
-    limits: []
-};
-
 // ─── PER-VERTICAL COMMERCE PLANS (HOS-688) ─────────────────────
 
 /**
  * Monthly price of every ENABLED commerce tier, in centavos.
  *
- * ARS $15.000 — the exact amount {@link COMMERCE_LISTING_PLAN} charges today
- * (owner 2026-07-22, HOS-166 OQ-2). HOS-688 turns one subscription-per-LISTING
- * into one subscription-per-OWNER-per-VERTICAL, and deliberately keeps the
- * price: nobody paying today sees a change, they simply get one listing for the
+ * ARS $15.000 — the price the single pre-HOS-688 `commerce-listing` plan
+ * charged (owner 2026-07-22, HOS-166 OQ-2), before HOS-688 split it into one
+ * subscription-per-OWNER-per-VERTICAL. HOS-688 deliberately kept the price:
+ * nobody paying at the time saw a change, they simply got one listing for the
  * same money under a plan that is theirs rather than the listing's.
  *
  * Like every price in this file it is a `'commercial'` field — the database
@@ -617,9 +568,10 @@ function commerceVerticalTier(input: {
         slug: input.slug,
         name: input.name,
         description: input.description,
-        // See COMMERCE_LISTING_PLAN's JSDoc: 'owner' only satisfies the
-        // PlanCategory type. product_domain ('gastronomy' / 'experience') is the
-        // real discriminator, stamped by `seedCommercePlan`.
+        // 'owner' only satisfies the PlanCategory type (D-ISOLATION forbids
+        // widening it to add a commerce value). product_domain
+        // ('gastronomy' / 'experience') is the real discriminator, stamped by
+        // `seedCommercePlan`.
         category: 'owner',
         monthlyPriceArs: input.monthlyPriceArs,
         annualPriceArs: null,
@@ -663,10 +615,10 @@ function commerceVerticalTier(input: {
  * `preapproval_plan` behind it) in every seeded environment and zeroing the
  * baseline would describe a state no real database is in.
  *
- * Deliberately excluded from {@link ALL_PLANS}, exactly like
- * {@link COMMERCE_LISTING_PLAN}: the accommodation seed loop, the public plan
- * list and the grant-matrix snapshot tests all operate on `ALL_PLANS` and must
- * stay accommodation-only.
+ * Deliberately excluded from {@link ALL_PLANS}, same as every other
+ * commerce/partner plan in this file: the accommodation seed loop, the public
+ * plan list and the grant-matrix snapshot tests all operate on `ALL_PLANS` and
+ * must stay accommodation-only.
  *
  * ---
  *
@@ -897,8 +849,8 @@ export const PARTNER_SILVER_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 2,
     isActive: true,
-    // Empty for the same reason COMMERCE_LISTING_PLAN's are: partner visibility
-    // is driven by the subscription status and the partner row's own
+    // Empty, same as every commerce-vertical tier: partner visibility is
+    // driven by the subscription status and the partner row's own
     // lifecycle/subscription columns, NOT by the entitlement engine.
     entitlements: [],
     limits: []
@@ -973,9 +925,10 @@ export const TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS = 1500;
  * gating.
  *
  * **Deliberately NOT part of {@link ALL_PLANS}** — same isolation precedent
- * as {@link COMMERCE_LISTING_PLAN} / {@link PARTNER_LISTING_PLAN}: the
- * accommodation seed loop, the public plan list, and the grant-matrix
- * snapshot tests all operate on `ALL_PLANS` and must never see this plan.
+ * as {@link PARTNER_LISTING_PLAN} and every commerce-vertical plan in this
+ * file: the accommodation seed loop, the public plan list, and the
+ * grant-matrix snapshot tests all operate on `ALL_PLANS` and must never see
+ * this plan.
  * It is seeded by its own dedicated helper (`seedTestDailyPlan` in
  * `@repo/seed`), which stamps `metadata.testPlan = true` in the DB row for
  * extra identifiability beyond the `owner-test-daily` slug alone.

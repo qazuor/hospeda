@@ -51,9 +51,9 @@
  * with nothing red anywhere.
  *
  * Deliberately kept OUT of `ALL_PLANS` — the established idiom for a plan that
- * exists and grants but never shows on the public pricing page, with four
- * precedents (`COMMERCE_LISTING_PLAN`, `PARTNER_LISTING_PLAN`,
- * `TEST_DAILY_PLAN`, the commerce verticals). `ALL_PLANS` drives the public
+ * exists and grants but never shows on the public pricing page, with three
+ * precedents (`PARTNER_LISTING_PLAN`, `TEST_DAILY_PLAN`, the commerce
+ * verticals). `ALL_PLANS` drives the public
  * `/plans` endpoint, the accommodation seed loop AND the grant-matrix snapshot
  * tests, so inclusion would break all three.
  */
@@ -185,9 +185,9 @@ function buildTrialPlan(input: {
         slug: input.slug,
         name: input.name,
         description: input.description,
-        // Same reason `COMMERCE_LISTING_PLAN` and every commerce tier carries
-        // `'owner'`: it only satisfies the `PlanCategory` type. For
-        // `owner-trial` it is also literally true, and load-bearing — a HOST's
+        // Same reason every commerce tier carries `'owner'`: it only satisfies
+        // the `PlanCategory` type. For `owner-trial` it is also literally
+        // true, and load-bearing — a HOST's
         // live subscription must resolve as owner-category or HOS-217's check
         // discards it. For the two commerce trials `product_domain` is the real
         // discriminator and filters them out long before category is asked.

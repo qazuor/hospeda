@@ -19,7 +19,6 @@
  */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { COMMERCE_LISTING_PLAN } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { and, billingPlans, billingPrices, eq, getDb, initializeDb, resetDb } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
@@ -44,6 +43,24 @@ class RollbackSignal extends Error {
         this.name = 'RollbackSignal';
     }
 }
+
+/**
+ * Fixture values for the `commerce-listing` row this migration targets.
+ *
+ * Inlined rather than imported from `@repo/billing`: the pre-HOS-688
+ * `COMMERCE_LISTING_PLAN` config constant was retired (HOS-1081) once every
+ * production row moved to the per-vertical plans, but this historical
+ * migration (and its test) still needs the ORIGINAL row shape to set up and
+ * assert against, unrelated to what today's config exports.
+ */
+const COMMERCE_LISTING_PLAN_FIXTURE = {
+    slug: 'commerce-listing',
+    name: 'Commerce Listing',
+    description: 'Subscription that makes a commerce listing visible (SPEC-239).',
+    isActive: true,
+    entitlements: [] as string[],
+    annualPriceArs: null as number | null
+};
 
 /** Stub actor — this migration only uses `ctx.db`, so a minimal stub suffices. */
 const STUB_ACTOR: Actor = {
@@ -83,7 +100,7 @@ async function removeCommerceListingPlan(tx: DrizzleClient): Promise<void> {
     const existing = await tx
         .select({ id: billingPlans.id })
         .from(billingPlans)
-        .where(eq(billingPlans.name, COMMERCE_LISTING_PLAN.slug))
+        .where(eq(billingPlans.name, COMMERCE_LISTING_PLAN_FIXTURE.slug))
         .limit(1);
 
     const planRow = existing[0];
@@ -108,7 +125,7 @@ async function ensureCommerceListingPlanAtAmount(
     const existingPlan = await tx
         .select({ id: billingPlans.id })
         .from(billingPlans)
-        .where(eq(billingPlans.name, COMMERCE_LISTING_PLAN.slug))
+        .where(eq(billingPlans.name, COMMERCE_LISTING_PLAN_FIXTURE.slug))
         .limit(1);
 
     let planId: string;
@@ -123,15 +140,15 @@ async function ensureCommerceListingPlanAtAmount(
         const inserted = await tx
             .insert(billingPlans)
             .values({
-                name: COMMERCE_LISTING_PLAN.slug,
-                description: COMMERCE_LISTING_PLAN.description,
-                active: COMMERCE_LISTING_PLAN.isActive,
-                entitlements: COMMERCE_LISTING_PLAN.entitlements as string[],
+                name: COMMERCE_LISTING_PLAN_FIXTURE.slug,
+                description: COMMERCE_LISTING_PLAN_FIXTURE.description,
+                active: COMMERCE_LISTING_PLAN_FIXTURE.isActive,
+                entitlements: COMMERCE_LISTING_PLAN_FIXTURE.entitlements as string[],
                 limits: {},
                 livemode: true,
-                displayName: COMMERCE_LISTING_PLAN.name,
+                displayName: COMMERCE_LISTING_PLAN_FIXTURE.name,
                 monthlyPriceArs: amount,
-                annualPriceArs: COMMERCE_LISTING_PLAN.annualPriceArs
+                annualPriceArs: COMMERCE_LISTING_PLAN_FIXTURE.annualPriceArs
             })
             .returning({ id: billingPlans.id });
 
@@ -183,7 +200,7 @@ async function readCommerceListingAmounts(
     const existingPlan = await tx
         .select({ id: billingPlans.id, monthlyPriceArs: billingPlans.monthlyPriceArs })
         .from(billingPlans)
-        .where(eq(billingPlans.name, COMMERCE_LISTING_PLAN.slug))
+        .where(eq(billingPlans.name, COMMERCE_LISTING_PLAN_FIXTURE.slug))
         .limit(1);
 
     const planRow = existingPlan[0];

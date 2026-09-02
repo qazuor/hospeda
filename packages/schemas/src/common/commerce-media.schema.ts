@@ -20,8 +20,10 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  *
  * Mirrors `AccommodationMediaStateSchema`
  * (`packages/schemas/src/entities/accommodation/subtypes/accommodation.media.schema.ts`)
- * by value, but is intentionally a SEPARATE schema instance: the accommodation
- * file is mid-change in another task and must not be imported from here.
+ * by value, but is intentionally a SEPARATE schema instance: commerce
+ * (gastronomy/experience) media is its own domain per ADR-035, and importing
+ * from the accommodation entity file would couple two verticals that must be
+ * able to evolve independently.
  */
 export const CommerceMediaStateSchema = z.enum(['visible', 'archived'], {
     message: 'zodError.common.commerceMedia.state.invalid'
@@ -45,7 +47,7 @@ export type CommerceMediaState = z.infer<typeof CommerceMediaStateSchema>;
  *
  * Field-for-field mirror of `AccommodationMediaSchema`'s row shape (same
  * validation rules), kept as a SEPARATE object (not imported from the
- * accommodation subtype file, which is mid-change in another task):
+ * accommodation subtype file, per the domain-isolation rule in ADR-035):
  * - `attribution` is nullable JSONB, matching the DB column type.
  * - Audit timestamps use `z.coerce.date()` to accept both `Date` and ISO
  *   strings (pg driver may return either).

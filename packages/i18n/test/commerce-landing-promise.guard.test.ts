@@ -22,10 +22,12 @@
  * ## Scope, deliberately narrow
  *
  * Only `commerce.lead.subtitle` and `commerce.lead.experience.subtitle` — the
- * hero line of each landing, which is also the page's meta description. The
- * rest of the `commerce.lead.*` subtree still belongs to the `CommerceLead`
- * form component, which really does collect a lead and really is answered by a
- * human; banning the vocabulary there would be false.
+ * hero line of each landing, which is also the page's meta description. These
+ * two are read server-side by the two `.astro` landing pages themselves and
+ * are the only surviving reason the `commerce.lead` namespace still exists;
+ * the actual lead-collecting form (`CommerceLead.client.tsx`) was deleted by
+ * HOS-693, and its process/success-detail explainer sub-keys were removed
+ * with the last component that read them (HOS-1081).
  *
  * ## Where this runs
  *

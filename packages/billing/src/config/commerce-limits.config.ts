@@ -112,11 +112,6 @@ const PRODUCT_DOMAIN_BY_LIMIT_KEY: Readonly<Record<LimitKey, ProductDomainValue>
     [LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH]: ProductDomainEnum.ACCOMMODATION
 };
 
-/** The commerce verticals' own caps, for {@link isCommerceVerticalLimitKey}. */
-const COMMERCE_VERTICAL_LIMIT_KEYS: ReadonlySet<LimitKey> = new Set(
-    Object.values(LIMIT_KEY_BY_COMMERCE_VERTICAL)
-);
-
 /**
  * Resolves which subscription domain supplies a limit key's base value.
  *
@@ -150,19 +145,6 @@ export function productDomainForLimitKey(
     limitKey: LimitKey | string
 ): ProductDomainValue | undefined {
     return PRODUCT_DOMAIN_BY_LIMIT_KEY[limitKey as LimitKey];
-}
-
-/**
- * Whether a limit key is one of the per-vertical commerce listing caps.
- *
- * Reads {@link LIMIT_KEY_BY_COMMERCE_VERTICAL} — the two commerce caps — rather
- * than the now-exhaustive domain map, which answers for every key.
- *
- * @param limitKey - The limit key to test.
- * @returns `true` for `max_gastronomies` / `max_experiences`.
- */
-export function isCommerceVerticalLimitKey(limitKey: LimitKey | string): boolean {
-    return COMMERCE_VERTICAL_LIMIT_KEYS.has(limitKey as LimitKey);
 }
 
 /**
