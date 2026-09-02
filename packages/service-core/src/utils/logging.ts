@@ -1,6 +1,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../types';
 import { ServiceError } from '../types';
+import { extractPostgresErrorCause, type PostgresErrorCause } from './postgres-error-cause';
 import { serviceLogger as defaultLogger } from './service-logger';
 
 let _logger = defaultLogger;
@@ -85,6 +86,62 @@ const formatActor = (actor: Actor | null | undefined): string => {
 };
 
 /**
+ * Same projection as {@link formatActor}, but as a plain object instead of a
+ * pre-stringified JSON string — used by {@link logError}, which now logs a
+ * structured `data` payload (see its JSDoc) instead of one flat string, so
+ * embedding an already-serialized string inside it would double-encode.
+ * Tolerates a missing actor the same way `formatActor` does.
+ */
+const buildActorSummary = (actor: Actor | null | undefined): Record<string, unknown> | null => {
+    if (actor === null || actor === undefined) {
+        return null;
+    }
+    return {
+        id: actor.id,
+        roles: actor.roles,
+        permissionsCount: actor.permissions?.length ?? 0
+    };
+};
+
+/** Drizzle bakes the full statement onto `error.message` after this literal marker (`drizzle-orm/pg-core/session.ts`, `queryWithCache`). Anchor on it so only a genuinely SQL-dominated message gets trimmed — an ordinary short error message is left untouched. */
+const DRIZZLE_FAILED_QUERY_MARKER = 'Failed query:';
+
+/**
+ * Builds the short, SQL-free summary used as the log's `message`/label
+ * (HOS-858 AC-3).
+ *
+ * When `error.message` carries Drizzle's {@link DRIZZLE_FAILED_QUERY_MARKER},
+ * the ~1900-character generated SQL + params dump that follows it is what
+ * dominated the 37k unreadable ERROR entries from the 2026-08-01 incident
+ * (see the HOS-858 report). The SQL can always be reconstructed from the
+ * source; a short summary — plus the Postgres SQLSTATE when one was found —
+ * cannot. The unmodified `error.message` (SQL included) is still preserved
+ * verbatim under `data.errorMessage` by {@link logError} for anyone who needs
+ * it; only the top-level message loses the dump.
+ *
+ * @param message - The raw `error.message`.
+ * @param postgresCause - The result of {@link extractPostgresErrorCause}, if any.
+ * @returns A short message with no generated SQL.
+ */
+const summarizeErrorMessage = (
+    message: string,
+    postgresCause: PostgresErrorCause | undefined
+): string => {
+    const markerIndex = message.indexOf(DRIZZLE_FAILED_QUERY_MARKER);
+    if (markerIndex === -1) {
+        return message;
+    }
+    const prefix = message
+        .slice(0, markerIndex)
+        .trim()
+        .replace(/[:.]+$/, '');
+    const causeSuffix = postgresCause ? ` (postgres ${postgresCause.code})` : '';
+    return prefix.length > 0
+        ? `${prefix}: query failed${causeSuffix}`
+        : `Query failed${causeSuffix}`;
+};
+
+/**
  * Logs the start of a service method execution, including input and actor details.
  * @param methodName - The full name of the method being executed (e.g., 'accommodation.create').
  * @param input - The input data or parameters for the method.
@@ -112,6 +169,27 @@ export const logMethodEnd = (methodName: string, output: unknown): void => {
 
 /**
  * Logs an error that occurred during a service method execution.
+ *
+ * HOS-858: previously built a single flat string dominated by whatever
+ * `error.message` happened to be — for a wrapped Drizzle query failure, that
+ * is `"Failed query: <~1900 chars of generated SQL> params: <...>"`, with the
+ * real cause (the Postgres driver's SQLSTATE, constraint, table, column)
+ * never read at all. Now:
+ * - {@link extractPostgresErrorCause} walks the error's wrapping chain for a
+ *   driver-reported SQLSTATE (see its JSDoc for the exact chain shape).
+ * - When found, its fields are stored as their OWN keys on the structured
+ *   `data` payload (`postgresErrorCode`, `postgresErrorConstraint`, ...) —
+ *   never concatenated into `message` — so they are filterable/groupable in
+ *   the log viewer instead of buried inside a 2000-char string.
+ * - {@link summarizeErrorMessage} strips the generated SQL out of the
+ *   top-level message when present; the unmodified `error.message` (SQL
+ *   included) is preserved verbatim under `data.errorMessage` for anyone who
+ *   still needs it.
+ *
+ * `detail` (which can carry a column's actual VALUE, e.g. `Key
+ * (email)=(x@y.com) already exists.`) is deliberately never extracted — see
+ * the "Scope decision" section in `./postgres-error-cause.ts`'s JSDoc.
+ *
  * @param methodName - The name of the method where the error occurred.
  * @param error - The error object that was caught.
  * @param input - The input data that may have caused the error.
@@ -122,8 +200,32 @@ export const logError = (methodName: string, error: Error, input: unknown, actor
     // reduced level (info/warn) so they don't flood the error stream with stack
     // traces (HOS-109 / OQ-1). Real faults stay at `error`.
     const level = resolveErrorLogLevel(error instanceof ServiceError ? error.code : undefined);
+    const postgresCause = extractPostgresErrorCause(error);
+
+    const data: Record<string, unknown> = {
+        input,
+        actor: buildActorSummary(actor),
+        errorMessage: error.message
+    };
+    if (postgresCause !== undefined) {
+        data.postgresErrorCode = postgresCause.code;
+        if (postgresCause.constraint !== undefined) {
+            data.postgresErrorConstraint = postgresCause.constraint;
+        }
+        if (postgresCause.table !== undefined) {
+            data.postgresErrorTable = postgresCause.table;
+        }
+        if (postgresCause.column !== undefined) {
+            data.postgresErrorColumn = postgresCause.column;
+        }
+        if (postgresCause.schema !== undefined) {
+            data.postgresErrorSchema = postgresCause.schema;
+        }
+    }
+
     _logger[level](
-        `Error in ${methodName} | error: ${error.message} | input: ${JSON.stringify(input)} | actor: ${formatActor(actor)}`
+        data,
+        `Error in ${methodName}: ${summarizeErrorMessage(error.message, postgresCause)}`
     );
 };
 
