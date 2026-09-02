@@ -45,6 +45,72 @@ const hasAllPermissions = (actor: Actor, permissions: PermissionEnum[]): boolean
 };
 
 /**
+ * Evaluates a route's whole permission gate: the AND list plus the OR-groups.
+ *
+ * `requiredPermissions` is every-of; each `anyOfPermissions` group is some-of,
+ * and the groups are ANDed with each other and with the AND list. Empty groups
+ * are skipped — an empty some-of can never be satisfied, and failing a route
+ * closed over a config typo is worse than ignoring it (HOS-1077).
+ *
+ * @param actor - The actor being authorized.
+ * @param requiredPermissions - Permissions the actor must hold ALL of.
+ * @param anyOfPermissions - Groups the actor must hold at least one member of, each.
+ * @returns `true` when every clause is satisfied.
+ */
+const passesPermissionGate = (
+    actor: Actor,
+    requiredPermissions: PermissionEnum[] | undefined,
+    anyOfPermissions: readonly (readonly PermissionEnum[])[] | undefined
+): boolean => {
+    if (
+        requiredPermissions &&
+        requiredPermissions.length > 0 &&
+        !hasAllPermissions(actor, requiredPermissions)
+    ) {
+        return false;
+    }
+    for (const group of anyOfPermissions ?? []) {
+        if (group.length > 0 && !hasAnyPermission(actor, [...group])) {
+            return false;
+        }
+    }
+    return true;
+};
+
+/**
+ * Flattens a route's permission gate into the list the audit log records.
+ *
+ * The audit trail must name what was demanded, not just that something was.
+ * An OR-group is written as `a|b` so a reader can tell "needed both" from
+ * "needed either" without consulting the route (HOS-1077).
+ *
+ * @param requiredPermissions - The AND list.
+ * @param anyOfPermissions - The OR-groups.
+ * @returns One string per clause.
+ */
+const describePermissionGate = (
+    requiredPermissions: PermissionEnum[] | undefined,
+    anyOfPermissions: readonly (readonly PermissionEnum[])[] | undefined
+): string[] => [
+    ...(requiredPermissions ?? []).map(String),
+    ...(anyOfPermissions ?? []).filter((group) => group.length > 0).map((group) => group.join('|'))
+];
+
+/**
+ * Whether a route declares any permission gate at all beyond its tier.
+ *
+ * @param requiredPermissions - The AND list.
+ * @param anyOfPermissions - The OR-groups.
+ * @returns `true` when at least one clause is declared.
+ */
+const hasPermissionGate = (
+    requiredPermissions: PermissionEnum[] | undefined,
+    anyOfPermissions: readonly (readonly PermissionEnum[])[] | undefined
+): boolean =>
+    (requiredPermissions !== undefined && requiredPermissions.length > 0) ||
+    (anyOfPermissions ?? []).some((group) => group.length > 0);
+
+/**
  * Check if actor has admin-level access.
  * Access is granted solely based on permissions, never by role bypass.
  */
@@ -80,7 +146,13 @@ const hasAdminAccess = (actor: Actor): boolean => {
 export const authorizationMiddleware = (config: AuthorizationConfig): MiddlewareHandler => {
     return async (c, next) => {
         const actor = getActorFromContext(c);
-        const { level, requiredPermissions, unauthorizedMessage, forbiddenMessage } = config;
+        const {
+            level,
+            requiredPermissions,
+            anyOfPermissions,
+            unauthorizedMessage,
+            forbiddenMessage
+        } = config;
 
         // Store authorization level in context for downstream use
         c.set('authorizationLevel', level);
@@ -129,8 +201,8 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             }
 
             // If specific permissions are required, check them
-            if (requiredPermissions && requiredPermissions.length > 0) {
-                if (!hasAllPermissions(actor, requiredPermissions)) {
+            if (hasPermissionGate(requiredPermissions, anyOfPermissions)) {
+                if (!passesPermissionGate(actor, requiredPermissions, anyOfPermissions)) {
                     apiLogger.warn(
                         `Forbidden: Actor ${actor.id} lacks required permissions for protected route`
                     );
@@ -142,7 +214,10 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                         method: c.req.method,
                         statusCode: 403,
                         reason: 'insufficient_permissions',
-                        requiredPermissions: requiredPermissions.map(String)
+                        requiredPermissions: describePermissionGate(
+                            requiredPermissions,
+                            anyOfPermissions
+                        )
                     });
                     throw new HTTPException(403, {
                         message: forbiddenMessage || 'Insufficient permissions'
@@ -192,8 +267,8 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             }
 
             // If additional specific permissions are required, check them
-            if (requiredPermissions && requiredPermissions.length > 0) {
-                if (!hasAllPermissions(actor, requiredPermissions)) {
+            if (hasPermissionGate(requiredPermissions, anyOfPermissions)) {
+                if (!passesPermissionGate(actor, requiredPermissions, anyOfPermissions)) {
                     apiLogger.warn(`Forbidden: Actor ${actor.id} lacks required admin permissions`);
                     auditLog({
                         auditEvent: AuditEventType.ACCESS_DENIED,
@@ -203,7 +278,10 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                         method: c.req.method,
                         statusCode: 403,
                         reason: 'insufficient_permissions',
-                        requiredPermissions: requiredPermissions.map(String)
+                        requiredPermissions: describePermissionGate(
+                            requiredPermissions,
+                            anyOfPermissions
+                        )
                     });
                     throw new HTTPException(403, {
                         message: forbiddenMessage || 'Insufficient admin permissions'
@@ -234,20 +312,26 @@ export const publicAuthMiddleware = (): MiddlewareHandler => {
  * Pre-configured authorization middleware for protected routes
  */
 export const protectedAuthMiddleware = (
-    requiredPermissions?: PermissionEnum[]
+    requiredPermissions?: PermissionEnum[],
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[]
 ): MiddlewareHandler => {
     return authorizationMiddleware({
         level: 'protected',
-        requiredPermissions
+        requiredPermissions,
+        anyOfPermissions
     });
 };
 
 /**
  * Pre-configured authorization middleware for admin routes
  */
-export const adminAuthMiddleware = (requiredPermissions?: PermissionEnum[]): MiddlewareHandler => {
+export const adminAuthMiddleware = (
+    requiredPermissions?: PermissionEnum[],
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[]
+): MiddlewareHandler => {
     return authorizationMiddleware({
         level: 'admin',
-        requiredPermissions
+        requiredPermissions,
+        anyOfPermissions
     });
 };

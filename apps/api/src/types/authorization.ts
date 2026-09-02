@@ -22,6 +22,40 @@ export interface AuthorizationConfig {
     level: AuthorizationLevel;
     /** Additional specific permissions required (for admin level or specific checks) */
     requiredPermissions?: PermissionEnum[];
+    /**
+     * OR-groups of permissions, ANDed together (HOS-1077).
+     *
+     * Each inner array is satisfied when the actor holds AT LEAST ONE of its
+     * members; the gate passes when EVERY group is satisfied. Composes with
+     * `requiredPermissions`, which stays a plain AND list.
+     *
+     * ```ts
+     * // "gastronomy.editAll OR commerce.editAll"
+     * anyOfPermissions: [[GASTRONOMY_EDIT_ALL, COMMERCE_EDIT_ALL]]
+     *
+     * // "(gastronomy.editAll OR commerce.editAll) AND
+     * //  (gastronomy.moderateReview OR commerce.moderateReview)"
+     * anyOfPermissions: [
+     *     [GASTRONOMY_EDIT_ALL, COMMERCE_EDIT_ALL],
+     *     [GASTRONOMY_MODERATE_REVIEW, COMMERCE_MODERATE_REVIEW]
+     * ]
+     * ```
+     *
+     * ## Why this exists
+     *
+     * `requiredPermissions` is `hasAllPermissions` — strictly AND — so a route
+     * that must accept "the legacy permission OR its replacement" could not be
+     * expressed at the factory at all. The workaround already in the codebase is
+     * to drop the route-level gate and re-implement the OR by hand inside the
+     * handler, which moves the declaration out of the place reviewers read it
+     * and off the OpenAPI description. Nesting is the smallest addition that
+     * keeps the gate declarative.
+     *
+     * An empty group is unsatisfiable, so empty groups are ignored rather than
+     * failing closed on a config typo — the same forgiving treatment
+     * `requiredPermissions: []` already gets.
+     */
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[];
     /** Custom error message for unauthorized access */
     unauthorizedMessage?: string;
     /** Custom error message for forbidden access */
