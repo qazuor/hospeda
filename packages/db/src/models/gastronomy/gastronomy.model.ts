@@ -121,6 +121,37 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
             throw new DbError(this.entityName, 'search', ctx, err.message);
         }
     }
+
+    /**
+     * Returns the IDs of every non-deleted gastronomy listing owned by the
+     * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
+     * `EntityViewService.getStatsForOwnCommerceListings` /
+     * `getDailySeriesForOwnCommerceListings` (HOS-734) to resolve which
+     * `entity_views` rows belong to the caller without accepting an ownerId
+     * param at the route layer (anti-peeking).
+     *
+     * @param ownerId - The owner's user id.
+     * @param tx - Optional transaction client.
+     * @returns Array of gastronomy listing IDs (may be empty).
+     */
+    async findIdsByOwnerId(ownerId: string, tx?: DrizzleClient): Promise<string[]> {
+        const db = this.getClient(tx);
+        const ctx = { ownerId };
+        try {
+            const rows = await db
+                .select({ id: gastronomies.id })
+                .from(gastronomies)
+                .where(and(eq(gastronomies.ownerId, ownerId), isNull(gastronomies.deletedAt)));
+
+            const ids = rows.map((r) => r.id);
+            logQuery(this.entityName, 'findIdsByOwnerId', ctx, { count: ids.length });
+            return ids;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findIdsByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
+        }
+    }
 }
 
 /** Singleton instance of GastronomyModel for use across the application. */
