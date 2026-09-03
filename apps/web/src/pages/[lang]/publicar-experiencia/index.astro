@@ -80,10 +80,19 @@ const plansResult = await fetchPublicPlans({ domain: 'experience' });
 const { plan: experiencePlan, trialDays, tiers } = resolveCommerceLandingOffer({ plansResult });
 
 /**
- * HOS-1119: mirrors `/publicar-restaurante/`'s own flag. Experience carries a
- * single active tier today, so this is `false` and the page renders
- * byte-identical to before this change — but the branch is parametrized the
- * same way so a future second experience tier needs no page rewrite.
+ * HOS-1119: mirrors `/publicar-restaurante/`'s own flag.
+ *
+ * **HOS-975 is what makes this `true` for the first time.** The owner put
+ * `experience-pro` and `experience-premium` on sale on 2026-09-03, so
+ * `?domain=experience` now returns three active plans where it returned one,
+ * and this page renders "desde $X" plus the tier comparison instead of a single
+ * flat price. Nothing here had to change for that — the branch was parametrized
+ * for exactly this case — but it is the first time it is taken on this route,
+ * which makes it the thing to look at here in a smoke.
+ *
+ * The flag is derived from the LIVE plan list, not from `plans.config.ts`, so
+ * it flips per environment as each one's `billing_plans` rows are migrated
+ * (`0090`), not when the deploy lands.
  */
 const hasMultipleTiers = tiers.length > 1;
 const tierDiffs = hasMultipleTiers

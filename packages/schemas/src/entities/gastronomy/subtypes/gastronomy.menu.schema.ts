@@ -21,9 +21,26 @@
  * All three may be set at once and **none is required**. Nobody is made to load
  * forty items to be allowed to publish.
  *
+ * ## Multi-language carta (HOS-1043)
+ *
+ * `nameI18n`/`descriptionI18n` on both the section and the item retrofit
+ * `{es,en,pt}` translations exactly as HOS-117 retrofitted
+ * `gastronomy_faqs.question_i18n`/`answer_i18n`: additive, nullish, and the
+ * legacy `name`/`description` columns stay the `es` fallback source — carried
+ * on the STORED schema so a legacy row (no translations) parses unchanged.
+ *
+ * Unlike the FAQ pair, this one is a PAID capability
+ * (`EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU`, gastronomy-premium only):
+ * the route refuses a submitted document that carries any translation unless
+ * the owner's plan grants the key (see `menu-translations-gate.ts`), and the
+ * public read withholds already-typed translations from a downgraded owner's
+ * payload the same live way it withholds the carta itself. The owner's own
+ * protected read is never gated — see `getMenu.ts`.
+ *
  * @module entities/gastronomy/subtypes/gastronomy.menu.schema
  */
 import { z } from 'zod';
+import { i18nText } from '../../../common/i18n.schema.js';
 import { mediaAssetUrl } from '../../../common/media.schema.js';
 
 // ----------------------------------------------------------------------------
@@ -118,6 +135,20 @@ export const GastronomyMenuItemSchema = z.object({
     name: z.string().min(1).max(150),
     /** Optional description. */
     description: z.string().max(500).nullable(),
+    /**
+     * Localized name (HOS-1043), or `null` when the dish has never been
+     * translated. `name` remains the `es` fallback source; read paths resolve
+     * this via `resolveI18nText` with `name` as the fallback. Additive/nullish,
+     * gated at write and at public read — see the module docblock.
+     */
+    nameI18n: i18nText({ min: 1, max: 150 }).nullish(),
+    /**
+     * Localized description (HOS-1043), or `null`. Same fallback rule as
+     * {@link GastronomyMenuItemSchema.nameI18n}, with `description` as the
+     * `es` source. `min: 0` because the legacy field itself has no minimum —
+     * "a consultar" applies to price, not to prose.
+     */
+    descriptionI18n: i18nText({ min: 0, max: 500 }).nullish(),
     /** Price in centavos, or `null` for "a consultar". */
     priceCents: z.number().int().min(0).max(GASTRONOMY_MENU_MAX_ITEM_PRICE_CENTS).nullable(),
     /** Whether the dish is currently on offer. */
@@ -183,6 +214,17 @@ export const GastronomyMenuSectionSchema = z.object({
     name: z.string().min(1).max(120),
     /** Optional blurb under the heading. */
     description: z.string().max(500).nullable(),
+    /**
+     * Localized heading (HOS-1043), or `null`. `name` remains the `es`
+     * fallback source. Additive/nullish, gated at write and at public read —
+     * see the module docblock.
+     */
+    nameI18n: i18nText({ min: 1, max: 120 }).nullish(),
+    /**
+     * Localized blurb (HOS-1043), or `null`. `description` remains the `es`
+     * fallback source.
+     */
+    descriptionI18n: i18nText({ min: 0, max: 500 }).nullish(),
     /** Position within the menu. */
     displayOrder: z.number().int().min(0),
     /**
@@ -234,6 +276,16 @@ export const GastronomyMenuItemInputSchema = z.object({
         .trim()
         .max(500, { message: 'zodError.gastronomy.menuItem.description.max' })
         .nullish(),
+    /**
+     * Localized name (HOS-1043), or `null`/omitted to leave the dish untranslated.
+     * Whether the caller's PLAN allows submitting one at all is an ENTITLEMENT
+     * (`MULTILINGUAL_GASTRONOMY_MENU`) checked at the route
+     * (`menuPayloadCarriesTranslations`), the same permission/entitlement split
+     * `photoUrl` above documents.
+     */
+    nameI18n: i18nText({ min: 1, max: 150 }).nullish(),
+    /** Localized description (HOS-1043), or `null`/omitted. Same gate as {@link nameI18n}. */
+    descriptionI18n: i18nText({ min: 0, max: 500 }).nullish(),
     /**
      * Price in CENTAVOS — never pesos, and never a float. `null` (or omitted)
      * is the honest value for "según pesca" / "a consultar", which is why the
@@ -319,6 +371,13 @@ export const GastronomyMenuSectionInputSchema = z.object({
         .trim()
         .max(500, { message: 'zodError.gastronomy.menuSection.description.max' })
         .nullish(),
+    /**
+     * Localized heading (HOS-1043), or `null`/omitted. See
+     * {@link GastronomyMenuItemInputSchema.nameI18n} for the entitlement gate.
+     */
+    nameI18n: i18nText({ min: 1, max: 120 }).nullish(),
+    /** Localized blurb (HOS-1043), or `null`/omitted. Same gate as `nameI18n`. */
+    descriptionI18n: i18nText({ min: 0, max: 500 }).nullish(),
     /**
      * The dishes, in the order they should appear. May be EMPTY: an owner
      * building the carta over several sittings types the headings first, and

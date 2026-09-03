@@ -54,7 +54,8 @@
             "attachmentPdf": "Cardápio em PDF",
             "viewPdf": "Ver cardápio em PDF",
             "consultPrice": "A consultar",
-            "unavailable": "Indisponível"
+            "unavailable": "Indisponível",
+            "switchLanguage": "Ver o cardápio em:"
         },
         "dailySpecials": {
             "title": "Menu do dia",

@@ -244,3 +244,35 @@
     white-space: nowrap;
     border: 0;
 }
+
+/* HOS-1043 — the EN/PT translation fields, collapsed behind a native <details>. */
+.translationsBlock {
+    width: 100%;
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.translationsSummary {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+}
+
+.translationsLockedHint {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--brand-accent, #b45309);
+    margin: var(--space-1, 0.25rem) 0 0;
+}
+
+.translationsGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.translationsGrid input {
+    flex: 1 1 200px;
+}

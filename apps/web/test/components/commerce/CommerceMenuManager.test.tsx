@@ -166,6 +166,8 @@ describe('CommerceMenuManager (HOS-895)', () => {
                     {
                         name: 'Entradas',
                         description: null,
+                        nameI18n: null,
+                        descriptionI18n: null,
                         items: [
                             {
                                 name: 'Empanadas',
@@ -174,7 +176,9 @@ describe('CommerceMenuManager (HOS-895)', () => {
                                 isAvailable: true,
                                 photoUrl: null,
                                 photoPublicId: null,
-                                photoAlt: null
+                                photoAlt: null,
+                                nameI18n: null,
+                                descriptionI18n: null
                             }
                         ]
                     }
@@ -321,6 +325,8 @@ describe('CommerceMenuManager (HOS-895)', () => {
                     {
                         name: 'Entradas',
                         description: null,
+                        nameI18n: null,
+                        descriptionI18n: null,
                         items: [
                             {
                                 name: 'Empanadas',
@@ -329,7 +335,9 @@ describe('CommerceMenuManager (HOS-895)', () => {
                                 isAvailable: true,
                                 photoUrl: PHOTO_URL,
                                 photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
-                                photoAlt: 'Empanadas recién horneadas'
+                                photoAlt: 'Empanadas recién horneadas',
+                                nameI18n: null,
+                                descriptionI18n: null
                             }
                         ]
                     }
