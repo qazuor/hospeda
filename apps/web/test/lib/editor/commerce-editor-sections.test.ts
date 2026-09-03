@@ -58,44 +58,48 @@ describe('buildCommerceEditorSections — the vertical split', () => {
         expect(ids.indexOf('practicalInfo')).toBe(ids.indexOf('meetingPoint') + 1);
     });
 
-    // ── The other direction (HOS-895) ───────────────────────────────────────
+    // ── The other direction (HOS-895, HOS-1042) ─────────────────────────────
     //
     // Until the carta, every vertical-exclusive section belonged to the SAME
     // vertical, so "experience minus gastronomy" doubled as "everything
     // exclusive". `carta` broke that symmetry, and the block above still passes
     // with it — it only ever looks one way. These assert the mirror, which is
-    // what fails if someone moves `carta` into `SHARED_SECTIONS` and hands
-    // every experience a menu page.
+    // what fails if someone moves `carta` or `eventos` into `SHARED_SECTIONS`
+    // and hands every experience a menu or agenda page.
 
-    it('should give a restaurant the one section only it has', () => {
+    it('should give a restaurant the two sections only it has', () => {
         expect(gastronomy.map((section) => section.id)).toContain('menu');
+        expect(gastronomy.map((section) => section.id)).toContain('venueEvents');
     });
 
-    it('should give an experience NO carta', () => {
+    it('should give an experience NEITHER of them', () => {
         expect(experience.map((section) => section.id)).not.toContain('menu');
+        expect(experience.map((section) => section.id)).not.toContain('venueEvents');
     });
 
-    it('should make the carta slug unresolvable on an experience registry', () => {
+    it('should make the carta and venue-events slugs unresolvable on an experience registry', () => {
         const registry = buildCommerceEditorRegistry({ vertical: 'experience' });
 
         expect(findEditorSectionBySlug({ registry, slug: 'carta' })).toBeUndefined();
+        expect(findEditorSectionBySlug({ registry, slug: 'eventos' })).toBeUndefined();
     });
 
-    it('should differ from the experience list by exactly the carta', () => {
+    it('should differ from the experience list by exactly the carta and venue events', () => {
         const extra = gastronomy
             .map((section) => section.id)
             .filter((id) => !experience.some((section) => section.id === id));
 
-        expect(extra).toEqual(['menu']);
+        expect(extra).toEqual(['menu', 'venueEvents']);
     });
 
-    it('should place the carta next to its structural twin, the FAQ page', () => {
-        // Both are self-persisting managers with their own endpoints, mounted
-        // bare with no form and no save button. Adjacency is the visible half
-        // of that decision.
+    it('should place the carta and venue events next to their structural twin, the FAQ page', () => {
+        // All three are self-persisting managers with their own endpoints,
+        // mounted bare with no form and no save button. Adjacency is the
+        // visible half of that decision, in declaration order.
         const ids = gastronomy.map((section) => section.id);
 
-        expect(ids.indexOf('menu')).toBe(ids.indexOf('faqs') - 1);
+        expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('faqs') - 1);
+        expect(ids.indexOf('menu')).toBe(ids.indexOf('venueEvents') - 1);
     });
 });
 

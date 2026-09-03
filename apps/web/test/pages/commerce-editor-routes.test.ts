@@ -65,6 +65,10 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     // a `GET .../menu` on a page that does not show one — the weight the split
     // was meant to remove, re-added with nothing failing.
     CommerceMenuManager: 'carta.astro',
+    // HOS-1042 — the mirror of `CommerceMenuManager` above, for the venue's
+    // own agenda: it fetches `.../events` on mount, so a stray re-import onto
+    // another route puts that request on a page that never shows the agenda.
+    CommerceVenueEventsManager: 'eventos.astro',
     EditorHub: 'index.astro'
 };
 

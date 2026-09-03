@@ -95,23 +95,31 @@ const SHARED_SECTIONS: readonly EditorSection[] = [
 ];
 
 /**
- * Sections that exist only on the gastronomy vertical (HOS-895).
+ * Sections that exist only on the gastronomy vertical (HOS-895, HOS-1042).
  *
  * The mirror of {@link EXPERIENCE_ONLY_SECTIONS}, and left out of the
  * experience registry for the same reason those two are left out of the
- * gastronomy one: an experience has no carta, so the section does not exist
- * for it rather than being hidden from it. `findEditorSectionBySlug` returns
- * `undefined` for `/experience/<id>/editar/carta` and the shared resolver
- * sends it to the hub — no `visibilityKey`, matching the file's rule that no
- * section here uses a runtime one.
+ * gastronomy one: an experience has no carta and no venue agenda, so the
+ * sections do not exist for it rather than being hidden from it.
+ * `findEditorSectionBySlug` returns `undefined` for both
+ * `/experience/<id>/editar/carta` and `/experience/<id>/editar/eventos`, and
+ * the shared resolver sends either to the hub — no `visibilityKey`, matching
+ * the file's rule that no section here uses a runtime one.
  *
- * In the `content` group rather than next to `precio`: the carta is authored
- * content, and structurally it is the twin of `preguntas` — a self-persisting
- * manager with its own endpoints, repeatable rows, mounted bare with no form
- * and no save button. `precio` holds the price TIER and the external menu
- * link, which are listing attributes. The "where it rendered pre-split" rule
- * that places the experience-only pair does not apply: this panel is new in
- * HOS-895, so no owner has an existing expectation to preserve.
+ * Both entries sit in the `content` group rather than next to `precio`: each
+ * is authored content, and structurally each is the twin of `preguntas` — a
+ * self-persisting manager with its own endpoints, repeatable rows, mounted
+ * bare with no form and no save button. `precio` holds the price TIER and the
+ * external menu link, which are listing attributes. The "where it rendered
+ * pre-split" rule that places the experience-only pair does not apply: both
+ * panels are new (HOS-895, HOS-1042), so no owner has an existing expectation
+ * to preserve.
+ *
+ * This array now holds two entries. `buildCommerceEditorSections` below
+ * splices the whole block in via spread (`...GASTRONOMY_ONLY_SECTIONS`), so
+ * that keeps working unchanged regardless of how many entries this array
+ * carries — both land just before `preguntas`, in declaration order (`carta`
+ * then `eventos`).
  */
 const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
     {
@@ -119,6 +127,12 @@ const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
         slug: 'carta',
         group: 'content',
         labelKey: 'commerce.owner.editor.sectionNav.menu'
+    },
+    {
+        id: 'venueEvents',
+        slug: 'eventos',
+        group: 'content',
+        labelKey: 'commerce.owner.editor.sectionNav.venueEvents'
     }
 ];
 
