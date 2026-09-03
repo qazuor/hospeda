@@ -1,0 +1,173 @@
+/**
+ * CommercePlanPicker styles (HOS-1119).
+ * Plain CSS module per web conventions — no Tailwind.
+ */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+    width: 100%;
+    max-width: 480px;
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.subtitle {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 0.75rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-sm, 8px);
+    padding: var(--space-4, 1rem);
+    cursor: pointer;
+    transition: border-color var(--duration-normal, 0.2s) ease;
+}
+
+/*
+ * The alpha steps are PRECOMPUTED tokens (`--brand-accent-a30`,
+ * `--brand-primary-a10`), never `oklch(from var(--brand-…) l c h / …)`.
+ * `scripts/check-css-relative-colors.cjs` fails on a new relative-color
+ * occurrence, and the generated palette already ships every step this file
+ * needs — same idiom `styles/components.css` uses throughout.
+ */
+.card:hover {
+    border-color: var(--brand-accent-a30);
+}
+
+.cardSelected {
+    border-color: var(--brand-primary);
+    background-color: var(--brand-primary-a10);
+}
+
+.radio {
+    margin-top: 3px;
+    flex-shrink: 0;
+    accent-color: var(--brand-primary);
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    flex: 1;
+    min-width: 0;
+}
+
+.cardHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+.planName {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--core-foreground);
+}
+
+.planPrice {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--core-foreground);
+    white-space: nowrap;
+}
+
+.planPriceUnit {
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--core-muted-foreground);
+    margin-left: 2px;
+}
+
+.addedList {
+    list-style: none;
+    margin: var(--space-1, 0.25rem) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.addedList li {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--core-muted-foreground);
+}
+
+.addedList li::before {
+    content: "+ ";
+    color: var(--success, oklch(0.55 0.18 145));
+    font-weight: 700;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border, oklch(0.8 0 0));
+}
+
+.btnCancel {
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    background: transparent;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.btnCancel:hover:not(:disabled) {
+    color: var(--core-foreground);
+}
+
+.btnConfirm {
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border-radius: var(--radius-sm, 6px);
+    border: none;
+    background: var(--brand-accent);
+    color: var(--accent-foreground, #fff);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out;
+}
+
+.btnConfirm:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.btnCancel:disabled,
+.btnConfirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
