@@ -2,6 +2,9 @@
  * Gastronomy Subtypes — specialized schemas for gastronomy-specific sub-entities.
  */
 
+// Daily-special schemas (HOS-1041 — the menú del día, with its own validity window)
+export * from './gastronomy.daily-special.schema.js';
+
 // FAQ schemas
 export * from './gastronomy.faq.schema.js';
 
