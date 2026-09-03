@@ -649,15 +649,22 @@ function commerceVerticalTier(input: {
  * and premium stays reserved for a future step that carries genuinely more.
  *
  * `isActive` here means "seeded, priced, and a valid subscription target" —
- * it does NOT by itself mean "reachable by checkout". Exactly ONE plan slug
- * per vertical is ever resolved by a real checkout, via
+ * and since HOS-1119 that is ALSO what makes a tier reachable. A commerce
+ * checkout still turns a vertical into a plan slug in exactly one place,
  * `resolveCommercePlanSlug` (`apps/api/src/services/commerce-plan-resolver.ts`),
- * reading {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL} or the
- * `HOSPEDA_COMMERCE_PLAN_SLUGS` env override. Commerce has no plan-picker and
- * no plan-change/upgrade route, so a second `isActive` tier existing in this
- * catalogue changes nothing about which plan a new gastronomy owner actually
- * lands on until that resolver is pointed at it. See `GASTRONOMY_PRO_PLAN`'s
- * own doc.
+ * but that resolver now takes the buyer's PICK and validates it against
+ * {@link COMMERCE_PLANS_BY_VERTICAL}; {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL}
+ * (or the `HOSPEDA_COMMERCE_PLAN_SLUGS` env override) is what a checkout that
+ * asks for nothing still gets.
+ *
+ * Until HOS-1119 the paragraph above said the opposite — commerce had no plan
+ * picker and no plan-change route, so a second `isActive` tier changed nothing
+ * about which plan a new owner landed on. That is the hole HOS-1119 closed:
+ * `gastronomy-pro` had been active, priced and trial-carrying since HOS-895 and
+ * nobody could buy it. There is now a tier picker on the checkout and a
+ * per-vertical upgrade route
+ * (`POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`,
+ * upgrades only). See `GASTRONOMY_PRO_PLAN`'s own doc.
  *
  * The still-disabled tier carries `monthlyPriceArs: 0` when it has not been
  * priced — shipping it inactive is the same precedent {@link AI_SUPPORT_ADDON}
@@ -716,17 +723,21 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
  * defaults only ever described "not sellable yet", not a deliberate choice to
  * sell without one.
  *
- * **Activating this row in the catalogue is not the same as making it
- * reachable.** `resolveCommercePlanSlug` (`apps/api/src/services/
- * commerce-plan-resolver.ts`) is the ONE place a commerce checkout turns a
- * vertical into a plan slug, and it always resolves to exactly ONE slug per
- * vertical — `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy` (this file,
- * still `GASTRONOMY_BASICO_PLAN.slug`) unless `HOSPEDA_COMMERCE_PLAN_SLUGS` is
- * set, which it is on staging/production. There is no plan-picker and no
- * commerce plan-change/upgrade route (unlike accommodation), so this plan
- * being `isActive` makes it a valid, priced, seeded row — not a plan any
- * checkout will actually put someone on until that resolver is pointed at it.
- * See HOS-895 PR2's PR description for the operational step this implies.
+ * **Reachable since HOS-1119, and it was not before.** For one release this row
+ * was active, priced, trial-carrying and unbuyable: `resolveCommercePlanSlug`
+ * (`apps/api/src/services/commerce-plan-resolver.ts`) had exactly one answer per
+ * vertical, and no surface could ask for another. That is worth remembering as a
+ * shape rather than an anecdote — activating a plan row and making it sellable
+ * are two different changes, and the first one produces no error, no log and no
+ * failing test on its own (HOS-1118).
+ *
+ * The resolver is still the ONE place a vertical becomes a plan slug. It now
+ * takes the buyer's pick and refuses any slug that is not a tier of the
+ * requesting vertical, which is what keeps gastronomy and experiences on
+ * separate MercadoPago `preapproval_plan`s. `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy`
+ * (still `GASTRONOMY_BASICO_PLAN.slug`, and overridden by
+ * `HOSPEDA_COMMERCE_PLAN_SLUGS` on staging/production) remains what a checkout
+ * that picks nothing gets — so no environment moved when this became reachable.
  */
 export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-pro',
