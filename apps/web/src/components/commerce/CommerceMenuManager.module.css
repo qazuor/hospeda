@@ -51,7 +51,9 @@
 .fileLink {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--core-primary, #0f766e);
+    /* `--brand-primary` is the link colour every other editor panel uses
+       (RichTextEditor, BasicInfoSection, PlanEntitlementGate). */
+    color: var(--brand-primary);
     text-decoration: underline;
 }
 
@@ -142,11 +144,17 @@
     color: var(--core-foreground);
 }
 
+/*
+ * The same pair the editor's own Save button uses (`host/editor/ActionBar`).
+ * This button sits inside that form, a card above it, so borrowing the CTA
+ * recipe rather than inventing one is what keeps the two from reading as
+ * different kinds of action.
+ */
 .primaryButton {
     align-self: flex-start;
-    background-color: var(--core-primary, #0f766e);
-    border-color: var(--core-primary, #0f766e);
-    color: var(--core-primary-foreground, #fff);
+    background-color: var(--brand-accent);
+    border-color: var(--brand-accent);
+    color: var(--accent-foreground, #ffffff);
     font-weight: 600;
 }
 
