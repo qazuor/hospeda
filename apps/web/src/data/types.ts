@@ -1111,6 +1111,19 @@ export interface GastronomyMenuItem {
     /** Price in centavos, or `null` for "a consultar". */
     readonly priceCents: number | null;
     readonly isAvailable: boolean;
+    /**
+     * Delivery URL of the dish's photo (HOS-1045), or `null`.
+     *
+     * `null` covers THREE situations the page cannot and need not tell apart:
+     * the venue attached no photo to this dish, the owner's current plan does
+     * not grant `menu_item_photos`, or their plan no longer grants
+     * `manage_gastronomy_menu` (in which case the whole carta is withheld and
+     * this field never arrives at all). The API decides; the renderer draws
+     * what it is given.
+     */
+    readonly photoUrl: string | null;
+    /** Alt text for {@link photoUrl}. `null` falls back to the dish's name. */
+    readonly photoAlt: string | null;
 }
 
 /**
@@ -1141,6 +1154,30 @@ export interface GastronomyDailySpecial {
     readonly description: string | null;
     /** Price in centavos, or `null` for "a consultar". */
     readonly priceCents: number | null;
+}
+
+/**
+ * One entry on a venue's own agenda (HOS-1042) — live music night, happy
+ * hour, the Tuesday deal. Mirrors `GastronomyEventPublic` (`@repo/schemas`)
+ * with only the fields the public detail page renders.
+ *
+ * `date` and `weekday` are mutually exclusive per `recurrence`, exactly as the
+ * schema enforces server-side: a `once` entry carries `date` and a `null`
+ * `weekday`; a `weekly` entry carries `weekday` and a `null` `date`.
+ */
+export interface GastronomyVenueEvent {
+    readonly id: string;
+    readonly title: string;
+    readonly description: string | null;
+    readonly recurrence: 'once' | 'weekly';
+    /** `YYYY-MM-DD`, for a `once` entry; `null` for a `weekly` one. */
+    readonly date: string | null;
+    /** `0` (Sunday) … `6` (Saturday), for a `weekly` entry; `null` for a `once` one. */
+    readonly weekday: number | null;
+    /** `HH:MM`, local venue time. */
+    readonly startTime: string;
+    /** `HH:MM`, or `null` when the venue does not say. */
+    readonly endTime: string | null;
 }
 
 /**
@@ -1180,6 +1217,12 @@ export interface GastronomyDetailData extends GastronomyCardData {
      * and does not need to.
      */
     readonly dailySpecials?: readonly GastronomyDailySpecial[];
+    /**
+     * The venue's own agenda, in order (HOS-1042). Empty/absent when the venue
+     * has none, OR when the owner's current plan does not grant
+     * `manage_gastronomy_events` — same withholding as {@link menuSections}.
+     */
+    readonly venueEvents?: readonly GastronomyVenueEvent[];
     /** Social network links provided by the owner. */
     readonly socialNetworks: GastronomySocialNetworks | null;
     /** SEO metadata fields. */

@@ -21,6 +21,8 @@ export {
     getGastronomyDailySpecials,
     replaceGastronomyDailySpecials
 } from './gastronomy.daily-specials';
+// Venue events helpers (HOS-1042) — the agenda, read whole and written whole
+export { getGastronomyEvents, replaceGastronomyEvents } from './gastronomy.events';
 // FAQ helpers
 export {
     addGastronomyFaq,
@@ -44,10 +46,15 @@ export {
 } from './gastronomy.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
-// Menu entitlement resolver (HOS-895 PR2) — live owner-plan check for the
-// public detail page's display gate
-// (HOS-1041 generalised the body; all three share one three-query lookup.)
+// Owner-plan entitlement resolvers (HOS-895 PR2; generalised by HOS-1041,
+// widened by HOS-1045, set-returning variant added by HOS-1042) — the live
+// checks behind the public detail page's display gates. All of them share ONE
+// three-query lookup, so they cannot drift; prefer the SET variant when a
+// caller needs more than one key on the same render.
 export {
+    type GastronomyMenuGrants,
+    resolveOwnerGastronomyMenuGrants,
+    resolveOwnerGastronomyPlanEntitlementSet,
     resolveOwnerGrantsGastronomyDailySpecial,
     resolveOwnerGrantsGastronomyEntitlement,
     resolveOwnerGrantsGastronomyMenuManagement

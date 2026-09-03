@@ -171,6 +171,34 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         }
     });
 
+    it('grants the photo per dish on gastronomy PREMIUM alone (HOS-1045)', () => {
+        // Narrower than the printable ficha above in BOTH directions, and the
+        // test says so rather than leaving it to be inferred:
+        //
+        //  - one vertical, not both. An experience has no carta, so there is
+        //    no dish for a photo to hang on; granting it to
+        //    `experience-premium` would advertise a capability whose routes
+        //    that owner can never reach.
+        //  - one TIER, and specifically not `-pro`. `-pro` grants
+        //    MANAGE_GASTRONOMY_MENU (asserted below, so the two cannot be
+        //    conflated): it may type a carta and may not put pictures on it.
+        //    That gap IS the premium step, so an assertion that only checked
+        //    "premium has it" would still pass on the day someone widened the
+        //    grant to `-pro` and quietly deleted the reason to upgrade.
+        expect(GASTRONOMY_PREMIUM_PLAN.entitlements).toContain(EntitlementKey.MENU_ITEM_PHOTOS);
+        expect(GASTRONOMY_PRO_PLAN.entitlements).toContain(EntitlementKey.MANAGE_GASTRONOMY_MENU);
+
+        for (const plan of [
+            GASTRONOMY_BASICO_PLAN,
+            GASTRONOMY_PRO_PLAN,
+            EXPERIENCE_BASICO_PLAN,
+            EXPERIENCE_PRO_PLAN,
+            EXPERIENCE_PREMIUM_PLAN
+        ]) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.MENU_ITEM_PHOTOS);
+        }
+    });
+
     it('grants the experience certificate from experience-PRO upwards, and nowhere else (HOS-1057)', () => {
         // Same shape as the HOS-1058 assertion above, one tier lower and one
         // vertical narrower. Three halves, each catching a different mistake:
@@ -197,6 +225,29 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         );
         for (const plan of ALL_GASTRONOMY_PLANS) {
             expect(plan.entitlements).not.toContain(EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE);
+        }
+    });
+
+    it('grants the venue events agenda from gastronomy-pro upwards only (HOS-1042)', () => {
+        // Same two load-bearing halves as the ficha test above, one tier lower
+        // and one vertical narrower.
+        //
+        // The negative half carries a THIRD case the ficha's does not: the two
+        // experience tiers. An experience IS an event with a date, so it has no
+        // second agenda to hang off itself — a key leaking there would not be a
+        // mis-priced feature, it would be a nonsensical one.
+        expect(GASTRONOMY_PRO_PLAN.entitlements).toContain(EntitlementKey.MANAGE_GASTRONOMY_EVENTS);
+        expect(GASTRONOMY_PREMIUM_PLAN.entitlements).toContain(
+            EntitlementKey.MANAGE_GASTRONOMY_EVENTS
+        );
+
+        for (const plan of [
+            GASTRONOMY_BASICO_PLAN,
+            EXPERIENCE_BASICO_PLAN,
+            EXPERIENCE_PRO_PLAN,
+            EXPERIENCE_PREMIUM_PLAN
+        ]) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.MANAGE_GASTRONOMY_EVENTS);
         }
     });
 

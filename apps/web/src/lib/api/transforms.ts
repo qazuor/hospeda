@@ -31,6 +31,7 @@ import type {
     GastronomyMenuSection,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
+    GastronomyVenueEvent,
     PartnerData,
     PartnerDetailData,
     ReviewCardData
@@ -2717,7 +2718,8 @@ function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
 
 /**
  * Maps the raw `menuSections` array a gastronomy detail payload carries
- * (HOS-895 PR2) into the shape `GastronomyMenuSection.astro` renders.
+ * (HOS-895 PR2, per-dish photos added by HOS-1045) into the shape
+ * `GastronomyMenu.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing — the same treatment the
@@ -2744,7 +2746,12 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
                               : item.priceCents == null
                                 ? null
                                 : Number(item.priceCents),
-                      isAvailable: item.isAvailable !== false
+                      isAvailable: item.isAvailable !== false,
+                      // HOS-1045. Already withheld server-side for an owner
+                      // whose plan does not grant `menu_item_photos`, so a
+                      // present value here is one the API decided to publish.
+                      photoUrl: item.photoUrl == null ? null : String(item.photoUrl),
+                      photoAlt: item.photoAlt == null ? null : String(item.photoAlt)
                   }))
                 : []
         }))
@@ -2782,6 +2789,35 @@ function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpeci
                       : Number(special.priceCents)
         }))
         .filter((special) => special.title.length > 0);
+}
+
+/**
+ * Maps the raw `venueEvents` array a gastronomy detail payload carries
+ * (HOS-1042) into the shape `GastronomyVenueEvents.astro` renders.
+ *
+ * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
+ * API's live entitlement check returns nothing, or drops an entry with no
+ * `title` — the same treatment `mapGastronomyMenuSections` gives a malformed
+ * row. `date`/`weekday` are passed through as-is (already mutually exclusive
+ * per `recurrence` on the server), never re-derived here.
+ *
+ * @param raw - The payload's `venueEvents` value, of unknown shape.
+ * @returns Renderer-ready agenda entries; empty when absent or malformed.
+ */
+function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((event) => ({
+            id: String(event.id ?? ''),
+            title: String(event.title ?? ''),
+            description: event.description == null ? null : String(event.description),
+            recurrence: event.recurrence === 'weekly' ? ('weekly' as const) : ('once' as const),
+            date: event.date == null ? null : String(event.date),
+            weekday: typeof event.weekday === 'number' ? event.weekday : null,
+            startTime: String(event.startTime ?? ''),
+            endTime: event.endTime == null ? null : String(event.endTime)
+        }))
+        .filter((event) => event.id.length > 0 && event.title.length > 0);
 }
 
 /**
@@ -2827,6 +2863,7 @@ export function toGastronomyDetailPageProps({
         // the API — see GastronomyPublicSchema's field docs. Nothing here
         // re-applies either.
         dailySpecials: mapGastronomyDailySpecials(item.dailySpecials),
+        venueEvents: mapGastronomyVenueEvents(item.venueEvents),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {

@@ -104,6 +104,9 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // tickable on any plan here because the editor is a flat checklist,
             // but only a gastronomy plan has a carta for it to unlock.
             EntitlementKey.MANAGE_GASTRONOMY_MENU,
+            // HOS-1045 — narrower still: gastronomy PREMIUM only, where the
+            // carta key above starts at `-pro`. Same flat-checklist caveat.
+            EntitlementKey.MENU_ITEM_PHOTOS,
             // HOS-1049 — the mirror image of the one above: tier-dependent
             // (`experience-pro` and up) and experience-only, since a restaurant
             // has an address and a door rather than a meeting point to walk to.
@@ -115,7 +118,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // caveat as the carta above it. A separate box rather than folded
             // into that one because they are separate keys: an operator must be
             // able to grant a venue today's menu without the full carta.
-            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+            // HOS-1042 — the venue's own agenda. Same shape as the carta above:
+            // tier-dependent, gastronomy-only, and tickable on any plan here
+            // because the editor is a flat checklist.
+            EntitlementKey.MANAGE_GASTRONOMY_EVENTS
         ]
     }
 ];

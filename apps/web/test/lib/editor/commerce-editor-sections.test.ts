@@ -58,54 +58,58 @@ describe('buildCommerceEditorSections — the vertical split', () => {
         expect(ids.indexOf('practicalInfo')).toBe(ids.indexOf('meetingPoint') + 1);
     });
 
-    // ── The other direction (HOS-895) ───────────────────────────────────────
+    // ── The other direction (HOS-895, HOS-1042) ─────────────────────────────
     //
     // Until the carta, every vertical-exclusive section belonged to the SAME
     // vertical, so "experience minus gastronomy" doubled as "everything
     // exclusive". `carta` broke that symmetry, and the block above still passes
     // with it — it only ever looks one way. These assert the mirror, which is
-    // what fails if someone moves `carta` into `SHARED_SECTIONS` and hands
-    // every experience a menu page.
+    // what fails if someone moves `carta` or `eventos` into `SHARED_SECTIONS`
+    // and hands every experience a menu or agenda page.
 
-    it('should give a restaurant the one section only it has', () => {
+    it('should give a restaurant the two sections only it has', () => {
         expect(gastronomy.map((section) => section.id)).toContain('menu');
+        expect(gastronomy.map((section) => section.id)).toContain('venueEvents');
     });
 
-    it('should give an experience NO carta', () => {
+    it('should give an experience NEITHER of them', () => {
         expect(experience.map((section) => section.id)).not.toContain('menu');
+        expect(experience.map((section) => section.id)).not.toContain('venueEvents');
     });
 
-    it('should make the carta slug unresolvable on an experience registry', () => {
+    it('should make the carta and venue-events slugs unresolvable on an experience registry', () => {
         const registry = buildCommerceEditorRegistry({ vertical: 'experience' });
 
         expect(findEditorSectionBySlug({ registry, slug: 'carta' })).toBeUndefined();
+        expect(findEditorSectionBySlug({ registry, slug: 'eventos' })).toBeUndefined();
     });
 
-    it('should differ from the experience list by exactly the carta and the menú del día', () => {
+    it('should differ from the experience list by exactly the three gastronomy-only sections', () => {
         const extra = gastronomy
             .map((section) => section.id)
             .filter((id) => !experience.some((section) => section.id === id));
 
-        // HOS-1041 added the second gastronomy-only section. Asserted as an
-        // exact list rather than two `toContain`s so a THIRD one cannot be
-        // added to `GASTRONOMY_ONLY_SECTIONS` without this failing and someone
-        // deciding whether an experience should have it.
-        expect(extra).toEqual(['menu', 'dailySpecials']);
+        // HOS-1041 added the second gastronomy-only section and HOS-1042 the
+        // third. Asserted as an exact list rather than N `toContain`s so a
+        // FOURTH cannot be added to `GASTRONOMY_ONLY_SECTIONS` without this
+        // failing and someone deciding whether an experience should have it.
+        expect(extra).toEqual(['menu', 'dailySpecials', 'venueEvents']);
     });
 
-    it('should place the carta next to its structural twin, the FAQ page', () => {
+    it('should place the gastronomy-only run in order, ending at the FAQ page', () => {
         // Both are self-persisting managers with their own endpoints, mounted
         // bare with no form and no save button. Adjacency is the visible half
         // of that decision.
         //
-        // HOS-1041 inserted `dailySpecials` BETWEEN them, so the carta is now
-        // two before the FAQs rather than one. The relationship being asserted
-        // is unchanged — the carta still leads the gastronomy-only run that
-        // ends at the FAQ page.
+        // HOS-1041 inserted `dailySpecials` between them and HOS-1042 added
+        // `venueEvents` after it, so the carta is now three before the FAQs
+        // rather than one. The relationship being asserted is unchanged — the
+        // carta still leads the gastronomy-only run that ends at the FAQ page.
         const ids = gastronomy.map((section) => section.id);
 
         expect(ids.indexOf('menu')).toBe(ids.indexOf('dailySpecials') - 1);
-        expect(ids.indexOf('dailySpecials')).toBe(ids.indexOf('faqs') - 1);
+        expect(ids.indexOf('dailySpecials')).toBe(ids.indexOf('venueEvents') - 1);
+        expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('faqs') - 1);
     });
 
     // ── The menú del día (HOS-1041) ─────────────────────────────────────────

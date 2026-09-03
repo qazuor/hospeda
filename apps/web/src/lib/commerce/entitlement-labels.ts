@@ -30,6 +30,10 @@
  */
 export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     manage_gastronomy_menu: 'manageGastronomyMenu',
+    // HOS-1045 — the first key that separates gastronomy PREMIUM from `-pro`,
+    // so it is the first entry here that will ever be rendered by the premium
+    // column of the tier picker.
+    menu_item_photos: 'menuItemPhotos',
     // HOS-1049. Shows up in the experience tier picker's "adds" list the day a
     // second experience tier is activated — `deriveCommercePlanTierDiffs` only
     // renders when there is more than one, and `experience-basico` is the only
@@ -43,7 +47,8 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // HOS-1041 — the second thing `gastronomy-pro` adds over `-basico`, so the
     // plan picker's "adds" list must name it or the tier reads as one feature
     // dearer than it is.
-    manage_gastronomy_daily_special: 'manageGastronomyDailySpecial'
+    manage_gastronomy_daily_special: 'manageGastronomyDailySpecial',
+    manage_gastronomy_events: 'manageGastronomyEvents'
 };
 
 /**
@@ -51,7 +56,9 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
  */
 export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_gastronomy_menu: 'Carta estructurada',
+    menu_item_photos: 'Foto por plato',
     manage_experience_directions: 'Mapa y cómo llegar',
     issue_experience_certificate: 'Certificados de experiencia',
-    manage_gastronomy_daily_special: 'Menú del día'
+    manage_gastronomy_daily_special: 'Menú del día',
+    manage_gastronomy_events: 'Eventos del local'
 };

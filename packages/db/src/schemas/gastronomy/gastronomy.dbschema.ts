@@ -28,6 +28,7 @@ import {
     VisibilityPgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { gastronomyEvents } from './gastronomy_event.dbschema.ts';
 import { gastronomyFaqs } from './gastronomy_faq.dbschema.ts';
 import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
 import { gastronomyReviews } from './gastronomy_review.dbschema.ts';
@@ -206,7 +207,9 @@ export const gastronomiesRelations = relations(gastronomies, ({ one, many }) => 
     features: many(rGastronomyFeature, { relationName: 'gastronomyToFeature' }),
     reviews: many(gastronomyReviews),
     faqs: many(gastronomyFaqs),
-    menuSections: many(gastronomyMenuSections)
+    menuSections: many(gastronomyMenuSections),
+    /** The venue's own agenda — HOS-1042. */
+    venueEvents: many(gastronomyEvents)
 }));
 
 /** Type-inferred insert type for gastronomy rows. */

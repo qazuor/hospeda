@@ -32,6 +32,22 @@
  *    an owner who uploads and walks away leaves the asset billing with nothing
  *    pointing at it.
  *
+ * ## The photo per dish (HOS-1045)
+ *
+ * Uploaded from the dish's own row, never from a gallery elsewhere on the page.
+ * That is the whole point of the issue: a picture chosen in one list and later
+ * matched to a dish in another is a matching task the owner has to redo every
+ * time either list moves.
+ *
+ * It persists in TWO steps, and the split is forced by the carta's own write
+ * model rather than chosen: the BYTES go up immediately
+ * (`POST .../menu-item-photo`, because an upload is an upload), and the
+ * ASSOCIATION rides in the next "Guardar carta" like every other field of the
+ * dish — because `PUT .../menu` mints a new id for every dish it writes, so
+ * there is no id an upload could have attached itself to. The consequence is
+ * visible and is worth stating: a photo uploaded and not saved is lost from the
+ * carta, exactly as a dish name typed and not saved is.
+ *
  * ## The 403 is a real state, not an error
  *
  * The structured carta is a `gastronomy-pro` capability, and the page this
@@ -65,6 +81,12 @@ interface MenuItemDraft {
     /** Price in CENTAVOS, or `null` for "a consultar". */
     priceCents: number | null;
     isAvailable: boolean;
+    /** Delivery URL of the dish photo (HOS-1045), or `null` for none. */
+    photoUrl: string | null;
+    /** Cloudinary id of that asset, round-tripped so the server can destroy it. */
+    photoPublicId: string | null;
+    /** Alt text; `null` lets the public page fall back to the dish's name. */
+    photoAlt: string | null;
 }
 
 /** One course, as held in form state. */
@@ -84,6 +106,9 @@ interface MenuEnvelope {
             readonly description: string | null;
             readonly priceCents: number | null;
             readonly isAvailable: boolean;
+            readonly photoUrl: string | null;
+            readonly photoPublicId: string | null;
+            readonly photoAlt: string | null;
         }>;
     }>;
     readonly file: MenuFile | null;
@@ -100,8 +125,20 @@ const EMPTY_ITEM: MenuItemDraft = {
     name: '',
     description: '',
     priceCents: null,
-    isAvailable: true
+    isAvailable: true,
+    photoUrl: null,
+    photoPublicId: null,
+    photoAlt: null
 };
+
+/** What the per-dish photo upload route answers with. */
+interface MenuItemPhotoUpload {
+    readonly url: string;
+    readonly publicId: string;
+}
+
+/** MIME types the per-dish photo input and the API both accept — images only. */
+const ACCEPTED_ITEM_PHOTO_TYPES = 'image/jpeg,image/png,image/webp';
 
 /** What the panel is doing right now. */
 type PanelState = 'loading' | 'idle' | 'saving' | 'uploading';
@@ -131,6 +168,14 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
+    /**
+     * HOS-1045. A SECOND lock, and deliberately not folded into `isLocked`:
+     * the carta lock disables Save (a `-basico` owner cannot save a carta at
+     * all), while this one must leave Save working — the way out of it is to
+     * remove the photos and save the carta without them, which a disabled Save
+     * would make impossible.
+     */
+    const [isPhotoLocked, setIsPhotoLocked] = useState(false);
 
     const basePath = `/api/v1/protected/gastronomies/${listingId}/menu`;
 
@@ -156,7 +201,10 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                             name: item.name,
                             description: item.description ?? '',
                             priceCents: item.priceCents,
-                            isAvailable: item.isAvailable
+                            isAvailable: item.isAvailable,
+                            photoUrl: item.photoUrl ?? null,
+                            photoPublicId: item.photoPublicId ?? null,
+                            photoAlt: item.photoAlt ?? null
                         }))
                     }))
                 );
@@ -228,6 +276,110 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
         []
     );
 
+    /**
+     * Uploads ONE dish photo and parks it on that dish's draft.
+     *
+     * The bytes leave immediately; the ASSOCIATION does not — it is written by
+     * the next "Guardar carta", because `PUT .../menu` re-creates every dish
+     * row and there is no id an upload could bind to. So this sets draft state
+     * and nothing more, and a photo added without saving is lost exactly as a
+     * dish name typed without saving is.
+     *
+     * @param sectionIndex - Index of the course.
+     * @param itemIndex - Index of the dish within it.
+     * @param selected - The chosen file.
+     */
+    const uploadItemPhoto = useCallback(
+        async (sectionIndex: number, itemIndex: number, selected: File) => {
+            setState('uploading');
+            setMessage(null);
+
+            // A raw `fetch` rather than `apiClient`, for the reason the menu
+            // file upload states: multipart across origins needs
+            // `credentials: 'include'` to carry the session cookie.
+            const body = new FormData();
+            body.append('file', selected);
+
+            let response: Response | undefined;
+            try {
+                response = await fetch(`${getApiUrl()}${basePath}-item-photo`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body
+                });
+            } catch {
+                response = undefined;
+            }
+
+            setState('idle');
+
+            if (response?.status === 403) {
+                setIsPhotoLocked(true);
+                setMessage(
+                    t(
+                        'commerce.owner.editor.menuManager.photoLocked',
+                        'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
+                    )
+                );
+                return;
+            }
+
+            if (!response?.ok) {
+                setMessage(
+                    t(
+                        'commerce.owner.editor.menuManager.photoUploadError',
+                        'No se pudo subir la foto del plato.'
+                    )
+                );
+                return;
+            }
+
+            const parsed = (await response.json()) as { data?: MenuItemPhotoUpload };
+            if (!parsed.data?.url) {
+                setMessage(
+                    t(
+                        'commerce.owner.editor.menuManager.photoUploadError',
+                        'No se pudo subir la foto del plato.'
+                    )
+                );
+                return;
+            }
+
+            patchItem(sectionIndex, itemIndex, {
+                photoUrl: parsed.data.url,
+                photoPublicId: parsed.data.publicId ?? null
+            });
+            setMessage(
+                t(
+                    'commerce.owner.editor.menuManager.photoAttached',
+                    'Foto agregada. Acordate de guardar la carta.'
+                )
+            );
+        },
+        [basePath, patchItem, t]
+    );
+
+    /**
+     * Detaches the photo from a dish's draft.
+     *
+     * Clears the alt text along with the URL: an alt describing a picture that
+     * is no longer there would be published against whatever photo is attached
+     * next.
+     *
+     * @param sectionIndex - Index of the course.
+     * @param itemIndex - Index of the dish within it.
+     */
+    const removeItemPhoto = useCallback(
+        (sectionIndex: number, itemIndex: number) => {
+            patchItem(sectionIndex, itemIndex, {
+                photoUrl: null,
+                photoPublicId: null,
+                photoAlt: null
+            });
+        },
+        [patchItem]
+    );
+
     const saveMenu = useCallback(async () => {
         setState('saving');
         setMessage(null);
@@ -248,7 +400,10 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                             name: item.name.trim(),
                             description: item.description.trim() || null,
                             priceCents: item.priceCents,
-                            isAvailable: item.isAvailable
+                            isAvailable: item.isAvailable,
+                            photoUrl: item.photoUrl,
+                            photoPublicId: item.photoPublicId,
+                            photoAlt: item.photoAlt
                         }))
                 }))
         };
@@ -265,7 +420,30 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
         // only thing that separates "your plan does not include this" from a
         // genuine error, and showing the second for the first is how an upsell
         // turns into a bug report.
+        //
+        // TWO entitlements can produce this 403 and they mean different things,
+        // so the payload decides which upsell to show rather than the response
+        // body: both refusals carry `ENTITLEMENT_REQUIRED`, and reading the key
+        // out of the message would be parsing prose. A document carrying a
+        // photo is refused for the photo — an owner who got a photo INTO this
+        // state necessarily passed the upload's own gate, which only the plan
+        // that also grants the carta passes.
         if (result.error.status === 403) {
+            const carriedPhoto = payload.sections.some((section) =>
+                section.items.some((item) => Boolean(item.photoUrl))
+            );
+
+            if (carriedPhoto) {
+                setIsPhotoLocked(true);
+                setMessage(
+                    t(
+                        'commerce.owner.editor.menuManager.photoLocked',
+                        'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
+                    )
+                );
+                return;
+            }
+
             setIsLocked(true);
             setMessage(
                 t(
@@ -636,6 +814,108 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 >
                                     {t('commerce.owner.editor.menuManager.removeItem', 'Quitar')}
                                 </button>
+
+                                {/*
+                                 * The photo (HOS-1045), on the dish's OWN row —
+                                 * that placement is the issue, not a detail.
+                                 * `safePhotoHref` is not needed for the preview
+                                 * because the value came from our own upload
+                                 * route in this same session; the PUBLIC page
+                                 * sanitises it anyway, since a row can have been
+                                 * written by something else.
+                                 */}
+                                <div className={styles.itemPhotoRow}>
+                                    {item.photoUrl ? (
+                                        <img
+                                            className={styles.itemPhotoThumb}
+                                            src={item.photoUrl}
+                                            alt={
+                                                item.photoAlt ||
+                                                item.name ||
+                                                t(
+                                                    'commerce.owner.editor.menuManager.photoPreview',
+                                                    'Foto del plato'
+                                                )
+                                            }
+                                        />
+                                    ) : null}
+
+                                    <label className={styles.itemPhotoLabel}>
+                                        <span>
+                                            {item.photoUrl
+                                                ? t(
+                                                      'commerce.owner.editor.menuManager.replacePhoto',
+                                                      'Cambiar la foto'
+                                                  )
+                                                : t(
+                                                      'commerce.owner.editor.menuManager.addPhoto',
+                                                      'Agregar foto'
+                                                  )}
+                                        </span>
+                                        <input
+                                            type="file"
+                                            accept={ACCEPTED_ITEM_PHOTO_TYPES}
+                                            disabled={busy || isPhotoLocked}
+                                            onChange={(event) => {
+                                                const selected = event.target.files?.[0];
+                                                // Cleared so choosing the SAME
+                                                // file again still fires
+                                                // `change`; without it a failed
+                                                // upload could not be retried.
+                                                event.target.value = '';
+                                                if (selected) {
+                                                    void uploadItemPhoto(
+                                                        sectionIndex,
+                                                        itemIndex,
+                                                        selected
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                    </label>
+
+                                    {item.photoUrl ? (
+                                        <>
+                                            <input
+                                                className={styles.input}
+                                                type="text"
+                                                value={item.photoAlt ?? ''}
+                                                placeholder={t(
+                                                    'commerce.owner.editor.menuManager.photoAltPlaceholder',
+                                                    'Describí la foto (opcional)'
+                                                )}
+                                                aria-label={t(
+                                                    'commerce.owner.editor.menuManager.photoAlt',
+                                                    'Texto alternativo de la foto'
+                                                )}
+                                                onChange={(event) => {
+                                                    patchItem(sectionIndex, itemIndex, {
+                                                        photoAlt: event.target.value || null
+                                                    });
+                                                }}
+                                            />
+                                            {/*
+                                             * Stays enabled while
+                                             * `isPhotoLocked`: removing the
+                                             * photo is the way OUT of that
+                                             * state, so it is the one control
+                                             * the lock must not take away.
+                                             */}
+                                            <button
+                                                type="button"
+                                                className={styles.dangerButton}
+                                                onClick={() => {
+                                                    removeItemPhoto(sectionIndex, itemIndex);
+                                                }}
+                                            >
+                                                {t(
+                                                    'commerce.owner.editor.menuManager.removePhoto',
+                                                    'Quitar la foto'
+                                                )}
+                                            </button>
+                                        </>
+                                    ) : null}
+                                </div>
                             </div>
                         ))}
 

@@ -1,5 +1,5 @@
 {
-  "id": "82763bae-31aa-4544-8071-2f4ea103af30",
+  "id": "e219b05d-288f-4b23-8914-5035a7f121fc",
   "prevId": "2e5d285e-488e-46d6-9489-85ec1c07a63f",
   "version": "7",
   "dialect": "postgresql",
@@ -14991,6 +14991,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "photo_url": {
+          "name": "photo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_public_id": {
+          "name": "photo_public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_alt": {
+          "name": "photo_alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "display_order": {
           "name": "display_order",
@@ -33390,8 +33408,7 @@
         "SOCIAL_FOOTER",
         "SOCIAL_SETTINGS",
         "SOCIAL_AUDIT",
-        "INTEGRATION",
-        "QR_CODE"
+        "INTEGRATION"
       ]
     },
     "public.permission_effect_enum": {
@@ -34039,10 +34056,6 @@
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
-        "platform.qrCode.view",
-        "platform.qrCode.create",
-        "platform.qrCode.update",
-        "platform.qrCode.delete",
         "moderation.term.view",
         "moderation.term.create",
         "moderation.term.update",

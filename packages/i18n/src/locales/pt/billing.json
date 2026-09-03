@@ -349,25 +349,39 @@
             "message_other": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
-        "max_active_alerts": { "title": "Você atingiu o limite de alertas de preço" },
-        "max_compare_items": { "title": "Você atingiu o limite de itens para comparar" },
+        "max_active_alerts": {
+            "title": "Você atingiu o limite de alertas de preço"
+        },
+        "max_compare_items": {
+            "title": "Você atingiu o limite de itens para comparar"
+        },
         "max_ai_text_improve_per_month": {
             "title": "Você atingiu o limite de melhorias de texto com IA"
         },
-        "max_ai_chat_per_month": { "title": "Você atingiu o limite de conversas no chat de IA" },
+        "max_ai_chat_per_month": {
+            "title": "Você atingiu o limite de conversas no chat de IA"
+        },
         "max_ai_chat_consumer_per_month": {
             "title": "Você atingiu o limite de conversas com o assistente de IA"
         },
-        "max_ai_search_per_month": { "title": "Você atingiu o limite de buscas com IA" },
+        "max_ai_search_per_month": {
+            "title": "Você atingiu o limite de buscas com IA"
+        },
         "max_ai_support_per_month": {
             "title": "Você atingiu o limite de atendimentos de suporte com IA"
         },
-        "max_ai_translate_per_month": { "title": "Você atingiu o limite de traduções com IA" },
+        "max_ai_translate_per_month": {
+            "title": "Você atingiu o limite de traduções com IA"
+        },
         "max_ai_accommodation_import_per_month": {
             "title": "Você atingiu o limite de importações de hospedagem com IA"
         },
-        "max_search_history_entries": { "title": "Você atingiu o limite de histórico de buscas" },
-        "max_collections": { "title": "Você atingiu o limite de coleções de favoritos" },
+        "max_search_history_entries": {
+            "title": "Você atingiu o limite de histórico de buscas"
+        },
+        "max_collections": {
+            "title": "Você atingiu o limite de coleções de favoritos"
+        },
         "generic": {
             "title": "Limite do plano atingido",
             "message": "Você atingiu o limite do seu plano. Faça um upgrade para continuar.",
@@ -474,6 +488,7 @@
         "download_listing_pdf": "Ficha em PDF para imprimir",
         "issue_experience_certificate": "Certificados de experiência",
         "manage_gastronomy_menu": "Cardápio com seções e pratos",
+        "menu_item_photos": "Foto por prato no cardápio",
         "manage_experience_directions": "Mapa do ponto de encontro e como chegar",
         "manage_gastronomy_daily_special": "Prato do dia com validade própria",
         "view_basic_stats": "Estatísticas básicas",
@@ -512,7 +527,8 @@
         "vip_promotions_access": "Acesso a promoções VIP",
         "ai_support": "Assistente de suporte com IA",
         "ai_translate": "Tradução de conteúdo com IA",
-        "ai_accommodation_import": "Importação de hospedagens com IA"
+        "ai_accommodation_import": "Importação de hospedagens com IA",
+        "manage_gastronomy_events": "Eventos do local, com data ou semanais"
     },
     "comparison": {
         "unlimited": "Ilimitado",

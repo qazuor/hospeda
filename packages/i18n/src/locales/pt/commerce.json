@@ -139,7 +139,8 @@
                 "practicalInfo": "Dados práticos",
                 "contactSocial": "Contato e redes",
                 "menu": "Cardápio",
-                "dailySpecials": "Menu do dia"
+                "dailySpecials": "Menu do dia",
+                "venueEvents": "Eventos"
             },
             "sections": {
                 "type": "Categoria",
@@ -337,7 +338,16 @@
                 "saving": "Salvando…",
                 "saved": "Cardápio salvo.",
                 "saveError": "Não foi possível salvar o cardápio.",
-                "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link."
+                "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link.",
+                "addPhoto": "Adicionar foto",
+                "replacePhoto": "Trocar a foto",
+                "removePhoto": "Remover a foto",
+                "photoPreview": "Foto do prato",
+                "photoAlt": "Texto alternativo da foto",
+                "photoAltPlaceholder": "Descreva a foto (opcional)",
+                "photoAttached": "Foto adicionada. Lembre de salvar o cardápio.",
+                "photoUploadError": "Não foi possível enviar a foto do prato.",
+                "photoLocked": "As fotos por prato estão disponíveis no plano Premium. Você pode remover as fotos e salvar o cardápio mesmo assim."
             },
             "dailySpecials": {
                 "title": "Menu do dia",
@@ -362,6 +372,34 @@
                 "locked": "O menu do dia está disponível a partir do plano Profissional.",
                 "expired": "Já venceu — não está sendo exibido.",
                 "scheduled": "Programado — ainda não é exibido."
+            },
+            "venueEventsManager": {
+                "title": "Agenda do local",
+                "intro": "Avise seus clientes quando algo acontece no seu local: música ao vivo, happy hour, a promoção de terça-feira.",
+                "newEntry": "Novo evento",
+                "entryTitle": "Título",
+                "titlePlaceholder": "Música ao vivo, Happy hour…",
+                "entryDescription": "Descrição",
+                "descriptionPlaceholder": "Detalhe opcional",
+                "moveUp": "Subir o evento",
+                "moveDown": "Descer o evento",
+                "removeEntry": "Remover",
+                "recurrenceWeekly": "Toda semana",
+                "recurrenceOnce": "Um único dia",
+                "weekday": "Dia da semana",
+                "date": "Data",
+                "startTime": "Horário de início",
+                "endTime": "Horário de término (opcional)",
+                "active": "Ativo",
+                "addEntry": "Adicionar evento",
+                "maxReached": "Você atingiu o limite de {{max}} eventos.",
+                "maxReached_one": "Você atingiu o limite de {{max}} evento.",
+                "maxReached_other": "Você atingiu o limite de {{max}} eventos.",
+                "save": "Salvar agenda",
+                "saving": "Salvando…",
+                "saved": "Agenda salva.",
+                "saveError": "Não foi possível salvar a agenda.",
+                "locked": "Manter uma agenda de eventos está disponível a partir do plano Profissional."
             }
         },
         "checklist": {
@@ -407,9 +445,11 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Cardápio estruturado",
+            "menuItemPhotos": "Foto por prato",
             "manageExperienceDirections": "Mapa e como chegar",
             "issueExperienceCertificate": "Certificados de experiência",
-            "manageGastronomyDailySpecial": "Menu do dia"
+            "manageGastronomyDailySpecial": "Menu do dia",
+            "manageGastronomyEvents": "Agenda de eventos"
         },
         "create": {
             "pickVertical": {

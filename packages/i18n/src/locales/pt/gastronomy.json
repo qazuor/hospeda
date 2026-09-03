@@ -39,13 +39,13 @@
             "closed": "Fechado",
             "open24h": "Aberto 24 horas",
             "today": "Hoje",
-            "friday": "Viernes",
-            "monday": "Lunes",
+            "friday": "Sexta-feira",
+            "monday": "Segunda-feira",
             "saturday": "Sábado",
             "sunday": "Domingo",
-            "thursday": "Jueves",
-            "tuesday": "Martes",
-            "wednesday": "Miércoles"
+            "thursday": "Quinta-feira",
+            "tuesday": "Terça-feira",
+            "wednesday": "Quarta-feira"
         },
         "menu": "Ver cardápio",
         "menuCarta": {
@@ -78,6 +78,12 @@
             "title": "Está procurando um salão para eventos?",
             "description": "Este lugar aceita aniversários, eventos corporativos e casamentos. Entre em contato para combinar.",
             "button": "Entrar em contato"
+        },
+        "venueEvents": {
+            "title": "Agenda do local",
+            "weekly": "Toda {{weekday}}",
+            "range": "{{when}}, das {{start}} às {{end}}",
+            "fromOnly": "{{when}}, a partir das {{start}}"
         }
     },
     "types": {

@@ -1,6 +1,7 @@
 export * from './gastronomy.model.ts';
 export * from './gastronomy-catalog-filters.ts';
 export * from './gastronomyDailySpecial.model.ts';
+export * from './gastronomyEvent.model.ts';
 export * from './gastronomyFaq.model.ts';
 export * from './gastronomyMedia.model.ts';
 export * from './gastronomyMenuItem.model.ts';

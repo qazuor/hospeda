@@ -293,6 +293,15 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description:
             'Allows building the venue menu as sections and dishes with names, descriptions and prices, instead of only linking or uploading it'
     },
+    // HOS-1045. Granted by `gastronomy-premium` ALONE — the tier step above
+    // `-pro`'s structured carta, and the same trailing commerce section for
+    // the slicing reason above.
+    {
+        key: EntitlementKey.MENU_ITEM_PHOTOS,
+        name: 'Photos per dish',
+        description:
+            'Allows attaching a photo to each dish of the structured menu, shown next to the dish on the public page'
+    },
     // HOS-1057. Granted from `experience-pro` upwards, and experience-only:
     // a restaurant has nothing to certify. The exact mirror of the key above
     // it, one vertical over.
@@ -321,5 +330,18 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Menú del día',
         description:
             'Allows publishing a dish of the day with its own validity window, which stops being shown on the public page when the window passes'
+    },
+    // HOS-1042. Granted from `gastronomy-pro` upwards and gastronomy-only, on
+    // exactly the terms the carta above is, and appended to this same trailing
+    // commerce section for the slicing reason stated at its head.
+    //
+    // Not the platform's destination `events` entity, and not the free "we host
+    // your birthday" CTA (HOS-1055) — see the enum member's doc for the three-way
+    // distinction.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
+        name: 'Venue events agenda',
+        description:
+            'Allows publishing the venue’s own events — live music night, happy hour, dinner show — on a date or repeating every week'
     }
 ];

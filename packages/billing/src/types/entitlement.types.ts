@@ -103,6 +103,46 @@ export enum EntitlementKey {
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
     /**
+     * A photo attached to each dish of the structured carta (HOS-1045).
+     *
+     * A TIER differentiator like {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}
+     * and {@link EntitlementKey.DOWNLOAD_LISTING_PDF}, so it stays OUT of
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * tier of a vertical receives, and a paid capability placed there is handed
+     * to `-basico` as well. Granted by `gastronomy-premium` ONLY (owner
+     * decision, 2026-09-01): where `-pro` earns the right to type a carta at
+     * all, this is what the step above it buys.
+     *
+     * ## It layers ON TOP of `MANAGE_GASTRONOMY_MENU`, it does not replace it
+     *
+     * A dish photo has nowhere to live without dishes, so this key is only
+     * reachable by an owner who also holds the carta key — which `-premium`
+     * does, and which is why that plan repeats `MANAGE_GASTRONOMY_MENU` rather
+     * than inheriting it from `-pro`. The two are still checked independently:
+     * the carta write is gated on the first, and the photo upload plus the
+     * presence of a photo in the submitted document on this one.
+     *
+     * ## No numeric limit rides with it
+     *
+     * Deliberately: there is no `MAX_MENU_ITEM_PHOTOS` key and none is planned
+     * for v1. Access is the gate and nothing else. The limit engine resolves an
+     * unknown key as *unlimited* across five layers without raising anything,
+     * so a cap declared but not wired end to end behaves in production exactly
+     * like no cap — while reading, in the catalogue, like a promise the
+     * platform keeps. `MAX_PHOTOS_PER_ACCOMMODATION` and its `extra-photos-20`
+     * addon are ACCOMMODATION machinery and are not reused here.
+     *
+     * The public detail page enforces this live, the same way the carta key is:
+     * a downgraded owner's dish photos stay in the database and
+     * `resolveOwnerGastronomyMenuGrants` (`@repo/service-core`) withholds them
+     * from the public payload on every render.
+     *
+     * Gastronomy-only by name and on purpose — an experience has no carta, so
+     * there is no second vertical for this key to be shared with.
+     */
+    MENU_ITEM_PHOTOS = 'menu_item_photos',
+
+    /**
      * Issuing a certificate to a person who did an experience (HOS-1057).
      *
      * Experience-only by name and on purpose, the exact mirror of
@@ -213,6 +253,41 @@ export enum EntitlementKey {
      * día.
      */
     MANAGE_GASTRONOMY_DAILY_SPECIAL = 'manage_gastronomy_daily_special',
+
+    /**
+     * Publishing a gastronomy venue's OWN events — live music night, happy
+     * hour, dinner show, the Tuesday deal (HOS-1042).
+     *
+     * A TIER differentiator granted from `gastronomy-pro` UPWARDS (owner
+     * decision, 2026-09-01), on exactly the terms
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU} is: NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that map is the floor every tier
+     * of a vertical receives), and carried by `-pro` and `-premium` alike so a
+     * premium subscriber never loses a capability their cheaper neighbour has.
+     *
+     * ## What this is NOT
+     *
+     * Three things in this codebase are called "events" and only one of them is
+     * this key:
+     *
+     * - The platform `events` entity is the DESTINATION's agenda — a festival,
+     *   a popular fiesta — curated by staff and of another scale entirely. A
+     *   happy hour does not belong there.
+     * - `GastronomyEventsCta` (HOS-1055) is the "we host YOUR event" toggle:
+     *   birthdays, corporate dinners, weddings. That is the venue offering
+     *   itself as a place to hire, and it stays free on every tier.
+     * - This key is the venue's own recurring agenda: things that happen AT the
+     *   venue, on a date or every Thursday, that a diner may show up for.
+     *
+     * Gastronomy-only by name and on purpose, the same way
+     * `MANAGE_GASTRONOMY_MENU` is: an experience IS an event with a date, so it
+     * has no second agenda to hang off itself.
+     *
+     * The public detail page enforces it live rather than by deleting rows — a
+     * downgraded owner's already-typed agenda stays in the database and is
+     * withheld from the public payload, the same mechanism the carta uses.
+     */
+    MANAGE_GASTRONOMY_EVENTS = 'manage_gastronomy_events',
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

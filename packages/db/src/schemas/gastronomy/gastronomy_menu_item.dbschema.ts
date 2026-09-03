@@ -14,7 +14,31 @@ import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
  * the whole venue — become per-dish once dishes are real. Both need a stable
  * identifier that survives the owner reordering the menu, and an array index
  * is not one. That retrofit is knowingly deferred (owner decision): this table
- * carries no allergen or photo column yet, only the id they will hang off.
+ * carries no allergen column yet, only the id it will hang off.
+ *
+ * ## The photo is COLUMNS here, not a row in a link table (HOS-1045)
+ *
+ * The obvious shape for "a dish has a photo" is a link table keyed by
+ * `gastronomy_menu_items.id`. It does not work, and the reason is one file
+ * over: `replaceGastronomyMenu` writes the carta as a WHOLE DOCUMENT — it
+ * hard-deletes the listing's sections and reinserts them, so `CASCADE` takes
+ * every item row with them and a NEW id is minted on every save. A link table
+ * keyed on that id would be emptied by the owner's next "Guardar carta".
+ *
+ * Making the id survive would mean turning that write into a diff, which is
+ * precisely the machinery HOS-895 deferred until something referenced an item.
+ * Columns on the item row sidestep the question: the photo travels INSIDE the
+ * document the client submits, so it is reinserted alongside the dish it
+ * belongs to and cannot be separated from it by a reorder or a rename. The
+ * binding is as tight as it gets — same row, one transaction.
+ *
+ * ONE photo per dish, not a gallery. The venue's gallery already exists
+ * (`gastronomy_media`) and a carta rendering N photos per dish is a different
+ * product. Nothing here caps how many DISHES may carry one: the capability is
+ * gated by the `menu_item_photos` entitlement (gastronomy premium) and by NO
+ * numeric limit key — owner decision, HOS-1045, and a deliberate one, since
+ * the limit engine resolves an unknown key as *unlimited* in five layers
+ * without raising, so a cap that is not wired end to end is worse than none.
  *
  * ## `gastronomy_id` is denormalized ON PURPOSE
  *
@@ -63,6 +87,31 @@ export const gastronomyMenuItems = pgTable(
          * retyping it next season.
          */
         isAvailable: boolean('is_available').notNull().default(true),
+        /**
+         * Delivery URL of the dish's photo (HOS-1045), or NULL for a dish
+         * without one — which is the ordinary case and always will be.
+         *
+         * Nullable rather than defaulted for the same reason `price_cents` is:
+         * there is no sensible stand-in value. A placeholder image would put a
+         * picture of nothing on a published carta.
+         */
+        photoUrl: text('photo_url'),
+        /**
+         * Cloudinary `public_id` of that asset, so a later cleanup can DESTROY
+         * it rather than merely forget it — the distinction `gastronomy_media`
+         * and `gastronomies.menu_file_public_id` both make, and the reason
+         * HOS-372 exists at all: a forgotten asset keeps billing.
+         *
+         * Nullable independently of {@link photoUrl}: a row whose URL came from
+         * somewhere other than our own upload route has no public id to store.
+         */
+        photoPublicId: text('photo_public_id'),
+        /**
+         * Alt text for the photo. Nullable; the public renderer falls back to
+         * the dish's own name, which is a better alt than an empty string and
+         * is always present.
+         */
+        photoAlt: text('photo_alt'),
         /** Position within its section. NOT NULL — see the section table. */
         displayOrder: integer('display_order').notNull(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -4,6 +4,8 @@
 
 // Daily-special schemas (HOS-1041 — the menú del día, with its own validity window)
 export * from './gastronomy.daily-special.schema.js';
+// Venue events schemas (HOS-1042 — the venue's own agenda, with recurrence)
+export * from './gastronomy.event.schema.js';
 
 // FAQ schemas
 export * from './gastronomy.faq.schema.js';

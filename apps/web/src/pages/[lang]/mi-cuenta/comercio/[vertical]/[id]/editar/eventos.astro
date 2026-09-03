@@ -1,0 +1,78 @@
+---
+/**
+ * @file eventos.astro
+ * @description Venue-events (agenda) section of the commerce editor
+ * (HOS-1042).
+ *
+ * Gastronomy only, same as `carta.astro`. The section is absent from the
+ * experience registry rather than hidden from its nav, so
+ * `resolveCommerceEditorPage` sends an experience request for this slug to
+ * the hub — the same mechanism that refuses `punto-de-encuentro` to a
+ * restaurant, pointing the other way.
+ *
+ * `CommerceVenueEventsManager` owns its own endpoints — `GET`/`PUT
+ * .../events` — so this page mounts it directly, with no form and no save
+ * button, exactly as `carta.astro` mounts `CommerceMenuManager`. Nothing here
+ * reaches the listing PATCH or its dirty tracking.
+ *
+ * ## Why the agenda is NOT preloaded server-side
+ *
+ * Same reasoning `carta.astro` states for the carta: the agenda is not part
+ * of the listing payload the editor is built from, and preloading it would
+ * make every editor load pay for a nested document most owners will not open.
+ * One fetch, on the one page that shows it.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/eventos/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceVenueEventsManager } from '@/components/commerce/CommerceVenueEventsManager.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { WEEKDAY_I18N_KEYS } from '@/lib/commerce/venue-event-draft';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: 'eventos' });
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+
+/**
+ * The weekday picker's seven labels, resolved HERE and passed down.
+ *
+ * They live under `gastronomy.detail.openingHours.*` — the set
+ * `OpeningHoursSection` already owns — and that prefix deliberately does not
+ * ship to the browser: 25 of its 32 keys are named only by `.astro` files
+ * rendering server-side, so adding it to `CLIENT_I18N_KEY_PREFIXES` would push
+ * 1,205 B brotli of never-named strings into the client dictionary to deliver
+ * 303 B of useful ones (measured). SSR reads the full catalog, so resolving
+ * them on this side costs nothing and avoids a second copy of the day names.
+ *
+ * Same pattern, and the same stated reason, as `AccommodationsListingMap`'s
+ * `typeLabels`: the island stays i18n-agnostic for these strings.
+ */
+const weekdayLabels = WEEKDAY_I18N_KEYS.map((dayKey) =>
+	t(`gastronomy.detail.openingHours.${dayKey}`, dayKey)
+);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="eventos"
+	title={t('commerce.owner.editor.sectionNav.venueEvents', 'Eventos')}
+>
+	<CommerceVenueEventsManager
+		client:load
+		listingId={listingId}
+		locale={locale}
+		weekdayLabels={weekdayLabels}
+	/>
+</CommerceEditorSectionLayout>

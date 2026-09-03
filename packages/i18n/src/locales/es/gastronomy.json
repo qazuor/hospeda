@@ -78,6 +78,12 @@
             "title": "¿Buscás salón para eventos?",
             "description": "Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.",
             "button": "Contactar"
+        },
+        "venueEvents": {
+            "title": "Agenda del local",
+            "weekly": "Todos los {{weekday}}",
+            "range": "{{when}}, {{start}} a {{end}}",
+            "fromOnly": "{{when}}, desde las {{start}}"
         }
     },
     "types": {
