@@ -42,7 +42,6 @@ import {
     FileTextIcon,
     HomeIcon,
     type IconProps,
-    LinkIcon,
     ListIcon,
     LocationIcon,
     LogsIcon,
@@ -58,6 +57,7 @@ import {
     PostSponsorshipIcon,
     PriceIcon,
     PromotionsIcon,
+    QrCodeIcon,
     ReceiptIcon,
     RefreshIcon,
     RolesIcon,
@@ -100,10 +100,6 @@ const NAV_ICON_MAP: Record<string, ComponentType<IconProps>> = {
     EyeIcon,
     FileTextIcon,
     HomeIcon,
-    // HOS-981 — Plataforma → Códigos QR. `@repo/icons` ships no QR or scan
-    // glyph, and a redirectable code IS a link with a printed handle, so this
-    // is the honest stand-in rather than a shape that merely looks square.
-    LinkIcon,
     ListIcon,
     LocationIcon,
     LogsIcon,
@@ -119,6 +115,7 @@ const NAV_ICON_MAP: Record<string, ComponentType<IconProps>> = {
     PostSponsorshipIcon,
     PriceIcon,
     PromotionsIcon,
+    QrCodeIcon,
     ReceiptIcon,
     RefreshIcon,
     RolesIcon,

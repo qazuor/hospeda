@@ -810,9 +810,7 @@ const plataformaSidebar: SidebarInput = {
                     type: 'link',
                     id: 'qr-codes',
                     label: { es: 'Códigos QR', en: 'QR codes', pt: 'Códigos QR' },
-                    // No QR glyph exists in @repo/icons; a redirectable code IS a
-                    // link with a printed handle, so LinkIcon is the honest stand-in.
-                    icon: 'LinkIcon',
+                    icon: 'QrCodeIcon',
                     route: '/platform/qr-codes',
                     // The gate the LIST route demands, not a broader one
                     // (HOS-981). A menu entry that declares a different
