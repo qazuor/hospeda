@@ -4169,6 +4169,25 @@ export const postEditApi = {
             body: { visibility }
         });
     },
+
+    /**
+     * Approve one of the caller's own posts (HOS-1037): the trusted editor's
+     * self-approve action.
+     *
+     * Moves `moderationState` ONLY — `visibility` is left intact. Requires
+     * `POST_PUBLISH_OWN` plus authorship; a plain editor gets a 403, and a
+     * post authored by someone else answers 404 (never 403 — see
+     * `apps/api/docs/error-contract.md`).
+     *
+     * @param params - Post ID.
+     * @returns The updated post.
+     */
+    moderate({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/posts/${id}/moderate`,
+            body: { moderationState: 'APPROVED' }
+        });
+    },
     /**
      * List the authenticated user's own posts, in every moderation and
      * lifecycle state — including drafts, pending-review, and rejected
@@ -4317,6 +4336,25 @@ export const eventEditApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/events/${id}/publish-state`,
             body: { visibility }
+        });
+    },
+
+    /**
+     * Approve one of the caller's own events (HOS-1037): the trusted editor's
+     * self-approve action.
+     *
+     * Moves `moderationState` ONLY — `visibility` is left intact. Requires
+     * `EVENT_PUBLISH_OWN` plus authorship; a plain editor gets a 403, and an
+     * event authored by someone else answers 404 (never 403 — see
+     * `apps/api/docs/error-contract.md`).
+     *
+     * @param params - Event ID.
+     * @returns The updated event.
+     */
+    moderate({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/events/${id}/moderate`,
+            body: { moderationState: 'APPROVED' }
         });
     },
 

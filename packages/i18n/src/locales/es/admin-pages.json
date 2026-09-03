@@ -846,7 +846,7 @@
                 "grantOverrides": "Permisos Otorgados",
                 "denyOverrides": "Permisos Denegados",
                 "trustedEditor": "Editor de confianza",
-                "trustedEditorDesc": "Puede publicar y eliminar sus propias notas y eventos sin aprobación previa",
+                "trustedEditorDesc": "Puede aprobar, publicar y eliminar sus propias notas y eventos sin pasar por la revisión de un moderador",
                 "trustedEditorEnabled": "Marcado como editor de confianza",
                 "trustedEditorDisabled": "Editor de confianza desmarcado",
                 "addOverride": "Agregar override",

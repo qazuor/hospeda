@@ -1,5 +1,10 @@
 import type { Post } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
@@ -107,13 +112,35 @@ export function checkCanDeletePost(actor: Actor, post: Post): void {
  * update behind plain `POST_UPDATE`. This is where it becomes load-bearing
  * (§7.6.4).
  *
- * The verdict belongs to the platform, so there is no author path here — not
- * even for a trusted editor, who moves `visibility` instead.
+ * Two independent paths (HOS-1037):
+ * - `POST_MODERATION_CHANGE` is the platform side: any post, any target
+ *   state. This is what the admin moderation queue uses, unchanged.
+ * - The author side is narrower on purpose: `actor.id === post.authorId`,
+ *   `POST_PUBLISH_OWN`, AND `moderationState === APPROVED`. A trusted editor
+ *   may approve their own content — the toggle's whole promise — but may not
+ *   self-reject or push it back to PENDING; those remain platform-only.
  *
+ * @param actor - The actor requesting the change.
+ * @param post - The post being moderated.
+ * @param moderationState - The verdict being requested.
  * @throws ServiceError if forbidden
  */
-export function checkCanModeratePost(actor: Actor): void {
-    requirePermission(actor, PermissionEnum.POST_MODERATION_CHANGE);
+export function checkCanModeratePost(
+    actor: Actor,
+    post: Post,
+    moderationState: ModerationStatusEnum
+): void {
+    if (hasPermission(actor, PermissionEnum.POST_MODERATION_CHANGE)) {
+        return;
+    }
+    if (
+        actor.id === post.authorId &&
+        hasPermission(actor, PermissionEnum.POST_PUBLISH_OWN) &&
+        moderationState === ModerationStatusEnum.APPROVED
+    ) {
+        return;
+    }
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot moderate post');
 }
 
 /**
