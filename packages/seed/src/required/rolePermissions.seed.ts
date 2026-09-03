@@ -213,6 +213,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DASHBOARD_BASE_VIEW,
         PermissionEnum.DASHBOARD_FULL_VIEW,
         PermissionEnum.SETTINGS_MANAGE,
+
+        // QR CODES (HOS-981): granted to exactly the roles that already hold
+        // SETTINGS_MANAGE, which is what the routes used to be gated on. The
+        // point of the split is that this set can now be delegated on its own —
+        // nobody gains or loses access on the day it ships.
+        PermissionEnum.QR_CODE_VIEW,
+        PermissionEnum.QR_CODE_CREATE,
+        PermissionEnum.QR_CODE_UPDATE,
+        PermissionEnum.QR_CODE_DELETE,
+
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
@@ -660,6 +670,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DASHBOARD_BASE_VIEW,
         PermissionEnum.DASHBOARD_FULL_VIEW,
         PermissionEnum.SETTINGS_MANAGE,
+
+        // QR CODES (HOS-981): granted to exactly the roles that already hold
+        // SETTINGS_MANAGE, which is what the routes used to be gated on. The
+        // point of the split is that this set can now be delegated on its own —
+        // nobody gains or loses access on the day it ships.
+        PermissionEnum.QR_CODE_VIEW,
+        PermissionEnum.QR_CODE_CREATE,
+        PermissionEnum.QR_CODE_UPDATE,
+        PermissionEnum.QR_CODE_DELETE,
+
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,

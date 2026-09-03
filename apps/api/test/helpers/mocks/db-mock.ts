@@ -204,6 +204,46 @@ class ExperienceMockModel extends GenericMockModel {
     }
 }
 
+/**
+ * HOS-981 — `qr_codes` table stub.
+ *
+ * Shape-only, in the style of the `accommodations` stub further down: a map from
+ * the property name production code uses to the physical column name, which is
+ * everything `Object.hasOwn(table, col)` and `safeIlike(table[col], term)` need.
+ *
+ * Declared at module scope rather than inline because three exports have to
+ * agree on the SAME object: `qrCodes` itself (imported at module scope by
+ * `QrCodeService._buildSearchConditions`), `MockQrCodeModel.getTable()` — which
+ * `adminList` calls to validate the sort field, and which throws
+ * "Cannot convert undefined or null to object" when it answers `undefined` —
+ * and `buildSearchCondition`.
+ */
+const qrCodesTableStub = {
+    id: 'id',
+    slug: 'slug',
+    targetUrl: 'target_url',
+    label: 'label',
+    description: 'description',
+    source: 'source',
+    entityType: 'entity_type',
+    entityId: 'entity_id',
+    renderOptions: 'render_options',
+    isActive: 'is_active',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+};
+
+/** HOS-981 — `qr_code_scans` table stub. Append-only: three columns, no audit. */
+const qrCodeScansTableStub = {
+    id: 'id',
+    qrCodeId: 'qr_code_id',
+    scannedAt: 'scanned_at'
+};
+
 export function createDbMock() {
     return {
         // Database client
@@ -259,6 +299,44 @@ export function createDbMock() {
             col,
             term
         })),
+
+        /**
+         * Free-text search-condition builder used by `BaseCrudService.adminList`
+         * and `search` (HOS-981).
+         *
+         * Shape-only, but it reproduces the ONE behaviour a caller can be wrong
+         * about: a column the table does not carry is dropped SILENTLY, and an
+         * empty result becomes `undefined` rather than an always-true clause. A
+         * service that names a column it does not have therefore attaches NO
+         * filter and answers `?search=anything` with the whole table — a bug
+         * that looks like a search matching everything rather than one that ran
+         * nothing, so a stub that always returned a condition would hide exactly
+         * the failure worth catching.
+         *
+         * Absent until now, which meant the import resolved to `undefined` and
+         * any admin list carrying a `search` term died with "is not a function".
+         */
+        buildSearchCondition: vi.fn((term: string, columns: readonly string[], table: unknown) => {
+            if (!term || term.trim().length === 0) return undefined;
+            if (typeof table !== 'object' || table === null) return undefined;
+
+            const tableRecord = table as Record<string, unknown>;
+            const conditions = columns
+                .filter((col) => Object.hasOwn(tableRecord, col))
+                .map((col) => ({ type: 'safeIlike', col: tableRecord[col], term: term.trim() }));
+
+            if (conditions.length === 0) return undefined;
+            if (conditions.length === 1) return conditions[0];
+            return { type: 'or', conditions };
+        }),
+
+        /**
+         * HOS-981 — `qr_codes` / `qr_code_scans` table stubs. `qrCodes` is
+         * imported at module scope by `QrCodeService`, so its absence is not a
+         * QR-only problem: it surfaces wherever the app is booted.
+         */
+        qrCodes: qrCodesTableStub,
+        qrCodeScans: qrCodeScansTableStub,
 
         /**
          * Gastronomy catalog-membership clause builders (HOS-1054).
@@ -597,6 +675,16 @@ export function createDbMock() {
          * shards rather than one file.
          */
         QrCodeModel: class MockQrCodeModel {
+            /**
+             * `adminList` calls this to validate the requested sort field
+             * against the real columns. Returning `undefined` makes
+             * `Object.hasOwn(table, sortBy)` throw a bare TypeError that
+             * surfaces as a 500 with no mention of the table — so the stub
+             * answers with the same object `qrCodes` exports.
+             */
+            getTable() {
+                return qrCodesTableStub;
+            }
             async findOne(_where: unknown) {
                 return null;
             }

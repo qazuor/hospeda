@@ -61,7 +61,14 @@ describe('QrCodeService', () => {
             modelMock as unknown as QrCodeModel,
             scanModelMock as unknown as QrCodeScanModel
         );
-        actor = createActor({ permissions: [PermissionEnum.SETTINGS_MANAGE] });
+        actor = createActor({
+            permissions: [
+                PermissionEnum.QR_CODE_VIEW,
+                PermissionEnum.QR_CODE_CREATE,
+                PermissionEnum.QR_CODE_UPDATE,
+                PermissionEnum.QR_CODE_DELETE
+            ]
+        });
     });
 
     describe('resolveBySlug', () => {
@@ -288,11 +295,206 @@ describe('QrCodeService', () => {
             });
         });
 
-        it('refuses an actor without SETTINGS_MANAGE', async () => {
+        it('refuses an actor without QR_CODE_CREATE', async () => {
             const result = await service.create(createActor({ permissions: [] }), input);
 
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
             expect(modelMock.create).not.toHaveBeenCalled();
+        });
+
+        /**
+         * The whole point of splitting the family: read access does not carry
+         * write access. An actor holding only `view` must not be able to mint a
+         * code — if this passed, the four verbs would be four names for one
+         * permission.
+         */
+        it('refuses an actor who holds only QR_CODE_VIEW', async () => {
+            const result = await service.create(
+                createActor({ permissions: [PermissionEnum.QR_CODE_VIEW] }),
+                input
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.create).not.toHaveBeenCalled();
+        });
+
+        /**
+         * And the gate really is the QR one, not the borrowed settings gate it
+         * replaced. Without this, leaving `SETTINGS_MANAGE` in place alongside
+         * would look identical from inside the suite.
+         */
+        it('is no longer satisfied by SETTINGS_MANAGE', async () => {
+            const result = await service.create(
+                createActor({ permissions: [PermissionEnum.SETTINGS_MANAGE] }),
+                input
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.create).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * HOS-981 PR 3 — the update path.
+     *
+     * Every assertion here is on WHAT REACHES THE MODEL, never on what the
+     * mocked model hands back. A test that asserted on the returned row would
+     * be asserting on its own fixture: the mock echoes whatever it is given, so
+     * a service that dropped a field entirely would still "return" it.
+     */
+    describe('update', () => {
+        /**
+         * A code stored RED, so a patch that silently reverts a colour has
+         * something to revert it from. The whole point of the fixture.
+         */
+        const redQrCode = {
+            ...liveQrCode,
+            renderOptions: {
+                errorCorrectionLevel: 'M',
+                format: 'SVG',
+                margin: 4,
+                size: null,
+                foregroundColor: '#ff0000',
+                backgroundColor: '#ffffff'
+            }
+        };
+
+        beforeEach(() => {
+            modelMock = createModelMock(['findOne', 'findById', 'create', 'update']);
+            service = new QrCodeService(
+                { logger: loggerMock },
+                modelMock as unknown as QrCodeModel,
+                scanModelMock as unknown as QrCodeScanModel
+            );
+            modelMock.findById.mockResolvedValue(redQrCode);
+            modelMock.update.mockImplementation(async (_where, data) => ({
+                ...redQrCode,
+                ...(data as Record<string, unknown>)
+            }));
+        });
+
+        /** The retarget. This single call is the reason the entity exists. */
+        it('writes the new target URL', async () => {
+            const result = await service.update(actor, QR_ID, {
+                targetUrl: 'https://hospeda.com.ar/es/destinos/colon/'
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(modelMock.update).toHaveBeenCalledTimes(1);
+            const [where, patch] = modelMock.update.mock.calls[0] as [
+                Record<string, unknown>,
+                Record<string, unknown>
+            ];
+            expect(where).toEqual({ id: QR_ID });
+            expect(patch.targetUrl).toBe('https://hospeda.com.ar/es/destinos/colon/');
+        });
+
+        /** Whitespace around a URL pasted out of a browser bar must not persist. */
+        it('trims the new target URL without otherwise rewriting it', async () => {
+            await service.update(actor, QR_ID, {
+                targetUrl: '  https://hospeda.com.ar/es/destinos/colon/  '
+            });
+
+            const patch = modelMock.update.mock.calls[0]?.[1] as Record<string, unknown>;
+            // Trailing slash intact, path untouched: a redirect target is copied
+            // by a human and canonicalising it would move where a printed code
+            // sends people.
+            expect(patch.targetUrl).toBe('https://hospeda.com.ar/es/destinos/colon/');
+        });
+
+        /**
+         * THE PATCH-MERGE ASSERTION.
+         *
+         * `toStrictEqual` on the whole `renderOptions` object, not
+         * `objectContaining` — which is blind to a field being present that
+         * should not be, and it is exactly the extra fields that do the damage
+         * here. If `QrCodeUpdateInputSchema` stops declaring the sub-object
+         * `.partial()`, Zod completes this patch with all five defaults,
+         * `foregroundColor: '#000000'` among them, and the red is written away.
+         */
+        it('sends ONLY the render option the caller changed, so the stored colour survives', async () => {
+            const result = await service.update(actor, QR_ID, { renderOptions: { margin: 8 } });
+
+            expect(result.error).toBeUndefined();
+            const patch = modelMock.update.mock.calls[0]?.[1] as {
+                renderOptions: Record<string, unknown>;
+            };
+
+            expect(patch.renderOptions).toStrictEqual({ margin: 8 });
+            // Stated twice, on purpose: the line above is the general rule, and
+            // this one names the field whose loss is silent and permanent.
+            expect(patch.renderOptions).not.toHaveProperty('foregroundColor');
+        });
+
+        /**
+         * The slug is already printed on a sticker. `.strict()` on the update
+         * schema is what refuses it — asserting the model was never touched is
+         * what proves the refusal happened BEFORE the write rather than being
+         * quietly dropped from it.
+         */
+        it('refuses an update that carries a slug', async () => {
+            const result = await service.update(actor, QR_ID, {
+                slug: 'Rena2ed4'
+            } as unknown as Parameters<typeof service.update>[2]);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(modelMock.update).not.toHaveBeenCalled();
+        });
+
+        it('refuses an unknown render option', async () => {
+            const result = await service.update(actor, QR_ID, {
+                renderOptions: { logoUrl: 'https://example.com/logo.png' }
+            } as unknown as Parameters<typeof service.update>[2]);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(modelMock.update).not.toHaveBeenCalled();
+        });
+
+        it('refuses an actor without QR_CODE_UPDATE', async () => {
+            const result = await service.update(createActor({ permissions: [] }), QR_ID, {
+                targetUrl: 'https://hospeda.com.ar/es/'
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.update).not.toHaveBeenCalled();
+        });
+
+        /**
+         * Retargeting is the one verb worth withholding from somebody who may
+         * otherwise browse and print codes: it silently changes where every
+         * sticker already in the field sends people.
+         */
+        it('refuses an actor who holds only QR_CODE_VIEW', async () => {
+            const result = await service.update(
+                createActor({ permissions: [PermissionEnum.QR_CODE_VIEW] }),
+                QR_ID,
+                { targetUrl: 'https://hospeda.com.ar/es/' }
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.update).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * The free-text columns the admin list searches over.
+     *
+     * Pinned as an exact list rather than a containment check: the base class
+     * defaults to `['name']`, a column `qr_codes` does not have, and
+     * `buildSearchCondition` DROPS unknown columns silently before returning
+     * `undefined` for an empty list. A regression to the default therefore
+     * attaches no filter at all and answers `?search=plaza` with the whole
+     * table — a bug that looks, from the panel, like a search that matched
+     * everything rather than one that ran nothing.
+     */
+    describe('getSearchableColumns', () => {
+        it('searches label, slug and targetUrl — and nothing that does not exist', () => {
+            const columns = (
+                service as unknown as { getSearchableColumns: () => string[] }
+            ).getSearchableColumns();
+
+            expect(columns).toStrictEqual(['label', 'slug', 'targetUrl']);
+            expect(columns).not.toContain('name');
         });
     });
 });

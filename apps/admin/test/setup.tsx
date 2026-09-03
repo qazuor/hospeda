@@ -321,6 +321,10 @@ vi.mock('@repo/icons', () => {
         PriceIcon: stub('PriceIcon'),
         PrintIcon: stub('PrintIcon'),
         PromotionsIcon: stub('PromotionsIcon'),
+        // HOS-981. This stub list is a hand-maintained inventory of @repo/icons:
+        // an icon missing here resolves to `undefined` under test, so the nav
+        // entry renders iconless and `nav-icon-map.test.ts` fails on it.
+        QrCodeIcon: stub('QrCodeIcon'),
         ReceiptIcon: stub('ReceiptIcon'),
         RefreshIcon: stub('RefreshIcon'),
         ReportsIcon: stub('ReportsIcon'),
