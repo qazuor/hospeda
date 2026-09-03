@@ -22,6 +22,11 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedAddExperienceFaqRoute } from './addFaq';
 import { protectedAddExperienceMediaRoute } from './addMedia';
 import { protectedGetExperienceBrochureRoute } from './brochure';
+import {
+    protectedGetExperienceCertificatePdfRoute,
+    protectedIssueExperienceCertificateRoute,
+    protectedListExperienceCertificatesRoute
+} from './certificates';
 import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
@@ -57,6 +62,13 @@ app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 // static segment ahead of a param at the same position regardless of insertion
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetExperienceBrochureRoute);
+
+// POST/GET /{id}/certificates and GET /{id}/certificates/{certificateId}/pdf —
+// The certificate a provider issues to whoever did the experience (HOS-1057).
+// Registered before /{id} for the same defensive reason as the brochure above.
+app.route('/', protectedGetExperienceCertificatePdfRoute);
+app.route('/', protectedIssueExperienceCertificateRoute);
+app.route('/', protectedListExperienceCertificatesRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetExperienceByIdRoute);

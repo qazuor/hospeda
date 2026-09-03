@@ -302,6 +302,15 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description:
             'Allows attaching a photo to each dish of the structured menu, shown next to the dish on the public page'
     },
+    // HOS-1057. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has nothing to certify. The exact mirror of the key above
+    // it, one vertical over.
+    {
+        key: EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+        name: 'Experience certificates',
+        description:
+            'Allows issuing a printable certificate to a person who did the experience, naming them, the outing and its date'
+    },
     // HOS-1049. Granted from `experience-pro` upwards, and experience-only:
     // a restaurant has an address and a door. The meeting point itself stays
     // free on every tier (HOS-1048) — only the how-to-get-there half is here.
