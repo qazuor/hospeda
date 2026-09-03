@@ -139,7 +139,11 @@ function groupCategories(categories: string[]): Record<string, string[]> {
                 PermissionCategoryEnum.EVENT_ORGANIZER,
                 PermissionCategoryEnum.PUBLIC,
                 PermissionCategoryEnum.SYSTEM,
-                PermissionCategoryEnum.ACCESS
+                PermissionCategoryEnum.ACCESS,
+                // HOS-981. Without this line the category is silently DROPPED
+                // from this page: the chain below has no final `else`, so a
+                // category no branch claims simply never renders.
+                PermissionCategoryEnum.QR_CODE
             ].includes(cat)
         ) {
             groups['System & Configuration'].push(category);

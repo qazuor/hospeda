@@ -28,7 +28,12 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './qr-code.normalizers';
-import { checkCanManageQrCode } from './qr-code.permissions';
+import {
+    checkCanCreateQrCode,
+    checkCanDeleteQrCode,
+    checkCanUpdateQrCode,
+    checkCanViewQrCode
+} from './qr-code.permissions';
 
 /** How many times a fresh slug is attempted before the create gives up. */
 const SLUG_MINT_ATTEMPTS = 5;
@@ -105,39 +110,47 @@ export class QrCodeService extends BaseCrudService<
     // ------------------------------------------------------------------
 
     protected _canCreate(actor: Actor, _data: QrCodeCreateInput): void {
-        checkCanManageQrCode(actor);
+        checkCanCreateQrCode(actor);
     }
     protected _canUpdate(actor: Actor, _entity: QrCode): void {
-        checkCanManageQrCode(actor);
+        checkCanUpdateQrCode(actor);
     }
     protected _canSoftDelete(actor: Actor, _entity: QrCode): void {
-        checkCanManageQrCode(actor);
+        checkCanDeleteQrCode(actor);
     }
+    /**
+     * Hard delete takes the DELETE gate, not a stricter one — because no route
+     * reaches it. `qr_codes.slug` is UNIQUE across the whole table, deleted rows
+     * included, precisely so a printed slug can never be reissued; removing the
+     * row would free it and orphan the scans that point at it. The admin tier
+     * therefore exposes soft delete only.
+     */
     protected _canHardDelete(actor: Actor, _entity: QrCode): void {
-        checkCanManageQrCode(actor);
+        checkCanDeleteQrCode(actor);
     }
+    /** Undoing a soft delete is the same authority as performing it. */
     protected _canRestore(actor: Actor, _entity: QrCode): void {
-        checkCanManageQrCode(actor);
+        checkCanDeleteQrCode(actor);
     }
     protected _canView(actor: Actor, _entity: QrCode): void {
-        checkCanManageQrCode(actor);
+        checkCanViewQrCode(actor);
     }
     protected _canList(actor: Actor): void {
-        checkCanManageQrCode(actor);
+        checkCanViewQrCode(actor);
     }
     protected _canSearch(actor: Actor): void {
-        checkCanManageQrCode(actor);
+        checkCanViewQrCode(actor);
     }
     protected _canCount(actor: Actor): void {
-        checkCanManageQrCode(actor);
+        checkCanViewQrCode(actor);
     }
     protected _canUpdateVisibility(actor: Actor, _entity: QrCode, _newVisibility: unknown): void {
-        checkCanManageQrCode(actor);
+        checkCanUpdateQrCode(actor);
     }
 
     protected async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
-        checkCanManageQrCode(actor);
+        checkCanViewQrCode(actor);
     }
 
     // ------------------------------------------------------------------

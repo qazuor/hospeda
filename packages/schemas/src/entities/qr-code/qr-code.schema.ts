@@ -5,6 +5,7 @@ import { QrCodeErrorCorrectionLevelEnumSchema } from '../../enums/qr-code-error-
 import { QrCodeFormatEnum } from '../../enums/qr-code-format.enum.js';
 import { QrCodeFormatEnumSchema } from '../../enums/qr-code-format.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 export const QR_CODE_SLUG_MIN_LENGTH = 4;
 export const QR_CODE_SLUG_MAX_LENGTH = 64;
@@ -113,6 +114,35 @@ export const QrCodeRenderOptionsSchema = z
     .strict();
 
 export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsSchema>;
+
+/**
+ * The same render options as a PATCH: every field optional, no field defaulted.
+ *
+ * This exists because `.partial()` alone is not enough, and the difference is
+ * invisible until it costs somebody a colour. In Zod 4 a `ZodDefault` still
+ * fires through an enclosing `ZodOptional`, so
+ * `QrCodeRenderOptionsSchema.partial().parse({margin: 8})` returns all SIX
+ * fields — the five the caller never mentioned arrive carrying the schema's
+ * defaults, indistinguishable from values an operator actually chose. Since
+ * `render_options` is one `jsonb` column, that completed object is what gets
+ * written: a code stored with `foregroundColor: '#ff0000'` comes back black
+ * after a margin-only patch, silently.
+ *
+ * `stripShapeDefaults` removes the `ZodDefault` wrappers first, so what comes
+ * out of a parse is exactly what went in. `.strict()` is preserved, so an
+ * unknown drawing key is still refused rather than merged into the stored
+ * document.
+ *
+ * Used by BOTH update schemas (domain and HTTP). Declared once here rather than
+ * spelled out in each so the two cannot drift into disagreeing about what a
+ * partial render patch is.
+ */
+export const QrCodeRenderOptionsPatchSchema = z
+    .object(stripShapeDefaults(QrCodeRenderOptionsSchema.shape))
+    .partial()
+    .strict();
+
+export type QrCodeRenderOptionsPatch = z.infer<typeof QrCodeRenderOptionsPatchSchema>;
 
 /**
  * A redirectable QR code (HOS-981).

@@ -1,6 +1,6 @@
 {
-  "id": "948208c6-0c61-43af-b808-ec064d9083fe",
-  "prevId": "783a9d55-30be-4e98-beea-588816e23208",
+  "id": "783a9d55-30be-4e98-beea-588816e23208",
+  "prevId": "c92bcea9-d36a-4aa6-8694-d139df4e1ece",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -15164,18 +15164,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "name_i18n": {
-          "name": "name_i18n",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description_i18n": {
-          "name": "description_i18n",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "price_cents": {
           "name": "price_cents",
           "type": "integer",
@@ -15379,18 +15367,6 @@
         "description": {
           "name": "description",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "name_i18n": {
-          "name": "name_i18n",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description_i18n": {
-          "name": "description_i18n",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

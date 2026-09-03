@@ -482,6 +482,13 @@
 | `POST /api/v1/admin/flags/{id}/toggle` | `feature-flags/admin/toggle.ts` | none | - | n/a | Admin kill-switch toggle; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
 | `DELETE /api/v1/admin/flags/{id}` | `feature-flags/admin/delete.ts` | none | - | n/a | Admin delete; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
 | `GET /api/v1/admin/flags/{id}/audit` | `feature-flags/admin/auditLog.ts` | none | - | n/a | Admin audit-log read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| **QR CODES — ADMIN** | | | | | |
+| `GET /api/v1/admin/qr-codes` | `qr-code/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.QR_CODE_VIEW-gated, no billing entitlement gate. A QR code is operator infrastructure, not a plan feature |
+| `POST /api/v1/admin/qr-codes` | `qr-code/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.QR_CODE_CREATE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/qr-codes/{id}` | `qr-code/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum.QR_CODE_VIEW-gated, no billing entitlement gate |
+| `PATCH /api/v1/admin/qr-codes/{id}` | `qr-code/admin/update.ts` | none | - | n/a | Admin write — this is the retarget endpoint the whole feature exists for; PermissionEnum.QR_CODE_UPDATE-gated, no billing entitlement gate |
+| `DELETE /api/v1/admin/qr-codes/{id}` | `qr-code/admin/delete.ts` | none | - | n/a | Admin soft delete; PermissionEnum.QR_CODE_DELETE-gated, no billing entitlement gate. Never hard-deletes: the slug stays reserved and the scans stay attached |
+| `GET /api/v1/admin/qr-codes/{id}/download` | `qr-code/admin/download.ts` | none | - | n/a | Admin render/download; PermissionEnum.QR_CODE_VIEW-gated (a download renders an existing row and writes nothing), no billing entitlement gate. Draws through the shared engine with the code's own stored options |
 | **ATTRACTION — ADMIN** | | | | | |
 | `GET /api/v1/admin/attractions` | `attraction/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions` | `attraction/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
