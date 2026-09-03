@@ -7,6 +7,7 @@ import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
+import { GastronomyEventPublicSchema } from './subtypes/gastronomy.event.schema.js';
 import { GastronomyMenuSectionPublicSchema } from './subtypes/gastronomy.menu.schema.js';
 
 /**
@@ -175,7 +176,24 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * withheld the same way `menuFileUrl` is (see the field's comment above),
      * even though the ROWS are not deleted.
      */
-    menuSections: z.array(GastronomyMenuSectionPublicSchema).optional()
+    menuSections: z.array(GastronomyMenuSectionPublicSchema).optional(),
+    /**
+     * The venue's own agenda (HOS-1042), read from `gastronomy_events`.
+     *
+     * `.optional()` on exactly the terms `menuSections` is, and withheld on
+     * exactly the terms it is: absent when the payload never ran the read,
+     * absent when the owner's CURRENT plan does not grant
+     * `MANAGE_GASTRONOMY_EVENTS`. A downgraded owner's already-typed agenda
+     * stays in the database and stops being published — the rows are not
+     * deleted (see `resolveOwnerGastronomyPlanEntitlements` in
+     * `@repo/service-core`).
+     *
+     * Named `venueEvents` and not `events` deliberately. `events` is the
+     * platform's DESTINATION agenda — a festival, a popular fiesta — and a
+     * gastronomy payload carrying a field by that name would read, to every
+     * consumer that already knows the other one, as the wrong thing.
+     */
+    venueEvents: z.array(GastronomyEventPublicSchema).optional()
 });
 
 /** TypeScript type for {@link GastronomyPublicSchema}. */
