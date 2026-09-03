@@ -330,7 +330,28 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
-    rating: true
+    rating: true,
+    // HOS-1113 — the same three the gastronomy owner-create schema omits, for
+    // the same reason: a `.omit()` schema accepts every base field it does not
+    // name, and the owner PATCH (`ExperienceOwnerUpdateInputSchema`) already
+    // refuses all three. The route handler spreads this body verbatim into
+    // `ExperienceAdminCreateInputCheckedSchema.parse(...)` and inserts it, so
+    // "accepted here" means "written to the row".
+    //
+    // - `adminInfo` — the `admin_info` jsonb column: internal staff notes plus a
+    //   `favorite` flag, with its own permission-gated write path
+    //   (`BaseCrudAdminService.setAdminInfo`) and stripped from public
+    //   projections. Not owner input.
+    // - `translationMeta` — SPEC-212 curation metadata written by the AI
+    //   translation pipeline, "exposed on admin responses only". No
+    //   `translation_meta` column on `experiences` today; omitted so it cannot
+    //   become live the day one lands.
+    // - `media` — no `media` column on `experiences`; photos live in
+    //   `experience_media` (HOS-372). Every other experience write schema omits
+    //   it already.
+    adminInfo: true,
+    translationMeta: true,
+    media: true
 }).extend({
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
