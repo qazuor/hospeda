@@ -49,6 +49,18 @@
  * SSR-only: it reaches `@repo/billing` transitively through
  * `generic-trial-days.ts`, so nothing a client island imports may import this
  * (see `apps/web/test/static-guards/billing-barrel-client-isolation.test.ts`).
+ *
+ * ## `tiers` (HOS-1119) — same response, a third reading
+ *
+ * Gastronomy went from one sellable tier to two (`gastronomy-basico` +
+ * `gastronomy-pro`, HOS-895 PR2) — the landing that used to advertise "the"
+ * price now has to admit there is a choice. `tiers` is the SAME
+ * `filterPlansByCategory` result `plan` is already read from (index 0), not a
+ * second selection: it is exactly what backs `plan` and `trialDays`, just
+ * without truncating it to one row. `plan`/`trialDays` keep their existing
+ * semantics unchanged (the cheapest/entry tier, and its own trial) so nothing
+ * downstream of this module that only reads those two fields needs to change;
+ * a caller that wants to render a comparison reads `tiers` instead.
  */
 
 import type { FetchPlansResult, PublicPlanData } from '@/lib/billing/fetch-plans';
@@ -69,45 +81,59 @@ export interface ResolveCommerceLandingOfferParams {
 /** Everything one commerce landing advertises about its plan. */
 export interface CommerceLandingOffer {
     /**
-     * The vertical's single sellable tier, or `null` when the fetch failed or
-     * the vertical currently has no active plan. `null` is what makes the page
-     * render its `price.unavailable` state.
+     * The vertical's ENTRY (cheapest/first) sellable tier, or `null` when the
+     * fetch failed or the vertical currently has no active plan. `null` is
+     * what makes the page render its `price.unavailable` state.
      */
     readonly plan: PublicPlanData | null;
     /**
      * The trial length that may be advertised, in days, or `null` when none
-     * may be. Never `0`.
+     * may be. Never `0`. Derived from `plan` — the entry tier's own trial,
+     * not a minimum across `tiers`.
      */
     readonly trialDays: number | null;
+    /**
+     * Every active tier of the vertical, sorted cheapest-first — `plan` is
+     * always `tiers[0]` when non-null. Empty when `plan` is `null` (failed
+     * fetch or no active plan at all).
+     *
+     * A vertical with exactly one entry here (experience, today) has no
+     * choice to present: the page must render byte-identical to before
+     * HOS-1119 in that case. More than one is what unlocks the "desde $X" +
+     * tier-comparison rendering.
+     */
+    readonly tiers: readonly PublicPlanData[];
 }
 
 /**
- * Resolve a commerce landing's price plan and its advertisable trial length
- * from one plans payload.
+ * Resolve a commerce landing's price plan, its advertisable trial length, and
+ * its full tier list from one plans payload.
  *
  * `category` is filtered on `'owner'` only to satisfy `PlanCategory`'s type —
  * the real discriminator is `product_domain`, already applied server-side by
  * the `?domain=` query param, so this narrows nothing beyond `isActive` and the
- * `sortOrder` ordering that picks the first tier.
+ * `sortOrder` ordering that picks the entry tier.
  *
  * @param params - RO-RO input, see {@link ResolveCommerceLandingOfferParams}.
- * @returns The plan to price and the trial days to promise; either may be
- *   `null`, and neither is ever invented.
+ * @returns The entry plan, the trial days to promise for it, and the full
+ *   active tier list; `plan`/`trialDays` may be `null`, and neither is ever
+ *   invented.
  */
 export function resolveCommerceLandingOffer({
     plansResult
 }: ResolveCommerceLandingOfferParams): CommerceLandingOffer {
     if (!plansResult.ok) {
-        return { plan: null, trialDays: null };
+        return { plan: null, trialDays: null, tiers: [] };
     }
 
-    const plan = filterPlansByCategory(plansResult.plans, 'owner')[0] ?? null;
+    const tiers = filterPlansByCategory(plansResult.plans, 'owner');
+    const plan = tiers[0] ?? null;
 
     if (plan === null) {
-        return { plan: null, trialDays: null };
+        return { plan: null, trialDays: null, tiers: [] };
     }
 
-    // Over the ONE plan the card prices — so the number promised can only ever
-    // belong to the plan whose price is shown next to it.
-    return { plan, trialDays: computeMinimumTrialDays({ plans: [plan] }) };
+    // Over the ONE entry plan the card prices — so the number promised can
+    // only ever belong to the plan whose price is shown next to it.
+    return { plan, trialDays: computeMinimumTrialDays({ plans: [plan] }), tiers };
 }

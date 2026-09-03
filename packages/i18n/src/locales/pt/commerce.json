@@ -334,8 +334,30 @@
             "incompleteError": "Ainda faltam dados para publicar.",
             "alreadySubscribedError": "Este comércio já tem uma assinatura ativa.",
             "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente.",
+            "invalidPlanError": "O plano escolhido não está mais disponível. Recarregue a página e tente novamente.",
             "publishCtaFree": "Publicar",
             "publishingFree": "Publicando..."
+        },
+        "planPicker": {
+            "title": "Escolha seu plano",
+            "subtitle": "Você pode mudar de plano mais tarde pela sua conta.",
+            "confirm": "Continuar"
+        },
+        "planChange": {
+            "currentLabel": "Plano atual",
+            "cta": "Mudar de plano",
+            "error": {
+                "400": "O plano escolhido não é válido.",
+                "404": "Não encontramos uma assinatura ativa para mudar de plano.",
+                "409": "Você tem um cancelamento pendente — não é possível mudar de plano até que seja resolvido.",
+                "410": "Esse plano não está mais disponível.",
+                "422": "Você não pode mudar para esse plano a partir do atual.",
+                "503": "O serviço de pagamentos está indisponível no momento. Tente novamente mais tarde.",
+                "generic": "Não conseguimos mudar seu plano. Tente novamente mais tarde."
+            }
+        },
+        "entitlements": {
+            "manageGastronomyMenu": "Cardápio estruturado"
         },
         "create": {
             "pickVertical": {
@@ -408,8 +430,11 @@
             },
             "price": {
                 "tagline": "Um único plano, simples",
+                "taglineMulti": "Escolha o plano ideal para o seu comércio",
                 "title": "Gastronomia Premium",
                 "priceSuffix": "/mês",
+                "fromPrefix": "A partir de ",
+                "tiersTitle": "Escolha seu plano",
                 "trial_one": "{{count}} dia de teste grátis",
                 "trial_other": "{{count}} dias de teste grátis",
                 "feature1": "1 ficha de gastronomia publicada",
@@ -466,8 +491,11 @@
             },
             "price": {
                 "tagline": "Um único plano, simples",
+                "taglineMulti": "Escolha o plano ideal para a sua experiência",
                 "title": "Experiências Premium",
                 "priceSuffix": "/mês",
+                "fromPrefix": "A partir de ",
+                "tiersTitle": "Escolha seu plano",
                 "trial_one": "{{count}} dia de teste grátis",
                 "trial_other": "{{count}} dias de teste grátis",
                 "feature1": "1 ficha de experiência publicada",

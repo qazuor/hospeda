@@ -334,8 +334,30 @@
             "incompleteError": "Some data is still missing to publish.",
             "alreadySubscribedError": "This business already has an active subscription.",
             "checkoutError": "We couldn't start the payment. Please try again.",
+            "invalidPlanError": "The selected plan is no longer available. Reload the page and try again.",
             "publishCtaFree": "Publish",
             "publishingFree": "Publishing..."
+        },
+        "planPicker": {
+            "title": "Choose your plan",
+            "subtitle": "You can change plans later from your account.",
+            "confirm": "Continue"
+        },
+        "planChange": {
+            "currentLabel": "Current plan",
+            "cta": "Change plan",
+            "error": {
+                "400": "The selected plan is not valid.",
+                "404": "We couldn't find an active subscription to change plans.",
+                "409": "You have a pending cancellation — you can't change plans until it is resolved.",
+                "410": "That plan is no longer available.",
+                "422": "You can't move to that plan from your current one.",
+                "503": "The payment service is unavailable right now. Please try again later.",
+                "generic": "We couldn't change your plan. Please try again later."
+            }
+        },
+        "entitlements": {
+            "manageGastronomyMenu": "Structured menu"
         },
         "create": {
             "pickVertical": {
@@ -408,8 +430,11 @@
             },
             "price": {
                 "tagline": "One simple plan",
+                "taglineMulti": "Choose the plan that fits your business",
                 "title": "Gastronomy Premium",
                 "priceSuffix": "/month",
+                "fromPrefix": "From ",
+                "tiersTitle": "Choose your plan",
                 "trial_one": "{{count}} day free trial",
                 "trial_other": "{{count}} days free trial",
                 "feature1": "1 published gastronomy listing",
@@ -466,8 +491,11 @@
             },
             "price": {
                 "tagline": "One simple plan",
+                "taglineMulti": "Choose the plan that fits your experience",
                 "title": "Experience Premium",
                 "priceSuffix": "/month",
+                "fromPrefix": "From ",
+                "tiersTitle": "Choose your plan",
                 "trial_one": "{{count}} day free trial",
                 "trial_other": "{{count}} days free trial",
                 "feature1": "1 published experience listing",

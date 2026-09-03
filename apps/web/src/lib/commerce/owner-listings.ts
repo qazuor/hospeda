@@ -18,6 +18,7 @@ import type {
     ExperienceProtected,
     GastronomyOwnerCreateInput,
     GastronomyProtected,
+    PlanChangeResponse,
     ResolveListingCompletenessResult,
     StartPaidSubscriptionResponse
 } from '@repo/schemas';
@@ -210,29 +211,86 @@ export function createOwnerListing(
  * Status contract (spec §7.1): `201` with `{checkoutUrl, localSubscriptionId,
  * expiresAt}`; `422` with `{error: {code: 'LISTING_INCOMPLETE', missing}}`
  * when the listing is not publish-ready; `409` when already subscribed;
- * `403` on a non-owner or a still-`mustChangePassword` caller.
+ * `403` on a non-owner or a still-`mustChangePassword` caller. HOS-1119 added
+ * `400` when `planSlug` names a tier that does not belong to this vertical.
  *
  * `payerEmail` (HOS-1008) is the address the owner confirmed on the
- * pre-redirect screen. It is sent ONLY when the own-preapproval path is
- * active — the flag that makes `payer_email` binding is the same flag that
- * makes the screen appear — so with the flag off **no body is sent at all**
- * and the request is byte-identical to the pre-HOS-1008 one.
+ * pre-redirect screen. `planSlug` (HOS-1119) is the tier the owner picked on
+ * the {@link CommercePlanOption} picker, when the vertical has more than one
+ * active tier and the owner is choosing their FIRST subscription. Each is
+ * sent ONLY when defined — with BOTH omitted **no body is sent at all** and
+ * the request is byte-identical to the pre-HOS-1008 one; the backend already
+ * defaults an absent `planSlug` to the vertical's default tier, so this
+ * function must never invent one.
  *
- * @param params - Vertical + listing id, plus the confirmed payer email when
- *   the owner went through the confirmation screen.
+ * @param params - Vertical + listing id, plus the confirmed payer email
+ *   and/or chosen tier slug when the owner went through those screens.
  */
 export function startOwnerListingCheckout({
     vertical,
     listingId,
-    payerEmail
+    payerEmail,
+    planSlug
 }: {
     readonly vertical: CommerceVertical;
     readonly listingId: string;
     readonly payerEmail?: string;
+    readonly planSlug?: string;
 }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
+    const body: { payerEmail?: string; planSlug?: string } = {};
+    if (payerEmail !== undefined) {
+        body.payerEmail = payerEmail;
+    }
+    if (planSlug !== undefined) {
+        body.planSlug = planSlug;
+    }
+    const hasBody = payerEmail !== undefined || planSlug !== undefined;
+
     return apiClient.postProtected<StartPaidSubscriptionResponse>({
         path: `${COMMERCE_LISTINGS_PATH}/${vertical}/${listingId}/start-subscription`,
         headers: { 'X-Idempotency-Key': crypto.randomUUID() },
-        ...(payerEmail === undefined ? {} : { body: { payerEmail } })
+        ...(hasBody ? { body } : {})
+    });
+}
+
+// ---------------------------------------------------------------------------
+// HOS-1119 — owner self-service tier upgrade
+// ---------------------------------------------------------------------------
+
+const COMMERCE_SUBSCRIPTIONS_PATH = '/api/v1/protected/commerce/subscriptions';
+
+/**
+ * Moves the caller's own commerce subscription for one vertical to a dearer
+ * tier (HOS-1119).
+ *
+ * `POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`.
+ * Mirrors {@link startOwnerListingCheckout}'s idempotency-key pattern — a
+ * fresh `X-Idempotency-Key` per call, so a retried click cannot open two
+ * upgrades.
+ *
+ * Upgrades only: the backend answers `422` for a target that is equal to or
+ * cheaper than the caller's current tier (commerce has no downgrade path —
+ * see `apps/api/src/routes/commerce/protected/change-plan.ts`'s module doc).
+ * Other error codes: `400` (malformed/foreign-vertical slug), `404` (no live
+ * subscription for this vertical, or the target plan does not exist), `409`
+ * (a cancellation is already pending), `410` (target plan retired), `503`
+ * (billing unavailable).
+ *
+ * @param params - Vertical to act on, and the target tier's slug.
+ * @returns A discriminated `PlanChangeResponse`: `pending_payment` (redirect
+ *   to `checkoutUrl` to pay the prorated delta) or `active` (applied at once,
+ *   no charge — the subscription was still trialing).
+ */
+export function changeCommercePlan({
+    vertical,
+    planSlug
+}: {
+    readonly vertical: CommerceVertical;
+    readonly planSlug: string;
+}): Promise<ApiResult<PlanChangeResponse>> {
+    return apiClient.postProtected<PlanChangeResponse>({
+        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/change-plan`,
+        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+        body: { planSlug }
     });
 }

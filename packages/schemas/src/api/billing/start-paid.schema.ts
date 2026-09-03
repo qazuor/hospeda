@@ -72,12 +72,12 @@ export type StartPaidSubscriptionRequest = z.infer<typeof StartPaidSubscriptionR
  * Request body for the commerce owner self-checkout
  * (`POST /api/v1/protected/commerce/listings/{entityType}/{entityId}/start-subscription`).
  *
- * Carries ONLY `payerEmail` (HOS-1008): the plan is derived from the
- * listing's vertical and the interval is always monthly, so unlike
- * {@link StartPaidSubscriptionRequestSchema} there is nothing else for the
- * caller to choose. The whole body is optional — omitting it keeps the exact
- * pre-HOS-1008 behavior, which is what the `ownPreapprovalEnabled` flag being
- * off must produce.
+ * Carries `payerEmail` (HOS-1008) and `planSlug` (HOS-1119). The interval is
+ * always monthly, so unlike {@link StartPaidSubscriptionRequestSchema} there is
+ * still nothing else for the caller to choose. **Every field is optional and so
+ * is the body itself** — omitting it entirely keeps the exact pre-HOS-1008
+ * behavior, which is what the `ownPreapprovalEnabled` flag being off must
+ * produce, and what a caller with no tier picker must keep producing.
  *
  * Deliberately NOT accepted on the ADMIN commerce start-subscription route:
  * that route provisions on the OWNER's behalf, and the admin has no way to
@@ -94,6 +94,27 @@ export const CommerceStartSubscriptionRequestSchema = z.object({
         .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
         .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
         .max(255, { message: 'zodError.billing.startPaid.payerEmail.max' })
+        .optional(),
+    /**
+     * HOS-1119: the tier the owner picked, when the vertical offers more than
+     * one. Omitted means "the vertical's default", i.e. the pre-HOS-1119
+     * behaviour exactly.
+     *
+     * Validated here only for SHAPE — a lowercase kebab slug, same pattern
+     * `parseCommercePlanSlugMap` accepts. **Whether the slug names a plan of
+     * this listing's vertical is decided by `resolveCommercePlanSlug`, and
+     * nowhere else** (HOS-688 AC-35): putting a per-vertical allowlist in this
+     * schema would make it a second place that maps a vertical to a set of
+     * plans, which is the thing the guard forbids. A well-formed slug that
+     * belongs to the other vertical therefore passes here and is refused there,
+     * with a 400 either way.
+     */
+    planSlug: z
+        .string({ message: 'zodError.billing.startPaid.planSlug.invalidType' })
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            message: 'zodError.billing.startPaid.planSlug.invalid'
+        })
+        .max(100, { message: 'zodError.billing.startPaid.planSlug.max' })
         .optional()
 });
 export type CommerceStartSubscriptionRequest = z.infer<

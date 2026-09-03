@@ -57,6 +57,16 @@ const SLOT_OCCUPYING_STATUSES: readonly string[] = [
 export interface OwnerVerticalSubscription {
     readonly id: string;
     readonly status: string;
+    /**
+     * The plan the subscription is currently on (`billing_plans.id`, a UUID).
+     *
+     * Added by HOS-1119, when a vertical stopped having exactly one sellable
+     * tier: the checkout has to be able to tell "you already pay for this
+     * vertical" apart from "you already pay for this vertical ON THIS TIER",
+     * because only the first of those is a listing to attach and the second is
+     * a plan change the caller has to make somewhere else.
+     */
+    readonly planId: string;
 }
 
 /**
@@ -94,7 +104,13 @@ export async function findOwnerVerticalSubscription(input: {
             isEntitlementGrantingStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
     );
 
-    return match ? { id: match.id as string, status: match.status as string } : null;
+    return match
+        ? {
+              id: match.id as string,
+              status: match.status as string,
+              planId: match.planId as string
+          }
+        : null;
 }
 
 /**

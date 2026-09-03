@@ -83,4 +83,43 @@ describe('startOwnerListingCheckout — request body (HOS-1008)', () => {
 
         expect(lastCall().path).toContain('/experience/listing-4/start-subscription');
     });
+
+    // HOS-1119: the checkout-time tier picker adds `planSlug`, sent under the
+    // same "present only when defined" discipline as `payerEmail`.
+    it('sends the chosen planSlug as the body when there is one', async () => {
+        await startOwnerListingCheckout({
+            vertical: 'gastronomy',
+            listingId: 'listing-5',
+            planSlug: 'gastronomy-pro'
+        });
+
+        expect(lastCall().body).toEqual({ planSlug: 'gastronomy-pro' });
+    });
+
+    it('sends BOTH payerEmail and planSlug when both were confirmed', async () => {
+        await startOwnerListingCheckout({
+            vertical: 'gastronomy',
+            listingId: 'listing-6',
+            payerEmail: 'owner@local.test',
+            planSlug: 'gastronomy-pro'
+        });
+
+        expect(lastCall().body).toEqual({
+            payerEmail: 'owner@local.test',
+            planSlug: 'gastronomy-pro'
+        });
+    });
+
+    it('still sends NO body when planSlug is explicitly undefined', async () => {
+        // Restates the "no body at all" contract from a second angle: passing
+        // `planSlug: undefined` explicitly must behave identically to not
+        // passing the field at all.
+        await startOwnerListingCheckout({
+            vertical: 'gastronomy',
+            listingId: 'listing-7',
+            planSlug: undefined
+        });
+
+        expect(Object.hasOwn(lastCall(), 'body')).toBe(false);
+    });
 });
