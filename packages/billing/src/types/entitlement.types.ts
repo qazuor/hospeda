@@ -102,6 +102,41 @@ export enum EntitlementKey {
      */
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
+    /**
+     * Publishing a gastronomy venue's OWN events — live music night, happy
+     * hour, dinner show, the Tuesday deal (HOS-1042).
+     *
+     * A TIER differentiator granted from `gastronomy-pro` UPWARDS (owner
+     * decision, 2026-09-01), on exactly the terms
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU} is: NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that map is the floor every tier
+     * of a vertical receives), and carried by `-pro` and `-premium` alike so a
+     * premium subscriber never loses a capability their cheaper neighbour has.
+     *
+     * ## What this is NOT
+     *
+     * Three things in this codebase are called "events" and only one of them is
+     * this key:
+     *
+     * - The platform `events` entity is the DESTINATION's agenda — a festival,
+     *   a popular fiesta — curated by staff and of another scale entirely. A
+     *   happy hour does not belong there.
+     * - `GastronomyEventsCta` (HOS-1055) is the "we host YOUR event" toggle:
+     *   birthdays, corporate dinners, weddings. That is the venue offering
+     *   itself as a place to hire, and it stays free on every tier.
+     * - This key is the venue's own recurring agenda: things that happen AT the
+     *   venue, on a date or every Thursday, that a diner may show up for.
+     *
+     * Gastronomy-only by name and on purpose, the same way
+     * `MANAGE_GASTRONOMY_MENU` is: an experience IS an event with a date, so it
+     * has no second agenda to hang off itself.
+     *
+     * The public detail page enforces it live rather than by deleting rows — a
+     * downgraded owner's already-typed agenda stays in the database and is
+     * withheld from the public payload, the same mechanism the carta uses.
+     */
+    MANAGE_GASTRONOMY_EVENTS = 'manage_gastronomy_events',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

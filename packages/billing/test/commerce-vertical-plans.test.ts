@@ -171,6 +171,29 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         }
     });
 
+    it('grants the venue events agenda from gastronomy-pro upwards only (HOS-1042)', () => {
+        // Same two load-bearing halves as the ficha test above, one tier lower
+        // and one vertical narrower.
+        //
+        // The negative half carries a THIRD case the ficha's does not: the two
+        // experience tiers. An experience IS an event with a date, so it has no
+        // second agenda to hang off itself — a key leaking there would not be a
+        // mis-priced feature, it would be a nonsensical one.
+        expect(GASTRONOMY_PRO_PLAN.entitlements).toContain(EntitlementKey.MANAGE_GASTRONOMY_EVENTS);
+        expect(GASTRONOMY_PREMIUM_PLAN.entitlements).toContain(
+            EntitlementKey.MANAGE_GASTRONOMY_EVENTS
+        );
+
+        for (const plan of [
+            GASTRONOMY_BASICO_PLAN,
+            EXPERIENCE_BASICO_PLAN,
+            EXPERIENCE_PRO_PLAN,
+            EXPERIENCE_PREMIUM_PLAN
+        ]) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.MANAGE_GASTRONOMY_EVENTS);
+        }
+    });
+
     it('never grants the OTHER vertical, nor an accommodation key (HOS-1074)', () => {
         // The whole reason four new keys exist instead of reusing
         // `EDIT_ACCOMMODATION_INFO` / `PUBLISH_ACCOMMODATIONS`: the loader
