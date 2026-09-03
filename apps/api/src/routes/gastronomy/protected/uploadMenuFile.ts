@@ -30,14 +30,21 @@
  * `validateFile`; only the PDF branch is new, and it is deliberately small:
  * a size cap plus a magic-byte check.
  *
- * ## Not gated on `MANAGE_GASTRONOMY_MENU`
+ * ## Gated on `MANAGE_GASTRONOMY_MENU` (HOS-895 PR2)
  *
- * The uploaded menu is how a `-basico` venue shows a menu at all. Gating it
- * would take away something every gastronomy tier has had since SPEC-239. Only
- * the STRUCTURED carta is the paid capability. See `putMenu.ts`.
+ * PR1 shipped this route ungated: the uploaded menu was how a `-basico` venue
+ * showed a menu at all, and only the STRUCTURED carta (`PUT .../menu`) was the
+ * paid capability. Owner decision (2026-09-02) reversed that — the attachment
+ * is now gated the same as the structured carta, `-pro`/`-premium` only. A
+ * `-basico` owner's fallback is now `menuUrl` alone; an already-uploaded file
+ * from before this change is not deleted, but the PUBLIC page stops rendering
+ * it for a non-entitled owner (see
+ * `resolveOwnerGrantsGastronomyMenuManagement` in `@repo/service-core`) and
+ * this route now refuses to REPLACE it.
  *
  * @module routes/gastronomy/protected/uploadMenuFile
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     type GastronomyMenuFileKind,
     GastronomyMenuFileUploadOutputSchema,
@@ -46,6 +53,8 @@ import {
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import {
@@ -118,7 +127,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     path: '/{id}/menu-file',
     summary: 'Upload a photo or PDF of the menu',
     description:
-        'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only. Available on every gastronomy tier — only the structured menu is a paid capability.',
+        'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -282,7 +291,13 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_FILE_UPLOAD_RATE_LIMIT_MAX,
                 keyPrefix: 'upload:gastronomy-menu-file'
-            })
+            }),
+            // Loader before checker (HOS-1074) — the global entitlement
+            // middleware resolves the ACCOMMODATION set, which never carries a
+            // commerce key, so `commerceVerticalEntitlementMiddleware` MUST run
+            // before `requireEntitlement` on every commerce route.
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
         ]
     }
 });

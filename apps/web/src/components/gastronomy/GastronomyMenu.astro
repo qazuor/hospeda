@@ -1,0 +1,295 @@
+---
+/**
+ * @file GastronomyMenu.astro
+ * @description Renders a gastronomy listing's menu on the public detail page
+ * (HOS-895 PR2).
+ *
+ * ## The hierarchy, and why it is "show all", not "pick one"
+ *
+ * A venue may set THREE independent things: a structured carta (sections and
+ * dishes), an uploaded photo/PDF, and an external link (rendered separately by
+ * `GastronomyContactBlock.astro`, unaffected by this component). None is
+ * required and none excludes the others — PR1's own schema doc says so
+ * explicitly ("All three may be set at once and none is required").
+ *
+ * This component does NOT hide the attachment when a structured carta exists,
+ * or vice versa. The structured carta is the best experience and renders
+ * FIRST when present — full sections and dishes, indexable HTML, no click
+ * required — with the uploaded photo/PDF rendered below it as a secondary
+ * block when ALSO present. A venue that typed ten dishes but still has a
+ * scanned photo of the full seasonal specials both get shown; picking one
+ * would silently drop content the owner chose to publish. The external link
+ * stays the last resort by construction: it is the only shape that predates
+ * HOS-895 and the only one still free on every tier (see the entitlement
+ * gate note below), and `GastronomyContactBlock` already renders it as a
+ * plain CTA regardless of what this component shows.
+ *
+ * ## The gate
+ *
+ * Both `menuSections` and the attachment (`fileUrl`/`fileKind`) arrive
+ * PRE-FILTERED by the API (`gastronomy/public/getBySlug.ts`): withheld,
+ * live, when the owner's CURRENT plan does not grant
+ * `manage_gastronomy_menu` (HOS-895 PR2, owner decision 2026-09-02). This
+ * component has no gate of its own to apply — an owner without the
+ * entitlement simply never has non-empty props to render, the same way
+ * `GastronomyContactBlock` cannot tell a "no menuUrl" venue from a redacted
+ * one.
+ *
+ * A PDF and an image are NOT rendered the same way: `fileKind` decides
+ * between an inline `<img>` and a "view PDF" link.
+ */
+
+import type { GastronomyMenuSection } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { formatPrice } from '@/lib/format-utils';
+
+interface Props {
+    readonly menuSections?: readonly GastronomyMenuSection[];
+    readonly fileUrl?: string | null;
+    readonly fileKind?: 'image' | 'pdf' | null;
+    readonly locale: SupportedLocale;
+}
+
+const { menuSections = [], fileUrl, fileKind, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const hasStructuredMenu = menuSections.length > 0;
+// `fileKind` is required by the schema whenever `fileUrl` is set (the API
+// never reports "half an attachment" — see GastronomyMenuFileSchema's doc),
+// but the safe-URL check still runs before anything is rendered.
+// `resolveSafeExternalUrl` already tolerates `null`/`undefined`, so this is a
+// direct binding the outbound-href-sanitization guard can prove — a ternary
+// wrapping the call is invisible to its binding scanner.
+const safeFileUrl = resolveSafeExternalUrl(fileUrl);
+const hasFile = Boolean(safeFileUrl && fileKind);
+
+if (!hasStructuredMenu && !hasFile) {
+    // Nothing to render — GastronomyContactBlock's external link (if any) is
+    // this listing's only menu content.
+    return;
+}
+
+// Nested under `menuCarta`, NOT `menu` — `gastronomy.detail.menu` is already a
+// leaf string ("Ver menú", the external-link CTA label in
+// GastronomyContactBlock.astro), and a JSON key cannot be both a string and
+// an object subtree.
+const title = t('gastronomy.detail.menuCarta.title', 'Carta');
+const attachmentImageTitle = t('gastronomy.detail.menuCarta.attachmentImage', 'Carta en imagen');
+const attachmentPdfTitle = t('gastronomy.detail.menuCarta.attachmentPdf', 'Carta en PDF');
+const viewPdfLabel = t('gastronomy.detail.menuCarta.viewPdf', 'Ver carta en PDF');
+const consultLabel = t('gastronomy.detail.menuCarta.consultPrice', 'A consultar');
+const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No disponible');
+---
+
+<section class="gastro-menu" id="gastro-menu">
+    <h2 class="gastro-menu__title">{title}</h2>
+
+    {hasStructuredMenu && (
+        <div class="gastro-menu__sections">
+            {menuSections.map((section) => (
+                <div class="gastro-menu__section">
+                    <h3 class="gastro-menu__section-name">{section.name}</h3>
+                    {section.description && (
+                        <p class="gastro-menu__section-description">{section.description}</p>
+                    )}
+                    <ul class="gastro-menu__items">
+                        {section.items.map((item) => (
+                            <li
+                                class="gastro-menu__item"
+                                data-unavailable={item.isAvailable ? undefined : 'true'}
+                            >
+                                <div class="gastro-menu__item-main">
+                                    <span class="gastro-menu__item-name">{item.name}</span>
+                                    <span class="gastro-menu__item-price">
+                                        {item.priceCents == null
+                                            ? consultLabel
+                                            : formatPrice({ amount: item.priceCents / 100, locale })}
+                                    </span>
+                                </div>
+                                {item.description && (
+                                    <p class="gastro-menu__item-description">{item.description}</p>
+                                )}
+                                {!item.isAvailable && (
+                                    <span class="gastro-menu__item-badge">{unavailableLabel}</span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ))}
+        </div>
+    )}
+
+    {hasFile && safeFileUrl && (
+        <div class="gastro-menu__attachment">
+            {fileKind === 'image' ? (
+                <>
+                    <h3 class="gastro-menu__attachment-title">{attachmentImageTitle}</h3>
+                    <a href={safeFileUrl} target="_blank" rel="noopener noreferrer">
+                        <img
+                            src={safeFileUrl}
+                            alt={attachmentImageTitle}
+                            class="gastro-menu__attachment-image"
+                            loading="lazy"
+                        />
+                    </a>
+                </>
+            ) : (
+                <>
+                    <h3 class="gastro-menu__attachment-title">{attachmentPdfTitle}</h3>
+                    <a
+                        href={safeFileUrl}
+                        class="gastro-menu__attachment-pdf-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {viewPdfLabel} ↗
+                    </a>
+                </>
+            )}
+        </div>
+    )}
+</section>
+
+<style>
+    .gastro-menu {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5, 20px);
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .gastro-menu__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-menu__sections {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5, 20px);
+    }
+
+    .gastro-menu__section-name {
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-1, 4px);
+    }
+
+    .gastro-menu__section-description {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0 0 var(--space-3, 12px);
+    }
+
+    .gastro-menu__items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .gastro-menu__item {
+        border-bottom: 1px dashed var(--border);
+        padding-bottom: var(--space-2, 8px);
+    }
+
+    .gastro-menu__item:last-child {
+        border-bottom: none;
+    }
+
+    .gastro-menu__item-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--space-3, 12px);
+        font-family: var(--font-sans);
+    }
+
+    .gastro-menu__item-name {
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .gastro-menu__item[data-unavailable='true'] .gastro-menu__item-name {
+        color: var(--core-muted-foreground);
+        text-decoration: line-through;
+    }
+
+    .gastro-menu__item-price {
+        font-weight: 600;
+        color: var(--brand-primary);
+        white-space: nowrap;
+    }
+
+    .gastro-menu__item-description {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+        margin: 4px 0 0;
+    }
+
+    .gastro-menu__item-badge {
+        display: inline-block;
+        margin-top: 4px;
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--core-muted-foreground);
+    }
+
+    .gastro-menu__attachment {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    .gastro-menu__attachment-title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-menu__attachment-image {
+        max-width: 100%;
+        border-radius: var(--radius-card, 24px);
+        border: 1px solid var(--border);
+    }
+
+    .gastro-menu__attachment-pdf-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 24px;
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: opacity 200ms ease-out;
+        width: fit-content;
+    }
+
+    .gastro-menu__attachment-pdf-link:hover {
+        opacity: 0.85;
+    }
+
+    .gastro-menu__attachment-pdf-link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

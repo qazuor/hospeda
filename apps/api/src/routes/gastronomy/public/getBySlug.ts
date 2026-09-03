@@ -4,7 +4,12 @@
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 import { GastronomyPublicSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import {
+    GastronomyService,
+    getGastronomyMenu,
+    resolveOwnerGrantsGastronomyMenuManagement,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -14,6 +19,7 @@ import {
 } from '../../../utils/commerce-catalog-relations';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { applyGastronomyMenuManagementGate } from './menu-projection';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -56,15 +62,39 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // Emitted as `undefined` when empty rather than `[]`: the detail page
         // renders nothing for either, and an empty array on the wire would read
         // as "loaded, and there are none" from a payload that never joined.
-        const [amenitiesData, featuresData] = await Promise.all([
-            fetchGastronomyAmenities(gastronomy.id),
-            fetchGastronomyFeatures(gastronomy.id)
-        ]);
+        //
+        // HOS-895 PR2: the structured carta and the uploaded photo/PDF are read
+        // in the same parallel batch, and gated by the SAME live check —
+        // `resolveOwnerGrantsGastronomyMenuManagement` reads the owner's
+        // CURRENT gastronomy subscription, not whatever plan was active when
+        // the carta was typed or the file was uploaded. See the resolver's own
+        // doc for why this is a live read rather than a synced column.
+        //
+        // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
+        // the same accessor the protected menu routes use.
+        const model = (
+            gastronomyService as unknown as { model: Parameters<typeof getGastronomyMenu>[0] }
+        ).model;
+
+        const [amenitiesData, featuresData, menuResult, ownerGrantsMenuManagement] =
+            await Promise.all([
+                fetchGastronomyAmenities(gastronomy.id),
+                fetchGastronomyFeatures(gastronomy.id),
+                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
+                resolveOwnerGrantsGastronomyMenuManagement({ ownerId: gastronomy.ownerId })
+            ]);
+
+        const menuGate = applyGastronomyMenuManagementGate({
+            gastronomy,
+            menuSections: menuResult.error ? [] : menuResult.data.sections,
+            ownerGrantsMenuManagement
+        });
 
         return {
             ...gastronomy,
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
-            features: featuresData.length > 0 ? featuresData : undefined
+            features: featuresData.length > 0 ? featuresData : undefined,
+            ...menuGate
         };
     },
     options: {

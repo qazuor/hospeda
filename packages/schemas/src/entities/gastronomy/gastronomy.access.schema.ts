@@ -7,6 +7,7 @@ import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
+import { GastronomyMenuSectionPublicSchema } from './subtypes/gastronomy.menu.schema.js';
 
 /**
  * Gastronomy Access Schemas — Three-Tier Response Projection
@@ -53,8 +54,16 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     // Gastronomy-specific public fields
     priceRange: true,
     menuUrl: true,
-    // HOS-895 — the uploaded photo/PDF alternative. Public: the ficha renders it
-    // exactly as it renders `menuUrl`. `menuFilePublicId` stays out: it is the
+    // HOS-895 PR2 — the uploaded photo/PDF alternative is now a `-pro`/
+    // `-premium` capability (owner decision, 2026-09-02; PR1 shipped it
+    // ungated). The COLUMN stays picked here — it is still owner-writable data
+    // — but the public `getBySlug` route nulls both fields out live, before
+    // this schema is reached, when the owner's CURRENT plan does not grant
+    // `MANAGE_GASTRONOMY_MENU` (see `resolveOwnerGrantsGastronomyMenuManagement`
+    // in `@repo/service-core`). Schema presence is safe for the same reason
+    // `richDescription`'s entitlement-by-omission gate is: the service strips
+    // it server-side before `stripWithSchema`, so a not-entitled owner's row
+    // never carries a truthy value out. `menuFilePublicId` stays out: it is the
     // provider handle used to delete the asset, not content.
     menuFileUrl: true,
     menuFileKind: true,
@@ -152,7 +161,21 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      */
     amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
     /** Features the owner ticked, joined with the shared catalog (HOS-1072). */
-    features: z.array(CommerceListingFeaturePublicSchema).optional()
+    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    /**
+     * The structured carta's sections and dishes (HOS-895 PR2), joined from
+     * `gastronomy_menu_sections` / `gastronomy_menu_items`.
+     *
+     * Populated by the public `getBySlug` route only — same reason `amenities`
+     * / `features` are `.optional()` rather than defaulted: a payload that
+     * never ran the join must say "not loaded", not "this venue has none".
+     *
+     * Empty (not omitted) when the owner's current plan does not grant
+     * `MANAGE_GASTRONOMY_MENU` — a downgraded owner's previously-typed carta is
+     * withheld the same way `menuFileUrl` is (see the field's comment above),
+     * even though the ROWS are not deleted.
+     */
+    menuSections: z.array(GastronomyMenuSectionPublicSchema).optional()
 });
 
 /** TypeScript type for {@link GastronomyPublicSchema}. */

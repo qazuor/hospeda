@@ -79,12 +79,22 @@ export enum EntitlementKey {
      * subscriber losing a capability their cheaper neighbour has would be a
      * downgrade dressed as a tier.
      *
-     * ## What it does NOT gate
+     * ## What it also gates, since HOS-895 PR2
      *
-     * Only the structured carta. The two fallbacks — the external `menuUrl` and
-     * the uploaded photo/PDF — stay available on every gastronomy tier: they
-     * are how a `-basico` venue shows a menu at all, and gating them would take
-     * away something `-basico` has had since SPEC-239.
+     * Originally ONLY the structured carta — the external `menuUrl` and the
+     * uploaded photo/PDF stayed free on every tier, `-basico` included, because
+     * that was how a `-basico` venue showed a menu at all. Owner decision
+     * (2026-09-02) narrowed that: the uploaded photo/PDF (`POST`/`DELETE
+     * .../menu-file`) is now gated by this SAME key, `-pro`/`-premium` only.
+     * `menuUrl` (the external link) is the one fallback still free on every
+     * tier — it predates HOS-895 entirely (SPEC-239) and taking it away would
+     * be a regression, not a re-tiering.
+     *
+     * The public detail page enforces this live, not by deleting rows: a
+     * downgraded owner's already-typed carta and already-uploaded file stay in
+     * the database, but `resolveOwnerGrantsGastronomyMenuManagement`
+     * (`@repo/service-core`) reads the CURRENT subscription on every render and
+     * withholds both from the public payload when it no longer grants this key.
      *
      * Gastronomy-only by name and on purpose. Experiences have no carta, so
      * there is no second vertical for this key to be shared with — the shape

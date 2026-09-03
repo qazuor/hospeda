@@ -27,12 +27,19 @@
  * `HOSPEDA_API_DEBUG_ERRORS` is on, and this assertion must not depend on a
  * debug flag.
  *
- * ## The three routes that must NOT be gated
+ * ## The one route that must NOT be gated
  *
- * `GET /menu`, `POST /menu-file` and `DELETE /menu-file` are ungated on
- * purpose: a `-basico` owner opens the same editor and the uploaded menu is how
- * they show a menu at all. The last case here is what stops a later change from
- * "tidying up" by putting the same middleware on all four.
+ * `GET /menu` is ungated on purpose: a `-basico` owner opens the same editor
+ * and an owner whose subscription lapsed is still reading their own data. The
+ * case for it here is what stops a later change from "tidying up" by putting
+ * the same middleware on all four.
+ *
+ * `POST /menu-file` and `DELETE /menu-file` used to be ungated too (PR1) — the
+ * uploaded menu was how a `-basico` venue showed a menu at all. Owner decision
+ * (2026-09-02, HOS-895 PR2) reversed that: the attachment is gated by the SAME
+ * key as the structured carta. The block cases for both live here, mirroring
+ * the PUT /menu case above; the allow side is
+ * `menu-entitlement-allow.e2e.test.ts`.
  *
  * @module test/commerce/menu-entitlement.e2e
  */
@@ -123,19 +130,38 @@ describe('gastronomy menu entitlement gate — block side (HOS-895)', () => {
         expect(witness).toHaveBeenCalled();
     });
 
-    it('lets the SAME owner reach DELETE /menu-file — the attachment is ungated', async () => {
-        const witness = vi
-            .spyOn(GastronomyService.prototype, 'getById')
-            .mockResolvedValue(NOT_FOUND_RESULT);
+    it('refuses POST /menu-file to an owner whose plan does not grant the structured carta', async () => {
+        // Witness: the upload handler's first ownership call. It never runs the
+        // Cloudinary upload check either, but this is the same call the PUT
+        // case above pins, so a mismatch between the two routes' gates would
+        // show up as this witness firing on one and not the other.
+        const witness = vi.spyOn(GastronomyService.prototype, 'getById');
+
+        const res = await app.request(`${MENU_PATH}-file`, {
+            method: 'POST',
+            headers: { ...ownerHeaders, 'content-type': 'multipart/form-data; boundary=x' },
+            body: '--x--'
+        });
+        const body = (await res.json()) as { error?: { code?: string; message?: string } };
+
+        expect(res.status).toBe(403);
+        expect(body.error?.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(body.error?.message).toContain('manage_gastronomy_menu');
+        expect(witness).not.toHaveBeenCalled();
+    });
+
+    it('refuses DELETE /menu-file to an owner whose plan does not grant the structured carta', async () => {
+        const witness = vi.spyOn(GastronomyService.prototype, 'getById');
 
         const res = await app.request(`${MENU_PATH}-file`, {
             method: 'DELETE',
             headers: ownerHeaders
         });
-        const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
+        const body = (await res.json()) as { error?: { code?: string; message?: string } };
 
-        expect(body.error?.code).not.toBe('ENTITLEMENT_REQUIRED');
-        expect(res.status).not.toBe(403);
-        expect(witness).toHaveBeenCalled();
+        expect(res.status).toBe(403);
+        expect(body.error?.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(body.error?.message).toContain('manage_gastronomy_menu');
+        expect(witness).not.toHaveBeenCalled();
     });
 });

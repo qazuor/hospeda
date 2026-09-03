@@ -12,10 +12,29 @@
  * key arrives by the OTHER path, unioned on from the `gastronomy-pro` plan row;
  * both paths end at the same resolved set, which is what this asserts against.
  *
+ * ## POST / DELETE `menu-file` (HOS-895 PR2)
+ *
+ * The attachment gate was added AFTER PR1 shipped it ungated. Its allow-side
+ * cases need the media provider mocked — `POST` reads it BEFORE the ownership
+ * check the other two routes stop at, so without a stub `getMediaProvider()`
+ * returns `null` (Cloudinary unconfigured in this test env) and the route
+ * answers 503 regardless of whether the gate passed, which would make the 403
+ * assertion trivially true for the wrong reason.
+ *
  * @module test/commerce/menu-entitlement-allow.e2e
  */
 
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
+const mockUpload = vi.fn();
+const mockDelete = vi.fn();
+
+vi.mock('../../src/services/media', () => ({
+    getMediaProvider: () => ({
+        upload: mockUpload,
+        delete: mockDelete
+    })
+}));
 
 vi.mock('@repo/billing', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/billing')>();
@@ -43,7 +62,14 @@ const { initApp } = await import('../../src/app.js');
 const { _resetCommerceBaseLimitCache } = await import(
     '../../src/middlewares/commerce-entitlement.js'
 );
+const { GastronomyService } = await import('@repo/service-core');
 type AppOpenAPI = import('../../src/types.js').AppOpenAPI;
+
+/** A `Result`-shaped failure, so a stubbed ownership check returns cleanly. */
+const NOT_FOUND_RESULT = {
+    data: undefined,
+    error: { code: 'NOT_FOUND', message: 'listing not found' }
+} as never;
 
 const USER_AGENT = { 'user-agent': 'vitest' };
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -95,5 +121,43 @@ describe('gastronomy menu entitlement gate — allow side (HOS-895)', () => {
         // `findById` answers `null` and the service reports NOT_FOUND — which
         // is the deepest an offline route test can reach here.)
         expect(body.error?.message).toContain('Gastronomy listing not found');
+    });
+
+    it('lets an entitled owner reach the POST /menu-file handler', async () => {
+        // Witness: the upload route's ownership check, the first call strictly
+        // AFTER both the rate limit and the entitlement gate. Mocked to
+        // NOT_FOUND so the request stops there with a 404 rather than
+        // attempting a real Cloudinary upload — the deepest an offline route
+        // test can reach, same technique the PUT case above uses.
+        const witness = vi
+            .spyOn(GastronomyService.prototype, 'getById')
+            .mockResolvedValue(NOT_FOUND_RESULT);
+
+        const res = await app.request(`${MENU_PATH}-file`, {
+            method: 'POST',
+            headers: { ...ownerHeaders, 'content-type': 'multipart/form-data; boundary=x' },
+            body: '--x--'
+        });
+        const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
+
+        expect(body.error?.code).not.toBe('ENTITLEMENT_REQUIRED');
+        expect(res.status).not.toBe(403);
+        expect(witness).toHaveBeenCalled();
+    });
+
+    it('lets an entitled owner reach the DELETE /menu-file handler', async () => {
+        const witness = vi
+            .spyOn(GastronomyService.prototype, 'getById')
+            .mockResolvedValue(NOT_FOUND_RESULT);
+
+        const res = await app.request(`${MENU_PATH}-file`, {
+            method: 'DELETE',
+            headers: ownerHeaders
+        });
+        const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
+
+        expect(body.error?.code).not.toBe('ENTITLEMENT_REQUIRED');
+        expect(res.status).not.toBe(403);
+        expect(witness).toHaveBeenCalled();
     });
 });

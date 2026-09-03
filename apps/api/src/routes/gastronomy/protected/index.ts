@@ -75,11 +75,12 @@ app.route('/', protectedGetGastronomyMenuRoute);
 // MANAGE_GASTRONOMY_MENU (gastronomy-pro and above).
 app.route('/', protectedPutGastronomyMenuRoute);
 
-// POST /{id}/menu-file — upload the photo/PDF alternative. Ungated: it is
-// how a -basico venue shows a menu at all.
+// POST /{id}/menu-file — upload the photo/PDF alternative. Gated on
+// MANAGE_GASTRONOMY_MENU, same as PUT /{id}/menu (HOS-895 PR2 — owner
+// decision reversed PR1's ungated shipment).
 app.route('/', protectedUploadGastronomyMenuFileRoute);
 
-// DELETE /{id}/menu-file — clear it, asset included.
+// DELETE /{id}/menu-file — clear it, asset included. Same gate as the upload.
 app.route('/', protectedDeleteGastronomyMenuFileRoute);
 
 // GET /{id} — Owner view (protected projection).

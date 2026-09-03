@@ -48,6 +48,14 @@
             "wednesday": "Miércoles"
         },
         "menu": "Ver cardápio",
+        "menuCarta": {
+            "title": "Cardápio",
+            "attachmentImage": "Cardápio em imagem",
+            "attachmentPdf": "Cardápio em PDF",
+            "viewPdf": "Ver cardápio em PDF",
+            "consultPrice": "A consultar",
+            "unavailable": "Indisponível"
+        },
         "reviews": {
             "title": "Avaliações",
             "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",
