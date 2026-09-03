@@ -210,6 +210,9 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
  *   experience starts (HOS-1048; ficha data, no entitlement)
+ * - `meetingPointDirections` — how to GET there (HOS-1049). Accepted by the
+ *   shape, refused at runtime by the route unless the caller's plan grants
+ *   `manage_experience_directions`. The one field here that is not free.
  * - `durationMinutes` — how long it lasts (HOS-898; ficha data, no entitlement)
  * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
  * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
@@ -251,6 +254,17 @@ export const ExperienceOwnerUpdateInputSchema = z
                 meetingPoint: true,
                 meetingPointLat: true,
                 meetingPointLong: true,
+                // HOS-1049: how to GET there. Accepted by the SHAPE here, and
+                // refused at RUNTIME by the route when the caller's plan does
+                // not grant `manage_experience_directions` — a field gate rather
+                // than a route gate, because everything else this schema carries
+                // is free on the basic tier and gating the whole PATCH would
+                // lock a `-basico` provider out of their own listing.
+                //
+                // The gate lives on the route and not in this shape on purpose:
+                // an entitlement is a fact about a subscription at request time,
+                // and a Zod schema is compiled once at module load.
+                meetingPointDirections: true,
                 // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056: the four practical
                 // ficha fields. Owner-declared, like the meeting point, and
                 // like it carrying NO entitlement — they sit with the other
@@ -349,9 +363,19 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     // - `media` — no `media` column on `experiences`; photos live in
     //   `experience_media` (HOS-372). Every other experience write schema omits
     //   it already.
+    // - `meetingPointDirections` — HOS-1049. The ONE entitlement-gated field on
+    //   this entity, and create is the one write path that cannot check the
+    //   entitlement honestly: a listing is created `PRIVATE`/`DRAFT` BEFORE the
+    //   owner has any subscription at all (the normal mid-funnel state
+    //   `commerce-entitlement.ts` is written around), so a gate here would
+    //   refuse every legitimate provider, while no gate at all would let an
+    //   unentitled one write the field through this schema's `.omit()`
+    //   inheritance, in silence. Omitting removes the dilemma: the field is
+    //   written through the owner PATCH, which IS gated, and nowhere else.
     adminInfo: true,
     translationMeta: true,
-    media: true
+    media: true,
+    meetingPointDirections: true
 }).extend({
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
