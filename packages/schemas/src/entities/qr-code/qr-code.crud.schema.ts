@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseSearchSchema } from '../../common/base.schema.js';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
+import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnum } from '../../enums/qr-code-source.enum.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -135,6 +136,13 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  * feature: the slug is the part that is already printed on a sticker somewhere.
  * `targetUrl` is exactly what an update is for.
  *
+ * `purpose` is NOT updatable either, for a different reason (HOS-981 PR 4): it
+ * is part of the `(entityType, entityId, purpose)` uniqueness key, so moving it
+ * makes the row invisible to the provisioner that owns it. The very next
+ * get-or-create then finds nothing, mints a SECOND permanent slug for the same
+ * subject, and leaves two live codes whose targets are free to diverge — the
+ * failure the key exists to prevent, reintroduced through the update path.
+ *
  * ## Why `renderOptions` is re-declared (HOS-981 PR 3)
  *
  * `stripShapeDefaults` removes TOP-LEVEL defaults only — by design, and it says
@@ -159,7 +167,9 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  */
 export const QrCodeUpdateInputSchema = z
     .object({
-        ...stripShapeDefaults(QrCodeCreateInputBaseSchema.omit({ slug: true }).shape),
+        ...stripShapeDefaults(
+            QrCodeCreateInputBaseSchema.omit({ slug: true, purpose: true }).shape
+        ),
         renderOptions: QrCodeRenderOptionsPatchSchema
     })
     .partial()
@@ -181,6 +191,12 @@ export const QrCodeSearchInputSchema = BaseSearchSchema.extend({
     source: QrCodeSourceEnumSchema.optional(),
     entityType: EntityTypeEnumSchema.optional(),
     entityId: z.string().uuid().optional(),
+    /**
+     * Filterable because a subject can now hold several codes: without it,
+     * "show me this restaurant's codes" answers with the door and the table
+     * code and no way to say which row is which.
+     */
+    purpose: QrCodePurposeEnumSchema.optional(),
     isActive: z.boolean().optional()
 }).strict();
 

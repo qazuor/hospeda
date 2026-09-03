@@ -4,6 +4,7 @@ import { QrCodeErrorCorrectionLevelEnum } from '../../enums/qr-code-error-correc
 import { QrCodeErrorCorrectionLevelEnumSchema } from '../../enums/qr-code-error-correction-level.schema.js';
 import { QrCodeFormatEnum } from '../../enums/qr-code-format.enum.js';
 import { QrCodeFormatEnumSchema } from '../../enums/qr-code-format.schema.js';
+import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
@@ -189,6 +190,18 @@ export const QrCodeSchema = z.object({
     entityType: EntityTypeEnumSchema.nullable().optional(),
 
     entityId: z.string().uuid().nullable().optional(),
+
+    /**
+     * WHICH code this is, for a subject that carries more than one.
+     *
+     * The third part of a generated code's identity: uniqueness on the table is
+     * `(entityType, entityId, purpose)`, so a restaurant's door code and its
+     * table code are not duplicates of each other. Nullable because a `MANUAL`
+     * code has no system purpose — and because Postgres excludes `NULL` rows
+     * from a UNIQUE index, which is what lets several hand-made codes coexist
+     * for one subject. See `QrCodePurposeEnum`.
+     */
+    purpose: QrCodePurposeEnumSchema.nullable().optional(),
 
     renderOptions: QrCodeRenderOptionsSchema,
 
