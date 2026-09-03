@@ -39,13 +39,13 @@
             "closed": "Closed",
             "open24h": "Open 24 hours",
             "today": "Today",
-            "friday": "Viernes",
-            "monday": "Lunes",
-            "saturday": "Sábado",
-            "sunday": "Domingo",
-            "thursday": "Jueves",
-            "tuesday": "Martes",
-            "wednesday": "Miércoles"
+            "friday": "Friday",
+            "monday": "Monday",
+            "saturday": "Saturday",
+            "sunday": "Sunday",
+            "thursday": "Thursday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday"
         },
         "menu": "View menu",
         "menuCarta": {
@@ -78,6 +78,12 @@
             "title": "Looking for a venue for an event?",
             "description": "This place accepts birthdays, corporate events, and weddings. Get in touch to coordinate.",
             "button": "Get in touch"
+        },
+        "venueEvents": {
+            "title": "Venue schedule",
+            "weekly": "Every {{weekday}}",
+            "range": "{{when}}, {{start}} to {{end}}",
+            "fromOnly": "{{when}}, from {{start}}"
         }
     },
     "types": {

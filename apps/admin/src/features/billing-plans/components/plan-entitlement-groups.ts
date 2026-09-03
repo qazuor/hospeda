@@ -118,7 +118,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // caveat as the carta above it. A separate box rather than folded
             // into that one because they are separate keys: an operator must be
             // able to grant a venue today's menu without the full carta.
-            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+            // HOS-1042 — the venue's own agenda. Same shape as the carta above:
+            // tier-dependent, gastronomy-only, and tickable on any plan here
+            // because the editor is a flat checklist.
+            EntitlementKey.MANAGE_GASTRONOMY_EVENTS
         ]
     }
 ];

@@ -3,13 +3,14 @@
  * Returns a single gastronomy listing projected through GastronomyPublicSchema.
  * Returns null (404) when the listing is not found or not publicly visible.
  */
+import { EntitlementKey } from '@repo/billing';
 import { GastronomyPublicSchema } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyDailySpecials,
+    getGastronomyEvents,
     getGastronomyMenu,
-    resolveOwnerGastronomyMenuGrants,
-    resolveOwnerGrantsGastronomyDailySpecial,
+    resolveOwnerGastronomyPlanEntitlementSet,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -23,6 +24,7 @@ import {
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyGastronomyDailySpecialsGate } from './daily-specials-projection';
+import { applyGastronomyVenueEventsGate } from './events-projection';
 import { applyGastronomyMenuManagementGate } from './menu-projection';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
@@ -68,16 +70,21 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // as "loaded, and there are none" from a payload that never joined.
         //
         // HOS-895 PR2: the structured carta and the uploaded photo/PDF are read
-        // in the same parallel batch, and gated by a live check —
-        // `resolveOwnerGastronomyMenuGrants` reads the owner's CURRENT
-        // gastronomy subscription, not whatever plan was active when the carta
-        // was typed or the file was uploaded. See the resolver's own doc for
-        // why this is a live read rather than a synced column.
+        // in the same parallel batch, and gated by a live check that reads the
+        // owner's CURRENT gastronomy subscription, not whatever plan was active
+        // when the carta was typed or the file was uploaded. See the resolver's
+        // own doc for why this is a live read rather than a synced column.
         //
-        // HOS-1045 adds a SECOND grant to the same lookup (the per-dish
-        // photos, premium-only). One call, not two: both answers come out of
-        // the same three queries, so they cannot disagree about which instant
-        // they describe.
+        // FOUR gated features now hang off this page — the carta (HOS-895), the
+        // per-dish photos (HOS-1045), the menú del día (HOS-1041) and the venue
+        // agenda (HOS-1042) — and they take the plan's whole entitlement SET in
+        // ONE resolver call. Per-feature calls would multiply a three-query
+        // lookup by four AND would let the four answers come from different
+        // reads of the same subscription if a plan change landed between them:
+        // a page showing one paid feature and withholding another, for no
+        // reason a reader could see. The nesting HOS-1045 warns about (a dish
+        // photo surviving a carta that was withheld) is impossible here for the
+        // same reason — one lookup, one instant.
         //
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the protected menu routes use.
@@ -101,37 +108,50 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // tag, not a job.
         const today = getTodayInMarketTimezone();
 
+        // ONE entitlement resolution for all THREE gated features. Each of the
+        // three arrived with its own boolean resolver call; kept that way this
+        // batch would issue nine billing queries per public render instead of
+        // three, and — worse — the three answers could come from different
+        // reads of the same subscription if a plan change landed mid-render,
+        // publishing one paid feature while withholding another for no reason a
+        // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
         const [
             amenitiesData,
             featuresData,
             menuResult,
-            menuGrants,
+            eventsResult,
             dailySpecialsResult,
-            ownerGrantsDailySpecial
+            ownerPlanEntitlements
         ] = await Promise.all([
             fetchGastronomyAmenities(gastronomy.id),
             fetchGastronomyFeatures(gastronomy.id),
             getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-            // HOS-1045: ONE call for BOTH menu grants. The carta gate and the
-            // dish-photo gate nest, and two separate lookups could answer from
-            // different instants — the photo surviving a carta that was
-            // withheld. The daily special stays its own call: different gate,
-            // different projection, no nesting.
-            resolveOwnerGastronomyMenuGrants({ ownerId: gastronomy.ownerId }),
+            getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
             getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today }),
-            resolveOwnerGrantsGastronomyDailySpecial({ ownerId: gastronomy.ownerId })
+            resolveOwnerGastronomyPlanEntitlementSet({ ownerId: gastronomy.ownerId })
         ]);
 
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: menuGrants.manageMenu,
-            ownerGrantsMenuItemPhotos: menuGrants.menuItemPhotos
+            ownerGrantsMenuManagement: ownerPlanEntitlements.has(
+                EntitlementKey.MANAGE_GASTRONOMY_MENU
+            ),
+            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS)
+        });
+
+        const eventsGate = applyGastronomyVenueEventsGate({
+            events: eventsResult.error ? [] : eventsResult.data.events,
+            ownerGrantsVenueEvents: ownerPlanEntitlements.has(
+                EntitlementKey.MANAGE_GASTRONOMY_EVENTS
+            )
         });
 
         const dailySpecialsGate = applyGastronomyDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial
+            ownerGrantsDailySpecial: ownerPlanEntitlements.has(
+                EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+            )
         });
 
         return {
@@ -139,6 +159,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,
             ...menuGate,
+            ...eventsGate,
             ...dailySpecialsGate
         };
     },

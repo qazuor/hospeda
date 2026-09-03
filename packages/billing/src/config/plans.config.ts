@@ -756,9 +756,13 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     // HOS-1041 — and the menú del día, which is the second. Owner decision,
     // 2026-09-01, same tier: an operational feature used daily by whoever uses
     // it. A separate key from the carta on purpose (see the enum member).
+    //
+    // HOS-1042 adds the venue's own events agenda as the third, on the same
+    // terms and by the same owner decision: `pro` and upwards, gastronomy only.
     extraEntitlements: [
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
-        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        EntitlementKey.MANAGE_GASTRONOMY_EVENTS
     ]
 });
 
@@ -810,14 +814,16 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // (owner decision, 2026-09-01). It sits next to `MANAGE_GASTRONOMY_MENU`
     // by necessity: a dish photo has nowhere to live without dishes, so the
     // two are only ever useful together even though their gates are separate.
+    //
+    // HOS-1041's menú del día and HOS-1042's venue events agenda are repeated
+    // here for the reason the carta is: these arrays are literal per plan, so
+    // omitting one would leave the dearer tier missing a feature its cheaper
+    // neighbour has.
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
-        // HOS-1041 — the menú del día, a `-pro` capability, repeated here for
-        // the same reason the carta above it is: these arrays are literal per
-        // plan, so omitting it would leave the dearer tier missing a feature
-        // its cheaper neighbour has.
         EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
         EntitlementKey.MENU_ITEM_PHOTOS
     ]
 });

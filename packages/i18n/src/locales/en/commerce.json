@@ -139,7 +139,8 @@
                 "practicalInfo": "Practical details",
                 "contactSocial": "Contact and social",
                 "menu": "Menu",
-                "dailySpecials": "Today's menu"
+                "dailySpecials": "Today's menu",
+                "venueEvents": "Events"
             },
             "sections": {
                 "type": "Category",
@@ -371,6 +372,34 @@
                 "locked": "Today's menu is available from the Professional plan.",
                 "expired": "Expired — not being shown.",
                 "scheduled": "Scheduled — not shown yet."
+            },
+            "venueEventsManager": {
+                "title": "Venue schedule",
+                "intro": "Let your diners know when something happens at your venue: live music, happy hour, the Tuesday deal.",
+                "newEntry": "New event",
+                "entryTitle": "Title",
+                "titlePlaceholder": "Live music, Happy hour…",
+                "entryDescription": "Description",
+                "descriptionPlaceholder": "Optional detail",
+                "moveUp": "Move event up",
+                "moveDown": "Move event down",
+                "removeEntry": "Remove",
+                "recurrenceWeekly": "Every week",
+                "recurrenceOnce": "One day only",
+                "weekday": "Day of the week",
+                "date": "Date",
+                "startTime": "Start time",
+                "endTime": "End time (optional)",
+                "active": "Active",
+                "addEntry": "Add event",
+                "maxReached": "You reached the limit of {{max}} events.",
+                "maxReached_one": "You reached the limit of {{max}} event.",
+                "maxReached_other": "You reached the limit of {{max}} events.",
+                "save": "Save schedule",
+                "saving": "Saving…",
+                "saved": "Schedule saved.",
+                "saveError": "The schedule could not be saved.",
+                "locked": "Keeping a venue schedule is available from the Professional plan onwards."
             }
         },
         "checklist": {
@@ -419,7 +448,8 @@
             "menuItemPhotos": "Photo per dish",
             "manageExperienceDirections": "Map and how to get there",
             "issueExperienceCertificate": "Experience certificates",
-            "manageGastronomyDailySpecial": "Today's menu"
+            "manageGastronomyDailySpecial": "Today's menu",
+            "manageGastronomyEvents": "Venue schedule"
         },
         "create": {
             "pickVertical": {

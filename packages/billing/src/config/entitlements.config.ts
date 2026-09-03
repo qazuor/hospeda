@@ -330,5 +330,18 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Menú del día',
         description:
             'Allows publishing a dish of the day with its own validity window, which stops being shown on the public page when the window passes'
+    },
+    // HOS-1042. Granted from `gastronomy-pro` upwards and gastronomy-only, on
+    // exactly the terms the carta above is, and appended to this same trailing
+    // commerce section for the slicing reason stated at its head.
+    //
+    // Not the platform's destination `events` entity, and not the free "we host
+    // your birthday" CTA (HOS-1055) — see the enum member's doc for the three-way
+    // distinction.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
+        name: 'Venue events agenda',
+        description:
+            'Allows publishing the venue’s own events — live music night, happy hour, dinner show — on a date or repeating every week'
     }
 ];

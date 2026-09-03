@@ -62,8 +62,9 @@ export type CommerceEditorSection =
     | 'servicios'
     | 'fotos'
     | 'contacto'
-    // HOS-895 — gastronomy only, the mirror of the two experience-only slugs
-    // above. Opening it on an experience listing redirects to the hub.
+    // HOS-895, HOS-1042 — gastronomy only, the mirror of the two
+    // experience-only slugs above. Opening either on an experience listing
+    // redirects to the hub.
     | 'carta'
     // HOS-1041 — gastronomy only too, and immediately after the carta because
     // that is where the registry puts it: the carta is the year's menu, this is
@@ -71,6 +72,7 @@ export type CommerceEditorSection =
     // package cannot import `apps/web`'s registry, so a section it cannot NAME
     // is a page no browser test can ever open.
     | 'menu-del-dia'
+    | 'eventos'
     | 'preguntas'
     | 'traducciones';
 

@@ -148,6 +148,37 @@ async function resolveOwnerGastronomyPlanEntitlements(
 }
 
 /**
+ * The owner's current gastronomy grants as a SET, for a caller that needs
+ * several keys at once (HOS-1042).
+ *
+ * The public detail route reads THREE gated features off one owner on one
+ * render — the carta (HOS-895), the menú del día (HOS-1041) and the venue
+ * agenda (HOS-1042) — plus the per-dish photo flag (HOS-1045). Asking
+ * {@link resolveOwnerGrantsGastronomyEntitlement} once per key would multiply
+ * a three-query lookup by the number of keys, and would let the answers come
+ * from different reads of the same subscription if a plan change landed
+ * mid-render: the page would publish one paid feature and withhold another for
+ * no reason a reader could see.
+ *
+ * A thin projection of the shared body above, so there is still exactly ONE
+ * place that knows how to find an owner's plan.
+ *
+ * `null` (unresolvable) collapses to an EMPTY set here, which every caller
+ * reads as "grants nothing" — the fail-closed direction the body documents.
+ * A caller that must tell "no plan" from "a plan granting nothing" should use
+ * the body's own `null` through one of the boolean helpers instead.
+ *
+ * @param input - The owner id to resolve.
+ * @returns The entitlement keys the owner's gastronomy plan grants; empty when
+ *   there is no customer, no qualifying subscription, or no readable plan.
+ */
+export async function resolveOwnerGastronomyPlanEntitlementSet(
+    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+): Promise<ReadonlySet<string>> {
+    return new Set((await resolveOwnerGastronomyPlanEntitlements(input.ownerId)) ?? []);
+}
+
+/**
  * Input for {@link resolveOwnerGrantsGastronomyEntitlement}.
  */
 export interface ResolveOwnerGrantsGastronomyEntitlementInput

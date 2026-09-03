@@ -3212,6 +3212,38 @@
                 "required": "El resultado exitoso es obligatorio"
             }
         },
+        "event": {
+            "title": {
+                "min": "The event title is required",
+                "max": "The event title cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The event description cannot exceed {{max}} characters"
+            },
+            "dateRequiredForOnce": "A one-off event needs a date",
+            "dateForbiddenForWeekly": "A weekly event takes no date: it repeats every week",
+            "weekdayRequiredForWeekly": "A weekly event needs a day of the week",
+            "weekdayForbiddenForOnce": "A one-off event takes no day of the week",
+            "endTimeEqualsStart": "The end time cannot be the same as the start time"
+        },
+        "eventDate": {
+            "invalid": "The event date is not valid (YYYY-MM-DD format)"
+        },
+        "eventRecurrence": {
+            "invalid": "The event recurrence is not valid"
+        },
+        "eventTime": {
+            "invalid": "The event time is not valid (HH:MM format)"
+        },
+        "eventWeekday": {
+            "int": "The day of the week must be a whole number",
+            "range": "The day of the week must be between 0 (Sunday) and 6 (Saturday)"
+        },
+        "events": {
+            "max": "The schedule cannot have more than {{max}} events",
+            "max_one": "The schedule cannot have more than {{max}} event",
+            "max_other": "The schedule cannot have more than {{max}} events"
+        },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
         },
