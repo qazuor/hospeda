@@ -2900,6 +2900,15 @@
         "meetingPoint": {
             "max": "The meeting point cannot exceed {{max}} characters"
         },
+        "meetingPointDirections": {
+            "item": {
+                "max": "Each how-to-get-there instruction cannot exceed {{max}} characters",
+                "min": "How-to-get-there instructions cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} how-to-get-there instructions",
+            "max_one": "You cannot add more than {{max}} how-to-get-there instruction",
+            "max_other": "You cannot add more than {{max}} how-to-get-there instructions"
+        },
         "meetingPointLat": {
             "max": "The meeting point latitude cannot exceed {{max}}",
             "min": "The meeting point latitude must be at least {{min}}"

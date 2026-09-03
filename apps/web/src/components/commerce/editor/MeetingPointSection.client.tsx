@@ -18,21 +18,33 @@
  * gastronomy side first; a field the schema strips saves nothing and reports
  * success.
  *
- * ## Nothing here is paid
+ * ## One page, two tiers
  *
  * Owner decision (2026-09-01): the meeting point ships from the BASIC tier.
  * Knowing where to show up cannot be a paid feature — without it the listing
- * does not do its job. The paid half is the MAP that draws the coordinates and
- * the how-to-get-there instructions (HOS-1049), which is why the two lat/long
- * inputs live here and unpaid: they are the data, not the drawing.
+ * does not do its job. That covers the address field and both coordinates: they
+ * are the data, not the drawing.
+ *
+ * The how-to-get-there instructions added by HOS-1049 are the paid half, and
+ * they live on this same page rather than a new one: "where do we meet, and how
+ * do you get there" is one errand, and a separate nav item would have made the
+ * entitlement look like a different subject instead of a deeper tier.
+ *
+ * The gate is `data.meetingPointDirectionsEnabled`, resolved live by the
+ * protected `getById` off the provider's CURRENT plan. An unentitled provider
+ * still SEES the field, read-only, with what they had written: hiding it would
+ * make a downgrade look like data loss, and hiding it from someone who never
+ * had it would make a paid feature invisible to the only person who could buy
+ * it. The API refuses the write independently (`manage_experience_directions`),
+ * so this control being read-only is an affordance, not the enforcement.
  *
  * ## Why the coordinates are typed in by hand
  *
- * There is no map picker on this surface — a map is precisely what HOS-1049
- * adds, and it is gated. So the owner pastes the pair they can copy out of any
- * maps app, and both are optional: an owner who describes the spot in words and
- * never pins it leaves a perfectly valid listing. Null is "no coordinate", not
- * an error, all the way down to the column.
+ * There is no map PICKER on this surface. HOS-1049 draws a map on the public
+ * ficha, not an editor widget, so the owner pastes the pair they can copy out
+ * of any maps app, and both stay optional: an owner who describes the spot in
+ * words and never pins it leaves a perfectly valid listing. Null is "no
+ * coordinate", not an error, all the way down to the column.
  */
 
 import type { JSX } from 'react';
@@ -42,6 +54,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { CommerceEditData, CommerceFieldChange } from './commerce-edit-data';
 import styles from './editor-fields.module.css';
 import { COMMERCE_FIELD_PREFIX } from './field-ids';
+import { checklistItemsToLines, linesToChecklistItems } from './PracticalInfoSection.client';
 
 export interface MeetingPointSectionProps {
     readonly locale: SupportedLocale;
@@ -50,6 +63,7 @@ export interface MeetingPointSectionProps {
         meetingPoint?: string;
         meetingPointLat?: string;
         meetingPointLong?: string;
+        meetingPointDirections?: string;
     }>;
     readonly onFieldChange: CommerceFieldChange;
 }
@@ -170,8 +184,50 @@ export function MeetingPointSection({
             <p className={styles.hint}>
                 {t(
                     'commerce.owner.editor.sections.meetingPointCoordsHint',
-                    'Si cargás las coordenadas, más adelante podemos mostrar el punto en un mapa. Podés dejarlas vacías.'
+                    'Si cargás las coordenadas, mostramos el punto en un mapa. Podés dejarlas vacías.'
                 )}
+            </p>
+
+            {/*
+             * HOS-1049 — the paid half. Rendered for every experience provider,
+             * `disabled` for the ones whose plan does not grant it, so a
+             * downgrade does not read as data loss and the capability is
+             * visible to the person who could buy it. The API refuses the write
+             * on its own; this attribute is the affordance, not the gate.
+             */}
+            <TextField
+                as="textarea"
+                prefix={COMMERCE_FIELD_PREFIX}
+                name="meetingPointDirections"
+                label={t('commerce.owner.editor.sections.meetingPointDirections', 'Cómo llegar')}
+                labelClassName={styles.label}
+                className={styles.textarea}
+                error={errors.meetingPointDirections}
+                rows={4}
+                disabled={!data.meetingPointDirectionsEnabled}
+                value={checklistItemsToLines({ items: data.meetingPointDirections })}
+                placeholder={t(
+                    'commerce.owner.editor.sections.meetingPointDirectionsPlaceholder',
+                    'Estacioná en la bajada municipal, sobre la costanera\nEl colectivo 4 te deja en la rotonda\nSon 300 m por camino de ripio, buscá el muelle de madera'
+                )}
+                onChange={(event) => {
+                    onFieldChange(
+                        'meetingPointDirections',
+                        linesToChecklistItems({ raw: event.target.value })
+                    );
+                }}
+            />
+
+            <p className={styles.hint}>
+                {data.meetingPointDirectionsEnabled
+                    ? t(
+                          'commerce.owner.editor.sections.meetingPointDirectionsHint',
+                          'Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.'
+                      )
+                    : t(
+                          'commerce.owner.editor.sections.meetingPointDirectionsLocked',
+                          'El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.'
+                      )}
             </p>
         </section>
     );

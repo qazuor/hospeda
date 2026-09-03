@@ -301,5 +301,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Photos per dish',
         description:
             'Allows attaching a photo to each dish of the structured menu, shown next to the dish on the public page'
+    },
+    // HOS-1049. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has an address and a door. The meeting point itself stays
+    // free on every tier (HOS-1048) — only the how-to-get-there half is here.
+    {
+        key: EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+        name: 'Meeting point map and directions',
+        description:
+            'Allows publishing how to reach the meeting point — where to park, which bus, how far the walk is — and drawing it on a map, on top of the meeting point address every tier already carries'
     }
 ];

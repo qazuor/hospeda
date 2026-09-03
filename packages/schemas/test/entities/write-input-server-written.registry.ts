@@ -255,10 +255,11 @@ export const ENTITIES: readonly EntityEntry[] = [
                     acceptsPrivateGroups adminInfo averageRating cancellationPolicy contactInfo
                     description descriptionI18n destinationId durationMinutes faqs
                     hasActiveSubscription isFeatured isPriceOnRequest lifecycleState media
-                    meetingPoint meetingPointLat meetingPointLong moderationState name nameI18n
-                    openingHours ownerId priceFrom priceUnit rating requirements reviewsCount
-                    richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n
-                    tags translationMeta type videos visibility whatToBring
+                    meetingPoint meetingPointDirections meetingPointLat meetingPointLong
+                    moderationState name nameI18n openingHours ownerId priceFrom priceUnit rating
+                    requirements reviewsCount richDescription richDescriptionI18n seo slug
+                    socialNetworks summary summaryI18n tags translationMeta type videos visibility
+                    whatToBring
                 `)
             },
             {
@@ -268,16 +269,22 @@ export const ENTITIES: readonly EntityEntry[] = [
                 accepts: fields(`
                     acceptsPrivateGroups adminInfo cancellationPolicy contactInfo description
                     descriptionI18n destinationId durationMinutes faqs isFeatured isPriceOnRequest
-                    lifecycleState meetingPoint meetingPointLat meetingPointLong moderationState
-                    name nameI18n openingHours priceFrom priceUnit rating requirements
-                    richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n
-                    tags translationMeta type videos visibility whatToBring
+                    lifecycleState meetingPoint meetingPointDirections meetingPointLat
+                    meetingPointLong moderationState name nameI18n openingHours priceFrom priceUnit
+                    rating requirements richDescription richDescriptionI18n seo slug socialNetworks
+                    summary summaryI18n tags translationMeta type videos visibility whatToBring
                 `)
             },
             {
                 name: 'ExperienceOwnerCreateInputSchema',
                 schema: ExperienceOwnerCreateInputSchema as unknown as Parseable,
                 tier: 'owner',
+                // HOS-1049 — `meetingPointDirections` is ABSENT here on purpose
+                // and present on the owner-UPDATE list below. It is the only
+                // entitlement-gated field on this entity, and create is the one
+                // write path that cannot check the entitlement honestly: the
+                // listing is created before the provider has any subscription
+                // at all. The schema omits it; the gated PATCH writes it.
                 accepts: fields(`
                     acceptsPrivateGroups cancellationPolicy contactInfo description descriptionI18n
                     destinationId durationMinutes faqs isPriceOnRequest meetingPoint
@@ -292,10 +299,10 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'owner',
                 accepts: fields(`
                     acceptsPrivateGroups cancellationPolicy contactInfo description descriptionI18n
-                    destinationId durationMinutes isPriceOnRequest meetingPoint meetingPointLat
-                    meetingPointLong name nameI18n openingHours priceFrom priceUnit requirements
-                    richDescription richDescriptionI18n socialNetworks summary summaryI18n type
-                    videos whatToBring
+                    destinationId durationMinutes isPriceOnRequest meetingPoint
+                    meetingPointDirections meetingPointLat meetingPointLong name nameI18n
+                    openingHours priceFrom priceUnit requirements richDescription
+                    richDescriptionI18n socialNetworks summary summaryI18n type videos whatToBring
                 `)
             }
         ]

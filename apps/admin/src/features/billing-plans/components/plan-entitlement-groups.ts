@@ -106,7 +106,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.MANAGE_GASTRONOMY_MENU,
             // HOS-1045 — narrower still: gastronomy PREMIUM only, where the
             // carta key above starts at `-pro`. Same flat-checklist caveat.
-            EntitlementKey.MENU_ITEM_PHOTOS
+            EntitlementKey.MENU_ITEM_PHOTOS,
+            // HOS-1049 — the mirror image of the one above: tier-dependent
+            // (`experience-pro` and up) and experience-only, since a restaurant
+            // has an address and a door rather than a meeting point to walk to.
+            EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS
         ]
     }
 ];

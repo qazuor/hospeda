@@ -33,7 +33,14 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // HOS-1045 — the first key that separates gastronomy PREMIUM from `-pro`,
     // so it is the first entry here that will ever be rendered by the premium
     // column of the tier picker.
-    menu_item_photos: 'menuItemPhotos'
+    menu_item_photos: 'menuItemPhotos',
+    // HOS-1049. Shows up in the experience tier picker's "adds" list the day a
+    // second experience tier is activated — `deriveCommercePlanTierDiffs` only
+    // renders when there is more than one, and `experience-basico` is the only
+    // sellable one today. The label is added now anyway: an unlabeled key falls
+    // back to its raw snake_case string, and the fallback firing in production
+    // is not something anyone would notice before a customer does.
+    manage_experience_directions: 'manageExperienceDirections'
 };
 
 /**
@@ -41,5 +48,6 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
  */
 export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_gastronomy_menu: 'Carta estructurada',
-    menu_item_photos: 'Foto por plato'
+    menu_item_photos: 'Foto por plato',
+    manage_experience_directions: 'Mapa y cómo llegar'
 };

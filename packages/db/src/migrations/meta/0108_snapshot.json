@@ -1,6 +1,6 @@
 {
-  "id": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
-  "prevId": "6971c57f-71ba-4e4c-b43d-ee64d7eab854",
+  "id": "9cf5107b-b032-4953-9659-0f753c62e0ec",
+  "prevId": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -14653,6 +14653,24 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "photo_url": {
+          "name": "photo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_public_id": {
+          "name": "photo_public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_alt": {
+          "name": "photo_alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "display_order": {
           "name": "display_order",

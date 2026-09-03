@@ -147,7 +147,11 @@
                 "meetingPointHint": "Dónde arranca la experiencia. Puede ser una dirección o una referencia del lugar.",
                 "meetingPointLat": "Latitud (opcional)",
                 "meetingPointLong": "Longitud (opcional)",
-                "meetingPointCoordsHint": "Si cargás las coordenadas, más adelante podemos mostrar el punto en un mapa. Podés dejarlas vacías.",
+                "meetingPointCoordsHint": "Si cargás las coordenadas, mostramos el punto en un mapa. Podés dejarlas vacías.",
+                "meetingPointDirections": "Cómo llegar",
+                "meetingPointDirectionsPlaceholder": "Estacioná en la bajada municipal, sobre la costanera\nEl colectivo 4 te deja en la rotonda\nSon 300 m por camino de ripio, buscá el muelle de madera",
+                "meetingPointDirectionsHint": "Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.",
+                "meetingPointDirectionsLocked": "El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.",
                 "durationHours": "Duración — horas",
                 "durationMinutes": "Duración — minutos",
                 "durationHint": "Cuánto dura la experiencia. Dejá los dos campos vacíos si preferís no publicarlo.",
@@ -367,7 +371,8 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Carta estructurada",
-            "menuItemPhotos": "Foto por plato"
+            "menuItemPhotos": "Foto por plato",
+            "manageExperienceDirections": "Mapa y cómo llegar"
         },
         "create": {
             "pickVertical": {
