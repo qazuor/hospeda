@@ -3210,7 +3210,9 @@
             "range": "O dia da semana deve estar entre 0 (domingo) e 6 (sábado)"
         },
         "events": {
-            "max": "A agenda não pode ter mais de {{max}} eventos"
+            "max": "A agenda não pode ter mais de {{max}} eventos",
+            "max_one": "A agenda não pode ter mais de {{max}} evento",
+            "max_other": "A agenda não pode ter mais de {{max}} eventos"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"

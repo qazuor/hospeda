@@ -359,6 +359,8 @@
                 "active": "Activo",
                 "addEntry": "Agregar evento",
                 "maxReached": "Llegaste al máximo de {{max}} eventos.",
+                "maxReached_one": "Llegaste al máximo de {{max}} evento.",
+                "maxReached_other": "Llegaste al máximo de {{max}} eventos.",
                 "save": "Guardar agenda",
                 "saving": "Guardando…",
                 "saved": "Agenda guardada.",

@@ -108,7 +108,7 @@ export function CommerceVenueEventsManager({
     locale,
     weekdayLabels
 }: CommerceVenueEventsManagerProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const [entries, setEntries] = useState<EventDraft[]>([]);
     const [state, setState] = useState<PanelState>('loading');
@@ -298,9 +298,16 @@ export function CommerceVenueEventsManager({
 
             {atMax ? (
                 <p className={styles.intro}>
-                    {t(
+                    {/*
+                     * `tPlural`, not `t`: the sentence interpolates a count next
+                     * to a noun, so at `max = 1` a single form would read
+                     * "máximo de 1 eventos". The ceiling is 30 today and the
+                     * singular is unreachable — which is exactly why it is
+                     * wired now rather than left for whoever lowers it.
+                     */}
+                    {tPlural(
                         'commerce.owner.editor.venueEventsManager.maxReached',
-                        'Llegaste al máximo de {{max}} eventos.',
+                        GASTRONOMY_EVENTS_MAX_ENTRIES,
                         { max: GASTRONOMY_EVENTS_MAX_ENTRIES }
                     )}
                 </p>

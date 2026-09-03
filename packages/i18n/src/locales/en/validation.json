@@ -3210,7 +3210,9 @@
             "range": "The day of the week must be between 0 (Sunday) and 6 (Saturday)"
         },
         "events": {
-            "max": "The schedule cannot have more than {{max}} events"
+            "max": "The schedule cannot have more than {{max}} events",
+            "max_one": "The schedule cannot have more than {{max}} event",
+            "max_other": "The schedule cannot have more than {{max}} events"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
