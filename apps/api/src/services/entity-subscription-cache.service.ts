@@ -107,12 +107,23 @@ interface OwnerAccommodationSubscription {
     readonly planId: string | null;
 }
 
-/** The negative answer — cached, so it costs one indexed read instead of a walk. */
-const NO_SUBSCRIPTION: OwnerAccommodationSubscription = {
-    id: null,
-    status: ENTITY_SUBSCRIPTION_STATUS_NONE,
-    planId: null
-};
+/**
+ * The negative answer — cached, so it costs one indexed read instead of a walk.
+ *
+ * A FUNCTION, not a module-level constant, and that is load-bearing rather than
+ * stylistic. 247 test files under `apps/api/test` replace `@repo/db` wholesale
+ * with their own `vi.mock` factory, and vitest turns any export those factories
+ * omit into a getter that THROWS on read. Reading
+ * `ENTITY_SUBSCRIPTION_STATUS_NONE` at module scope therefore made importing
+ * this module — or anything that transitively imports it, which now includes
+ * `owner-entitlement.ts` and so most of the public accommodation route tree —
+ * blow up in every one of those suites, with an error naming this file rather
+ * than the mock that was actually incomplete. Deferring the read to call time
+ * confines that to the few suites that genuinely execute a sync.
+ */
+function noSubscription(): OwnerAccommodationSubscription {
+    return { id: null, status: ENTITY_SUBSCRIPTION_STATUS_NONE, planId: null };
+}
 
 /**
  * How many rows one upsert statement carries. Owners hold single-digit
@@ -134,7 +145,7 @@ const UPSERT_CHUNK_SIZE = 200;
  *
  * @param ownerId - `users.id` of the accommodation owner.
  * @returns The entitlement-granting subscription when there is one, else the
- *   most recent accommodation subscription, else {@link NO_SUBSCRIPTION}.
+ *   most recent accommodation subscription, else {@link noSubscription}.
  */
 async function deriveOwnerAccommodationSubscription(
     ownerId: string
@@ -160,7 +171,7 @@ async function deriveOwnerAccommodationSubscription(
 
     const accommodationSubs = rows.filter((row) => isAccommodationSubscription(row));
     if (accommodationSubs.length === 0) {
-        return NO_SUBSCRIPTION;
+        return noSubscription();
     }
 
     const granting = accommodationSubs.find((row) => isEntitlementGrantingStatus(row.status));
@@ -173,7 +184,7 @@ async function deriveOwnerAccommodationSubscription(
         )[0];
 
     if (!chosen) {
-        return NO_SUBSCRIPTION;
+        return noSubscription();
     }
     return { id: chosen.id, status: chosen.status, planId: chosen.planId ?? null };
 }

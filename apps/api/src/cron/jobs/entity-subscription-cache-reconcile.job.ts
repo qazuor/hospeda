@@ -70,12 +70,19 @@ interface DerivedOwnerState {
     readonly planId: string | null;
 }
 
-/** The negative answer, cached so an unsubscribed host is still a cache HIT. */
-const NO_SUBSCRIPTION: DerivedOwnerState = {
-    subscriptionId: null,
-    status: ENTITY_SUBSCRIPTION_STATUS_NONE,
-    planId: null
-};
+/**
+ * The negative answer, cached so an unsubscribed host is still a cache HIT.
+ *
+ * A function rather than a module-level constant, for the same reason as
+ * `noSubscription()` in `entity-subscription-cache.service.ts`: `@repo/db` is
+ * replaced wholesale by hundreds of test files, and vitest makes any export
+ * their factory omits throw ON READ — so reading the sentinel at module scope
+ * breaks the IMPORT of every suite that mocks the module, with an error that
+ * names this file instead of the incomplete mock.
+ */
+function noSubscription(): DerivedOwnerState {
+    return { subscriptionId: null, status: ENTITY_SUBSCRIPTION_STATUS_NONE, planId: null };
+}
 
 /**
  * Derive, for every owner at once, the accommodation subscription their cache
@@ -88,7 +95,7 @@ const NO_SUBSCRIPTION: DerivedOwnerState = {
  * rows. A SQL equality would drop every one of them.
  *
  * @returns ownerId → the state to cache. Owners with no accommodation
- *   subscription are absent; the caller substitutes {@link NO_SUBSCRIPTION}.
+ *   subscription are absent; the caller substitutes {@link noSubscription}.
  */
 async function deriveStateByOwner(): Promise<Map<string, DerivedOwnerState>> {
     const db = getDb();
@@ -199,7 +206,7 @@ export const entitySubscriptionCacheReconcileJob: CronJobDefinition = {
             }> = [];
 
             for (const accommodation of owned) {
-                const desired = stateByOwner.get(accommodation.ownerId) ?? NO_SUBSCRIPTION;
+                const desired = stateByOwner.get(accommodation.ownerId) ?? noSubscription();
                 const current = existingByEntityId.get(accommodation.id);
                 const alreadyCorrect =
                     current !== undefined &&
