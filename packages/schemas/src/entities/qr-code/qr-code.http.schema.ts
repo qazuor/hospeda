@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
+import { QrCodeFormatEnumSchema } from '../../enums/qr-code-format.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
-import { QrCodeRenderOptionsSchema, QrCodeSchema, QrCodeSlugSchema } from './qr-code.schema.js';
+import {
+    QrCodeRenderOptionsPatchSchema,
+    QrCodeRenderOptionsSchema,
+    QrCodeSchema,
+    QrCodeSlugSchema
+} from './qr-code.schema.js';
 
 /**
  * QrCode HTTP schemas (HOS-981).
@@ -61,9 +67,20 @@ export const QrCodeCreateHttpSchema = z
 
 export type QrCodeCreateHttp = z.infer<typeof QrCodeCreateHttpSchema>;
 
-/** `slug` is absent by construction: a printed code cannot be renamed. */
+/**
+ * `slug` is absent by construction: a printed code cannot be renamed.
+ *
+ * `renderOptions` is re-declared for the same reason the domain update schema
+ * does it — see the long note on `QrCodeUpdateInputSchema`. In short:
+ * `stripShapeDefaults` strips TOP-LEVEL defaults only, so without this line a
+ * `PATCH {renderOptions: {margin: 8}}` reaches the service carrying five
+ * defaulted siblings and silently repaints a red code black.
+ */
 export const QrCodeUpdateHttpSchema = z
-    .object(stripShapeDefaults(QrCodeCreateHttpSchema.omit({ slug: true }).shape))
+    .object({
+        ...stripShapeDefaults(QrCodeCreateHttpSchema.omit({ slug: true }).shape),
+        renderOptions: QrCodeRenderOptionsPatchSchema
+    })
     .partial()
     .strict();
 
@@ -106,3 +123,54 @@ export type QrCodeResolution = z.infer<typeof QrCodeResolutionSchema>;
 export const QrCodeRenderQuerySchema = QrCodeRenderOptionsSchema.partial();
 
 export type QrCodeRenderQuery = z.infer<typeof QrCodeRenderQuerySchema>;
+
+/**
+ * Query accepted by the admin download endpoint (HOS-981 PR 3).
+ *
+ * Only `format` — everything else is read from the code's stored
+ * `renderOptions`, which is the thing the panel edits. A download that could
+ * silently differ from the configured code in colour, size or error correction
+ * would defeat the point of storing those options at all: the operator would be
+ * printing something the panel never showed them.
+ *
+ * Declared separately from {@link QrCodeRenderQuerySchema} rather than reusing
+ * it because that one's numeric fields (`margin`, `size`) are plain `z.number()`
+ * and a query string is text — `?margin=8` would be refused, not coerced.
+ */
+export const QrCodeDownloadQuerySchema = z
+    .object({
+        format: QrCodeFormatEnumSchema.optional()
+    })
+    .strict();
+
+export type QrCodeDownloadQuery = z.infer<typeof QrCodeDownloadQuerySchema>;
+
+/**
+ * What the admin download endpoint answers with.
+ *
+ * The image travels as JSON rather than as an `image/svg+xml` body, following
+ * the precedent set by the provider's own QR endpoint (`host-trade/protected/
+ * mine-qr.ts`) and for the same two reasons. First, the caller is a panel that
+ * shows a preview NEXT TO a download button; a raw image response makes the page
+ * fetch the same bytes twice. Second, and the reason that is not merely
+ * ergonomic: the encoded string is built from operator-supplied input, and
+ * serving operator-influenced markup from our own origin under an image
+ * content-type is a shape worth not having at all.
+ *
+ * `dataUrl` is what a download link's `href` gets; `svg` carries the raw markup
+ * for inline preview and is `null` for a raster format.
+ */
+export const QrCodeDownloadResponseSchema = z.object({
+    /** The format actually rendered — the query override, or the stored one. */
+    format: QrCodeFormatEnumSchema,
+    /** Suggested file name, slug-derived, extension matching `format`. */
+    filename: z.string().min(1),
+    /** The URL the symbol encodes: the platform's own `/qr/{slug}/` indirection. */
+    scanUrl: z.string().url(),
+    /** Ready-to-embed `data:` URL — an `<img src>` and a download `href` both. */
+    dataUrl: z.string().min(1),
+    /** Raw SVG markup for inline rendering; `null` when the format is raster. */
+    svg: z.string().nullable()
+});
+
+export type QrCodeDownloadResponse = z.infer<typeof QrCodeDownloadResponseSchema>;

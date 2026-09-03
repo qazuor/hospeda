@@ -4,7 +4,12 @@ import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodeSourceEnum } from '../../enums/qr-code-source.enum.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
-import { QrCodeRenderOptionsSchema, QrCodeSchema, QrCodeSlugSchema } from './qr-code.schema.js';
+import {
+    QrCodeRenderOptionsPatchSchema,
+    QrCodeRenderOptionsSchema,
+    QrCodeSchema,
+    QrCodeSlugSchema
+} from './qr-code.schema.js';
 
 /**
  * QrCode CRUD Schemas (HOS-981)
@@ -129,9 +134,34 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  * `slug` is NOT updatable, and that is the load-bearing constraint of the whole
  * feature: the slug is the part that is already printed on a sticker somewhere.
  * `targetUrl` is exactly what an update is for.
+ *
+ * ## Why `renderOptions` is re-declared (HOS-981 PR 3)
+ *
+ * `stripShapeDefaults` removes TOP-LEVEL defaults only — by design, and it says
+ * so. `renderOptions` is a nested object every one of whose fields carries a
+ * default, so passing it through unchanged means `{renderOptions: {margin: 8}}`
+ * PARSES INTO a fully-populated object: the five fields the caller never
+ * mentioned arrive filled with the schema's defaults, indistinguishable from
+ * fields the operator actually set. A bare `.partial()` does not fix that
+ * either — in Zod 4 a `ZodDefault` still fires through an enclosing
+ * `ZodOptional` — which is why {@link QrCodeRenderOptionsPatchSchema} strips the
+ * defaults first.
+ *
+ * That is not a cosmetic difference. `render_options` is one `jsonb` column, so
+ * whatever this schema produces is what gets written: a code stored with
+ * `foregroundColor: '#ff0000'` that receives a margin-only PATCH would come back
+ * black, with no error anywhere. The patch schema keeps the payload as small as
+ * the caller wrote it, which is what lets `QrCodeModel.mergeableJsonbColumns`
+ * merge it into the stored document instead of replacing it. Both halves are
+ * required — a partial patch written with a plain `SET` still loses the
+ * siblings, and a merge fed a defaults-completed object still overwrites them
+ * with defaults.
  */
 export const QrCodeUpdateInputSchema = z
-    .object(stripShapeDefaults(QrCodeCreateInputBaseSchema.omit({ slug: true }).shape))
+    .object({
+        ...stripShapeDefaults(QrCodeCreateInputBaseSchema.omit({ slug: true }).shape),
+        renderOptions: QrCodeRenderOptionsPatchSchema
+    })
     .partial()
     .strict();
 
