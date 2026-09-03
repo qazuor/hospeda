@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Unit tests for the `0084-hos-981-qr-code-permissions` data migration, using a
+ * Unit tests for the `0089-hos-981-qr-code-permissions` data migration, using a
  * mocked insert chain — no real database connection. Same style as
  * `0072-hos-765-billing-reconciliation-permission.test.ts`.
  *
@@ -19,12 +19,12 @@
  *      migration that tidied it away would take SEO defaults and system tags
  *      with it.
  *
- * @module test/data-migrations/0084-hos-981-qr-code-permissions
+ * @module test/data-migrations/0089-hos-981-qr-code-permissions
  */
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0084-hos-981-qr-code-permissions.js';
+import * as migration from '../../src/data-migrations/0089-hos-981-qr-code-permissions.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -86,10 +86,10 @@ function buildCtx(insertedRows: unknown[]): {
     return { ctx, readInsertValues };
 }
 
-describe('0084-hos-981 QR-code permissions — meta', () => {
+describe('0089-hos-981 QR-code permissions — meta', () => {
     it('exports the expected required/additive meta shape', () => {
         expect(migration.meta).toEqual({
-            name: '0084-hos-981-qr-code-permissions',
+            name: '0089-hos-981-qr-code-permissions',
             group: 'required',
             destructive: false
         });
@@ -98,11 +98,11 @@ describe('0084-hos-981 QR-code permissions — meta', () => {
     it('meta.name matches the file name, which is the ledger primary key', () => {
         // The ledger keys on this string. A rename that misses it re-runs a
         // migration that already ran, or strands one that never did.
-        expect(migration.meta.name).toBe('0084-hos-981-qr-code-permissions');
+        expect(migration.meta.name).toBe('0089-hos-981-qr-code-permissions');
     });
 });
 
-describe('0084-hos-981 QR-code permissions — exported lists shape', () => {
+describe('0089-hos-981 QR-code permissions — exported lists shape', () => {
     it('grants exactly the four QR verbs', () => {
         expect([...QR_CODE_PERMISSIONS]).toEqual([
             PermissionEnum.QR_CODE_VIEW,
@@ -136,7 +136,7 @@ describe('0084-hos-981 QR-code permissions — exported lists shape', () => {
     });
 });
 
-describe('0084-hos-981 QR-code permissions — no drift against the seed', () => {
+describe('0089-hos-981 QR-code permissions — no drift against the seed', () => {
     it.each([RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN])('seed %s holds all four', (role) => {
         const perms = ROLE_PERMISSIONS[role] ?? [];
         for (const permission of QR_CODE_PERMISSIONS) {
@@ -183,7 +183,7 @@ describe('0084-hos-981 QR-code permissions — no drift against the seed', () =>
     });
 });
 
-describe('0084-hos-981 QR-code permissions — up()', () => {
+describe('0089-hos-981 QR-code permissions — up()', () => {
     it('inserts all eight (role, permission) pairs', async () => {
         const insertedRows = GRANTS.map((grant) => ({ ...grant }));
         const { ctx, readInsertValues } = buildCtx(insertedRows);

@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0084-hos-981-qr-code-permissions
+ * Data migration: 0089-hos-981-qr-code-permissions
  *
  * Companion delta for HOS-981. The seed's `ROLE_PERMISSIONS` constant
  * (`packages/seed/src/required/rolePermissions.seed.ts`) has already been edited
@@ -55,7 +55,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0084-hos-981-qr-code-permissions',
+    name: '0089-hos-981-qr-code-permissions',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
