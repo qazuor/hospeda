@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useQrCodesList } from '@/features/qr-codes/hooks/useQrCodes';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/platform/qr-codes/')({
@@ -30,29 +31,35 @@ function QrCodesListPage() {
     const [pageSize, setPageSize] = useState(20);
     const [search, setSearch] = useState('');
 
+    /**
+     * One request per pause, not one per keystroke. Typing "plaza" untuned fires
+     * five admin list queries, four of which are answers nobody will read.
+     */
+    const debouncedSearch = useDebounce(search.trim(), 300);
+
     const { data, isLoading } = useQrCodesList({
         page,
         pageSize,
-        q: search.trim() === '' ? undefined : search.trim()
+        q: debouncedSearch === '' ? undefined : debouncedSearch
     });
 
     const columns: readonly DataTableColumn<QrCode>[] = [
         {
             id: 'label',
             accessorKey: 'label',
-            header: t('qr-codes.columns.label'),
+            header: t('admin-qr-codes.columns.label'),
             cell: ({ row }) => <div className="font-medium">{row.label}</div>
         },
         {
             id: 'slug',
             accessorKey: 'slug',
-            header: t('qr-codes.columns.slug'),
+            header: t('admin-qr-codes.columns.slug'),
             cell: ({ row }) => <div className="font-mono text-sm">{row.slug}</div>
         },
         {
             id: 'targetUrl',
             accessorKey: 'targetUrl',
-            header: t('qr-codes.columns.targetUrl'),
+            header: t('admin-qr-codes.columns.targetUrl'),
             cell: ({ row }) => (
                 <div className="max-w-md truncate text-muted-foreground text-sm">
                     {row.targetUrl}
@@ -62,16 +69,18 @@ function QrCodesListPage() {
         {
             id: 'isActive',
             accessorKey: 'isActive',
-            header: t('qr-codes.columns.isActive'),
+            header: t('admin-qr-codes.columns.isActive'),
             cell: ({ row }) => (
                 <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                    {row.isActive ? t('qr-codes.status.active') : t('qr-codes.status.inactive')}
+                    {row.isActive
+                        ? t('admin-qr-codes.status.active')
+                        : t('admin-qr-codes.status.inactive')}
                 </Badge>
             )
         },
         {
             id: 'actions',
-            header: t('qr-codes.columns.actions'),
+            header: t('admin-qr-codes.columns.actions'),
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <Button
@@ -83,7 +92,7 @@ function QrCodesListPage() {
                             to="/platform/qr-codes/$id"
                             params={{ id: row.id }}
                         >
-                            {t('qr-codes.actions.view')}
+                            {t('admin-qr-codes.actions.view')}
                         </Link>
                     </Button>
                     <Button
@@ -95,7 +104,7 @@ function QrCodesListPage() {
                             to="/platform/qr-codes/$id/edit"
                             params={{ id: row.id }}
                         >
-                            {t('qr-codes.actions.edit')}
+                            {t('admin-qr-codes.actions.edit')}
                         </Link>
                     </Button>
                 </div>
@@ -104,25 +113,25 @@ function QrCodesListPage() {
     ];
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.SETTINGS_MANAGE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.QR_CODE_VIEW]}>
             <div className="p-6">
                 <div className="mb-6 flex items-center justify-between">
                     <div>
-                        <h1 className="font-bold text-3xl">{t('qr-codes.title')}</h1>
-                        <p className="text-muted-foreground">{t('qr-codes.description')}</p>
+                        <h1 className="font-bold text-3xl">{t('admin-qr-codes.title')}</h1>
+                        <p className="text-muted-foreground">{t('admin-qr-codes.description')}</p>
                     </div>
                     <Button asChild>
                         <Link to="/platform/qr-codes/new">
                             <AddIcon className="mr-2 h-4 w-4" />
-                            {t('qr-codes.create')}
+                            {t('admin-qr-codes.create')}
                         </Link>
                     </Button>
                 </div>
 
                 <div className="mb-4 max-w-md">
                     <Input
-                        aria-label={t('qr-codes.search.placeholder')}
-                        placeholder={t('qr-codes.search.placeholder')}
+                        aria-label={t('admin-qr-codes.search.placeholder')}
+                        placeholder={t('admin-qr-codes.search.placeholder')}
                         value={search}
                         onChange={(e) => {
                             setSearch(e.target.value);

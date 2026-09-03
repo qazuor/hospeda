@@ -814,11 +814,11 @@ const plataformaSidebar: SidebarInput = {
                     // link with a printed handle, so LinkIcon is the honest stand-in.
                     icon: 'LinkIcon',
                     route: '/platform/qr-codes',
-                    // The same gate the API tier uses (HOS-981). Borrowed rather
-                    // than a dedicated QR_CODE_* family: a new permission drags a
-                    // role_permission data migration behind it, and nobody manages
-                    // QR codes today without also holding settings.
-                    permissions: ['SETTINGS_MANAGE']
+                    // The gate the LIST route demands, not a broader one
+                    // (HOS-981). A menu entry that declares a different
+                    // permission than its route enforces is an entry shown to
+                    // somebody who then eats a 403.
+                    permissions: ['QR_CODE_VIEW']
                 },
                 {
                     type: 'link',

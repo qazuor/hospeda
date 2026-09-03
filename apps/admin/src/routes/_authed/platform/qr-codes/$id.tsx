@@ -53,18 +53,18 @@ function QrCodeDetailPage() {
             anchor.click();
             anchor.remove();
         } catch {
-            addToast({ message: t('qr-codes.download.failed'), variant: 'error' });
+            addToast({ message: t('admin-qr-codes.download.failed'), variant: 'error' });
         }
     };
 
     const handleDelete = async () => {
-        if (!window.confirm(t('qr-codes.messages.deleteConfirm'))) return;
+        if (!window.confirm(t('admin-qr-codes.messages.deleteConfirm'))) return;
         try {
             await deleteMutation.mutateAsync(id);
-            addToast({ message: t('qr-codes.messages.deleted'), variant: 'success' });
+            addToast({ message: t('admin-qr-codes.messages.deleted'), variant: 'success' });
             navigate({ to: '/platform/qr-codes' });
         } catch {
-            addToast({ message: t('qr-codes.messages.deleteError'), variant: 'error' });
+            addToast({ message: t('admin-qr-codes.messages.deleteError'), variant: 'error' });
         }
     };
 
@@ -73,11 +73,13 @@ function QrCodeDetailPage() {
     }
 
     if (!qrCode) {
-        return <div className="p-8 text-muted-foreground">{t('qr-codes.messages.notFound')}</div>;
+        return (
+            <div className="p-8 text-muted-foreground">{t('admin-qr-codes.messages.notFound')}</div>
+        );
     }
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.SETTINGS_MANAGE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.QR_CODE_VIEW]}>
             <div className="container mx-auto max-w-4xl py-8">
                 <div className="mb-8 flex items-start justify-between gap-4">
                     <div>
@@ -90,14 +92,16 @@ function QrCodeDetailPage() {
                                 to="/platform/qr-codes/$id/edit"
                                 params={{ id: qrCode.id }}
                             >
-                                {t('qr-codes.actions.edit')}
+                                {t('admin-qr-codes.actions.edit')}
                             </Link>
                         </Button>
                         <Button
                             variant="outline"
                             asChild
                         >
-                            <Link to="/platform/qr-codes">{t('qr-codes.actions.backToList')}</Link>
+                            <Link to="/platform/qr-codes">
+                                {t('admin-qr-codes.actions.backToList')}
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -105,32 +109,34 @@ function QrCodeDetailPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{t('qr-codes.detail')}</CardTitle>
+                            <CardTitle>{t('admin-qr-codes.detail')}</CardTitle>
                             <CardDescription>{qrCode.description || '—'}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4 text-sm">
                             <div>
-                                <div className="font-medium">{t('qr-codes.columns.targetUrl')}</div>
+                                <div className="font-medium">
+                                    {t('admin-qr-codes.columns.targetUrl')}
+                                </div>
                                 <div className="break-all text-muted-foreground">
                                     {qrCode.targetUrl}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span>{t('qr-codes.columns.isActive')}</span>
+                                <span>{t('admin-qr-codes.columns.isActive')}</span>
                                 <Badge variant={qrCode.isActive ? 'success' : 'secondary'}>
                                     {qrCode.isActive
-                                        ? t('qr-codes.status.active')
-                                        : t('qr-codes.status.inactive')}
+                                        ? t('admin-qr-codes.status.active')
+                                        : t('admin-qr-codes.status.inactive')}
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span>{t('qr-codes.columns.source')}</span>
+                                <span>{t('admin-qr-codes.columns.source')}</span>
                                 <span className="text-muted-foreground">
-                                    {t(`qr-codes.source.${qrCode.source}`)}
+                                    {t(`admin-qr-codes.source.${qrCode.source}`)}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span>{t('qr-codes.columns.createdAt')}</span>
+                                <span>{t('admin-qr-codes.columns.createdAt')}</span>
                                 <span className="text-muted-foreground">
                                     {new Date(qrCode.createdAt).toLocaleDateString()}
                                 </span>
@@ -140,8 +146,8 @@ function QrCodeDetailPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>{t('qr-codes.download.title')}</CardTitle>
-                            <CardDescription>{t('qr-codes.download.help')}</CardDescription>
+                            <CardTitle>{t('admin-qr-codes.download.title')}</CardTitle>
+                            <CardDescription>{t('admin-qr-codes.download.help')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {preview?.dataUrl ? (
@@ -155,7 +161,7 @@ function QrCodeDetailPage() {
                             {preview?.scanUrl ? (
                                 <div className="text-sm">
                                     <div className="font-medium">
-                                        {t('qr-codes.download.scanUrl')}
+                                        {t('admin-qr-codes.download.scanUrl')}
                                     </div>
                                     <div className="break-all font-mono text-muted-foreground">
                                         {preview.scanUrl}
@@ -170,7 +176,7 @@ function QrCodeDetailPage() {
                                     disabled={downloadMutation.isPending}
                                     onClick={() => handleDownload(QrCodeFormatEnum.SVG)}
                                 >
-                                    {t('qr-codes.download.svg')}
+                                    {t('admin-qr-codes.download.svg')}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -178,7 +184,7 @@ function QrCodeDetailPage() {
                                     disabled={downloadMutation.isPending}
                                     onClick={() => handleDownload(QrCodeFormatEnum.PNG)}
                                 >
-                                    {t('qr-codes.download.png')}
+                                    {t('admin-qr-codes.download.png')}
                                 </Button>
                                 <Button
                                     variant="destructive"
@@ -186,7 +192,7 @@ function QrCodeDetailPage() {
                                     disabled={deleteMutation.isPending}
                                     onClick={handleDelete}
                                 >
-                                    {t('qr-codes.actions.delete')}
+                                    {t('admin-qr-codes.actions.delete')}
                                 </Button>
                             </div>
                         </CardContent>

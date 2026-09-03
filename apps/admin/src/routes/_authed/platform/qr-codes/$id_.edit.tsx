@@ -33,11 +33,13 @@ function QrCodeEditPage() {
     }
 
     if (!qrCode) {
-        return <div className="p-8 text-muted-foreground">{t('qr-codes.messages.notFound')}</div>;
+        return (
+            <div className="p-8 text-muted-foreground">{t('admin-qr-codes.messages.notFound')}</div>
+        );
     }
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.SETTINGS_MANAGE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.QR_CODE_UPDATE]}>
             <QrCodeEditForm
                 id={id}
                 qrCode={qrCode}
@@ -54,18 +56,18 @@ function QrCodeEditForm({ id, qrCode }: { readonly id: string; readonly qrCode: 
 
     const handleSubmit = async (payload: QrCodeCreateHttp | QrCodeUpdateHttp) => {
         try {
-            await updateMutation.mutateAsync({ id, data: payload as never });
-            addToast({ message: t('qr-codes.messages.updated'), variant: 'success' });
+            await updateMutation.mutateAsync({ id, data: payload as QrCodeUpdateHttp });
+            addToast({ message: t('admin-qr-codes.messages.updated'), variant: 'success' });
             navigate({ to: '/platform/qr-codes/$id', params: { id } });
         } catch (error) {
-            addToast({ message: t('qr-codes.messages.updateError'), variant: 'error' });
+            addToast({ message: t('admin-qr-codes.messages.updateError'), variant: 'error' });
             throw error;
         }
     };
 
     return (
         <div className="container mx-auto max-w-4xl py-8">
-            <h1 className="mb-8 font-bold text-3xl">{t('qr-codes.edit')}</h1>
+            <h1 className="mb-8 font-bold text-3xl">{t('admin-qr-codes.edit')}</h1>
             <QrCodeForm
                 mode="edit"
                 initialData={qrCode}

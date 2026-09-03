@@ -23,10 +23,10 @@ function QrCodeCreatePage() {
     const handleSubmit = async (payload: QrCodeCreateHttp | QrCodeUpdateHttp) => {
         try {
             const created = await createMutation.mutateAsync(payload as never);
-            addToast({ message: t('qr-codes.messages.created'), variant: 'success' });
+            addToast({ message: t('admin-qr-codes.messages.created'), variant: 'success' });
             navigate({ to: '/platform/qr-codes/$id', params: { id: created.id } });
         } catch (_error) {
-            addToast({ message: t('qr-codes.messages.createError'), variant: 'error' });
+            addToast({ message: t('admin-qr-codes.messages.createError'), variant: 'error' });
             // Rethrown so the form knows the save did not happen: a submit that
             // neither succeeds nor complains is worse than one that fails loudly.
             throw _error;
@@ -34,9 +34,9 @@ function QrCodeCreatePage() {
     };
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.SETTINGS_MANAGE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.QR_CODE_CREATE]}>
             <div className="container mx-auto max-w-4xl py-8">
-                <h1 className="mb-8 font-bold text-3xl">{t('qr-codes.create')}</h1>
+                <h1 className="mb-8 font-bold text-3xl">{t('admin-qr-codes.create')}</h1>
                 <QrCodeForm
                     mode="create"
                     onSubmit={handleSubmit}
