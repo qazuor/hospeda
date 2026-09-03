@@ -15,7 +15,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
  * Hard delete gastronomy listing — Admin endpoint.
  *
  * Permanently removes the gastronomy listing from the database.
- * Requires COMMERCE_DELETE permission (reusing the same gate used for
+ * Requires GASTRONOMY_DELETE (or the legacy COMMERCE_DELETE) permission (reusing the same gate used for
  * hard deletes of other commerce entities until a dedicated
  * COMMERCE_HARD_DELETE permission is defined).
  */
@@ -23,9 +23,10 @@ export const adminHardDeleteGastronomyRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}/hard',
     summary: 'Hard delete gastronomy listing (admin)',
-    description: 'Permanently deletes a gastronomy listing. Requires COMMERCE_DELETE permission.',
+    description:
+        'Permanently deletes a gastronomy listing. Requires GASTRONOMY_DELETE (or the legacy COMMERCE_DELETE) permission.',
     tags: ['Gastronomy'],
-    requiredPermissions: [PermissionEnum.COMMERCE_DELETE],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_DELETE, PermissionEnum.COMMERCE_DELETE]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -24,7 +24,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * DELETE /api/v1/admin/experiences/:id/media/:mediaId
  * Remove photo from experience listing gallery — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `removeExperienceMedia` enforces the same gate via `checkExperienceCanEditMedia`.
  */
 export const adminRemoveExperienceMediaRoute = createAdminRoute({
@@ -32,9 +32,9 @@ export const adminRemoveExperienceMediaRoute = createAdminRoute({
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from experience listing gallery (admin)',
     description:
-        'Soft-deletes a media row and resequences the remaining visible photos. Requires COMMERCE_EDIT_ALL.',
+        'Soft-deletes a media row and resequences the remaining visible photos. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

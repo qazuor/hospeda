@@ -22,16 +22,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * Partial update experience listing — Admin endpoint.
  *
  * Uses the same `ExperienceUpdateInputSchema` (all fields partial) as the PUT
- * endpoint. Requires COMMERCE_EDIT_ALL permission.
+ * endpoint. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
  */
 export const adminPatchExperienceRoute = createAdminRoute({
     method: 'patch',
     path: '/{id}',
     summary: 'Partial update experience listing (admin)',
     description:
-        'Updates specific fields of an experience listing. Requires COMMERCE_EDIT_ALL permission.',
+        'Updates specific fields of an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Experience'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

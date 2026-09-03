@@ -129,7 +129,13 @@ function resolveAnalyticsUserType(
     ) {
         return 'staff';
     }
-    if (roles.includes(RoleEnum.HOST) || roles.includes(RoleEnum.COMMERCE_OWNER)) {
+    if (
+        roles.includes(RoleEnum.HOST) ||
+        roles.includes(RoleEnum.COMMERCE_OWNER) ||
+        // HOS-1077: the per-vertical owner roles are owners too.
+        roles.includes(RoleEnum.GASTRONOMY_OWNER) ||
+        roles.includes(RoleEnum.EXPERIENCE_OWNER)
+    ) {
         return 'owner';
     }
     return 'tourist';

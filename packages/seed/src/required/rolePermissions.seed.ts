@@ -398,6 +398,27 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // written about a listing.
         PermissionEnum.COMMERCE_MODERATION_CHANGE,
 
+        // HOS-1077: the per-vertical split of the six admin-tier COMMERCE_*
+        // above. Seeded ALONGSIDE them, not instead of them — this is the expand
+        // release, so both families are live and every gate reads either one.
+        // Release 2 deletes the COMMERCE_* six from this list.
+        //
+        // Granting both verticals to staff is not a re-coupling: staff are meant
+        // to reach everything. What the split buys is the ability to grant ONE
+        // of them to somebody who is not staff, which was impossible before.
+        PermissionEnum.GASTRONOMY_CREATE,
+        PermissionEnum.GASTRONOMY_VIEW_ALL,
+        PermissionEnum.GASTRONOMY_EDIT_ALL,
+        PermissionEnum.GASTRONOMY_DELETE,
+        PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
+        PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
+        PermissionEnum.EXPERIENCE_CREATE,
+        PermissionEnum.EXPERIENCE_VIEW_ALL,
+        PermissionEnum.EXPERIENCE_EDIT_ALL,
+        PermissionEnum.EXPERIENCE_DELETE,
+        PermissionEnum.EXPERIENCE_MODERATE_REVIEW,
+        PermissionEnum.EXPERIENCE_MODERATION_CHANGE,
+
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
         PermissionEnum.PARTNER_MANAGE,
@@ -756,6 +777,27 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
         // written about a listing.
         PermissionEnum.COMMERCE_MODERATION_CHANGE,
+
+        // HOS-1077: the per-vertical split of the six admin-tier COMMERCE_*
+        // above. Seeded ALONGSIDE them, not instead of them — this is the expand
+        // release, so both families are live and every gate reads either one.
+        // Release 2 deletes the COMMERCE_* six from this list.
+        //
+        // Granting both verticals to staff is not a re-coupling: staff are meant
+        // to reach everything. What the split buys is the ability to grant ONE
+        // of them to somebody who is not staff, which was impossible before.
+        PermissionEnum.GASTRONOMY_CREATE,
+        PermissionEnum.GASTRONOMY_VIEW_ALL,
+        PermissionEnum.GASTRONOMY_EDIT_ALL,
+        PermissionEnum.GASTRONOMY_DELETE,
+        PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
+        PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
+        PermissionEnum.EXPERIENCE_CREATE,
+        PermissionEnum.EXPERIENCE_VIEW_ALL,
+        PermissionEnum.EXPERIENCE_EDIT_ALL,
+        PermissionEnum.EXPERIENCE_DELETE,
+        PermissionEnum.EXPERIENCE_MODERATE_REVIEW,
+        PermissionEnum.EXPERIENCE_MODERATION_CHANGE,
 
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
@@ -1197,6 +1239,144 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // and buys from it. This is the grant the whole permission exists for:
         // a commerce owner buys `extra-gastronomies-1`, and ACCOMMODATION_CREATE
         // (the closest pre-existing gate) leaves them out.
+        PermissionEnum.BILLING_ADDON_PURCHASE
+    ],
+
+    [RoleEnum.GASTRONOMY_OWNER]: [
+        // HOS-1077: the gastronomy half of what `COMMERCE_OWNER` used to grant as
+        // one indivisible bundle. This role is the reason the split exists —
+        // holding it lets somebody run a gastronomy listing WITHOUT any
+        // authority over the other vertical, which `COMMERCE_OWNER` could not
+        // express.
+        //
+        // Deliberately NOT granted any `COMMERCE_*`: adding them back here would
+        // re-create the coupling. Existing accounts keep `COMMERCE_OWNER` as a
+        // SECOND row in `user_role` (roles are many-to-many since HOS-296), so
+        // nobody loses access during the expand window without this role
+        // carrying the legacy family too.
+        //
+        // Single owner write permission, mirroring SPEC-253 D2=b: one
+        // `editOwn` covers every owner-accessible section, not ten per-section
+        // permissions.
+        PermissionEnum.GASTRONOMY_EDIT_OWN,
+
+        // Creating the listing is what makes somebody an owner — the same
+        // self-service door `COMMERCE_CREATE` opens today (HOS-166 PR-A).
+        PermissionEnum.GASTRONOMY_CREATE,
+
+        // USER: Basic profile permissions
+        PermissionEnum.USER_VIEW_PROFILE,
+        PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
+
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
+        // ACCESS: Basic dashboard access (owner self-service now lives entirely
+        // in the web app's /mi-cuenta — NOT the admin panel; ACCESS_PANEL_ADMIN
+        // is intentionally absent here)
+        PermissionEnum.DASHBOARD_BASE_VIEW,
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // MEDIA: Upload and delete own images
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: Own-scoped conversations with guests
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+
+        // BILLING: Own subscription and billing view (mirrors HOST)
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
+        // and buys from it. Same reasoning as COMMERCE_OWNER above.
+        PermissionEnum.BILLING_ADDON_PURCHASE
+    ],
+
+    [RoleEnum.EXPERIENCE_OWNER]: [
+        // HOS-1077: the experience half of what `COMMERCE_OWNER` used to grant as
+        // one indivisible bundle. This role is the reason the split exists —
+        // holding it lets somebody run an experience listing WITHOUT any
+        // authority over the other vertical, which `COMMERCE_OWNER` could not
+        // express.
+        //
+        // Deliberately NOT granted any `COMMERCE_*`: adding them back here would
+        // re-create the coupling. Existing accounts keep `COMMERCE_OWNER` as a
+        // SECOND row in `user_role` (roles are many-to-many since HOS-296), so
+        // nobody loses access during the expand window without this role
+        // carrying the legacy family too.
+        //
+        // Single owner write permission, mirroring SPEC-253 D2=b: one
+        // `editOwn` covers every owner-accessible section, not ten per-section
+        // permissions.
+        PermissionEnum.EXPERIENCE_EDIT_OWN,
+
+        // Creating the listing is what makes somebody an owner — the same
+        // self-service door `COMMERCE_CREATE` opens today (HOS-166 PR-A).
+        PermissionEnum.EXPERIENCE_CREATE,
+
+        // USER: Basic profile permissions
+        PermissionEnum.USER_VIEW_PROFILE,
+        PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
+
+        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
+        PermissionEnum.RECOMMENDATION_VIEW,
+
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
+        // ACCESS: Basic dashboard access (owner self-service now lives entirely
+        // in the web app's /mi-cuenta — NOT the admin panel; ACCESS_PANEL_ADMIN
+        // is intentionally absent here)
+        PermissionEnum.DASHBOARD_BASE_VIEW,
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // MEDIA: Upload and delete own images
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: Own-scoped conversations with guests
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+
+        // BILLING: Own subscription and billing view (mirrors HOST)
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
+        // and buys from it. Same reasoning as COMMERCE_OWNER above.
         PermissionEnum.BILLING_ADDON_PURCHASE
     ],
 

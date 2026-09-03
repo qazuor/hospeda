@@ -16,7 +16,7 @@ const experienceReviewService = new ExperienceReviewService({ logger: apiLogger 
  * List all experience reviews — Admin endpoint.
  *
  * Returns all reviews including PENDING and REJECTED (not filtered to APPROVED
- * like the public list). Requires COMMERCE_MODERATE_REVIEW permission.
+ * like the public list). Requires EXPERIENCE_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission.
  */
 export const adminListExperienceReviewsRoute = createAdminListRoute({
     method: 'get',
@@ -25,7 +25,9 @@ export const adminListExperienceReviewsRoute = createAdminListRoute({
     description:
         'Returns a paginated list of all experience reviews with full admin details, including pending and rejected reviews.',
     tags: ['Experience Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.COMMERCE_MODERATE_REVIEW],
+    anyOfPermissions: [
+        [PermissionEnum.EXPERIENCE_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+    ],
     responseSchema: ExperienceReviewSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

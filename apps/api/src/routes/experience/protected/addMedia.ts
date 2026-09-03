@@ -36,7 +36,7 @@ export const protectedAddExperienceMediaRoute = createCRUDRoute({
     summary: 'Add photo to experience listing gallery',
     description:
         'Registers an already-uploaded URL as a new experience_media row. ' +
-        'Requires COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).',
+        'Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
     tags: ['Experience', 'Experience Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

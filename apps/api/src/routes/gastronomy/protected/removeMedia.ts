@@ -36,7 +36,7 @@ export const protectedRemoveGastronomyMediaRoute = createCRUDRoute({
     summary: 'Remove photo from gastronomy listing gallery',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
-        'Requires COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).',
+        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

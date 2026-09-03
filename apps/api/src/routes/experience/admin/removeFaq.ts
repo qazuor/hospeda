@@ -20,16 +20,17 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * DELETE /api/v1/admin/experiences/:id/faqs/:faqId
  * Remove FAQ from experience listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `removeExperienceFaq` enforces the same gate via `checkExperienceCanEditFaqs`.
  */
 export const adminRemoveExperienceFaqRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from experience listing (admin)',
-    description: 'Removes a FAQ from an experience listing. Requires COMMERCE_EDIT_ALL.',
+    description:
+        'Removes a FAQ from an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

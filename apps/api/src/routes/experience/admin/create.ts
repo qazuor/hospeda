@@ -20,15 +20,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * POST /api/v1/admin/experiences
  * Create experience listing — Admin endpoint.
  *
- * Requires COMMERCE_CREATE permission.
+ * Requires EXPERIENCE_CREATE (or the legacy COMMERCE_CREATE) permission.
  */
 export const adminCreateExperienceRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create experience listing',
-    description: 'Creates a new experience listing. Requires COMMERCE_CREATE permission.',
+    description:
+        'Creates a new experience listing. Requires EXPERIENCE_CREATE (or the legacy COMMERCE_CREATE) permission.',
     tags: ['Experience'],
-    requiredPermissions: [PermissionEnum.COMMERCE_CREATE],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_CREATE, PermissionEnum.COMMERCE_CREATE]],
     // H-156: the CHECKED variant carries the cross-field pricing rule
     // (priceUnit required unless the price is on request).
     requestBody: ExperienceAdminCreateInputCheckedSchema,

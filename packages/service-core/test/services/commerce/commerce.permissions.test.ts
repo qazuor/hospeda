@@ -15,6 +15,7 @@ import {
     checkCanDeleteCommerce,
     checkCanEditAll,
     checkCanEditOwn,
+    checkCanModerateCommerceListing,
     checkCanModerateReview,
     checkCanViewAll
 } from '../../../src/services/commerce/commerce.permissions';
@@ -189,12 +190,9 @@ describe('checkCanAdminListCommerce', () => {
         ).not.toThrow();
     });
 
-    it('should allow actor with custom viewOwnPermission (COMMERCE_EDIT_OWN)', () => {
+    it('should allow actor holding only the vertical viewAll (HOS-1077)', () => {
         expect(() =>
-            checkCanAdminListCommerce(
-                makeActor([PermissionEnum.COMMERCE_EDIT_OWN]),
-                PermissionEnum.COMMERCE_EDIT_OWN
-            )
+            checkCanAdminListCommerce(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'gastronomy')
         ).not.toThrow();
     });
 
@@ -216,5 +214,150 @@ describe('checkCanModerateReview', () => {
 
     it('should forbid actor without COMMERCE_MODERATE_REVIEW', () => {
         expectForbidden(() => checkCanModerateReview(makeActor([])));
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1077 — per-vertical split
+//
+// The three properties that make the expand release safe, asserted against the
+// real check functions rather than a hand-rolled context:
+//
+//   1. The legacy `commerce.*` permission still passes (dual-read) — nobody
+//      loses access while live `role_permission` rows are backfilled.
+//   2. The vertical's own permission passes — the split is usable on day one.
+//   3. A gastronomy permission does NOT pass an experience check, and vice
+//      versa. This is the bug the issue is about: today one grant covers both
+//      verticals, so "moderates restaurants" implies "moderates excursions".
+//      If this block goes green with the vertical argument removed, the split
+//      is decorative.
+// ---------------------------------------------------------------------------
+
+describe('HOS-1077 per-vertical permission split', () => {
+    const ownedEntity = { ownerId: 'actor-1' };
+
+    describe('the legacy commerce.* family still passes (dual-read)', () => {
+        it('accepts COMMERCE_EDIT_ALL on a gastronomy check', () => {
+            expect(() =>
+                checkCanEditAll(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {}, 'gastronomy')
+            ).not.toThrow();
+        });
+
+        it('accepts COMMERCE_EDIT_ALL on an experience check', () => {
+            expect(() =>
+                checkCanEditAll(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {}, 'experience')
+            ).not.toThrow();
+        });
+
+        it('accepts COMMERCE_MODERATION_CHANGE on both verticals', () => {
+            const actor = makeActor([PermissionEnum.COMMERCE_MODERATION_CHANGE]);
+            expect(() => checkCanModerateCommerceListing(actor, 'gastronomy')).not.toThrow();
+            expect(() => checkCanModerateCommerceListing(actor, 'experience')).not.toThrow();
+        });
+
+        it('accepts COMMERCE_EDIT_OWN for the owner of a gastronomy listing', () => {
+            expect(() =>
+                checkCanEditOwn(
+                    makeActor([PermissionEnum.COMMERCE_EDIT_OWN]),
+                    ownedEntity,
+                    'gastronomy'
+                )
+            ).not.toThrow();
+        });
+    });
+
+    describe("the vertical's own permission passes", () => {
+        it('accepts GASTRONOMY_EDIT_ALL on a gastronomy check', () => {
+            expect(() =>
+                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'gastronomy')
+            ).not.toThrow();
+        });
+
+        it('accepts EXPERIENCE_EDIT_ALL on an experience check', () => {
+            expect(() =>
+                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'experience')
+            ).not.toThrow();
+        });
+
+        it('accepts GASTRONOMY_EDIT_OWN for the owner of a gastronomy listing', () => {
+            expect(() =>
+                checkCanEditOwn(
+                    makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN]),
+                    ownedEntity,
+                    'gastronomy'
+                )
+            ).not.toThrow();
+        });
+
+        it('accepts EXPERIENCE_MODERATION_CHANGE on an experience listing', () => {
+            expect(() =>
+                checkCanModerateCommerceListing(
+                    makeActor([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]),
+                    'experience'
+                )
+            ).not.toThrow();
+        });
+    });
+
+    describe('one vertical does NOT grant the other — the whole point of HOS-1077', () => {
+        it('GASTRONOMY_EDIT_ALL is refused on an experience check', () => {
+            expectForbidden(() =>
+                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'experience')
+            );
+        });
+
+        it('EXPERIENCE_EDIT_ALL is refused on a gastronomy check', () => {
+            expectForbidden(() =>
+                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'gastronomy')
+            );
+        });
+
+        it('GASTRONOMY_MODERATE_REVIEW is refused on an experience review check', () => {
+            expectForbidden(() =>
+                checkCanModerateReview(
+                    makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]),
+                    'experience'
+                )
+            );
+        });
+
+        it('EXPERIENCE_MODERATION_CHANGE is refused on a gastronomy listing', () => {
+            expectForbidden(() =>
+                checkCanModerateCommerceListing(
+                    makeActor([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]),
+                    'gastronomy'
+                )
+            );
+        });
+
+        it('GASTRONOMY_VIEW_ALL is refused on an experience admin list', () => {
+            expectForbidden(() =>
+                checkCanAdminListCommerce(
+                    makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]),
+                    'experience'
+                )
+            );
+        });
+
+        it('GASTRONOMY_DELETE is refused on an experience delete', () => {
+            expectForbidden(() =>
+                checkCanDeleteCommerce(
+                    makeActor([PermissionEnum.GASTRONOMY_DELETE]),
+                    {},
+                    'experience'
+                )
+            );
+        });
+    });
+
+    describe('a vertical permission alone does not pass a vertical-agnostic caller', () => {
+        // Callers that pass no vertical still read the legacy family only. That
+        // is deliberate: those call sites are the ones release 2 must convert,
+        // and a silent fail-open here would hide them.
+        it('GASTRONOMY_EDIT_ALL is refused when no vertical is supplied', () => {
+            expectForbidden(() =>
+                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {})
+            );
+        });
     });
 });

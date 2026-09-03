@@ -20,16 +20,17 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
  * Remove FAQ from gastronomy listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `removeGastronomyFaq` enforces the same gate via `checkGastronomyCanEditFaqs`.
  */
 export const adminRemoveGastronomyFaqRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing (admin)',
-    description: 'Removes a FAQ from a gastronomy listing. Requires COMMERCE_EDIT_ALL.',
+    description:
+        'Removes a FAQ from a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

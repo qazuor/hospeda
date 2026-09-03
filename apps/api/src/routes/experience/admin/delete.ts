@@ -16,16 +16,17 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * DELETE /api/v1/admin/experiences/:id
  * Soft delete experience listing — Admin endpoint.
  *
- * Requires COMMERCE_DELETE permission. The service layer (`_canSoftDelete`)
+ * Requires EXPERIENCE_DELETE (or the legacy COMMERCE_DELETE) permission. The service layer (`_canSoftDelete`)
  * enforces the same gate, providing defense in depth.
  */
 export const adminDeleteExperienceRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}',
     summary: 'Soft delete experience listing (admin)',
-    description: 'Soft deletes an experience listing. Requires COMMERCE_DELETE permission.',
+    description:
+        'Soft deletes an experience listing. Requires EXPERIENCE_DELETE (or the legacy COMMERCE_DELETE) permission.',
     tags: ['Experience'],
-    requiredPermissions: [PermissionEnum.COMMERCE_DELETE],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_DELETE, PermissionEnum.COMMERCE_DELETE]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

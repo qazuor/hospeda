@@ -166,3 +166,52 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
         );
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-1077 — the per-vertical owner roles reach the same commerce area
+//
+// The gate is a SET membership check, so the failure mode is silent and total:
+// a role missing from the set makes every `/mi-cuenta/comercio/*` page redirect
+// away with nothing in the sidebar to explain why. These assert the two new
+// roles are in, without disturbing what was already out.
+// ---------------------------------------------------------------------------
+
+describe('HOS-1077 vertical owner roles and the commerce nav', () => {
+    it('a GASTRONOMY_OWNER holding no other commerce hat reaches the commerce nav', () => {
+        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER] })).toBe(
+            true
+        );
+    });
+
+    it('an EXPERIENCE_OWNER holding no other commerce hat reaches the commerce nav', () => {
+        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER, RoleEnum.EXPERIENCE_OWNER] })).toBe(
+            true
+        );
+    });
+
+    it('neither vertical owner reaches the ACCOMMODATIONS nav', () => {
+        // The commerce and accommodation sets stay disjoint for the new roles
+        // exactly as they were for COMMERCE_OWNER.
+        expect(hasAccommodationsNavAccess({ roles: [RoleEnum.GASTRONOMY_OWNER] })).toBe(false);
+        expect(hasAccommodationsNavAccess({ roles: [RoleEnum.EXPERIENCE_OWNER] })).toBe(false);
+    });
+
+    it('ROLES_WITH_COMMERCE_NAV names both new roles alongside the legacy one', () => {
+        expect(ROLES_WITH_COMMERCE_NAV.has('GASTRONOMY_OWNER')).toBe(true);
+        expect(ROLES_WITH_COMMERCE_NAV.has('EXPERIENCE_OWNER')).toBe(true);
+        // Expand, not contract: the legacy role must still be in the set, or
+        // every existing commerce owner loses the area on deploy.
+        expect(ROLES_WITH_COMMERCE_NAV.has('COMMERCE_OWNER')).toBe(true);
+    });
+
+    it('ROLES_WITH_ACCOMMODATIONS_NAV gained neither', () => {
+        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('GASTRONOMY_OWNER')).toBe(false);
+        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('EXPERIENCE_OWNER')).toBe(false);
+    });
+
+    it('a plain tourist still does not reach the commerce nav', () => {
+        // Instrument check: if the set had been widened to everyone, every
+        // assertion above would pass while measuring nothing.
+        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
+    });
+});

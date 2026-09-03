@@ -24,7 +24,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * DELETE /api/v1/admin/gastronomies/:id/media/:mediaId
  * Remove photo from gastronomy listing gallery — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `removeGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminRemoveGastronomyMediaRoute = createAdminRoute({
@@ -32,9 +32,9 @@ export const adminRemoveGastronomyMediaRoute = createAdminRoute({
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from gastronomy listing gallery (admin)',
     description:
-        'Soft-deletes a media row and resequences the remaining visible photos. Requires COMMERCE_EDIT_ALL.',
+        'Soft-deletes a media row and resequences the remaining visible photos. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

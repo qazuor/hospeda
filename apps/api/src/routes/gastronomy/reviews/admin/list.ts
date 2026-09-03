@@ -17,7 +17,7 @@ const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger 
  * List all gastronomy reviews — Admin endpoint.
  *
  * Returns all reviews including PENDING and REJECTED (not filtered to APPROVED
- * like the public list). Requires COMMERCE_MODERATE_REVIEW permission.
+ * like the public list). Requires GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission.
  *
  * The moderation UI sends `status` as the *moderation* state (e.g. PENDING).
  * It is declared in `requestQuery` so the admin-list factory (a) whitelists it
@@ -33,7 +33,9 @@ export const adminListGastronomyReviewsRoute = createAdminListRoute({
     description:
         'Returns a paginated list of all gastronomy reviews with full admin details, including pending and rejected reviews.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.COMMERCE_MODERATE_REVIEW],
+    anyOfPermissions: [
+        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+    ],
     requestQuery: {
         status: z.nativeEnum(ModerationStatusEnum).optional()
     },

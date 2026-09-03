@@ -16,7 +16,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies/:id/restore
  * Restore gastronomy listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service layer (`_canRestore`)
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service layer (`_canRestore`)
  * enforces the same gate.
  */
 export const adminRestoreGastronomyRoute = createAdminRoute({
@@ -24,9 +24,9 @@ export const adminRestoreGastronomyRoute = createAdminRoute({
     path: '/{id}/restore',
     summary: 'Restore gastronomy listing (admin)',
     description:
-        'Restores a soft-deleted gastronomy listing. Requires COMMERCE_EDIT_ALL permission.',
+        'Restores a soft-deleted gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Gastronomy'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
