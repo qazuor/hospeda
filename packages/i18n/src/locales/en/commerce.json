@@ -99,8 +99,6 @@
             },
             "views": {
                 "title": "Views",
-                "window7d": "7 days",
-                "window30d": "30 days",
                 "unique": "unique",
                 "total": "total",
                 "error": "We couldn't load your views. Please try again later."

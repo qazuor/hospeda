@@ -144,14 +144,17 @@ export function CommerceViewsWidget({
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>{t('commerce.owner.list.views.title', 'Vistas')}</h2>
-                <div className={styles.toggle}>
+                <fieldset
+                    className={styles.toggle}
+                    aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
+                >
                     <button
                         type="button"
                         className={windowParam === '7d' ? styles.toggleActive : styles.toggleButton}
                         onClick={() => setWindowParam('7d')}
                         aria-pressed={windowParam === '7d'}
                     >
-                        {t('commerce.owner.list.views.window7d', '7 días')}
+                        {t('common.window.7d', '7 días')}
                     </button>
                     <button
                         type="button"
@@ -161,9 +164,9 @@ export function CommerceViewsWidget({
                         onClick={() => setWindowParam('30d')}
                         aria-pressed={windowParam === '30d'}
                     >
-                        {t('commerce.owner.list.views.window30d', '30 días')}
+                        {t('common.window.30d', '30 días')}
                     </button>
-                </div>
+                </fieldset>
             </div>
 
             {state.status === 'error' && (

@@ -99,8 +99,6 @@
             },
             "views": {
                 "title": "Vistas",
-                "window7d": "7 días",
-                "window30d": "30 días",
                 "unique": "únicos",
                 "total": "totales",
                 "error": "No pudimos cargar las vistas. Probá de nuevo más tarde."

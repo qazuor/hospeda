@@ -24,7 +24,13 @@
 }
 
 .toggle {
+    /* Reset browser default <fieldset> chrome (border/margin/min-width) — the
+       fieldset is used only for its implicit "group" accessible role +
+       aria-label, not for its visual appearance. */
     display: inline-flex;
+    margin: 0;
+    min-width: 0;
+    border: none;
     gap: var(--space-1, 0.25rem);
     padding: 0.125rem;
     border-radius: var(--radius-pill, 999px);
