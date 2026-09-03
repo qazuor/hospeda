@@ -89,6 +89,30 @@ export interface CommerceEditData {
     /** Longitude of the meeting point, or `null`. See {@link meetingPointLat}. */
     readonly meetingPointLong: number | null;
     /**
+     * How to GET to the meeting point (HOS-1049) — already split into items,
+     * like {@link whatToBring}: the textarea converts on the way in and out, so
+     * this state matches the column and the PATCH body exactly.
+     *
+     * The ONE entitlement-gated field in this editor. It still round-trips for
+     * a provider whose plan no longer grants it — see
+     * {@link meetingPointDirectionsEnabled} for why the value and the
+     * permission are two separate pieces of state.
+     */
+    readonly meetingPointDirections: readonly string[];
+    /**
+     * Whether the provider's CURRENT plan grants `manage_experience_directions`
+     * (HOS-1049), as resolved by the protected `getById`.
+     *
+     * NOT derived from the value above, and the difference matters in both
+     * directions: an entitled provider who has written nothing must still be
+     * offered the field, and a downgraded provider who has written plenty must
+     * still SEE it — read-only, so they know what is being withheld from their
+     * public page rather than watching it vanish.
+     *
+     * Read-only state: nothing in this form can change it.
+     */
+    readonly meetingPointDirectionsEnabled: boolean;
+    /**
      * Whole hours of the experience's duration (HOS-898), or `null` when the
      * box is empty.
      *

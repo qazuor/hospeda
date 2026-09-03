@@ -103,6 +103,46 @@ export enum EntitlementKey {
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
     /**
+     * How to GET to an experience's meeting point (HOS-1049) — the walking and
+     * parking instructions, and the map drawn from the stored coordinates.
+     *
+     * A TIER differentiator on the same terms as
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}, and therefore NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * tier of a vertical receives. Granted from `experience-pro` UPWARDS
+     * (owner decision, 2026-09-01): `-pro` and `-premium` both carry it,
+     * because a premium subscriber missing a capability their cheaper
+     * neighbour has is a downgrade dressed as a tier.
+     *
+     * ## What is NOT behind it
+     *
+     * The meeting point ITSELF — `experiences.meeting_point` and its two
+     * coordinate columns — is ficha data on every tier (HOS-1048, owner
+     * decision). Knowing where you have to show up cannot be a paid feature.
+     * What this key gates is the enrichment: the `meeting_point_directions`
+     * list ("estacioná en la bajada municipal", "son 300 m por camino de
+     * tierra") and the rendered MAP. Many Litoral departures start at a place
+     * with no useful postal address, and there the instructions are worth more
+     * than the address is.
+     *
+     * ## Enforced on the write AND on the public read
+     *
+     * The write half is a field gate on `PATCH /protected/experiences/{id}`:
+     * the whole route already needs `EDIT_EXPERIENCE_INFO`, so this is checked
+     * only when the body actually names `meetingPointDirections`. The read half
+     * is live and withholds rather than deletes — a downgraded provider's
+     * already-typed instructions stay in the database, and
+     * `resolveOwnerGrantsExperienceDirections` (`@repo/service-core`) reads the
+     * CURRENT experience subscription on every public render. Same mechanism,
+     * and same reason, as `MANAGE_GASTRONOMY_MENU`.
+     *
+     * Experience-only by name and on purpose: a restaurant has an address and
+     * a door, so there is no second vertical for this to be shared with — the
+     * mirror image of `MANAGE_GASTRONOMY_MENU`'s "an experience has no carta".
+     */
+    MANAGE_EXPERIENCE_DIRECTIONS = 'manage_experience_directions',
+
+    /**
      * Publishing a gastronomy venue's OWN events — live music night, happy
      * hour, dinner show, the Tuesday deal (HOS-1042).
      *

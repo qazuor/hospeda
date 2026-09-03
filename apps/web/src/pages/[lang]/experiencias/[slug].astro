@@ -268,12 +268,18 @@ const breadcrumbItems = [
         <!-- Where the experience starts (HOS-1048). Above the contact block on
              purpose: someone reading this page wants to know where to be before
              they want the provider's phone number. Renders nothing when the
-             owner declared no meeting point, and carries NO entitlement check —
-             this is ficha data from the basic tier. The map that draws the
-             coordinates and the how-to-get-there instructions are the paid half
-             (HOS-1049) and are not on this page. -->
+             owner declared no meeting point. The meeting point TEXT carries no
+             entitlement check — it is ficha data from the basic tier. The map
+             that draws the coordinates and the how-to-get-there instructions
+             are the paid half (HOS-1049), rendered by the same component and
+             gated on `meetingPointDirectionsEnabled`, which the API resolves
+             live from the provider's current plan. -->
         <ExperienceMeetingPoint
             meetingPoint={experience.meetingPoint}
+            meetingPointLat={experience.meetingPointLat}
+            meetingPointLong={experience.meetingPointLong}
+            meetingPointDirections={experience.meetingPointDirections}
+            meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}
             locale={locale}
         />
 

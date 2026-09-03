@@ -1,6 +1,6 @@
 {
-  "id": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
-  "prevId": "6971c57f-71ba-4e4c-b43d-ee64d7eab854",
+  "id": "d1e467f0-a5da-450b-a187-e508ccfe625f",
+  "prevId": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -14185,6 +14185,191 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gastronomy_events": {
+      "name": "gastronomy_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "gastronomy_id": {
+          "name": "gastronomy_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurrence": {
+          "name": "recurrence",
+          "type": "gastronomy_event_recurrence_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weekday": {
+          "name": "weekday",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_time": {
+          "name": "start_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_time": {
+          "name": "end_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_id": {
+          "name": "updated_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "gastronomyEvents_gastronomyId_idx": {
+          "name": "gastronomyEvents_gastronomyId_idx",
+          "columns": [
+            {
+              "expression": "gastronomy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastronomyEvents_gastronomyId_displayOrder_idx": {
+          "name": "gastronomyEvents_gastronomyId_displayOrder_idx",
+          "columns": [
+            {
+              "expression": "gastronomy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "display_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "gastronomy_events_gastronomy_id_gastronomies_id_fk": {
+          "name": "gastronomy_events_gastronomy_id_gastronomies_id_fk",
+          "tableFrom": "gastronomy_events",
+          "tableTo": "gastronomies",
+          "columnsFrom": [
+            "gastronomy_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "gastronomy_events_created_by_id_users_id_fk": {
+          "name": "gastronomy_events_created_by_id_users_id_fk",
+          "tableFrom": "gastronomy_events",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "gastronomy_events_updated_by_id_users_id_fk": {
+          "name": "gastronomy_events_updated_by_id_users_id_fk",
+          "tableFrom": "gastronomy_events",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updated_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -34142,6 +34327,14 @@
       "values": [
         "image",
         "pdf"
+      ]
+    },
+    "public.gastronomy_event_recurrence_enum": {
+      "name": "gastronomy_event_recurrence_enum",
+      "schema": "public",
+      "values": [
+        "once",
+        "weekly"
       ]
     },
     "public.gastronomy_media_state_enum": {

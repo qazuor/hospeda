@@ -836,7 +836,17 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     trialDays: COMMERCE_TRIAL_DAYS
 });
 
-/** Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
+/**
+ * Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}.
+ *
+ * **Still `isActive: false` and unpriced, on purpose.** HOS-1049 gives it a
+ * capability but deliberately does NOT activate or price it — that is a
+ * commercial decision, and it is the same two-step gastronomy took: HOS-895
+ * PR1 granted `MANAGE_GASTRONOMY_MENU` to a `-pro` nobody could buy, and PR2
+ * activated and priced it. Until the equivalent decision is taken for
+ * experiences, no subscriber can hold `MANAGE_EXPERIENCE_DIRECTIONS` and the
+ * gate that reads it refuses everyone rather than drawing a live tier line.
+ */
 export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-pro',
     name: 'Experiencias Profesional',
@@ -845,7 +855,12 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     maxListings: 1,
     sortOrder: 2,
     isActive: false,
-    monthlyPriceArs: 0
+    monthlyPriceArs: 0,
+    // HOS-1049 — the first thing that separates `-pro` from `-basico` by more
+    // than its name: how to GET to the meeting point (the instructions and the
+    // map that draws it). The meeting point itself stays on `-basico`. Owner
+    // decision, 2026-09-01: `pro` and upwards.
+    extraEntitlements: [EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS]
 });
 
 /**
@@ -868,7 +883,16 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // HOS-1058 — R-1: the two verticals are separate domains, so the same
     // capability is granted to each vertical's premium plan on its own. There
     // is no "commerce" plan to grant it once.
-    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF]
+    //
+    // HOS-1049 adds the meeting-point directions, which are a `-pro`
+    // capability. Repeated here rather than inherited, because these arrays are
+    // literal per plan and nothing composes a tier out of the one below it:
+    // omitting it would mean the dearer plan silently lost a feature `-pro`
+    // has. Same reasoning as {@link GASTRONOMY_PREMIUM_PLAN}.
+    extraEntitlements: [
+        EntitlementKey.DOWNLOAD_LISTING_PDF,
+        EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS
+    ]
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */

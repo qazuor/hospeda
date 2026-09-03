@@ -1093,6 +1093,9 @@
         "zodError.experience.media.reorder.orderedIds.invalid",
         "zodError.experience.media.reorder.orderedIds.min",
         "zodError.experience.meetingPoint.max",
+        "zodError.experience.meetingPointDirections.item.max",
+        "zodError.experience.meetingPointDirections.item.min",
+        "zodError.experience.meetingPointDirections.max",
         "zodError.experience.meetingPointLat.max",
         "zodError.experience.meetingPointLat.min",
         "zodError.experience.meetingPointLong.max",
@@ -1885,7 +1888,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1884,
+    "total": 1887,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1921,7 +1924,7 @@
         "exchangeRate": 25,
         "exchangeRateConfig": 13,
         "exchangeRates": 1,
-        "experience": 31,
+        "experience": 34,
         "experienceFeature": 4,
         "feature": 61,
         "featureFlag": 6,

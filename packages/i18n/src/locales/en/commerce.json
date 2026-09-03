@@ -148,7 +148,11 @@
                 "meetingPointHint": "Where the experience starts. It can be an address or a landmark.",
                 "meetingPointLat": "Latitude (optional)",
                 "meetingPointLong": "Longitude (optional)",
-                "meetingPointCoordsHint": "If you add the coordinates, we can show the spot on a map later on. You can leave them empty.",
+                "meetingPointCoordsHint": "If you add the coordinates, we show the spot on a map. You can leave them empty.",
+                "meetingPointDirections": "How to get there",
+                "meetingPointDirectionsPlaceholder": "Park at the municipal slipway, on the riverfront\nBus 4 drops you at the roundabout\nIt is 300 m along a gravel track, look for the wooden pier",
+                "meetingPointDirectionsHint": "One instruction per line. Where to park, which bus, how far the walk is from the road, what landmark to look for.",
+                "meetingPointDirectionsLocked": "The map and the how-to-get-there instructions are not included in your plan. The meeting point is, and it stays published.",
                 "durationHours": "Duration — hours",
                 "durationMinutes": "Duration — minutes",
                 "durationHint": "How long the experience lasts. Leave both fields empty if you would rather not publish it.",
@@ -385,6 +389,7 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Structured menu",
+            "manageExperienceDirections": "Map and how to get there",
             "manageGastronomyEvents": "Venue schedule"
         },
         "create": {
