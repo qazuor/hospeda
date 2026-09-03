@@ -3,39 +3,56 @@ import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
 
 /**
  * The subset of {@link EntityTypeEnum} values that the view-tracking system
- * accepts. Only ACCOMMODATION, POST, and EVENT detail pages are tracked;
- * the remaining enum members (DESTINATION, USER, CONVERSATION, REVIEW,
- * BILLING_SUBSCRIPTION, PAYMENT) are explicitly excluded.
+ * accepts. ACCOMMODATION, POST, EVENT, GASTRONOMY, and EXPERIENCE detail pages
+ * are tracked; the remaining enum members (DESTINATION, USER, CONVERSATION,
+ * REVIEW, BILLING_SUBSCRIPTION, PAYMENT) are explicitly excluded.
  *
- * SPEC-159 §3 / DB schema entity_view.dbschema.ts.
+ * GASTRONOMY and EXPERIENCE were added by HOS-734 to give both commerce
+ * verticals the same "basic stats" (view counts) accommodation, posts, and
+ * events already had. No DB migration was needed: `entity_views.entity_type`
+ * already reuses the full `entity_type_enum` Postgres enum (see
+ * `entity_view.dbschema.ts`), which has carried GASTRONOMY/EXPERIENCE since
+ * they were added to {@link EntityTypeEnum} for the user-bookmark subsystem.
+ * Only this narrower Zod subset needed widening.
+ *
+ * SPEC-159 §3 / HOS-734 / DB schema entity_view.dbschema.ts.
  */
 export const TRACKABLE_ENTITY_TYPES = [
     EntityTypeEnum.ACCOMMODATION,
     EntityTypeEnum.POST,
-    EntityTypeEnum.EVENT
+    EntityTypeEnum.EVENT,
+    EntityTypeEnum.GASTRONOMY,
+    EntityTypeEnum.EXPERIENCE
 ] as const;
 
 /**
- * Zod schema for the trackable entity-type subset used by SPEC-159.
+ * Zod schema for the trackable entity-type subset used by SPEC-159 / HOS-734.
  *
- * Derived from {@link EntityTypeEnum} using `z.enum` with the three accepted
+ * Derived from {@link EntityTypeEnum} using `z.enum` with the accepted
  * string literals — avoids duplicating raw strings while keeping the type
  * narrow. Any other EntityTypeEnum value is rejected with a descriptive error.
  *
  * @example
  * ```ts
  * TrackableEntityTypeSchema.parse('ACCOMMODATION'); // ok
+ * TrackableEntityTypeSchema.parse('GASTRONOMY');    // ok (HOS-734)
  * TrackableEntityTypeSchema.parse('DESTINATION');   // throws ZodError
  * ```
  */
 export const TrackableEntityTypeSchema = z.enum(
-    [EntityTypeEnum.ACCOMMODATION, EntityTypeEnum.POST, EntityTypeEnum.EVENT],
+    [
+        EntityTypeEnum.ACCOMMODATION,
+        EntityTypeEnum.POST,
+        EntityTypeEnum.EVENT,
+        EntityTypeEnum.GASTRONOMY,
+        EntityTypeEnum.EXPERIENCE
+    ],
     { message: 'zodError.entityView.entityType.invalid' }
 );
 
 /**
  * Inferred TypeScript type for the trackable-entity subset.
- * One of `'ACCOMMODATION' | 'POST' | 'EVENT'`.
+ * One of `'ACCOMMODATION' | 'POST' | 'EVENT' | 'GASTRONOMY' | 'EXPERIENCE'`.
  */
 export type TrackableEntityType = z.infer<typeof TrackableEntityTypeSchema>;
 

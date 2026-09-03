@@ -44,6 +44,17 @@ describe('TrackableEntityTypeSchema', () => {
             const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.EVENT);
             expect(result.success).toBe(true);
         });
+
+        // HOS-734: gastronomy/experience basic view stats.
+        it('should accept GASTRONOMY', () => {
+            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.GASTRONOMY);
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept EXPERIENCE', () => {
+            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.EXPERIENCE);
+            expect(result.success).toBe(true);
+        });
     });
 
     describe('when given a non-trackable entity type', () => {
@@ -128,6 +139,23 @@ describe('EntityViewCaptureInputSchema', () => {
         it('should accept EVENT + valid uuid', () => {
             const result = EntityViewCaptureInputSchema.safeParse({
                 entityType: 'EVENT',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        // HOS-734: gastronomy/experience basic view stats.
+        it('should accept GASTRONOMY + valid uuid', () => {
+            const result = EntityViewCaptureInputSchema.safeParse({
+                entityType: 'GASTRONOMY',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept EXPERIENCE + valid uuid', () => {
+            const result = EntityViewCaptureInputSchema.safeParse({
+                entityType: 'EXPERIENCE',
                 entityId: VALID_UUID
             });
             expect(result.success).toBe(true);
