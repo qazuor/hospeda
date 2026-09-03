@@ -17,6 +17,7 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
+import { CommerceViewsWidget } from '@/components/commerce/CommerceViewsWidget.client';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
@@ -114,6 +115,16 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
             ))}
         </div>
     )}
+
+    <CommerceViewsWidget
+        client:visible
+        locale={locale}
+        listings={listings.map((listing) => ({
+            id: listing.id,
+            vertical: listing.vertical,
+            name: listing.name
+        }))}
+    />
 
     <AccountSectionCard>
         {

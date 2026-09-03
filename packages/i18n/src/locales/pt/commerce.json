@@ -96,6 +96,14 @@
                     "label_other": "{{current}} de {{max}} experiências"
                 },
                 "upgrade": "Ampliar cota"
+            },
+            "views": {
+                "title": "Visualizações",
+                "window7d": "7 dias",
+                "window30d": "30 dias",
+                "unique": "únicos",
+                "total": "totais",
+                "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde."
             }
         },
         "editor": {
