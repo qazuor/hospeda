@@ -7,7 +7,7 @@ import { GastronomyPublicSchema } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyMenu,
-    resolveOwnerGrantsGastronomyMenuManagement,
+    resolveOwnerGastronomyMenuGrants,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -64,11 +64,16 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // as "loaded, and there are none" from a payload that never joined.
         //
         // HOS-895 PR2: the structured carta and the uploaded photo/PDF are read
-        // in the same parallel batch, and gated by the SAME live check —
-        // `resolveOwnerGrantsGastronomyMenuManagement` reads the owner's
-        // CURRENT gastronomy subscription, not whatever plan was active when
-        // the carta was typed or the file was uploaded. See the resolver's own
-        // doc for why this is a live read rather than a synced column.
+        // in the same parallel batch, and gated by a live check —
+        // `resolveOwnerGastronomyMenuGrants` reads the owner's CURRENT
+        // gastronomy subscription, not whatever plan was active when the carta
+        // was typed or the file was uploaded. See the resolver's own doc for
+        // why this is a live read rather than a synced column.
+        //
+        // HOS-1045 adds a SECOND grant to the same lookup (the per-dish
+        // photos, premium-only). One call, not two: both answers come out of
+        // the same three queries, so they cannot disagree about which instant
+        // they describe.
         //
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the protected menu routes use.
@@ -76,18 +81,18 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             gastronomyService as unknown as { model: Parameters<typeof getGastronomyMenu>[0] }
         ).model;
 
-        const [amenitiesData, featuresData, menuResult, ownerGrantsMenuManagement] =
-            await Promise.all([
-                fetchGastronomyAmenities(gastronomy.id),
-                fetchGastronomyFeatures(gastronomy.id),
-                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-                resolveOwnerGrantsGastronomyMenuManagement({ ownerId: gastronomy.ownerId })
-            ]);
+        const [amenitiesData, featuresData, menuResult, menuGrants] = await Promise.all([
+            fetchGastronomyAmenities(gastronomy.id),
+            fetchGastronomyFeatures(gastronomy.id),
+            getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
+            resolveOwnerGastronomyMenuGrants({ ownerId: gastronomy.ownerId })
+        ]);
 
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement
+            ownerGrantsMenuManagement: menuGrants.manageMenu,
+            ownerGrantsMenuItemPhotos: menuGrants.menuItemPhotos
         });
 
         return {

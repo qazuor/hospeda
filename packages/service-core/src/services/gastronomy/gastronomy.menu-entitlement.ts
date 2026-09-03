@@ -65,27 +65,45 @@ export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
 }
 
 /**
- * Resolves whether the owner's CURRENT gastronomy subscription plan grants
- * `MANAGE_GASTRONOMY_MENU`.
+ * The menu-related grants of one owner's current gastronomy plan (HOS-1045).
+ *
+ * Two booleans travelling together because they are read together, on the same
+ * request, out of the SAME three queries. Asking for them separately would
+ * double a three-round-trip lookup on the busiest public page in the vertical
+ * and — worse — would let the two answers come from different instants.
+ */
+export interface GastronomyMenuGrants {
+    /** `manage_gastronomy_menu`: the structured carta and the uploaded file. */
+    readonly manageMenu: boolean;
+    /** `menu_item_photos`: a photo attached to each dish (premium only). */
+    readonly menuItemPhotos: boolean;
+}
+
+/** Every grant `false` — the fail-closed answer for an unresolvable owner. */
+const NO_MENU_GRANTS: GastronomyMenuGrants = { manageMenu: false, menuItemPhotos: false };
+
+/**
+ * Resolves which menu capabilities the owner's CURRENT gastronomy subscription
+ * plan grants (HOS-895 for the carta, HOS-1045 for the dish photos).
  *
  * Looks up the owner's billing customer, then their active/trialing/comp
  * GASTRONOMY-domain subscription (SPEC-239 isolation — an owner who is also a
  * host or an experience provider must not have that subscription's plan
- * consulted here), then checks that plan's `entitlements` array.
+ * consulted here), then reads that plan's `entitlements` array ONCE and answers
+ * every key from it.
  *
- * Fails closed (`false`) when the owner has no billing customer, no
+ * Fails closed (every grant `false`) when the owner has no billing customer, no
  * qualifying subscription, or the resolved plan is missing / has no
  * entitlements array — the same direction `resolveOwnerPlanGrantsFeatured`
  * fails in, and for the same reason: an unresolvable plan must never be read
  * as "paid for it".
  *
  * @param input - The owner id to resolve.
- * @returns `true` when the owner's gastronomy plan includes
- *   `MANAGE_GASTRONOMY_MENU`; `false` otherwise.
+ * @returns The owner's menu grants.
  */
-export async function resolveOwnerGrantsGastronomyMenuManagement(
+export async function resolveOwnerGastronomyMenuGrants(
     input: ResolveOwnerGrantsGastronomyMenuManagementInput
-): Promise<boolean> {
+): Promise<GastronomyMenuGrants> {
     const db = getDb();
 
     const [customer] = await db
@@ -97,7 +115,7 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
         .limit(1);
 
     if (!customer) {
-        return false;
+        return NO_MENU_GRANTS;
     }
 
     const subscriptionRows = await db
@@ -121,7 +139,7 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
     );
 
     if (!gastronomySubscription) {
-        return false;
+        return NO_MENU_GRANTS;
     }
 
     const [plan] = await db
@@ -133,8 +151,30 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
         .limit(1);
 
     if (!plan || !Array.isArray(plan.entitlements)) {
-        return false;
+        return NO_MENU_GRANTS;
     }
 
-    return (plan.entitlements as string[]).includes(EntitlementKey.MANAGE_GASTRONOMY_MENU);
+    const granted = plan.entitlements as string[];
+
+    return {
+        manageMenu: granted.includes(EntitlementKey.MANAGE_GASTRONOMY_MENU),
+        menuItemPhotos: granted.includes(EntitlementKey.MENU_ITEM_PHOTOS)
+    };
+}
+
+/**
+ * Whether the owner's current gastronomy plan grants `MANAGE_GASTRONOMY_MENU`.
+ *
+ * Kept as its own export after HOS-1045 widened the resolver above: it is the
+ * name five JSDoc blocks across `apps/api` point at, and a caller that needs
+ * exactly one boolean should not have to know the shape of the other.
+ *
+ * @param input - The owner id to resolve.
+ * @returns `true` when the plan includes `MANAGE_GASTRONOMY_MENU`.
+ */
+export async function resolveOwnerGrantsGastronomyMenuManagement(
+    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+): Promise<boolean> {
+    const { manageMenu } = await resolveOwnerGastronomyMenuGrants(input);
+    return manageMenu;
 }
