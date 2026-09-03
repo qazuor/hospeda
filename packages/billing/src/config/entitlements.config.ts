@@ -301,5 +301,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Experience certificates',
         description:
             'Allows issuing a printable certificate to a person who did the experience, naming them, the outing and its date'
+    },
+    // HOS-1049. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has an address and a door. The meeting point itself stays
+    // free on every tier (HOS-1048) — only the how-to-get-there half is here.
+    {
+        key: EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+        name: 'Meeting point map and directions',
+        description:
+            'Allows publishing how to reach the meeting point — where to park, which bus, how far the walk is — and drawing it on a map, on top of the meeting point address every tier already carries'
     }
 ];

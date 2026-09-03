@@ -827,15 +827,17 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
 /**
  * Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}.
  *
- * **Still `isActive: false` and unpriced, and HOS-1057 deliberately did not
- * change that.** Granting a tier a capability and putting that tier on sale are
- * two different decisions — the shape HOS-1118 names, and the reason
- * `gastronomy-pro` spent a release active, priced and unbuyable. The owner
- * decided the certificate belongs to `pro` (2026-09-01); whether `experience-pro`
- * goes on sale, and at what price, is a separate call nobody has made. Until it
- * is, this grant reaches nobody, exactly as `DOWNLOAD_LISTING_PDF` reaches
- * nobody on the retired premium tiers — and the presentation page says so in
- * as many words rather than promising a feature that cannot be bought.
+ * **Still `isActive: false` and unpriced, on purpose, and neither HOS-1049 nor
+ * HOS-1057 changed that.** Granting a tier a capability and putting that tier
+ * on sale are two different decisions — the shape HOS-1118 names — and it is
+ * the same two-step gastronomy took: HOS-895 PR1 granted
+ * `MANAGE_GASTRONOMY_MENU` to a `-pro` nobody could buy, and PR2 activated and
+ * priced it. Until the equivalent decision is taken for experiences, no
+ * subscriber can hold either of this tier's keys and the gates that read them
+ * refuse everyone rather than drawing a live tier line — exactly as
+ * `DOWNLOAD_LISTING_PDF` reaches nobody on the retired premium tiers. The
+ * presentation page says so in as many words rather than promising a feature
+ * that cannot be bought.
  */
 export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-pro',
@@ -846,10 +848,16 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     sortOrder: 2,
     isActive: false,
     monthlyPriceArs: 0,
-    // HOS-1057 — the first thing that separates this tier from `-basico` by more
-    // than its name: the certificate a provider issues to whoever did the
-    // experience. Owner decision, 2026-09-01 — `pro` and upwards.
-    extraEntitlements: [EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE]
+    // The two things that separate `-pro` from `-basico` by more than its
+    // name, both owner decisions of 2026-09-01, both `pro` and upwards:
+    // HOS-1049 — how to GET to the meeting point (the instructions and the map
+    // that draws it); the meeting point itself stays on `-basico`.
+    // HOS-1057 — the certificate a provider issues to whoever did the
+    // experience.
+    extraEntitlements: [
+        EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+        EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+    ]
 });
 
 /**
@@ -873,13 +881,14 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // capability is granted to each vertical's premium plan on its own. There
     // is no "commerce" plan to grant it once.
     //
-    // HOS-1057 adds the experience certificate, which is a `-pro` capability.
-    // Repeated here rather than inherited, exactly as GASTRONOMY_PREMIUM_PLAN
-    // repeats the carta: these arrays are literal per plan and nothing composes
-    // a tier from the one below it, so omitting it would mean the dearer plan
-    // silently lost a feature `-pro` has.
+    // HOS-1049 and HOS-1057 each add a `-pro` capability. Repeated here rather
+    // than inherited, because these arrays are literal per plan and nothing
+    // composes a tier out of the one below it: omitting either would mean the
+    // dearer plan silently lost a feature `-pro` has. Same reasoning as
+    // {@link GASTRONOMY_PREMIUM_PLAN}.
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
+        EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
         EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
     ]
 });

@@ -13,6 +13,7 @@
  * - Permission helpers — granular COMMERCE_* gate wrappers
  * - Certificate helpers (HOS-1057) — issueExperienceCertificate /
  *   listExperienceCertificates / getExperienceCertificate
+ * - Entitlement resolver (HOS-1049) — resolveOwnerGrantsExperienceDirections
  * - Types — ExperienceHookState
  */
 
@@ -22,6 +23,11 @@ export {
     issueExperienceCertificate,
     listExperienceCertificates
 } from './experience.certificate';
+// Meeting-point directions entitlement resolver (HOS-1049)
+export {
+    type ResolveOwnerGrantsExperienceDirectionsInput,
+    resolveOwnerGrantsExperienceDirections
+} from './experience.directions-entitlement';
 // FAQ helpers
 export {
     addExperienceFaq,

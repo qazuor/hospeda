@@ -15,6 +15,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
+import { withholdExperienceDirectionsFromList } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -50,7 +51,8 @@ export const publicGetExperiencesByDestinationRoute = createPublicListRoute({
         }
 
         return {
-            items: result.data?.items || [],
+            // HOS-1049: withheld on lists, same reason as `list.ts`.
+            items: withholdExperienceDirectionsFromList(result.data?.items || []),
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },

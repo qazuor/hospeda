@@ -104,9 +104,12 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // tickable on any plan here because the editor is a flat checklist,
             // but only a gastronomy plan has a carta for it to unlock.
             EntitlementKey.MANAGE_GASTRONOMY_MENU,
-            // HOS-1057 — the mirror of the key above, one vertical over:
-            // tier-dependent (experience-pro and upwards) and experience-only,
-            // since a restaurant has nothing to certify.
+            // HOS-1049 — the mirror image of the one above: tier-dependent
+            // (`experience-pro` and up) and experience-only, since a restaurant
+            // has an address and a door rather than a meeting point to walk to.
+            EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+            // HOS-1057 — same shape, same tier: the certificate a provider
+            // issues to whoever did the experience.
             EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
         ]
     }

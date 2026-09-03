@@ -169,6 +169,12 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'tag/user-tag/admin/entities.ts',
     // Shared read-route helpers (not registered as standalone routes)
     'comment/admin/comment-admin.helpers.ts',
+    // Pure public projection gate for the experience meeting-point directions
+    // (not a Hono route) — HOS-1049. It lands in the enumeration only because
+    // `experience/public/` is one of the public dirs the matrix DOES cover;
+    // the gastronomy twin (`gastronomy/public/menu-projection.ts`) never
+    // surfaces here because that dir is out of scope entirely.
+    'experience/public/directions-projection.ts',
     // Entity-level permission helper (used by media upload/delete handlers)
     'media/admin/permissions.ts',
     // Better Auth framework passthrough — not an application route handler

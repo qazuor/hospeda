@@ -4,12 +4,17 @@
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
 import { ExperiencePublicSchema } from '@repo/schemas';
-import { ExperienceService, ServiceError } from '@repo/service-core';
+import {
+    ExperienceService,
+    resolveOwnerGrantsExperienceDirections,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { applyExperienceDirectionsGate } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -38,7 +43,21 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return result.data ?? null;
+        const experience = result.data;
+        if (!experience) {
+            return null;
+        }
+
+        // HOS-1049. This route gates too, and that is not belt-and-braces:
+        // `meetingPointDirections` is named on `ExperiencePublicSchema`, so
+        // without this the response strip would happily pass the stored column
+        // straight through here while `getBySlug` withheld it — the same value,
+        // paid on one URL and free on the other.
+        const ownerGrantsDirections = await resolveOwnerGrantsExperienceDirections({
+            ownerId: experience.ownerId
+        });
+
+        return applyExperienceDirectionsGate({ experience, ownerGrantsDirections });
     },
     options: {
         cacheTTL: 300,

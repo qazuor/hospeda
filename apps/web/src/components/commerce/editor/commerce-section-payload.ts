@@ -63,7 +63,16 @@ export const COMMERCE_SECTION_PAYLOAD_KEYS: Readonly<
         // `BasicInfoSection`.
         'refreshSlugFromName'
     ],
-    meetingPoint: ['meetingPoint', 'meetingPointLat', 'meetingPointLong'],
+    meetingPoint: [
+        'meetingPoint',
+        'meetingPointLat',
+        'meetingPointLong',
+        // HOS-1049 — the paid half, on the same page as the free half. Both are
+        // one errand for the owner ("where do we meet, and how do you get
+        // there"), and splitting them into two nav items would have made the
+        // entitlement look like a different subject rather than a deeper tier.
+        'meetingPointDirections'
+    ],
     practicalInfo: [
         'durationMinutes',
         'whatToBring',
