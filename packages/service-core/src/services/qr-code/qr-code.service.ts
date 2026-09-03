@@ -72,10 +72,12 @@ const POSTGRES_UNIQUE_VIOLATION = '23505';
 /**
  * How many rows the entity lookup reads before picking the oldest live one.
  *
- * More than one because the table cannot yet enforce one code per entity (see
- * {@link QrCodeService.getOrCreateForEntity}); small because anything past a
- * handful would mean a provisioning bug worth failing loudly on, not a page to
- * scroll through.
+ * More than one even though `qr_codes_entity_purpose_unique` now makes a second
+ * live row for one `(entity, purpose)` impossible: the index is partial on
+ * `deleted_at IS NULL`, so retired codes for the same key are still returned by
+ * this query and filtered in code, and rows written before the index existed
+ * were never checked by it at all. Small because anything past a handful means
+ * a provisioning bug worth noticing, not a page to scroll through.
  */
 const ENTITY_CODE_LOOKUP_PAGE_SIZE = 10;
 
