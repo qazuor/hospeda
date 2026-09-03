@@ -52,6 +52,7 @@ import {
     isDevelopment,
     isProduction
 } from './lib/env';
+import { DEFAULT_LOCALE } from './lib/i18n';
 import { initIconSprite } from './lib/icon-sprite';
 import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import { resolveLegacyRedirectTarget } from './lib/legacy-redirects';
@@ -68,6 +69,7 @@ import {
     isAuthRoute,
     isChangePasswordRoute,
     isImageEndpointRoute,
+    isLanguageNeutralRoute,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
@@ -287,7 +289,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     }
 
     // Step 4: Extract and validate locale from the URL path.
-    const { locale, restOfPath } = extractLocaleFromPath({ path });
+    const { locale: pathLocale, restOfPath } = extractLocaleFromPath({ path });
 
     // If the locale segment is missing or not a supported locale, redirect to the
     // default locale while preserving the rest of the path AND the query string.
@@ -298,13 +300,27 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // pass it: dropping it silently strips campaign parameters from every
     // locale-less link (`/?utm_source=newsletter` → a bare `/es/`), and the
     // attribution is gone before analytics sees the first pageview.
-    if (locale === null) {
+    //
+    // A language-neutral route is the one exception (HOS-981). `/qr/{slug}/` is
+    // printed on a physical sign, so its URL is fixed in ink: redirecting it to
+    // `/es/qr/{slug}/` would both add a hop in front of somebody standing at a
+    // sign and mean the print run had silently chosen a language for every
+    // future scanner. Only the redirect is suppressed — the request continues
+    // down the same pipeline as any other, so the trailing-slash rule, the 404
+    // rewrite and the security headers all still apply to it.
+    if (pathLocale === null && !isLanguageNeutralRoute({ path })) {
         const redirectUrl = buildLocaleRedirect({
             restOfPath: restOfPath || path,
             search: context.url.search
         });
         return context.redirect(redirectUrl, 301);
     }
+
+    // A language-neutral route carries no locale segment to read, but every step
+    // below still needs one — for `locals.locale`, and for the URLs the auth
+    // guards build. The default is the honest answer for a URL that deliberately
+    // declares no language.
+    const locale = pathLocale ?? DEFAULT_LOCALE;
 
     // Step 5: Store the validated locale in locals for downstream pages/components.
     (context.locals as { locale: typeof locale }).locale = locale;

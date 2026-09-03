@@ -15,6 +15,7 @@ import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
     CHANGE_PASSWORD_SEGMENT,
+    LANGUAGE_NEUTRAL_PREFIXES,
     PROFILE_COMPLETION_BYPASS_ROLES,
     PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
     PROFILE_COMPLETION_SEGMENT,
@@ -211,6 +212,33 @@ export function isProfileCompletionRequiredSessionOptionalRoute({
     return (PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(
         segments[1] ?? ''
     );
+}
+
+/**
+ * Checks whether a URL path belongs to a route that deliberately lives outside
+ * the `/{lang}/` tree, and must therefore not be 301-redirected into it.
+ *
+ * Unlike {@link isStaticAssetRoute} this does NOT bypass the middleware: it
+ * suppresses the locale redirect and nothing else, so the trailing-slash
+ * normalisation, the 404 rewrite and the security headers all still apply. A
+ * language-neutral route that bypassed the pipeline would answer an unresolved
+ * slug with a blank 404 body instead of the site's 404 page.
+ *
+ * @param params - Object containing the URL path string.
+ * @returns True when the path must keep its locale-less form.
+ */
+export function isLanguageNeutralRoute({ path }: { readonly path: string }): boolean {
+    if (!path) {
+        return false;
+    }
+
+    for (const prefix of LANGUAGE_NEUTRAL_PREFIXES) {
+        if (path.startsWith(prefix)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**

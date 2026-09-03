@@ -906,3 +906,88 @@ describe('middleware onRequest — H-170 baseline security headers on every resp
         expectSecurityHeaders(result);
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-981 — the language-neutral QR route
+// ---------------------------------------------------------------------------
+
+/**
+ * `/qr/{slug}/` lives outside the `/{lang}/` tree because a QR code is printed
+ * on a physical sign: the URL is set in ink and cannot be changed afterwards,
+ * so a locale in it would permanently choose a language for every future
+ * scanner.
+ *
+ * What makes this worth testing at the middleware level rather than trusting a
+ * predicate: the exemption has to be NARROW in two directions at once. It must
+ * suppress the locale redirect (or the route is unreachable in its printed
+ * form) and it must NOT bypass the pipeline (or an unresolved slug answers a
+ * blank 404 instead of the site's 404 page, which is exactly what somebody who
+ * scanned a dead sticker must not get). The obvious implementation — an early
+ * `return next()` alongside the static-asset check — satisfies the first and
+ * silently breaks the second, so both are asserted here, plus a control on a
+ * path that must still be redirected.
+ */
+describe('middleware onRequest — HOS-981 /qr/ is language-neutral', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    it('does NOT redirect /qr/{slug}/ into the locale tree', async () => {
+        const context = createContext({ pathname: '/qr/Live2345/' });
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 302 }));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it('still rewrites an unresolved slug to the real site 404 page', async () => {
+        // The half an early `return next()` would break. The QR page answers a
+        // bare `new Response(null, { status: 404 })` and depends on Step 8 to
+        // turn it into the rendered 404.
+        const context = createContext({ pathname: '/qr/Missing2/' });
+        context.rewrite.mockReturnValue(
+            new Response('<html>chrome</html>', {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+
+        await onRequest(context as any, next);
+
+        expect(context.rewrite).toHaveBeenCalledWith('/404');
+    });
+
+    it('gives downstream a defined locale even though the URL carries none', async () => {
+        const context = createContext({ pathname: '/qr/Live2345/' });
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 302 }));
+
+        await onRequest(context as any, next);
+
+        expect(context.locals.locale).toBe('es');
+    });
+
+    it('control: an ordinary locale-less path is STILL 301-redirected', async () => {
+        // The exemption must not have widened into "no path needs a locale".
+        const context = createContext({ pathname: '/destinos/colon/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/destinos/colon/', 301);
+    });
+
+    it('control: a path merely CONTAINING /qr/ is not exempt', async () => {
+        // The predicate is a prefix match, and it must stay one: `/es/qr/...`
+        // already carries a locale, and a substring match would exempt paths
+        // that have nothing to do with printed codes.
+        const context = createContext({ pathname: '/algo/qr/Live2345/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/algo/qr/Live2345/', 301);
+    });
+});

@@ -22,7 +22,8 @@ import type {
     PointOfInterestPublic,
     PostListItem,
     PostPublic,
-    PostSummary
+    PostSummary,
+    QrCodeResolution
 } from '@repo/schemas';
 import { apiClient } from './client';
 import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
@@ -1899,5 +1900,28 @@ export const partnerApi = {
      */
     getBySlug(slug: string): Promise<ApiResult<PartnerPublic>> {
         return apiClient.get({ path: `${BASE}/partners/${encodeURIComponent(slug)}` });
+    }
+};
+
+// --- QR codes (HOS-981) ---
+
+/** Public QR-code API endpoints. */
+export const qrApi = {
+    /**
+     * Resolve a printed slug to its current target, recording the scan.
+     *
+     * GET /api/v1/public/qr/{slug}
+     *
+     * Deliberately NOT opted into the SSR cache (`cacheTtlMs` is never passed):
+     * the call has a side effect — it is what counts the scan — and the target
+     * it returns is editable at any moment, which is the entire reason a printed
+     * code points at a slug instead of at the destination.
+     *
+     * Every reason a slug does not resolve — unknown, retired, soft-deleted or
+     * malformed — comes back as the same 404. The caller has nothing to
+     * distinguish and must not try to.
+     */
+    resolve(slug: string): Promise<ApiResult<QrCodeResolution>> {
+        return apiClient.get({ path: `${BASE}/qr/${encodeURIComponent(slug)}` });
     }
 };

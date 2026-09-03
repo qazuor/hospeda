@@ -1,0 +1,77 @@
+---
+/**
+ * @file qr/[slug].astro
+ * @description The public landing for a printed QR code (HOS-981). Resolves the
+ * slug against the API — which records the scan in the same call — and 302s to
+ * the code's current target.
+ *
+ * @route /qr/{slug}/
+ * @rendering SSR (on-demand), never cached
+ *
+ * ## Why this page is NOT under `/{lang}/`
+ *
+ * A QR code is printed on a physical sign. Its URL is set in ink and cannot be
+ * changed afterwards — that indirection is the entire product. Putting a locale
+ * in it would mean the print run chose, permanently, which language every
+ * future scanner reads the site in. `isLanguageNeutralRoute` in the middleware
+ * is what stops the locale redirect from adding one.
+ *
+ * ## Why it is never cached
+ *
+ * Two independent reasons, either of which is sufficient: a cached response is
+ * a scan that was never counted, and the target is editable at any moment, so a
+ * cached one keeps sending people to a URL the operator has already replaced.
+ * `applyCacheHeaders` is called with `cacheable: false` rather than a bare
+ * header so the demotion goes through the same fail-closed path every other
+ * page uses.
+ *
+ * ## Status codes
+ *
+ * 302 to the target when the slug resolves; 404 otherwise, with no attempt to
+ * tell the reasons apart — the API already answers one identical body for
+ * unknown, retired, deleted and malformed slugs, and re-deriving a distinction
+ * here would re-open the oracle that design closes. The bare
+ * `new Response(null, { status: 404 })` is the established shape: the
+ * middleware rewrites it to the real site 404 page, so somebody who scanned a
+ * dead sticker gets a page telling them the code no longer works instead of a
+ * blank body or a silent bounce to the home page.
+ */
+
+import { qrApi } from '@/lib/api/endpoints';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { CACHE_TAG_ALL } from '@repo/cache-tags';
+
+const slug = Astro.params.slug as string;
+
+// Never cacheable, so the tag list is inert — `applyCacheHeaders` returns
+// before it reads `tags`. `CACHE_TAG_ALL` is filler for the non-empty tuple
+// type, not a claim that anything purges this response.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: false,
+    cacheClass: 'detail',
+    tags: [CACHE_TAG_ALL]
+});
+
+const result = await qrApi.resolve(slug);
+
+if (!result.ok || !result.data) {
+    return new Response(null, { status: 404 });
+}
+
+// 302 and not 301: the target is editable, and a permanently-cached redirect in
+// somebody's browser would outlive the operator's next edit with nothing able to
+// evict it.
+//
+// The response is built by hand rather than with `Astro.redirect` because that
+// helper constructs its own `Response` carrying only `Location` — the
+// `Cache-Control` written onto `Astro.response.headers` above would not survive
+// it, and an accidentally shared-cacheable redirect is exactly the failure this
+// page is written to avoid. Copying the headers keeps the demotion (and
+// anything else the pipeline attached) on the response that actually ships.
+const redirectHeaders = new Headers(Astro.response.headers);
+redirectHeaders.set('Location', result.data.targetUrl);
+
+return new Response(null, { status: 302, headers: redirectHeaders });
+---
