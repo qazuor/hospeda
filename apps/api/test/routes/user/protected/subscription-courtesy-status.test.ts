@@ -216,18 +216,43 @@ function setupBillingMock(sub: StubSub) {
     // fixture honest about where the value actually comes from — put it only
     // on the facade object and the endpoint would answer `null` in production
     // while the test stayed green.
-    vi.mocked(getDb).mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([
-            {
-                courtesyStartsAt: sub.courtesyStartsAt ?? null,
-                courtesyEndsAt: sub.courtesyEndsAt ?? null,
-                courtesyCyclesGranted: sub.courtesyCyclesGranted ?? null
-            }
-        ])
-    } as never);
+    //
+    // HOS-934: the route now runs a SECOND getDb() query first —
+    // `hydrateSubscriptionProductDomains`'s batched `productDomain` recovery
+    // (`.select({id, productDomain}).from(...).where(inArray(...))`, no
+    // `.limit()`). The two queries are distinguished by their `.select()`
+    // projection: only the hydration query names a `productDomain` column.
+    // Without this, `where()` resolved to the chain object itself (not an
+    // array), `rows.map(...)` inside the hydration helper threw, and the
+    // route's own catch-all swallowed it as "no subscription" — every
+    // assertion below then saw `result.subscription: null`.
+    vi.mocked(getDb).mockImplementation((() => {
+        let isProductDomainQuery = false;
+        const chain = {
+            select: vi.fn((cols: Record<string, unknown>) => {
+                isProductDomainQuery = 'productDomain' in cols && 'id' in cols;
+                return chain;
+            }),
+            from: vi.fn(() => chain),
+            where: vi.fn(() => {
+                if (isProductDomainQuery) {
+                    // No stored row for this fixture's id — hydration resolves
+                    // productDomain to `null`, which fails open to
+                    // accommodation, matching this file's pre-HOS-934 default.
+                    return Promise.resolve([]);
+                }
+                return chain;
+            }),
+            limit: vi.fn().mockResolvedValue([
+                {
+                    courtesyStartsAt: sub.courtesyStartsAt ?? null,
+                    courtesyEndsAt: sub.courtesyEndsAt ?? null,
+                    courtesyCyclesGranted: sub.courtesyCyclesGranted ?? null
+                }
+            ])
+        };
+        return chain;
+    }) as never);
 
     return mock;
 }

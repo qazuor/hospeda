@@ -438,6 +438,51 @@ describe('hydrateSubscriptionProductDomains (HOS-934)', () => {
         expect(hydrated[0]?.productDomain).toBeNull();
     });
 
+    it(
+        'is transparent when the recovery query returns no rows at all — every ' +
+            'original field survives unchanged, only productDomain is added (HOS-934 CI incident)',
+        async () => {
+            // Arrange — an EMPTY result set for the whole batch, not a
+            // per-subscription miss: this is what an under-mocked getDb() in a
+            // consuming test suite produces (no rows configured for the
+            // recovery query at all), and what caused two apps/api suites to
+            // regress when this function shipped — the caller's own catch-all
+            // swallowed the resulting shape mismatch as "no subscription".
+            // Hydration itself must stay a pure ADD: the object that goes in
+            // comes out with every field intact, never truncated.
+            mockRecoveryQuery([]);
+            const isPastDue = () => false;
+            const rawSubscriptions = [
+                {
+                    id: 'sub-1',
+                    status: 'active',
+                    planId: 'plan-1',
+                    currentPeriodStart: null,
+                    currentPeriodEnd: null,
+                    trialEnd: null,
+                    isPastDue
+                }
+            ];
+
+            // Act
+            const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+            // Assert — every original field present and unchanged...
+            expect(hydrated[0]?.id).toBe('sub-1');
+            expect(hydrated[0]?.status).toBe('active');
+            expect(hydrated[0]?.planId).toBe('plan-1');
+            expect(hydrated[0]?.currentPeriodStart).toBeNull();
+            expect(hydrated[0]?.currentPeriodEnd).toBeNull();
+            expect(hydrated[0]?.trialEnd).toBeNull();
+            expect(hydrated[0]?.isPastDue).toBe(isPastDue);
+            // ...plus the one field hydration is responsible for adding.
+            expect(hydrated[0]?.productDomain).toBeNull();
+            expect(Object.keys(hydrated[0] as object).sort()).toEqual(
+                [...Object.keys(rawSubscriptions[0] as object), 'productDomain'].sort()
+            );
+        }
+    );
+
     it('returns an empty array without querying when given an empty input', async () => {
         // Arrange
         const selectMock = vi.fn();
