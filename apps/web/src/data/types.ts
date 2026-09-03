@@ -1125,6 +1125,25 @@ export interface GastronomyMenuSection {
 }
 
 /**
+ * One dish on a gastronomy listing's menú del día (HOS-1041). Mirrors
+ * `GastronomyDailySpecialPublic` (`@repo/schemas`) with only the fields the
+ * public detail page renders.
+ *
+ * Deliberately carries NO `validFrom`/`validUntil`. Everything that reaches
+ * this type has already been filtered by the API to the specials valid TODAY,
+ * so the window is not a fact the page has any use for — and shipping it would
+ * invite a component to re-derive the filter in the browser's timezone, which
+ * is how the same day gets two different answers.
+ */
+export interface GastronomyDailySpecial {
+    readonly id: string;
+    readonly title: string;
+    readonly description: string | null;
+    /** Price in centavos, or `null` for "a consultar". */
+    readonly priceCents: number | null;
+}
+
+/**
  * Typed data shape for the gastronomy detail page (SPEC-239).
  * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
  *
@@ -1152,6 +1171,15 @@ export interface GastronomyDetailData extends GastronomyCardData {
      * entitlement — same withholding as {@link menuFileUrl}.
      */
     readonly menuSections?: readonly GastronomyMenuSection[];
+    /**
+     * The menú del día as it stands TODAY (HOS-1041). Empty when the venue is
+     * offering nothing today, when every special's window has passed, OR when
+     * the owner's current plan does not grant
+     * `manage_gastronomy_daily_special` — the API applies both the window
+     * filter and the entitlement gate, so the page cannot tell the three apart
+     * and does not need to.
+     */
+    readonly dailySpecials?: readonly GastronomyDailySpecial[];
     /** Social network links provided by the owner. */
     readonly socialNetworks: GastronomySocialNetworks | null;
     /** SEO metadata fields. */

@@ -81,21 +81,60 @@ describe('buildCommerceEditorSections — the vertical split', () => {
         expect(findEditorSectionBySlug({ registry, slug: 'carta' })).toBeUndefined();
     });
 
-    it('should differ from the experience list by exactly the carta', () => {
+    it('should differ from the experience list by exactly the carta and the menú del día', () => {
         const extra = gastronomy
             .map((section) => section.id)
             .filter((id) => !experience.some((section) => section.id === id));
 
-        expect(extra).toEqual(['menu']);
+        // HOS-1041 added the second gastronomy-only section. Asserted as an
+        // exact list rather than two `toContain`s so a THIRD one cannot be
+        // added to `GASTRONOMY_ONLY_SECTIONS` without this failing and someone
+        // deciding whether an experience should have it.
+        expect(extra).toEqual(['menu', 'dailySpecials']);
     });
 
     it('should place the carta next to its structural twin, the FAQ page', () => {
         // Both are self-persisting managers with their own endpoints, mounted
         // bare with no form and no save button. Adjacency is the visible half
         // of that decision.
+        //
+        // HOS-1041 inserted `dailySpecials` BETWEEN them, so the carta is now
+        // two before the FAQs rather than one. The relationship being asserted
+        // is unchanged — the carta still leads the gastronomy-only run that
+        // ends at the FAQ page.
         const ids = gastronomy.map((section) => section.id);
 
-        expect(ids.indexOf('menu')).toBe(ids.indexOf('faqs') - 1);
+        expect(ids.indexOf('menu')).toBe(ids.indexOf('dailySpecials') - 1);
+        expect(ids.indexOf('dailySpecials')).toBe(ids.indexOf('faqs') - 1);
+    });
+
+    // ── The menú del día (HOS-1041) ─────────────────────────────────────────
+
+    it('should give a restaurant the menú del día section', () => {
+        expect(gastronomy.map((section) => section.id)).toContain('dailySpecials');
+    });
+
+    it('should give an experience NO menú del día', () => {
+        expect(experience.map((section) => section.id)).not.toContain('dailySpecials');
+    });
+
+    it('should make the menú-del-día slug unresolvable on an experience registry', () => {
+        // Absent, not hidden — otherwise `/experience/<id>/editar/menu-del-dia`
+        // stays reachable by typing the URL and renders a panel whose every
+        // write the API refuses.
+        const registry = buildCommerceEditorRegistry({ vertical: 'experience' });
+
+        expect(findEditorSectionBySlug({ registry, slug: 'menu-del-dia' })).toBeUndefined();
+    });
+
+    it('should resolve the menú-del-día slug on a gastronomy registry', () => {
+        // The positive half: without it, the three assertions above all pass
+        // against a registry that lost the section entirely.
+        const registry = buildCommerceEditorRegistry({ vertical: 'gastronomy' });
+
+        expect(findEditorSectionBySlug({ registry, slug: 'menu-del-dia' })?.id).toBe(
+            'dailySpecials'
+        );
     });
 });
 

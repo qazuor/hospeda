@@ -306,6 +306,10 @@
                 "title": "Vos editás el contenido",
                 "description": "Actualizás horarios, contacto, media y menú cuando quieras, desde tu panel. Sin depender de nadie."
             },
+            "dailySpecials": {
+                "title": "A daily menu that expires on its own",
+                "description": "Publish the dish of the day or the chef’s suggestion with the date it runs until. When it passes, it stops showing on its own — last week’s menu is never left on your page. Available from the Professional plan."
+            },
             "seo": {
                 "title": "Buen SEO incluido",
                 "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."
