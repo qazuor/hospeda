@@ -252,6 +252,7 @@
                 "fileTitle": "Menu photo or PDF",
                 "filePdf": "View the PDF",
                 "fileImage": "View the photo",
+                "fileUnavailable": "This file cannot be opened. Remove it and upload it again.",
                 "addFile": "Upload photo or PDF",
                 "replaceFile": "Replace the file",
                 "removeFile": "Remove",

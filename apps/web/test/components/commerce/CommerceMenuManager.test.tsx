@@ -144,6 +144,75 @@ describe('CommerceMenuManager (HOS-895)', () => {
         });
     });
 
+    // ── The scheme gate (HOS-592 / F-02, via HOS-895) ───────────────────────
+    //
+    // `menuFileUrl` is not composed only by our upload route: three of the four
+    // gastronomy write schemas are `.omit(...)`-based over `GastronomySchema`,
+    // so they accepted `javascript:…` from a request body until HOS-895 named
+    // the column in their omit lists. `z.string().url()` does not restrict the
+    // scheme, so a schema-valid value is still a stored-XSS sink the moment it
+    // reaches an `href`. The static guard proves the HELPER IS CALLED; these two
+    // prove what it does — which is the half a guard cannot assert.
+
+    it('renders no link at all for a javascript: menu file URL', async () => {
+        mockGet.mockResolvedValue({
+            ok: true,
+            data: {
+                sections: [],
+                file: { url: 'javascript:alert(document.cookie)', kind: 'image' }
+            }
+        } as never);
+
+        render(
+            <CommerceMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText(/No se puede abrir este archivo/)).toBeInTheDocument();
+        });
+
+        // No anchor, and specifically no anchor carrying the payload — a
+        // `not.toBeVisible()` here would pass on an element that merely renders
+        // off-screen while still being clickable.
+        expect(screen.queryByRole('link')).toBeNull();
+        expect(document.querySelector('a[href^="javascript:"]')).toBeNull();
+
+        // The row is still removable. Dropping the link must not strand the
+        // owner with a file they cannot take down.
+        expect(screen.getByRole('button', { name: 'Eliminar' })).toBeInTheDocument();
+    });
+
+    it('renders the link for an ordinary https menu file URL', async () => {
+        // The mirror: without it, a component that refused EVERY url would pass
+        // the case above.
+        mockGet.mockResolvedValue({
+            ok: true,
+            data: {
+                sections: [],
+                file: { url: 'https://res.cloudinary.com/demo/menu-file.pdf', kind: 'pdf' }
+            }
+        } as never);
+
+        render(
+            <CommerceMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByRole('link', { name: 'Ver el PDF' })).toBeInTheDocument();
+        });
+
+        expect(screen.getByRole('link', { name: 'Ver el PDF' })).toHaveAttribute(
+            'href',
+            'https://res.cloudinary.com/demo/menu-file.pdf'
+        );
+    });
+
     it('shows a plan refusal as the upsell it is, not as a failure', async () => {
         mockGet.mockResolvedValue(LOADED_MENU as never);
         mockPut.mockResolvedValue({

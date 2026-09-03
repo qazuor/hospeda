@@ -252,6 +252,7 @@
                 "fileTitle": "Foto ou PDF do cardápio",
                 "filePdf": "Ver o PDF",
                 "fileImage": "Ver a foto",
+                "fileUnavailable": "Não é possível abrir este arquivo. Exclua-o e envie novamente.",
                 "addFile": "Enviar foto ou PDF",
                 "replaceFile": "Substituir o arquivo",
                 "removeFile": "Excluir",

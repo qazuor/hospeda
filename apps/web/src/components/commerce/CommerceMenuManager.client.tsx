@@ -49,6 +49,7 @@ import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/commerce/p
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './CommerceMenuManager.module.css';
 
 /** What the API returns for the uploaded photo/PDF. */
@@ -353,6 +354,28 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
 
     const busy = state !== 'idle';
 
+    /*
+     * The scheme gate (HOS-592 / F-02), and it is NOT belt-and-braces here.
+     *
+     * `menu_file_url` is written by the upload route from what Cloudinary
+     * returns — but that is not the ONLY way into the column. Measured against
+     * the real schemas: `GastronomyOwnerCreateInputSchema`,
+     * `GastronomyAdminCreateInputSchema` and `GastronomyUpdateInputSchema` are
+     * all built with `.omit(...)` over `GastronomySchema`, so every field that
+     * schema carries is accepted from the request body unless it is named in
+     * the omit list. All three took `menuFileUrl: 'javascript:alert(1)'` and
+     * kept it verbatim, because `z.string().url()` does not restrict the
+     * scheme.
+     *
+     * The write side is narrowed too (those three now omit the column), but
+     * this gate stays: it is the half that does not depend on nobody adding a
+     * fourth write path, and it is what makes the value safe no matter how it
+     * got into the row — including rows written before that narrowing.
+     *
+     * `undefined` means the link is DROPPED, never rendered with the raw value.
+     */
+    const safeFileHref = resolveSafeExternalUrl(file?.url);
+
     return (
         <section
             className={styles.panel}
@@ -376,16 +399,34 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
 
                 {file ? (
                     <div className={styles.fileRow}>
-                        <a
-                            className={styles.fileLink}
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {file.kind === 'pdf'
-                                ? t('commerce.owner.editor.menuManager.filePdf', 'Ver el PDF')
-                                : t('commerce.owner.editor.menuManager.fileImage', 'Ver la foto')}
-                        </a>
+                        {/*
+                         * No link when the scheme is not http(s) — and the
+                         * Remove button below stays, deliberately. A row whose
+                         * URL cannot be linked is exactly the row an owner most
+                         * needs to be able to delete.
+                         */}
+                        {safeFileHref ? (
+                            <a
+                                className={styles.fileLink}
+                                href={safeFileHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {file.kind === 'pdf'
+                                    ? t('commerce.owner.editor.menuManager.filePdf', 'Ver el PDF')
+                                    : t(
+                                          'commerce.owner.editor.menuManager.fileImage',
+                                          'Ver la foto'
+                                      )}
+                            </a>
+                        ) : (
+                            <span className={styles.intro}>
+                                {t(
+                                    'commerce.owner.editor.menuManager.fileUnavailable',
+                                    'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
+                                )}
+                            </span>
+                        )}
                         <button
                             type="button"
                             className={styles.dangerButton}

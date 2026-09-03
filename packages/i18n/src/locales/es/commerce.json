@@ -252,6 +252,7 @@
                 "fileTitle": "Foto o PDF del menú",
                 "filePdf": "Ver el PDF",
                 "fileImage": "Ver la foto",
+                "fileUnavailable": "No se puede abrir este archivo. Eliminalo y subilo de nuevo.",
                 "addFile": "Subir foto o PDF",
                 "replaceFile": "Reemplazar el archivo",
                 "removeFile": "Eliminar",
