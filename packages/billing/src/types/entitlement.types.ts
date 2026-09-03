@@ -66,6 +66,32 @@ export enum EntitlementKey {
      */
     DOWNLOAD_LISTING_PDF = 'download_listing_pdf',
 
+    /**
+     * Editing a gastronomy listing's structured carta — sections and dishes
+     * (HOS-895).
+     *
+     * A TIER differentiator, like {@link EntitlementKey.DOWNLOAD_LISTING_PDF}
+     * and unlike the four keys above it, so it is NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * tier of a vertical receives, and putting a paid capability there would
+     * hand it to `-basico` as well. Granted from `gastronomy-pro` UPWARDS
+     * (owner decision): `-pro` and `-premium` both carry it, because a premium
+     * subscriber losing a capability their cheaper neighbour has would be a
+     * downgrade dressed as a tier.
+     *
+     * ## What it does NOT gate
+     *
+     * Only the structured carta. The two fallbacks — the external `menuUrl` and
+     * the uploaded photo/PDF — stay available on every gastronomy tier: they
+     * are how a `-basico` venue shows a menu at all, and gating them would take
+     * away something `-basico` has had since SPEC-239.
+     *
+     * Gastronomy-only by name and on purpose. Experiences have no carta, so
+     * there is no second vertical for this key to be shared with — the shape
+     * `DOWNLOAD_LISTING_PDF` has for the opposite reason.
+     */
+    MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

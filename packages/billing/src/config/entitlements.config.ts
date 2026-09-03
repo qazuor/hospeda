@@ -283,5 +283,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Downloadable PDF listing sheet',
         description:
             'Allows downloading a print-ready PDF of the listing public page — photo, hours, contact and a QR back to the online sheet'
+    },
+    // HOS-895. Granted from `gastronomy-pro` upwards, and gastronomy-only:
+    // an experience has no carta. The two menu fallbacks (external link,
+    // uploaded photo/PDF) are NOT behind it — every gastronomy tier keeps them.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        name: 'Structured gastronomy menu',
+        description:
+            'Allows building the venue menu as sections and dishes with names, descriptions and prices, instead of only linking or uploading it'
     }
 ];

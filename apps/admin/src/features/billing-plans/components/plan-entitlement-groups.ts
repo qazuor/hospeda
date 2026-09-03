@@ -99,7 +99,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-1058 — the one commerce key that is NOT uniform across a
             // vertical's tiers: only each vertical's premium plan grants it,
             // which is exactly why an operator needs it as a tickable box here.
-            EntitlementKey.DOWNLOAD_LISTING_PDF
+            EntitlementKey.DOWNLOAD_LISTING_PDF,
+            // HOS-895 — likewise tier-dependent, and gastronomy-only: it is
+            // tickable on any plan here because the editor is a flat checklist,
+            // but only a gastronomy plan has a carta for it to unlock.
+            EntitlementKey.MANAGE_GASTRONOMY_MENU
         ]
     }
 ];
