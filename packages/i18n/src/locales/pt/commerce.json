@@ -118,7 +118,8 @@
                 "meetingPoint": "Ponto de encontro",
                 "practicalInfo": "Dados práticos",
                 "contactSocial": "Contato e redes",
-                "menu": "Cardápio"
+                "menu": "Cardápio",
+                "venueEvents": "Eventos"
             },
             "sections": {
                 "type": "Categoria",
@@ -313,6 +314,32 @@
                 "saved": "Cardápio salvo.",
                 "saveError": "Não foi possível salvar o cardápio.",
                 "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link."
+            },
+            "venueEventsManager": {
+                "title": "Agenda do local",
+                "intro": "Avise seus clientes quando algo acontece no seu local: música ao vivo, happy hour, a promoção de terça-feira.",
+                "newEntry": "Novo evento",
+                "entryTitle": "Título",
+                "titlePlaceholder": "Música ao vivo, Happy hour…",
+                "entryDescription": "Descrição",
+                "descriptionPlaceholder": "Detalhe opcional",
+                "moveUp": "Subir o evento",
+                "moveDown": "Descer o evento",
+                "removeEntry": "Remover",
+                "recurrenceWeekly": "Toda semana",
+                "recurrenceOnce": "Um único dia",
+                "weekday": "Dia da semana",
+                "date": "Data",
+                "startTime": "Horário de início",
+                "endTime": "Horário de término (opcional)",
+                "active": "Ativo",
+                "addEntry": "Adicionar evento",
+                "maxReached": "Você atingiu o limite de {{max}} eventos.",
+                "save": "Salvar agenda",
+                "saving": "Salvando…",
+                "saved": "Agenda salva.",
+                "saveError": "Não foi possível salvar a agenda.",
+                "locked": "Manter uma agenda de eventos está disponível a partir do plano Profissional."
             }
         },
         "checklist": {
@@ -357,7 +384,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Cardápio estruturado"
+            "manageGastronomyMenu": "Cardápio estruturado",
+            "manageGastronomyEvents": "Agenda de eventos"
         },
         "create": {
             "pickVertical": {

@@ -118,7 +118,8 @@
                 "meetingPoint": "Meeting point",
                 "practicalInfo": "Practical details",
                 "contactSocial": "Contact and social",
-                "menu": "Menu"
+                "menu": "Menu",
+                "venueEvents": "Events"
             },
             "sections": {
                 "type": "Category",
@@ -313,6 +314,32 @@
                 "saved": "Menu saved.",
                 "saveError": "The menu could not be saved.",
                 "locked": "Entering the menu dish by dish is available from the Professional plan onwards. In the meantime you can upload a photo or a PDF of the menu, or leave the link."
+            },
+            "venueEventsManager": {
+                "title": "Venue schedule",
+                "intro": "Let your diners know when something happens at your venue: live music, happy hour, the Tuesday deal.",
+                "newEntry": "New event",
+                "entryTitle": "Title",
+                "titlePlaceholder": "Live music, Happy hour…",
+                "entryDescription": "Description",
+                "descriptionPlaceholder": "Optional detail",
+                "moveUp": "Move event up",
+                "moveDown": "Move event down",
+                "removeEntry": "Remove",
+                "recurrenceWeekly": "Every week",
+                "recurrenceOnce": "One day only",
+                "weekday": "Day of the week",
+                "date": "Date",
+                "startTime": "Start time",
+                "endTime": "End time (optional)",
+                "active": "Active",
+                "addEntry": "Add event",
+                "maxReached": "You reached the limit of {{max}} events.",
+                "save": "Save schedule",
+                "saving": "Saving…",
+                "saved": "Schedule saved.",
+                "saveError": "The schedule could not be saved.",
+                "locked": "Keeping a venue schedule is available from the Professional plan onwards."
             }
         },
         "checklist": {
@@ -357,7 +384,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Structured menu"
+            "manageGastronomyMenu": "Structured menu",
+            "manageGastronomyEvents": "Venue schedule"
         },
         "create": {
             "pickVertical": {

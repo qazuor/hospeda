@@ -118,7 +118,8 @@
                 "meetingPoint": "Punto de encuentro",
                 "practicalInfo": "Datos prácticos",
                 "contactSocial": "Contacto y redes",
-                "menu": "Carta"
+                "menu": "Carta",
+                "venueEvents": "Eventos"
             },
             "sections": {
                 "type": "Categoría",
@@ -313,6 +314,32 @@
                 "saved": "Carta guardada.",
                 "saveError": "No se pudo guardar la carta.",
                 "locked": "Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace."
+            },
+            "venueEventsManager": {
+                "title": "Agenda del local",
+                "intro": "Contale a tus comensales cuándo pasa algo en tu local: música en vivo, happy hour, la promo de los martes.",
+                "newEntry": "Nuevo evento",
+                "entryTitle": "Título",
+                "titlePlaceholder": "Música en vivo, Happy hour…",
+                "entryDescription": "Descripción",
+                "descriptionPlaceholder": "Detalle opcional",
+                "moveUp": "Subir el evento",
+                "moveDown": "Bajar el evento",
+                "removeEntry": "Quitar",
+                "recurrenceWeekly": "Todas las semanas",
+                "recurrenceOnce": "Un solo día",
+                "weekday": "Día de la semana",
+                "date": "Fecha",
+                "startTime": "Hora de inicio",
+                "endTime": "Hora de fin (opcional)",
+                "active": "Activo",
+                "addEntry": "Agregar evento",
+                "maxReached": "Llegaste al máximo de {{max}} eventos.",
+                "save": "Guardar agenda",
+                "saving": "Guardando…",
+                "saved": "Agenda guardada.",
+                "saveError": "No se pudo guardar la agenda.",
+                "locked": "Mantener una agenda de eventos está disponible desde el plan Profesional."
             }
         },
         "checklist": {
@@ -357,7 +384,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Carta estructurada"
+            "manageGastronomyMenu": "Carta estructurada",
+            "manageGastronomyEvents": "Agenda de eventos"
         },
         "create": {
             "pickVertical": {
