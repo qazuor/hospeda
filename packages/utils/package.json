@@ -36,6 +36,7 @@
     },
     "dependencies": {
         "date-fns": "^4.4.0",
+        "nanoid": "^6.0.1",
         "slugify": "^1.6.9",
         "undici": ">=8.7.0 <9",
         "@repo/config": "workspace:*",

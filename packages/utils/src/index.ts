@@ -10,6 +10,7 @@ export * from './date';
 export * from './markdown-helpers';
 export * from './object';
 export * from './sentry';
+export * from './short-id';
 export * from './string';
 export * from './tiptap-renderer';
 export * from './utc-date-math';
