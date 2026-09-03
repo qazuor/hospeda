@@ -1881,7 +1881,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1877,
+    "total": 1880,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
