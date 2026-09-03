@@ -555,6 +555,7 @@ export { PowerIcon } from './icons/system/PowerIcon';
 export { PowerOffIcon } from './icons/system/PowerOffIcon';
 export { PreviousIcon } from './icons/system/PreviousIcon';
 export { PriceIcon } from './icons/system/PriceIcon';
+export { QrCodeIcon } from './icons/system/QrCodeIcon';
 export { QuotesIcon } from './icons/system/QuotesIcon';
 export { ReceiptIcon } from './icons/system/ReceiptIcon';
 export { RefreshIcon } from './icons/system/RefreshIcon';

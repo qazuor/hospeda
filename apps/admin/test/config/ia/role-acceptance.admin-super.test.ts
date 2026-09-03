@@ -172,6 +172,14 @@ const ADMIN_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.DASHBOARD_BASE_VIEW,
     PermissionEnum.DASHBOARD_FULL_VIEW,
     PermissionEnum.SETTINGS_MANAGE,
+    // HOS-981. This array is a hand-copied duplicate of the seed's ADMIN bundle
+    // and NOTHING diffs the two, so a permission added to the seed and forgotten
+    // here goes unnoticed: the sidebar item it gates simply reads as hidden for
+    // ADMIN and every assertion still passes. Kept in step deliberately.
+    PermissionEnum.QR_CODE_VIEW,
+    PermissionEnum.QR_CODE_CREATE,
+    PermissionEnum.QR_CODE_UPDATE,
+    PermissionEnum.QR_CODE_DELETE,
     PermissionEnum.STATS_VIEW,
     PermissionEnum.NOTIFICATION_SEND,
     PermissionEnum.NOTIFICATION_CONFIGURE,

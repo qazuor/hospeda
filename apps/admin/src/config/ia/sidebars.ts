@@ -808,6 +808,18 @@ const plataformaSidebar: SidebarInput = {
                 },
                 {
                     type: 'link',
+                    id: 'qr-codes',
+                    label: { es: 'Códigos QR', en: 'QR codes', pt: 'Códigos QR' },
+                    icon: 'QrCodeIcon',
+                    route: '/platform/qr-codes',
+                    // The gate the LIST route demands, not a broader one
+                    // (HOS-981). A menu entry that declares a different
+                    // permission than its route enforces is an entry shown to
+                    // somebody who then eats a 403.
+                    permissions: ['QR_CODE_VIEW']
+                },
+                {
+                    type: 'link',
                     id: 'critical-settings',
                     label: {
                         es: 'Configuración crítica',

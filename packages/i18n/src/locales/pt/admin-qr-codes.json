@@ -1,0 +1,86 @@
+{
+    "title": "Códigos QR",
+    "description": "Um código impresso aponta sempre para o mesmo endereço curto; o destino se altera aqui, sem reimprimir nada.",
+    "create": "Criar código QR",
+    "edit": "Editar código QR",
+    "detail": "Detalhe do código",
+    "search": {
+        "placeholder": "Buscar por nome, código ou destino"
+    },
+    "columns": {
+        "label": "Nome",
+        "slug": "Código",
+        "targetUrl": "Destino",
+        "source": "Origem",
+        "isActive": "Estado",
+        "createdAt": "Criado",
+        "actions": "Ações"
+    },
+    "form": {
+        "labelLabel": "Nome",
+        "labelPlaceholder": "Mural da praça Ramírez",
+        "labelHelp": "Como você vai reconhecer este código daqui a um ano.",
+        "targetUrlLabel": "URL de destino",
+        "targetUrlPlaceholder": "https://hospeda.com.ar/pt/destinos/colon/",
+        "targetUrlHelp": "Para onde a leitura leva. Pode ser alterado quando quiser: é a razão de existir do sistema.",
+        "descriptionLabel": "Descrição",
+        "descriptionPlaceholder": "Onde está colado, quem pediu, até quando vale.",
+        "slugLabel": "Código curto",
+        "slugPlaceholder": "Gerado automaticamente se ficar vazio",
+        "slugHelp": "Aparece na URL impressa. Só pode ser escolhido na criação.",
+        "slugLocked": "O código curto não pode ser alterado: já está impresso.",
+        "isActiveLabel": "Ativo",
+        "isActiveHelp": "Um código inativo deixa de redirecionar, mas conserva as leituras já registradas.",
+        "renderTitle": "Como é desenhado",
+        "renderHelp": "Só os campos que você mexer são salvos; o resto fica como estava.",
+        "formatLabel": "Formato",
+        "errorCorrectionLabel": "Correção de erros",
+        "marginLabel": "Margem (módulos)",
+        "sizeLabel": "Tamanho (pixels)",
+        "sizePlaceholder": "Vazio = escala livre",
+        "foregroundColorLabel": "Cor do código",
+        "backgroundColorLabel": "Cor de fundo"
+    },
+    "source": {
+        "MANUAL": "Manual",
+        "GENERATED": "Gerado"
+    },
+    "status": {
+        "active": "Ativo",
+        "inactive": "Inativo"
+    },
+    "errorCorrection": {
+        "L": "L — baixa (~7%)",
+        "M": "M — média (~15%)",
+        "Q": "Q — alta (~25%)",
+        "H": "H — máxima (~30%)"
+    },
+    "download": {
+        "title": "Baixar",
+        "help": "A imagem é desenhada com as opções salvas deste código.",
+        "svg": "Baixar SVG",
+        "png": "Baixar PNG",
+        "scanUrl": "URL codificada",
+        "failed": "Não foi possível gerar a imagem."
+    },
+    "actions": {
+        "view": "Ver",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "backToList": "Voltar à lista"
+    },
+    "messages": {
+        "created": "Código QR criado",
+        "createError": "Não foi possível criar o código QR",
+        "updated": "Código QR atualizado",
+        "updateError": "Não foi possível atualizar o código QR",
+        "deleted": "Código QR excluído",
+        "deleteError": "Não foi possível excluir o código QR",
+        "deleteConfirm": "Excluir este código? O código curto fica reservado para sempre e as leituras são preservadas.",
+        "notFound": "Esse código QR não existe",
+        "requiredLabel": "Falta o nome: é o que vai permitir encontrar este código daqui a um ano.",
+        "requiredTargetUrl": "Falta a URL de destino: sem ela o código não leva a lugar nenhum.",
+        "invalid": "Reveja os campos marcados: há algo que o servidor não vai aceitar.",
+        "fieldInvalid": "Reveja este campo."
+    }
+}
