@@ -76,6 +76,7 @@ import { BillingCustomerSyncService } from '../../../services/billing-customer-s
 import { loadCommerceListingMedia } from '../../../services/commerce-listing-media';
 import {
     CommercePlanNotConfiguredError,
+    CommercePlanNotForVerticalError,
     resolveCommercePlanSlug
 } from '../../../services/commerce-plan-resolver';
 import {
@@ -228,9 +229,16 @@ export async function handleCommerceStartSubscription(
          * did before.
          */
         requestedPayerEmail?: string;
+        /**
+         * HOS-1119: the tier the owner picked in the plan selector.
+         * `undefined` when they were offered no choice (a vertical with a
+         * single sellable tier) — in which case this route behaves exactly as
+         * it did before.
+         */
+        requestedPlanSlug?: string;
     }
 ): Promise<StartPaidSubscriptionResponse | Response> {
-    const { entityType, entityId, requestedPayerEmail } = input;
+    const { entityType, entityId, requestedPayerEmail, requestedPlanSlug } = input;
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
@@ -248,12 +256,27 @@ export async function handleCommerceStartSubscription(
 
     // ── Plan slug (D-7) — resolved before touching billing so an unset
     // HOSPEDA_COMMERCE_PLAN_ID 503s uniformly for both verticals. ──────────
+    //
+    // HOS-1119: `requestedPlanSlug` is forwarded, never interpreted here. The
+    // resolver is still the ONE place a vertical becomes a plan slug (AC-35);
+    // what changed is that it now takes the buyer's pick as an argument and
+    // refuses one that is not a tier of THIS vertical, which is what keeps the
+    // two verticals on separate MercadoPago preapproval plans.
     let planSlug: string;
     try {
-        planSlug = resolveCommercePlanSlug({ entityType });
+        planSlug = resolveCommercePlanSlug({
+            entityType,
+            ...(requestedPlanSlug === undefined ? {} : { requestedPlanSlug })
+        });
     } catch (error) {
         if (error instanceof CommercePlanNotConfiguredError) {
             throw new HTTPException(503, { message: error.message });
+        }
+        // A caller-supplied slug that names no tier of this vertical is a bad
+        // request body, not an operator misconfiguration — 400, per the error
+        // contract's input-shape tier, and never the 503 above.
+        if (error instanceof CommercePlanNotForVerticalError) {
+            throw new HTTPException(400, { message: error.message });
         }
         throw error;
     }
@@ -366,6 +389,27 @@ export async function handleCommerceStartSubscription(
     });
 
     if (ownerSubscription) {
+        // HOS-1119 — the tier request cannot be silently dropped here.
+        //
+        // Branch 2 attaches the listing to the subscription the owner ALREADY
+        // pays for, and opens no checkout. If they picked a tier on the way in,
+        // that pick has nowhere to go: attaching would answer 201 while leaving
+        // them on the tier they were already on, which reads from the outside
+        // exactly like a successful upgrade. Refuse instead, and name the route
+        // that does change tiers.
+        //
+        // Only a MISMATCH refuses. Re-picking the tier they are already on is a
+        // no-op request, not an error, and still attaches.
+        if (requestedPlanSlug !== undefined) {
+            const currentPlan = await billing.plans.get(ownerSubscription.planId);
+            if (currentPlan?.name !== planSlug) {
+                throw new HTTPException(409, {
+                    message:
+                        'You already have a subscription for this vertical on a different plan. Change your plan first, then publish this listing.'
+                });
+            }
+        }
+
         const [attached, cap] = await Promise.all([
             countAttachedListings({ subscriptionId: ownerSubscription.id }),
             resolveCommerceVerticalCap({
@@ -474,35 +518,42 @@ export async function handleCommerceStartSubscription(
  * router's docstring for why the ordering matters here.
  */
 /**
- * Read the payer email the owner confirmed on the pre-redirect screen
- * (HOS-1008), if any.
+ * Read the two optional choices the owner may have made before being sent to
+ * MercadoPago: the payer email they confirmed on the pre-redirect screen
+ * (HOS-1008) and the tier they picked in the plan selector (HOS-1119).
  *
- * Returns `{}` — not `{ requestedPayerEmail: undefined }` — when there is
- * nothing to forward, so the caller can spread it under `exactOptionalPropertyTypes`.
+ * Returns `{}` — not `{ requestedPayerEmail: undefined }` — for anything the
+ * caller did not send, so the result can be spread under
+ * `exactOptionalPropertyTypes`.
  *
  * **An absent body is not an error.** This endpoint shipped with no request
  * body at all, and both the web client (whenever
  * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` is off, which is production today)
  * and several existing tests still call it that way. A missing, empty or
- * unparseable body therefore means "the owner did not confirm an alternative
- * address" and the checkout proceeds exactly as it did before.
+ * unparseable body therefore means "the owner confirmed no alternative address
+ * and picked no tier" and the checkout proceeds exactly as it did before.
  *
- * A body that IS present but carries a malformed `payerEmail` is a different
- * case and answers 400: the caller tried to bind an address MercadoPago
- * cannot accept, and silently ignoring it would send them to a checkout only
- * a mistyped account could pay.
+ * A body that IS present but malformed is a different case and answers 400:
+ * the caller tried to bind an address MercadoPago cannot accept, or named a
+ * plan in a shape no plan uses, and silently ignoring either would send them
+ * to a checkout that is not the one they asked for.
+ *
+ * Note this validates SHAPE only. Whether the slug names a tier of the
+ * listing's vertical is `resolveCommercePlanSlug`'s call and no one else's
+ * (AC-35) — see the handler, which maps that refusal to its own 400.
  *
  * @param ctx - The Hono request context.
- * @returns `{ requestedPayerEmail }` when a valid one was sent, `{}` otherwise.
- * @throws HTTPException 400 when a present body carries an invalid `payerEmail`.
+ * @returns The subset of `{ requestedPayerEmail, requestedPlanSlug }` actually
+ *   supplied; `{}` when neither was.
+ * @throws HTTPException 400 when a present body carries an invalid field.
  *
  * Exported for its own unit test: the "absent body is not an error" contract
  * is the risky half of HOS-1008 (every pre-existing caller relies on it) and
  * route-level tests in this app do not reliably reach the handler.
  */
-export async function readConfirmedPayerEmail(
+export async function readCommerceCheckoutOptions(
     ctx: Context
-): Promise<{ requestedPayerEmail?: string }> {
+): Promise<{ requestedPayerEmail?: string; requestedPlanSlug?: string }> {
     const raw: unknown = await ctx.req.json().catch(() => undefined);
     if (raw === undefined || raw === null) {
         return {};
@@ -511,12 +562,15 @@ export async function readConfirmedPayerEmail(
     const parsed = CommerceStartSubscriptionRequestSchema.safeParse(raw);
     if (!parsed.success) {
         throw new HTTPException(400, {
-            message: 'Invalid payerEmail in request body.'
+            message: 'Invalid payerEmail or planSlug in request body.'
         });
     }
 
-    const { payerEmail } = parsed.data;
-    return payerEmail === undefined ? {} : { requestedPayerEmail: payerEmail };
+    const { payerEmail, planSlug } = parsed.data;
+    return {
+        ...(payerEmail === undefined ? {} : { requestedPayerEmail: payerEmail }),
+        ...(planSlug === undefined ? {} : { requestedPlanSlug: planSlug })
+    };
 }
 
 export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
@@ -527,21 +581,21 @@ export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
         "Starts a MercadoPago subscription for the caller's OWN commerce listing. Requires COMMERCE_EDIT_OWN and ownership of the target listing; the listing must be complete (422 otherwise).",
     tags: ['Protected - Commerce', 'Billing'],
     requestParams: StartSubscriptionParamsSchema,
-    // HOS-1008 deliberately does NOT declare `requestBody` here. The factory
-    // only calls `ctx.req.valid('json')` when one is declared, and this
-    // endpoint has always been called with NO body at all — by the web client
-    // and by several existing tests. Declaring a schema would make every one
-    // of those bodyless POSTs parse a body that is not there. The body is
-    // therefore read and validated by hand in
-    // `readConfirmedPayerEmail`, which treats "absent" and "empty" as the same
-    // thing: the pre-HOS-1008 behavior.
+    // HOS-1008 deliberately does NOT declare `requestBody` here, and HOS-1119
+    // keeps it that way. The factory only calls `ctx.req.valid('json')` when
+    // one is declared, and this endpoint has always been called with NO body at
+    // all — by the web client and by several existing tests. Declaring a schema
+    // would make every one of those bodyless POSTs parse a body that is not
+    // there. The body is therefore read and validated by hand in
+    // `readCommerceCheckoutOptions`, which treats "absent" and "empty" as the
+    // same thing: the pre-HOS-1008 behavior.
     responseSchema: StartPaidSubscriptionResponseSchema,
     successStatusCode: 201,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleCommerceStartSubscription(ctx, {
             entityType: params.entityType as CommerceEntityType,
             entityId: params.entityId as string,
-            ...(await readConfirmedPayerEmail(ctx))
+            ...(await readCommerceCheckoutOptions(ctx))
         })
 });
 

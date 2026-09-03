@@ -141,4 +141,55 @@ describe('resolveCommerceLandingOffer', () => {
         expect(plan?.slug).toBe('gastronomy-basico');
         expect(trialDays).toBe(30);
     });
+
+    describe('tiers (HOS-1119)', () => {
+        it('with a single active tier, tiers holds exactly that one plan — the "no choice" case', () => {
+            // This is the shape `/publicar-experiencia/` sees today: the page
+            // must render byte-identical to before HOS-1119, and `tiers.length
+            // > 1` is the flag it checks to decide that.
+            const { plan, tiers } = resolveCommerceLandingOffer({
+                plansResult: ok([apiPlan({ slug: 'experience-basico', sortOrder: 1 })])
+            });
+
+            expect(tiers).toHaveLength(1);
+            expect(tiers[0]?.slug).toBe('experience-basico');
+            expect(plan).toBe(tiers[0]);
+        });
+
+        it('with two active tiers, tiers holds both, sorted cheapest-first', () => {
+            const { plan, tiers } = resolveCommerceLandingOffer({
+                plansResult: ok([
+                    apiPlan({ slug: 'gastronomy-pro', sortOrder: 2, monthlyPriceArs: 4_500_000 }),
+                    apiPlan({ slug: 'gastronomy-basico', sortOrder: 1, monthlyPriceArs: 1_500_000 })
+                ])
+            });
+
+            expect(tiers.map((t) => t.slug)).toEqual(['gastronomy-basico', 'gastronomy-pro']);
+            // `plan` keeps its existing semantics — the entry (cheapest) tier —
+            // so nothing that only reads `plan`/`trialDays` needs to change.
+            expect(plan?.slug).toBe('gastronomy-basico');
+        });
+
+        it('excludes an inactive tier from the comparison, same as it excludes it from plan', () => {
+            const { tiers } = resolveCommerceLandingOffer({
+                plansResult: ok([
+                    apiPlan({ slug: 'gastronomy-basico', sortOrder: 1 }),
+                    apiPlan({ slug: 'gastronomy-premium-retired', sortOrder: 2, isActive: false })
+                ])
+            });
+
+            expect(tiers).toHaveLength(1);
+            expect(tiers[0]?.slug).toBe('gastronomy-basico');
+        });
+
+        it('is empty when the fetch failed or the vertical has no active plan', () => {
+            expect(
+                resolveCommerceLandingOffer({
+                    plansResult: { ok: false, error: 'boom' }
+                }).tiers
+            ).toEqual([]);
+
+            expect(resolveCommerceLandingOffer({ plansResult: ok([]) }).tiers).toEqual([]);
+        });
+    });
 });

@@ -121,8 +121,14 @@ export const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
  * the actual safety net, not a defense-in-depth extra. Every caller of
  * `resolvePlanBySlug` (monthly, commerce, annual) inherits the gate for
  * free from this single choke point.
+ *
+ * Exported since HOS-1119 so the commerce tier-change route resolves its
+ * target plan through THIS function rather than its own `listAll().find()`.
+ * That is not tidiness: a second slug resolver would not inherit the
+ * `owner-test-daily` gate above, and the gate is described in its own docblock
+ * as the actual safety net rather than a defence-in-depth extra.
  */
-async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
+export async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
     if (planSlug === TEST_DAILY_PLAN.slug && !env.HOSPEDA_SHOW_TEST_BILLING_PLAN) {
         return null;
     }
@@ -146,7 +152,7 @@ interface PriceShape {
  * must be excluded — they belong to plan-change flows, not the initial
  * paid-sub entry point.
  */
-function findMonthlyPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | null {
+export function findMonthlyPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | null {
     return (
         prices.find((p) => p.active && p.billingInterval === 'month' && p.intervalCount === 1) ??
         null

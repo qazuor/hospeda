@@ -992,6 +992,11 @@
                 "max": "El new plan id no puede superar los {{max}} caracteres",
                 "min": "El new plan id debe tener al menos {{min}} caracteres"
             },
+            "planSlug": {
+                "invalid": "O slug do plano não está em um formato válido",
+                "invalidType": "O slug do plano tem um tipo de dado inválido",
+                "max": "O slug do plano não pode ultrapassar {{max}} caracteres"
+            },
             "previousPlanId": {
                 "invalidType": "El previous plan id tiene un tipo de dato inválido",
                 "min": "El previous plan id debe tener al menos {{min}} caracteres"
@@ -1232,6 +1237,7 @@
                 "max": "O e-mail de pagamento não pode exceder {{max}} caracteres"
             },
             "planSlug": {
+                "invalid": "O slug do plano não está em um formato válido",
                 "invalidType": "O slug do plano tem um tipo de dado inválido",
                 "max": "O slug do plano não pode ultrapassar {{max}} caracteres",
                 "min": "O slug do plano deve ter pelo menos {{min}} caracteres"

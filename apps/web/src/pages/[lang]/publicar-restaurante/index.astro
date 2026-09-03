@@ -32,6 +32,11 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
 import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
+import {
+    COMMERCE_ENTITLEMENT_FALLBACK_LABEL,
+    COMMERCE_ENTITLEMENT_I18N_SUFFIX
+} from '@/lib/commerce/entitlement-labels';
+import { deriveCommercePlanTierDiffs, toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -71,7 +76,20 @@ applyCacheHeaders({
 // two lines of the card describe different plans, so both come out of the
 // same call. See `lib/billing/commerce-landing-plan.ts`.
 const plansResult = await fetchPublicPlans({ domain: 'gastronomy' });
-const { plan: gastronomyPlan, trialDays } = resolveCommerceLandingOffer({ plansResult });
+const { plan: gastronomyPlan, trialDays, tiers } = resolveCommerceLandingOffer({ plansResult });
+
+/**
+ * HOS-1119: gastronomy went from one sellable tier to two
+ * (`gastronomy-basico` + `gastronomy-pro`, activated HOS-895 PR2). With more
+ * than one active tier the page can no longer advertise a single flat price —
+ * it switches to "desde $X" plus a short tier comparison; with exactly one
+ * (the state this page shipped in, and what `/publicar-experiencia/` still
+ * has today) it renders BYTE-IDENTICAL to before this change.
+ */
+const hasMultipleTiers = tiers.length > 1;
+const tierDiffs = hasMultipleTiers
+    ? deriveCommercePlanTierDiffs(tiers.map(toCommercePlanOption))
+    : [];
 
 /**
  * The trial line on the price card, or `null` when none may be promised.
@@ -290,7 +308,9 @@ const signupUrl = buildCommerceStartUrl({ locale, vertical: 'gastronomy' });
     <section class="pub-rest__price section section--warm">
         <div class="pub-rest__container section__container">
             <p class="pub-rest__tagline" data-reveal="up">
-                {t('commerce.landing.gastronomy.price.tagline')}
+                {hasMultipleTiers
+                    ? t('commerce.landing.gastronomy.price.taglineMulti')
+                    : t('commerce.landing.gastronomy.price.tagline')}
             </p>
             <h2 class="pub-rest__section-title" data-reveal="up">
                 {t('commerce.landing.gastronomy.price.title')}
@@ -300,6 +320,7 @@ const signupUrl = buildCommerceStartUrl({ locale, vertical: 'gastronomy' });
                     gastronomyPlan ? (
                         <Fragment>
                             <p class="pub-rest__price-amount">
+                                {hasMultipleTiers && t('commerce.landing.gastronomy.price.fromPrefix')}
                                 {formatPriceArs(gastronomyPlan.monthlyPriceArs)}
                                 <span class="pub-rest__price-suffix">
                                     {t('commerce.landing.gastronomy.price.priceSuffix')}
@@ -331,6 +352,45 @@ const signupUrl = buildCommerceStartUrl({ locale, vertical: 'gastronomy' });
                     )
                 }
             </div>
+
+            {
+                hasMultipleTiers && (
+                    <div class="pub-rest__tiers" data-reveal="up">
+                        <h3 class="pub-rest__tiers-title">
+                            {t('commerce.landing.gastronomy.price.tiersTitle')}
+                        </h3>
+                        <ul class="pub-rest__tiers-list">
+                            {tierDiffs.map(({ plan, addedEntitlements }) => (
+                                <li class="pub-rest__tier">
+                                    <div class="pub-rest__tier-header">
+                                        <span class="pub-rest__tier-name">{plan.name}</span>
+                                        <span class="pub-rest__tier-price">
+                                            {formatPriceArs(plan.monthlyPriceArs)}
+                                            <span class="pub-rest__price-suffix">
+                                                {t('commerce.landing.gastronomy.price.priceSuffix')}
+                                            </span>
+                                        </span>
+                                    </div>
+                                    {addedEntitlements.length > 0 && (
+                                        <ul class="pub-rest__tier-adds">
+                                            {addedEntitlements.map((key) => (
+                                                <li>
+                                                    {t(
+                                                        `commerce.owner.entitlements.${
+                                                            COMMERCE_ENTITLEMENT_I18N_SUFFIX[key] ?? key
+                                                        }`,
+                                                        COMMERCE_ENTITLEMENT_FALLBACK_LABEL[key] ?? key
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )
+            }
         </div>
     </section>
 
@@ -538,6 +598,71 @@ const signupUrl = buildCommerceStartUrl({ locale, vertical: 'gastronomy' });
     .pub-rest__price-unavailable {
         color: var(--core-muted-foreground);
         font-family: var(--font-sans);
+    }
+
+    /* Tier comparison (HOS-1119) — only rendered when the vertical has more
+       than one active tier. */
+    .pub-rest__tiers {
+        max-width: 560px;
+        margin: var(--space-8, 2rem) auto 0;
+    }
+    .pub-rest__tiers-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        text-align: center;
+        margin: 0 0 var(--space-4);
+    }
+    .pub-rest__tiers-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    .pub-rest__tier {
+        background-color: var(--core-card);
+        border-radius: var(--radius-sm, 8px);
+        padding: var(--space-4);
+        text-align: left;
+    }
+    .pub-rest__tier-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+    .pub-rest__tier-name {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+    .pub-rest__tier-price {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        color: var(--core-foreground);
+        white-space: nowrap;
+    }
+    .pub-rest__tier-adds {
+        list-style: none;
+        margin: var(--space-2) 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .pub-rest__tier-adds li {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+    .pub-rest__tier-adds li::before {
+        content: '+ ';
+        color: var(--success, oklch(0.55 0.18 145));
+        font-weight: 700;
     }
 
     /* FAQ */

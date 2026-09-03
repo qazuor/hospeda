@@ -28,7 +28,7 @@
  * @module services/commerce-plan-resolver
  */
 
-import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
+import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL, findCommercePlanForVertical } from '@repo/billing';
 import type { CommercePlanSlugMap, CommercePlanVertical } from '../utils/commerce-plan-config';
 import { parseCommercePlanSlugMap } from '../utils/commerce-plan-config';
 import { env } from '../utils/env';
@@ -47,6 +47,46 @@ export interface ResolveCommercePlanSlugInput {
      * enum member is assignable to its own literal type; the reverse is not).
      */
     readonly entityType: CommercePlanVertical;
+    /**
+     * The tier the buyer PICKED, when they picked one (HOS-1119).
+     *
+     * `undefined` — the pre-HOS-1119 shape, and still what every caller without
+     * a picker passes — means "whatever this vertical resolves to by default":
+     * exactly the previous behaviour, `HOSPEDA_COMMERCE_PLAN_SLUGS` override
+     * included.
+     *
+     * A value is validated against {@link findCommercePlanForVertical} and
+     * REFUSED when it names no tier of `entityType`. It is never trusted as a
+     * slug. A request naming the OTHER vertical's plan is precisely how the two
+     * verticals would come to share one MercadoPago `preapproval_plan` — the
+     * thing HOS-688 AC-35 exists to prevent — and unlike a second resolution
+     * site, an unvalidated request parameter is a hole a *customer* can drive
+     * through rather than one a developer has to add.
+     */
+    readonly requestedPlanSlug?: string;
+}
+
+/**
+ * Thrown by {@link resolveCommercePlanSlug} when the caller asked for a plan
+ * that is not a tier of the vertical they are checking out (HOS-1119).
+ *
+ * Distinct from {@link CommercePlanNotConfiguredError}, which is an OPERATOR
+ * mistake resolved as a 503. This one is a CALLER mistake — a bad request body,
+ * or a tampered one — and routes answer it 400 per the error contract's
+ * input-shape tier. It is deliberately not a 404: the plan may well exist, it
+ * simply does not belong to this vertical, and saying so leaks nothing (the
+ * commerce catalogue is public).
+ */
+export class CommercePlanNotForVerticalError extends Error {
+    constructor(
+        /** The slug the caller asked for. */
+        public readonly requestedPlanSlug: string,
+        /** The vertical it was asked for. */
+        public readonly vertical: CommercePlanVertical
+    ) {
+        super(`Plan '${requestedPlanSlug}' is not a plan of the '${vertical}' vertical`);
+        this.name = 'CommercePlanNotForVerticalError';
+    }
 }
 
 /**
@@ -90,19 +130,48 @@ function resolveCommercePlanSlugMap(): CommercePlanSlugMap {
 /**
  * Resolves the plan slug a commerce checkout should subscribe against.
  *
+ * ## HOS-1119 — the site now takes an argument, and is still ONE site
+ *
+ * Until HOS-1119 this function had exactly one answer per vertical, and AC-35's
+ * guard existed to keep it that way. What HOS-1119 changes is NOT that: the
+ * guard's invariant is "a commerce vertical is turned into a plan slug here and
+ * nowhere else", and that is still literally true — every caller with a tier to
+ * honour passes it IN rather than resolving one itself.
+ *
+ * What HOS-1119 removes is a different, accidental property that was never the
+ * invariant: that the answer could not depend on anything but the vertical.
+ * `gastronomy-pro` shipped active, priced and trial-carrying in HOS-895 and was
+ * unbuyable purely because no caller had a way to ask for it.
+ *
+ * The MercadoPago property AC-35 actually protects — one vertical, one
+ * `preapproval_plan` family, so a trial spent on gastronomy still leaves one for
+ * experiences — survives because {@link findCommercePlanForVertical} refuses any
+ * slug that is not a tier OF THIS VERTICAL. Cross-vertical is the failure the
+ * guard describes, and it is now impossible by validation rather than by there
+ * having been only one possible answer.
+ *
  * @param input - {@link ResolveCommercePlanSlugInput}
- * @returns The plan slug for that vertical.
+ * @returns The plan slug for that vertical: the requested tier when one was
+ *   asked for and belongs to the vertical, the configured default otherwise.
  * @throws {CommercePlanNotConfiguredError} When the configured mapping is
  *   malformed. Callers respond 503.
+ * @throws {CommercePlanNotForVerticalError} When `requestedPlanSlug` names no
+ *   tier of `entityType`. Callers respond 400.
  *
  * @example
  * ```ts
  * let planSlug: string;
  * try {
- *   planSlug = resolveCommercePlanSlug({ entityType: CommerceEntityTypeEnum.GASTRONOMY });
+ *   planSlug = resolveCommercePlanSlug({
+ *     entityType: CommerceEntityTypeEnum.GASTRONOMY,
+ *     requestedPlanSlug: body.planSlug
+ *   });
  * } catch (error) {
  *   if (error instanceof CommercePlanNotConfiguredError) {
  *     throw new HTTPException(503, { message: error.message });
+ *   }
+ *   if (error instanceof CommercePlanNotForVerticalError) {
+ *     throw new HTTPException(400, { message: error.message });
  *   }
  *   throw error;
  * }
@@ -113,5 +182,25 @@ export function resolveCommercePlanSlug(input: ResolveCommercePlanSlugInput): st
     // The `Record<vertical, slug>` lookup §6.8 sanctions and AC-7 explicitly
     // permits: one code path reading a different value, not a behavioural
     // branch by domain.
-    return map[input.entityType];
+    const defaultSlug = map[input.entityType];
+
+    const requested = input.requestedPlanSlug?.trim();
+    if (requested === undefined || requested === '') {
+        // No pick — byte-identical to the pre-HOS-1119 behaviour, env override
+        // and all. A blank string is treated as "no pick" rather than as an
+        // invalid slug: it is what an untouched form field serialises to, and
+        // 400-ing on it would break the default path for the caller that is
+        // least deliberate about the field.
+        return defaultSlug;
+    }
+
+    const plan = findCommercePlanForVertical({ vertical: input.entityType, slug: requested });
+    if (!plan) {
+        throw new CommercePlanNotForVerticalError(requested, input.entityType);
+    }
+
+    // `plan.slug`, not `requested`: identical strings today, but returning the
+    // catalogue's own value means whatever reaches MercadoPago came from the
+    // catalogue rather than from the request body.
+    return plan.slug;
 }

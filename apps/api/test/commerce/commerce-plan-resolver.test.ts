@@ -17,7 +17,9 @@
 import {
     DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
     EXPERIENCE_BASICO_PLAN,
-    GASTRONOMY_BASICO_PLAN
+    EXPERIENCE_PRO_PLAN,
+    GASTRONOMY_BASICO_PLAN,
+    GASTRONOMY_PRO_PLAN
 } from '@repo/billing';
 import { CommerceEntityTypeEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
@@ -37,6 +39,7 @@ vi.mock('../../src/utils/env', () => ({
 
 import {
     CommercePlanNotConfiguredError,
+    CommercePlanNotForVerticalError,
     resolveCommercePlanSlug
 } from '../../src/services/commerce-plan-resolver';
 
@@ -114,6 +117,146 @@ describe('resolveCommercePlanSlug (HOS-688)', () => {
 
         expect(resolveCommercePlanSlug({ entityType: CommerceEntityTypeEnum.GASTRONOMY })).toBe(
             DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy
+        );
+    });
+});
+
+/**
+ * HOS-1119 — the resolver now takes the buyer's pick.
+ *
+ * The invariant AC-35's guard protects is "a vertical becomes a plan slug HERE
+ * and nowhere else", and these tests are about the half of it a type cannot
+ * state: that a slug arriving from a request body cannot move a checkout onto
+ * the OTHER vertical's plan, and therefore onto the other vertical's MercadoPago
+ * `preapproval_plan`.
+ */
+describe('resolveCommercePlanSlug — requested tier (HOS-1119)', () => {
+    it('resolves the requested tier when it belongs to the vertical', () => {
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+
+        expect(
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: GASTRONOMY_PRO_PLAN.slug
+            })
+        ).toBe(GASTRONOMY_PRO_PLAN.slug);
+    });
+
+    it('is NOT the default — the pick genuinely moves the answer', () => {
+        // Guards against a mutation that ignores `requestedPlanSlug` entirely:
+        // the assertion above would still pass if `-pro` happened to be the
+        // default, so pin that it is not.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+
+        expect(GASTRONOMY_PRO_PLAN.slug).not.toBe(
+            DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy
+        );
+        expect(
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: GASTRONOMY_PRO_PLAN.slug
+            })
+        ).not.toBe(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy);
+    });
+
+    it('REFUSES the other vertical’s plan — the whole point of the validation', () => {
+        // This is the failure AC-35's guard describes in prose: two verticals
+        // billed against one MercadoPago preapproval plan, the second free trial
+        // silently not happening, and every page still rendering perfectly.
+        // Before HOS-1119 it was impossible because there was one answer per
+        // vertical; now it is impossible because the request is checked.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+
+        expect(() =>
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: EXPERIENCE_BASICO_PLAN.slug
+            })
+        ).toThrow(CommercePlanNotForVerticalError);
+
+        expect(() =>
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                requestedPlanSlug: GASTRONOMY_PRO_PLAN.slug
+            })
+        ).toThrow(CommercePlanNotForVerticalError);
+    });
+
+    it('refuses a slug that names no plan at all', () => {
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+
+        expect(() =>
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: 'owner-premium'
+            })
+        ).toThrow(CommercePlanNotForVerticalError);
+    });
+
+    it('refuses an accommodation plan slug', () => {
+        // The other direction of the same leak: an accommodation plan reached
+        // through a commerce checkout would put a restaurant on a host plan,
+        // with the host plan's caps and entitlements.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+
+        expect(() =>
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: 'owner-basico'
+            })
+        ).toThrow(CommercePlanNotForVerticalError);
+    });
+
+    it('accepts a tier that is currently INACTIVE — activeness is the database’s call', () => {
+        // `experience-pro` ships `isActive: false`. This resolver answers
+        // membership only; whether the tier is sellable is decided by
+        // `billing_plans.active` at checkout, so that an operator activating a
+        // tier does not need a deploy. A membership check that also read
+        // `isActive` would freeze that decision into the binary.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+        expect(EXPERIENCE_PRO_PLAN.isActive).toBe(false);
+
+        expect(
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                requestedPlanSlug: EXPERIENCE_PRO_PLAN.slug
+            })
+        ).toBe(EXPERIENCE_PRO_PLAN.slug);
+    });
+
+    it('ignores the requested tier when it is absent or blank', () => {
+        // The pre-HOS-1119 path, which every caller without a picker still
+        // takes. A blank string is "no pick", not an invalid slug: it is what an
+        // untouched form field serialises to.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+
+        expect(resolveCommercePlanSlug({ entityType: CommerceEntityTypeEnum.GASTRONOMY })).toBe(
+            GASTRONOMY_BASICO_PLAN.slug
+        );
+        expect(
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: '   '
+            })
+        ).toBe(GASTRONOMY_BASICO_PLAN.slug);
+    });
+
+    it('lets an explicit pick override the ENV default, not just the shipped one', () => {
+        // Staging and production both set the variable, so a picker that only
+        // beat the code default would do nothing where it matters.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS =
+            'gastronomy:custom-gastro-plan,experience:custom-exp-plan';
+
+        expect(
+            resolveCommercePlanSlug({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                requestedPlanSlug: GASTRONOMY_PRO_PLAN.slug
+            })
+        ).toBe(GASTRONOMY_PRO_PLAN.slug);
+
+        // …and still falls back to the env value when nothing is picked.
+        expect(resolveCommercePlanSlug({ entityType: CommerceEntityTypeEnum.GASTRONOMY })).toBe(
+            'custom-gastro-plan'
         );
     });
 });

@@ -7,9 +7,11 @@
  * and, for the `draft-complete` state, the "Publicar y pagar" CTA that starts
  * the owner's self-checkout — mirrors `PlanPurchaseButton.client.tsx` +
  * `checkout-pending.ts` (sessionStorage) + `CheckoutStatusPoller.client.tsx`
- * (HOS-151), stripped down to what commerce actually needs: no plan picker,
- * no promo codes, no annual/monthly toggle (HOS-166 D-7 — one plan, binary
- * billing).
+ * (HOS-151), stripped down to what commerce actually needs: no promo codes,
+ * no annual/monthly toggle (HOS-166 D-7 — binary billing). A tier picker WAS
+ * added in HOS-1119 (`CommercePlanPicker`, gated by `availablePlans.length >
+ * 1 && !hasVerticalSubscription`) once gastronomy went from one sellable
+ * tier to two — see that prop's doc for the exact condition.
  *
  * Hydration: `client:visible` — this sits inside a listing card in a list,
  * not above-the-fold interactive chrome.
@@ -18,6 +20,7 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { PayerEmailConfirmDialog } from '@/components/billing/PayerEmailConfirmDialog.client';
+import { Dialog } from '@/components/shared/ui/Dialog.client';
 import { useSession } from '@/lib/auth-client';
 import { storePendingCheckoutSubId } from '@/lib/billing/checkout-pending';
 import {
@@ -30,11 +33,13 @@ import {
 } from '@/lib/commerce/missing-field-labels';
 import type { CommerceOwnerListingSummaryWithState } from '@/lib/commerce/owner-listings';
 import { startOwnerListingCheckout } from '@/lib/commerce/owner-listings';
+import type { CommercePlanOption } from '@/lib/commerce/plan-options';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { BrochureDownloadButton } from './BrochureDownloadButton.client';
 import styles from './CommerceListingActions.module.css';
+import { CommercePlanPicker } from './CommercePlanPicker.client';
 
 export interface CommerceListingActionsProps {
     /** The listing summary + completeness preview to render actions for. */
@@ -73,6 +78,21 @@ export interface CommerceListingActionsProps {
      * a step that does nothing.
      */
     readonly ownPreapprovalEnabled?: boolean;
+    /**
+     * Active tiers of this listing's vertical (HOS-1119), resolved SSR-side
+     * by the page via `fetchPublicPlans({ domain: vertical })` +
+     * `filterPlansByCategory(..., 'owner')`.
+     *
+     * Defaults to `[]` — the same safe-degradation posture the page itself
+     * uses on a failed fetch: with 0 or 1 entries the tier picker never
+     * renders and checkout behaves EXACTLY as it did before HOS-1119 (no
+     * `planSlug` sent, backend resolves the vertical's default tier). The
+     * picker only opens when there is a real choice to make AND the owner is
+     * choosing their FIRST subscription for this vertical — an owner who
+     * already holds one changes tiers from `CommercePlanChange` instead,
+     * never from this checkout CTA.
+     */
+    readonly availablePlans?: readonly CommercePlanOption[];
 }
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
@@ -89,12 +109,17 @@ export function CommerceListingActions({
     listing,
     locale,
     hasVerticalSubscription,
-    ownPreapprovalEnabled = false
+    ownPreapprovalEnabled = false,
+    availablePlans = []
 }: CommerceListingActionsProps): JSX.Element {
     const { t } = createTranslations(locale);
     const { data: session } = useSession();
     const [isCheckoutStarting, setIsCheckoutStarting] = useState(false);
     const [showPayerEmailConfirm, setShowPayerEmailConfirm] = useState(false);
+    const [showPlanPicker, setShowPlanPicker] = useState(false);
+    // The tier chosen on the plan picker, carried across the (optional)
+    // payer-email confirmation step until `runCheckout` actually fires.
+    const [pendingPlanSlug, setPendingPlanSlug] = useState<string | undefined>(undefined);
     const [checkoutError, setCheckoutError] = useState<string | null>(null);
     // AC-14/R-5: on a 422 the SERVER's `missing` array is authoritative and
     // overrides the local preview — see `resolveListingCompleteness`'s module
@@ -131,10 +156,11 @@ export function CommerceListingActions({
      * Runs the checkout itself.
      *
      * `payerEmail` is forwarded only when the owner actually went through the
-     * confirmation screen; otherwise nothing is sent and the request is
-     * identical to the pre-HOS-1008 one.
+     * confirmation screen; `planSlug` only when the owner went through the
+     * tier picker (HOS-1119). With both omitted the request is byte-identical
+     * to the pre-HOS-1008 one.
      */
-    async function runCheckout(payerEmail?: string): Promise<void> {
+    async function runCheckout(payerEmail?: string, planSlug?: string): Promise<void> {
         if (isCheckoutStarting) {
             return;
         }
@@ -145,7 +171,8 @@ export function CommerceListingActions({
             const result = await startOwnerListingCheckout({
                 vertical: listing.vertical,
                 listingId: listing.id,
-                ...(payerEmail === undefined ? {} : { payerEmail })
+                ...(payerEmail === undefined ? {} : { payerEmail }),
+                ...(planSlug === undefined ? {} : { planSlug })
             });
 
             if (result.ok) {
@@ -191,6 +218,21 @@ export function CommerceListingActions({
                 return;
             }
 
+            if (result.error.status === 400) {
+                // HOS-1119: the chosen `planSlug` is not a tier of this
+                // vertical — distinct from the generic checkoutError so an
+                // owner who somehow submits a stale/foreign slug gets a
+                // message that points at the plan choice, not at a vague
+                // payment failure.
+                setCheckoutError(
+                    t(
+                        'commerce.owner.checklist.invalidPlanError',
+                        'El plan elegido ya no está disponible. Recargá la página e intentá de nuevo.'
+                    )
+                );
+                return;
+            }
+
             setCheckoutError(
                 t(
                     'commerce.owner.checklist.checkoutError',
@@ -210,12 +252,30 @@ export function CommerceListingActions({
     }
 
     /**
-     * The CTA handler. Opens the payer-email confirmation screen when this
-     * click will really open a MercadoPago checkout; otherwise goes straight
-     * to {@link runCheckout}, which is exactly what happened before HOS-1008.
+     * Whether this click should open the tier picker first (HOS-1119): only
+     * when there is a real choice (more than one active tier) AND the owner
+     * is choosing their FIRST subscription for this vertical. An owner who
+     * already holds one changes tiers from `CommercePlanChange` instead —
+     * offering the picker here too would let them silently re-subscribe at a
+     * different tier through a route the backend does not treat as an
+     * upgrade.
+     */
+    const shouldShowPlanPicker = availablePlans.length > 1 && !hasVerticalSubscription;
+
+    /**
+     * The CTA handler. Opens the tier picker when there is a real choice to
+     * make (HOS-1119); otherwise opens the payer-email confirmation screen
+     * when this click will really open a MercadoPago checkout; otherwise goes
+     * straight to {@link runCheckout}, which is exactly what happened before
+     * HOS-1008.
      */
     function handlePublishAndPay(): void {
         if (isCheckoutStarting) {
+            return;
+        }
+        if (shouldShowPlanPicker) {
+            setCheckoutError(null);
+            setShowPlanPicker(true);
             return;
         }
         if (needsPayerEmailConfirm) {
@@ -226,10 +286,22 @@ export function CommerceListingActions({
         void runCheckout();
     }
 
+    /** Called with the chosen tier slug once the owner confirms the picker. */
+    function handlePlanPickerConfirm(planSlug: string): void {
+        setShowPlanPicker(false);
+        setPendingPlanSlug(planSlug);
+        if (needsPayerEmailConfirm) {
+            setCheckoutError(null);
+            setShowPayerEmailConfirm(true);
+            return;
+        }
+        void runCheckout(undefined, planSlug);
+    }
+
     /** Called with the confirmed (possibly edited) email. */
     function handlePayerEmailConfirmed(email: string): void {
         setShowPayerEmailConfirm(false);
-        void runCheckout(email);
+        void runCheckout(email, pendingPlanSlug);
     }
 
     if (state.kind === 'published') {
@@ -401,6 +473,28 @@ export function CommerceListingActions({
                 onCancel={() => setShowPayerEmailConfirm(false)}
                 onConfirm={handlePayerEmailConfirmed}
             />
+
+            {/*
+             * HOS-1119: the tier picker, shown BEFORE the payer-email
+             * confirmation (per `handlePublishAndPay`/`handlePlanPickerConfirm`)
+             * only when there is a real choice and this is the owner's first
+             * subscription for the vertical (`shouldShowPlanPicker`). Mounted
+             * unconditionally and toggled via `isOpen`, same shape as the
+             * payer-email dialog above.
+             */}
+            <Dialog
+                isOpen={showPlanPicker}
+                onClose={() => setShowPlanPicker(false)}
+                ariaLabel={t('commerce.owner.planPicker.title', 'Elegí tu plan')}
+                size="md"
+            >
+                <CommercePlanPicker
+                    plans={availablePlans}
+                    locale={locale}
+                    onConfirm={handlePlanPickerConfirm}
+                    onCancel={() => setShowPlanPicker(false)}
+                />
+            </Dialog>
         </div>
     );
 }

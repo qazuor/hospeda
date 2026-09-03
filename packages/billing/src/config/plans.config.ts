@@ -649,15 +649,22 @@ function commerceVerticalTier(input: {
  * and premium stays reserved for a future step that carries genuinely more.
  *
  * `isActive` here means "seeded, priced, and a valid subscription target" —
- * it does NOT by itself mean "reachable by checkout". Exactly ONE plan slug
- * per vertical is ever resolved by a real checkout, via
+ * and since HOS-1119 that is ALSO what makes a tier reachable. A commerce
+ * checkout still turns a vertical into a plan slug in exactly one place,
  * `resolveCommercePlanSlug` (`apps/api/src/services/commerce-plan-resolver.ts`),
- * reading {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL} or the
- * `HOSPEDA_COMMERCE_PLAN_SLUGS` env override. Commerce has no plan-picker and
- * no plan-change/upgrade route, so a second `isActive` tier existing in this
- * catalogue changes nothing about which plan a new gastronomy owner actually
- * lands on until that resolver is pointed at it. See `GASTRONOMY_PRO_PLAN`'s
- * own doc.
+ * but that resolver now takes the buyer's PICK and validates it against
+ * {@link COMMERCE_PLANS_BY_VERTICAL}; {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL}
+ * (or the `HOSPEDA_COMMERCE_PLAN_SLUGS` env override) is what a checkout that
+ * asks for nothing still gets.
+ *
+ * Until HOS-1119 the paragraph above said the opposite — commerce had no plan
+ * picker and no plan-change route, so a second `isActive` tier changed nothing
+ * about which plan a new owner landed on. That is the hole HOS-1119 closed:
+ * `gastronomy-pro` had been active, priced and trial-carrying since HOS-895 and
+ * nobody could buy it. There is now a tier picker on the checkout and a
+ * per-vertical upgrade route
+ * (`POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`,
+ * upgrades only). See `GASTRONOMY_PRO_PLAN`'s own doc.
  *
  * The still-disabled tier carries `monthlyPriceArs: 0` when it has not been
  * priced — shipping it inactive is the same precedent {@link AI_SUPPORT_ADDON}
@@ -716,17 +723,21 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
  * defaults only ever described "not sellable yet", not a deliberate choice to
  * sell without one.
  *
- * **Activating this row in the catalogue is not the same as making it
- * reachable.** `resolveCommercePlanSlug` (`apps/api/src/services/
- * commerce-plan-resolver.ts`) is the ONE place a commerce checkout turns a
- * vertical into a plan slug, and it always resolves to exactly ONE slug per
- * vertical — `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy` (this file,
- * still `GASTRONOMY_BASICO_PLAN.slug`) unless `HOSPEDA_COMMERCE_PLAN_SLUGS` is
- * set, which it is on staging/production. There is no plan-picker and no
- * commerce plan-change/upgrade route (unlike accommodation), so this plan
- * being `isActive` makes it a valid, priced, seeded row — not a plan any
- * checkout will actually put someone on until that resolver is pointed at it.
- * See HOS-895 PR2's PR description for the operational step this implies.
+ * **Reachable since HOS-1119, and it was not before.** For one release this row
+ * was active, priced, trial-carrying and unbuyable: `resolveCommercePlanSlug`
+ * (`apps/api/src/services/commerce-plan-resolver.ts`) had exactly one answer per
+ * vertical, and no surface could ask for another. That is worth remembering as a
+ * shape rather than an anecdote — activating a plan row and making it sellable
+ * are two different changes, and the first one produces no error, no log and no
+ * failing test on its own (HOS-1118).
+ *
+ * The resolver is still the ONE place a vertical becomes a plan slug. It now
+ * takes the buyer's pick and refuses any slug that is not a tier of the
+ * requesting vertical, which is what keeps gastronomy and experiences on
+ * separate MercadoPago `preapproval_plan`s. `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy`
+ * (still `GASTRONOMY_BASICO_PLAN.slug`, and overridden by
+ * `HOSPEDA_COMMERCE_PLAN_SLUGS` on staging/production) remains what a checkout
+ * that picks nothing gets — so no environment moved when this became reachable.
  */
 export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-pro',
@@ -879,6 +890,56 @@ export const DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL = {
     gastronomy: GASTRONOMY_BASICO_PLAN.slug,
     experience: EXPERIENCE_BASICO_PLAN.slug
 } as const;
+
+/**
+ * Every tier of each commerce vertical, in display order (HOS-1119).
+ *
+ * {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL} above answers "which ONE plan
+ * does a vertical fall back to"; this answers the question HOS-1119 needed and
+ * nothing could: "which plans is a vertical ALLOWED to be on at all". The two
+ * are complementary, not alternatives — the default is still exactly what a
+ * checkout that asks for nothing gets.
+ *
+ * Built from {@link ALL_GASTRONOMY_PLANS} / {@link ALL_EXPERIENCE_PLANS} rather
+ * than re-listing the tiers, so a seventh tier added to either array is
+ * selectable by construction and cannot be forgotten here.
+ */
+export const COMMERCE_PLANS_BY_VERTICAL: Readonly<
+    Record<CommerceVertical, readonly PlanDefinition[]>
+> = {
+    gastronomy: ALL_GASTRONOMY_PLANS,
+    experience: ALL_EXPERIENCE_PLANS
+} as const;
+
+/**
+ * Finds the commerce plan definition a vertical knows by that slug (HOS-1119).
+ *
+ * **This is a MEMBERSHIP test, not a sellability test, and the split is the
+ * point.** It answers only "does this slug name a tier of this vertical" — a
+ * structural fact fixed in this catalogue that no operator can change at
+ * runtime. Whether that tier is currently *sellable* is a `billing_plans.active`
+ * question, read from the DATABASE at checkout time, exactly as
+ * `loadVerticalBaseLimit` reads the cap from the database rather than from this
+ * file: activating or retiring a tier must take effect without a deploy.
+ *
+ * Keeping membership in code is what preserves HOS-688 AC-35's real invariant:
+ * a gastronomy checkout can never be pointed at an experience plan, and so never
+ * at the other vertical's MercadoPago `preapproval_plan`. That is the property
+ * the per-vertical free trial rests on, and it is now enforced by a lookup
+ * instead of by there having been only one possible answer.
+ *
+ * @param input.vertical - The vertical the request belongs to.
+ * @param input.slug - The plan slug the caller asked for.
+ * @returns The matching {@link PlanDefinition}, or `undefined` when the slug
+ *   names no tier of that vertical — including when it names a tier of the OTHER
+ *   vertical, which is the case that matters.
+ */
+export function findCommercePlanForVertical(input: {
+    vertical: CommerceVertical;
+    slug: string;
+}): PlanDefinition | undefined {
+    return COMMERCE_PLANS_BY_VERTICAL[input.vertical].find((plan) => plan.slug === input.slug);
+}
 
 /**
  * Dedicated partner-directory plan (SPEC-271).
