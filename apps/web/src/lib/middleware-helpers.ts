@@ -47,6 +47,23 @@ export interface LocaleExtractionResult {
  * is two letters. A future two-letter route segment would be swallowed by this
  * check — which is a reason to not create one, since it would collide with a
  * language tag for visitors regardless of what this function does.
+ *
+ * **That segment now exists: `/qr/` (HOS-981).** The warning above was right —
+ * `qr` matches this pattern, so this function classifies it as an unsupported
+ * LANGUAGE and returns a `restOfPath` with the `qr` REPLACED, which would send
+ * `/qr/Live2345/` to `/es/Live2345/` and a 404. It was created anyway, because
+ * the segment is printed on physical signs and cannot carry a locale.
+ *
+ * It is resolved OUTSIDE this function, by {@link isLanguageNeutralRoute} /
+ * `LANGUAGE_NEUTRAL_PREFIXES`, which makes the middleware skip the locale
+ * redirect for that prefix — so this pattern still matches `qr` and simply
+ * never gets to act on it. Do NOT "fix" the collision by special-casing `qr`
+ * here: the exemption is the fix, and narrowing this regex would change how
+ * every unsupported two-letter language tag behaves for every visitor.
+ *
+ * The constraint the warning states still holds for anything new: a two-letter
+ * top-level segment needs an entry in `LANGUAGE_NEUTRAL_PREFIXES`, or it is
+ * silently eaten.
  */
 const LOCALE_SHAPED_SEGMENT = /^[a-z]{2}(-[a-z]{2})?$/i;
 

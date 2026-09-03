@@ -971,12 +971,33 @@ describe('middleware onRequest — HOS-981 /qr/ is language-neutral', () => {
 
     it('control: an ordinary locale-less path is STILL 301-redirected', async () => {
         // The exemption must not have widened into "no path needs a locale".
+        // Note this path's first segment is a WORD, so it takes the "no locale
+        // segment at all" branch and is kept whole — see the next test for what
+        // happens to a two-letter one, which is the case `/qr/` actually is.
         const context = createContext({ pathname: '/destinos/colon/' });
         const next = vi.fn().mockResolvedValue(new Response('ok'));
 
         await onRequest(context as any, next);
 
         expect(context.redirect).toHaveBeenCalledWith('/es/destinos/colon/', 301);
+    });
+
+    it('shows WHY the exemption is load-bearing: a two-letter segment is EATEN, not prefixed', async () => {
+        // This is the behaviour that makes removing `/qr/` from
+        // LANGUAGE_NEUTRAL_PREFIXES a 404 rather than an extra hop, and it is
+        // asserted on a segment that is NOT exempt so it can actually run.
+        //
+        // `xx` is two letters, so LOCALE_SHAPED_SEGMENT matches it and
+        // extractLocaleFromPath treats it as a request for an unsupported
+        // LANGUAGE — which REPLACES the segment instead of keeping it. `qr` is
+        // shaped identically, so unexempted it would redirect to
+        // `/es/Live2345/` with the `qr` gone, not to `/es/qr/Live2345/`.
+        const context = createContext({ pathname: '/xx/Live2345/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/Live2345/', 301);
     });
 
     it('control: a path merely CONTAINING /qr/ is not exempt', async () => {

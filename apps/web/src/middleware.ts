@@ -302,12 +302,19 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // attribution is gone before analytics sees the first pageview.
     //
     // A language-neutral route is the one exception (HOS-981). `/qr/{slug}/` is
-    // printed on a physical sign, so its URL is fixed in ink: redirecting it to
-    // `/es/qr/{slug}/` would both add a hop in front of somebody standing at a
-    // sign and mean the print run had silently chosen a language for every
-    // future scanner. Only the redirect is suppressed — the request continues
-    // down the same pipeline as any other, so the trailing-slash rule, the 404
-    // rewrite and the security headers all still apply to it.
+    // printed on a physical sign, so its URL is fixed in ink and cannot acquire
+    // a locale after the fact.
+    //
+    // Without the exception this does NOT cost a hop — it costs the route. `qr`
+    // is two letters, so it matches `LOCALE_SHAPED_SEGMENT` and takes the
+    // "unsupported language" branch of `extractLocaleFromPath`, which REPLACES
+    // the segment instead of keeping it: `restOfPath` comes back as
+    // `/{slug}/` and the redirect lands on `/es/{slug}/`, a 404. The `qr` is
+    // eaten. Do not read this guard as a latency optimisation.
+    //
+    // Only the redirect is suppressed — the request continues down the same
+    // pipeline as any other, so the trailing-slash rule, the 404 rewrite and
+    // the security headers all still apply to it.
     if (pathLocale === null && !isLanguageNeutralRoute({ path })) {
         const redirectUrl = buildLocaleRedirect({
             restOfPath: restOfPath || path,
