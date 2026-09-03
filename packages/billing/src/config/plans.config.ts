@@ -536,11 +536,15 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
 /**
  * Monthly AI-chat quota of a commerce tier that GRANTS the chat (HOS-400).
  *
- * 250 calls/month, borne by the listing's owner. The number is the
- * accommodation `owner-pro` rung (`MAX_AI_CHAT_PER_MONTH: 250`) rather than a
- * new ladder: a restaurant's ficha and a mid-tier host's ficha field roughly the
- * same volume of visitor questions, and inventing a third scale for commerce
- * would have to be justified by traffic nobody has measured yet.
+ * 1250 calls/month, borne by the listing's owner — owner decision, 2026-09-03.
+ *
+ * The number is the accommodation PREMIUM rung of the existing ladder
+ * (50 / 250 / 1250 for básico / pro / premium) rather than a new scale. The
+ * alternative put to the owner was the `-pro` rung (250), on the argument that a
+ * commerce premium covers ONE listing while an accommodation premium covers an
+ * unlimited portfolio, so the same rung buys far more per listing here. They
+ * chose to match the premium rung regardless: premium is premium, whatever the
+ * vertical.
  *
  * Shared by both verticals on purpose. Nothing yet distinguishes what a diner
  * asks a restaurant from what a traveller asks an excursion, so a single
@@ -551,7 +555,7 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  * so an operator override stands and changing it in production is a
  * data-migration, not a deploy.
  */
-export const COMMERCE_AI_CHAT_PER_MONTH = 250;
+export const COMMERCE_AI_CHAT_PER_MONTH = 1250;
 
 /**
  * Builds one tier of a per-vertical commerce catalogue (HOS-688 §6.8).
