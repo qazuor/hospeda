@@ -752,7 +752,14 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-895 — the first thing that separates `-pro` from `-basico` by more
     // than its name: the structured carta. Owner decision, `pro` and upwards.
-    extraEntitlements: [EntitlementKey.MANAGE_GASTRONOMY_MENU]
+    //
+    // HOS-1041 — and the menú del día, which is the second. Owner decision,
+    // 2026-09-01, same tier: an operational feature used daily by whoever uses
+    // it. A separate key from the carta on purpose (see the enum member).
+    extraEntitlements: [
+        EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+    ]
 });
 
 /**
@@ -806,6 +813,11 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        // HOS-1041 — the menú del día, a `-pro` capability, repeated here for
+        // the same reason the carta above it is: these arrays are literal per
+        // plan, so omitting it would leave the dearer tier missing a feature
+        // its cheaper neighbour has.
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
         EntitlementKey.MENU_ITEM_PHOTOS
     ]
 });

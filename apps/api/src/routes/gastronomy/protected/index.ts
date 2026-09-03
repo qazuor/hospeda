@@ -25,10 +25,12 @@ import { protectedGetGastronomyBrochureRoute } from './brochure';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
 import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
+import { protectedGetGastronomyDailySpecialsRoute } from './getDailySpecials';
 import { protectedGetGastronomyMediaRoute } from './getMedia';
 import { protectedGetGastronomyMenuRoute } from './getMenu';
 import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedPatchGastronomyRoute } from './patch';
+import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
@@ -90,6 +92,18 @@ app.route('/', protectedDeleteGastronomyMenuFileRoute);
 // tier above. Returns the asset; the association is written by PUT /{id}/menu,
 // because a dish's id does not survive that write.
 app.route('/', protectedUploadGastronomyMenuItemPhotoRoute);
+
+// Menú del día (HOS-1041) — a dish with its own validity window. Registered
+// before /{id} for the same DEFENSIVE reason as the entries above.
+//
+// GET /{id}/daily-specials — read them, UNFILTERED by the window. NOT
+// entitlement-gated: every gastronomy tier sees its own specials, and only
+// publishing them is paid.
+app.route('/', protectedGetGastronomyDailySpecialsRoute);
+
+// PUT /{id}/daily-specials — replace them. Gated on
+// MANAGE_GASTRONOMY_DAILY_SPECIAL (gastronomy-pro and above).
+app.route('/', protectedPutGastronomyDailySpecialsRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetGastronomyByIdRoute);

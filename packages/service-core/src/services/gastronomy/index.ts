@@ -15,6 +15,12 @@
  * - Types — GastronomyHookState
  */
 
+// Daily-special helpers (HOS-1041) — the menú del día, read whole and written
+// whole. The expiry is the `validOn` filter on the read, not a cron.
+export {
+    getGastronomyDailySpecials,
+    replaceGastronomyDailySpecials
+} from './gastronomy.daily-specials';
 // FAQ helpers
 export {
     addGastronomyFaq,
@@ -38,11 +44,14 @@ export {
 } from './gastronomy.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
-// Menu entitlement resolvers (HOS-895 PR2, widened by HOS-1045) — live
-// owner-plan check for the public detail page's display gate
+// Menu entitlement resolvers (HOS-895 PR2; generalised by HOS-1041, widened by
+// HOS-1045) — live owner-plan checks for the public detail page's display
+// gates. All four share ONE three-query lookup, so they cannot drift.
 export {
     type GastronomyMenuGrants,
     resolveOwnerGastronomyMenuGrants,
+    resolveOwnerGrantsGastronomyDailySpecial,
+    resolveOwnerGrantsGastronomyEntitlement,
     resolveOwnerGrantsGastronomyMenuManagement
 } from './gastronomy.menu-entitlement';
 // Permission helpers

@@ -33,6 +33,21 @@
  * `lib/middleware-helpers.ts`), so the page would render unstyled in prod while
  * looking perfect locally. Do not add `is:inline` here.
  *
+ * KNOWN STALE COPY, NOT FIXED HERE (noted by HOS-1041, needs an owner
+ * decision). The printable-PDF bullet still ends with "el único plan que se
+ * puede comprar ahora es el Básico". That stopped being true before HOS-1041
+ * touched this file: HOS-895 PR2 activated `gastronomy-pro` for sale
+ * (`isActive: true`, ARS 45.000/mo) and HOS-1119 made it actually reachable
+ * from checkout. So the page under-sells the tier that two features — the
+ * structured carta and now the menú del día — are sold on.
+ *
+ * HOS-1041 deliberately did NOT rewrite that sentence. This page's copy is the
+ * owner-approved artifact verbatim (see above) and what the business says it
+ * sells is an owner decision, not an implementer's. The menú del día bullet
+ * added below therefore states its tier and says nothing about buyability,
+ * rather than contradicting the neighbouring line. Fixing the stale sentence is
+ * a one-line follow-up once the owner confirms the wording.
+ *
  * @route /{lang}/presentacion/gastronomia/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
  */
@@ -212,6 +227,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gas
       <li><span class="tick">&check;</span><span>Teléfono, WhatsApp, email, redes y tu ubicación en el mapa.</span></li>
       <li><span class="tick">&check;</span><span><strong>Preguntas frecuentes propias</strong>: si aceptás tarjeta, si hay estacionamiento, si se puede ir con perro, o cualquier cosa que te pregunten seguido por teléfono.</span></li>
       <li><span class="tick">&check;</span><span>Tu página en español, inglés y portugués.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>El menú del día, con fecha de vencimiento</strong>: cargás el plato del día o la sugerencia del chef, le ponés hasta cuándo vale, y cuando esa fecha pasa <strong>deja de mostrarse solo</strong>. Nadie tiene que acordarse de sacarlo — que es justamente lo que hoy no pasa, y por eso las fichas terminan anunciando el pescado del martes pasado. <strong>Va en el escalón Profesional.</strong></span></li>
       <li><span class="tick tick--no">!</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el folleto del mostrador del hotel, el volante de la cabaña o la pila de la oficina de turismo — el único lugar donde tu ficha funciona sin internet. Ya está construida, pero <strong>va en el escalón Premium</strong>, que hoy no está a la venta: el único plan que se puede comprar ahora es el Básico.</span></li>
     </ul>
     <p class="subhead">

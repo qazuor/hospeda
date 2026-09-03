@@ -138,7 +138,8 @@
                 "meetingPoint": "Meeting point",
                 "practicalInfo": "Practical details",
                 "contactSocial": "Contact and social",
-                "menu": "Menu"
+                "menu": "Menu",
+                "dailySpecials": "Today's menu"
             },
             "sections": {
                 "type": "Category",
@@ -346,6 +347,30 @@
                 "photoAttached": "Photo added. Remember to save the menu.",
                 "photoUploadError": "The dish photo could not be uploaded.",
                 "photoLocked": "Photos per dish are available on the Premium plan. You can remove the photos and save the menu anyway."
+            },
+            "dailySpecials": {
+                "title": "Today's menu",
+                "intro": "The dish of the day or the chef's suggestion. Each one runs until the date you set and then stops showing on its own — you never have to take it down.",
+                "newSpecial": "New daily special",
+                "titleLabel": "Dish",
+                "titlePlaceholder": "Milanesa napolitana with mashed potato",
+                "descriptionLabel": "Details",
+                "descriptionPlaceholder": "With a side and dessert",
+                "priceLabel": "Price in pesos",
+                "pricePlaceholder": "Price",
+                "from": "From",
+                "until": "Until",
+                "moveUp": "Move up",
+                "moveDown": "Move down",
+                "remove": "Remove",
+                "add": "Add daily special",
+                "save": "Save today's menu",
+                "saving": "Saving…",
+                "saved": "Today's menu saved.",
+                "saveError": "Today's menu could not be saved.",
+                "locked": "Today's menu is available from the Professional plan.",
+                "expired": "Expired — not being shown.",
+                "scheduled": "Scheduled — not shown yet."
             }
         },
         "checklist": {
@@ -393,7 +418,8 @@
             "manageGastronomyMenu": "Structured menu",
             "menuItemPhotos": "Photo per dish",
             "manageExperienceDirections": "Map and how to get there",
-            "issueExperienceCertificate": "Experience certificates"
+            "issueExperienceCertificate": "Experience certificates",
+            "manageGastronomyDailySpecial": "Today's menu"
         },
         "create": {
             "pickVertical": {
