@@ -300,3 +300,93 @@ describe('the per-dish photo (HOS-1045)', () => {
         expect(data.photoUrl).toBe('https://res.cloudinary.com/hospeda/empanada.jpg');
     });
 });
+
+describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () => {
+    it('accepts a section and dish carrying a full {es,en,pt} translation', () => {
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+            sections: [
+                {
+                    name: 'Entradas',
+                    nameI18n: { es: 'Entradas', en: 'Starters', pt: 'Entradas' },
+                    items: [
+                        {
+                            name: 'Empanada de carne',
+                            nameI18n: {
+                                es: 'Empanada de carne',
+                                en: 'Beef empanada',
+                                pt: 'Empanada de carne'
+                            },
+                            description: 'Con salsa criolla',
+                            descriptionI18n: {
+                                es: 'Con salsa criolla',
+                                en: 'With criolla sauce',
+                                pt: 'Com molho crioulo'
+                            }
+                        }
+                    ]
+                }
+            ]
+        });
+
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && parsed.data.sections[0]?.nameI18n).toEqual({
+            es: 'Entradas',
+            en: 'Starters',
+            pt: 'Entradas'
+        });
+    });
+
+    it('accepts a document with no translations at all — the ordinary `-pro` case', () => {
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+            sections: [{ name: 'Entradas', items: [{ name: 'Empanada' }] }]
+        });
+
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && parsed.data.sections[0]?.nameI18n).toBeUndefined();
+    });
+
+    it('rejects a translation missing the Portuguese leg — all three locales travel together', () => {
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+            sections: [
+                {
+                    name: 'Entradas',
+                    items: [
+                        {
+                            name: 'Empanada',
+                            nameI18n: { es: 'Empanada', en: 'Empanada' }
+                        }
+                    ]
+                }
+            ]
+        });
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it('never publishes photoPublicId alongside a translation, entitled or not', () => {
+        // Guards against a mutation that made the translation gate accidentally
+        // widen the public projection's own omission.
+        const parsed = GastronomyMenuItemPublicSchema.safeParse({
+            id: '33333333-3333-4333-8333-333333333333',
+            sectionId: '11111111-1111-4111-8111-111111111111',
+            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            name: 'Empanada',
+            description: null,
+            nameI18n: { es: 'Empanada', en: 'Empanada', pt: 'Empanada' },
+            descriptionI18n: null,
+            priceCents: 250_000,
+            isAvailable: true,
+            photoUrl: null,
+            photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+            photoAlt: null,
+            displayOrder: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+
+        expect(parsed.success).toBe(true);
+        const data = (parsed.success ? parsed.data : {}) as Record<string, unknown>;
+        expect('photoPublicId' in data).toBe(false);
+        expect(data.nameI18n).toEqual({ es: 'Empanada', en: 'Empanada', pt: 'Empanada' });
+    });
+});
