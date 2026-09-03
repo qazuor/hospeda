@@ -3124,6 +3124,43 @@
                 }
             }
         },
+        "menu": {
+            "sections": {
+                "max": "The menu cannot have more than {{max}} sections"
+            }
+        },
+        "menuFileKind": {
+            "invalid": "The menu file type is not valid"
+        },
+        "menuFileUrl": {
+            "invalid": "The menu file URL is not valid"
+        },
+        "menuItem": {
+            "name": {
+                "min": "The dish name is required",
+                "max": "The dish name cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The dish description cannot exceed {{max}} characters"
+            },
+            "priceCents": {
+                "int": "The dish price must be a whole number of cents",
+                "min": "The dish price cannot be negative",
+                "max": "The dish price exceeds the maximum allowed"
+            }
+        },
+        "menuSection": {
+            "name": {
+                "min": "The section name is required",
+                "max": "The section name cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The section description cannot exceed {{max}} characters"
+            },
+            "items": {
+                "max": "A section cannot have more than {{max}} dishes"
+            }
+        },
         "menuUrl": {
             "httpsRequired": "La URL del menú debe usar HTTPS",
             "invalid": "La URL del menú no es válida"

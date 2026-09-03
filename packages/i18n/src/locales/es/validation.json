@@ -3124,6 +3124,43 @@
                 }
             }
         },
+        "menu": {
+            "sections": {
+                "max": "La carta no puede tener más de {{max}} secciones"
+            }
+        },
+        "menuFileKind": {
+            "invalid": "El tipo de archivo del menú no es válido"
+        },
+        "menuFileUrl": {
+            "invalid": "La URL del archivo del menú no es válida"
+        },
+        "menuItem": {
+            "name": {
+                "min": "El nombre del plato es obligatorio",
+                "max": "El nombre del plato no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción del plato no puede superar los {{max}} caracteres"
+            },
+            "priceCents": {
+                "int": "El precio del plato debe ser un número entero de centavos",
+                "min": "El precio del plato no puede ser negativo",
+                "max": "El precio del plato supera el máximo permitido"
+            }
+        },
+        "menuSection": {
+            "name": {
+                "min": "El nombre de la sección es obligatorio",
+                "max": "El nombre de la sección no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción de la sección no puede superar los {{max}} caracteres"
+            },
+            "items": {
+                "max": "Una sección no puede tener más de {{max}} platos"
+            }
+        },
         "menuUrl": {
             "httpsRequired": "La URL del menú debe usar HTTPS",
             "invalid": "La URL del menú no es válida"

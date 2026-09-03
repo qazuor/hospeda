@@ -1253,6 +1253,17 @@ export function createDbMock() {
         GastronomyFaqModel: GenericMockModel,
         gastronomyFaqModel: new GenericMockModel(),
 
+        // HOS-895: the carta. `gastronomy.menu.ts` constructs both of these
+        // itself, exactly as the FAQ helper constructs `GastronomyFaqModel`, so
+        // the CLASS has to be here or the menu routes throw "not a constructor"
+        // at request time rather than failing a visible assertion. This object
+        // is an explicit inventory of `@repo/db`: an export missing from it
+        // arrives as `undefined`, not as an import error.
+        GastronomyMenuSectionModel: GenericMockModel,
+        gastronomyMenuSectionModel: new GenericMockModel(),
+        GastronomyMenuItemModel: GenericMockModel,
+        gastronomyMenuItemModel: new GenericMockModel(),
+
         // HOS-277: AllianceLeadModel — instantiated at module scope by
         // AllianceLeadService when the alliance lead routes load. A GenericMockModel
         // no-op stub is sufficient for route-level permission-gate tests (no real DB

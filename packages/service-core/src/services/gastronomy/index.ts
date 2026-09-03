@@ -6,6 +6,7 @@
  * - {@link GastronomyReviewService} — review create / moderate / list / rating recompute
  * - FAQ helpers — addGastronomyFaq / updateGastronomyFaq / removeGastronomyFaq /
  *   listGastronomyFaqs / reorderGastronomyFaqs
+ * - Menu helpers (HOS-895) — getGastronomyMenu / replaceGastronomyMenu
  * - Media helpers (HOS-372) — addGastronomyMedia / removeGastronomyMedia /
  *   reorderGastronomyMedia / getGastronomyMedia / setFeaturedGastronomyMedia,
  *   plus the composed-media read attach helpers
@@ -35,6 +36,8 @@ export {
     attachComposedGastronomyMedia,
     attachComposedGastronomyMediaList
 } from './gastronomy.media-read';
+// Menu helpers (HOS-895) — the carta, read whole and written whole
+export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
 // Permission helpers
 export {
     checkGastronomyCanAdminList,

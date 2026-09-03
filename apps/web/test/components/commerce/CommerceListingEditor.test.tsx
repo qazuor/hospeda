@@ -92,7 +92,9 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
 }));
 
 vi.mock('../../../src/lib/api/client', () => ({
-    apiClient: { patch: vi.fn() }
+    apiClient: {
+        patch: vi.fn()
+    }
 }));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({

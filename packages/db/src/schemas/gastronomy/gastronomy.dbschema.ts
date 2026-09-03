@@ -13,6 +13,7 @@ import {
     integer,
     jsonb,
     numeric,
+    pgEnum,
     pgTable,
     text,
     timestamp,
@@ -28,9 +29,28 @@ import {
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { gastronomyFaqs } from './gastronomy_faq.dbschema.ts';
+import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
 import { gastronomyReviews } from './gastronomy_review.dbschema.ts';
 import { rGastronomyAmenity } from './r_gastronomy_amenity.dbschema.ts';
 import { rGastronomyFeature } from './r_gastronomy_feature.dbschema.ts';
+
+/**
+ * What kind of file a venue uploaded as its menu (HOS-895).
+ *
+ * - `image` — a photo or scan of the printed menu, the overwhelmingly common
+ *   case for a small restaurant.
+ * - `pdf` — the same thing, already digital, and the only one of the two that
+ *   can carry several pages in one file.
+ *
+ * An enum rather than a MIME string or an extension sniffed off the URL: the
+ * public page has to decide between an `<img>` and a document link, and a
+ * decision taken from the tail of a Cloudinary URL is a decision that breaks
+ * the first time a delivery transformation is appended to it.
+ */
+export const GastronomyMenuFileKindPgEnum = pgEnum('gastronomy_menu_file_kind_enum', [
+    'image',
+    'pdf'
+]);
 
 /**
  * Gastronomy table — commerce listings for food and beverage venues (SPEC-239).
@@ -59,8 +79,38 @@ export const gastronomies = pgTable(
         type: GastronomyTypePgEnum('type').notNull(),
         /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
         priceRange: PriceRangePgEnum('price_range'),
-        /** Optional URL to the venue's online menu. */
+        /**
+         * Optional URL to the venue's online menu — the link the owner already
+         * publishes somewhere else.
+         *
+         * Since HOS-895 this is ONE of three ways a venue can show its menu,
+         * not the only one. The other two are the structured carta
+         * (`gastronomy_menu_sections` + `gastronomy_menu_items`) and the
+         * uploaded file below. All three may be set at once and none is
+         * mandatory: an owner who does not want to type forty dishes must
+         * still be able to publish.
+         */
         menuUrl: text('menu_url'),
+        /**
+         * Public URL of an uploaded photo or PDF of the menu (HOS-895).
+         *
+         * Written by the upload route in the SAME request that stores the file,
+         * which is the whole reason the column is written server-side rather
+         * than diffed into the editor's PATCH body: an owner who uploads and
+         * then walks away without saving used to leave the asset billing in
+         * Cloudinary with nothing pointing at it — the orphan HOS-372 built
+         * `gastronomy_media` to stop.
+         */
+        menuFileUrl: text('menu_file_url'),
+        /**
+         * Provider-side identifier of {@link menuFileUrl}, kept so the delete
+         * route can destroy the asset instead of merely forgetting its URL.
+         * Nullable for the same reason the URL is; the two are set and cleared
+         * together.
+         */
+        menuFilePublicId: text('menu_file_public_id'),
+        /** Whether {@link menuFileUrl} is an image or a PDF. */
+        menuFileKind: GastronomyMenuFileKindPgEnum('menu_file_kind'),
         // Jsonb grouped columns (matching accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
@@ -155,7 +205,8 @@ export const gastronomiesRelations = relations(gastronomies, ({ one, many }) => 
     amenities: many(rGastronomyAmenity, { relationName: 'gastronomyToAmenity' }),
     features: many(rGastronomyFeature, { relationName: 'gastronomyToFeature' }),
     reviews: many(gastronomyReviews),
-    faqs: many(gastronomyFaqs)
+    faqs: many(gastronomyFaqs),
+    menuSections: many(gastronomyMenuSections)
 }));
 
 /** Type-inferred insert type for gastronomy rows. */

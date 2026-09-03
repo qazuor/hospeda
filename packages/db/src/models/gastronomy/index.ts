@@ -2,6 +2,8 @@ export * from './gastronomy.model.ts';
 export * from './gastronomy-catalog-filters.ts';
 export * from './gastronomyFaq.model.ts';
 export * from './gastronomyMedia.model.ts';
+export * from './gastronomyMenuItem.model.ts';
+export * from './gastronomyMenuSection.model.ts';
 export * from './gastronomyReview.model.ts';
 export * from './rGastronomyAmenity.model.ts';
 export * from './rGastronomyFeature.model.ts';

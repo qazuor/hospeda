@@ -39,13 +39,32 @@ const ROUTE_FILES = readdirSync(ROUTES_DIR).filter((file) => file.endsWith('.ast
  * Both share one `[vertical]` route tree, so the experience-only pages are real
  * files that a gastronomy request redirects out of rather than files that do not
  * exist. The registry is what refuses them, not the filesystem.
+ *
+ * A REAL union since HOS-895, not the experience build alone. That shortcut was
+ * correct only while every vertical-exclusive section belonged to the same
+ * vertical: `carta` exists for gastronomy and not for experiences, so the
+ * experience build no longer contains every slug that has a file. Reading it
+ * alone made `carta.astro` look like a route matching no registry section —
+ * the guard failing on the exact drift it exists to catch, with the drift
+ * being the guard's own assumption.
  */
-const ALL_SECTIONS = buildCommerceEditorSections({ vertical: 'experience' });
+const ALL_SECTIONS = [
+    ...new Map(
+        (['gastronomy', 'experience'] as const)
+            .flatMap((vertical) => buildCommerceEditorSections({ vertical }))
+            .map((section) => [section.slug, section] as const)
+    ).values()
+];
 
 /** Components that must appear on exactly one route each. */
 const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     MediaSection: 'fotos.astro',
     CommerceFaqManager: 'preguntas.astro',
+    // HOS-895. Listed for the same reason as the two above: the panel fetches
+    // its own carta on mount, so a stray re-import onto another route would put
+    // a `GET .../menu` on a page that does not show one — the weight the split
+    // was meant to remove, re-added with nothing failing.
+    CommerceMenuManager: 'carta.astro',
     EditorHub: 'index.astro'
 };
 

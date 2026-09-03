@@ -1,0 +1,194 @@
+/* CommerceMenuManager.module.css — HOS-895 */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1.5rem);
+}
+
+.heading {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0;
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+.subheading {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.intro,
+.message {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ── The uploaded photo / PDF ─────────────────────────────────────────── */
+
+.fileBlock,
+.sectionsBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+}
+
+.fileRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 1rem);
+    flex-wrap: wrap;
+}
+
+.fileLink {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    /* `--brand-primary` is the link colour every other editor panel uses
+       (RichTextEditor, BasicInfoSection, PlanEntitlementGate). */
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
+.uploadLabel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+/* ── The structured carta ─────────────────────────────────────────────── */
+
+.sectionCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    padding: var(--space-3, 1rem);
+    margin: 0;
+}
+
+.sectionHead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+/*
+ * The dish row wraps rather than scrolls: a name, a description, a price and a
+ * checkbox do not fit one narrow phone line, and a horizontally scrolling form
+ * row hides controls the owner has to reach.
+ */
+.itemRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+.input,
+.priceInput {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 0.5rem 0.75rem;
+    min-width: 0;
+}
+
+.input {
+    flex: 1 1 12rem;
+}
+
+.priceInput {
+    flex: 0 1 8rem;
+}
+
+.availableLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.iconButton {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    border-radius: var(--radius-md, 0.5rem);
+    padding: 0.5rem 0.875rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+}
+
+/*
+ * The same pair the editor's own Save button uses (`host/editor/ActionBar`).
+ * This button sits inside that form, a card above it, so borrowing the CTA
+ * recipe rather than inventing one is what keeps the two from reading as
+ * different kinds of action.
+ */
+.primaryButton {
+    align-self: flex-start;
+    background-color: var(--brand-accent);
+    border-color: var(--brand-accent);
+    color: var(--accent-foreground, #ffffff);
+    font-weight: 600;
+}
+
+.secondaryButton {
+    align-self: flex-start;
+}
+
+.dangerButton {
+    color: var(--destructive, #b91c1c);
+    border-color: oklch(0.88 0.06 25);
+}
+
+.iconButton {
+    padding: 0.375rem 0.625rem;
+    line-height: 1;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled,
+.iconButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Visually hidden, still announced — the <legend> each course card needs. */
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

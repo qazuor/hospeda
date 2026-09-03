@@ -55,7 +55,11 @@ vi.mock('@/lib/i18n', () => ({
     })
 }));
 
-vi.mock('@/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
+vi.mock('@/lib/api/client', () => ({
+    apiClient: {
+        patch: vi.fn()
+    }
+}));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) },

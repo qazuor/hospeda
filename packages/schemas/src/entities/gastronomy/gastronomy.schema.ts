@@ -16,6 +16,7 @@ import { TagsFields } from '../../common/tags.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
 import { GastronomyFaqSchema } from './subtypes/gastronomy.faq.schema.js';
+import { GastronomyMenuFileKindSchema } from './subtypes/gastronomy.menu.schema.js';
 
 /**
  * Gastronomy Entity Schema — commerce listing for food and beverage venues.
@@ -67,6 +68,26 @@ export const GastronomySchema = z.object({
         .url({ message: 'zodError.gastronomy.menuUrl.invalid' })
         .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
         .nullish(),
+
+    /**
+     * Delivery URL of an uploaded photo or PDF of the menu (HOS-895).
+     *
+     * NOT owner-writable through the listing PATCH: it is written by the
+     * dedicated upload route in the same request that stores the file, so it is
+     * absent from `GastronomyOwnerUpdateInputSchema`. See
+     * `subtypes/gastronomy.menu.schema.ts` for the three-shapes model.
+     */
+    menuFileUrl: z.string().url({ message: 'zodError.gastronomy.menuFileUrl.invalid' }).nullish(),
+
+    /** Whether {@link menuFileUrl} is an image or a PDF. */
+    menuFileKind: GastronomyMenuFileKindSchema.nullish(),
+
+    /**
+     * Provider-side id of the uploaded menu file, kept so the delete route can
+     * destroy the asset rather than merely forget it. Deliberately absent from
+     * every access projection — it is operational, not content.
+     */
+    menuFilePublicId: z.string().nullish(),
 
     // Linked destination and owner
     destinationId: DestinationIdSchema,

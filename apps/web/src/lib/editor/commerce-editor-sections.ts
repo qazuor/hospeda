@@ -95,6 +95,34 @@ const SHARED_SECTIONS: readonly EditorSection[] = [
 ];
 
 /**
+ * Sections that exist only on the gastronomy vertical (HOS-895).
+ *
+ * The mirror of {@link EXPERIENCE_ONLY_SECTIONS}, and left out of the
+ * experience registry for the same reason those two are left out of the
+ * gastronomy one: an experience has no carta, so the section does not exist
+ * for it rather than being hidden from it. `findEditorSectionBySlug` returns
+ * `undefined` for `/experience/<id>/editar/carta` and the shared resolver
+ * sends it to the hub — no `visibilityKey`, matching the file's rule that no
+ * section here uses a runtime one.
+ *
+ * In the `content` group rather than next to `precio`: the carta is authored
+ * content, and structurally it is the twin of `preguntas` — a self-persisting
+ * manager with its own endpoints, repeatable rows, mounted bare with no form
+ * and no save button. `precio` holds the price TIER and the external menu
+ * link, which are listing attributes. The "where it rendered pre-split" rule
+ * that places the experience-only pair does not apply: this panel is new in
+ * HOS-895, so no owner has an existing expectation to preserve.
+ */
+const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
+    {
+        id: 'menu',
+        slug: 'carta',
+        group: 'content',
+        labelKey: 'commerce.owner.editor.sectionNav.menu'
+    }
+];
+
+/**
  * Sections that exist only on the experience vertical.
  *
  * Inserted directly after `basicInfo`, which is where they render in the
@@ -142,7 +170,18 @@ export function buildCommerceEditorSections({
 }: {
     readonly vertical: CommerceVertical;
 }): readonly EditorSection[] {
-    if (vertical !== 'experience') return SHARED_SECTIONS;
+    if (vertical !== 'experience') {
+        // HOS-895: the carta sits just before `preguntas`, its structural twin
+        // in the `content` group.
+        const faqsIndex = SHARED_SECTIONS.findIndex((section) => section.id === 'faqs');
+        return faqsIndex === -1
+            ? [...SHARED_SECTIONS, ...GASTRONOMY_ONLY_SECTIONS]
+            : [
+                  ...SHARED_SECTIONS.slice(0, faqsIndex),
+                  ...GASTRONOMY_ONLY_SECTIONS,
+                  ...SHARED_SECTIONS.slice(faqsIndex)
+              ];
+    }
 
     const [basicInfo, ...rest] = SHARED_SECTIONS;
     // `SHARED_SECTIONS` is a non-empty literal, so `basicInfo` is always defined;

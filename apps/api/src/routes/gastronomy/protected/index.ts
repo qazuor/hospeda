@@ -23,16 +23,20 @@ import { protectedAddGastronomyFaqRoute } from './addFaq';
 import { protectedAddGastronomyMediaRoute } from './addMedia';
 import { protectedGetGastronomyBrochureRoute } from './brochure';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
+import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
 import { protectedGetGastronomyMediaRoute } from './getMedia';
+import { protectedGetGastronomyMenuRoute } from './getMenu';
 import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedPatchGastronomyRoute } from './patch';
+import { protectedPutGastronomyMenuRoute } from './putMenu';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
+import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
 import { protectedGastronomyViewStatsRoute } from './viewStats';
 import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
@@ -57,6 +61,26 @@ app.route('/', protectedGastronomyViewStatsDailySeriesRoute);
 // static segment ahead of a param at the same position regardless of insertion
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetGastronomyBrochureRoute);
+
+// Menu (HOS-895) — the carta and its photo/PDF alternative. Registered
+// before /{id} for the same DEFENSIVE reason as the media and brochure
+// entries: Hono resolves a static segment ahead of a param at the same
+// position regardless of insertion order.
+//
+// GET /{id}/menu — read the carta. NOT entitlement-gated: every gastronomy
+// tier sees its own menu, and only writing the structured half is paid.
+app.route('/', protectedGetGastronomyMenuRoute);
+
+// PUT /{id}/menu — replace the structured carta. Gated on
+// MANAGE_GASTRONOMY_MENU (gastronomy-pro and above).
+app.route('/', protectedPutGastronomyMenuRoute);
+
+// POST /{id}/menu-file — upload the photo/PDF alternative. Ungated: it is
+// how a -basico venue shows a menu at all.
+app.route('/', protectedUploadGastronomyMenuFileRoute);
+
+// DELETE /{id}/menu-file — clear it, asset included.
+app.route('/', protectedDeleteGastronomyMenuFileRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetGastronomyByIdRoute);

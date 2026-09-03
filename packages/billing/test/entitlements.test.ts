@@ -255,18 +255,32 @@ describe('Entitlement Configuration', () => {
             ).toBeDefined();
         });
 
+        it('keeps the pro-only structured-carta key OUT of the vertical-wide map (HOS-895)', () => {
+            // Same shape of key, same reason, one tier lower: `-pro` and above
+            // grant the carta, so listing it in the floor map would hand it to
+            // `-basico` — the exact give-away the tier exists to prevent.
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS]).not.toContain(
+                EntitlementKey.MANAGE_GASTRONOMY_MENU
+            );
+            expect(
+                ENTITLEMENT_DEFINITIONS.find((e) => e.key === EntitlementKey.MANAGE_GASTRONOMY_MENU)
+            ).toBeDefined();
+        });
+
         it('should have all 7 categories totaling to the full definitions count', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
             // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
-            // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5)
+            // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5;
+            // HOS-895: commerce 5→6)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
             const touristCount = 13;
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
             // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical (4);
-            // HOS-1058 — plus the premium-only printable ficha (1).
-            const commerceCount = 5;
+            // HOS-1058 — plus the premium-only printable ficha (1);
+            // HOS-895 — plus the pro-and-above structured carta (1).
+            const commerceCount = 6;
 
             // Act & Assert
             expect(
