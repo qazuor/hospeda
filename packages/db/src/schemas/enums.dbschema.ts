@@ -53,6 +53,7 @@ import {
     PriceCurrencyEnum,
     PriceRangeEnum,
     ProductTypeEnum,
+    QrCodePurposeEnum,
     QrCodeSourceEnum,
     RecurrenceTypeEnum,
     RefundStatusEnum,
@@ -472,3 +473,18 @@ export const CalendarSyncStatusPgEnum = pgEnum(
  * Values: MANUAL, GENERATED.
  */
 export const QrCodeSourcePgEnum = pgEnum('qr_code_source_enum', enumToTuple(QrCodeSourceEnum));
+
+/**
+ * PostgreSQL enum for WHICH code a `qr_codes` row is, when its subject carries
+ * more than one (HOS-981 PR 4).
+ *
+ * Values: HOST_TRADE_USAGE, LISTING, MENU, CERTIFICATE, BROCHURE. All five ship
+ * together even though only the first is written today — adding a value later
+ * is a migration over a table that will hold production rows by then.
+ *
+ * An enum rather than a varchar, and the reason binds harder than it does for
+ * `entity_type`: this value is part of the uniqueness key, so two spellings of
+ * one purpose mint two permanent slugs for one subject. See
+ * `QrCodePurposeEnum`.
+ */
+export const QrCodePurposePgEnum = pgEnum('qr_code_purpose_enum', enumToTuple(QrCodePurposeEnum));
