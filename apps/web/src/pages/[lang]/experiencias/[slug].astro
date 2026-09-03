@@ -27,6 +27,7 @@ import ExperiencePrivateGroups from '@/components/experience/ExperiencePrivateGr
 import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
 import { hasPublicContactChannel } from '@/lib/experience-contact';
@@ -328,6 +329,16 @@ const breadcrumbItems = [
         {faqs.length > 0 && (
             <ExperienceFaqs faqs={faqs} locale={locale} />
         )}
+
+        <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
+             basic view stats in mi-cuenta/comercio. -->
+        <EntityViewTracker
+            client:idle
+            entityType="EXPERIENCE"
+            slug={slug}
+            entityId={experience.id}
+            locale={locale}
+        />
     </div>
 </DetailLayout>
 
