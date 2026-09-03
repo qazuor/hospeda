@@ -40,7 +40,7 @@ export const adminCreateQrCodeRoute = createAdminRoute({
     description:
         'Creates a redirectable QR code. Omit `slug` to have one minted. A GENERATED code must name its entity; a MANUAL one must not.',
     tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.SETTINGS_MANAGE],
+    requiredPermissions: [PermissionEnum.QR_CODE_CREATE],
     requestBody: QrCodeCreateHttpSchema,
     responseSchema: QrCodeAdminSchema,
     handler: async (

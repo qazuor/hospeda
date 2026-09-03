@@ -148,14 +148,17 @@ export type QrCodeDownloadQuery = z.infer<typeof QrCodeDownloadQuerySchema>;
 /**
  * What the admin download endpoint answers with.
  *
- * The image travels as JSON rather than as an `image/svg+xml` body, following
- * the precedent set by the provider's own QR endpoint (`host-trade/protected/
- * mine-qr.ts`) and for the same two reasons. First, the caller is a panel that
- * shows a preview NEXT TO a download button; a raw image response makes the page
- * fetch the same bytes twice. Second, and the reason that is not merely
- * ergonomic: the encoded string is built from operator-supplied input, and
- * serving operator-influenced markup from our own origin under an image
- * content-type is a shape worth not having at all.
+ * The image travels as JSON rather than as an `image/svg+xml` body because the
+ * endpoint is AUTHENTICATED and the panel is a different origin: an
+ * `<img src=".../download">` sends no credentials, so a raw image response would
+ * render broken for every operator. A `data:` URL fetched by the app's own API
+ * client carries the session. Secondarily, the panel shows a preview NEXT TO a
+ * download button, so one response serves both instead of fetching the same
+ * bytes twice.
+ *
+ * Not an injection argument: every `renderOptions` field is bounded by a regex,
+ * an enum or an integer range, and the only string encoded into the symbol is
+ * `/qr/{slug}/` over the QR alphabet. No operator text reaches the markup.
  *
  * `dataUrl` is what a download link's `href` gets; `svg` carries the raw markup
  * for inline preview and is `null` for a raster format.

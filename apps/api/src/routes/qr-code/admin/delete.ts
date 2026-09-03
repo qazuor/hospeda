@@ -37,7 +37,7 @@ export const adminDeleteQrCodeRoute = createAdminRoute({
     description:
         'Soft-deletes a QR code. The slug remains reserved forever — it may already be printed — and recorded scans are preserved. The code stops resolving immediately.',
     tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.SETTINGS_MANAGE],
+    requiredPermissions: [PermissionEnum.QR_CODE_DELETE],
     requestParams: { id: QrCodeIdSchema },
     responseSchema: QrCodeDeleteResponseSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

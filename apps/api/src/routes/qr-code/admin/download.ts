@@ -26,11 +26,21 @@
  *
  * ## Why the image travels as JSON
  *
- * Same reasoning as the provider's own QR endpoint (`host-trade/protected/
- * mine-qr.ts`), which established the shape: the panel renders a preview NEXT TO
- * a download button, so an image response would make the page fetch identical
- * bytes twice — and serving operator-influenced markup from our origin under an
- * `image/svg+xml` content-type is a shape worth not having at all.
+ * Because the endpoint is AUTHENTICATED and the panel is served from a different
+ * origin. An `image/svg+xml` body would be consumed with
+ * `<img src=".../download">`, and a browser sends no credentials on that
+ * request — the preview would render broken for every operator, every time. A
+ * `data:` URL fetched by the app's own API client carries the session and works.
+ * The secondary benefit is that the panel shows a preview NEXT TO a download
+ * button, so one response serves both instead of fetching identical bytes twice.
+ *
+ * It is NOT an injection argument, and an earlier version of this comment
+ * claimed it was. Nothing operator-typed reaches the markup: every
+ * `renderOptions` field is bounded by a regex, an enum or an integer range, and
+ * the only string encoded into the symbol is `/qr/{slug}/` with the slug
+ * confined to the QR alphabet — `targetUrl` never appears in the SVG at all. A
+ * comment that gives a false reason for a correct decision is an invitation to
+ * revert the decision as soon as somebody checks the reason.
  *
  * @module routes/qr-code/admin/download
  */
@@ -67,7 +77,7 @@ export const adminDownloadQrCodeRoute = createAdminRoute({
     description:
         'Renders the code with its own stored render options and returns the image as a data URL (plus raw SVG markup when the format is vector). `format` may override SVG/PNG for this one download; every other drawing option comes from the stored configuration.',
     tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.SETTINGS_MANAGE],
+    requiredPermissions: [PermissionEnum.QR_CODE_VIEW],
     requestParams: { id: QrCodeIdSchema },
     requestQuery: QrCodeDownloadQuerySchema.shape,
     responseSchema: QrCodeDownloadResponseSchema,

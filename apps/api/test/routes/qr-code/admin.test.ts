@@ -180,18 +180,52 @@ function redQrRow(): Record<string, unknown> {
     };
 }
 
-/** An operator who may reach the admin panel and manage settings. */
+/** An operator who may reach the admin panel and holds all four QR verbs. */
 const adminActor = {
     id: '77777777-7777-4777-8777-777777777777',
     roles: [RoleEnum.ADMIN] as readonly RoleEnum[],
-    permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.SETTINGS_MANAGE]
+    permissions: [
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.QR_CODE_VIEW,
+        PermissionEnum.QR_CODE_CREATE,
+        PermissionEnum.QR_CODE_UPDATE,
+        PermissionEnum.QR_CODE_DELETE
+    ]
 };
 
-/** An operator who may reach the panel but not manage settings. */
+/** An operator who may reach the panel and holds no QR verb at all. */
 const unprivilegedActor = {
     id: '88888888-8888-4888-8888-888888888888',
     roles: [RoleEnum.EDITOR] as readonly RoleEnum[],
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
+};
+
+/**
+ * The delegation the split exists for: somebody who may find a printed code and
+ * download its image, and nothing else.
+ *
+ * This actor is what makes the four permissions more than four names for one
+ * gate. Every write probe below runs against it, so a route that quietly
+ * accepted `QR_CODE_VIEW` for a write would fail here rather than in production.
+ */
+const readOnlyActor = {
+    id: '66666666-6666-4666-8666-666666666666',
+    roles: [RoleEnum.EDITOR] as readonly RoleEnum[],
+    permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.QR_CODE_VIEW]
+};
+
+/**
+ * An operator still carrying only the gate PR 1 borrowed.
+ *
+ * `SETTINGS_MANAGE` opened every QR route until this release. If a route still
+ * answered to it, the whole point of the split — delegating QR without settings,
+ * and withholding settings-holders from nothing — would be quietly undone, and
+ * no other probe here would notice.
+ */
+const legacySettingsActor = {
+    id: '55555555-5555-4555-8555-555555555556',
+    roles: [RoleEnum.ADMIN] as readonly RoleEnum[],
+    permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.SETTINGS_MANAGE]
 };
 
 // ---------------------------------------------------------------------------
@@ -354,8 +388,34 @@ describe('PATCH /admin/qr-codes/{id} — retargeting is the product', () => {
         expect(res.status).toBe(404);
     });
 
-    it('refuses an admin who does not hold SETTINGS_MANAGE', async () => {
+    it('refuses an admin who holds no QR permission', async () => {
         const app = await buildApp(unprivilegedActor);
+
+        const res = await probe(app, `/${RED_ID}`, {
+            method: 'PATCH',
+            body: { targetUrl: NEW_TARGET }
+        });
+
+        expect(res.status).toBe(403);
+        expect(qrDb.update).not.toHaveBeenCalled();
+    });
+
+    /** Reading a code is not authority to move where it points. */
+    it('refuses a read-only QR operator', async () => {
+        const app = await buildApp(readOnlyActor);
+
+        const res = await probe(app, `/${RED_ID}`, {
+            method: 'PATCH',
+            body: { targetUrl: NEW_TARGET }
+        });
+
+        expect(res.status).toBe(403);
+        expect(qrDb.update).not.toHaveBeenCalled();
+    });
+
+    /** The borrowed gate no longer opens this route. */
+    it('refuses an operator carrying only SETTINGS_MANAGE', async () => {
+        const app = await buildApp(legacySettingsActor);
 
         const res = await probe(app, `/${RED_ID}`, {
             method: 'PATCH',
@@ -543,6 +603,29 @@ describe('GET /admin/qr-codes/{id}/download', () => {
 
         expect(res.status).toBe(404);
     });
+
+    /**
+     * The positive half of the delegation, and the reason `download` is gated on
+     * VIEW rather than on a write verb: somebody granted only reading must be
+     * able to print the sticker. Without this the four permissions could all be
+     * wired to the strictest gate and every refusal test above would still pass.
+     */
+    it('lets a read-only QR operator download', async () => {
+        const app = await buildApp(readOnlyActor);
+
+        const res = await probe(app, `/${RED_ID}/download`);
+
+        expect(res.status).toBe(200);
+        expect((res.body.data as Record<string, unknown>).filename).toBe(`qr-${RED_SLUG}.svg`);
+    });
+
+    it('refuses an operator carrying only SETTINGS_MANAGE', async () => {
+        const app = await buildApp(legacySettingsActor);
+
+        const res = await probe(app, `/${RED_ID}/download`);
+
+        expect(res.status).toBe(403);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -579,6 +662,19 @@ describe('POST /admin/qr-codes', () => {
         });
     });
 
+    /** Reading codes is not authority to mint one. */
+    it('refuses a read-only QR operator', async () => {
+        const app = await buildApp(readOnlyActor);
+
+        const res = await probe(app, '/', {
+            method: 'POST',
+            body: { targetUrl: NEW_TARGET, label: 'Folleto', source: 'MANUAL' }
+        });
+
+        expect(res.status).toBe(403);
+        expect(qrDb.create).not.toHaveBeenCalled();
+    });
+
     it('refuses a MANUAL code that names an entity', async () => {
         const app = await buildApp();
 
@@ -609,8 +705,17 @@ describe('DELETE /admin/qr-codes/{id}', () => {
         expect((res.body.data as Record<string, unknown>).success).toBe(true);
     });
 
-    it('refuses an admin who does not hold SETTINGS_MANAGE', async () => {
+    it('refuses an admin who holds no QR permission', async () => {
         const app = await buildApp(unprivilegedActor);
+
+        const res = await probe(app, `/${RED_ID}`, { method: 'DELETE' });
+
+        expect(res.status).toBe(403);
+        expect(qrDb.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('refuses a read-only QR operator', async () => {
+        const app = await buildApp(readOnlyActor);
 
         const res = await probe(app, `/${RED_ID}`, { method: 'DELETE' });
 

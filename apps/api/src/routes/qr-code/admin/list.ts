@@ -37,7 +37,7 @@ export const adminListQrCodesRoute = createAdminListRoute({
     description:
         'Returns a paginated list of redirectable QR codes. Supports free-text search over label, slug and target URL, plus filters by source, entity reference and active status.',
     tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.SETTINGS_MANAGE],
+    requiredPermissions: [PermissionEnum.QR_CODE_VIEW],
     requestQuery: QrCodeAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: QrCodeAdminSchema,
     handler: async (ctx, _params, _body, query) => {

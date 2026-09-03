@@ -57,7 +57,7 @@ export const adminUpdateQrCodeRoute = createAdminRoute({
     description:
         'Updates a redirectable QR code. Retargeting `targetUrl` is the point of the entity: the printed slug never changes and is refused in the body. `renderOptions` is merged key by key, so sending one drawing option leaves the others as they were.',
     tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.SETTINGS_MANAGE],
+    requiredPermissions: [PermissionEnum.QR_CODE_UPDATE],
     requestParams: { id: QrCodeIdSchema },
     requestBody: QrCodeUpdateHttpSchema,
     responseSchema: QrCodeAdminSchema,

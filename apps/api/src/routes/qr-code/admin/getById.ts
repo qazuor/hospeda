@@ -32,7 +32,7 @@ export const adminGetQrCodeByIdRoute = createAdminRoute({
     summary: 'Get a QR code by id (admin)',
     description: 'Returns a single redirectable QR code with its full admin detail.',
     tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.SETTINGS_MANAGE],
+    requiredPermissions: [PermissionEnum.QR_CODE_VIEW],
     requestParams: { id: QrCodeIdSchema },
     responseSchema: QrCodeAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
