@@ -1,4 +1,13 @@
 export * from './accommodation/accommodation.featured-toggle';
+// HOS-963: pure media-composition helper reused by raw-query public routes
+// (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
+// never hit `_afterSearch`, the chokepoint that normally composes `media` from
+// the relational `accommodation_media` table. Mirrors commerce's
+// `composeCommerceMedia` export below.
+export {
+    type ComposeAccommodationMediaInput,
+    composeAccommodationMedia
+} from './accommodation/accommodation.media-compose';
 export * from './accommodation/accommodation.occupancy';
 export * from './accommodation/accommodation.poi-proximity.helper';
 export * from './accommodation/accommodation.service';
