@@ -15,15 +15,24 @@
  * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
  * public page is not.
  *
- * Not gated on `MANAGE_GASTRONOMY_MENU` — same reason as the upload. See
- * `uploadMenuFile.ts`.
+ * Gated on `MANAGE_GASTRONOMY_MENU`, same as the upload (HOS-895 PR2) — see
+ * `uploadMenuFile.ts` for why. Deleting is refused the same as replacing: a
+ * `-basico` owner cannot clear an attachment that predates the gate any more
+ * than they can upload a new one. That is intentional, not an oversight — the
+ * withdraw path they DO have is downgrading to `menuUrl` only being what the
+ * public page already renders for them (it stops showing the file the moment
+ * `resolveOwnerGrantsGastronomyMenuManagement` returns `false`, regardless of
+ * whether the row is deleted).
  *
  * @module routes/gastronomy/protected/deleteMenuFile
  */
+import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, SuccessSchema } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -37,7 +46,7 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
     path: '/{id}/menu-file',
     summary: 'Remove the uploaded menu photo or PDF',
     description:
-        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only. The structured menu and the external link are untouched.',
+        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -108,5 +117,12 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
         }
 
         return { success: true } as const;
+    },
+    options: {
+        middlewares: [
+            // Loader before checker (HOS-1074) — see uploadMenuFile.ts.
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
+        ]
     }
 });

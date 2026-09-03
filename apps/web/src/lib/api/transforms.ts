@@ -27,6 +27,7 @@ import type {
     ExperienceSocialNetworks,
     GastronomyCardData,
     GastronomyDetailData,
+    GastronomyMenuSection,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
     PartnerData,
@@ -2714,6 +2715,42 @@ function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
 }
 
 /**
+ * Maps the raw `menuSections` array a gastronomy detail payload carries
+ * (HOS-895 PR2) into the shape `GastronomyMenuSection.astro` renders.
+ *
+ * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
+ * API's live entitlement check returns nothing — the same treatment the
+ * amenities/features mappers give an absent join.
+ *
+ * @param raw - The payload's `menuSections` value, of unknown shape.
+ * @returns Renderer-ready sections; empty when absent or malformed.
+ */
+function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((section) => ({
+            id: String(section.id ?? ''),
+            name: String(section.name ?? ''),
+            description: section.description == null ? null : String(section.description),
+            items: Array.isArray(section.items)
+                ? (section.items as Array<Record<string, unknown>>).map((item) => ({
+                      id: String(item.id ?? ''),
+                      name: String(item.name ?? ''),
+                      description: item.description == null ? null : String(item.description),
+                      priceCents:
+                          typeof item.priceCents === 'number'
+                              ? item.priceCents
+                              : item.priceCents == null
+                                ? null
+                                : Number(item.priceCents),
+                      isAvailable: item.isAvailable !== false
+                  }))
+                : []
+        }))
+        .filter((section) => section.name.length > 0);
+}
+
+/**
  * Transforms a raw API gastronomy item to GastronomyDetailData props.
  *
  * Used on the gastronomy detail page where the full `GastronomyPublic` shape
@@ -2745,6 +2782,13 @@ export function toGastronomyDetailPageProps({
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
+        // HOS-895 PR2: both already withheld server-side (null / absent) for a
+        // listing whose owner does not currently hold
+        // `manage_gastronomy_menu` — see GastronomyPublicSchema's field docs.
+        menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
+        menuFileKind:
+            item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
+        menuSections: mapGastronomyMenuSections(item.menuSections),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {

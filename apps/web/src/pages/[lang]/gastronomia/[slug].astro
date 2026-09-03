@@ -20,6 +20,7 @@ import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
+import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
 import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
 // Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
@@ -316,6 +317,16 @@ const breadcrumbItems = [
             summary={gastronomy.summary}
             descriptionText={descriptionText}
             richDescription={gastronomy.richDescription}
+        />
+
+        <!-- Menu (HOS-895 PR2): structured carta and/or the uploaded photo/PDF.
+             Both arrive pre-filtered by the API's live entitlement check —
+             see GastronomyMenu.astro's frontmatter for the hierarchy. -->
+        <GastronomyMenu
+            menuSections={gastronomy.menuSections}
+            fileUrl={gastronomy.menuFileUrl}
+            fileKind={gastronomy.menuFileKind}
+            locale={locale}
         />
 
         <!-- Opening Hours (only when configured) -->

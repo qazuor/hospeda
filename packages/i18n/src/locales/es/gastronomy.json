@@ -48,6 +48,14 @@
             "wednesday": "Miércoles"
         },
         "menu": "Ver menú",
+        "menuCarta": {
+            "title": "Carta",
+            "attachmentImage": "Carta en imagen",
+            "attachmentPdf": "Carta en PDF",
+            "viewPdf": "Ver carta en PDF",
+            "consultPrice": "A consultar",
+            "unavailable": "No disponible"
+        },
         "reviews": {
             "title": "Reseñas",
             "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!",

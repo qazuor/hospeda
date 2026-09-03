@@ -1100,6 +1100,31 @@ export interface GastronomyCardData {
 }
 
 /**
+ * One dish or drink on a gastronomy listing's structured carta (HOS-895 PR2).
+ * Mirrors `GastronomyMenuItemPublic` (`@repo/schemas`) with only the fields
+ * the public detail page renders.
+ */
+export interface GastronomyMenuItem {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string | null;
+    /** Price in centavos, or `null` for "a consultar". */
+    readonly priceCents: number | null;
+    readonly isAvailable: boolean;
+}
+
+/**
+ * One course heading with its dishes (HOS-895 PR2). Mirrors
+ * `GastronomyMenuSectionPublic` (`@repo/schemas`).
+ */
+export interface GastronomyMenuSection {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string | null;
+    readonly items: readonly GastronomyMenuItem[];
+}
+
+/**
  * Typed data shape for the gastronomy detail page (SPEC-239).
  * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
  *
@@ -1112,6 +1137,21 @@ export interface GastronomyDetailData extends GastronomyCardData {
     readonly richDescription?: string | null;
     /** External URL for the establishment's menu. Null when not provided. */
     readonly menuUrl?: string | null;
+    /**
+     * Delivery URL of an uploaded photo or PDF of the menu (HOS-895 PR2).
+     * `null` both when nothing was uploaded AND when the owner's current plan
+     * does not grant `manage_gastronomy_menu` — the API withholds it live, so
+     * the page cannot tell the two apart and does not need to.
+     */
+    readonly menuFileUrl?: string | null;
+    /** Whether {@link menuFileUrl} is an image or a PDF. */
+    readonly menuFileKind?: 'image' | 'pdf' | null;
+    /**
+     * The structured carta's sections, in order (HOS-895 PR2). Empty when the
+     * venue typed none, OR when the owner's current plan does not grant the
+     * entitlement — same withholding as {@link menuFileUrl}.
+     */
+    readonly menuSections?: readonly GastronomyMenuSection[];
     /** Social network links provided by the owner. */
     readonly socialNetworks: GastronomySocialNetworks | null;
     /** SEO metadata fields. */

@@ -565,20 +565,27 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  *   different verticals.
  * @param input.maxListings - Value of that cap for this tier.
  * @param input.sortOrder - Display order within the vertical.
- * @param input.isActive - Whether the tier is sellable. Only premium is today.
+ * @param input.isActive - Whether the tier is sellable AT ALL — a seeded,
+ *   priced, subscribable row. Does not by itself decide whether checkout ever
+ *   resolves TO it: see `GASTRONOMY_PRO_PLAN`'s doc for why an `isActive` tier
+ *   can still be unreachable while another vertical tier stays the default.
  * @param input.monthlyPriceArs - Monthly price in centavos; `0` for a tier that
  *   has not been priced yet, which is also why such a tier ships inactive.
  * @param input.hasTrial - Whether the tier grants a free trial (HOS-590).
- *   Defaults to `false` — the two disabled tiers per vertical have no price
- *   and are not sellable, so a trial has nothing to precede.
+ *   Defaults to `false` — a disabled, unpriced tier has no price and is not
+ *   sellable, so a trial has nothing to precede. Every `isActive: true` tier
+ *   in this file passes `true` here.
  * @param input.trialDays - Trial length in days when `hasTrial` is `true`.
  *   Defaults to `0`.
  * @param input.extraEntitlements - Keys this TIER grants on top of the
- *   vertical's uniform set (HOS-1058). Empty for every tier but premium. This
- *   is the one door through which a tier may differ grantwise from its
- *   siblings, and it is deliberately additive: a tier can add to the vertical's
- *   set and can never subtract from it, so the "every tier of a vertical grants
- *   its own pair" invariant above survives whatever is passed here.
+ *   vertical's uniform set (HOS-1058). Empty for básico across both
+ *   verticals; populated for a tier that earns its dearer name (`-pro`'s
+ *   structured carta since HOS-895, `-premium`'s printable PDF since
+ *   HOS-1058). This is the one door through which a tier may differ
+ *   grantwise from its siblings, and it is deliberately additive: a tier can
+ *   add to the vertical's set and can never subtract from it, so the "every
+ *   tier of a vertical grants its own pair" invariant above survives whatever
+ *   is passed here.
  * @returns The tier's {@link PlanDefinition}.
  */
 function commerceVerticalTier(input: {
@@ -633,21 +640,31 @@ function commerceVerticalTier(input: {
 }
 
 /**
- * The gastronomy catalogue (HOS-688 §6.8, retiered by HOS-818).
+ * The gastronomy catalogue (HOS-688 §6.8, retiered by HOS-818, `-pro`
+ * activated by HOS-895 PR2).
  *
  * Built for the full three-tier shape so enabling a tier later is a
- * data-migration rather than a code change. **Only ONE tier is ever enabled at
- * a time**, and since HOS-818 that tier is BÁSICO, not premium: the owner
- * reserved the "premium" name for a future step that actually carries more
- * functionality, so today's buyers land on the entry tier instead of on the top
- * one with nowhere left to go.
+ * data-migration rather than a code change. **Two tiers are `isActive` as of
+ * HOS-895 PR2** — básico (HOS-818's entry tier) and pro (activated here) —
+ * and premium stays reserved for a future step that carries genuinely more.
  *
- * The disabled tiers carry `monthlyPriceArs: 0` when they have not been priced
- * — shipping them inactive is the same precedent {@link AI_SUPPORT_ADDON} set
- * for a definition whose price is still TBD, and `seedCommercePlan` skips the
- * `billing_prices` row for a tier priced at zero rather than seeding a free
- * one. The now-disabled premium tier is the exception: it keeps its price and
- * trial, because the row already exists (priced, with a live MercadoPago
+ * `isActive` here means "seeded, priced, and a valid subscription target" —
+ * it does NOT by itself mean "reachable by checkout". Exactly ONE plan slug
+ * per vertical is ever resolved by a real checkout, via
+ * `resolveCommercePlanSlug` (`apps/api/src/services/commerce-plan-resolver.ts`),
+ * reading {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL} or the
+ * `HOSPEDA_COMMERCE_PLAN_SLUGS` env override. Commerce has no plan-picker and
+ * no plan-change/upgrade route, so a second `isActive` tier existing in this
+ * catalogue changes nothing about which plan a new gastronomy owner actually
+ * lands on until that resolver is pointed at it. See `GASTRONOMY_PRO_PLAN`'s
+ * own doc.
+ *
+ * The still-disabled tier carries `monthlyPriceArs: 0` when it has not been
+ * priced — shipping it inactive is the same precedent {@link AI_SUPPORT_ADDON}
+ * set for a definition whose price is still TBD, and `seedCommercePlan` skips
+ * the `billing_prices` row for a tier priced at zero rather than seeding a
+ * free one. The disabled premium tier is the exception: it keeps its price
+ * and trial, because the row already exists (priced, with a live MercadoPago
  * `preapproval_plan` behind it) in every seeded environment and zeroing the
  * baseline would describe a state no real database is in.
  *
@@ -658,7 +675,9 @@ function commerceVerticalTier(input: {
  *
  * ---
  *
- * Gastronomy basic tier — **the only sellable gastronomy plan today** (HOS-818).
+ * Gastronomy basic tier — **the DEFAULT sellable gastronomy plan** (HOS-818).
+ * Still the plan `resolveCommercePlanSlug` resolves by default; see the
+ * catalogue doc above for what activating `-pro` did and did not change.
  *
  * One listing for {@link COMMERCE_VERTICAL_MONTHLY_PRICE_ARS} — the exact price,
  * limits and (empty) entitlement set the premium tier carried before it, so the
@@ -683,16 +702,43 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     trialDays: COMMERCE_TRIAL_DAYS
 });
 
-/** Gastronomy professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
+/**
+ * Gastronomy professional tier — **activated for sale by HOS-895 PR2 (owner
+ * decision, 2026-09-03)**, priced at ARS $45.000/mo.
+ *
+ * Until this change it shipped `isActive: false` / `monthlyPriceArs: 0`,
+ * "not enabled yet" — the first thing HOS-895 gave it a reason to exist for
+ * was the structured carta below, and the owner decided the same day to stop
+ * holding the tier back. See {@link GASTRONOMY_BASICO_PLAN} for the shape.
+ *
+ * Carries the same 30-day trial as its siblings ({@link COMMERCE_TRIAL_DAYS})
+ * — added along with activation, since the two disabled tiers' no-trial
+ * defaults only ever described "not sellable yet", not a deliberate choice to
+ * sell without one.
+ *
+ * **Activating this row in the catalogue is not the same as making it
+ * reachable.** `resolveCommercePlanSlug` (`apps/api/src/services/
+ * commerce-plan-resolver.ts`) is the ONE place a commerce checkout turns a
+ * vertical into a plan slug, and it always resolves to exactly ONE slug per
+ * vertical — `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy` (this file,
+ * still `GASTRONOMY_BASICO_PLAN.slug`) unless `HOSPEDA_COMMERCE_PLAN_SLUGS` is
+ * set, which it is on staging/production. There is no plan-picker and no
+ * commerce plan-change/upgrade route (unlike accommodation), so this plan
+ * being `isActive` makes it a valid, priced, seeded row — not a plan any
+ * checkout will actually put someone on until that resolver is pointed at it.
+ * See HOS-895 PR2's PR description for the operational step this implies.
+ */
 export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-pro',
     name: 'Gastronomía Profesional',
-    description: 'Gastronomy listing plan — professional tier (not enabled yet, HOS-688).',
+    description: 'Gastronomy listing plan — professional tier (HOS-688, activated HOS-895 PR2).',
     vertical: 'gastronomy',
     maxListings: 1,
     sortOrder: 2,
-    isActive: false,
-    monthlyPriceArs: 0,
+    isActive: true,
+    monthlyPriceArs: 4_500_000,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-895 — the first thing that separates `-pro` from `-basico` by more
     // than its name: the structured carta. Owner decision, `pro` and upwards.
     extraEntitlements: [EntitlementKey.MANAGE_GASTRONOMY_MENU]

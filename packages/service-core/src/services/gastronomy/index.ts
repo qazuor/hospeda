@@ -38,6 +38,9 @@ export {
 } from './gastronomy.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
+// Menu entitlement resolver (HOS-895 PR2) — live owner-plan check for the
+// public detail page's display gate
+export { resolveOwnerGrantsGastronomyMenuManagement } from './gastronomy.menu-entitlement';
 // Permission helpers
 export {
     checkGastronomyCanAdminList,

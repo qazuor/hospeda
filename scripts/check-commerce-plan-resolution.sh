@@ -28,8 +28,29 @@
 #   2. No production TypeScript outside `@repo/billing`'s catalogue hardcodes a
 #      per-vertical commerce plan slug literal.
 #
+# WHAT COUNTS AS "READS" IN CHECK 1 (HOS-895 PR2 fix)
+#   A dotted member access immediately before the name — `env.HOSPEDA_COMMERCE_
+#   PLAN_SLUGS`, `data.HOSPEDA_COMMERCE_PLAN_SLUGS`, or any other receiver —
+#   which is how every real read of this variable is written in this codebase.
+#   A bare mention of the string (a JSDoc line naming the variable, an error
+#   message, a "you still need to configure X" note) is NOT a read and no
+#   longer trips this check. Before this fix, check 1 matched the string
+#   ANYWHERE — including inside comments and string literals — while check 2
+#   below already filtered comments; that inconsistency flagged HOS-895 PR2's
+#   own documentation (explaining exactly why `gastronomy-pro` is not yet
+#   reachable) as if it read the variable, which it does not. The dot-prefix
+#   rule fixes the four false positives that produced (two JSDoc mentions, one
+#   of them inside a template-string message) without narrowing the allowlist
+#   or weakening what a REAL unauthorized read looks like.
+#
 # WHAT IT DOES NOT PROVE — stated so a green run is not read as more than it is
 #   - It is line-based, so a read split across several lines is invisible to it.
+#   - Check 1 only recognizes dotted member access. Bracket notation
+#     (`env['HOSPEDA_COMMERCE_PLAN_SLUGS']`) or a destructured binding
+#     (`const { HOSPEDA_COMMERCE_PLAN_SLUGS } = env`) would read the variable
+#     without tripping it — no such access exists in this codebase today, and
+#     introducing one is a static-guard gap to close then, not a hypothetical
+#     worth complicating this regex for now.
 #   - It says nothing about the DATABASE. A plan renamed in `billing_plans`
 #     without the config following is a data problem, not a source one.
 #   - It does not check that the resolved slug exists. That cannot be known at
@@ -57,8 +78,12 @@ FAILED=0
 # env modules (declaration + boot validation).
 ALLOWED_ENV_READERS='^(apps/api/src/services/commerce-plan-resolver\.ts|apps/api/src/utils/commerce-plan-config\.ts|apps/api/src/utils/env\.ts|apps/api/src/utils/env-schema\.ts|packages/config/src/env-registry\.hospeda\.ts)$'
 
-ENV_READERS=$(grep -rln --include="*.ts" --include="*.tsx" --include="*.astro" \
-    'HOSPEDA_COMMERCE_PLAN_SLUGS' \
+# Matches a dotted member-access READ (`env.HOSPEDA_COMMERCE_PLAN_SLUGS`,
+# `data.HOSPEDA_COMMERCE_PLAN_SLUGS`, any receiver) — see "WHAT COUNTS AS
+# READS" above. A bare mention of the name with no `.` immediately before it
+# (a JSDoc line, an error message, an object key declaration) does not match.
+ENV_READERS=$(grep -rlE --include="*.ts" --include="*.tsx" --include="*.astro" \
+    '\.HOSPEDA_COMMERCE_PLAN_SLUGS\b' \
     apps packages 2>/dev/null \
     | grep -v '/node_modules/' \
     | grep -v '/dist/' \
