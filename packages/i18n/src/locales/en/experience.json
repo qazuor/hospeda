@@ -45,7 +45,9 @@
         },
         "hours": "Opening hours",
         "meetingPoint": {
-            "title": "Meeting point"
+            "title": "Meeting point",
+            "howToGetThere": "How to get there",
+            "mapAriaLabel": "Map of the meeting point"
         },
         "openingHours": {
             "title": "Opening hours",

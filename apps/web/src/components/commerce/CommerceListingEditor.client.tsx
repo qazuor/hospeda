@@ -350,6 +350,21 @@ function buildPatchPayload({
         if (current.meetingPointLong !== baseline.meetingPointLong) {
             payload.meetingPointLong = current.meetingPointLong;
         }
+        // HOS-1049: `[]` is a meaningful value, not an absence — it is how the
+        // owner removes every instruction, exactly as with `whatToBring`. The
+        // key ships whenever the list differs, empty or not.
+        //
+        // Deliberately NOT also guarded on `meetingPointDirectionsEnabled`. A
+        // first draft was, and the guard turned out to be unreachable: current
+        // and baseline are seeded from the same payload, so they can only differ
+        // after an edit, and an unentitled provider's control is `disabled` and
+        // cannot be edited. An unreachable branch that no test can kill is worse
+        // than no branch — it reads as protection and provides none. The
+        // affordance is `disabled`; the ENFORCEMENT is the API's field gate,
+        // which refuses this key with a 403 regardless of what any client sends.
+        if (!sameStringList(current.meetingPointDirections, baseline.meetingPointDirections)) {
+            payload.meetingPointDirections = [...current.meetingPointDirections];
+        }
 
         // HOS-898: two boxes, one column. The diff has to be taken on the JOINED
         // value, not on the two halves — a change from 90 minutes to 1 h 30 min
@@ -497,6 +512,11 @@ export function CommerceListingEditor({
         meetingPoint: strField(data, 'meetingPoint'),
         meetingPointLat: numField(data, 'meetingPointLat'),
         meetingPointLong: numField(data, 'meetingPointLong'),
+        // HOS-1049: the value round-trips for everyone; the flag beside it is
+        // what decides whether the control is editable. Absent reads as NOT
+        // entitled — the one direction where guessing gives the product away.
+        meetingPointDirections: strArrayField(data, 'meetingPointDirections'),
+        meetingPointDirectionsEnabled: data.meetingPointDirectionsEnabled === true,
         // HOS-898: one stored column, two boxes. `splitDuration` runs ONCE here
         // and never again on re-render, which is what stops the boxes from
         // rewriting themselves while the owner types.

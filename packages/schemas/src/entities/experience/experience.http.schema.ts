@@ -218,8 +218,14 @@ export const httpToDomainExperienceCreate = (
     //
     // `durationMinutes` and `cancellationPolicy` are absent on purpose: both
     // are `.nullish()`, so an omitted key already means "not declared".
+    //
+    // HOS-1049: `meetingPointDirections` joins them for the same reason plus
+    // one of its own — it is the one entitlement-gated field on this entity,
+    // and this flat create surface has no subscription in hand to check it
+    // against. Empty here; written later through the gated owner PATCH.
     whatToBring: [],
     requirements: [],
+    meetingPointDirections: [],
     acceptsPrivateGroups: false,
 
     // Contact info mapping from flat HTTP fields

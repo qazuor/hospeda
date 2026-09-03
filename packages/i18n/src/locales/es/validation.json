@@ -2900,6 +2900,15 @@
         "meetingPoint": {
             "max": "El punto de encuentro no puede superar los {{max}} caracteres"
         },
+        "meetingPointDirections": {
+            "item": {
+                "max": "Cada indicación de cómo llegar no puede superar los {{max}} caracteres",
+                "min": "Las indicaciones de cómo llegar no pueden quedar vacías"
+            },
+            "max": "No podés cargar más de {{max}} indicaciones de cómo llegar",
+            "max_one": "No podés cargar más de {{max}} indicación de cómo llegar",
+            "max_other": "No podés cargar más de {{max}} indicaciones de cómo llegar"
+        },
         "meetingPointLat": {
             "max": "La latitud del punto de encuentro no puede superar {{max}}",
             "min": "La latitud del punto de encuentro debe ser al menos {{min}}"
@@ -3174,7 +3183,9 @@
             "validUntil": {
                 "invalid": "La fecha de fin debe ser una fecha válida con formato AAAA-MM-DD",
                 "beforeValidFrom": "La fecha de fin no puede ser anterior a la de inicio",
-                "windowTooLong": "El plato del día no puede estar vigente más de {{max}} días"
+                "windowTooLong": "El plato del día no puede estar vigente más de {{max}} días",
+                "windowTooLong_one": "El plato del día no puede estar vigente más de {{max}} día",
+                "windowTooLong_other": "El plato del día no puede estar vigente más de {{max}} días"
             }
         },
         "dailySpecials": {

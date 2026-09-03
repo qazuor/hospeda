@@ -1,6 +1,6 @@
 {
-  "id": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
-  "prevId": "6971c57f-71ba-4e4c-b43d-ee64d7eab854",
+  "id": "853f6f61-5a2c-45b3-b027-02481ad5eb9f",
+  "prevId": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -14185,6 +14185,177 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gastronomy_daily_specials": {
+      "name": "gastronomy_daily_specials",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "gastronomy_id": {
+          "name": "gastronomy_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price_cents": {
+          "name": "price_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_until": {
+          "name": "valid_until",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_id": {
+          "name": "updated_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "gastronomyDailySpecials_gastronomyId_idx": {
+          "name": "gastronomyDailySpecials_gastronomyId_idx",
+          "columns": [
+            {
+              "expression": "gastronomy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastronomyDailySpecials_gastronomyId_validity_idx": {
+          "name": "gastronomyDailySpecials_gastronomyId_validity_idx",
+          "columns": [
+            {
+              "expression": "gastronomy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "valid_from",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "valid_until",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "gastronomy_daily_specials_gastronomy_id_gastronomies_id_fk": {
+          "name": "gastronomy_daily_specials_gastronomy_id_gastronomies_id_fk",
+          "tableFrom": "gastronomy_daily_specials",
+          "tableTo": "gastronomies",
+          "columnsFrom": [
+            "gastronomy_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "gastronomy_daily_specials_created_by_id_users_id_fk": {
+          "name": "gastronomy_daily_specials_created_by_id_users_id_fk",
+          "tableFrom": "gastronomy_daily_specials",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "gastronomy_daily_specials_updated_by_id_users_id_fk": {
+          "name": "gastronomy_daily_specials_updated_by_id_users_id_fk",
+          "tableFrom": "gastronomy_daily_specials",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updated_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

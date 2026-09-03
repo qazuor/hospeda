@@ -11,9 +11,15 @@
  *   plus the composed-media read attach helpers
  * - Projection utilities — projectExperiencePublic / projectExperienceOwnerAvatar
  * - Permission helpers — granular COMMERCE_* gate wrappers
+ * - Entitlement resolver (HOS-1049) — resolveOwnerGrantsExperienceDirections
  * - Types — ExperienceHookState
  */
 
+// Meeting-point directions entitlement resolver (HOS-1049)
+export {
+    type ResolveOwnerGrantsExperienceDirectionsInput,
+    resolveOwnerGrantsExperienceDirections
+} from './experience.directions-entitlement';
 // FAQ helpers
 export {
     addExperienceFaq,

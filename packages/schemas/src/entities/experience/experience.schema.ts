@@ -41,8 +41,24 @@ export const MAX_EXPERIENCE_CHECKLIST_ITEMS = 20;
 /** Maximum length of a single `whatToBring` / `requirements` line (HOS-1046). */
 export const MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH = 160;
 
+/** Maximum number of lines in the `meetingPointDirections` list (HOS-1049). */
+export const MAX_EXPERIENCE_DIRECTION_ITEMS = 12;
+
 /**
- * Builds the schema for one of the two experience checklists (HOS-1046).
+ * Maximum length of a single `meetingPointDirections` line (HOS-1049).
+ *
+ * Longer than {@link MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH} because the two
+ * lists are not the same kind of sentence: a packing-list line is a noun
+ * ("repelente"), a directions line is a manoeuvre ("desde la Ruta 14 tomá el
+ * acceso a la playa municipal, seguí 800 m de ripio y estacioná junto al
+ * puesto de guardavidas"). Measured against real Litoral departures, 160 cut
+ * those in half; 240 does not.
+ */
+export const MAX_EXPERIENCE_DIRECTION_ITEM_LENGTH = 240;
+
+/**
+ * Builds the schema for one of the experience free-text lists (HOS-1046,
+ * reused by HOS-1049).
  *
  * `whatToBring` and `requirements` are separate COLUMNS but share a shape, and
  * the shape carries three decisions worth stating once:
@@ -63,23 +79,31 @@ export const MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH = 160;
  * the `--verify` guard would then demand a translation for a key that can never
  * exist. Literals at the call site keep the key greppable and the guard honest.
  *
- * @param messages - The three i18n keys for this checklist's failure modes.
- * @returns A Zod array schema for that checklist.
+ * @param input - The three i18n keys for this list's failure modes, plus the
+ *   optional size limits (defaulting to the HOS-1046 checklist ones).
+ * @returns A Zod array schema for that list.
  */
-function experienceChecklistSchema(messages: {
+function experienceChecklistSchema(input: {
     readonly itemMin: string;
     readonly itemMax: string;
     readonly listMax: string;
+    /** Defaults to {@link MAX_EXPERIENCE_CHECKLIST_ITEMS}. */
+    readonly maxItems?: number;
+    /** Defaults to {@link MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH}. */
+    readonly maxItemLength?: number;
 }): z.ZodDefault<z.ZodArray<z.ZodString>> {
+    const maxItems = input.maxItems ?? MAX_EXPERIENCE_CHECKLIST_ITEMS;
+    const maxItemLength = input.maxItemLength ?? MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH;
+
     return z
         .array(
             z
                 .string()
                 .trim()
-                .min(1, { message: messages.itemMin })
-                .max(MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH, { message: messages.itemMax })
+                .min(1, { message: input.itemMin })
+                .max(maxItemLength, { message: input.itemMax })
         )
-        .max(MAX_EXPERIENCE_CHECKLIST_ITEMS, { message: messages.listMax })
+        .max(maxItems, { message: input.listMax })
         .default([]);
 }
 
@@ -109,6 +133,10 @@ function experienceChecklistSchema(messages: {
  * - `isPriceOnRequest` — when true, hides priceFrom and shows "Consultar precio"
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
  *   experience starts (HOS-1048); ficha data, never entitlement-gated.
+ * - `meetingPointDirections` — how to GET there (HOS-1049); the ONE gated
+ *   field on this entity, `manage_experience_directions` from `experience-pro`
+ *   upwards. Gated on the route, not here: this schema also describes rows read
+ *   back from the database, and the instructions are withheld, never deleted.
  * - `durationMinutes` — how long it lasts, in minutes (HOS-898)
  * - `whatToBring` / `requirements` — two free-text checklists (HOS-1046)
  * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
@@ -220,6 +248,34 @@ export const ExperienceSchema = z.object({
         .min(-180, { message: 'zodError.experience.meetingPointLong.min' })
         .max(180, { message: 'zodError.experience.meetingPointLong.max' })
         .nullish(),
+
+    /**
+     * HOW TO GET to the meeting point (HOS-1049) — one instruction per line:
+     * where to park, which bus, how far the walk is from the road, what
+     * landmark to look for.
+     *
+     * A list rather than prose, for the same reason {@link whatToBring} is one:
+     * a traveller reads these one at a time. It also keeps the field clear of
+     * markdown, so it needs no sanitiser and does not overlap
+     * `richDescription`'s own entitlement.
+     *
+     * ## The ONE entitlement-gated field on this entity
+     *
+     * Every other ficha field here is free on the basic tier by owner decision
+     * — including {@link meetingPoint} and its two coordinates. This one, and
+     * the MAP drawn from those coordinates, are `manage_experience_directions`
+     * (`experience-pro` and above). The gate lives on the write route and on
+     * the public projection, NOT in this schema: the base schema also describes
+     * rows read back from the database, and a downgraded provider's
+     * instructions are withheld, never deleted.
+     */
+    meetingPointDirections: experienceChecklistSchema({
+        itemMin: 'zodError.experience.meetingPointDirections.item.min',
+        itemMax: 'zodError.experience.meetingPointDirections.item.max',
+        listMax: 'zodError.experience.meetingPointDirections.max',
+        maxItems: MAX_EXPERIENCE_DIRECTION_ITEMS,
+        maxItemLength: MAX_EXPERIENCE_DIRECTION_ITEM_LENGTH
+    }),
 
     /**
      * How long the experience lasts, in whole MINUTES (HOS-898).

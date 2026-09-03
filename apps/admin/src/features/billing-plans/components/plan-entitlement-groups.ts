@@ -104,6 +104,10 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // tickable on any plan here because the editor is a flat checklist,
             // but only a gastronomy plan has a carta for it to unlock.
             EntitlementKey.MANAGE_GASTRONOMY_MENU,
+            // HOS-1049 — the mirror image of the one above: tier-dependent
+            // (`experience-pro` and up) and experience-only, since a restaurant
+            // has an address and a door rather than a meeting point to walk to.
+            EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
             // HOS-1041 — the menú del día, same tier and same gastronomy-only
             // caveat as the carta above it. A separate box rather than folded
             // into that one because they are separate keys: an operator must be

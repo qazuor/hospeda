@@ -2900,6 +2900,15 @@
         "meetingPoint": {
             "max": "The meeting point cannot exceed {{max}} characters"
         },
+        "meetingPointDirections": {
+            "item": {
+                "max": "Each how-to-get-there instruction cannot exceed {{max}} characters",
+                "min": "How-to-get-there instructions cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} how-to-get-there instructions",
+            "max_one": "You cannot add more than {{max}} how-to-get-there instruction",
+            "max_other": "You cannot add more than {{max}} how-to-get-there instructions"
+        },
         "meetingPointLat": {
             "max": "The meeting point latitude cannot exceed {{max}}",
             "min": "The meeting point latitude must be at least {{min}}"
@@ -3174,7 +3183,9 @@
             "validUntil": {
                 "invalid": "The end date must be a valid date in YYYY-MM-DD format",
                 "beforeValidFrom": "The end date cannot be earlier than the start date",
-                "windowTooLong": "A daily special cannot run for more than {{max}} days"
+                "windowTooLong": "A daily special cannot run for more than {{max}} days",
+                "windowTooLong_one": "A daily special cannot run for more than {{max}} day",
+                "windowTooLong_other": "A daily special cannot run for more than {{max}} days"
             }
         },
         "dailySpecials": {

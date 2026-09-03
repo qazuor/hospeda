@@ -267,6 +267,22 @@ describe('Entitlement Configuration', () => {
             ).toBeDefined();
         });
 
+        it('keeps the pro-only experience-directions key OUT of the vertical-wide map (HOS-1049)', () => {
+            // Third key of this shape, same reason: `experience-pro` and above
+            // grant the how-to-get-there half, so listing it in the floor map
+            // would hand it to `experience-basico` — which today is the ONLY
+            // sellable experience tier, so the give-away would be total rather
+            // than partial.
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS]).not.toContain(
+                EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS
+            );
+            expect(
+                ENTITLEMENT_DEFINITIONS.find(
+                    (e) => e.key === EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS
+                )
+            ).toBeDefined();
+        });
+
         it('keeps the pro-only menú-del-día key OUT of the vertical-wide map (HOS-1041)', () => {
             // Third key of this shape, same reason as the two above: the floor
             // map is what EVERY tier of a vertical receives, so a paid
@@ -286,7 +302,8 @@ describe('Entitlement Configuration', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
             // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
             // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5;
-            // HOS-895: commerce 5→6; HOS-1041: commerce 6→7)
+            // HOS-895: commerce 5→6; HOS-1049: commerce 6→7;
+            // HOS-1041: commerce 7→8)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
@@ -295,8 +312,9 @@ describe('Entitlement Configuration', () => {
             // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical (4);
             // HOS-1058 — plus the premium-only printable ficha (1);
             // HOS-895 — plus the pro-and-above structured carta (1);
+            // HOS-1049 — plus the pro-and-above meeting-point directions (1);
             // HOS-1041 — plus the pro-and-above menú del día (1).
-            const commerceCount = 7;
+            const commerceCount = 8;
 
             // Act & Assert
             expect(
