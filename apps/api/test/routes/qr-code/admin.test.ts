@@ -48,7 +48,10 @@ const qrDb = vi.hoisted(() => {
             }
             return null;
         }),
-        findAll: vi.fn(async () => ({ items: [...rows.values()], total: rows.size })),
+        findAll: vi.fn(async (..._args: readonly unknown[]) => ({
+            items: [...rows.values()],
+            total: rows.size
+        })),
         /**
          * Answers with a COMPLETE row. The route validates its response against
          * `QrCodeAdminSchema`, so a stub that echoed only what it was given
@@ -76,7 +79,7 @@ const qrDb = vi.hoisted(() => {
             rows.set(id, merged);
             return merged;
         }),
-        softDelete: vi.fn(async () => 1),
+        softDelete: vi.fn(async (_where: Record<string, unknown>) => 1),
         getTable: vi.fn()
     };
 });
@@ -109,7 +112,7 @@ vi.mock('@repo/db', async () => {
                 return qrDb.findOne(where);
             }
             async findAll(...args: unknown[]) {
-                return qrDb.findAll(...(args as []));
+                return qrDb.findAll(...args);
             }
             async create(data: Record<string, unknown>) {
                 return qrDb.create(data);
@@ -118,7 +121,7 @@ vi.mock('@repo/db', async () => {
                 return qrDb.update(where, data);
             }
             async softDelete(where: Record<string, unknown>) {
-                return qrDb.softDelete(where as never);
+                return qrDb.softDelete(where);
             }
         },
         QrCodeScanModel: class {
@@ -376,9 +379,9 @@ describe('GET /admin/qr-codes', () => {
 
         expect(res.status).toBe(200);
         expect(qrDb.findAll).toHaveBeenCalledTimes(1);
-        const pagination = qrDb.findAll.mock.calls[0]?.[1] as Record<string, unknown>;
-        expect(pagination.page).toBe(1);
-        expect(pagination.pageSize).toBe(5);
+        const pagination = qrDb.findAll.mock.calls[0]?.[1] as Record<string, unknown> | undefined;
+        expect(pagination?.page).toBe(1);
+        expect(pagination?.pageSize).toBe(5);
     });
 
     /**

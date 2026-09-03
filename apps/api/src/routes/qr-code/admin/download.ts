@@ -75,7 +75,7 @@ export const adminDownloadQrCodeRoute = createAdminRoute({
         ctx: Context,
         params: Record<string, unknown>,
         _body: Record<string, unknown>,
-        query: Record<string, unknown>
+        query?: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
 
