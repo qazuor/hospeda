@@ -7,9 +7,6 @@
             "forbiddenForManual": "A manual code cannot be attached to an entity",
             "requiredForGenerated": "A generated code must name the entity it came from"
         },
-        "entityType": {
-            "max": "The entity type must not exceed {{max}} characters"
-        },
         "label": {
             "max": "The QR code name must not exceed {{max}} characters",
             "min": "The QR code name is required"

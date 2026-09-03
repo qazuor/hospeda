@@ -7,9 +7,6 @@
             "forbiddenForManual": "Un código manual no puede estar asociado a una entidad",
             "requiredForGenerated": "Un código generado debe indicar la entidad de la que proviene"
         },
-        "entityType": {
-            "max": "El tipo de entidad no puede superar los {{max}} caracteres"
-        },
         "label": {
             "max": "El nombre del código QR no puede superar los {{max}} caracteres",
             "min": "El nombre del código QR es obligatorio"

@@ -1502,7 +1502,6 @@
         "zodError.qrCode.description.max",
         "zodError.qrCode.entityRef.forbiddenForManual",
         "zodError.qrCode.entityRef.requiredForGenerated",
-        "zodError.qrCode.entityType.max",
         "zodError.qrCode.label.max",
         "zodError.qrCode.label.min",
         "zodError.qrCode.renderOptions.color.invalid",
@@ -1855,7 +1854,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1854,
+    "total": 1853,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1919,7 +1918,7 @@
         "priceRange": 13,
         "publicStats": 8,
         "pushToken": 4,
-        "qrCode": 16,
+        "qrCode": 15,
         "required": 1,
         "response": 1,
         "result": 6,
