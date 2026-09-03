@@ -29,6 +29,7 @@ import {
     determineOverallThreshold,
     ExperienceService,
     GastronomyService,
+    hydrateSubscriptionProductDomains,
     type LimitUsage,
     OwnerPromotionService,
     SearchHistoryService,
@@ -244,9 +245,9 @@ export class UsageTrackingService {
 
         try {
             // Get customer's active subscription
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 return {
                     success: false,
                     error: {
@@ -255,6 +256,12 @@ export class UsageTrackingService {
                     }
                 };
             }
+
+            // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
+            // `hydrateSubscriptionProductDomains`'s doc) — without this,
+            // `findActiveSubscriptionForDomain`'s domain scoping is a no-op: every
+            // subscription reaches it with `productDomain = undefined`.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             const activeSubscription = findActiveSubscriptionForDomain({
                 subscriptions,
@@ -458,14 +465,20 @@ export class UsageTrackingService {
 
         try {
             // Get customer's active subscription
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 return {
                     success: true,
                     data: null
                 };
             }
+
+            // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
+            // `hydrateSubscriptionProductDomains`'s doc) — without this,
+            // `findActiveSubscriptionForDomain`'s domain scoping is a no-op: every
+            // subscription reaches it with `productDomain = undefined`.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             const activeSubscription = findActiveSubscriptionForDomain({
                 subscriptions,

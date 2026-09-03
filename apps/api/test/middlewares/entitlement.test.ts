@@ -3,6 +3,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { getDb } from '@repo/db';
 import { isOwnerCategorySubscription, PlanService, RoleEnum } from '@repo/service-core';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
@@ -557,6 +558,107 @@ describe('entitlementMiddleware', () => {
             // Second request - should use cache
             await app.request('/test');
             expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // HOS-1104: `getByCustomerId()` never populates `productDomain` on its own
+    // (qzpay-core's mapper builds objects field-by-field from the fields
+    // `QZPaySubscription` declares — see `hydrateSubscriptionProductDomains`'s
+    // doc in `@repo/service-core`). Without hydration, the SPEC-239 T-034
+    // "exclude commerce-domain subscriptions" comment a few lines above
+    // `loadEntitlements`'s `.find()` was a documented no-op: every subscription
+    // reached `isAccommodationSubscription` with `productDomain = undefined`,
+    // which fails OPEN to accommodation regardless of the subscription's real
+    // vertical.
+    describe('SPEC-239 domain isolation via HOS-1104 hydration', () => {
+        it('does NOT resolve a gastronomy-only subscription as the accommodation plan', async () => {
+            // Fixture omits `productDomain` — that shape never occurs on the
+            // real SDK object. Its real vertical is supplied via the mocked
+            // `getDb()` recovery SELECT, exactly like the HOS-934 precedent.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-gastro', planId: 'plan-gastro', status: 'active' }
+            ]);
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi
+                            .fn()
+                            .mockResolvedValue([{ id: 'sub-gastro', productDomain: 'gastronomy' }])
+                    })
+                })
+            } as never);
+            // Deliberately DOES grant PUBLISH_ACCOMMODATIONS: without this the
+            // gastronomy plan resolving at all (bug or not) would leave the
+            // entitlement absent for an unrelated reason (no plan configured),
+            // making the assertion below pass regardless of whether the
+            // domain exclusion actually ran.
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-gastro',
+                name: 'Gastronomy Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({ entitlements: Array.from(c.get('userEntitlements')) })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Without hydration this would resolve the gastronomy plan and
+            // grant PUBLISH_ACCOMMODATIONS from an unrelated subscription — the
+            // exact HOS-1104 bug. The correct outcome is the tourist-free
+            // default (no active accommodation subscription found).
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('still resolves a real accommodation subscription (fix must not invert the bug)', async () => {
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-accom', planId: 'plan-123', status: 'active' }
+            ]);
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi
+                            .fn()
+                            .mockResolvedValue([
+                                { id: 'sub-accom', productDomain: 'accommodation' }
+                            ])
+                    })
+                })
+            } as never);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-123',
+                name: 'Pro Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({ entitlements: Array.from(c.get('userEntitlements')) })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         });
     });
 
