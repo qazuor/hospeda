@@ -1,0 +1,86 @@
+{
+    "title": "Códigos QR",
+    "singular": "Código QR",
+    "plural": "Códigos QR",
+    "description": "Un código impreso apunta siempre a la misma dirección corta; el destino se cambia acá, sin reimprimir nada.",
+    "create": "Crear código QR",
+    "edit": "Editar código QR",
+    "detail": "Detalle del código",
+    "empty": "Todavía no hay ningún código QR.",
+    "search": {
+        "placeholder": "Buscar por nombre, código o destino"
+    },
+    "columns": {
+        "label": "Nombre",
+        "slug": "Código",
+        "targetUrl": "Destino",
+        "source": "Origen",
+        "isActive": "Estado",
+        "createdAt": "Creado",
+        "actions": "Acciones"
+    },
+    "form": {
+        "labelLabel": "Nombre",
+        "labelPlaceholder": "Cartelera de la plaza Ramírez",
+        "labelHelp": "Cómo vas a reconocer este código dentro de un año.",
+        "targetUrlLabel": "URL de destino",
+        "targetUrlPlaceholder": "https://hospeda.com.ar/es/destinos/colon/",
+        "targetUrlHelp": "A dónde lleva el escaneo. Se puede cambiar cuando quieras: es la razón de ser del sistema.",
+        "descriptionLabel": "Descripción",
+        "descriptionPlaceholder": "Dónde está pegado, quién lo pidió, hasta cuándo va.",
+        "slugLabel": "Código corto",
+        "slugPlaceholder": "Se genera solo si lo dejás vacío",
+        "slugHelp": "Aparece en la URL impresa. Solo se puede elegir al crear.",
+        "slugLocked": "El código corto no se puede cambiar: ya está impreso.",
+        "sourceLabel": "Origen",
+        "isActiveLabel": "Activo",
+        "isActiveHelp": "Un código inactivo deja de redirigir, pero conserva los escaneos registrados.",
+        "renderTitle": "Cómo se dibuja",
+        "renderHelp": "Solo se guardan los campos que toques: el resto queda como estaba.",
+        "formatLabel": "Formato",
+        "errorCorrectionLabel": "Corrección de errores",
+        "marginLabel": "Margen (módulos)",
+        "sizeLabel": "Tamaño (píxeles)",
+        "sizePlaceholder": "Vacío = escala libre",
+        "foregroundColorLabel": "Color del código",
+        "backgroundColorLabel": "Color de fondo"
+    },
+    "source": {
+        "MANUAL": "Manual",
+        "GENERATED": "Generado"
+    },
+    "status": {
+        "active": "Activo",
+        "inactive": "Inactivo"
+    },
+    "errorCorrection": {
+        "L": "L — baja (~7%)",
+        "M": "M — media (~15%)",
+        "Q": "Q — alta (~25%)",
+        "H": "H — máxima (~30%)"
+    },
+    "download": {
+        "title": "Descargar",
+        "help": "La imagen se dibuja con las opciones guardadas de este código.",
+        "svg": "Descargar SVG",
+        "png": "Descargar PNG",
+        "scanUrl": "URL que codifica",
+        "failed": "No se pudo generar la imagen."
+    },
+    "actions": {
+        "view": "Ver",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "backToList": "Volver al listado"
+    },
+    "messages": {
+        "created": "Código QR creado",
+        "createError": "No se pudo crear el código QR",
+        "updated": "Código QR actualizado",
+        "updateError": "No se pudo actualizar el código QR",
+        "deleted": "Código QR eliminado",
+        "deleteError": "No se pudo eliminar el código QR",
+        "deleteConfirm": "¿Eliminar este código? El código corto queda reservado para siempre y los escaneos se conservan.",
+        "notFound": "No existe ese código QR"
+    }
+}

@@ -1,0 +1,86 @@
+{
+    "title": "QR codes",
+    "singular": "QR code",
+    "plural": "QR codes",
+    "description": "A printed code always points at the same short address; the destination is changed here, with nothing reprinted.",
+    "create": "Create QR code",
+    "edit": "Edit QR code",
+    "detail": "Code detail",
+    "empty": "No QR codes yet.",
+    "search": {
+        "placeholder": "Search by name, code or destination"
+    },
+    "columns": {
+        "label": "Name",
+        "slug": "Code",
+        "targetUrl": "Destination",
+        "source": "Source",
+        "isActive": "Status",
+        "createdAt": "Created",
+        "actions": "Actions"
+    },
+    "form": {
+        "labelLabel": "Name",
+        "labelPlaceholder": "Plaza Ramírez noticeboard",
+        "labelHelp": "How you will recognise this code a year from now.",
+        "targetUrlLabel": "Destination URL",
+        "targetUrlPlaceholder": "https://hospeda.com.ar/en/destinations/colon/",
+        "targetUrlHelp": "Where a scan is sent. Change it whenever you like — that is the whole point of the system.",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Where it is stuck, who asked for it, how long it runs.",
+        "slugLabel": "Short code",
+        "slugPlaceholder": "Generated for you if left empty",
+        "slugHelp": "Appears in the printed URL. Can only be chosen at creation.",
+        "slugLocked": "The short code cannot be changed: it is already printed.",
+        "sourceLabel": "Source",
+        "isActiveLabel": "Active",
+        "isActiveHelp": "An inactive code stops redirecting but keeps every scan already recorded.",
+        "renderTitle": "How it is drawn",
+        "renderHelp": "Only the fields you touch are saved; the rest stay as they were.",
+        "formatLabel": "Format",
+        "errorCorrectionLabel": "Error correction",
+        "marginLabel": "Margin (modules)",
+        "sizeLabel": "Size (pixels)",
+        "sizePlaceholder": "Empty = scales freely",
+        "foregroundColorLabel": "Code colour",
+        "backgroundColorLabel": "Background colour"
+    },
+    "source": {
+        "MANUAL": "Manual",
+        "GENERATED": "Generated"
+    },
+    "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+    },
+    "errorCorrection": {
+        "L": "L — low (~7%)",
+        "M": "M — medium (~15%)",
+        "Q": "Q — high (~25%)",
+        "H": "H — highest (~30%)"
+    },
+    "download": {
+        "title": "Download",
+        "help": "The image is drawn with this code's saved options.",
+        "svg": "Download SVG",
+        "png": "Download PNG",
+        "scanUrl": "Encoded URL",
+        "failed": "The image could not be generated."
+    },
+    "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "backToList": "Back to list"
+    },
+    "messages": {
+        "created": "QR code created",
+        "createError": "The QR code could not be created",
+        "updated": "QR code updated",
+        "updateError": "The QR code could not be updated",
+        "deleted": "QR code deleted",
+        "deleteError": "The QR code could not be deleted",
+        "deleteConfirm": "Delete this code? The short code stays reserved forever and the recorded scans are kept.",
+        "notFound": "No such QR code"
+    }
+}
