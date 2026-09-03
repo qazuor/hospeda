@@ -171,6 +171,35 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         }
     });
 
+    it('grants the experience certificate from experience-PRO upwards, and nowhere else (HOS-1057)', () => {
+        // Same shape as the HOS-1058 assertion above, one tier lower and one
+        // vertical narrower. Three halves, each catching a different mistake:
+        //
+        // - `-pro` and `-premium` carry it: fails if the grant is dropped, or
+        //   if `-premium` is left out on the assumption that a dearer tier
+        //   inherits from the cheaper one. Nothing composes these arrays.
+        // - `experience-basico` does not: fails if the key is moved into
+        //   `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, which would hand it to the
+        //   ONLY sellable experience tier there is — i.e. to every paying
+        //   experience owner, while the gate kept looking like it worked.
+        // - No gastronomy tier does: a restaurant has nothing to certify, and
+        //   this is the assertion that keeps that true if someone later widens
+        //   `extraEntitlements` by copy-paste across verticals.
+        expect(EXPERIENCE_PRO_PLAN.entitlements).toContain(
+            EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+        );
+        expect(EXPERIENCE_PREMIUM_PLAN.entitlements).toContain(
+            EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+        );
+
+        expect(EXPERIENCE_BASICO_PLAN.entitlements).not.toContain(
+            EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+        );
+        for (const plan of ALL_GASTRONOMY_PLANS) {
+            expect(plan.entitlements).not.toContain(EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE);
+        }
+    });
+
     it('grants the venue events agenda from gastronomy-pro upwards only (HOS-1042)', () => {
         // Same two load-bearing halves as the ficha test above, one tier lower
         // and one vertical narrower.

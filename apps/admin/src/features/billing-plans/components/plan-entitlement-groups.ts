@@ -108,6 +108,9 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // (`experience-pro` and up) and experience-only, since a restaurant
             // has an address and a door rather than a meeting point to walk to.
             EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+            // HOS-1057 — same shape, same tier: the certificate a provider
+            // issues to whoever did the experience.
+            EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
             // HOS-1042 — the venue's own agenda. Same shape as the carta above:
             // tier-dependent, gastronomy-only, and tickable on any plan here
             // because the editor is a flat checklist.

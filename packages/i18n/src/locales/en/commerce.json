@@ -62,6 +62,26 @@
         "error": "We couldn't generate the sheet. Please try again in a moment.",
         "locked": "The PDF sheet is available on the Premium plan of your category."
     },
+    "certificate": {
+        "title": "Certificate",
+        "preamble": "This certifies that",
+        "connector": "completed the experience",
+        "qrHint": "Scan the code to see the experience.",
+        "footer": "Certificate issued by the provider through Hospeda — hospeda.com.ar",
+        "heading": "Certificates",
+        "intro": "Issue a certificate to whoever did the experience. They can download it, print it or share it.",
+        "recipientLabel": "Name of the person who did it",
+        "dateLabel": "Day they did it",
+        "submit": "Issue certificate",
+        "submitting": "Issuing…",
+        "issuedOn": "Issued on {date}",
+        "download": "Download PDF",
+        "downloading": "Generating the certificate…",
+        "empty": "You haven't issued any certificates yet.",
+        "error": "We couldn't issue the certificate. Please try again in a moment.",
+        "downloadError": "We couldn't generate the certificate. Please try again in a moment.",
+        "locked": "Certificates are available from the Experiences Professional plan upwards."
+    },
     "owner": {
         "nav": "My business",
         "list": {
@@ -390,6 +410,7 @@
         "entitlements": {
             "manageGastronomyMenu": "Structured menu",
             "manageExperienceDirections": "Map and how to get there",
+            "issueExperienceCertificate": "Experience certificates",
             "manageGastronomyEvents": "Venue schedule"
         },
         "create": {
