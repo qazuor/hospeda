@@ -103,7 +103,10 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-895 — likewise tier-dependent, and gastronomy-only: it is
             // tickable on any plan here because the editor is a flat checklist,
             // but only a gastronomy plan has a carta for it to unlock.
-            EntitlementKey.MANAGE_GASTRONOMY_MENU
+            EntitlementKey.MANAGE_GASTRONOMY_MENU,
+            // HOS-1045 — narrower still: gastronomy PREMIUM only, where the
+            // carta key above starts at `-pro`. Same flat-checklist caveat.
+            EntitlementKey.MENU_ITEM_PHOTOS
         ]
     }
 ];
