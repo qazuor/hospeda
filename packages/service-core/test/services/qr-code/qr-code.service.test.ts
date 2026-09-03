@@ -61,7 +61,14 @@ describe('QrCodeService', () => {
             modelMock as unknown as QrCodeModel,
             scanModelMock as unknown as QrCodeScanModel
         );
-        actor = createActor({ permissions: [PermissionEnum.SETTINGS_MANAGE] });
+        actor = createActor({
+            permissions: [
+                PermissionEnum.QR_CODE_VIEW,
+                PermissionEnum.QR_CODE_CREATE,
+                PermissionEnum.QR_CODE_UPDATE,
+                PermissionEnum.QR_CODE_DELETE
+            ]
+        });
     });
 
     describe('resolveBySlug', () => {
@@ -288,8 +295,39 @@ describe('QrCodeService', () => {
             });
         });
 
-        it('refuses an actor without SETTINGS_MANAGE', async () => {
+        it('refuses an actor without QR_CODE_CREATE', async () => {
             const result = await service.create(createActor({ permissions: [] }), input);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.create).not.toHaveBeenCalled();
+        });
+
+        /**
+         * The whole point of splitting the family: read access does not carry
+         * write access. An actor holding only `view` must not be able to mint a
+         * code — if this passed, the four verbs would be four names for one
+         * permission.
+         */
+        it('refuses an actor who holds only QR_CODE_VIEW', async () => {
+            const result = await service.create(
+                createActor({ permissions: [PermissionEnum.QR_CODE_VIEW] }),
+                input
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.create).not.toHaveBeenCalled();
+        });
+
+        /**
+         * And the gate really is the QR one, not the borrowed settings gate it
+         * replaced. Without this, leaving `SETTINGS_MANAGE` in place alongside
+         * would look identical from inside the suite.
+         */
+        it('is no longer satisfied by SETTINGS_MANAGE', async () => {
+            const result = await service.create(
+                createActor({ permissions: [PermissionEnum.SETTINGS_MANAGE] }),
+                input
+            );
 
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
             expect(modelMock.create).not.toHaveBeenCalled();
@@ -412,10 +450,26 @@ describe('QrCodeService', () => {
             expect(modelMock.update).not.toHaveBeenCalled();
         });
 
-        it('refuses an actor without SETTINGS_MANAGE', async () => {
+        it('refuses an actor without QR_CODE_UPDATE', async () => {
             const result = await service.update(createActor({ permissions: [] }), QR_ID, {
                 targetUrl: 'https://hospeda.com.ar/es/'
             });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(modelMock.update).not.toHaveBeenCalled();
+        });
+
+        /**
+         * Retargeting is the one verb worth withholding from somebody who may
+         * otherwise browse and print codes: it silently changes where every
+         * sticker already in the field sends people.
+         */
+        it('refuses an actor who holds only QR_CODE_VIEW', async () => {
+            const result = await service.update(
+                createActor({ permissions: [PermissionEnum.QR_CODE_VIEW] }),
+                QR_ID,
+                { targetUrl: 'https://hospeda.com.ar/es/' }
+            );
 
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
             expect(modelMock.update).not.toHaveBeenCalled();
