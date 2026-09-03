@@ -9,6 +9,8 @@ import {
     QR_CODE_DEFAULT_BACKGROUND_COLOR,
     QR_CODE_DEFAULT_FOREGROUND_COLOR,
     QR_CODE_DEFAULT_MARGIN,
+    QrCodeAdminSearchSchema,
+    QrCodeCreateHttpSchema,
     QrCodeCreateInputSchema,
     QrCodeErrorCorrectionLevelEnum,
     QrCodeFormatEnum,
@@ -16,6 +18,7 @@ import {
     QrCodeScanSchema,
     QrCodeSlugSchema,
     QrCodeSourceEnum,
+    QrCodeUpdateHttpSchema,
     QrCodeUpdateInputSchema
 } from '../../../src/index.js';
 
@@ -160,6 +163,78 @@ describe('QrCodeUpdateInputSchema', () => {
      */
     it('materialises nothing from an empty patch', () => {
         expect(QrCodeUpdateInputSchema.parse({})).toStrictEqual({});
+    });
+});
+
+describe('QrCodeAdminSearchSchema', () => {
+    /**
+     * Regression for the `z.coerce.boolean()` trap: a query param always arrives
+     * as a string and `Boolean('false') === true`, so coercion hands the filter
+     * the exact complement of what was asked. An operator filtering for retired
+     * codes would be shown the live ones under an "inactive" heading.
+     *
+     * This test fails if anyone puts `z.coerce.boolean()` back.
+     */
+    it('parses ?isActive=false to false, not true', () => {
+        const parsed = QrCodeAdminSearchSchema.parse({ isActive: 'false' });
+
+        expect(parsed.isActive).toBe(false);
+    });
+
+    it('parses ?isActive=true to true', () => {
+        expect(QrCodeAdminSearchSchema.parse({ isActive: 'true' }).isActive).toBe(true);
+    });
+
+    it('leaves isActive undefined when the param is absent', () => {
+        expect(QrCodeAdminSearchSchema.parse({}).isActive).toBeUndefined();
+    });
+});
+
+describe('QrCodeCreateHttpSchema', () => {
+    it('defaults isActive to true when the body omits it', () => {
+        expect(
+            QrCodeCreateHttpSchema.parse({
+                targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+                label: 'Cartelera plaza Ramirez',
+                source: QrCodeSourceEnum.MANUAL
+            }).isActive
+        ).toBe(true);
+    });
+
+    /**
+     * Fails closed rather than inverting. With `z.coerce.boolean()` this parsed
+     * successfully and produced `true` — a code the operator asked to be retired
+     * would have been created live.
+     */
+    it('rejects the string "false" instead of reading it as true', () => {
+        const result = QrCodeCreateHttpSchema.safeParse({
+            targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+            label: 'Cartelera plaza Ramirez',
+            source: QrCodeSourceEnum.MANUAL,
+            isActive: 'false'
+        });
+
+        expect(result.success).toBe(false);
+    });
+
+    it('honours an explicit false', () => {
+        expect(
+            QrCodeCreateHttpSchema.parse({
+                targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+                label: 'Cartelera plaza Ramirez',
+                source: QrCodeSourceEnum.MANUAL,
+                isActive: false
+            }).isActive
+        ).toBe(false);
+    });
+
+    /**
+     * The `isActive` default must stay the outermost wrapper so
+     * `stripShapeDefaults` can see it. Wrapping it in a `z.preprocess()` would
+     * hide it behind a `ZodPipe`, and an empty PATCH would revive a retired code.
+     */
+    it('strips the isActive default from the update schema', () => {
+        expect(QrCodeUpdateHttpSchema.parse({})).toStrictEqual({});
     });
 });
 

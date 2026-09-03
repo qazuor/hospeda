@@ -42,7 +42,19 @@ export const QrCodeCreateHttpSchema = z
         entityType: z.string().nullable().optional(),
         entityId: z.string().uuid().nullable().optional(),
         renderOptions: QrCodeRenderOptionsSchema.optional(),
-        isActive: z.coerce.boolean().default(true)
+        /**
+         * A real boolean, NOT `z.coerce.boolean()`: coercion reads the string
+         * `'false'` as `true`, so a form-encoded body would silently create a
+         * code marked live that the operator asked to be retired. Rejecting the
+         * string outright fails closed instead of inverting the value.
+         *
+         * The `.default()` stays the OUTERMOST wrapper on purpose — a
+         * `z.preprocess()` around it would hide it from `stripShapeDefaults`
+         * (which traverses only `ZodDefault`/`ZodOptional`/`ZodNullable`), and
+         * the update schema below would then let an empty PATCH revive a
+         * retired code.
+         */
+        isActive: z.boolean().default(true)
     })
     .strict();
 
