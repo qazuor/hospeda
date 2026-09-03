@@ -19,6 +19,12 @@
  * destinations, events and posts. They are first-class domain entities
  * (SPEC-239 gastronomy, SPEC-240 experience) with their own tables, but had
  * never been added to this shared enum.
+ *
+ * `HOST_TRADE` was appended for HOS-981, so `qr_codes.entity_type` can name the
+ * subject a `GENERATED` code was derived from through this enum rather than
+ * free text. The other three subjects the QR system needs — `ACCOMMODATION`,
+ * `GASTRONOMY` and `EXPERIENCE`, the three verticals of HOS-982 — were already
+ * here; the provider was the only one missing.
  */
 export enum EntityTypeEnum {
     ACCOMMODATION = 'ACCOMMODATION',
@@ -31,5 +37,6 @@ export enum EntityTypeEnum {
     BILLING_SUBSCRIPTION = 'BILLING_SUBSCRIPTION',
     PAYMENT = 'PAYMENT',
     EXPERIENCE = 'EXPERIENCE',
-    GASTRONOMY = 'GASTRONOMY'
+    GASTRONOMY = 'GASTRONOMY',
+    HOST_TRADE = 'HOST_TRADE'
 }

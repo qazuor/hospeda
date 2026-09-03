@@ -1,0 +1,360 @@
+/**
+ * Tests for the QR code entity schemas (HOS-981).
+ *
+ * @module test/entities/qr-code/qr-code.schema
+ */
+
+import { describe, expect, it } from 'vitest';
+import {
+    EntityTypeEnum,
+    QR_CODE_DEFAULT_BACKGROUND_COLOR,
+    QR_CODE_DEFAULT_FOREGROUND_COLOR,
+    QR_CODE_DEFAULT_MARGIN,
+    QrCodeAdminSearchSchema,
+    QrCodeCreateHttpSchema,
+    QrCodeCreateInputSchema,
+    QrCodeErrorCorrectionLevelEnum,
+    QrCodeFormatEnum,
+    QrCodeRenderOptionsSchema,
+    QrCodeScanSchema,
+    QrCodeSlugSchema,
+    QrCodeSourceEnum,
+    QrCodeUpdateHttpSchema,
+    QrCodeUpdateInputSchema
+} from '../../../src/index.js';
+
+const VALID_UUID = '11111111-1111-4111-8111-111111111111';
+
+describe('QrCodeSlugSchema', () => {
+    it('accepts a slug from the unambiguous alphabet', () => {
+        expect(QrCodeSlugSchema.safeParse('k7Qm2XbT').success).toBe(true);
+    });
+
+    it('rejects the ambiguous characters the printed URL cannot afford', () => {
+        for (const slug of ['abcdefg0', 'abcdefgO', 'abcdefg1', 'abcdefgl', 'abcdefgI']) {
+            expect(QrCodeSlugSchema.safeParse(slug).success).toBe(false);
+        }
+    });
+
+    it('rejects separators and anything not URL-safe', () => {
+        for (const slug of ['abcd-efg', 'abcd_efg', 'abcd efg', 'abcd/efg', 'abcd.efg']) {
+            expect(QrCodeSlugSchema.safeParse(slug).success).toBe(false);
+        }
+    });
+
+    it('rejects a slug that is too short', () => {
+        expect(QrCodeSlugSchema.safeParse('abc').success).toBe(false);
+    });
+});
+
+describe('QrCodeRenderOptionsSchema', () => {
+    it('fills every field from an empty object', () => {
+        const parsed = QrCodeRenderOptionsSchema.parse({});
+
+        expect(parsed.errorCorrectionLevel).toBe(QrCodeErrorCorrectionLevelEnum.M);
+        expect(parsed.format).toBe(QrCodeFormatEnum.SVG);
+        expect(parsed.margin).toBe(QR_CODE_DEFAULT_MARGIN);
+        expect(parsed.size).toBeNull();
+        expect(parsed.foregroundColor).toBe(QR_CODE_DEFAULT_FOREGROUND_COLOR);
+        expect(parsed.backgroundColor).toBe(QR_CODE_DEFAULT_BACKGROUND_COLOR);
+    });
+
+    it('keeps every explicitly supplied value', () => {
+        const parsed = QrCodeRenderOptionsSchema.parse({
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H,
+            format: QrCodeFormatEnum.PNG,
+            margin: 2,
+            size: 512,
+            foregroundColor: '#123456',
+            backgroundColor: '#abcdef12'
+        });
+
+        expect(parsed).toStrictEqual({
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H,
+            format: QrCodeFormatEnum.PNG,
+            margin: 2,
+            size: 512,
+            foregroundColor: '#123456',
+            backgroundColor: '#abcdef12'
+        });
+    });
+
+    it('rejects an out-of-range margin', () => {
+        expect(QrCodeRenderOptionsSchema.safeParse({ margin: -1 }).success).toBe(false);
+        expect(QrCodeRenderOptionsSchema.safeParse({ margin: 21 }).success).toBe(false);
+    });
+
+    it('rejects a size below the scannable floor', () => {
+        expect(QrCodeRenderOptionsSchema.safeParse({ size: 32 }).success).toBe(false);
+    });
+
+    it('rejects a colour that is not hex', () => {
+        expect(QrCodeRenderOptionsSchema.safeParse({ foregroundColor: 'black' }).success).toBe(
+            false
+        );
+        expect(QrCodeRenderOptionsSchema.safeParse({ backgroundColor: '#12345' }).success).toBe(
+            false
+        );
+    });
+
+    it('rejects an unknown option rather than silently dropping it', () => {
+        expect(
+            QrCodeRenderOptionsSchema.safeParse({ logoUrl: 'https://x.test/a.png' }).success
+        ).toBe(false);
+    });
+});
+
+describe('QrCodeCreateInputSchema', () => {
+    const base = {
+        targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+        label: 'Cartelera plaza Ramirez',
+        source: QrCodeSourceEnum.MANUAL
+    };
+
+    it('accepts a minimal manual code with no slug', () => {
+        const parsed = QrCodeCreateInputSchema.parse(base);
+
+        expect(parsed.slug).toBeUndefined();
+        expect(parsed.isActive).toBe(true);
+        expect(parsed.renderOptions).toBeUndefined();
+    });
+
+    it('accepts an explicit slug', () => {
+        expect(QrCodeCreateInputSchema.parse({ ...base, slug: 'k7Qm2XbT' }).slug).toBe('k7Qm2XbT');
+    });
+
+    it('rejects a target that is not a URL', () => {
+        expect(QrCodeCreateInputSchema.safeParse({ ...base, targetUrl: 'not a url' }).success).toBe(
+            false
+        );
+    });
+
+    it('rejects an empty label', () => {
+        expect(QrCodeCreateInputSchema.safeParse({ ...base, label: '' }).success).toBe(false);
+    });
+
+    /**
+     * `source` and the entity reference must agree. Before this invariant
+     * existed the JSDoc asserted it and nothing applied it, so a MANUAL code
+     * could be saved pointing at an entity that never generated it, and a
+     * GENERATED one could be saved naming no entity at all — unreachable
+     * forever by the (entity_type, entity_id) lookup that is the whole point
+     * of those columns.
+     */
+    describe('source / entity reference invariant', () => {
+        const ENTITY = { entityType: EntityTypeEnum.HOST_TRADE, entityId: VALID_UUID };
+
+        /**
+         * `entityType` is the shared enum, not free text (HOS-981). This is the
+         * failure the enum exists to stop: the generator writing `'hostTrade'`
+         * while an operator types `'host_trade'`, the (entityType, entityId)
+         * lookup missing the existing code, and a second permanent slug being
+         * minted for the same provider.
+         */
+        it('rejects an entityType outside EntityTypeEnum', () => {
+            for (const bogus of ['hostTrade', 'host_trade', 'HOSTTRADE', 'provider']) {
+                expect(
+                    QrCodeCreateInputSchema.safeParse({
+                        ...base,
+                        source: QrCodeSourceEnum.GENERATED,
+                        entityType: bogus,
+                        entityId: VALID_UUID
+                    }).success,
+                    `entityType "${bogus}" must be rejected`
+                ).toBe(false);
+            }
+        });
+
+        it('accepts a MANUAL code with no entity reference', () => {
+            expect(QrCodeCreateInputSchema.safeParse(base).success).toBe(true);
+        });
+
+        it('accepts a MANUAL code with the reference explicitly nulled', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    entityType: null,
+                    entityId: null
+                }).success
+            ).toBe(true);
+        });
+
+        it('rejects a MANUAL code that names an entity', () => {
+            expect(QrCodeCreateInputSchema.safeParse({ ...base, ...ENTITY }).success).toBe(false);
+        });
+
+        it('accepts a GENERATED code that names its entity', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    source: QrCodeSourceEnum.GENERATED,
+                    ...ENTITY
+                }).success
+            ).toBe(true);
+        });
+
+        it('rejects a GENERATED code with no entity reference', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    source: QrCodeSourceEnum.GENERATED
+                }).success
+            ).toBe(false);
+        });
+
+        /**
+         * Half a reference is not half-identified, it is unidentified: the
+         * composite index needs both columns to answer "does this subject
+         * already have a code?".
+         */
+        it('rejects a GENERATED code carrying only entityType', () => {
+            const result = QrCodeCreateInputSchema.safeParse({
+                ...base,
+                source: QrCodeSourceEnum.GENERATED,
+                entityType: 'ACCOMMODATION'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.issues.map((issue) => issue.path.join('.'))).toContain('entityId');
+        });
+
+        it('rejects a GENERATED code carrying only entityId', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    source: QrCodeSourceEnum.GENERATED,
+                    entityId: VALID_UUID
+                }).success
+            ).toBe(false);
+        });
+    });
+
+    it('rejects audit fields supplied by the caller', () => {
+        expect(
+            QrCodeCreateInputSchema.safeParse({ ...base, createdById: VALID_UUID }).success
+        ).toBe(false);
+        expect(QrCodeCreateInputSchema.safeParse({ ...base, id: VALID_UUID }).success).toBe(false);
+    });
+});
+
+describe('QrCodeUpdateInputSchema', () => {
+    it('accepts a lone targetUrl — the whole reason the table exists', () => {
+        const parsed = QrCodeUpdateInputSchema.parse({
+            targetUrl: 'https://hospeda.com.ar/otra-cosa'
+        });
+
+        expect(parsed).toStrictEqual({ targetUrl: 'https://hospeda.com.ar/otra-cosa' });
+    });
+
+    /**
+     * The slug is already printed on a sticker somewhere. Accepting it here
+     * would let an update strand every code in the field.
+     */
+    it('refuses a slug', () => {
+        expect(QrCodeUpdateInputSchema.safeParse({ slug: 'k7Qm2XbT' }).success).toBe(false);
+    });
+
+    /**
+     * A PATCH that omits `isActive` must not resurrect a retired code. This is
+     * what `stripShapeDefaults` buys, and an empty patch is the way to see it.
+     */
+    it('materialises nothing from an empty patch', () => {
+        expect(QrCodeUpdateInputSchema.parse({})).toStrictEqual({});
+    });
+});
+
+describe('QrCodeAdminSearchSchema', () => {
+    /**
+     * Regression for the `z.coerce.boolean()` trap: a query param always arrives
+     * as a string and `Boolean('false') === true`, so coercion hands the filter
+     * the exact complement of what was asked. An operator filtering for retired
+     * codes would be shown the live ones under an "inactive" heading.
+     *
+     * This test fails if anyone puts `z.coerce.boolean()` back.
+     */
+    it('parses ?isActive=false to false, not true', () => {
+        const parsed = QrCodeAdminSearchSchema.parse({ isActive: 'false' });
+
+        expect(parsed.isActive).toBe(false);
+    });
+
+    it('parses ?isActive=true to true', () => {
+        expect(QrCodeAdminSearchSchema.parse({ isActive: 'true' }).isActive).toBe(true);
+    });
+
+    it('leaves isActive undefined when the param is absent', () => {
+        expect(QrCodeAdminSearchSchema.parse({}).isActive).toBeUndefined();
+    });
+});
+
+describe('QrCodeCreateHttpSchema', () => {
+    it('defaults isActive to true when the body omits it', () => {
+        expect(
+            QrCodeCreateHttpSchema.parse({
+                targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+                label: 'Cartelera plaza Ramirez',
+                source: QrCodeSourceEnum.MANUAL
+            }).isActive
+        ).toBe(true);
+    });
+
+    /**
+     * Fails closed rather than inverting. With `z.coerce.boolean()` this parsed
+     * successfully and produced `true` — a code the operator asked to be retired
+     * would have been created live.
+     */
+    it('rejects the string "false" instead of reading it as true', () => {
+        const result = QrCodeCreateHttpSchema.safeParse({
+            targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+            label: 'Cartelera plaza Ramirez',
+            source: QrCodeSourceEnum.MANUAL,
+            isActive: 'false'
+        });
+
+        expect(result.success).toBe(false);
+    });
+
+    it('honours an explicit false', () => {
+        expect(
+            QrCodeCreateHttpSchema.parse({
+                targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
+                label: 'Cartelera plaza Ramirez',
+                source: QrCodeSourceEnum.MANUAL,
+                isActive: false
+            }).isActive
+        ).toBe(false);
+    });
+
+    /**
+     * The `isActive` default must stay the outermost wrapper so
+     * `stripShapeDefaults` can see it. Wrapping it in a `z.preprocess()` would
+     * hide it behind a `ZodPipe`, and an empty PATCH would revive a retired code.
+     */
+    it('strips the isActive default from the update schema', () => {
+        expect(QrCodeUpdateHttpSchema.parse({})).toStrictEqual({});
+    });
+});
+
+describe('QrCodeScanSchema', () => {
+    it('accepts a scan row', () => {
+        const parsed = QrCodeScanSchema.parse({
+            id: VALID_UUID,
+            qrCodeId: VALID_UUID,
+            scannedAt: '2026-09-02T12:00:00.000Z'
+        });
+
+        expect(parsed.scannedAt).toBeInstanceOf(Date);
+    });
+
+    /**
+     * Pins the privacy decision: the scan row carries exactly three fields.
+     * If someone adds `ipAddress` or `userAgent` to the entity, this fails.
+     */
+    it('carries no field beyond qrCodeId and scannedAt', () => {
+        expect(Object.keys(QrCodeScanSchema.shape).sort()).toStrictEqual([
+            'id',
+            'qrCodeId',
+            'scannedAt'
+        ]);
+    });
+});

@@ -22,6 +22,7 @@ export * from './owner-promotion/index.ts';
 export * from './partner/index.ts';
 export * from './platform/index.ts';
 export * from './post/index.ts';
+export * from './qr-code/index.ts';
 export * from './revalidation/index.ts';
 export * from './social/index.ts';
 export * from './sponsorship/index.ts';

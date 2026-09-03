@@ -8,12 +8,13 @@ import { EntityTypeEnumSchema } from '../entity-type.schema.js';
 // ============================================================================
 
 describe('EntityTypeEnum', () => {
-    it('should have exactly 11 values (5 original + 4 from SPEC-086 + 2 from F3 favorites)', () => {
+    it('should have exactly 12 values (5 original + 4 from SPEC-086 + 2 from F3 favorites + 1 from HOS-981)', () => {
         // Arrange
         const values = Object.values(EntityTypeEnum);
 
-        // Assert (AC-F15; F3 appended EXPERIENCE + GASTRONOMY for user bookmarks)
-        expect(values).toHaveLength(11);
+        // Assert (AC-F15; F3 appended EXPERIENCE + GASTRONOMY for user bookmarks,
+        // HOS-981 appended HOST_TRADE for qr_codes.entity_type)
+        expect(values).toHaveLength(12);
     });
 
     describe('original 5 values', () => {
@@ -66,6 +67,12 @@ describe('EntityTypeEnum', () => {
         });
     });
 
+    describe('1 new value added in HOS-981 (QR codes for providers)', () => {
+        it('should include HOST_TRADE', () => {
+            expect(EntityTypeEnum.HOST_TRADE).toBe('HOST_TRADE');
+        });
+    });
+
     describe('EntityTypeEnumSchema', () => {
         it('should accept every enum value', () => {
             for (const value of Object.values(EntityTypeEnum)) {
@@ -105,6 +112,22 @@ describe('EntityTypeEnum', () => {
         it('should accept GASTRONOMY', () => {
             const result = EntityTypeEnumSchema.safeParse('GASTRONOMY');
             expect(result.success).toBe(true);
+        });
+
+        it('should accept HOST_TRADE', () => {
+            const result = EntityTypeEnumSchema.safeParse('HOST_TRADE');
+            expect(result.success).toBe(true);
+        });
+
+        /**
+         * The spelling matters more here than for the other values: HOS-981
+         * stores this on `qr_codes.entity_type`, where a mis-spelled variant
+         * would make the (entityType, entityId) lookup miss an existing code and
+         * mint a second permanent slug for the same provider.
+         */
+        it('should reject the camelCase and snake_case spellings of HOST_TRADE', () => {
+            expect(EntityTypeEnumSchema.safeParse('hostTrade').success).toBe(false);
+            expect(EntityTypeEnumSchema.safeParse('host_trade').success).toBe(false);
         });
 
         it('should reject an unknown entity type with ZodError', () => {

@@ -1,4 +1,39 @@
 {
+    "qrCode": {
+        "description": {
+            "max": "A descrição não pode exceder {{max}} caracteres"
+        },
+        "entityRef": {
+            "forbiddenForManual": "Um código manual não pode estar associado a uma entidade",
+            "requiredForGenerated": "Um código gerado deve indicar a entidade da qual provém"
+        },
+        "label": {
+            "max": "O nome do código QR não pode exceder {{max}} caracteres",
+            "min": "O nome do código QR é obrigatório"
+        },
+        "renderOptions": {
+            "color": {
+                "invalid": "A cor deve ser hexadecimal, no formato #rgb, #rrggbb ou #rrggbbaa"
+            },
+            "margin": {
+                "max": "A margem não pode exceder {{max}} módulos",
+                "min": "A margem não pode ser menor que {{min}} módulos"
+            },
+            "size": {
+                "max": "O tamanho não pode exceder {{max}} pixels",
+                "min": "O tamanho deve ser de pelo menos {{min}} pixels para que uma câmera consiga ler o código"
+            }
+        },
+        "slug": {
+            "invalidPattern": "O código só pode usar caracteres inequívocos: sem 0, O, 1, l ou I",
+            "max": "O código não pode exceder {{max}} caracteres",
+            "min": "O código deve ter pelo menos {{min}} caracteres"
+        },
+        "targetUrl": {
+            "invalidUrl": "O destino deve ser uma URL válida",
+            "max": "O destino não pode exceder {{max}} caracteres"
+        }
+    },
     "reviewMarkedFields": "Verifique os campos destacados.",
     "accommodation": {
         "address": {
@@ -2418,6 +2453,15 @@
         },
         "productType": {
             "invalid": "El product type no es válido"
+        },
+        "qrCodeErrorCorrectionLevel": {
+            "invalid": "Nível de correção de erros inválido"
+        },
+        "qrCodeFormat": {
+            "invalid": "Formato de código QR inválido"
+        },
+        "qrCodeSource": {
+            "invalid": "Origem do código QR inválida"
         },
         "recurrenceType": {
             "invalid": "El recurrence type no es válido"

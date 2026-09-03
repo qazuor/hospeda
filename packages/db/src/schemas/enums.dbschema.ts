@@ -53,6 +53,7 @@ import {
     PriceCurrencyEnum,
     PriceRangeEnum,
     ProductTypeEnum,
+    QrCodeSourceEnum,
     RecurrenceTypeEnum,
     RefundStatusEnum,
     RoleEnum,
@@ -465,3 +466,9 @@ export const CalendarSyncStatusPgEnum = pgEnum(
     'calendar_sync_status_enum',
     enumToTuple(CalendarSyncStatusEnum)
 );
+
+/**
+ * PostgreSQL enum for how a `qr_codes` row came into existence (HOS-981).
+ * Values: MANUAL, GENERATED.
+ */
+export const QrCodeSourcePgEnum = pgEnum('qr_code_source_enum', enumToTuple(QrCodeSourceEnum));
