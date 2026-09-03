@@ -611,6 +611,15 @@ drops the call.
 but the route it protects has not been built yet. Do not delete these;
 do not build the route without a spec. The snapshot guard excepts them.
 
+**An unmounted gate helper does NOT prove the feature is unprotected.** A route
+may call the generic `requireEntitlement` directly instead of the named helper,
+leaving the helper stale while the gate stays real and enforced. Measured
+2026-08-31: of the four helpers marked `PHANTOM-GATE`, two were false positives —
+`CAN_USE_CALENDAR` is required by **4** routes and `CAN_SYNC_EXTERNAL_CALENDAR` by
+**3**, both through the generic call. The real phantoms were `RESPOND_REVIEWS`,
+`CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING`, with **0** routes each. So count
+the routes that require the entitlement KEY, never the call sites of the helper.
+
 `// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
 `currentCount` implementation is a hardcoded `0` stub (the counter service
 does not exist yet). See the "Reserved — Limit Stubs" section in
