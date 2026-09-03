@@ -102,6 +102,46 @@ export enum EntitlementKey {
      */
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
+    /**
+     * A photo attached to each dish of the structured carta (HOS-1045).
+     *
+     * A TIER differentiator like {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}
+     * and {@link EntitlementKey.DOWNLOAD_LISTING_PDF}, so it stays OUT of
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * tier of a vertical receives, and a paid capability placed there is handed
+     * to `-basico` as well. Granted by `gastronomy-premium` ONLY (owner
+     * decision, 2026-09-01): where `-pro` earns the right to type a carta at
+     * all, this is what the step above it buys.
+     *
+     * ## It layers ON TOP of `MANAGE_GASTRONOMY_MENU`, it does not replace it
+     *
+     * A dish photo has nowhere to live without dishes, so this key is only
+     * reachable by an owner who also holds the carta key — which `-premium`
+     * does, and which is why that plan repeats `MANAGE_GASTRONOMY_MENU` rather
+     * than inheriting it from `-pro`. The two are still checked independently:
+     * the carta write is gated on the first, and the photo upload plus the
+     * presence of a photo in the submitted document on this one.
+     *
+     * ## No numeric limit rides with it
+     *
+     * Deliberately: there is no `MAX_MENU_ITEM_PHOTOS` key and none is planned
+     * for v1. Access is the gate and nothing else. The limit engine resolves an
+     * unknown key as *unlimited* across five layers without raising anything,
+     * so a cap declared but not wired end to end behaves in production exactly
+     * like no cap — while reading, in the catalogue, like a promise the
+     * platform keeps. `MAX_PHOTOS_PER_ACCOMMODATION` and its `extra-photos-20`
+     * addon are ACCOMMODATION machinery and are not reused here.
+     *
+     * The public detail page enforces this live, the same way the carta key is:
+     * a downgraded owner's dish photos stay in the database and
+     * `resolveOwnerGastronomyMenuGrants` (`@repo/service-core`) withholds them
+     * from the public payload on every render.
+     *
+     * Gastronomy-only by name and on purpose — an experience has no carta, so
+     * there is no second vertical for this key to be shared with.
+     */
+    MENU_ITEM_PHOTOS = 'menu_item_photos',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

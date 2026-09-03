@@ -271,7 +271,7 @@ describe('Entitlement Configuration', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
             // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
             // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5;
-            // HOS-895: commerce 5→6)
+            // HOS-895: commerce 5→6; HOS-1045: commerce 6→7)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
@@ -279,8 +279,9 @@ describe('Entitlement Configuration', () => {
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
             // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical (4);
             // HOS-1058 — plus the premium-only printable ficha (1);
-            // HOS-895 — plus the pro-and-above structured carta (1).
-            const commerceCount = 6;
+            // HOS-895 — plus the pro-and-above structured carta (1);
+            // HOS-1045 — plus the premium-only photo per dish (1).
+            const commerceCount = 7;
 
             // Act & Assert
             expect(

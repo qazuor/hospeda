@@ -292,5 +292,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Structured gastronomy menu',
         description:
             'Allows building the venue menu as sections and dishes with names, descriptions and prices, instead of only linking or uploading it'
+    },
+    // HOS-1045. Granted by `gastronomy-premium` ALONE — the tier step above
+    // `-pro`'s structured carta, and the same trailing commerce section for
+    // the slicing reason above.
+    {
+        key: EntitlementKey.MENU_ITEM_PHOTOS,
+        name: 'Photos per dish',
+        description:
+            'Allows attaching a photo to each dish of the structured menu, shown next to the dish on the public page'
     }
 ];

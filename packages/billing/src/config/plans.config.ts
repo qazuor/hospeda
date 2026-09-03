@@ -797,7 +797,17 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // here rather than inherited, because these arrays are literal per plan and
     // nothing composes a tier from the one below it: omitting it would mean the
     // dearer plan silently lost a feature `-pro` has.
-    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF, EntitlementKey.MANAGE_GASTRONOMY_MENU]
+    //
+    // HOS-1045 adds the photo per dish — the FIRST capability this tier holds
+    // that `-pro` does not, and what makes premium a step rather than a name
+    // (owner decision, 2026-09-01). It sits next to `MANAGE_GASTRONOMY_MENU`
+    // by necessity: a dish photo has nowhere to live without dishes, so the
+    // two are only ever useful together even though their gates are separate.
+    extraEntitlements: [
+        EntitlementKey.DOWNLOAD_LISTING_PDF,
+        EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        EntitlementKey.MENU_ITEM_PHOTOS
+    ]
 });
 
 /**
