@@ -373,7 +373,23 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
      */
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
-    featureIds: z.array(z.string().uuid()).optional()
+    featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * Whether the provider's CURRENT experience plan grants
+     * `manage_experience_directions` (HOS-1049).
+     *
+     * The owner editor needs this to know whether to OFFER the directions
+     * field, and the protected tier is the only place it can learn it: the
+     * stored `meetingPointDirections` round-trip above says what was written,
+     * never whether it may still be written. Without the flag the editor would
+     * present the control to a `-basico` provider and collect a 403 on save —
+     * a refusal the person only discovers after typing.
+     *
+     * `.optional()` because only the protected `getById` route resolves it; the
+     * owner LIST route does not, and a missing flag must read as "not entitled"
+     * rather than as permission.
+     */
+    meetingPointDirectionsEnabled: z.boolean().optional()
 });
 
 /** TypeScript type for {@link ExperienceProtectedSchema}. */
