@@ -97,6 +97,7 @@ export * from './post/post.service';
 export type { PostHookState } from './post/post.types';
 export * from './postSponsor/postSponsor.service';
 export * from './postSponsorship/postSponsorship.service';
+export * from './qr-code';
 export * from './recommendation';
 export * from './social';
 export * from './sponsorship';
