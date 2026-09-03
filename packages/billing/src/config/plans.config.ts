@@ -7,7 +7,11 @@ import {
 import { EntitlementKey } from '../types/entitlement.types.js';
 import { LimitKey, type PlanDefinition } from '../types/plan.types.js';
 import { ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL } from './commerce-entitlements.config.js';
-import { type CommerceVertical, LIMIT_KEY_BY_COMMERCE_VERTICAL } from './commerce-limits.config.js';
+import {
+    AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
+    type CommerceVertical,
+    LIMIT_KEY_BY_COMMERCE_VERTICAL
+} from './commerce-limits.config.js';
 import { LIMIT_METADATA } from './limits.config.js';
 
 /**
@@ -530,13 +534,40 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
 export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
 
 /**
+ * Monthly AI-chat quota of a commerce tier that GRANTS the chat (HOS-400).
+ *
+ * 250 calls/month, borne by the listing's owner. The number is the
+ * accommodation `owner-pro` rung (`MAX_AI_CHAT_PER_MONTH: 250`) rather than a
+ * new ladder: a restaurant's ficha and a mid-tier host's ficha field roughly the
+ * same volume of visitor questions, and inventing a third scale for commerce
+ * would have to be justified by traffic nobody has measured yet.
+ *
+ * Shared by both verticals on purpose. Nothing yet distinguishes what a diner
+ * asks a restaurant from what a traveller asks an excursion, so a single
+ * constant keeps the two catalogues from drifting apart for no reason. Split it
+ * the day one vertical's real usage says it should be.
+ *
+ * Like every cap in this file it is a `'commercial'` field: the database wins,
+ * so an operator override stands and changing it in production is a
+ * data-migration, not a deploy.
+ */
+export const COMMERCE_AI_CHAT_PER_MONTH = 250;
+
+/**
  * Builds one tier of a per-vertical commerce catalogue (HOS-688 §6.8).
  *
- * Every tier declares EXACTLY ONE limit — its own vertical's listing cap — and
- * nothing else. That absence is deliberate and is not the same as `-1`: both
- * resolve to unlimited downstream, but an absent key reads as "this plan does
- * not meter that", which is what is true here. A gastronomy plan has no opinion
- * about photos, promotions or AI quotas.
+ * Every tier declares EXACTLY TWO limits, both scoped to its own vertical: the
+ * listing cap, and — since HOS-400 — the monthly AI-chat quota. Everything else
+ * is deliberately absent, and that absence is not the same as `-1`: both resolve
+ * to unlimited downstream, but an absent key reads as "this plan does not meter
+ * that", which is what is true here. A gastronomy plan still has no opinion
+ * about photos, promotions, or any AI quota other than its own chat.
+ *
+ * The chat quota was NOT left absent for exactly that reason. "This plan does
+ * not meter the chat" and "this plan grants an uncapped chat" are the same
+ * value downstream, and only one of them is true of a tier that does not sell
+ * the feature — so every tier states a number, and the tiers without the
+ * capability state `0`. See `input.aiChatPerMonth` below.
  *
  * ## Entitlements (HOS-1074)
  *
@@ -586,6 +617,13 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  *   add to the vertical's set and can never subtract from it, so the "every
  *   tier of a vertical grants its own pair" invariant above survives whatever
  *   is passed here.
+ * @param input.aiChatPerMonth - Monthly AI-chat quota for this tier (HOS-400).
+ *   REQUIRED, with no default, on purpose: the limit engine resolves an ABSENT
+ *   key as UNLIMITED rather than as zero, so a default would make "nobody
+ *   thought about this tier" indistinguishable from "deliberately uncapped".
+ *   Pass `0` for a tier that does not grant `AI_CHAT` — it is the belt to the
+ *   entitlement gate's braces, and it is what the owner-side check reads as
+ *   "feature disabled in this plan".
  * @returns The tier's {@link PlanDefinition}.
  */
 function commerceVerticalTier(input: {
@@ -600,6 +638,7 @@ function commerceVerticalTier(input: {
     hasTrial?: boolean;
     trialDays?: number;
     extraEntitlements?: readonly EntitlementKey[];
+    aiChatPerMonth: number;
 }): PlanDefinition {
     return {
         slug: input.slug,
@@ -635,7 +674,20 @@ function commerceVerticalTier(input: {
             ...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[input.vertical],
             ...(input.extraEntitlements ?? [])
         ],
-        limits: [limit(LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.maxListings)]
+        limits: [
+            limit(LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.maxListings),
+            // HOS-400 — the vertical's AI-chat quota. Declared by EVERY tier,
+            // including the ones that do not grant AI_CHAT at all, and that is
+            // the point: `aiChatPerMonth` is a REQUIRED parameter rather than an
+            // optional one defaulting to zero. A tier that omitted the key would
+            // not be capped at zero, it would be UNLIMITED — the limit engine
+            // resolves an absent key as `-1` through five layers without raising
+            // (see `commerce-limits.config.ts`'s header). So básico and pro pass
+            // an explicit `0` ("disabled in this plan"), which is a decision
+            // somebody made, and a future seventh tier cannot inherit an
+            // uncapped chat by forgetting an argument.
+            limit(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.aiChatPerMonth)
+        ]
     };
 }
 
@@ -706,7 +758,10 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-400: the AI chat is premium-only in both verticals (owner decision),
+    // so básico declares an explicit zero rather than omitting the key.
+    aiChatPerMonth: 0
 });
 
 /**
@@ -763,7 +818,11 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
         EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
         EntitlementKey.MANAGE_GASTRONOMY_EVENTS
-    ]
+    ],
+    // HOS-400: the AI chat is PREMIUM in both verticals (owner decision), so
+    // `-pro` declares an explicit zero. It is the one capability in this file
+    // that pro does NOT inherit upward from.
+    aiChatPerMonth: 0
 });
 
 /**
@@ -824,8 +883,20 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
         EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
         EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
-        EntitlementKey.MENU_ITEM_PHOTOS
-    ]
+        EntitlementKey.MENU_ITEM_PHOTOS,
+        // HOS-400 — the AI chat on the public ficha. Owner decision: PREMIUM in
+        // both verticals. Note this is `AI_CHAT`, the SAME key the accommodation
+        // plans grant, not a gastronomy-specific one: what separates the two is
+        // the SUBSCRIPTION the key is read from (SPEC-239 domain isolation) and
+        // the per-vertical quota beside it, never a duplicated entitlement.
+        // Deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, which is
+        // the floor every tier receives — putting it there would hand the chat
+        // to básico and pro too.
+        EntitlementKey.AI_CHAT
+    ],
+    // HOS-400: the only commerce tier of this vertical that carries a nonzero
+    // chat quota, because it is the only one that grants the capability.
+    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH
 });
 
 /**
@@ -849,7 +920,10 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-400: the AI chat is premium-only in both verticals (owner decision),
+    // so básico declares an explicit zero rather than omitting the key.
+    aiChatPerMonth: 0
 });
 
 /**
@@ -885,7 +959,11 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     extraEntitlements: [
         EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
         EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
-    ]
+    ],
+    // HOS-400: the AI chat is PREMIUM in both verticals (owner decision), so
+    // `-pro` declares an explicit zero. It is the one capability in this file
+    // that pro does NOT inherit upward from.
+    aiChatPerMonth: 0
 });
 
 /**
@@ -917,8 +995,15 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
         EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
-        EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
-    ]
+        EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+        // HOS-400 — see the twin comment on GASTRONOMY_PREMIUM_PLAN. Same key,
+        // different subscription domain; the isolation comes from the domain and
+        // the per-vertical quota, not from a duplicated entitlement.
+        EntitlementKey.AI_CHAT
+    ],
+    // HOS-400: the only commerce tier of this vertical that carries a nonzero
+    // chat quota, because it is the only one that grants the capability.
+    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */
