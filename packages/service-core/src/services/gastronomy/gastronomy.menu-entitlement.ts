@@ -1,6 +1,12 @@
 /**
- * Live resolver for "does this gastronomy owner's PLAN currently grant
- * `MANAGE_GASTRONOMY_MENU`" (HOS-895 PR2).
+ * Live resolver for "what does this gastronomy owner's PLAN currently grant"
+ * (HOS-895 PR2, widened from one key to the whole set by HOS-1042).
+ *
+ * The filename still says `menu-entitlement` because the carta was the first
+ * question asked here and renaming a file is how a text-matching guard
+ * elsewhere in the repo silently stops matching. What the module answers is the
+ * general one: the entitlement set of the owner's live gastronomy plan, from
+ * which `MANAGE_GASTRONOMY_MENU` and `MANAGE_GASTRONOMY_EVENTS` are both read.
  *
  * ## Why this exists, and why it is a live read rather than a synced column
  *
@@ -57,6 +63,20 @@ import { subscriptionMatchesDomain } from '../billing/subscription/subscription-
 const ACTIVE_PLAN_SUBSCRIPTION_STATUSES = ENTITLEMENT_GRANTING_STATUSES;
 
 /**
+ * The fail-closed answer: no plan resolved, therefore no grants.
+ *
+ * A FUNCTION returning a fresh set, not a shared constant. `Object.freeze` does
+ * not seal a `Set`'s contents — `.add()` still works on a frozen one — so a
+ * module-level singleton would be one stray mutation away from handing a grant
+ * to every unresolvable owner from that moment on. `ReadonlySet` stops that at
+ * compile time; a fresh set stops it at runtime too, and costs nothing on a
+ * path that is already three queries deep.
+ *
+ * @returns An empty entitlement set.
+ */
+const noEntitlements = (): ReadonlySet<string> => new Set<string>();
+
+/**
  * Input for {@link resolveOwnerGrantsGastronomyMenuManagement}.
  */
 export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
@@ -65,27 +85,36 @@ export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
 }
 
 /**
- * Resolves whether the owner's CURRENT gastronomy subscription plan grants
- * `MANAGE_GASTRONOMY_MENU`.
+ * Resolves the FULL entitlement set of the owner's current gastronomy plan
+ * (HOS-1042).
  *
- * Looks up the owner's billing customer, then their active/trialing/comp
- * GASTRONOMY-domain subscription (SPEC-239 isolation — an owner who is also a
- * host or an experience provider must not have that subscription's plan
- * consulted here), then checks that plan's `entitlements` array.
+ * Introduced when a SECOND tier-gated gastronomy capability appeared — the
+ * venue events agenda alongside the structured carta — and the public detail
+ * route needed both answers about the same owner on the same render. Asking the
+ * boolean question twice would mean three extra queries per page view for the
+ * second key, and, worse, would let the two answers come from different reads
+ * of the same subscription if a plan change landed between them.
  *
- * Fails closed (`false`) when the owner has no billing customer, no
- * qualifying subscription, or the resolved plan is missing / has no
- * entitlements array — the same direction `resolveOwnerPlanGrantsFeatured`
- * fails in, and for the same reason: an unresolvable plan must never be read
- * as "paid for it".
+ * So the shared query answers once and the callers ask the set. Everything the
+ * boolean version documented still holds: a live read on every render rather
+ * than a synced column (a plan downgrade must take effect without a migration),
+ * the SPEC-239 domain isolation (an owner who is also a host or an experience
+ * provider must not have THAT subscription's plan consulted), and the fail-
+ * closed direction — an unresolvable plan yields an EMPTY set, never a
+ * permissive one.
+ *
+ * Unknown strings are returned as-is rather than dropped. The column is
+ * `string[]` and this function's job is to report what the plan row says; the
+ * caller compares against a known key, so a retired grant spelled like an
+ * entitlement matches nothing.
  *
  * @param input - The owner id to resolve.
- * @returns `true` when the owner's gastronomy plan includes
- *   `MANAGE_GASTRONOMY_MENU`; `false` otherwise.
+ * @returns The entitlement keys the owner's gastronomy plan grants. Empty when
+ *   there is no customer, no qualifying subscription, or no readable plan.
  */
-export async function resolveOwnerGrantsGastronomyMenuManagement(
+export async function resolveOwnerGastronomyPlanEntitlements(
     input: ResolveOwnerGrantsGastronomyMenuManagementInput
-): Promise<boolean> {
+): Promise<ReadonlySet<string>> {
     const db = getDb();
 
     const [customer] = await db
@@ -97,7 +126,7 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
         .limit(1);
 
     if (!customer) {
-        return false;
+        return noEntitlements();
     }
 
     const subscriptionRows = await db
@@ -121,7 +150,7 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
     );
 
     if (!gastronomySubscription) {
-        return false;
+        return noEntitlements();
     }
 
     const [plan] = await db
@@ -133,8 +162,32 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
         .limit(1);
 
     if (!plan || !Array.isArray(plan.entitlements)) {
-        return false;
+        return noEntitlements();
     }
 
-    return (plan.entitlements as string[]).includes(EntitlementKey.MANAGE_GASTRONOMY_MENU);
+    return new Set(plan.entitlements as string[]);
+}
+
+/**
+ * Resolves whether the owner's CURRENT gastronomy subscription plan grants
+ * `MANAGE_GASTRONOMY_MENU`.
+ *
+ * Thin projection of {@link resolveOwnerGastronomyPlanEntitlements}, kept as a
+ * named function because "does this owner still have the carta" is the question
+ * the public route asks and reading it as a set membership at the call site
+ * would bury it.
+ *
+ * A caller needing MORE than one key on the same render must use the set
+ * function directly rather than calling two of these — see that function's doc
+ * for why.
+ *
+ * @param input - The owner id to resolve.
+ * @returns `true` when the owner's gastronomy plan includes
+ *   `MANAGE_GASTRONOMY_MENU`; `false` otherwise.
+ */
+export async function resolveOwnerGrantsGastronomyMenuManagement(
+    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+): Promise<boolean> {
+    const entitlements = await resolveOwnerGastronomyPlanEntitlements(input);
+    return entitlements.has(EntitlementKey.MANAGE_GASTRONOMY_MENU);
 }

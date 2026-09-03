@@ -15,6 +15,8 @@
  * - Types — GastronomyHookState
  */
 
+// Venue events helpers (HOS-1042) — the agenda, read whole and written whole
+export { getGastronomyEvents, replaceGastronomyEvents } from './gastronomy.events';
 // FAQ helpers
 export {
     addGastronomyFaq,
@@ -38,9 +40,13 @@ export {
 } from './gastronomy.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
-// Menu entitlement resolver (HOS-895 PR2) — live owner-plan check for the
-// public detail page's display gate
-export { resolveOwnerGrantsGastronomyMenuManagement } from './gastronomy.menu-entitlement';
+// Owner-plan entitlement resolver (HOS-895 PR2, widened by HOS-1042) — the live
+// check behind the public detail page's display gates. Prefer the SET function
+// when a caller needs more than one key on the same render.
+export {
+    resolveOwnerGastronomyPlanEntitlements,
+    resolveOwnerGrantsGastronomyMenuManagement
+} from './gastronomy.menu-entitlement';
 // Permission helpers
 export {
     checkGastronomyCanAdminList,
