@@ -77,11 +77,8 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     )
 }));
 
-// `get` is stubbed because the gastronomy branch of the editor mounts
-// `CommerceMenuManager`, which reads its own carta on mount (HOS-895).
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
-        get: vi.fn().mockResolvedValue({ ok: true, data: { sections: [], file: null } }),
         patch: vi.fn()
     }
 }));
@@ -127,6 +124,7 @@ function renderEditor() {
     return render(
         <CommerceListingEditor
             vertical="gastronomy"
+            sectionId="basicInfo"
             listingId="abc"
             locale="es"
             initialData={baseData}

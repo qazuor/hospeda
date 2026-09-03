@@ -1,56 +1,46 @@
 /**
- * @file CommerceListingEditor.faqs.test.tsx
- * @description The FAQ block of the commerce owner editor (HOS-811 + HOS-827).
+ * @file CommerceFaqManager.persistence.test.tsx
+ * @description Round-trip guards for the commerce FAQ manager (HOS-811 +
+ * HOS-841). Renamed from `CommerceListingEditor.faqs.test.tsx` by HOS-1080.
  *
  * WHAT THIS GUARDS, AND WHY IT IS NOT THE SIBLING SUITE.
- * `CommerceFaqManager.test.tsx` already renders the manager in isolation and
- * asserts its transport. It stayed green through HOS-811 for a reason that has
- * nothing to do with the manager: the manager was not part of the editor at
- * all. `editar.astro` mounted it as a SEPARATE `client:idle` island below the
- * form, so every question about it — does it hydrate, is it inside the form's
- * grid, does it sit above the save button — was a question about the page, and
- * the page has no component test. The reported symptom (HOS-811: "the button
- * fires no request at all, no message, no marked field") is exactly what a
- * section that never hydrates looks like from the outside.
+ * `CommerceFaqManager.test.tsx` renders the manager and asserts its transport
+ * with a fixture shaped the way the buggy code ASSUMED. These tests use the
+ * shape the API actually returns: `ExperienceFaqSingleOutputSchema` and its
+ * gastronomy twin are both `z.object({ faq: … })`, and HOS-841 was the manager
+ * storing that envelope instead of the FAQ inside it — a blank card on screen
+ * and a follow-up PUT to `…/faqs/undefined`. Neither is visible unless the
+ * fixture is wrapped, which is what makes this suite distinct rather than
+ * redundant.
  *
- * So these tests render the REAL editor and drive the FAQ form through it:
+ * They also cover HOS-811's second half: a blank field must produce a VISIBLE
+ * error. Returning silently is indistinguishable, from the outside, from a
+ * control that never hydrated — which is exactly how HOS-811 was reported.
  *
- * - HOS-811: filling question + answer and pressing the FAQ's own Guardar must
- *   reach `apiClient.postProtected` with the vertical's FAQ endpoint. The
- *   assertion is on the REQUEST, not on a toast — "nothing left the browser"
- *   was the whole bug.
- * - HOS-811 (second half): a blank field must produce a VISIBLE error. The old
- *   code returned silently, which is indistinguishable from a dead control.
- * - HOS-827: the block must live inside the form's own sections column (same
- *   width and alignment as every other card) and BEFORE the save button.
+ * WHAT CHANGED WITH HOS-1080. These tests used to render the whole
+ * `CommerceListingEditor` in order to prove the FAQ block hydrated at all,
+ * because `editar.astro` mounted the manager as a SEPARATE `client:idle` island
+ * below the form and no test covered the page. The FAQ section is its own route
+ * now (`editar/preguntas.astro`), which mounts this manager directly with no
+ * form around it — so the question "does it hydrate inside the editor's island"
+ * no longer exists, and the three HOS-827 layout tests that asked where the card
+ * sat relative to the save button went with it. What survives is what was always
+ * about the manager itself, now rendered the way its route renders it.
  *
  * `vertical="experience"` on purpose: the sibling suite only ever renders
  * `gastronomy`, so the experience endpoint had no covering test anywhere.
  */
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('../../../src/components/commerce/editor/editor-fields.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
-    RichTextEditor: ({ ariaLabel }: { ariaLabel?: string }) => <textarea aria-label={ariaLabel} />
-}));
-
-// Partial by construction: every verb the editor OR the FAQ manager reaches for
-// is listed. A whole-module mock missing `postProtected` would leave the call
-// `undefined`, the manager's `await` would throw inside its own handler, and
-// this suite would go green having asserted nothing — the exact failure shape
-// this file exists to rule out.
+// Partial by construction: every verb the FAQ manager reaches for is listed. A
+// whole-module mock missing `postProtected` would leave the call `undefined`,
+// the manager's `await` would throw inside its own handler, and this suite would
+// go green having asserted nothing — the exact failure shape this file exists
+// to rule out.
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         get: vi.fn(),
@@ -62,59 +52,34 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
-vi.mock('../../../src/lib/api/endpoints-protected', () => ({
-    protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
-    commerceMediaApi: {
-        listMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: [] } }),
-        addMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: {} } }),
-        removeMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }),
-        setFeaturedMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: {} } })
-    }
-}));
-
 vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
 vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
-import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
+import { CommerceFaqManager } from '../../../src/components/commerce/CommerceFaqManager.client';
 import { apiClient } from '../../../src/lib/api/client';
 
 const mockPostProtected = vi.mocked(apiClient.postProtected);
 const mockPut = vi.mocked(apiClient.put);
 
-const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
 
-const baseData = {
-    id: LISTING_ID,
-    ownerId: 'owner-1',
-    name: 'Kayak al atardecer',
-    slug: 'kayak-al-atardecer',
-    destinationId: DESTINATION_1,
-    description: 'Descripción original con suficiente longitud para pasar validación.',
-    richDescription: 'old text'
-} as unknown as CommerceListingDetail;
-
+/** Mounts the manager exactly as `editar/preguntas.astro` does. */
 function renderEditor() {
     return render(
-        <CommerceListingEditor
+        <CommerceFaqManager
             vertical="experience"
             listingId={LISTING_ID}
             locale="es"
-            initialData={baseData}
-            destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
-            amenities={[]}
-            features={[]}
-            hasFaqSection={true}
             initialFaqs={[]}
         />
     );
 }
 
-/** The FAQ block, scoped so the editor's own Guardar can never be the one hit. */
+/** The manager's root, so every `within` query stays scoped to it. */
 function faqBlock(container: HTMLElement): HTMLElement {
-    const block = container.querySelector('#editor-faqs');
+    const block = container.firstElementChild;
     if (!(block instanceof HTMLElement)) {
-        throw new Error('the editor rendered no #editor-faqs block');
+        throw new Error('the FAQ manager rendered nothing');
     }
     return block;
 }
@@ -158,7 +123,7 @@ function openAndFill({
     return block;
 }
 
-describe('CommerceListingEditor — FAQ block', () => {
+describe('CommerceFaqManager — persistence round trip (HOS-811 / HOS-841)', () => {
     beforeEach(() => {
         mockPostProtected.mockReset();
         mockPut.mockReset();
@@ -345,53 +310,5 @@ describe('CommerceListingEditor — FAQ block', () => {
         expect(within(block).getByLabelText('Respuesta')).toHaveAttribute('aria-invalid', 'true');
         // Still no pointless request.
         expect(mockPostProtected).not.toHaveBeenCalled();
-    });
-
-    // ── HOS-827 ─────────────────────────────────────────────────────────────
-
-    it('renders the FAQ block inside the form column, not as a sibling of the form', () => {
-        const { container } = renderEditor();
-
-        const column = container.querySelector('.sectionsColumn');
-        expect(column).not.toBeNull();
-        expect(column?.contains(faqBlock(container))).toBe(true);
-    });
-
-    it('places the FAQ block ABOVE the save button', () => {
-        const { container } = renderEditor();
-
-        const save = container.querySelector('button[type="submit"]');
-        expect(save).not.toBeNull();
-
-        // `querySelectorAll` yields document order, so the index comparison IS
-        // the reading order: the FAQ block must come first.
-        const inOrder = Array.from(container.querySelectorAll('*'));
-        expect(inOrder.indexOf(faqBlock(container))).toBeLessThan(inOrder.indexOf(save as Element));
-    });
-
-    it('gives the FAQ block the same section-card class as every other section', () => {
-        const { container } = renderEditor();
-
-        // `editor-fields.module.css` is proxy-mocked to echo the class name, so
-        // this asserts the block composes the SAME recipe the other cards do —
-        // which is what makes it the same width and alignment as they are.
-        expect(faqBlock(container).className).toContain('section');
-    });
-
-    it('does not render the block at all when the host page does not ask for it', () => {
-        const { container } = render(
-            <CommerceListingEditor
-                vertical="experience"
-                listingId={LISTING_ID}
-                locale="es"
-                initialData={baseData}
-                destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
-                amenities={[]}
-                features={[]}
-            />
-        );
-
-        expect(container.querySelector('#editor-faqs')).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Agregar pregunta' })).toBeNull();
     });
 });

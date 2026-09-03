@@ -19,6 +19,9 @@
  * 2. **Rich text input.** `#ce-richDescription` was a `<textarea>`; it is now a
  *    contenteditable driven by TipTap, so `setReactInputValue` no longer
  *    applies to it.
+ *
+ * HOS-1080 split the editor into one page per section, which broke the gate
+ * from (1) and made the URL builder below necessary — see each of their docs.
  */
 
 import { expect, type Locator, type Page } from '@playwright/test';
@@ -37,16 +40,91 @@ import { expect, type Locator, type Page } from '@playwright/test';
 const RICH_DESCRIPTION_SELECTOR = '.ProseMirror';
 
 /**
+ * The commerce editor's section routes (HOS-1080).
+ *
+ * The URL segments, in the app's own Spanish vocabulary. `hub` is the landing
+ * page at `…/editar/`: it lists the sections and renders NO form, so nothing
+ * that fills a field or presses Save can start there.
+ *
+ * `apps/web/test/pages/commerce-editor-routes.test.ts` reads this union and
+ * fails if a slug here has no route file — this file cannot import the web
+ * app's registry (the E2E package resolves `@repo/*` to built dist and knows
+ * nothing about `apps/web/src`), so the drift is caught from the other side
+ * instead of being left to a CI run of the browser suite.
+ */
+export type CommerceEditorSection =
+    | 'hub'
+    | 'datos'
+    | 'punto-de-encuentro'
+    | 'datos-practicos'
+    | 'horarios'
+    | 'precio'
+    | 'servicios'
+    | 'fotos'
+    | 'contacto'
+    // HOS-895 — gastronomy only, the mirror of the two experience-only slugs
+    // above. Opening it on an experience listing redirects to the hub.
+    | 'carta'
+    | 'preguntas'
+    | 'traducciones';
+
+/**
+ * Builds the URL of one commerce editor section.
+ *
+ * Always trailing-slashed: Astro runs with `trailingSlash: 'always'`, and a URL
+ * without one answers a 404 PAGE rather than a redirect — which reads in a
+ * failing spec as "the editor is broken", not "the path was wrong".
+ *
+ * @param params.webUrl - Base URL of the web app under test
+ * @param params.vertical - `gastronomy` or `experience`
+ * @param params.listingId - UUID of the listing being edited
+ * @param params.section - Which section page to open
+ * @param params.locale - UI locale segment (default `es`)
+ */
+export function commerceEditorUrl({
+    webUrl,
+    vertical,
+    listingId,
+    section,
+    locale = 'es'
+}: {
+    readonly webUrl: string;
+    readonly vertical: 'gastronomy' | 'experience';
+    readonly listingId: string;
+    readonly section: CommerceEditorSection;
+    readonly locale?: string;
+}): string {
+    const base = `${webUrl}/${locale}/mi-cuenta/comercio/${vertical}/${listingId}/editar/`;
+    return section === 'hub' ? base : `${base}${section}/`;
+}
+
+/**
  * Waits until the commerce editor island has actually hydrated.
  *
- * Gates on TipTap's editable surface: `.ProseMirror` is created by TipTap at
- * runtime and is absent from the SSR HTML, so its presence proves React
- * hydrated and mounted the island's children — unlike any server-rendered
- * element, which is present long before that.
+ * Gates on `data-hydrated`, which `CommerceListingEditor` sets on its `<form>`
+ * from a mount effect. Nothing about it can be true before hydration: the SSR
+ * HTML does not carry the attribute, and React runs child effects BEFORE parent
+ * effects, so by the time the form has it every section component below has
+ * finished mounting.
  *
- * @param params.page - The Playwright page sitting on the editor route
- * @param params.timeout - Milliseconds to wait (default 20s; the island ships
- *   TipTap, so it is heavier than a plain form)
+ * WHY NOT `.ProseMirror` ANY MORE (HOS-1080). That was the right gate while the
+ * editor was ONE page: TipTap creates `.ProseMirror` at runtime, so its presence
+ * proved hydration, and the rich-text field was on the only page there was. With
+ * one page per section the rich text lives on `datos` alone — on `contacto`,
+ * `precio` and `traducciones` the element does not exist at all, so the gate
+ * waited twenty seconds for something the page could never render. Six specs
+ * died on exactly that.
+ *
+ * The fix is NOT to weaken the wait. This gate is the only thing standing
+ * between these specs and the HOS-371 class of bug, where an edit lands on a
+ * node React is not listening to, the form never goes dirty, and Save silently
+ * sends nothing. A shorter timeout, an `if`, or a `waitForTimeout` would make
+ * all six green and stop proving the page is alive.
+ *
+ * @param params.page - The Playwright page sitting on an editor SECTION route
+ *   (not the hub — it renders no form and therefore no island)
+ * @param params.timeout - Milliseconds to wait (default 20s; the `datos`
+ *   section ships TipTap, so it is heavier than a plain form)
  */
 export async function waitForCommerceEditorHydration({
     page,
@@ -55,12 +133,12 @@ export async function waitForCommerceEditorHydration({
     readonly page: Page;
     readonly timeout?: number;
 }): Promise<void> {
-    await expect(page.locator(RICH_DESCRIPTION_SELECTOR).first()).toBeVisible({ timeout });
-    // The rich text surface is the LAST child to mount, but the island's own
-    // handlers attach before it — asserting a server-rendered control is
-    // interactive here is therefore safe and keeps the failure message
-    // pointed at the form rather than at the editor.
-    await expect(page.locator('#ce-type')).toBeEditable({ timeout: 5_000 });
+    await expect(
+        page.locator('form[data-hydrated="true"]'),
+        'The commerce editor island never hydrated. If this page is the hub ' +
+            '(…/editar/ with no section segment) it renders no form at all — open a ' +
+            'section route instead, e.g. commerceEditorUrl({ …, section: "datos" }).'
+    ).toBeVisible({ timeout });
 }
 
 /**

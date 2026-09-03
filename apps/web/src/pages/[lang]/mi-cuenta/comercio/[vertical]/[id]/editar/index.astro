@@ -1,0 +1,95 @@
+---
+/**
+ * @file mi-cuenta/comercio/[vertical]/[id]/editar/index.astro
+ * @description The commerce editor hub (HOS-1080, closing HOS-892).
+ *
+ * Lists every section as a row with a status line. Rendered on BOTH viewports:
+ * on mobile it IS the navigation, on desktop it doubles as a status summary of
+ * the listing.
+ *
+ * It deliberately does NOT redirect to the first section, for the reason
+ * HOS-318 D-8 recorded on the accommodation side: a redirect traps the back
+ * button — from a section, "back" lands on the hub, which bounces forward
+ * again — and a back button that does not work is the single most frustrating
+ * thing for this editor's audience.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import EditorHub from '@/components/host/editor/EditorHub.astro';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorSectionStatuses } from '@/lib/editor/commerce-editor-hub-status-model';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+import { readCommerceEditorHubFacts } from '@/lib/commerce/commerce-editor-detail';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: null });
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, registry } = resolution;
+const { t } = createTranslations(locale);
+
+const facts = readCommerceEditorHubFacts({ detail });
+const statuses = resolveCommerceEditorSectionStatuses({
+	input: {
+		vertical,
+		listing: facts.listing,
+		photoCount: facts.photoCount,
+		faqCount: facts.faqCount,
+		selectedCatalogCount: facts.selectedCatalogCount,
+	},
+});
+
+const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={null}
+	currentSectionSlug={null}
+	title={detail.name}
+	subtitle={t('commerce.owner.editor.hub.subtitle', 'Elegí qué querés editar')}
+	description={t('commerce.owner.editor.pageDescription', 'Editar la información de tu ficha')}
+>
+	<div class="commerce-hub__identity">
+		<span class="commerce-hub__badge">{verticalLabel}</span>
+		<code class="commerce-hub__slug">{detail.slug}</code>
+	</div>
+
+	<EditorHub
+		locale={locale}
+		registry={registry}
+		entityId={listingId}
+		statuses={statuses}
+	/>
+</CommerceEditorSectionLayout>
+
+<style>
+	.commerce-hub__identity {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3, 1rem);
+		flex-wrap: wrap;
+		margin-bottom: var(--space-5, 1.5rem);
+	}
+
+	.commerce-hub__badge {
+		font-size: var(--text-caption, 0.75rem);
+		padding: 0.125rem 0.5rem;
+		border-radius: var(--radius-pill, 999px);
+		background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+		color: var(--core-muted-foreground);
+	}
+
+	.commerce-hub__slug {
+		font-size: var(--text-caption, 0.75rem);
+		color: var(--core-muted-foreground);
+	}
+</style>

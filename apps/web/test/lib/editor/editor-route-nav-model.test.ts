@@ -4,7 +4,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { ACCOMMODATION_EDITOR_SECTIONS } from '@/lib/editor/accommodation-editor-sections';
+import {
+    ACCOMMODATION_EDITOR_REGISTRY,
+    ACCOMMODATION_EDITOR_SECTIONS,
+    buildAccommodationEditorVisibility
+} from '@/lib/editor/accommodation-editor-sections';
 import {
     buildEditorNavModel,
     countActiveLinks,
@@ -21,9 +25,10 @@ function build({
 } = {}): readonly EditorNavGroup[] {
     return buildEditorNavModel({
         locale: 'es',
-        accommodationId: 'acc-uuid',
+        registry: ACCOMMODATION_EDITOR_REGISTRY,
+        entityId: 'acc-uuid',
         currentSectionId,
-        hasTranslations
+        visibility: buildAccommodationEditorVisibility({ hasTranslations })
     });
 }
 
@@ -135,9 +140,10 @@ describe('buildEditorNavModel — locale', () => {
     it('should build hrefs for the requested locale', () => {
         const groups = buildEditorNavModel({
             locale: 'pt',
-            accommodationId: 'acc-uuid',
+            registry: ACCOMMODATION_EDITOR_REGISTRY,
+            entityId: 'acc-uuid',
             currentSectionId: null,
-            hasTranslations: true
+            visibility: buildAccommodationEditorVisibility({ hasTranslations: true })
         });
 
         for (const link of allLinks(groups)) {

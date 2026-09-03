@@ -17,13 +17,12 @@
  */
 
 import {
-    ACCOMMODATION_EDITOR_SECTIONS,
     buildEditorSectionUrl,
-    EDITOR_SECTION_GROUP_LABEL_KEYS,
-    EDITOR_SECTION_GROUPS,
-    type EditorSection,
-    type EditorSectionGroup
-} from '@/lib/editor/accommodation-editor-sections';
+    type EditorRegistry,
+    type EditorSectionGroup,
+    type EditorSectionVisibility,
+    getVisibleEditorSections
+} from '@/lib/editor/editor-registry';
 import type { SupportedLocale } from '@/lib/i18n';
 
 // ---------------------------------------------------------------------------
@@ -54,56 +53,44 @@ export interface EditorNavGroup {
 /**
  * Builds the grouped nav model for one editor page.
  *
- * @param params - Locale, accommodation id, the active section, and whether the
- * conditional translations section should appear.
+ * Registry-driven since HOS-1080, so gastronomy and experience render the same
+ * nav from their own section list instead of growing a second copy of it.
+ *
+ * @param params - Locale, the vertical's registry, the entity id, the active
+ * section, and the runtime answers to the registry's visibility keys.
  * @returns The groups to render, in declared order, each with its links. Groups
  * that end up with no links are omitted entirely — an empty heading is noise.
  */
 export function buildEditorNavModel({
     locale,
-    accommodationId,
+    registry,
+    entityId,
     currentSectionId,
-    hasTranslations
+    visibility = {}
 }: {
     readonly locale: SupportedLocale;
-    readonly accommodationId: string;
+    readonly registry: EditorRegistry;
+    readonly entityId: string;
     /** `null` on the hub, where no section is active. */
     readonly currentSectionId: string | null;
-    readonly hasTranslations: boolean;
+    readonly visibility?: EditorSectionVisibility;
 }): readonly EditorNavGroup[] {
-    const visible = ACCOMMODATION_EDITOR_SECTIONS.filter((section) =>
-        isSectionVisible({ section, hasTranslations })
-    );
+    const visible = getVisibleEditorSections({ registry, visibility });
 
-    return EDITOR_SECTION_GROUPS.map((group) => ({
-        group,
-        headingKey: EDITOR_SECTION_GROUP_LABEL_KEYS[group],
-        links: visible
-            .filter((section) => section.group === group)
-            .map((section) => ({
-                sectionId: section.id,
-                href: buildEditorSectionUrl({ locale, accommodationId, section }),
-                labelKey: section.labelKey,
-                isActive: section.id === currentSectionId
-            }))
-    })).filter((navGroup) => navGroup.links.length > 0);
-}
-
-/**
- * Decides whether a section appears at all.
- *
- * @param params - The section and the availability of conditional data.
- * @returns True when the section should be listed.
- */
-function isSectionVisible({
-    section,
-    hasTranslations
-}: {
-    readonly section: EditorSection;
-    readonly hasTranslations: boolean;
-}): boolean {
-    if (section.id === 'translations') return hasTranslations;
-    return true;
+    return registry.groups
+        .map((group) => ({
+            group,
+            headingKey: registry.groupLabelKeys[group],
+            links: visible
+                .filter((section) => section.group === group)
+                .map((section) => ({
+                    sectionId: section.id,
+                    href: buildEditorSectionUrl({ locale, registry, entityId, section }),
+                    labelKey: section.labelKey,
+                    isActive: section.id === currentSectionId
+                }))
+        }))
+        .filter((navGroup) => navGroup.links.length > 0);
 }
 
 /**

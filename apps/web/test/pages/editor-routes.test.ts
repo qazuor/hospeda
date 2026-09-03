@@ -162,8 +162,13 @@ describe('editor routes — section isolation (AC-7)', () => {
 });
 
 describe('editor pages follow the /mi-cuenta conventions', () => {
+    // HOS-1080 moved the shell's body into `EditorShellLayout.astro`, which
+    // every vertical's editor now renders through; `EditorSectionLayout.astro`
+    // is the accommodation adapter over it. The conventions below are
+    // properties of the SHELL, so they are asserted there — asserting them on
+    // the adapter would pass vacuously, since the adapter contains no markup.
     const LAYOUT = readFileSync(
-        resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
+        resolve(__dirname, '../../src/layouts/EditorShellLayout.astro'),
         'utf8'
     );
 
@@ -214,34 +219,40 @@ describe('editor pages follow the /mi-cuenta conventions', () => {
 
 describe('editor routes — navigation feel (T-025)', () => {
     it('should inherit View Transitions through the layout chain', () => {
-        // Every editor page renders through EditorSectionLayout → AccountLayout
-        // → BaseLayout, and BaseLayout mounts ClientRouter. So navigating
-        // between sections animates instead of flashing — a hard page swap
-        // reads to this editor's audience as "the screen got away from me".
-        // Asserted here so a future layout change cannot quietly drop it.
+        // Every editor page renders through EditorSectionLayout →
+        // EditorShellLayout → AccountLayout → BaseLayout, and BaseLayout mounts
+        // ClientRouter. So navigating between sections animates instead of
+        // flashing — a hard page swap reads to this editor's audience as "the
+        // screen got away from me". Asserted here so a future layout change
+        // cannot quietly drop it.
         const base = readFileSync(resolve(__dirname, '../../src/layouts/BaseLayout.astro'), 'utf8');
         const account = readFileSync(
             resolve(__dirname, '../../src/layouts/AccountLayout.astro'),
             'utf8'
         );
-        const editor = readFileSync(
+        const adapter = readFileSync(
             resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
+            'utf8'
+        );
+        const shell = readFileSync(
+            resolve(__dirname, '../../src/layouts/EditorShellLayout.astro'),
             'utf8'
         );
 
         expect(base).toContain('<ClientRouter />');
         expect(account).toContain('BaseLayout');
-        expect(editor).toContain('AccountLayout');
+        expect(adapter).toContain('EditorShellLayout');
+        expect(shell).toContain('AccountLayout');
     });
 
     it('should keep the nav column stretched so the sticky sidebar can travel', () => {
-        const editor = readFileSync(
-            resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
+        const shell = readFileSync(
+            resolve(__dirname, '../../src/layouts/EditorShellLayout.astro'),
             'utf8'
         );
 
-        expect(editor).toContain('.editor-shell__nav');
-        expect(editor).toContain('align-self: stretch;');
+        expect(shell).toContain('.editor-shell__nav');
+        expect(shell).toContain('align-self: stretch;');
     });
 });
 

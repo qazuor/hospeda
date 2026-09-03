@@ -100,9 +100,13 @@ describe('isListingPublished (HOS-834)', () => {
 });
 
 describe('the commerce editor states ONE address rule (HOS-834)', () => {
+    // HOS-1080: the notice moved with the name field, onto the basic-info
+    // section's own route. It belongs wherever renaming happens and nowhere
+    // else — a page that cannot change the name has nothing to say about what
+    // renaming does to the URL.
     const EDITOR_PAGE = join(
         __dirname,
-        '../../src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro'
+        '../../src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos.astro'
     );
 
     /**

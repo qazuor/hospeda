@@ -1,0 +1,64 @@
+---
+/**
+ * @file CommerceEditorSectionLayout.astro
+ * @description The COMMERCE editor's shell (HOS-1080).
+ *
+ * A thin adapter over `EditorShellLayout.astro`, the same way
+ * `EditorSectionLayout.astro` is for accommodations. Everything structural —
+ * the two-column geometry, the breadcrumb trail, the sticky route nav — lives
+ * in the shell; what is left here is the commerce vocabulary: the registry the
+ * resolver built for this listing's vertical, and the `comercio` entry of the
+ * account sidebar.
+ *
+ * The registry is a PROP rather than built here because the vertical decides
+ * which sections exist, and the resolver already knows it. Building it twice
+ * would let the page's nav and the page's redirect logic disagree about whether
+ * a section exists.
+ */
+
+import EditorShellLayout from '@/layouts/EditorShellLayout.astro';
+import type { EditorRegistry } from '@/lib/editor/editor-registry';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly registry: EditorRegistry;
+	readonly listingId: string;
+	readonly listingName: string;
+	/** `null` on the hub, where no section is active. */
+	readonly currentSectionId: string | null;
+	/** `null` on the hub. Drives the last breadcrumb. */
+	readonly currentSectionSlug: string | null;
+	readonly title: string;
+	readonly description?: string;
+	/** Optional subtitle under the page heading. */
+	readonly subtitle?: string;
+}
+
+const {
+	locale,
+	registry,
+	listingId,
+	listingName,
+	currentSectionId,
+	currentSectionSlug,
+	title,
+	description,
+	subtitle,
+} = Astro.props;
+---
+
+<EditorShellLayout
+	locale={locale}
+	registry={registry}
+	entityId={listingId}
+	entityName={listingName}
+	currentSectionId={currentSectionId}
+	currentSectionSlug={currentSectionSlug}
+	accountSection="comercio"
+	title={title}
+	description={description}
+	subtitle={subtitle}
+>
+	<slot />
+</EditorShellLayout>

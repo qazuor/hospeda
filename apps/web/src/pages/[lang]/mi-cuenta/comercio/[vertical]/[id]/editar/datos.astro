@@ -1,0 +1,87 @@
+---
+/**
+ * @file datos.astro
+ * @description Identity and description section of the commerce editor (HOS-1080).
+ *
+ * Needs the destinations catalog but NOT the amenity/feature ones. `slug` stays
+ * out of the form — the owner never edits it directly; the server keeps it
+ * aligned with the name while the listing is a draft and stops once published
+ * (HOS-784 stage 1), which is what the checkbox inside `BasicInfoSection`
+ * offers on a published listing.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+import { isListingPublished } from '@/lib/listing-slug-refresh';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'datos',
+	need: ['destinations']
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+
+// HOS-834: the address notice states ONE state, the one this listing is
+// actually in. A single line describing both at once ("follows the name while
+// unpublished; once published it stops") never said which applied, so on a
+// published listing its first half described something that does not happen to
+// it. Resolved through `isListingPublished` — the same predicate that gates the
+// slug-refresh opt-in inside the editor (HOS-784), so the sentence above the
+// form and the behaviour below it can never disagree.
+//
+// It lives on THIS page since HOS-1080, and only this one: it is about what
+// renaming does to the URL, and the name field is here.
+const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycleState });
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="datos"
+	title={t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')}
+>
+	<p class="ce-identity__notice">
+		{listingIsPublished
+			? t(
+					'commerce.owner.editor.slugFixedNotice',
+					'La dirección web de tu ficha (su URL) ya está fija: cambiar el nombre no la modifica.',
+				)
+			: t(
+					'commerce.owner.editor.slugFollowsNameNotice',
+					'La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.',
+				)}
+	</p>
+
+	<CommerceListingEditor
+		client:load
+		sectionId="basicInfo"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+		destinations={resolution.destinations}
+		destinationsLoadFailed={resolution.destinationsLoadFailed}
+	/>
+</CommerceEditorSectionLayout>
+
+<style>
+	.ce-identity__notice {
+		margin: 0 0 var(--space-5, 1.5rem);
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-muted-foreground);
+	}
+</style>

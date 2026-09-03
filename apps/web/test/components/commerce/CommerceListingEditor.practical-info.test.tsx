@@ -31,6 +31,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
+import { buildCommerceEditorSections } from '../../../src/lib/editor/commerce-editor-sections';
 
 const { I18N_INITIAL } = vi.hoisted(() => {
     const blank = () => ({ es: '', en: '', pt: '' });
@@ -94,11 +95,8 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
-// `get` is stubbed because the gastronomy branch of the editor mounts
-// `CommerceMenuManager`, which reads its own carta on mount (HOS-895).
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
-        get: vi.fn().mockResolvedValue({ ok: true, data: { sections: [], file: null } }),
         patch: vi.fn()
     }
 }));
@@ -145,6 +143,7 @@ function renderEditor(
     return render(
         <CommerceListingEditor
             vertical={vertical}
+            sectionId="practicalInfo"
             listingId="abc"
             locale="es"
             initialData={initialData}
@@ -201,31 +200,21 @@ describe('CommerceListingEditor — practical details', () => {
             expect(screen.queryByLabelText('Política de cancelación')).toBeNull();
         });
 
-        it('lists the section in the nav right after the meeting point', () => {
-            // The scrollspy takes the FIRST visible entry of the nav array, so
-            // an entry out of DOM order highlights the wrong link whenever two
-            // sections share the viewport.
-            const { unmount } = renderEditor('experience');
+        it('sits in the experience registry right after the meeting point', () => {
+            // HOS-1080: a section entry, not an in-page anchor. The ordering
+            // still matters — it is the order the nav and the hub both render.
+            const experienceIds = buildCommerceEditorSections({
+                vertical: 'experience'
+            }).map((section) => section.id);
+            const gastronomyIds = buildCommerceEditorSections({
+                vertical: 'gastronomy'
+            }).map((section) => section.id);
 
-            const ids = [
-                ...screen
-                    .getByRole('navigation', { name: 'Navegación de secciones del formulario' })
-                    .querySelectorAll('a')
-            ].map((anchor) => anchor.getAttribute('href'));
-
-            expect(ids).toContain('#editor-practicalInfo');
-            expect(ids.indexOf('#editor-practicalInfo')).toBe(
-                ids.indexOf('#editor-meetingPoint') + 1
+            expect(experienceIds).toContain('practicalInfo');
+            expect(experienceIds.indexOf('practicalInfo')).toBe(
+                experienceIds.indexOf('meetingPoint') + 1
             );
-
-            unmount();
-            renderEditor('gastronomy');
-            const gastronomyIds = [
-                ...screen
-                    .getByRole('navigation', { name: 'Navegación de secciones del formulario' })
-                    .querySelectorAll('a')
-            ].map((anchor) => anchor.getAttribute('href'));
-            expect(gastronomyIds).not.toContain('#editor-practicalInfo');
+            expect(gastronomyIds).not.toContain('practicalInfo');
         });
     });
 
@@ -320,13 +309,14 @@ describe('CommerceListingEditor — practical details', () => {
 
             fireEvent.change(hoursBox(), { target: { value: '1' } });
             fireEvent.change(minutesBox(), { target: { value: '90' } });
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
-                target: { value: 'Excursión a Colón II' }
-            });
+            // A sibling edit so the form is dirty and the save actually fires.
+            // (Before HOS-1080 this used the name field, which lives on another
+            // page now.)
+            fireEvent.change(policyBox(), { target: { value: 'Reprogramamos sin cargo.' } });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body).toHaveProperty('name', 'Excursión a Colón II');
+            expect(body).toHaveProperty('cancellationPolicy', 'Reprogramamos sin cargo.');
             expect(body).not.toHaveProperty('durationMinutes');
         });
 
@@ -391,9 +381,11 @@ describe('CommerceListingEditor — practical details', () => {
             expect(body).toHaveProperty('acceptsPrivateGroups', false);
         });
 
-        it('omits every practical key when nothing about them changed', async () => {
-            // An untouched section must not appear in the diff, or every save of
-            // an unrelated field would rewrite it.
+        it('omits every untouched practical key when only one of them changed', async () => {
+            // An untouched field must not appear in the diff, or every save of
+            // its neighbours would rewrite it. (Before HOS-1080 the neighbour
+            // was the name field; it lives on another page now, so the edit is
+            // one of these five and the other four are what is asserted absent.)
             renderEditor(
                 'experience',
                 buildListing({
@@ -404,27 +396,35 @@ describe('CommerceListingEditor — practical details', () => {
                 })
             );
 
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
-                target: { value: 'Excursión a Colón II' }
-            });
+            fireEvent.change(requirementsBox(), { target: { value: 'Saber nadar' } });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(body).toHaveProperty('name', 'Excursión a Colón II');
+            expect(body).toHaveProperty('requirements', ['Saber nadar']);
             expect(body).not.toHaveProperty('durationMinutes');
             expect(body).not.toHaveProperty('whatToBring');
-            expect(body).not.toHaveProperty('requirements');
             expect(body).not.toHaveProperty('cancellationPolicy');
             expect(body).not.toHaveProperty('acceptsPrivateGroups');
         });
 
-        it('never sends a practical key from the gastronomy branch', async () => {
-            // Non-vacuity for the vertical split: the form-state object is
-            // shared between both verticals, so only `buildPatchPayload` keeps
-            // these keys off a gastronomy PATCH.
-            renderEditor(
-                'gastronomy',
-                buildListing({ durationMinutes: 150, acceptsPrivateGroups: true })
+        it('never sends a practical key from a gastronomy save', async () => {
+            // Non-vacuity for the vertical split. Guarded twice over since
+            // HOS-1080: a restaurant has no practical-info section to reach
+            // (asserted above), and the form state is shared between verticals,
+            // so `buildPatchPayload` still has to keep these keys off the body.
+            // This asserts the second half, from a page a restaurant DOES have.
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    sectionId="basicInfo"
+                    listingId="abc"
+                    locale="es"
+                    initialData={buildListing({
+                        durationMinutes: 150,
+                        acceptsPrivateGroups: true
+                    })}
+                    destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
+                />
             );
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {

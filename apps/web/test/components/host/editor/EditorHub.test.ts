@@ -20,13 +20,17 @@ const SOURCE = readFileSync(
 const CODE = SOURCE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '');
 
 describe('EditorHub.astro — structure (AC-4)', () => {
-    it('should derive its rows from the section registry', () => {
-        expect(CODE).toContain('ACCOMMODATION_EDITOR_SECTIONS');
+    it('should derive its rows from the section registry it is given', () => {
+        // HOS-1080: the registry is a PROP now, not an import. That is what lets
+        // gastronomy and experience render the same hub — and it is why an
+        // import of the accommodation registry here would be a regression.
+        expect(CODE).toContain('getVisibleEditorSections({ registry, visibility })');
+        expect(CODE).not.toContain('ACCOMMODATION_EDITOR_SECTIONS');
     });
 
-    it('should group rows using the declared group order', () => {
-        expect(CODE).toContain('EDITOR_SECTION_GROUPS');
-        expect(CODE).toContain('EDITOR_SECTION_GROUP_LABEL_KEYS');
+    it("should group rows using the registry's declared group order", () => {
+        expect(CODE).toContain('registry.groups');
+        expect(CODE).toContain('registry.groupLabelKeys[group]');
     });
 
     it('should build hrefs with the shared URL builder, not by hand', () => {
@@ -34,8 +38,10 @@ describe('EditorHub.astro — structure (AC-4)', () => {
         expect(CODE).not.toContain('mi-cuenta/propiedades/');
     });
 
-    it('should hide the translations row when there is no translation data', () => {
-        expect(CODE).toContain('hasTranslations');
+    it('should hide a section whose visibility key is not satisfied', () => {
+        // The accommodation editor's `translations` row is the live case; the
+        // hub never names it, it only honours the registry's answer.
+        expect(CODE).toContain('visibility');
     });
 
     it('should render each group as the canonical account card', () => {
