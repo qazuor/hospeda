@@ -49,7 +49,14 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     RichTextEditor: ({ ariaLabel }: { ariaLabel?: string }) => <textarea aria-label={ariaLabel} />
 }));
 
-vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
+// `get` is stubbed because the gastronomy branch of the editor mounts
+// `CommerceMenuManager`, which reads its own carta on mount (HOS-895).
+vi.mock('../../../src/lib/api/client', () => ({
+    apiClient: {
+        get: vi.fn().mockResolvedValue({ ok: true, data: { sections: [], file: null } }),
+        patch: vi.fn()
+    }
+}));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
@@ -143,9 +150,13 @@ describe('CommerceListingEditor — section nav', () => {
         expect(ids).toEqual(domOrder);
     });
 
-    it('covers all eight sections when the amenity catalog is populated', () => {
+    it('covers all nine sections when the amenity catalog is populated', () => {
         renderEditor({ withCatalogs: true });
 
+        // Nine since HOS-895 added the carta. This list is enumerated rather
+        // than counted on purpose: the smoke that produced H-153 found eight
+        // entries and none of them the one the merchant needed, which a count
+        // would not have caught.
         expect(navTargetIds()).toEqual([
             'editor-basicInfo',
             'editor-contact',
@@ -154,7 +165,8 @@ describe('CommerceListingEditor — section nav', () => {
             'editor-media',
             'editor-translations',
             'editor-amenities',
-            'editor-price'
+            'editor-price',
+            'editor-menu'
         ]);
     });
 

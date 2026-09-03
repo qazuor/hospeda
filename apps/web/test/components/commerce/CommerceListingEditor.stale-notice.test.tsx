@@ -77,7 +77,14 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     )
 }));
 
-vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
+// `get` is stubbed because the gastronomy branch of the editor mounts
+// `CommerceMenuManager`, which reads its own carta on mount (HOS-895).
+vi.mock('../../../src/lib/api/client', () => ({
+    apiClient: {
+        get: vi.fn().mockResolvedValue({ ok: true, data: { sections: [], file: null } }),
+        patch: vi.fn()
+    }
+}));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) },

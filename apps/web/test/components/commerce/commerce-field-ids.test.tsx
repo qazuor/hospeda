@@ -51,7 +51,14 @@ vi.mock('@/lib/i18n', () => ({
     })
 }));
 
-vi.mock('@/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
+// `get` is stubbed because the gastronomy branch of the editor mounts
+// `CommerceMenuManager`, which reads its own carta on mount (HOS-895).
+vi.mock('@/lib/api/client', () => ({
+    apiClient: {
+        get: vi.fn().mockResolvedValue({ ok: true, data: { sections: [], file: null } }),
+        patch: vi.fn()
+    }
+}));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
