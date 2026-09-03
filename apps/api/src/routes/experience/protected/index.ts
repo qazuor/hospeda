@@ -33,6 +33,8 @@ import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateExperienceFaqRoute } from './updateFaq';
+import { protectedExperienceViewStatsRoute } from './viewStats';
+import { protectedExperienceViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
 const app = createRouter();
 
@@ -42,6 +44,13 @@ app.route('/', protectedReorderExperienceFaqsRoute);
 // GET /mine — Owner's own listings. MUST be before /{id} so the literal
 // "mine" segment is not captured as an :id param.
 app.route('/', protectedListMyExperienceRoute);
+
+// GET /mine/views, /mine/views/daily-series — Basic view stats (HOS-734).
+// Two literal segments under /mine, so ordering relative to /mine and /{id}
+// is not load-bearing (Hono matches exact segment counts), but registered
+// alongside /mine for readability.
+app.route('/', protectedExperienceViewStatsRoute);
+app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 
 // GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
 // /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a

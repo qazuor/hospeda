@@ -33,6 +33,8 @@ import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
+import { protectedGastronomyViewStatsRoute } from './viewStats';
+import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
 const app = createRouter();
 
@@ -42,6 +44,13 @@ app.route('/', protectedReorderGastronomyFaqsRoute);
 // GET /mine — Owner's own listings. MUST be before /{id} so the literal
 // "mine" segment is not captured as an :id param.
 app.route('/', protectedListMyGastronomyRoute);
+
+// GET /mine/views, /mine/views/daily-series — Basic view stats (HOS-734).
+// Two literal segments under /mine, so ordering relative to /mine and /{id}
+// is not load-bearing (Hono matches exact segment counts), but registered
+// alongside /mine for readability.
+app.route('/', protectedGastronomyViewStatsRoute);
+app.route('/', protectedGastronomyViewStatsDailySeriesRoute);
 
 // GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
 // /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a
