@@ -43,7 +43,18 @@ vi.mock('@repo/service-core', () => ({
     }),
     // SPEC-239 T-034: all test subscriptions here are accommodation-domain
     // (no productDomain set), so this should always return true.
-    isAccommodationSubscription: () => true
+    isAccommodationSubscription: () => true,
+    // HOS-1104: pass-through stub. Deliberately does NOT fabricate a
+    // `productDomain` value onto the fixtures (that would hide the bug this
+    // hydration exists to fix) — it mirrors the real function's own no-op
+    // behaviour when there is nothing to recover from the DB. Without this,
+    // the wholesale @repo/service-core mock above leaves the new
+    // `hydrateSubscriptionProductDomains` import `undefined`, and calling it
+    // throws inside `applyAddonEntitlements`/`removeAddonEntitlements`'s
+    // try/catch — the same "whole-module mock missing a newly-added export"
+    // failure mode this file's own history already hit twice (ALL_PLANS-only
+    // mock, then isAccommodationSubscription).
+    hydrateSubscriptionProductDomains: (subs: unknown[]) => Promise.resolve(subs)
 }));
 
 // Plan reads are now DB-backed via PlanService (SPEC-192 T-025 cutover).

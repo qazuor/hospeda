@@ -30,6 +30,7 @@ import {
 import type { ServiceResult } from '@repo/service-core';
 import {
     AddonCatalogService,
+    hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
     PlanService,
     syncFeaturedByEntitlementForAccommodation
@@ -125,11 +126,11 @@ export class AddonEntitlementService {
             const addon = addonResult.data;
 
             // Get customer's active subscription
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(
                 input.customerId
             );
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 return {
                     success: false,
                     error: {
@@ -138,6 +139,12 @@ export class AddonEntitlementService {
                     }
                 };
             }
+
+            // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
+            // `hydrateSubscriptionProductDomains`'s doc) — without this, every
+            // subscription below fails OPEN to accommodation regardless of its
+            // real vertical, making the SPEC-239 T-034 filter a no-op.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
             // Treats null/undefined productDomain as 'accommodation' (legacy rows).
@@ -426,17 +433,23 @@ export class AddonEntitlementService {
             const addon = addonResult.data;
 
             // Get customer's active subscription
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(
                 input.customerId
             );
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 // No subscription - nothing to remove
                 return {
                     success: true,
                     data: undefined
                 };
             }
+
+            // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
+            // `hydrateSubscriptionProductDomains`'s doc) — without this, every
+            // subscription below fails OPEN to accommodation regardless of its
+            // real vertical, making the SPEC-239 T-034 filter a no-op.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
             // Treats null/undefined productDomain as 'accommodation' (legacy rows).
@@ -696,9 +709,15 @@ export class AddonEntitlementService {
 
             // Backward compatibility: Also read from JSON metadata as secondary source
             const adjustmentsFromMetadata: AddonAdjustment[] = [];
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
-            if (subscriptions && subscriptions.length > 0) {
+            if (rawSubscriptions && rawSubscriptions.length > 0) {
+                // HOS-1104: `getByCustomerId()` never populates `productDomain`
+                // (see `hydrateSubscriptionProductDomains`'s doc) — without this,
+                // every subscription below fails OPEN to accommodation regardless
+                // of its real vertical, making the SPEC-239 T-034 filter a no-op.
+                const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
                 // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
                 // Treats null/undefined productDomain as 'accommodation' (legacy rows).
                 const activeSubscription = subscriptions.find(
