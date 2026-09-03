@@ -808,6 +808,20 @@ const plataformaSidebar: SidebarInput = {
                 },
                 {
                     type: 'link',
+                    id: 'qr-codes',
+                    label: { es: 'Códigos QR', en: 'QR codes', pt: 'Códigos QR' },
+                    // No QR glyph exists in @repo/icons; a redirectable code IS a
+                    // link with a printed handle, so LinkIcon is the honest stand-in.
+                    icon: 'LinkIcon',
+                    route: '/platform/qr-codes',
+                    // The same gate the API tier uses (HOS-981). Borrowed rather
+                    // than a dedicated QR_CODE_* family: a new permission drags a
+                    // role_permission data migration behind it, and nobody manages
+                    // QR codes today without also holding settings.
+                    permissions: ['SETTINGS_MANAGE']
+                },
+                {
+                    type: 'link',
                     id: 'critical-settings',
                     label: {
                         es: 'Configuración crítica',
