@@ -1,4 +1,5 @@
 CREATE TYPE "public"."qr_code_source_enum" AS ENUM('MANUAL', 'GENERATED');--> statement-breakpoint
+ALTER TYPE "public"."entity_type_enum" ADD VALUE 'HOST_TRADE';--> statement-breakpoint
 CREATE TABLE "qr_code_scans" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"qr_code_id" uuid NOT NULL,
@@ -12,7 +13,7 @@ CREATE TABLE "qr_codes" (
 	"label" varchar(200) NOT NULL,
 	"description" text,
 	"source" "qr_code_source_enum" NOT NULL,
-	"entity_type" varchar(100),
+	"entity_type" "entity_type_enum",
 	"entity_id" uuid,
 	"render_options" jsonb NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL,

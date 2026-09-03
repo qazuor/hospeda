@@ -1,5 +1,5 @@
 {
-  "id": "87c2d668-917c-42c4-b95d-dad2d0b04e39",
+  "id": "bf8c7d96-29ed-4b82-8a21-86ab5558c5fc",
   "prevId": "f586055f-be6c-449b-b863-76176f231d35",
   "version": "7",
   "dialect": "postgresql",
@@ -19567,7 +19567,8 @@
         },
         "entity_type": {
           "name": "entity_type",
-          "type": "varchar(100)",
+          "type": "entity_type_enum",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -32221,7 +32222,8 @@
         "BILLING_SUBSCRIPTION",
         "PAYMENT",
         "EXPERIENCE",
-        "GASTRONOMY"
+        "GASTRONOMY",
+        "HOST_TRADE"
       ]
     },
     "public.event_category_enum": {
