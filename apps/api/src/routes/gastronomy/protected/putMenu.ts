@@ -12,7 +12,13 @@
  *    stay ahead of the gate: the global `entitlementMiddleware` has already put
  *    the ACCOMMODATION set in the context, and that set never carries a commerce
  *    key (HOS-1074).
- * 3. **Ownership** — inside `replaceGastronomyMenu`, via the same
+ * 3. **The dish photos, if any** — `menuPayloadCarriesItemPhoto` inspects the
+ *    BODY and, when it finds a photo, requires `MENU_ITEM_PHOTOS` too
+ *    (HOS-1045). Conditional on the payload rather than a second
+ *    `requireEntitlement`, because a `-pro` owner IS entitled to write a carta
+ *    — just not to put a picture on a dish of it. See
+ *    `menu-item-photo-gate.ts` for why this refuses instead of stripping.
+ * 4. **Ownership** — inside `replaceGastronomyMenu`, via the same
  *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the FAQ and media writes use.
  *
  * ## The gate is on THIS route and not on the read
@@ -35,7 +41,8 @@ import { EntitlementKey } from '@repo/billing';
 import {
     GastronomyMenuOutputSchema,
     type GastronomyMenuReplacePayload,
-    GastronomyMenuReplacePayloadSchema
+    GastronomyMenuReplacePayloadSchema,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -44,10 +51,12 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+import { hasEntitlement, requireEntitlement } from '../../../middlewares/entitlement';
+import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
+import { menuPayloadCarriesItemPhoto } from './menu-item-photo-gate';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -58,6 +67,21 @@ export async function handlePutGastronomyMenu(
     body: Record<string, unknown>
 ) {
     const actor = getActorFromContext(ctx);
+
+    // HOS-1045 — the payload-conditional half of the gate. `hasEntitlement`
+    // reads the set `commerceVerticalEntitlementMiddleware` put in the context,
+    // so this is the caller's GASTRONOMY grants, not their accommodation ones,
+    // and it answers `false` when that set is missing entirely — the fail-closed
+    // direction, which is the only safe one for a paid capability.
+    if (
+        menuPayloadCarriesItemPhoto(body) &&
+        !hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.MENU_ITEM_PHOTOS)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            `Access denied. This feature requires the '${EntitlementKey.MENU_ITEM_PHOTOS}' entitlement.`
+        );
+    }
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
@@ -87,7 +111,7 @@ export const protectedPutGastronomyMenuRoute = createCRUDRoute({
     path: '/{id}/menu',
     summary: 'Replace the structured menu of a gastronomy listing',
     description:
-        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above.',
+        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium).',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

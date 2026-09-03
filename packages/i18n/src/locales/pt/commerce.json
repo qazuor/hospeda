@@ -337,7 +337,16 @@
                 "saving": "Salvando…",
                 "saved": "Cardápio salvo.",
                 "saveError": "Não foi possível salvar o cardápio.",
-                "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link."
+                "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link.",
+                "addPhoto": "Adicionar foto",
+                "replacePhoto": "Trocar a foto",
+                "removePhoto": "Remover a foto",
+                "photoPreview": "Foto do prato",
+                "photoAlt": "Texto alternativo da foto",
+                "photoAltPlaceholder": "Descreva a foto (opcional)",
+                "photoAttached": "Foto adicionada. Lembre de salvar o cardápio.",
+                "photoUploadError": "Não foi possível enviar a foto do prato.",
+                "photoLocked": "As fotos por prato estão disponíveis no plano Premium. Você pode remover as fotos e salvar o cardápio mesmo assim."
             },
             "dailySpecials": {
                 "title": "Menu do dia",
@@ -407,6 +416,7 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Cardápio estruturado",
+            "menuItemPhotos": "Foto por prato",
             "manageExperienceDirections": "Mapa e como chegar",
             "issueExperienceCertificate": "Certificados de experiência",
             "manageGastronomyDailySpecial": "Menu do dia"

@@ -12,7 +12,7 @@
  * fields are compared against a NON-empty source so a mutation that always
  * returns "withheld" (or always "granted") fails at least one case.
  */
-import type { GastronomyMenuSectionPublic } from '@repo/schemas';
+import type { GastronomyMenuItemPublic, GastronomyMenuSectionPublic } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { applyGastronomyMenuManagementGate } from '../../../../src/routes/gastronomy/public/menu-projection';
 
@@ -27,6 +27,35 @@ const SECTION: GastronomyMenuSectionPublic = {
     items: []
 };
 
+const PHOTO_URL = 'https://res.cloudinary.com/x/empanada.jpg';
+
+/** One dish CARRYING a photo — the only fixture the HOS-1045 gate can be seen with. */
+const ITEM_WITH_PHOTO: GastronomyMenuItemPublic = {
+    id: '33333333-3333-4333-8333-333333333333',
+    sectionId: SECTION.id,
+    gastronomyId: SECTION.gastronomyId,
+    name: 'Empanada de carne',
+    description: null,
+    priceCents: 250_000,
+    isAvailable: true,
+    photoUrl: PHOTO_URL,
+    photoAlt: 'Empanada recién horneada',
+    displayOrder: 0,
+    createdAt: new Date(),
+    updatedAt: new Date()
+};
+
+/**
+ * The section as it comes OUT of the database: the public type omits
+ * `photoPublicId`, the ROW carries it, and this gate is what removes it. Typed
+ * through the intersection rather than by widening the fixture to `any`, so the
+ * cast asserts exactly the one extra column and nothing else.
+ */
+const SECTION_WITH_PHOTO = {
+    ...SECTION,
+    items: [{ ...ITEM_WITH_PHOTO, photoPublicId: 'hospeda/dev/empanada' }]
+} as unknown as GastronomyMenuSectionPublic;
+
 describe('applyGastronomyMenuManagementGate', () => {
     it('withholds the file and the structured carta when the owner is not entitled', () => {
         const result = applyGastronomyMenuManagementGate({
@@ -35,7 +64,8 @@ describe('applyGastronomyMenuManagementGate', () => {
                 menuFileKind: 'image'
             },
             menuSections: [SECTION],
-            ownerGrantsMenuManagement: false
+            ownerGrantsMenuManagement: false,
+            ownerGrantsMenuItemPhotos: true
         });
 
         expect(result.menuFileUrl).toBeNull();
@@ -50,7 +80,8 @@ describe('applyGastronomyMenuManagementGate', () => {
                 menuFileKind: 'pdf'
             },
             menuSections: [SECTION],
-            ownerGrantsMenuManagement: true
+            ownerGrantsMenuManagement: true,
+            ownerGrantsMenuItemPhotos: true
         });
 
         expect(result.menuFileUrl).toBe('https://res.cloudinary.com/x/menu.pdf');
@@ -66,7 +97,8 @@ describe('applyGastronomyMenuManagementGate', () => {
         const result = applyGastronomyMenuManagementGate({
             gastronomy: { menuFileUrl: null, menuFileKind: null },
             menuSections: [],
-            ownerGrantsMenuManagement: true
+            ownerGrantsMenuManagement: true,
+            ownerGrantsMenuItemPhotos: true
         });
 
         expect(result.menuFileUrl).toBeNull();
@@ -82,9 +114,71 @@ describe('applyGastronomyMenuManagementGate', () => {
         const result = applyGastronomyMenuManagementGate({
             gastronomy: { menuFileUrl: undefined, menuFileKind: undefined },
             menuSections: [],
-            ownerGrantsMenuManagement: true
+            ownerGrantsMenuManagement: true,
+            ownerGrantsMenuItemPhotos: true
         });
 
         expect(result.menuSections).toBeUndefined();
+    });
+
+    // ── HOS-1045: the per-dish photo, a NARROWER gate over the same payload ──
+
+    it('publishes the dish photo when the owner is entitled to photos', () => {
+        const result = applyGastronomyMenuManagementGate({
+            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            menuSections: [SECTION_WITH_PHOTO],
+            ownerGrantsMenuManagement: true,
+            ownerGrantsMenuItemPhotos: true
+        });
+
+        const item = result.menuSections?.[0]?.items[0];
+        expect(item?.photoUrl).toBe(PHOTO_URL);
+        expect(item?.photoAlt).toBe('Empanada recién horneada');
+        // The dish's OTHER fields must survive the projection untouched — a
+        // mutation that rebuilt the item from a subset of its keys would pass
+        // the two assertions above and silently drop the price.
+        expect(item?.name).toBe('Empanada de carne');
+        expect(item?.priceCents).toBe(250_000);
+    });
+
+    it('withholds the dish photo from a carta-entitled owner who is NOT photo-entitled', () => {
+        // The `-pro` case, and the reason the two grants are separate
+        // parameters: the carta is published, each dish without its picture.
+        // `ownerGrantsMenuManagement` stays TRUE here, so a mutation that made
+        // the photo follow the carta's grant fails this case and only this one.
+        const result = applyGastronomyMenuManagementGate({
+            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            menuSections: [SECTION_WITH_PHOTO],
+            ownerGrantsMenuManagement: true,
+            ownerGrantsMenuItemPhotos: false
+        });
+
+        const item = result.menuSections?.[0]?.items[0];
+        expect(result.menuSections).toHaveLength(1);
+        expect(item?.name).toBe('Empanada de carne');
+        expect(item?.photoUrl).toBeNull();
+        expect(item?.photoAlt).toBeNull();
+    });
+
+    it('never publishes photoPublicId, entitled or not', () => {
+        // `GastronomyMenuItemPublicSchema` omits it; this asserts the omission
+        // is TRUE AT RUNTIME, which the type alone cannot say — the sections
+        // reaching this gate are raw rows and do carry the column.
+        //
+        // Asserted with `toHaveProperty`, not `toBeUndefined`: reading a key
+        // that was never copied and reading one copied as `undefined` both give
+        // `undefined`, and only the first is what the omission promises.
+        for (const grantsPhotos of [true, false]) {
+            const result = applyGastronomyMenuManagementGate({
+                gastronomy: { menuFileUrl: null, menuFileKind: null },
+                menuSections: [SECTION_WITH_PHOTO],
+                ownerGrantsMenuManagement: true,
+                ownerGrantsMenuItemPhotos: grantsPhotos
+            });
+
+            const item = result.menuSections?.[0]?.items[0];
+            expect(item).toBeDefined();
+            expect(item).not.toHaveProperty('photoPublicId');
+        }
     });
 });

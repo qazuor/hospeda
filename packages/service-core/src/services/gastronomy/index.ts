@@ -44,10 +44,12 @@ export {
 } from './gastronomy.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
-// Menu entitlement resolver (HOS-895 PR2) — live owner-plan check for the
-// public detail page's display gate
-// (HOS-1041 generalised the body; all three share one three-query lookup.)
+// Menu entitlement resolvers (HOS-895 PR2; generalised by HOS-1041, widened by
+// HOS-1045) — live owner-plan checks for the public detail page's display
+// gates. All four share ONE three-query lookup, so they cannot drift.
 export {
+    type GastronomyMenuGrants,
+    resolveOwnerGastronomyMenuGrants,
     resolveOwnerGrantsGastronomyDailySpecial,
     resolveOwnerGrantsGastronomyEntitlement,
     resolveOwnerGrantsGastronomyMenuManagement

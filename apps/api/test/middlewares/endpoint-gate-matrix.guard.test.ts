@@ -216,7 +216,23 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // route) — HOS-584. It lives beside its single caller so the accepted
     // entity-type list and the rule table cannot drift apart; the gate it runs
     // behind is the row for `ai/protected/translate.ts`.
-    'ai/protected/translate.authorization.ts'
+    'ai/protected/translate.authorization.ts',
+    // Pure payload predicate (`menuPayloadCarriesItemPhoto`) consumed by
+    // putMenu.ts — not a Hono route: it declares no route factory, no `new
+    // Hono()` and no `app.route`, and is exported only so the rule has a unit
+    // test surface that does not need a Hono context. HOS-1045.
+    //
+    // The same shape as `experience/public/directions-projection.ts` two dozen
+    // lines above, and it surfaces here for the same reason that one does: it
+    // sits in a directory the matrix DOES cover. Its own gastronomy twin
+    // (`gastronomy/public/menu-projection.ts`) never appears because that dir
+    // is out of scope entirely.
+    //
+    // Giving it a matrix row would be worse than excluding it — the row would
+    // describe an endpoint that does not exist, and the guard is presence-only
+    // (HOS-1114) so nothing would ever contradict it. The gate this predicate
+    // feeds is enforced by the row for `gastronomy/protected/putMenu.ts`.
+    'gastronomy/protected/menu-item-photo-gate.ts'
 ]);
 
 /**

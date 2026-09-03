@@ -26,6 +26,7 @@ import {
     GASTRONOMY_MENU_MAX_ITEMS_PER_SECTION,
     GASTRONOMY_MENU_MAX_SECTIONS,
     GastronomyMenuFileSchema,
+    GastronomyMenuItemPublicSchema,
     GastronomyMenuReplacePayloadSchema
 } from '../../../src/entities/gastronomy/subtypes/gastronomy.menu.schema.js';
 
@@ -206,5 +207,96 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
         expect(data.menuFileUrl).toBeUndefined();
         expect(data.menuFilePublicId).toBeUndefined();
         expect(data.menuFileKind).toBeUndefined();
+    });
+});
+
+describe('the per-dish photo (HOS-1045)', () => {
+    /** A carta document carrying exactly one dish, with the given photo fields. */
+    const withPhoto = (photo: Record<string, unknown>) => ({
+        sections: [{ name: 'Entradas', items: [{ name: 'Empanada', ...photo }] }]
+    });
+
+    it('accepts a dish photo and carries all three fields through', () => {
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(
+            withPhoto({
+                photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
+                photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+                photoAlt: 'Empanada recién horneada'
+            })
+        );
+
+        expect(parsed.success).toBe(true);
+        const item = parsed.success ? parsed.data.sections[0]?.items[0] : undefined;
+        expect(item?.photoUrl).toBe('https://res.cloudinary.com/hospeda/empanada.jpg');
+        // `photoPublicId` is asserted alongside the URL because it is what a
+        // cleanup needs to DESTROY the asset rather than merely forget it. A
+        // schema that dropped it would look identical on the public page and
+        // leak a billed asset per replaced photo.
+        expect(item?.photoPublicId).toBe('hospeda/dev/gastronomies/x/empanada');
+        expect(item?.photoAlt).toBe('Empanada recién horneada');
+    });
+
+    it('accepts a dish with NO photo — the ordinary case', () => {
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(withPhoto({ photoUrl: null }));
+
+        expect(parsed.success).toBe(true);
+    });
+
+    it.each([
+        ['javascript:', 'javascript:alert(document.cookie)'],
+        ['data:', 'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=='],
+        ['vbscript:', 'vbscript:msgbox(1)']
+    ])('REJECTS a %s photo URL', (_label, hostile) => {
+        // The reason `photoUrl` uses `mediaAssetUrl` and not `z.string().url()`:
+        // the latter accepts all three of these, and this value is written
+        // straight into an `<img src>` on a public page. This is the write-side
+        // half of the two-sided guard (`resolveSafeExternalUrl` is the read
+        // half) — and it is the half that stops the row being written at all.
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(
+            withPhoto({ photoUrl: hostile })
+        );
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it('rejects alt text past its ceiling', () => {
+        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(
+            withPhoto({
+                photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
+                photoAlt: 'a'.repeat(201)
+            })
+        );
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it('keeps photoPublicId OUT of the public projection', () => {
+        // `GastronomyMenuItemPublicSchema` omits it deliberately — a derived
+        // schema accepts everything it does not name, so this asserts the
+        // decision was taken rather than inherited. Checked with `in`, not
+        // `toBeUndefined`: a key copied as `undefined` and a key never copied
+        // both read as `undefined`, and only the second is the omission.
+        const parsed = GastronomyMenuItemPublicSchema.safeParse({
+            id: '33333333-3333-4333-8333-333333333333',
+            sectionId: '11111111-1111-4111-8111-111111111111',
+            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            name: 'Empanada',
+            description: null,
+            priceCents: 250_000,
+            isAvailable: true,
+            photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
+            photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+            photoAlt: null,
+            displayOrder: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
+
+        expect(parsed.success).toBe(true);
+        const data = (parsed.success ? parsed.data : {}) as Record<string, unknown>;
+        expect('photoPublicId' in data).toBe(false);
+        // The sibling fields DO survive — without this the assertion above
+        // would also pass on a schema that dropped the whole photo.
+        expect(data.photoUrl).toBe('https://res.cloudinary.com/hospeda/empanada.jpg');
     });
 });
