@@ -80,6 +80,14 @@ interface AcquireResult {
      * safe when the claim was skipped or has not landed yet.
      */
     readonly release: () => void;
+    /**
+     * This claim's position in {@link stack}, or `undefined` when no entry
+     * could be claimed at all (transitions disabled, navigation in flight, a
+     * page with no `<ClientRouter />`). Lets a caller ask "am I the topmost
+     * open surface?" via {@link getTopDialogEntryId} (HOS-350) — see
+     * `useDialogHistoryBack`'s `isTopmost`.
+     */
+    readonly id: number | undefined;
 }
 
 /**
@@ -110,7 +118,43 @@ const unwinding = new Set<number>();
 /** Resolved once, so claims after the first are synchronous. */
 let cachedNavigate: NavigateFn | null = null;
 
-const NO_ENTRY: AcquireResult = { release: () => undefined };
+const NO_ENTRY: AcquireResult = { release: () => undefined, id: undefined };
+
+/**
+ * Subscribers to {@link stack} membership/order changes (HOS-350). A separate
+ * concern from the back-button plumbing above: this is a read-only "the top
+ * may have changed" signal that lets a modal-like surface ask "am I still the
+ * topmost one?" (e.g. to decide whether IT should react to Escape when
+ * another surface just opened on top of it). Nothing here decides what
+ * closes — see `useDialogHistoryBack`'s `isTopmost`.
+ */
+const stackListeners = new Set<() => void>();
+
+function notifyStackListeners(): void {
+    for (const listener of stackListeners) listener();
+}
+
+/**
+ * Subscribes to {@link stack} changes. Returns an unsubscribe function.
+ *
+ * @internal exported for `useDialogHistoryBack`.
+ */
+export function subscribeToDialogStack(listener: () => void): () => void {
+    stackListeners.add(listener);
+    return () => {
+        stackListeners.delete(listener);
+    };
+}
+
+/**
+ * The id of the innermost (topmost) entry currently in {@link stack}, or
+ * `undefined` when nothing is claimed right now.
+ *
+ * @internal exported for `useDialogHistoryBack`.
+ */
+export function getTopDialogEntryId(): number | undefined {
+    return stack[stack.length - 1]?.id;
+}
 
 /** The dialog id stamped on the current history entry, if any. */
 function currentEntryId(): number | undefined {
@@ -148,6 +192,7 @@ function handlePopState(): void {
     if (currentId !== undefined && currentId > top.id) return;
 
     stack.pop();
+    notifyStackListeners();
     // A claim still resolving has no entry to own any more; letting it land
     // would strand a fragment in the URL that nothing will ever unwind.
     if (!top.pushed) top.cancelled = true;
@@ -177,6 +222,7 @@ function abandonAll(): void {
     }
     stack.length = 0;
     pendingBackSteps = 0;
+    notifyStackListeners();
 }
 
 function attachListeners(): void {
@@ -244,6 +290,7 @@ export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireR
         cancelled: false
     };
     stack.push(entry);
+    notifyStackListeners();
 
     const navigateNow = cachedNavigate;
     if (navigateNow) {
@@ -269,7 +316,7 @@ export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireR
             });
     }
 
-    return { release: () => releaseDialogHistoryEntry(entry) };
+    return { release: () => releaseDialogHistoryEntry(entry), id: entry.id };
 }
 
 /** The URL of the entry this module would claim, or `null` if it cannot. */
@@ -337,7 +384,9 @@ function claim(navigateFn: NavigateFn, entry: DialogHistoryEntry): boolean {
 
 function dropEntry(entry: DialogHistoryEntry): void {
     const index = stack.indexOf(entry);
-    if (index !== -1) stack.splice(index, 1);
+    if (index === -1) return;
+    stack.splice(index, 1);
+    notifyStackListeners();
 }
 
 /**

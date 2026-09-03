@@ -22,6 +22,12 @@ import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
+// Shared with every other modal-like surface (Dialog, the AI search drawer).
+// This file used to keep a private copy of the Tab-cycling logic, bound to
+// the PANEL rather than `document` — worse than the shared trap's own prior
+// bug, because a panel listener never runs once focus has fallen out to
+// `<body>` (HOS-350).
+import { trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { AiChatFab } from './AiChatFab';
@@ -142,7 +148,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
     // Back button closes the panel instead of leaving the accommodation page
     // (HOS-310). This widget builds its own `role="dialog"` rather than using
     // the shared `Dialog`, so it wires the same hook directly.
-    useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
+    const { isTopmost } = useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
 
     // Keep the panel inside the area the user can actually see. Without this
     // the mobile keyboard covers the composer: the panel is anchored with
@@ -167,36 +173,24 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
         composerTextareaRef.current?.focus();
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            // `isTopmost` (HOS-350): when a second overlay opens above this
+            // panel (e.g. the feedback modal via Ctrl+Shift+F), only the
+            // outermost surface may close on a single Escape press.
             if (e.key === 'Escape') {
-                setIsOpen(false);
+                if (isTopmost) setIsOpen(false);
                 return;
             }
 
-            // Focus trap: Tab cycles within the panel
-            if (e.key === 'Tab') {
-                const currentFocusables = panel.querySelectorAll<HTMLElement>(
-                    'button, textarea, [tabindex]:not([tabindex="-1"])'
-                );
-                const first = currentFocusables[0];
-                const last = currentFocusables[currentFocusables.length - 1];
-
-                if (e.shiftKey) {
-                    if (document.activeElement === first) {
-                        e.preventDefault();
-                        last?.focus();
-                    }
-                } else {
-                    if (document.activeElement === last) {
-                        e.preventDefault();
-                        first?.focus();
-                    }
-                }
-            }
+            // Focus trap: cycles Tab within the panel, and recovers focus
+            // that was LOST while the panel was open. Bound to `document`
+            // (not the panel) so it still catches Tab once focus has fallen
+            // out to `<body>` — see `@/lib/focus-trap`.
+            trapFocus(panel, e);
         };
 
-        panel.addEventListener('keydown', handleKeyDown);
-        return () => panel.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen]);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, isTopmost]);
 
     // Return focus to FAB when panel closes.
     // Guard: only fire after a real open→close transition, never on initial mount
