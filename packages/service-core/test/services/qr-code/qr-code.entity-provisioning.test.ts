@@ -141,7 +141,7 @@ describe('QrCodeService — entity provisioning', () => {
 
             // Read field by field rather than with `objectContaining`, which is
             // blind to a field that was never written at all.
-            const written = modelMock.create.mock.calls[0][0] as Record<string, unknown>;
+            const written = modelMock.create.mock.calls[0]?.[0] as Record<string, unknown>;
             expect(written.source).toBe(QrCodeSourceEnum.GENERATED);
             expect(written.entityType).toBe(EntityTypeEnum.HOST_TRADE);
             expect(written.entityId).toBe(HOST_TRADE_ID);
@@ -287,7 +287,7 @@ describe('QrCodeService — entity provisioning', () => {
             expect(result.error).toBeUndefined();
             expect(result.data?.updated).toBe(true);
 
-            const [where, patch] = modelMock.update.mock.calls[0] as [
+            const [where, patch] = modelMock.update.mock.calls[0] as unknown as [
                 Record<string, unknown>,
                 Record<string, unknown>
             ];
