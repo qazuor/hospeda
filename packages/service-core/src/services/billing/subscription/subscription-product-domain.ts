@@ -37,6 +37,7 @@ import {
     type DrizzleClient,
     eq,
     getDb,
+    inArray,
     isNull,
     sql
 } from '@repo/db';
@@ -143,6 +144,95 @@ export function subscriptionMatchesDomain(sub: unknown, domain: ProductDomainVal
     }
 
     return value === domain;
+}
+
+/**
+ * Hydrates `productDomain` onto a list of subscriptions fetched via
+ * `billing.subscriptions.getByCustomerId()`, before any of them reach
+ * {@link subscriptionMatchesDomain} (HOS-934).
+ *
+ * **Why this exists**: `getByCustomerId()` returns
+ * `QZPaySubscriptionWithHelpers` objects built by qzpay-core's mapper
+ * field-by-field from the fields `QZPaySubscription` itself declares — there
+ * is no spread of the underlying row, so a column qzpay-drizzle adds beyond
+ * core's interface never reaches the object. `productDomain` is exactly such
+ * a column (like `courtesyStartsAt`/`courtesyEndsAt`, see
+ * `readCourtesyFields`'s module doc for the same mechanism), so every one of
+ * these objects arrives with `productDomain` `undefined` — never `null`,
+ * never the real string. Handed straight to `subscriptionMatchesDomain`,
+ * that `undefined` reads as "legacy row, fail open to accommodation" for
+ * EVERY subscription regardless of its real vertical: a gastronomy-only
+ * subscription would match a caller scoped to `accommodation` and vanish
+ * from a caller scoped to `gastronomy`/`experience`. This function closes
+ * that gap once, centrally, so every caller that resolves "the" subscription
+ * for a domain reads the same, correct value.
+ *
+ * A single batched `SELECT` recovers the column for every subscription that
+ * is missing it. Subscriptions that already carry a `productDomain` (e.g. a
+ * caller that hydrated already, or a future qzpay-core release that includes
+ * the column) are left untouched — an explicit value, even `null`, is a real
+ * answer and not a gap to fill.
+ *
+ * Returns NEW subscription objects (does not mutate the input array or its
+ * elements) — `QZPaySubscriptionWithHelpers` instances are plain object
+ * literals with their helper methods as own properties (not on a
+ * prototype), so `{ ...sub, productDomain }` preserves every method
+ * unchanged.
+ *
+ * @param subscriptions - Subscriptions as returned by `getByCustomerId()`.
+ * @param tx - Optional Drizzle client (e.g. a caller-provided transaction) so
+ *   the read participates in the caller's boundary. Defaults to a standalone
+ *   `getDb()` connection.
+ * @returns A new array, same order, each element carrying a real
+ *   `productDomain` value (the stored string, or `null` for a legacy row
+ *   whose column is genuinely `NULL`).
+ *
+ * @example
+ * ```ts
+ * const rawSubscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+ * const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+ * const match = subscriptions.find(
+ *   (sub) => isEntitlementGrantingStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
+ * );
+ * ```
+ */
+export async function hydrateSubscriptionProductDomains<T extends { id: string }>(
+    subscriptions: readonly T[],
+    tx?: DrizzleClient
+): Promise<(T & { productDomain: string | null })[]> {
+    if (subscriptions.length === 0) {
+        return [];
+    }
+
+    const idsNeedingHydration = subscriptions
+        .filter((sub) => (sub as Record<string, unknown>).productDomain === undefined)
+        .map((sub) => sub.id);
+
+    let domainById = new Map<string, string | null>();
+
+    if (idsNeedingHydration.length > 0) {
+        const db = tx ?? getDb();
+        const rows = await db
+            .select({
+                id: billingSubscriptions.id,
+                productDomain: billingSubscriptions.productDomain
+            })
+            .from(billingSubscriptions)
+            .where(inArray(billingSubscriptions.id, idsNeedingHydration));
+
+        domainById = new Map(rows.map((row) => [row.id, row.productDomain ?? null]));
+    }
+
+    return subscriptions.map((sub) => {
+        const existing = (sub as Record<string, unknown>).productDomain;
+        if (existing !== undefined) {
+            return sub as T & { productDomain: string | null };
+        }
+        return {
+            ...sub,
+            productDomain: domainById.get(sub.id) ?? null
+        };
+    });
 }
 
 /**

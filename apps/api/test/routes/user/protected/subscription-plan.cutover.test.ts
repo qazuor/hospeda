@@ -132,6 +132,18 @@ vi.mock('@repo/service-core', () => ({
         }
     },
     RoleEnum: { HOST: 'host', USER: 'user' },
+    // HOS-934: subscription.ts hydrates `productDomain` on the raw
+    // getByCustomerId() result BEFORE it reaches subscriptionMatchesDomain
+    // below — the real helper runs a getDb() recovery query none of the
+    // fixtures in this file need (none set a non-default productDomain), so
+    // this is a transparent passthrough: same objects, unchanged, exactly
+    // what the real function does when there is nothing to recover. Omitting
+    // this export entirely (as this whole-module mock originally did) makes
+    // subscription.ts's real `hydrateSubscriptionProductDomains(...)` call
+    // throw "is not a function", which the route's own catch-all silently
+    // turns into `{ subscription: null }` — the exact failure mode this
+    // comment is here to prevent from recurring.
+    hydrateSubscriptionProductDomains: async <T>(subs: readonly T[]): Promise<T[]> => [...subs],
     // HOS-259 / HOS-685: subscription.ts domain-scopes the resolved subscription
     // through ONE canonical predicate. Mirror its real semantics — accommodation
     // fails open on a legacy row, every other domain fails closed, and a

@@ -23,6 +23,7 @@
 import type { EntitlementKey, LimitKey } from '@repo/billing';
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import {
+    hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
     isOwnerCategorySubscription,
     RoleEnum
@@ -118,7 +119,15 @@ export const userEntitlementsRoute = createProtectedRoute({
             try {
                 const customer = await billing.customers.getByExternalId(actor.id);
                 if (customer) {
-                    const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+                    const rawSubscriptions = await billing.subscriptions.getByCustomerId(
+                        customer.id
+                    );
+                    // HOS-934: hydrate `productDomain` before it reaches
+                    // `isAccommodationSubscription` below — `getByCustomerId()`
+                    // never populates it (see hydrateSubscriptionProductDomains's
+                    // doc), so without this every subscription would fail open
+                    // to accommodation regardless of its real vertical.
+                    const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
                     // HOS-239: use the canonical entitlement-granting status set
                     // (active | trialing | comp) instead of the inline
                     // `active | trialing` that dropped `comp` — that omission is

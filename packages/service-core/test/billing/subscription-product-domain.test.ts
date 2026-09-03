@@ -35,6 +35,7 @@ vi.mock('@repo/db', () => ({
     },
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
     getDb: vi.fn(),
+    inArray: vi.fn((col: unknown, values: unknown[]) => ({ inArray: col, values })),
     isNull: vi.fn((col: unknown) => ({ isNull: col })),
     sql: vi.fn()
 }));
@@ -42,6 +43,7 @@ vi.mock('@repo/db', () => ({
 import type { DrizzleClient } from '@repo/db';
 import * as dbModule from '@repo/db';
 import {
+    hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
     isOwnerCategorySubscription,
     loadSubscriptionDiscountState,
@@ -354,5 +356,181 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
                 );
             }
         });
+    });
+});
+
+describe('hydrateSubscriptionProductDomains (HOS-934)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** Wires `mockGetDb` to resolve the batched recovery SELECT with `rows`. */
+    function mockRecoveryQuery(rows: Array<{ id: string; productDomain: string | null }>) {
+        mockGetDb.mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockResolvedValue(rows)
+                })
+            })
+        });
+    }
+
+    it(
+        'recovers productDomain for subscriptions that arrive without it — ' +
+            'the qzpay-core mapper shape (HOS-934 root cause)',
+        async () => {
+            // Arrange — objects shaped exactly like `getByCustomerId()`'s real
+            // return value: no `productDomain` key at all, only the fields
+            // `QZPaySubscription` declares.
+            const rawSubscriptions = [
+                { id: 'sub-gastronomy', status: 'active', planId: 'plan-1' },
+                { id: 'sub-accommodation', status: 'active', planId: 'plan-2' }
+            ];
+            mockRecoveryQuery([
+                { id: 'sub-gastronomy', productDomain: 'gastronomy' },
+                { id: 'sub-accommodation', productDomain: 'accommodation' }
+            ]);
+
+            // Act
+            const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+            // Assert
+            expect(hydrated.find((s) => s.id === 'sub-gastronomy')?.productDomain).toBe(
+                'gastronomy'
+            );
+            expect(hydrated.find((s) => s.id === 'sub-accommodation')?.productDomain).toBe(
+                'accommodation'
+            );
+        }
+    );
+
+    it('does NOT re-query for a subscription that already carries a productDomain', async () => {
+        // Arrange
+        const selectMock = vi.fn();
+        mockGetDb.mockReturnValue({ select: selectMock });
+        const rawSubscriptions = [
+            {
+                id: 'sub-already-hydrated',
+                status: 'active',
+                planId: 'plan-1',
+                productDomain: 'gastronomy'
+            }
+        ];
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Assert — the existing value is preserved, and no query was issued at all.
+        expect(hydrated[0]?.productDomain).toBe('gastronomy');
+        expect(selectMock).not.toHaveBeenCalled();
+    });
+
+    it('resolves to null (not undefined) for a row genuinely missing from the recovery query', async () => {
+        // Arrange — the recovery SELECT found no matching row (e.g. the
+        // subscription was deleted between the two reads).
+        mockRecoveryQuery([]);
+        const rawSubscriptions = [{ id: 'sub-vanished', status: 'active', planId: 'plan-1' }];
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Assert
+        expect(hydrated[0]?.productDomain).toBeNull();
+    });
+
+    it(
+        'is transparent when the recovery query returns no rows at all — every ' +
+            'original field survives unchanged, only productDomain is added (HOS-934 CI incident)',
+        async () => {
+            // Arrange — an EMPTY result set for the whole batch, not a
+            // per-subscription miss: this is what an under-mocked getDb() in a
+            // consuming test suite produces (no rows configured for the
+            // recovery query at all), and what caused two apps/api suites to
+            // regress when this function shipped — the caller's own catch-all
+            // swallowed the resulting shape mismatch as "no subscription".
+            // Hydration itself must stay a pure ADD: the object that goes in
+            // comes out with every field intact, never truncated.
+            mockRecoveryQuery([]);
+            const isPastDue = () => false;
+            const rawSubscriptions = [
+                {
+                    id: 'sub-1',
+                    status: 'active',
+                    planId: 'plan-1',
+                    currentPeriodStart: null,
+                    currentPeriodEnd: null,
+                    trialEnd: null,
+                    isPastDue
+                }
+            ];
+
+            // Act
+            const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+            // Assert — every original field present and unchanged...
+            expect(hydrated[0]?.id).toBe('sub-1');
+            expect(hydrated[0]?.status).toBe('active');
+            expect(hydrated[0]?.planId).toBe('plan-1');
+            expect(hydrated[0]?.currentPeriodStart).toBeNull();
+            expect(hydrated[0]?.currentPeriodEnd).toBeNull();
+            expect(hydrated[0]?.trialEnd).toBeNull();
+            expect(hydrated[0]?.isPastDue).toBe(isPastDue);
+            // ...plus the one field hydration is responsible for adding.
+            expect(hydrated[0]?.productDomain).toBeNull();
+            expect(Object.keys(hydrated[0] as object).sort()).toEqual(
+                [...Object.keys(rawSubscriptions[0] as object), 'productDomain'].sort()
+            );
+        }
+    );
+
+    it('returns an empty array without querying when given an empty input', async () => {
+        // Arrange
+        const selectMock = vi.fn();
+        mockGetDb.mockReturnValue({ select: selectMock });
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains([]);
+
+        // Assert
+        expect(hydrated).toEqual([]);
+        expect(selectMock).not.toHaveBeenCalled();
+    });
+
+    it('preserves helper methods on the hydrated objects (QZPaySubscriptionWithHelpers shape)', async () => {
+        // Arrange — `qzpayCreateSubscriptionWithHelpers` builds a plain object
+        // literal with its helper methods as OWN properties (no class/prototype
+        // involved), so `{ ...sub, productDomain }` must carry them through
+        // unchanged.
+        const isPastDue = () => false;
+        const rawSubscriptions = [
+            { id: 'sub-with-helpers', status: 'past_due', planId: 'plan-1', isPastDue }
+        ];
+        mockRecoveryQuery([{ id: 'sub-with-helpers', productDomain: 'accommodation' }]);
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Assert
+        expect(hydrated[0]?.isPastDue).toBe(isPastDue);
+        expect(hydrated[0]?.isPastDue()).toBe(false);
+        expect(hydrated[0]?.productDomain).toBe('accommodation');
+    });
+
+    it('uses the caller-provided tx instead of a standalone getDb() connection', async () => {
+        // Arrange
+        const whereMock = vi.fn().mockResolvedValue([{ id: 'sub-1', productDomain: 'gastronomy' }]);
+        const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+        const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+        const fakeTx = { select: selectMock } as unknown as DrizzleClient;
+
+        // Act
+        await hydrateSubscriptionProductDomains(
+            [{ id: 'sub-1', status: 'active', planId: 'plan-1' }],
+            fakeTx
+        );
+
+        // Assert — the standalone getDb() connection was never touched.
+        expect(mockGetDb).not.toHaveBeenCalled();
+        expect(selectMock).toHaveBeenCalledTimes(1);
     });
 });

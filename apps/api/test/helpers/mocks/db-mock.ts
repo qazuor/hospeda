@@ -356,6 +356,15 @@ export function createDbMock() {
         lte: vi.fn((a: string, b: unknown) => ({ type: 'lte', left: a, right: b })),
         isNull: vi.fn((a: string) => ({ type: 'isNull', column: a })),
         isNotNull: vi.fn((a: string) => ({ type: 'isNotNull', column: a })),
+        // HOS-934: hydrateSubscriptionProductDomains() batches its recovery
+        // query with `inArray(billingSubscriptions.id, ids)`. Without this
+        // export, any test that exercises the real (pass-through) hydration
+        // helper throws "No 'inArray' export is defined on the @repo/db mock".
+        inArray: vi.fn((a: string, b: readonly unknown[]) => ({
+            type: 'inArray',
+            column: a,
+            values: b
+        })),
 
         // Mock BaseModel class
         BaseModel: class MockBaseModel {
