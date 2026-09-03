@@ -29,9 +29,11 @@ import {
     calculatePromoCodeEffect,
     checkSubscriptionStatusTransition,
     getPromoCodeById,
+    hydrateSubscriptionProductDomains,
     loadSubscriptionDiscountState,
     resolveFullPlanPriceCentavos,
     resolveOwnerPlanGrantsFeatured,
+    subscriptionMatchesDomain,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
@@ -809,12 +811,49 @@ async function confirmPlanUpgrade(input: {
         const userId = await resolveOwnerUserId({
             customerId: changeResult.subscription.customerId
         });
+        // HOS-1119 — `applyUpgradeRestorationsOrWarn` is ACCOMMODATION-only, and
+        // until commerce had a plan-change route nothing could reach it with a
+        // commerce plan id. Now something can.
+        //
+        // It restores the host's plan-restricted ACCOMMODATIONS and PROMOTIONS
+        // against the caps of `newPlanId`. A commerce tier declares neither cap
+        // (`commerceVerticalTier` gives each one only its own vertical's listing
+        // limit), so handing it one means reasoning about an owner's
+        // accommodations from a gastronomy plan — with the restore direction
+        // being the permissive one, and every layer beneath resolving an unknown
+        // limit key as *unlimited*. Restoring more than the host's real
+        // accommodation plan allows is silent by construction: no error, no log,
+        // just rows quietly un-restricted.
+        //
+        // The predicate is the canonical one (SPEC-239), hydrated first because
+        // qzpay never populates `productDomain` on a returned subscription — and
+        // it fails OPEN toward accommodation on purpose, so every pre-commerce
+        // row keeps behaving exactly as it did.
+        const [hydratedSubscription] = await hydrateSubscriptionProductDomains([
+            changeResult.subscription
+        ]);
+        const isAccommodationUpgrade =
+            hydratedSubscription !== undefined &&
+            subscriptionMatchesDomain(hydratedSubscription, 'accommodation');
+
         if (userId) {
-            await applyUpgradeRestorationsOrWarn({
-                userId,
-                customerId: changeResult.subscription.customerId,
-                newPlanId
-            });
+            if (isAccommodationUpgrade) {
+                await applyUpgradeRestorationsOrWarn({
+                    userId,
+                    customerId: changeResult.subscription.customerId,
+                    newPlanId
+                });
+            } else {
+                apiLogger.info(
+                    {
+                        planChangeUpgradeId,
+                        newPlanId,
+                        customerId: changeResult.subscription.customerId,
+                        productDomain: hydratedSubscription?.productDomain
+                    },
+                    'Plan upgrade: non-accommodation subscription — accommodation restoration skipped by domain isolation'
+                );
+            }
             // SPEC-309 T-010: sync featuredByEntitlement to reflect the
             // post-upgrade plan via the shared resolver (T-004), which
             // already excludes non-accommodation (commerce/partner)

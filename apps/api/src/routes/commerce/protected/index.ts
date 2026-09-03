@@ -14,6 +14,7 @@
  * note: "the rest remains").
  */
 import { createRouter } from '../../../utils/create-app';
+import { commerceChangePlanRouter } from './change-plan';
 import {
     protectedCreateExperienceListingRoute,
     protectedCreateGastronomyListingRoute
@@ -28,11 +29,16 @@ router.route('/', protectedCreateGastronomyListingRoute);
 router.route('/', protectedCreateExperienceListingRoute);
 // POST /listings/:entityType/:entityId/start-subscription — owner checkout (§6.3)
 router.route('/', startCommerceSubscriptionRouter);
+// POST /subscriptions/:entityType/change-plan — owner tier change (HOS-1119).
+// Keyed by VERTICAL, not by listing: since HOS-688 a commerce subscription
+// belongs to an owner and a vertical, and several listings hang off one.
+router.route('/', commerceChangePlanRouter);
 
 /**
  * Protected commerce routes:
  * - POST /listings/gastronomy
  * - POST /listings/experience
  * - POST /listings/:entityType/:entityId/start-subscription
+ * - POST /subscriptions/:entityType/change-plan
  */
 export const protectedCommerceRoutes = router;
