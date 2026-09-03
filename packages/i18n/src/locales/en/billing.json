@@ -528,7 +528,8 @@
         "ai_support": "AI support assistant",
         "ai_translate": "AI content translation",
         "ai_accommodation_import": "AI accommodation import",
-        "manage_gastronomy_events": "Venue events, dated or weekly"
+        "manage_gastronomy_events": "Venue events, dated or weekly",
+        "multilingual_gastronomy_menu": "Menu in multiple languages"
     },
     "comparison": {
         "unlimited": "Unlimited",
