@@ -16,6 +16,10 @@
 import EditorHub from '@/components/host/editor/EditorHub.astro';
 import { FeaturedToggleSection } from '@/components/host/editor/FeaturedToggleSection.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import {
+	ACCOMMODATION_EDITOR_REGISTRY,
+	buildAccommodationEditorVisibility,
+} from '@/lib/editor/accommodation-editor-sections';
 import { resolveEditorSectionStatuses } from '@/lib/editor/editor-hub-status-model';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -75,8 +79,9 @@ const statuses = resolveEditorSectionStatuses({
 >
 	<EditorHub
 		locale={locale}
-		accommodationId={accommodationId}
-		hasTranslations={data.translations !== null}
+		registry={ACCOMMODATION_EDITOR_REGISTRY}
+		entityId={accommodationId}
+		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
 	/>
 
