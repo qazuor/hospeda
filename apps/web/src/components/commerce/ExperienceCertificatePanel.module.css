@@ -12,7 +12,7 @@
     gap: var(--space-2);
     margin-top: var(--space-3);
     padding-top: var(--space-3);
-    border-top: 1px solid var(--core-border);
+    border-top: 1px solid var(--border);
 }
 
 .heading {
@@ -51,8 +51,8 @@
 
 .input {
     padding: var(--space-2);
-    border: 1px solid var(--core-border);
-    border-radius: var(--radius-input, 0.5rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
     background: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
