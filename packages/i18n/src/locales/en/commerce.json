@@ -110,7 +110,8 @@
                 "price": "Price",
                 "faqs": "FAQs",
                 "meetingPoint": "Meeting point",
-                "practicalInfo": "Practical details"
+                "practicalInfo": "Practical details",
+                "menu": "Menu"
             },
             "sections": {
                 "type": "Category",
@@ -244,6 +245,42 @@
                 "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
                 "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
                 "checkbox": "Change the web address too so it follows this new name"
+            },
+            "menuManager": {
+                "title": "Menu",
+                "intro": "Enter your menu dish by dish, or upload a photo or a PDF of it. You can use both, and neither is required.",
+                "fileTitle": "Menu photo or PDF",
+                "filePdf": "View the PDF",
+                "fileImage": "View the photo",
+                "addFile": "Upload photo or PDF",
+                "replaceFile": "Replace the file",
+                "removeFile": "Remove",
+                "uploaded": "Menu file uploaded.",
+                "fileRemoved": "Menu file removed.",
+                "uploadError": "The menu file could not be uploaded.",
+                "deleteError": "The menu file could not be removed.",
+                "sectionsTitle": "Dishes by course",
+                "newSection": "New course",
+                "sectionName": "Course name",
+                "sectionNamePlaceholder": "Starters, Mains, Desserts…",
+                "addSection": "Add course",
+                "removeSection": "Remove",
+                "moveSectionUp": "Move course up",
+                "moveSectionDown": "Move course down",
+                "itemName": "Dish name",
+                "itemNamePlaceholder": "Dish name",
+                "itemDescription": "Dish description",
+                "itemDescriptionPlaceholder": "Ingredients, portion…",
+                "itemPrice": "Dish price",
+                "itemPricePlaceholder": "On request",
+                "itemAvailable": "Available",
+                "addItem": "Add dish",
+                "removeItem": "Remove",
+                "save": "Save menu",
+                "saving": "Saving…",
+                "saved": "Menu saved.",
+                "saveError": "The menu could not be saved.",
+                "locked": "Entering the menu dish by dish is available from the Professional plan onwards. In the meantime you can upload a photo or a PDF of the menu, or leave the link."
             }
         },
         "checklist": {

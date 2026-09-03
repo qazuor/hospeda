@@ -47,6 +47,7 @@ import { addToast } from '@/store/toast-store';
 import type { CommerceFaq } from './CommerceFaqManager.client';
 import { CommerceFaqManager } from './CommerceFaqManager.client';
 import styles from './CommerceListingEditor.module.css';
+import { CommerceMenuManager } from './CommerceMenuManager.client';
 import {
     type CommerceI18nValues,
     CommerceTranslationPanel,
@@ -793,6 +794,16 @@ export function CommerceListingEditor({
             label: t('commerce.owner.editor.sectionNav.price', 'Precio')
         });
 
+        // HOS-895 — gastronomy only: an experience has no carta. Appended
+        // after the price entry because the panel renders after PriceSection,
+        // which is what the scrollspy's first-match tie-break requires.
+        if (vertical === 'gastronomy') {
+            sections.push({
+                id: 'editor-menu',
+                label: t('commerce.owner.editor.sectionNav.menu', 'Carta')
+            });
+        }
+
         // H-153 added this entry; HOS-827 moved its target INTO this component,
         // so the anchor and the link are now emitted by the same file and cannot
         // drift apart. Appended last because the FAQ card renders last among the
@@ -944,6 +955,24 @@ export function CommerceListingEditor({
                         errors={fieldErrors}
                         onFieldChange={onFieldChange}
                     />
+
+                    {/*
+                     * HOS-895: the carta — courses and dishes, plus the photo/PDF
+                     * of the printed menu. Gastronomy only; an experience has no
+                     * menu. Like `CommerceFaqManager` it persists against its own
+                     * endpoints and nothing here reaches the form's PATCH payload
+                     * or its dirty tracking. The wrapper carries the card recipe
+                     * because the panel emits its own <section> with the nav
+                     * anchor but no card styling.
+                     */}
+                    {vertical === 'gastronomy' && (
+                        <div className={fieldStyles.section}>
+                            <CommerceMenuManager
+                                listingId={listingId}
+                                locale={locale}
+                            />
+                        </div>
+                    )}
 
                     {/*
                      * HOS-827: a section of the form, above the save button and

@@ -110,7 +110,8 @@
                 "price": "Preço",
                 "faqs": "Perguntas frequentes",
                 "meetingPoint": "Ponto de encontro",
-                "practicalInfo": "Dados práticos"
+                "practicalInfo": "Dados práticos",
+                "menu": "Cardápio"
             },
             "sections": {
                 "type": "Categoria",
@@ -244,6 +245,42 @@
                 "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
                 "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
                 "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+            },
+            "menuManager": {
+                "title": "Cardápio",
+                "intro": "Carregue o cardápio prato a prato ou envie uma foto ou um PDF dele. Você pode usar as duas formas, e nenhuma é obrigatória.",
+                "fileTitle": "Foto ou PDF do cardápio",
+                "filePdf": "Ver o PDF",
+                "fileImage": "Ver a foto",
+                "addFile": "Enviar foto ou PDF",
+                "replaceFile": "Substituir o arquivo",
+                "removeFile": "Excluir",
+                "uploaded": "Arquivo do cardápio enviado.",
+                "fileRemoved": "Arquivo do cardápio excluído.",
+                "uploadError": "Não foi possível enviar o arquivo do cardápio.",
+                "deleteError": "Não foi possível excluir o arquivo do cardápio.",
+                "sectionsTitle": "Pratos por seção",
+                "newSection": "Nova seção",
+                "sectionName": "Nome da seção",
+                "sectionNamePlaceholder": "Entradas, Principais, Sobremesas…",
+                "addSection": "Adicionar seção",
+                "removeSection": "Remover",
+                "moveSectionUp": "Subir a seção",
+                "moveSectionDown": "Descer a seção",
+                "itemName": "Nome do prato",
+                "itemNamePlaceholder": "Nome do prato",
+                "itemDescription": "Descrição do prato",
+                "itemDescriptionPlaceholder": "Ingredientes, porção…",
+                "itemPrice": "Preço do prato",
+                "itemPricePlaceholder": "Sob consulta",
+                "itemAvailable": "Disponível",
+                "addItem": "Adicionar prato",
+                "removeItem": "Remover",
+                "save": "Salvar cardápio",
+                "saving": "Salvando…",
+                "saved": "Cardápio salvo.",
+                "saveError": "Não foi possível salvar o cardápio.",
+                "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link."
             }
         },
         "checklist": {
