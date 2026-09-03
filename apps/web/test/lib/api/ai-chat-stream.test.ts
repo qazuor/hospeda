@@ -44,7 +44,8 @@ function createOpaqueErrorResponse(status: number): Response {
 describe('streamChat (SSE client)', () => {
     const baseParams = {
         apiUrl: 'http://localhost:3001',
-        accommodationId: '550e8400-e29b-41d4-a716-446655440000',
+        entityType: 'accommodation' as const,
+        entityId: '550e8400-e29b-41d4-a716-446655440000',
         messages: [{ role: 'user' as const, content: '¿Tiene estacionamiento?' }],
         locale: 'es' as const,
         conversationId: null as string | null
@@ -251,7 +252,8 @@ describe('streamChat (SSE client)', () => {
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
-                    accommodationId: baseParams.accommodationId,
+                    entityType: baseParams.entityType,
+                    entityId: baseParams.entityId,
                     messages: baseParams.messages,
                     locale: 'es',
                     conversationId: null

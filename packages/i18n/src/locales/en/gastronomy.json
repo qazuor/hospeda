@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Ask the AI about this venue",
+        "headerDisclaimer": "Answers are AI-generated and may contain errors. Always confirm the information with the venue.",
+        "panelLabel": "AI chat — Questions about the venue",
+        "priceDisclaimer": "The menu, prices and hours may have changed. Contact the venue to confirm.",
+        "unavailable": "AI chat is not available for this venue"
+    },
     "listing": {
         "title": "Gastronomy",
         "subtitle": "Discover the best restaurants, bars, and flavors of the region",

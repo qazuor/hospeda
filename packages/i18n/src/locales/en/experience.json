@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Ask the AI about this experience",
+        "headerDisclaimer": "Answers are AI-generated and may contain errors. Always confirm the information with the provider.",
+        "panelLabel": "AI chat — Questions about the experience",
+        "priceDisclaimer": "Schedules, availability and prices may have changed. Contact the provider to confirm.",
+        "unavailable": "AI chat is not available for this experience"
+    },
     "meta": {
         "title": "Experiences & Services",
         "description": "Discover the best tourism experiences and services in the region: rentals, excursions, guides, and more"

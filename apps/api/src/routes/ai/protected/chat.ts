@@ -122,7 +122,7 @@ const RATE_LIMIT_FEATURE: AiFeature = 'chat';
 const UNAVAILABLE_COPY_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
     accommodation: 'accommodations.aiChat.unavailable',
     gastronomy: 'gastronomy.aiChat.unavailable',
-    experience: 'experiences.aiChat.unavailable'
+    experience: 'experience.aiChat.unavailable'
 };
 
 /**
