@@ -176,6 +176,12 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * `MANAGE_GASTRONOMY_MENU` — a downgraded owner's previously-typed carta is
      * withheld the same way `menuFileUrl` is (see the field's comment above),
      * even though the ROWS are not deleted.
+     *
+     * Each section/item's `nameI18n`/`descriptionI18n` (HOS-1043) are withheld
+     * INDEPENDENTLY, on the narrower `MULTILINGUAL_GASTRONOMY_MENU` key —
+     * `null` on both when the plan does not grant it, the same live-read
+     * mechanism `photoUrl` uses for `MENU_ITEM_PHOTOS`. See
+     * `gastronomy.menu.schema.ts` for the full mechanism.
      */
     menuSections: z.array(GastronomyMenuSectionPublicSchema).optional(),
     /**

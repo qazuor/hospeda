@@ -288,6 +288,56 @@ export enum EntitlementKey {
      * withheld from the public payload, the same mechanism the carta uses.
      */
     MANAGE_GASTRONOMY_EVENTS = 'manage_gastronomy_events',
+
+    /**
+     * Translating the structured carta into `{es,en,pt}` (HOS-1043) — the
+     * `name_i18n`/`description_i18n` pair on both `gastronomy_menu_sections`
+     * and `gastronomy_menu_items`.
+     *
+     * A TIER differentiator granted by `gastronomy-premium` ALONE, on exactly
+     * the terms {@link EntitlementKey.MENU_ITEM_PHOTOS} is: deliberately NOT
+     * in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that map is the floor every
+     * tier of a vertical receives, and a paid capability there would be handed
+     * to `-basico` and `-pro` as well).
+     *
+     * ## It layers ON TOP of `MANAGE_GASTRONOMY_MENU`, it does not replace it
+     *
+     * A translation has nowhere to live without a carta to translate, so this
+     * key is only reachable by an owner who also holds
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU} — which `-premium` does,
+     * and which is why that plan repeats it rather than inheriting it from
+     * `-pro`. The two are checked independently: the carta write is gated on
+     * the first, and a document carrying a translation on this one — the same
+     * per-FIELD (not per-route) shape `MENU_ITEM_PHOTOS` uses, because both
+     * ride inside the SAME shared `PUT .../menu` body as the untranslated
+     * fields a `-pro` owner may still write.
+     *
+     * ## Manual, not `AI_TRANSLATE`
+     *
+     * `AI_TRANSLATE` (SPEC-212) resolves accommodation/destination/event/post
+     * content only; extending it to a commerce entity is separate work, out of
+     * scope here. `nameI18n`/`descriptionI18n` are typed by hand by the owner
+     * — the same way `gastronomy_faqs.question_i18n` was before any AI path
+     * touched it.
+     *
+     * ## Enforced on the write AND on the public read
+     *
+     * `menuPayloadCarriesTranslations` inspects the submitted document (like
+     * `menuPayloadCarriesItemPhoto` does for photos) and refuses a document
+     * naming ANY translation unless this key is granted — a `-pro` owner keeps
+     * writing an untranslated carta undisturbed. The public detail page
+     * enforces it live rather than by deleting rows: a downgraded owner's
+     * already-typed translations stay in the database and
+     * `resolveOwnerGastronomyPlanEntitlementSet` (`@repo/service-core`) is
+     * asked on every render, the same mechanism the carta and photo keys use.
+     * The owner's OWN protected read is NOT gated, for the reason
+     * `MANAGE_GASTRONOMY_DAILY_SPECIAL` states: a downgraded owner still sees
+     * everything they typed.
+     *
+     * Gastronomy-only by name and on purpose: an experience has no carta, so
+     * there is no second vertical for this key to be shared with.
+     */
+    MULTILINGUAL_GASTRONOMY_MENU = 'multilingual_gastronomy_menu',
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

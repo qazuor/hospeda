@@ -53,7 +53,10 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // `ai_chat` key the accommodation catalogue grants: the picker renders it
     // from the plan row's own entitlements, so a gastronomy premium and an
     // accommodation premium both showing "Chat con IA" is correct, not a leak.
-    ai_chat: 'aiChat'
+    ai_chat: 'aiChat',
+    // HOS-1043 — same tier and same reasoning as `menu_item_photos`: the
+    // second key that separates gastronomy PREMIUM from `-pro`.
+    multilingual_gastronomy_menu: 'multilingualGastronomyMenu'
 };
 
 /**
@@ -66,5 +69,6 @@ export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     issue_experience_certificate: 'Certificados de experiencia',
     manage_gastronomy_daily_special: 'Menú del día',
     manage_gastronomy_events: 'Eventos del local',
-    ai_chat: 'Chat con IA en tu ficha'
+    ai_chat: 'Chat con IA en tu ficha',
+    multilingual_gastronomy_menu: 'Carta en varios idiomas'
 };

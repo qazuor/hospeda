@@ -56,6 +56,19 @@
  * API decides; a refusal is shown as the upsell sentence it is, never as
  * "something went wrong". The uploaded file and the link are NOT gated and stay
  * usable on every tier.
+ *
+ * ## Translations (HOS-1043)
+ *
+ * `nameEn`/`namePt`/`descriptionEn`/`descriptionPt` are plain draft fields,
+ * unlike the photo: there is no separate upload endpoint to gate ahead of
+ * time, because a translation has no bytes of its own. So the fields are
+ * always editable and the gate fires only at "Guardar carta", the same way the
+ * carta's OWN gate does — the API decides, and a refusal is shown as the
+ * upsell sentence it is (`isTranslationLocked`). A translation is submitted
+ * ONLY when BOTH `en` and `pt` are filled (the ES leg comes from the legacy
+ * `name`/`description` at save time): the write schema requires all three
+ * locales together, so a half-filled pair would 400 rather than silently
+ * publish an empty string as "the English name".
  */
 
 import type { JSX } from 'react';
@@ -67,11 +80,19 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './CommerceMenuManager.module.css';
+import { MenuTranslationFields } from './MenuTranslationFields.client';
 
 /** What the API returns for the uploaded photo/PDF. */
 interface MenuFile {
     readonly url: string;
     readonly kind: 'image' | 'pdf';
+}
+
+/** A localized `{es,en,pt}` value, or `null` when never translated. */
+interface I18nTextValue {
+    readonly es: string;
+    readonly en: string;
+    readonly pt: string;
 }
 
 /** One dish, as held in form state. Ids are not carried — see the payload schema. */
@@ -87,12 +108,28 @@ interface MenuItemDraft {
     photoPublicId: string | null;
     /** Alt text; `null` lets the public page fall back to the dish's name. */
     photoAlt: string | null;
+    /** English translation of {@link name} (HOS-1043). Empty means "not translated". */
+    nameEn: string;
+    /** Portuguese translation of {@link name} (HOS-1043). */
+    namePt: string;
+    /** English translation of {@link description} (HOS-1043). */
+    descriptionEn: string;
+    /** Portuguese translation of {@link description} (HOS-1043). */
+    descriptionPt: string;
 }
 
 /** One course, as held in form state. */
 interface MenuSectionDraft {
     name: string;
     description: string;
+    /** English translation of {@link name} (HOS-1043). Empty means "not translated". */
+    nameEn: string;
+    /** Portuguese translation of {@link name} (HOS-1043). */
+    namePt: string;
+    /** English translation of {@link description} (HOS-1043). */
+    descriptionEn: string;
+    /** Portuguese translation of {@link description} (HOS-1043). */
+    descriptionPt: string;
     items: MenuItemDraft[];
 }
 
@@ -101,9 +138,13 @@ interface MenuEnvelope {
     readonly sections: ReadonlyArray<{
         readonly name: string;
         readonly description: string | null;
+        readonly nameI18n: I18nTextValue | null;
+        readonly descriptionI18n: I18nTextValue | null;
         readonly items: ReadonlyArray<{
             readonly name: string;
             readonly description: string | null;
+            readonly nameI18n: I18nTextValue | null;
+            readonly descriptionI18n: I18nTextValue | null;
             readonly priceCents: number | null;
             readonly isAvailable: boolean;
             readonly photoUrl: string | null;
@@ -128,7 +169,22 @@ const EMPTY_ITEM: MenuItemDraft = {
     isAvailable: true,
     photoUrl: null,
     photoPublicId: null,
-    photoAlt: null
+    photoAlt: null,
+    nameEn: '',
+    namePt: '',
+    descriptionEn: '',
+    descriptionPt: ''
+};
+
+/** A fresh section draft — see {@link EMPTY_ITEM} for the translation fields. */
+const EMPTY_SECTION: MenuSectionDraft = {
+    name: '',
+    description: '',
+    nameEn: '',
+    namePt: '',
+    descriptionEn: '',
+    descriptionPt: '',
+    items: []
 };
 
 /** What the per-dish photo upload route answers with. */
@@ -145,6 +201,30 @@ type PanelState = 'loading' | 'idle' | 'saving' | 'uploading';
 
 /** MIME types the upload input and the API both accept. */
 const ACCEPTED_MENU_FILE_TYPES = 'image/jpeg,image/png,image/webp,application/pdf';
+
+/**
+ * Builds the `{es,en,pt}` payload for a translated field (HOS-1043), or
+ * `null` when there is nothing to submit.
+ *
+ * Requires BOTH `en` and `pt` non-empty before building anything: the write
+ * schema (`i18nText`) requires all three locales together whenever the object
+ * is present, so a half-filled pair would 400 instead of quietly publishing
+ * the untranslated legacy text as "the English name" — which `en: ''` would
+ * do if it were allowed through.
+ *
+ * @param legacy - The `es` source (the section/item's own `name`/`description`).
+ * @param en - The draft English translation.
+ * @param pt - The draft Portuguese translation.
+ * @returns The `{es,en,pt}` object, or `null`.
+ */
+function buildI18nField(legacy: string, en: string, pt: string): I18nTextValue | null {
+    const trimmedEn = en.trim();
+    const trimmedPt = pt.trim();
+    if (!trimmedEn || !trimmedPt) {
+        return null;
+    }
+    return { es: legacy.trim(), en: trimmedEn, pt: trimmedPt };
+}
 
 /** Moves one entry of an array, returning a new array. Out-of-range is a no-op. */
 function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
@@ -176,6 +256,12 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
      * would make impossible.
      */
     const [isPhotoLocked, setIsPhotoLocked] = useState(false);
+    /**
+     * HOS-1043. A THIRD lock, same reasoning as `isPhotoLocked`: the way out
+     * is to clear the EN/PT fields and save the carta in Spanish only, so Save
+     * must stay enabled.
+     */
+    const [isTranslationLocked, setIsTranslationLocked] = useState(false);
 
     const basePath = `/api/v1/protected/gastronomies/${listingId}/menu`;
 
@@ -197,9 +283,17 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                     result.data.sections.map((section) => ({
                         name: section.name,
                         description: section.description ?? '',
+                        nameEn: section.nameI18n?.en ?? '',
+                        namePt: section.nameI18n?.pt ?? '',
+                        descriptionEn: section.descriptionI18n?.en ?? '',
+                        descriptionPt: section.descriptionI18n?.pt ?? '',
                         items: section.items.map((item) => ({
                             name: item.name,
                             description: item.description ?? '',
+                            nameEn: item.nameI18n?.en ?? '',
+                            namePt: item.nameI18n?.pt ?? '',
+                            descriptionEn: item.descriptionI18n?.en ?? '',
+                            descriptionPt: item.descriptionI18n?.pt ?? '',
                             priceCents: item.priceCents,
                             isAvailable: item.isAvailable,
                             photoUrl: item.photoUrl ?? null,
@@ -221,7 +315,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
     // ── Structured carta ────────────────────────────────────────────────────
 
     const addSection = useCallback(() => {
-        setSections((prev) => [...prev, { name: '', description: '', items: [] }]);
+        setSections((prev) => [...prev, { ...EMPTY_SECTION }]);
     }, []);
 
     const removeSection = useCallback((index: number) => {
@@ -394,11 +488,28 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                 .map((section) => ({
                     name: section.name.trim(),
                     description: section.description.trim() || null,
+                    // HOS-1043 — submitted ONLY when BOTH en and pt are filled.
+                    // The write schema requires all three locales together
+                    // whenever the object is present at all, so a half-filled
+                    // pair is not sent rather than 400ing on a save the owner
+                    // has no field to fix from here.
+                    nameI18n: buildI18nField(section.name, section.nameEn, section.namePt),
+                    descriptionI18n: buildI18nField(
+                        section.description,
+                        section.descriptionEn,
+                        section.descriptionPt
+                    ),
                     items: section.items
                         .filter((item) => item.name.trim().length > 0)
                         .map((item) => ({
                             name: item.name.trim(),
                             description: item.description.trim() || null,
+                            nameI18n: buildI18nField(item.name, item.nameEn, item.namePt),
+                            descriptionI18n: buildI18nField(
+                                item.description,
+                                item.descriptionEn,
+                                item.descriptionPt
+                            ),
                             priceCents: item.priceCents,
                             isAvailable: item.isAvailable,
                             photoUrl: item.photoUrl,
@@ -421,13 +532,14 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
         // genuine error, and showing the second for the first is how an upsell
         // turns into a bug report.
         //
-        // TWO entitlements can produce this 403 and they mean different things,
-        // so the payload decides which upsell to show rather than the response
-        // body: both refusals carry `ENTITLEMENT_REQUIRED`, and reading the key
-        // out of the message would be parsing prose. A document carrying a
-        // photo is refused for the photo — an owner who got a photo INTO this
-        // state necessarily passed the upload's own gate, which only the plan
-        // that also grants the carta passes.
+        // THREE entitlements can now produce this 403 and they mean different
+        // things, so the payload decides which upsell to show rather than the
+        // response body: every refusal carries `ENTITLEMENT_REQUIRED`, and
+        // reading the key out of the message would be parsing prose. Checked
+        // in the SAME order `handlePutGastronomyMenu` checks them server-side
+        // (photo gate, then translations gate, then the carta gate itself),
+        // so a document carrying both an unentitled photo and an unentitled
+        // translation is attributed to the photo on both sides.
         if (result.error.status === 403) {
             const carriedPhoto = payload.sections.some((section) =>
                 section.items.some((item) => Boolean(item.photoUrl))
@@ -439,6 +551,26 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                     t(
                         'commerce.owner.editor.menuManager.photoLocked',
                         'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
+                    )
+                );
+                return;
+            }
+
+            const carriedTranslation = payload.sections.some(
+                (section) =>
+                    Boolean(section.nameI18n) ||
+                    Boolean(section.descriptionI18n) ||
+                    section.items.some(
+                        (item) => Boolean(item.nameI18n) || Boolean(item.descriptionI18n)
+                    )
+            );
+
+            if (carriedTranslation) {
+                setIsTranslationLocked(true);
+                setMessage(
+                    t(
+                        'commerce.owner.editor.menuManager.translationLocked',
+                        'Traducir la carta está disponible en el plan Premium. Podés borrar las traducciones y guardar la carta en español.'
                     )
                 );
                 return;
@@ -718,6 +850,25 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                             </button>
                         </div>
 
+                        {/*
+                         * HOS-1043. Name-only: this editor has no field for a
+                         * section's `description` at all (see the load/save
+                         * mapping above), so there is nothing for
+                         * `hasDescription` to translate here.
+                         */}
+                        <MenuTranslationFields
+                            nameEn={section.nameEn}
+                            namePt={section.namePt}
+                            descriptionEn={section.descriptionEn}
+                            descriptionPt={section.descriptionPt}
+                            hasDescription={false}
+                            locked={isTranslationLocked}
+                            locale={locale}
+                            onChange={(patch) => {
+                                patchSection(sectionIndex, patch);
+                            }}
+                        />
+
                         {section.items.map((item, itemIndex) => (
                             <div
                                 // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
@@ -758,6 +909,18 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                         patchItem(sectionIndex, itemIndex, {
                                             description: event.target.value
                                         });
+                                    }}
+                                />
+                                <MenuTranslationFields
+                                    nameEn={item.nameEn}
+                                    namePt={item.namePt}
+                                    descriptionEn={item.descriptionEn}
+                                    descriptionPt={item.descriptionPt}
+                                    hasDescription={true}
+                                    locked={isTranslationLocked}
+                                    locale={locale}
+                                    onChange={(patch) => {
+                                        patchItem(sectionIndex, itemIndex, patch);
                                     }}
                                 />
                                 {/*

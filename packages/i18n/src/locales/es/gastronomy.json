@@ -61,7 +61,8 @@
             "attachmentPdf": "Carta en PDF",
             "viewPdf": "Ver carta en PDF",
             "consultPrice": "A consultar",
-            "unavailable": "No disponible"
+            "unavailable": "No disponible",
+            "switchLanguage": "Ver la carta en:"
         },
         "dailySpecials": {
             "title": "Menú del día",

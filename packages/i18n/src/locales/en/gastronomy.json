@@ -61,7 +61,8 @@
             "attachmentPdf": "Menu PDF",
             "viewPdf": "View menu PDF",
             "consultPrice": "Ask staff",
-            "unavailable": "Unavailable"
+            "unavailable": "Unavailable",
+            "switchLanguage": "View menu in:"
         },
         "dailySpecials": {
             "title": "Today's menu",

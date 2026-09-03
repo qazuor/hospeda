@@ -908,6 +908,11 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // here for the reason the carta is: these arrays are literal per plan, so
     // omitting one would leave the dearer tier missing a feature its cheaper
     // neighbour has.
+    //
+    // HOS-1043 adds the multi-language carta, on the same terms as the photo
+    // per dish right above it: `-premium` alone, and layered on top of
+    // `MANAGE_GASTRONOMY_MENU` rather than replacing it — a translation has
+    // nowhere to live without a carta to translate.
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
@@ -922,7 +927,8 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
         // Deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, which is
         // the floor every tier receives — putting it there would hand the chat
         // to básico and pro too.
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
     ],
     // HOS-400: the only commerce tier of this vertical that carries a nonzero
     // chat quota, because it is the only one that grants the capability.

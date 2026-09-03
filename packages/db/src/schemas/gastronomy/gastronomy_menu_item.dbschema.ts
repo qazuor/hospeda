@@ -1,5 +1,15 @@
+import type { I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { boolean, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
 import { gastronomies } from './gastronomy.dbschema.ts';
 import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
@@ -69,6 +79,18 @@ export const gastronomyMenuItems = pgTable(
         name: text('name').notNull(),
         /** Optional description — ingredients, preparation, portion. */
         description: text('description'),
+        /**
+         * Localized name (HOS-1043). Additive/nullable: `name` remains the `es`
+         * fallback source and the only value an owner without the
+         * `multilingual_gastronomy_menu` entitlement can ever write. See
+         * `gastronomy_menu_section.dbschema.ts` for the full mechanism.
+         */
+        nameI18n: jsonb('name_i18n').$type<I18nText>(),
+        /**
+         * Localized description (HOS-1043). Additive/nullable: `description`
+         * remains the `es` fallback source.
+         */
+        descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
         /**
          * Price in CENTAVOS, per the platform's money rule (integer, never
          * `numeric`/float). Nullable, and the nullability is the feature: a

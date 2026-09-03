@@ -2717,13 +2717,44 @@ function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
 }
 
 /**
+ * Coerces a raw `nameI18n`/`descriptionI18n` value into an {@link I18nTextLike}
+ * or `null`, defensively.
+ *
+ * `null` covers both "never translated" and "withheld server-side for a plan
+ * that does not grant `multilingual_gastronomy_menu`" (HOS-1043) — the same
+ * single-value collapse {@link GastronomyMenuItem.photoUrl}'s own doc
+ * describes for the photo gate, and for the same reason: the API decides, the
+ * renderer draws what it is given.
+ *
+ * @param raw - The raw field value, of unknown shape.
+ * @returns An {@link I18nTextLike} object, or `null`.
+ */
+function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const record = raw as Record<string, unknown>;
+    const result: { es?: string; en?: string; pt?: string } = {};
+    for (const locale of ['es', 'en', 'pt'] as const) {
+        if (typeof record[locale] === 'string') {
+            result[locale] = record[locale] as string;
+        }
+    }
+    return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
  * Maps the raw `menuSections` array a gastronomy detail payload carries
- * (HOS-895 PR2, per-dish photos added by HOS-1045) into the shape
- * `GastronomyMenu.astro` renders.
+ * (HOS-895 PR2, per-dish photos added by HOS-1045, translations added by
+ * HOS-1043) into the shape `GastronomyMenu.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing — the same treatment the
  * amenities/features mappers give an absent join.
+ *
+ * `nameI18n`/`descriptionI18n` are carried through RAW (not pre-resolved to
+ * the page locale, unlike the FAQ transform's `resolveFaqField`): the carta
+ * renders its own language switcher independent of the page's URL locale
+ * (HOS-1043), so the renderer needs every translated leg the API sent, not
+ * just the one matching the current page.
  *
  * @param raw - The payload's `menuSections` value, of unknown shape.
  * @returns Renderer-ready sections; empty when absent or malformed.
@@ -2735,11 +2766,15 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
             id: String(section.id ?? ''),
             name: String(section.name ?? ''),
             description: section.description == null ? null : String(section.description),
+            nameI18n: coerceI18nTextLike(section.nameI18n),
+            descriptionI18n: coerceI18nTextLike(section.descriptionI18n),
             items: Array.isArray(section.items)
                 ? (section.items as Array<Record<string, unknown>>).map((item) => ({
                       id: String(item.id ?? ''),
                       name: String(item.name ?? ''),
                       description: item.description == null ? null : String(item.description),
+                      nameI18n: coerceI18nTextLike(item.nameI18n),
+                      descriptionI18n: coerceI18nTextLike(item.descriptionI18n),
                       priceCents:
                           typeof item.priceCents === 'number'
                               ? item.priceCents

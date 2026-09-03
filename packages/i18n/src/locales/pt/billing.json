@@ -528,7 +528,8 @@
         "ai_support": "Assistente de suporte com IA",
         "ai_translate": "Tradução de conteúdo com IA",
         "ai_accommodation_import": "Importação de hospedagens com IA",
-        "manage_gastronomy_events": "Eventos do local, com data ou semanais"
+        "manage_gastronomy_events": "Eventos do local, com data ou semanais",
+        "multilingual_gastronomy_menu": "Cardápio em vários idiomas"
     },
     "comparison": {
         "unlimited": "Ilimitado",
