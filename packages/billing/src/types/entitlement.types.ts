@@ -102,6 +102,44 @@ export enum EntitlementKey {
      */
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
+    /**
+     * The menú del día — a dish with its own validity window (HOS-1041).
+     *
+     * ## Not a narrower `MANAGE_GASTRONOMY_MENU`
+     *
+     * The carta is what the venue cooks all year; this is what it is cooking
+     * today, and they are bought for different reasons. A venue with a fixed
+     * menu and a blackboard out front wants this and not the carta; a venue
+     * with forty dishes and no daily offer wants the reverse. They land on the
+     * same tier today, but they are separate capabilities and reusing one key
+     * for both would make it impossible to price them apart later without
+     * migrating live subscriptions.
+     *
+     * ## Where it sits, and why not in the vertical floor
+     *
+     * Granted from `gastronomy-pro` UPWARDS (owner decision, 2026-09-01): a
+     * daily operational feature, used every day by whoever uses it and paid for
+     * by nobody else. Deliberately ABSENT from
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * tier receives, and a paid capability there would be handed to `-basico`.
+     * `-premium` repeats it literally rather than inheriting it, for the reason
+     * `plans.config.ts` states: nothing composes a tier out of the one below.
+     *
+     * ## What it gates
+     *
+     * `PUT .../daily-specials` (writing them) and the public projection
+     * (showing them). The OWNER's own read is NOT gated — an owner whose
+     * subscription lapsed still sees what they typed, the same split
+     * `MANAGE_GASTRONOMY_MENU` makes between `getMenu` and `putMenu`. The
+     * public detail page enforces it live via
+     * `resolveOwnerGrantsGastronomyDailySpecial` (`@repo/service-core`) rather
+     * than by deleting rows.
+     *
+     * Gastronomy-only by name and on purpose: an experience has no menú del
+     * día.
+     */
+    MANAGE_GASTRONOMY_DAILY_SPECIAL = 'manage_gastronomy_daily_special',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

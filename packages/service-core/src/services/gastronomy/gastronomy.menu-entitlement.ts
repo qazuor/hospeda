@@ -65,8 +65,17 @@ export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
 }
 
 /**
- * Resolves whether the owner's CURRENT gastronomy subscription plan grants
- * `MANAGE_GASTRONOMY_MENU`.
+ * Input for {@link resolveOwnerGrantsGastronomyEntitlement}.
+ */
+export interface ResolveOwnerGrantsGastronomyEntitlementInput
+    extends ResolveOwnerGrantsGastronomyMenuManagementInput {
+    /** The key to test against the resolved plan's `entitlements` array. */
+    readonly entitlementKey: EntitlementKey;
+}
+
+/**
+ * Resolves whether the owner's CURRENT gastronomy subscription plan grants an
+ * arbitrary entitlement key.
  *
  * Looks up the owner's billing customer, then their active/trialing/comp
  * GASTRONOMY-domain subscription (SPEC-239 isolation — an owner who is also a
@@ -79,12 +88,22 @@ export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
  * fails in, and for the same reason: an unresolvable plan must never be read
  * as "paid for it".
  *
- * @param input - The owner id to resolve.
- * @returns `true` when the owner's gastronomy plan includes
- *   `MANAGE_GASTRONOMY_MENU`; `false` otherwise.
+ * ## Why the key is a parameter as of HOS-1041
+ *
+ * This body was written for `MANAGE_GASTRONOMY_MENU` with the key inlined. The
+ * menú del día needs the identical three-query lookup for a DIFFERENT key, and
+ * copying it would have produced a second resolver that drifts from this one —
+ * which is precisely the failure `featured-entitlement.resolver.ts` records for
+ * `ENTITLEMENT_GRANTING_STATUSES` (three separate PRs shipped a hand-rolled
+ * duplicate of that set, each with its own bug). One body, one key parameter.
+ *
+ * @param input.ownerId - The owner id to resolve.
+ * @param input.entitlementKey - The entitlement to look for.
+ * @returns `true` when the owner's gastronomy plan includes the key; `false`
+ *   otherwise.
  */
-export async function resolveOwnerGrantsGastronomyMenuManagement(
-    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+export async function resolveOwnerGrantsGastronomyEntitlement(
+    input: ResolveOwnerGrantsGastronomyEntitlementInput
 ): Promise<boolean> {
     const db = getDb();
 
@@ -136,5 +155,46 @@ export async function resolveOwnerGrantsGastronomyMenuManagement(
         return false;
     }
 
-    return (plan.entitlements as string[]).includes(EntitlementKey.MANAGE_GASTRONOMY_MENU);
+    return (plan.entitlements as string[]).includes(input.entitlementKey);
+}
+
+/**
+ * Resolves whether the owner's CURRENT gastronomy plan grants
+ * `MANAGE_GASTRONOMY_MENU` — the structured carta and the uploaded photo/PDF
+ * (HOS-895 PR2).
+ *
+ * @param input - The owner id to resolve.
+ * @returns `true` when the owner's gastronomy plan includes
+ *   `MANAGE_GASTRONOMY_MENU`; `false` otherwise.
+ */
+export async function resolveOwnerGrantsGastronomyMenuManagement(
+    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+): Promise<boolean> {
+    return await resolveOwnerGrantsGastronomyEntitlement({
+        ownerId: input.ownerId,
+        entitlementKey: EntitlementKey.MANAGE_GASTRONOMY_MENU
+    });
+}
+
+/**
+ * Resolves whether the owner's CURRENT gastronomy plan grants
+ * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — the menú del día (HOS-1041).
+ *
+ * Used by the public detail route to withhold today's specials from a listing
+ * whose owner is no longer on `-pro` or above. The rows are NOT deleted: a
+ * downgraded owner's specials are still theirs, and they reappear the moment
+ * the plan does — the same live-read stance the carta takes, for the same
+ * reason.
+ *
+ * @param input - The owner id to resolve.
+ * @returns `true` when the owner's gastronomy plan includes
+ *   `MANAGE_GASTRONOMY_DAILY_SPECIAL`; `false` otherwise.
+ */
+export async function resolveOwnerGrantsGastronomyDailySpecial(
+    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+): Promise<boolean> {
+    return await resolveOwnerGrantsGastronomyEntitlement({
+        ownerId: input.ownerId,
+        entitlementKey: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+    });
 }
