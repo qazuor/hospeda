@@ -40,7 +40,20 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // request that stores or destroys the Cloudinary asset — never
+    // from a listing body. Omitted here because these schemas are
+    // built with `.omit(...)`, so a field is accepted unless it is
+    // named: leaving them in let a request body set `menuFileUrl`
+    // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+    // does not restrict the scheme) and set `menuFilePublicId` to
+    // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+    // would then destroy. Same rule, same reason as `media` below.
+    menuFileUrl: true,
+    menuFilePublicId: true,
+    menuFileKind: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
@@ -238,6 +251,19 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
+    // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // request that stores or destroys the Cloudinary asset — never
+    // from a listing body. Omitted here because these schemas are
+    // built with `.omit(...)`, so a field is accepted unless it is
+    // named: leaving them in let a request body set `menuFileUrl`
+    // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+    // does not restrict the scheme) and set `menuFilePublicId` to
+    // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+    // would then destroy. Same rule, same reason as `media` below.
+    menuFileUrl: true,
+    menuFilePublicId: true,
+    menuFileKind: true,
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
@@ -319,6 +345,19 @@ export const GastronomyUpdateInputSchema = z
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,
                 averageRating: true,
+                // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+                // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+                // request that stores or destroys the Cloudinary asset — never
+                // from a listing body. Omitted here because these schemas are
+                // built with `.omit(...)`, so a field is accepted unless it is
+                // named: leaving them in let a request body set `menuFileUrl`
+                // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+                // does not restrict the scheme) and set `menuFilePublicId` to
+                // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+                // would then destroy. Same rule, same reason as `media` below.
+                menuFileUrl: true,
+                menuFilePublicId: true,
+                menuFileKind: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `gastronomy_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which

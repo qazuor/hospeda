@@ -17,6 +17,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+    GastronomyAdminCreateInputSchema,
+    GastronomyOwnerCreateInputSchema,
+    GastronomyOwnerUpdateInputSchema,
+    GastronomyUpdateInputSchema
+} from '../../../src/entities/gastronomy/gastronomy.crud.schema.js';
+import {
     GASTRONOMY_MENU_MAX_ITEMS_PER_SECTION,
     GASTRONOMY_MENU_MAX_SECTIONS,
     GastronomyMenuFileSchema,
@@ -147,5 +153,58 @@ describe('GastronomyMenuFileSchema (HOS-895)', () => {
         expect(
             GastronomyMenuFileSchema.safeParse({ url: 'https://cdn.example.com/menu.jpg' }).success
         ).toBe(false);
+    });
+});
+
+describe('the menu-file columns are not writable from a listing body (HOS-895)', () => {
+    /*
+     * REGRESSION ANCHOR. `menuFileUrl`, `menuFilePublicId` and `menuFileKind`
+     * are written by `POST`/`DELETE /gastronomies/{id}/menu-file` and by nothing
+     * else — but adding them to `GastronomySchema` made three of the four write
+     * schemas accept them silently, because those three are built with
+     * `.omit(...)` and therefore take every field they are not told to drop.
+     * Measured before the fix: all three kept `javascript:alert(1)` verbatim.
+     *
+     * Two distinct consequences, which is why both columns are asserted:
+     *
+     *  - `menuFileUrl` reaches an `href`, and `z.string().url()` does NOT
+     *    restrict the scheme — a stored-XSS sink on a public listing page
+     *    (HOS-592 / F-02).
+     *  - `menuFilePublicId` is the handle `DELETE /menu-file` passes to the
+     *    media provider, so a body that sets it to another listing's Cloudinary
+     *    id turns that route into a cross-tenant asset delete.
+     *
+     * The render-side gate in `CommerceMenuManager` covers the first no matter
+     * how the row was written; this covers both at the boundary.
+     */
+    const HOSTILE = {
+        name: 'La Parrilla',
+        summary: 'x'.repeat(40),
+        description: 'x'.repeat(60),
+        type: 'PARRILLA',
+        destinationId: '22222222-2222-4222-8222-222222222222',
+        ownerId: '11111111-1111-4111-8111-111111111111',
+        menuFileUrl: 'javascript:alert(document.cookie)',
+        menuFilePublicId: 'hospeda/prod/gastronomies/somebody-elses-listing/menu-file',
+        menuFileKind: 'image'
+    } as const;
+
+    it.each([
+        ['GastronomyUpdateInputSchema (admin update)', GastronomyUpdateInputSchema],
+        ['GastronomyAdminCreateInputSchema', GastronomyAdminCreateInputSchema],
+        ['GastronomyOwnerCreateInputSchema', GastronomyOwnerCreateInputSchema],
+        ['GastronomyOwnerUpdateInputSchema (owner PATCH)', GastronomyOwnerUpdateInputSchema]
+    ])('%s drops every menu-file column', (_label, schema) => {
+        const parsed = schema.safeParse(HOSTILE);
+
+        // The assertion is on the PARSED OUTPUT, not on `success`. These are
+        // strip-mode schemas: an unknown key does not fail the parse, it is
+        // simply not carried — so `expect(parsed.success).toBe(false)` would be
+        // the vacuous version of this test and would pass with the hole open.
+        const data = (parsed.success ? parsed.data : {}) as Record<string, unknown>;
+
+        expect(data.menuFileUrl).toBeUndefined();
+        expect(data.menuFilePublicId).toBeUndefined();
+        expect(data.menuFileKind).toBeUndefined();
     });
 });
