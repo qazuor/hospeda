@@ -31,6 +31,7 @@ import {
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import {
+    hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
     isOwnerCategorySubscription,
     RoleEnum,
@@ -510,9 +511,9 @@ async function loadEntitlements(
         }
 
         // Get customer's active subscription
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
 
-        if (!subscriptions || subscriptions.length === 0) {
+        if (!rawSubscriptions || rawSubscriptions.length === 0) {
             // No subscription at all — fall back to role-appropriate defaults.
             // HOST actors who were just promoted (before first publish) receive
             // owner-basico defaults so they can access host features during the
@@ -523,6 +524,15 @@ async function loadEntitlements(
             }
             return buildDefaultEntitlementsResult();
         }
+
+        // HOS-1104: `getByCustomerId()` never populates `productDomain` (it is a
+        // qzpay-drizzle column outside core's mapped interface — see
+        // `hydrateSubscriptionProductDomains`'s doc). Without this, every
+        // subscription below reaches `isAccommodationSubscription` with
+        // `productDomain = undefined`, which fails OPEN to accommodation for ALL
+        // of them regardless of their real vertical — the exact bug that made the
+        // SPEC-239 T-034 exclusion below a documented no-op.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
         // Find active accommodation subscription (there should only be one).
         // SPEC-239 T-034: exclude commerce-domain subscriptions so a customer

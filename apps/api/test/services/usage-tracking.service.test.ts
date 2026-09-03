@@ -26,15 +26,60 @@ import { UsageTrackingService } from '../../src/services/usage-tracking.service'
  * Mock the @repo/db module to prevent real database calls.
  * The mock select chain simulates Drizzle's fluent API:
  * select().from().where() -> Promise<rows[]>
+ *
+ * HOS-1104: `hydrateSubscriptionProductDomains` (a real, unmocked
+ * `@repo/service-core` function used by the service under test) ALSO reads
+ * `getDb()`, against `billingSubscriptions` rather than `billingAddonPurchases`.
+ * `mockFrom` routes by the table passed to `.from()` so the two queries don't
+ * share a result — `mockWhere` stays the addon-purchases resolver (unchanged
+ * name, to keep the existing test bodies below untouched), and
+ * `mockHydrationWhere` resolves the productDomain recovery lookup from
+ * `storedProductDomains` (default: empty, i.e. every subscription hydrates to
+ * `null` — a legacy row, matching the pre-HOS-1104 fixture shape exactly).
  */
-const mockWhere = vi.fn().mockResolvedValue([]);
-const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
-const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+// `vi.hoisted()` guarantees these run before the `vi.mock('@repo/db', ...)`
+// factory below, including the plain object literal — Vitest's implicit
+// "mock"-prefix hoisting only special-cases `vi.fn(...)` assignments, not a
+// bare `const mockXxx = {...}`, which threw "Cannot access ... before
+// initialization" here.
+const { mockWhere, mockBillingSubscriptionsTable, mockSelect } = vi.hoisted(() => {
+    const where = vi.fn().mockResolvedValue([]);
+    const billingSubscriptionsTable = { id: 'id', productDomain: 'product_domain' };
+    const hydrationWhere = vi.fn((clause: { values?: readonly string[] }) => {
+        const ids = clause?.values ?? [];
+        const rows = ids
+            .filter((id) => id in storedProductDomains)
+            .map((id) => ({ id, productDomain: storedProductDomains[id] ?? null }));
+        return Promise.resolve(rows);
+    });
+    const from = vi.fn((table: unknown) => ({
+        where: table === billingSubscriptionsTable ? hydrationWhere : where
+    }));
+    const select = vi.fn().mockReturnValue({ from });
+    return {
+        mockWhere: where,
+        mockBillingSubscriptionsTable: billingSubscriptionsTable,
+        mockSelect: select
+    };
+});
+
+/**
+ * HOS-1104: keyed by subscription id, read by `mockHydrationWhere` above.
+ * `mockHydrationWhere` only reads this from inside its own function body
+ * (invoked later, at test-run time), so closing over this `let` before its
+ * declaration line runs is safe — TDZ only trips on a synchronous read, and
+ * hoisting a plain object-literal `const` here (matching the `vi.fn(...)`
+ * bindings above) is exactly what threw before this was pulled into
+ * `vi.hoisted()`.
+ */
+let storedProductDomains: Record<string, string | null> = {};
 
 vi.mock('@repo/db', () => ({
     getDb: () => ({
         select: mockSelect
     }),
+    billingSubscriptions: mockBillingSubscriptionsTable,
+    inArray: vi.fn((column: unknown, values: unknown) => ({ column, values })),
     // EntityViewService singleton (service-core barrel) dereferences these at import.
     AccommodationModel: vi.fn(function () {
         return { findIdsByOwnerId: vi.fn(async () => []) };
@@ -103,6 +148,9 @@ describe('UsageTrackingService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1104: no stored productDomain by default -> every subscription
+        // hydrates to `null` (a legacy row), matching the fixtures' shape.
+        storedProductDomains = {};
 
         // Create mock billing client
         mockBilling = {
@@ -890,19 +938,26 @@ describe('UsageTrackingService', () => {
         // 'gastronomy' in place of the old 'commerce' fixture.
         const gastronomyPlanId = 'plan_gastronomy_monthly';
 
+        // HOS-1104: neither fixture sets `productDomain` directly — the real
+        // `getByCustomerId()` never populates it (qzpay-core's mapper builds
+        // objects field-by-field from the fields `QZPaySubscription` declares;
+        // see `hydrateSubscriptionProductDomains`'s doc). Setting it inline
+        // here would fabricate a field the SDK never provides and mask the
+        // exact bug this hydration exists to fix (the HOS-934 precedent this
+        // suite used to repeat). The real value is supplied via
+        // `storedProductDomains`, simulating the recovery SELECT.
+
         /** A gastronomy-domain subscription living under the SAME billing customer. */
         const gastronomySubscription = {
             ...mockSubscription,
             id: 'sub_gastronomy_1',
-            planId: gastronomyPlanId,
-            productDomain: 'gastronomy'
+            planId: gastronomyPlanId
         };
 
         /** An explicitly accommodation-domain subscription. */
         const accommodationSubscription = {
             ...mockSubscription,
-            id: 'sub_accommodation_1',
-            productDomain: 'accommodation'
+            id: 'sub_accommodation_1'
         };
 
         const gastronomyPlan = {
@@ -917,6 +972,10 @@ describe('UsageTrackingService', () => {
             (mockBilling.plans.get as Mock).mockImplementation((planId: string) =>
                 Promise.resolve(planId === gastronomyPlanId ? gastronomyPlan : mockPlan)
             );
+            storedProductDomains = {
+                [gastronomySubscription.id]: 'gastronomy',
+                [accommodationSubscription.id]: 'accommodation'
+            };
         });
 
         it('should resolve the gastronomy subscription when the gastronomy domain is requested, even when the accommodation one is listed first', async () => {
