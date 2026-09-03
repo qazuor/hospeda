@@ -1115,6 +1115,10 @@
         "zodError.experience.whatToBring.item.max",
         "zodError.experience.whatToBring.item.min",
         "zodError.experience.whatToBring.max",
+        "zodError.experienceCertificate.completedAt.format",
+        "zodError.experienceCertificate.recipientName.invalidCharacters",
+        "zodError.experienceCertificate.recipientName.required",
+        "zodError.experienceCertificate.recipientName.tooLong",
         "zodError.experienceFeature.comments.max",
         "zodError.experienceFeature.comments.min",
         "zodError.experienceFeature.hostReWriteName.max",
@@ -1874,7 +1878,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1873,
+    "total": 1877,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1911,6 +1915,7 @@
         "exchangeRateConfig": 13,
         "exchangeRates": 1,
         "experience": 34,
+        "experienceCertificate": 4,
         "experienceFeature": 4,
         "feature": 61,
         "featureFlag": 6,

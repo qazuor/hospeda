@@ -36,7 +36,10 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // sellable one today. The label is added now anyway: an unlabeled key falls
     // back to its raw snake_case string, and the fallback firing in production
     // is not something anyone would notice before a customer does.
-    manage_experience_directions: 'manageExperienceDirections'
+    manage_experience_directions: 'manageExperienceDirections',
+    // HOS-1057. Same reasoning, same tier: labelled now so the raw key can
+    // never reach the picker.
+    issue_experience_certificate: 'issueExperienceCertificate'
 };
 
 /**
@@ -44,5 +47,6 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
  */
 export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_gastronomy_menu: 'Carta estructurada',
-    manage_experience_directions: 'Mapa y cómo llegar'
+    manage_experience_directions: 'Mapa y cómo llegar',
+    issue_experience_certificate: 'Certificados de experiencia'
 };
