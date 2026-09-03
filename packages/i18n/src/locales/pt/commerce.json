@@ -62,6 +62,26 @@
         "error": "Não conseguimos gerar a ficha. Tente novamente em instantes.",
         "locked": "A ficha em PDF está disponível no plano Premium do seu ramo."
     },
+    "certificate": {
+        "title": "Certificado",
+        "preamble": "O presente certifica que",
+        "connector": "realizou a experiência",
+        "qrHint": "Escaneie o código para conhecer a experiência.",
+        "footer": "Certificado emitido pelo prestador através da Hospeda — hospeda.com.ar",
+        "heading": "Certificados",
+        "intro": "Emita um certificado para quem fez a experiência. Pode baixar, imprimir ou compartilhar.",
+        "recipientLabel": "Nome de quem fez",
+        "dateLabel": "Dia em que fez",
+        "submit": "Emitir certificado",
+        "submitting": "Emitindo…",
+        "issuedOn": "Emitido em {date}",
+        "download": "Baixar PDF",
+        "downloading": "Gerando o certificado…",
+        "empty": "Você ainda não emitiu nenhum certificado.",
+        "error": "Não conseguimos emitir o certificado. Tente novamente em instantes.",
+        "downloadError": "Não conseguimos gerar o certificado. Tente novamente em instantes.",
+        "locked": "Os certificados estão disponíveis a partir do plano Profissional de Experiências."
+    },
     "owner": {
         "nav": "Meu comércio",
         "list": {
