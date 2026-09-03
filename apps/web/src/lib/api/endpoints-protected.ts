@@ -2789,21 +2789,26 @@ export const hostTradesApi = {
     },
 
     /**
-     * The caller's own QR (HOS-376 T-050, §6.2a).
+     * The caller's own QR (HOS-376 T-050, §6.2a; HOS-981 PR 4).
      *
-     * The URL travels alongside the image because a provider who cannot scan
-     * his own code — printing from a machine with no camera, or working out why
-     * a scan lands nowhere — needs to read the destination as text.
+     * Two URLs travel alongside the image because since HOS-981 they are two
+     * different things: `url` is what the symbol encodes (`{site}/qr/{qrSlug}/`,
+     * readable as text by a provider who cannot scan his own code), and
+     * `targetUrl` is where that redirect lands — the usage-registration page,
+     * which is what `url` alone used to mean.
      *
      * @param params - `cookieHeader` when calling from SSR.
-     * @returns The SVG markup, the URL it encodes, and the slug.
+     * @returns The SVG markup, the URL it encodes, the URL it redirects to, the
+     *   listing's slug and the QR code's own slug.
      */
-    getMyQr({
-        cookieHeader
-    }: {
-        cookieHeader?: string;
-    } = {}): Promise<
-        ApiResult<{ readonly svg: string; readonly url: string; readonly slug: string }>
+    getMyQr({ cookieHeader }: { cookieHeader?: string } = {}): Promise<
+        ApiResult<{
+            readonly svg: string;
+            readonly url: string;
+            readonly targetUrl: string;
+            readonly slug: string;
+            readonly qrSlug: string;
+        }>
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/host-trades/mine/qr`,
