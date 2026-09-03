@@ -43,7 +43,7 @@
 
 import type { OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
-import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DestinationOption } from '@/components/commerce/destination-option';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import { apiClient } from '@/lib/api/client';
@@ -698,6 +698,33 @@ export function CommerceListingEditor({
     const isSaving = status.kind === 'saving';
 
     /**
+     * Announces that this island has hydrated, by setting `data-hydrated` on the
+     * form once mounted (HOS-1080).
+     *
+     * Every control in every section is server-rendered, so "the input is
+     * visible and editable" is true long before React attaches a single
+     * handler — the false gate HOS-371 already had to fix once, when writing
+     * into a not-yet-listening node left the form clean and Save silent. Its fix
+     * was to wait for `.ProseMirror`, which TipTap creates at runtime; that
+     * worked while the editor was ONE page carrying the rich-text field. With
+     * one page per section, seven of the eight sections have no client-created
+     * DOM at all, so there is nothing on them to wait for.
+     *
+     * A parent effect is the strongest signal available and needs no per-section
+     * table: React runs child effects BEFORE parent effects, so by the time this
+     * fires every section component below has finished mounting — strictly later
+     * than `.ProseMirror` appearing, not merely equivalent to it.
+     *
+     * Set through a ref rather than through state so it costs no extra render.
+     * React never rewrites an attribute it does not itself render, so it
+     * survives every subsequent update.
+     */
+    const formRef = useRef<HTMLFormElement>(null);
+    useEffect(() => {
+        formRef.current?.setAttribute('data-hydrated', 'true');
+    }, []);
+
+    /**
      * Leaves the section for the editor hub.
      *
      * HOS-1080 changed the destination, not the mechanism: with one page per
@@ -734,6 +761,7 @@ export function CommerceListingEditor({
 
     return (
         <form
+            ref={formRef}
             className={styles.editor}
             onSubmit={handleSubmit}
             aria-busy={isSaving}

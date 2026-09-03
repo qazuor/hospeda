@@ -197,6 +197,37 @@ describe('CommerceListingEditor', () => {
      * no request. Asserting only the toast would pass just as well if the editor
      * PATCHed an empty body alongside it.
      */
+    it('marks the form hydrated only from a mount effect, never in the markup (HOS-1080)', async () => {
+        // The E2E suite's hydration gate. Every control in every section is
+        // server-rendered, so "visible and editable" is true long before React
+        // attaches a handler — the HOS-371 class of bug, where an edit lands on
+        // a node React is not listening to and Save silently sends nothing.
+        //
+        // Two halves, and both matter. The attribute must be ABSENT from what
+        // the component renders (otherwise it ships in the SSR HTML and gates
+        // nothing), and PRESENT once mounted. `renderToStaticMarkup` is the only
+        // way to observe the first half: `render()` runs effects, so it can
+        // never tell a server-rendered attribute from an effect-set one.
+        const { renderToStaticMarkup } = await import('react-dom/server');
+
+        const ssr = renderToStaticMarkup(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                sectionId="basicInfo"
+                listingId="abc"
+                locale="es"
+                initialData={baseData}
+                destinations={destinationOptions}
+            />
+        );
+        expect(ssr).not.toContain('data-hydrated');
+
+        const { container } = renderEditor('gastronomy');
+        await waitFor(() =>
+            expect(container.querySelector('form')).toHaveAttribute('data-hydrated', 'true')
+        );
+    });
+
     it('never touches the media endpoints from a form section (HOS-1080)', async () => {
         // Photos are their own route now, mounting `MediaSection` directly. A
         // form section that still hydrated media would be paying for two extra

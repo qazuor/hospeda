@@ -211,6 +211,68 @@ describe('commerce editor routes — section isolation', () => {
     });
 });
 
+describe('commerce editor routes — the E2E suite points at routes that exist', () => {
+    /**
+     * The section slugs `apps/e2e` names, read out of its own source.
+     *
+     * The E2E package cannot import this registry — it resolves `@repo/*` to
+     * built dist and knows nothing about `apps/web/src` — so the two spell the
+     * slugs independently and nothing but a full browser run connects them.
+     * That gap is not theoretical: HOS-1080 shipped with all six commerce specs
+     * still opening `…/editar/`, which had become the form-less hub, and the
+     * only thing that reported it was a red E2E shard.
+     */
+    const E2E_HELPERS = readFileSync(
+        resolve(__dirname, '../../../e2e/fixtures/commerce-editor-helpers.ts'),
+        'utf8'
+    );
+
+    /** The `CommerceEditorSection` union members, minus the `hub` sentinel. */
+    function e2eSectionSlugs(): readonly string[] {
+        const union = E2E_HELPERS.match(/export type CommerceEditorSection =([\s\S]*?);/)?.[1];
+        if (!union) throw new Error('CommerceEditorSection union not found in the E2E helpers');
+
+        return [...union.matchAll(/'([a-z0-9-]+)'/g)]
+            .map((match) => match[1])
+            .filter((slug): slug is string => Boolean(slug) && slug !== 'hub');
+    }
+
+    it('should have parsed the real union, not an empty match', () => {
+        // The scan is a regex over source; without this every assertion below
+        // would pass vacuously over an empty list.
+        expect(e2eSectionSlugs().length).toBe(ALL_SECTIONS.length);
+    });
+
+    it('should give every slug the E2E suite names a route file', () => {
+        for (const slug of e2eSectionSlugs()) {
+            expect(ROUTE_FILES, `the E2E suite opens "${slug}" and no route renders it`).toContain(
+                `${slug}.astro`
+            );
+        }
+    });
+
+    it('should have an E2E slug for every section the registry declares', () => {
+        // The other direction: a section the E2E cannot name is a page no
+        // browser test can ever reach.
+        const e2e = new Set(e2eSectionSlugs());
+
+        for (const section of ALL_SECTIONS) {
+            expect(
+                e2e.has(section.slug),
+                `"${section.slug}" is a real section the E2E suite cannot address`
+            ).toBe(true);
+        }
+    });
+
+    it('should keep the E2E hydration gate off the hub, which renders no form', () => {
+        // The gate waits on the editor island's `data-hydrated` form. The hub
+        // mounts no island at all, so a spec that gates there waits out its
+        // full timeout — which is exactly how the six failures read.
+        expect(E2E_HELPERS).toContain('form[data-hydrated="true"]');
+        expect(readRoute('index.astro')).not.toContain('<CommerceListingEditor');
+    });
+});
+
 describe('commerce editor routes — preserved behaviours', () => {
     it('should preload FAQs on the questions route so the manager paints real data', () => {
         const source = readRoute('preguntas.astro');
