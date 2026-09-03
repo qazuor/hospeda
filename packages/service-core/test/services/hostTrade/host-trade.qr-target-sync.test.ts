@@ -82,14 +82,26 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
           }
         : null;
 
+    /** Keys that ADDRESS the row rather than patch it. Everything else is a write. */
+    const ADDRESSING_KEYS = new Set(['actor', 'entityType', 'entityId', 'ctx']);
+
     const findLiveCodeForEntity = vi.fn(async () => ({ data: stored, error: undefined }));
-    const setEntityTargetUrl = vi.fn(async (input: { targetUrl: string }) => {
+    const setEntityTargetUrl = vi.fn(async (input: Record<string, unknown>) => {
         if (!stored) return { data: { updated: false }, error: undefined };
-        if (stored.targetUrl === input.targetUrl) {
-            return { data: { updated: false }, error: undefined };
-        }
-        stored.targetUrl = input.targetUrl;
-        return { data: { updated: true }, error: undefined };
+
+        // Applies EVERY non-addressing key, not just `targetUrl`. A double that
+        // only ever wrote the column it expected could not tell a correct
+        // implementation from one that also moved the slug — which is the exact
+        // failure the assertions in this file are supposed to be able to see.
+        const patch = Object.fromEntries(
+            Object.entries(input).filter(([key]) => !ADDRESSING_KEYS.has(key))
+        );
+        const changed = Object.entries(patch).some(
+            ([key, value]) => (stored as Record<string, unknown>)[key] !== value
+        );
+        Object.assign(stored, patch);
+
+        return { data: { updated: changed }, error: undefined };
     });
 
     return {
