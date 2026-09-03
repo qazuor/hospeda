@@ -202,11 +202,21 @@ describe('QrCodeService', () => {
     });
 
     describe('create', () => {
+        /**
+         * Deliberately omits `isActive`, which carries `.default(true)` on the
+         * create schema — creating a code without saying so must produce a live
+         * one. The cast is the repo's standard boundary for this (see
+         * `host-trade.service.test.ts`): `create()` is typed
+         * `data: z.infer<TCreateSchema>`, the schema's OUTPUT type, so every
+         * defaulted field reads as required at the call site even though Zod
+         * fills it at runtime. `defaults isActive to true` below asserts that
+         * the default really does fire, so the cast hides nothing.
+         */
         const input = {
             targetUrl: 'https://hospeda.com.ar/alojamientos/foo',
             label: 'Cartelera plaza Ramirez',
             source: QrCodeSourceEnum.MANUAL
-        };
+        } as Parameters<typeof service.create>[1];
 
         it('mints a slug when the caller supplies none', async () => {
             modelMock.findOne.mockResolvedValue(null);
@@ -221,6 +231,26 @@ describe('QrCodeService', () => {
             const written = modelMock.create.mock.calls[0]?.[0] as { slug: string };
             expect(written.slug).toMatch(
                 /^[23456789ABCDEFGHJKLMNPQRSTVWXYZabcdefghijkmnpqrstvwxyz]{8}$/
+            );
+        });
+
+        /**
+         * The create default is the counterpart of the stripped update default:
+         * creating without `isActive` yields a live code, while an empty PATCH
+         * yields nothing at all (so it cannot revive a retired one). This pins
+         * the create half; `QrCodeUpdateInputSchema` pins the update half.
+         */
+        it('defaults isActive to true when the caller omits it', async () => {
+            modelMock.findOne.mockResolvedValue(null);
+            modelMock.create.mockImplementation(async (data: Record<string, unknown>) => ({
+                ...liveQrCode,
+                ...data
+            }));
+
+            await service.create(actor, input);
+
+            expect((modelMock.create.mock.calls[0]?.[0] as { isActive: boolean }).isActive).toBe(
+                true
             );
         });
 
