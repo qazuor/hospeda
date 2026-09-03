@@ -13,6 +13,13 @@
  * answers "withheld" (or always "granted") fails at least one case, and the
  * flag is asserted separately from the payload so a gate that withheld the
  * text but left the map on cannot pass.
+ *
+ * ## `not.toHaveProperty`, never `toBeUndefined`
+ *
+ * `toBeUndefined` cannot tell "the key was never copied" from "the key was
+ * copied AS undefined", and the second is a real bug that `JSON.stringify`
+ * hides on the wire (measured on HOS-1045). This gate promises the key is
+ * GONE, so that is what these assert.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -38,7 +45,7 @@ describe('applyExperienceDirectionsGate', () => {
         });
 
         // Assert
-        expect(result.meetingPointDirections).toBeUndefined();
+        expect(result).not.toHaveProperty('meetingPointDirections');
         expect(result.meetingPointDirectionsEnabled).toBe(false);
     });
 
@@ -72,7 +79,7 @@ describe('applyExperienceDirectionsGate', () => {
         });
 
         // Assert
-        expect(result.meetingPointDirections).toBeUndefined();
+        expect(result).not.toHaveProperty('meetingPointDirections');
         expect(result.meetingPointDirectionsEnabled).toBe(true);
     });
 
@@ -90,9 +97,9 @@ describe('applyExperienceDirectionsGate', () => {
         });
 
         // Assert
-        expect(nullish.meetingPointDirections).toBeUndefined();
+        expect(nullish).not.toHaveProperty('meetingPointDirections');
         expect(nullish.meetingPointDirectionsEnabled).toBe(true);
-        expect(absent.meetingPointDirections).toBeUndefined();
+        expect(absent).not.toHaveProperty('meetingPointDirections');
         expect(absent.meetingPointDirectionsEnabled).toBe(true);
     });
 });
@@ -112,7 +119,7 @@ describe('withholdExperienceDirectionsFromList', () => {
         // Assert
         expect(result).toHaveLength(2);
         for (const card of result) {
-            expect(card.meetingPointDirections).toBeUndefined();
+            expect(card).not.toHaveProperty('meetingPointDirections');
             expect(card.meetingPointDirectionsEnabled).toBe(false);
         }
     });

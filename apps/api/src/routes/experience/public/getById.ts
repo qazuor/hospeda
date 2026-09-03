@@ -57,10 +57,7 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
             ownerId: experience.ownerId
         });
 
-        return {
-            ...experience,
-            ...applyExperienceDirectionsGate({ experience, ownerGrantsDirections })
-        };
+        return applyExperienceDirectionsGate({ experience, ownerGrantsDirections });
     },
     options: {
         cacheTTL: 300,

@@ -1,24 +1,48 @@
 /**
  * Public projection gate for an experience's how-to-get-there half (HOS-1049).
  *
- * Extracted out of the two public detail routes so the withholding rule has a
- * direct unit-test surface, independent of building a full
- * `ExperiencePublicSchema` fixture through the route/HTTP layer. Same shape,
- * and same reason, as `routes/gastronomy/public/menu-projection.ts`.
+ * Extracted out of the public routes so the withholding rule has a direct
+ * unit-test surface, independent of building a full `ExperiencePublicSchema`
+ * fixture through the route/HTTP layer. Same purpose as
+ * `routes/gastronomy/public/menu-projection.ts`.
+ *
+ * ## It REMOVES the key; it does not set it to `undefined`
+ *
+ * The schema half of this gate — `meetingPointDirections` declared
+ * `.optional()` on `ExperiencePublicSchema` rather than picked from the base —
+ * is a promise about TYPES. What actually flows through a public route is a raw
+ * database row, and a `{ ...row, meetingPointDirections: undefined }` spread
+ * leaves the key PRESENT with an undefined value. `JSON.stringify` happens to
+ * drop it, which is exactly what makes that bug invisible: the wire looks right
+ * while the object does not, and anything that inspects the object before
+ * serialization — a test, a cache layer, a future SSR path — sees a key that
+ * was supposed to be gone.
+ *
+ * So this returns the projected object with the key genuinely destructured
+ * away, and its tests assert `not.toHaveProperty` rather than `toBeUndefined`:
+ * the two are indistinguishable to `toBeUndefined`, and only the first says
+ * what this gate actually promises. (Measured on HOS-1045.)
  *
  * @module routes/experience/public/directions-projection
  */
 
-/** What the public route needs from the stored listing to project directions. */
+/** What the gate needs from the stored listing. */
 export interface ExperienceDirectionsGateSource {
     readonly meetingPointDirections?: readonly string[] | null | undefined;
 }
 
-/** The projected fields, ready to spread into the public response. */
-export interface ExperienceDirectionsGateResult {
-    readonly meetingPointDirections: readonly string[] | undefined;
+/** The fields the gate adds on top of whatever it was handed. */
+export interface ExperienceDirectionsGateFields {
+    readonly meetingPointDirections?: readonly string[];
     readonly meetingPointDirectionsEnabled: boolean;
 }
+
+/** The projected object: the input minus the raw column, plus the gate's own. */
+export type ExperienceDirectionsGateResult<T extends ExperienceDirectionsGateSource> = Omit<
+    T,
+    'meetingPointDirections'
+> &
+    ExperienceDirectionsGateFields;
 
 /**
  * Withholds the how-to-get-there instructions, and tells the page not to draw
@@ -29,36 +53,47 @@ export interface ExperienceDirectionsGateResult {
  * in `@repo/service-core`) — a downgraded provider's instructions survive and
  * reappear the moment they upgrade again.
  *
- * `meetingPoint`, `meetingPointLat` and `meetingPointLong` are NOT parameters
- * here on purpose: all three are ficha data on every tier (HOS-1048) and are
- * never withheld. The caller passes them through unchanged. That is exactly why
- * {@link ExperienceDirectionsGateResult.meetingPointDirectionsEnabled} has to
+ * `meetingPoint`, `meetingPointLat` and `meetingPointLong` pass through
+ * untouched on purpose: all three are ficha data on every tier (HOS-1048) and
+ * are never withheld. That is exactly why
+ * {@link ExperienceDirectionsGateFields.meetingPointDirectionsEnabled} has to
  * exist — the coordinates reach the page either way, so their presence cannot
  * be what decides whether the paid map is drawn.
  *
- * @param input.experience - The stored `meetingPointDirections` column.
+ * @param input.experience - The listing, as read.
  * @param input.ownerGrantsDirections - The live entitlement check result.
- * @returns The fields to spread into the public response.
- *   `meetingPointDirections` is `undefined` (not `[]`) when withheld or empty,
- *   matching the "not loaded" vs "empty" convention `amenities`/`features`
- *   already use on this schema.
+ * @returns The listing carrying `meetingPointDirections` ONLY when the provider
+ *   is entitled and wrote at least one — matching the "not loaded" vs "empty"
+ *   convention `amenities`/`features` already use on this schema.
  */
-export function applyExperienceDirectionsGate(input: {
-    readonly experience: ExperienceDirectionsGateSource;
+export function applyExperienceDirectionsGate<T extends ExperienceDirectionsGateSource>(input: {
+    readonly experience: T;
     readonly ownerGrantsDirections: boolean;
-}): ExperienceDirectionsGateResult {
+}): ExperienceDirectionsGateResult<T> {
     const { experience, ownerGrantsDirections } = input;
 
+    // Destructured OUT, not overwritten with `undefined`. See the module doc.
+    const { meetingPointDirections, ...rest } = experience;
+
+    const withheld = { ...rest, meetingPointDirectionsEnabled: false };
     if (!ownerGrantsDirections) {
-        return { meetingPointDirections: undefined, meetingPointDirectionsEnabled: false };
+        return withheld as ExperienceDirectionsGateResult<T>;
     }
 
-    const directions = experience.meetingPointDirections ?? [];
+    const directions = meetingPointDirections ?? [];
+
+    if (directions.length === 0) {
+        return {
+            ...rest,
+            meetingPointDirectionsEnabled: true
+        } as ExperienceDirectionsGateResult<T>;
+    }
 
     return {
-        meetingPointDirections: directions.length > 0 ? directions : undefined,
+        ...rest,
+        meetingPointDirections: directions,
         meetingPointDirectionsEnabled: true
-    };
+    } as ExperienceDirectionsGateResult<T>;
 }
 
 /**
@@ -76,13 +111,12 @@ export function applyExperienceDirectionsGate(input: {
  * there is exactly ONE definition of what "withheld" looks like on the wire.
  *
  * @param items - The search result items, straight from the service.
- * @returns The same items with the directions withheld and the flag `false`.
+ * @returns The same items with the directions removed and the flag `false`.
  */
 export function withholdExperienceDirectionsFromList<T extends ExperienceDirectionsGateSource>(
     items: readonly T[]
-): (T & ExperienceDirectionsGateResult)[] {
-    return items.map((item) => ({
-        ...item,
-        ...applyExperienceDirectionsGate({ experience: item, ownerGrantsDirections: false })
-    }));
+): ExperienceDirectionsGateResult<T>[] {
+    return items.map((experience) =>
+        applyExperienceDirectionsGate({ experience, ownerGrantsDirections: false })
+    );
 }

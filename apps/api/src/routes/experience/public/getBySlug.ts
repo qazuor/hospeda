@@ -76,12 +76,18 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
             resolveOwnerGrantsExperienceDirections({ ownerId: experience.ownerId })
         ]);
 
-        return {
-            ...experience,
-            amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
-            features: featuresData.length > 0 ? featuresData : undefined,
-            ...applyExperienceDirectionsGate({ experience, ownerGrantsDirections })
-        };
+        // The gate wraps the WHOLE object rather than being spread into it: it
+        // has to REMOVE `meetingPointDirections`, and a spread of
+        // `{ meetingPointDirections: undefined }` leaves the key present. See
+        // the projection module's doc.
+        return applyExperienceDirectionsGate({
+            experience: {
+                ...experience,
+                amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
+                features: featuresData.length > 0 ? featuresData : undefined
+            },
+            ownerGrantsDirections
+        });
     },
     options: {
         cacheTTL: 300,
