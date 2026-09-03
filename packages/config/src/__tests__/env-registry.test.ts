@@ -261,8 +261,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED (HOS-937, billing category,
  * optional, api only) — feature flag for the own-preapproval accommodation-
  * monthly checkout, ships dark (default false). 277 + 1 = 278.
+ *
+ * +1 = HOSPEDA_BRAND_PHONE (HOS-364, core category, optional, web only) —
+ * single source of truth for the Hospeda brand contact phone number, in
+ * call/display form (no AR mobile 9); apps/web/src/lib/brand-phone.ts
+ * derives the tel:/wa.me forms from it. Ships with a production-safe
+ * default so it is not strictly required. 278 + 1 = 279.
  */
-const EXPECTED_VAR_COUNT = 278;
+const EXPECTED_VAR_COUNT = 279;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
