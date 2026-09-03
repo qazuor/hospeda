@@ -220,7 +220,14 @@ export const ANFITRIONES_LIST: readonly FeatureListItem[] = [
     }
 ] as const;
 
-/** Gastronomía y experiencias section: 4 benefit rows. */
+/**
+ * Gastronomía y experiencias section: 5 benefit rows.
+ *
+ * The menú del día row (HOS-1041) names its tier in the copy. Every other row
+ * here describes something every gastronomy tier gets, so a row that does not
+ * is only honest if it says so — this page has no per-plan column to carry that
+ * information for it.
+ */
 export const GASTRO_LIST: readonly FeatureListItem[] = [
     {
         titleKey: 'features.gastro.list.ownProfile.title',
@@ -235,8 +242,21 @@ export const GASTRO_LIST: readonly FeatureListItem[] = [
         descriptionKey: 'features.gastro.list.selfEdit.description'
     },
     {
+        titleKey: 'features.gastro.list.dailySpecials.title',
+        descriptionKey: 'features.gastro.list.dailySpecials.description'
+    },
+    {
         titleKey: 'features.gastro.list.seo.title',
         descriptionKey: 'features.gastro.list.seo.description'
+    },
+    // HOS-1057. Experiences only, which this shared section cannot express —
+    // gastronomy and experiences have no separate lists here, and giving one
+    // capability its own section would be a bigger change than the capability
+    // warrants. The copy says "experiencias" so a restaurateur reading it is
+    // not promised something a restaurant cannot use.
+    {
+        titleKey: 'features.gastro.list.certificates.title',
+        descriptionKey: 'features.gastro.list.certificates.description'
     }
 ] as const;
 

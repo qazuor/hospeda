@@ -267,6 +267,23 @@ describe('Entitlement Configuration', () => {
             ).toBeDefined();
         });
 
+        it('keeps the pro-only experience-certificate key OUT of the vertical-wide map (HOS-1057)', () => {
+            // Third key of this shape, same reason as the two above and one
+            // vertical over: `experience-pro` and upwards grant the certificate,
+            // so listing it in the floor map would hand it to
+            // `experience-basico` — which is the sellable experience tier today,
+            // i.e. the give-away would reach every paying experience owner
+            // there is.
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS]).not.toContain(
+                EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+            );
+            expect(
+                ENTITLEMENT_DEFINITIONS.find(
+                    (e) => e.key === EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+                )
+            ).toBeDefined();
+        });
+
         it('keeps the pro-only experience-directions key OUT of the vertical-wide map (HOS-1049)', () => {
             // Third key of this shape, same reason: `experience-pro` and above
             // grant the how-to-get-there half, so listing it in the floor map
@@ -283,11 +300,27 @@ describe('Entitlement Configuration', () => {
             ).toBeDefined();
         });
 
+        it('keeps the pro-only menú-del-día key OUT of the vertical-wide map (HOS-1041)', () => {
+            // Third key of this shape, same reason as the two above: the floor
+            // map is what EVERY tier of a vertical receives, so a paid
+            // capability listed there reaches `-basico` and the tier stops
+            // meaning anything.
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS]).not.toContain(
+                EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+            );
+            expect(
+                ENTITLEMENT_DEFINITIONS.find(
+                    (e) => e.key === EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+                )
+            ).toBeDefined();
+        });
+
         it('should have all 7 categories totaling to the full definitions count', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
             // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
             // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5;
-            // HOS-895: commerce 5→6; HOS-1049: commerce 6→7)
+            // HOS-895: commerce 5→6; HOS-1049: commerce 6→7;
+            // HOS-1057: commerce 7→8; HOS-1041: commerce 8→9)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
@@ -296,8 +329,10 @@ describe('Entitlement Configuration', () => {
             // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical (4);
             // HOS-1058 — plus the premium-only printable ficha (1);
             // HOS-895 — plus the pro-and-above structured carta (1);
-            // HOS-1049 — plus the pro-and-above meeting-point directions (1).
-            const commerceCount = 7;
+            // HOS-1049 — plus the pro-and-above meeting-point directions (1);
+            // HOS-1057 — plus the pro-and-above experience certificate (1);
+            // HOS-1041 — plus the pro-and-above menú del día (1).
+            const commerceCount = 9;
 
             // Act & Assert
             expect(

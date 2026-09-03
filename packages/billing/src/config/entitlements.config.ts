@@ -293,6 +293,15 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description:
             'Allows building the venue menu as sections and dishes with names, descriptions and prices, instead of only linking or uploading it'
     },
+    // HOS-1057. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has nothing to certify. The exact mirror of the key above
+    // it, one vertical over.
+    {
+        key: EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+        name: 'Experience certificates',
+        description:
+            'Allows issuing a printable certificate to a person who did the experience, naming them, the outing and its date'
+    },
     // HOS-1049. Granted from `experience-pro` upwards, and experience-only:
     // a restaurant has an address and a door. The meeting point itself stays
     // free on every tier (HOS-1048) — only the how-to-get-there half is here.
@@ -301,5 +310,16 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Meeting point map and directions',
         description:
             'Allows publishing how to reach the meeting point — where to park, which bus, how far the walk is — and drawing it on a map, on top of the meeting point address every tier already carries'
+    },
+    // HOS-1041. Same tier and same shape as the carta above — `gastronomy-pro`
+    // upwards, gastronomy-only, kept out of the vertical floor map — but a
+    // SEPARATE key: the carta is the year's menu, this is today's, and they are
+    // bought for different reasons. See the enum member for why they are not
+    // merged.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        name: 'Menú del día',
+        description:
+            'Allows publishing a dish of the day with its own validity window, which stops being shown on the public page when the window passes'
     }
 ];

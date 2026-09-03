@@ -2955,6 +2955,16 @@
             "max_other": "Você não pode adicionar mais de {{max}} itens do que levar"
         }
     },
+    "experienceCertificate": {
+        "recipientName": {
+            "required": "Informe o nome de quem fez a experiência",
+            "tooLong": "O nome não pode ultrapassar 120 caracteres",
+            "invalidCharacters": "O nome não pode conter caracteres de controle"
+        },
+        "completedAt": {
+            "format": "A data deve usar o formato AAAA-MM-DD"
+        }
+    },
     "experienceFeature": {
         "comments": {
             "max": "El comments no puede superar los {{max}} caracteres",
@@ -3160,6 +3170,36 @@
     "gastronomy": {
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
+        },
+        "dailySpecial": {
+            "title": {
+                "min": "O nome do prato do dia é obrigatório",
+                "max": "O nome do prato do dia não pode ultrapassar {{max}} caracteres"
+            },
+            "description": {
+                "max": "A descrição do prato do dia não pode ultrapassar {{max}} caracteres"
+            },
+            "priceCents": {
+                "int": "O preço do prato do dia deve ser um número inteiro de centavos",
+                "min": "O preço do prato do dia não pode ser negativo",
+                "max": "O preço do prato do dia ultrapassa o máximo permitido"
+            },
+            "validFrom": {
+                "invalid": "A data de início deve ser uma data válida no formato AAAA-MM-DD"
+            },
+            "validOn": {
+                "invalid": "A data de consulta deve ser uma data válida no formato AAAA-MM-DD"
+            },
+            "validUntil": {
+                "invalid": "A data de fim deve ser uma data válida no formato AAAA-MM-DD",
+                "beforeValidFrom": "A data de fim não pode ser anterior à de início",
+                "windowTooLong": "O prato do dia não pode ficar vigente por mais de {{max}} dias",
+                "windowTooLong_one": "O prato do dia não pode ficar vigente por mais de {{max}} dia",
+                "windowTooLong_other": "O prato do dia não pode ficar vigente por mais de {{max}} dias"
+            }
+        },
+        "dailySpecials": {
+            "max": "O menu do dia não pode ter mais de {{max}} pratos"
         },
         "delete": {
             "deletedAt": {

@@ -107,7 +107,15 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-1049 — the mirror image of the one above: tier-dependent
             // (`experience-pro` and up) and experience-only, since a restaurant
             // has an address and a door rather than a meeting point to walk to.
-            EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS
+            EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+            // HOS-1057 — same shape, same tier: the certificate a provider
+            // issues to whoever did the experience.
+            EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+            // HOS-1041 — the menú del día, same tier and same gastronomy-only
+            // caveat as the carta above it. A separate box rather than folded
+            // into that one because they are separate keys: an operator must be
+            // able to grant a venue today's menu without the full carta.
+            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
         ]
     }
 ];

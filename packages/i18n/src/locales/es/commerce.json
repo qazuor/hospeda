@@ -62,6 +62,26 @@
         "error": "No pudimos generar la ficha. Probá de nuevo en un momento.",
         "locked": "La ficha en PDF está disponible en el plan Premium de tu rubro."
     },
+    "certificate": {
+        "title": "Certificado",
+        "preamble": "El presente certifica que",
+        "connector": "realizó la experiencia",
+        "qrHint": "Escaneá el código para conocer la experiencia.",
+        "footer": "Certificado emitido por el prestador a través de Hospeda — hospeda.com.ar",
+        "heading": "Certificados",
+        "intro": "Emitile un certificado a quien hizo la experiencia. Lo podés descargar, imprimir o mandárselo.",
+        "recipientLabel": "Nombre de quien la hizo",
+        "dateLabel": "Día en que la hizo",
+        "submit": "Emitir certificado",
+        "submitting": "Emitiendo…",
+        "issuedOn": "Emitido el {date}",
+        "download": "Descargar PDF",
+        "downloading": "Generando el certificado…",
+        "empty": "Todavía no emitiste ningún certificado.",
+        "error": "No pudimos emitir el certificado. Probá de nuevo en un momento.",
+        "downloadError": "No pudimos generar el certificado. Probá de nuevo en un momento.",
+        "locked": "Los certificados están disponibles desde el plan Profesional de Experiencias."
+    },
     "owner": {
         "nav": "Mi comercio",
         "list": {
@@ -118,7 +138,8 @@
                 "meetingPoint": "Punto de encuentro",
                 "practicalInfo": "Datos prácticos",
                 "contactSocial": "Contacto y redes",
-                "menu": "Carta"
+                "menu": "Carta",
+                "dailySpecials": "Menú del día"
             },
             "sections": {
                 "type": "Categoría",
@@ -317,6 +338,30 @@
                 "saved": "Carta guardada.",
                 "saveError": "No se pudo guardar la carta.",
                 "locked": "Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace."
+            },
+            "dailySpecials": {
+                "title": "Menú del día",
+                "intro": "El plato del día o la sugerencia del chef. Cada uno vale hasta la fecha que le pongas y después deja de mostrarse solo — no hace falta que vuelvas a sacarlo.",
+                "newSpecial": "Nuevo plato del día",
+                "titleLabel": "Plato",
+                "titlePlaceholder": "Milanesa a la napolitana con puré",
+                "descriptionLabel": "Detalle",
+                "descriptionPlaceholder": "Con guarnición y postre",
+                "priceLabel": "Precio en pesos",
+                "pricePlaceholder": "Precio",
+                "from": "Desde",
+                "until": "Hasta",
+                "moveUp": "Subir",
+                "moveDown": "Bajar",
+                "remove": "Quitar",
+                "add": "Agregar plato del día",
+                "save": "Guardar menú del día",
+                "saving": "Guardando…",
+                "saved": "Menú del día guardado.",
+                "saveError": "No se pudo guardar el menú del día.",
+                "locked": "El menú del día está disponible desde el plan Profesional.",
+                "expired": "Ya venció — no se está mostrando.",
+                "scheduled": "Programado — todavía no se muestra."
             }
         },
         "checklist": {
@@ -362,7 +407,9 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Carta estructurada",
-            "manageExperienceDirections": "Mapa y cómo llegar"
+            "manageExperienceDirections": "Mapa y cómo llegar",
+            "issueExperienceCertificate": "Certificados de experiencia",
+            "manageGastronomyDailySpecial": "Menú del día"
         },
         "create": {
             "pickVertical": {

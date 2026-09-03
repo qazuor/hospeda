@@ -1,5 +1,5 @@
 {
-  "id": "7faf6e2f-c884-4335-bc59-f3ce59c2df2e",
+  "id": "0b56dc72-a007-448d-ad6a-8ec5ed41f4ba",
   "prevId": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
   "version": "7",
   "dialect": "postgresql",
@@ -12046,6 +12046,173 @@
           "tableTo": "users",
           "columnsFrom": [
             "updated_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.experience_certificates": {
+      "name": "experience_certificates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "experience_id": {
+          "name": "experience_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipient_name": {
+          "name": "recipient_name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_id": {
+          "name": "updated_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_id": {
+          "name": "deleted_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "experienceCertificates_experienceId_idx": {
+          "name": "experienceCertificates_experienceId_idx",
+          "columns": [
+            {
+              "expression": "experience_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "experienceCertificates_issuedAt_idx": {
+          "name": "experienceCertificates_issuedAt_idx",
+          "columns": [
+            {
+              "expression": "issued_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "experience_certificates_experience_id_experiences_id_fk": {
+          "name": "experience_certificates_experience_id_experiences_id_fk",
+          "tableFrom": "experience_certificates",
+          "tableTo": "experiences",
+          "columnsFrom": [
+            "experience_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "experience_certificates_created_by_id_users_id_fk": {
+          "name": "experience_certificates_created_by_id_users_id_fk",
+          "tableFrom": "experience_certificates",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "experience_certificates_updated_by_id_users_id_fk": {
+          "name": "experience_certificates_updated_by_id_users_id_fk",
+          "tableFrom": "experience_certificates",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updated_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "experience_certificates_deleted_by_id_users_id_fk": {
+          "name": "experience_certificates_deleted_by_id_users_id_fk",
+          "tableFrom": "experience_certificates",
+          "tableTo": "users",
+          "columnsFrom": [
+            "deleted_by_id"
           ],
           "columnsTo": [
             "id"
@@ -33052,8 +33219,7 @@
         "SOCIAL_FOOTER",
         "SOCIAL_SETTINGS",
         "SOCIAL_AUDIT",
-        "INTEGRATION",
-        "QR_CODE"
+        "INTEGRATION"
       ]
     },
     "public.permission_effect_enum": {
@@ -33701,10 +33867,6 @@
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
-        "platform.qrCode.view",
-        "platform.qrCode.create",
-        "platform.qrCode.update",
-        "platform.qrCode.delete",
         "moderation.term.view",
         "moderation.term.create",
         "moderation.term.update",

@@ -103,6 +103,40 @@ export enum EntitlementKey {
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
     /**
+     * Issuing a certificate to a person who did an experience (HOS-1057).
+     *
+     * Experience-only by name and on purpose, the exact mirror of
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}: a restaurant has nothing
+     * to certify, so there is no second vertical for this key to be shared
+     * with.
+     *
+     * A TIER differentiator — `experience-pro` and UPWARDS (owner decision,
+     * 2026-09-01) — so, like the two keys above it, it is deliberately NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`. That map is the floor
+     * `commerceVerticalEntitlementMiddleware` hands EVERY tier of a vertical at
+     * once, and a paid capability listed there would be given to
+     * `experience-basico` as well. It reaches the gate through the union
+     * `resolveCommerceVerticalGrants` already performs over the subscribed
+     * plan's own `entitlements` column.
+     *
+     * `-premium` repeats the grant rather than inheriting it, for the reason
+     * `MANAGE_GASTRONOMY_MENU` already documents: these arrays are literal per
+     * plan and nothing composes a tier from the one below it, so omitting it
+     * would mean the dearer plan silently lost a feature `-pro` has.
+     *
+     * ## What it gates, and what it does not
+     *
+     * It gates the whole `/api/v1/protected/experiences/{id}/certificates`
+     * surface — issuing, listing back, and the PDF. There is no PUBLIC
+     * certificate URL for it to gate: the artifact that travels is the PDF file
+     * itself, and the only link it carries is a QR back to the experience's own
+     * public page. See the module doc of
+     * `apps/api/src/services/experience-certificate/certificate-response.ts`
+     * for why that decision was taken rather than left implicit.
+     */
+    ISSUE_EXPERIENCE_CERTIFICATE = 'issue_experience_certificate',
+
+    /**
      * How to GET to an experience's meeting point (HOS-1049) — the walking and
      * parking instructions, and the map drawn from the stored coordinates.
      *
@@ -142,6 +176,43 @@ export enum EntitlementKey {
      */
     MANAGE_EXPERIENCE_DIRECTIONS = 'manage_experience_directions',
 
+    /**
+     * The menú del día — a dish with its own validity window (HOS-1041).
+     *
+     * ## Not a narrower `MANAGE_GASTRONOMY_MENU`
+     *
+     * The carta is what the venue cooks all year; this is what it is cooking
+     * today, and they are bought for different reasons. A venue with a fixed
+     * menu and a blackboard out front wants this and not the carta; a venue
+     * with forty dishes and no daily offer wants the reverse. They land on the
+     * same tier today, but they are separate capabilities and reusing one key
+     * for both would make it impossible to price them apart later without
+     * migrating live subscriptions.
+     *
+     * ## Where it sits, and why not in the vertical floor
+     *
+     * Granted from `gastronomy-pro` UPWARDS (owner decision, 2026-09-01): a
+     * daily operational feature, used every day by whoever uses it and paid for
+     * by nobody else. Deliberately ABSENT from
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * tier receives, and a paid capability there would be handed to `-basico`.
+     * `-premium` repeats it literally rather than inheriting it, for the reason
+     * `plans.config.ts` states: nothing composes a tier out of the one below.
+     *
+     * ## What it gates
+     *
+     * `PUT .../daily-specials` (writing them) and the public projection
+     * (showing them). The OWNER's own read is NOT gated — an owner whose
+     * subscription lapsed still sees what they typed, the same split
+     * `MANAGE_GASTRONOMY_MENU` makes between `getMenu` and `putMenu`. The
+     * public detail page enforces it live via
+     * `resolveOwnerGrantsGastronomyDailySpecial` (`@repo/service-core`) rather
+     * than by deleting rows.
+     *
+     * Gastronomy-only by name and on purpose: an experience has no menú del
+     * día.
+     */
+    MANAGE_GASTRONOMY_DAILY_SPECIAL = 'manage_gastronomy_daily_special',
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',
