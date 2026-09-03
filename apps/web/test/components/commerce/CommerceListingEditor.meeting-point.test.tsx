@@ -29,6 +29,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
+import { buildCommerceEditorSections } from '../../../src/lib/editor/commerce-editor-sections';
 
 const { I18N_INITIAL } = vi.hoisted(() => {
     const blank = () => ({ es: '', en: '', pt: '' });
@@ -137,6 +138,7 @@ function renderEditor(
     return render(
         <CommerceListingEditor
             vertical={vertical}
+            sectionId="meetingPoint"
             listingId="abc"
             locale="es"
             initialData={initialData}
@@ -183,33 +185,27 @@ describe('CommerceListingEditor — meeting point (HOS-1048)', () => {
             expect(screen.queryByLabelText('Punto de encuentro')).toBeNull();
         });
 
-        it('lists the section in the nav for an experience, and not for gastronomy', () => {
-            // Arrange
-            const { unmount } = renderEditor('experience');
+        it('exists in the experience registry, and not in the gastronomy one', () => {
+            // HOS-1080 moved the nav out of this island and onto the route, so
+            // what used to be an in-page anchor is a section entry now. The
+            // vertical gate moved with it: leaving the section out of the
+            // gastronomy registry is what makes
+            // `/gastronomy/<id>/editar/punto-de-encuentro` redirect instead of
+            // rendering an empty page.
+            const experienceIds = buildCommerceEditorSections({
+                vertical: 'experience'
+            }).map((section) => section.id);
+            const gastronomyIds = buildCommerceEditorSections({
+                vertical: 'gastronomy'
+            }).map((section) => section.id);
 
-            // Act
-            const experienceNav = screen
-                .getByRole('navigation', { name: 'Navegación de secciones del formulario' })
-                .querySelectorAll('a');
-            const experienceIds = [...experienceNav].map((a) => a.getAttribute('href'));
-
-            // Assert — present, and positioned right after the basic-info entry,
-            // which is where the section renders. The scrollspy takes the FIRST
-            // visible entry of the array, so an out-of-order entry highlights
-            // the wrong link whenever two sections share the viewport.
-            expect(experienceIds).toContain('#editor-meetingPoint');
-            expect(experienceIds.indexOf('#editor-meetingPoint')).toBe(
-                experienceIds.indexOf('#editor-basicInfo') + 1
+            expect(experienceIds).toContain('meetingPoint');
+            // Positioned right after basic info, where an owner already expects
+            // it from the pre-split editor's render order.
+            expect(experienceIds.indexOf('meetingPoint')).toBe(
+                experienceIds.indexOf('basicInfo') + 1
             );
-
-            unmount();
-            renderEditor('gastronomy');
-            const gastronomyIds = [
-                ...screen
-                    .getByRole('navigation', { name: 'Navegación de secciones del formulario' })
-                    .querySelectorAll('a')
-            ].map((a) => a.getAttribute('href'));
-            expect(gastronomyIds).not.toContain('#editor-meetingPoint');
+            expect(gastronomyIds).not.toContain('meetingPoint');
         });
     });
 
@@ -305,30 +301,41 @@ describe('CommerceListingEditor — meeting point (HOS-1048)', () => {
             expect(body).toHaveProperty('meetingPointLat', null);
         });
 
-        it('omits the meeting-point keys entirely when nothing about it changed', async () => {
-            // Arrange — an untouched section must not appear in the diff, or
-            // every save of an unrelated field would rewrite it.
+        it('omits the untouched meeting-point keys when only one of them changed', async () => {
+            // An untouched field must not appear in the diff, or every save of
+            // its neighbour would rewrite it. (Before HOS-1080 this was phrased
+            // as "edit the name and check the meeting point stays out"; the name
+            // lives on another page now, so the neighbour is a sibling field.)
             renderEditor('experience', buildListing({ meetingPoint: MEETING_POINT }));
 
-            // Act
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
-                target: { value: 'Excursión a Colón II' }
+            fireEvent.change(screen.getByLabelText('Latitud (opcional)'), {
+                target: { value: '-32.4825' }
             });
             fireEvent.click(saveButton());
 
-            // Assert
             const body = await wireBody();
-            expect(body).toHaveProperty('name', 'Excursión a Colón II');
+            expect(body).toHaveProperty('meetingPointLat', -32.4825);
             expect(body).not.toHaveProperty('meetingPoint');
-            expect(body).not.toHaveProperty('meetingPointLat');
             expect(body).not.toHaveProperty('meetingPointLong');
         });
 
-        it('never sends a meeting point from the gastronomy branch', async () => {
-            // Non-vacuity for the vertical split: the state object is shared
-            // between both verticals, so only `buildPatchPayload` keeps the key
-            // off a gastronomy PATCH.
-            renderEditor('gastronomy', buildListing({ meetingPoint: MEETING_POINT }));
+        it('never sends a meeting point from a gastronomy save', async () => {
+            // Non-vacuity for the vertical split. It is now guarded twice over:
+            // `buildCommerceEditorSections` gives a restaurant no meeting-point
+            // section to reach (asserted above), AND — should one ever be
+            // reached — the form state is shared between verticals, so
+            // `buildPatchPayload` still has to keep the key off the body. This
+            // asserts the second half, from the page a restaurant DOES have.
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    sectionId="basicInfo"
+                    listingId="abc"
+                    locale="es"
+                    initialData={buildListing({ meetingPoint: MEETING_POINT })}
+                    destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
+                />
+            );
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Parrilla Nueva' }

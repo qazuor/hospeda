@@ -1,9 +1,26 @@
 /**
  * @file CommerceListingEditor.client.tsx
- * @description Operational + identity editor island for a commerce owner's
- * listing (SPEC-249 Part A, extended in SPEC-253 and HOS-166 D-1). Native
- * HTML form (no TanStack Form, per web conventions) that persists changes
- * through the vertical's protected PATCH endpoint (`updateOwn`).
+ * @description Editor island for ONE section of a commerce owner's listing
+ * (SPEC-249 Part A, extended in SPEC-253 and HOS-166 D-1; split one-page-per-
+ * section in HOS-1080). Native HTML form (no TanStack Form, per web
+ * conventions) that persists changes through the vertical's protected PATCH
+ * endpoint (`updateOwn`).
+ *
+ * ## One island, one section (HOS-1080)
+ *
+ * Until HOS-1080 this component rendered every field group at once on a single
+ * route, with an in-page scrollspy nav — the long form HOS-892 reported. It now
+ * takes a `sectionId` and renders exactly that section, one per route, matching
+ * the accommodation editor the two surfaces already shared their `ActionBar`
+ * and section styling with.
+ *
+ * What deliberately did NOT change is `buildPatchPayload`. Its per-field
+ * contracts (`priceFrom` omits, `priceUnit` nulls, `contactInfo` ships
+ * wholesale, the duration is diffed JOINED, `media` never ships) are the kind of
+ * thing a per-section rewrite flattens without anything failing. It still builds
+ * the full diff from the whole form state; `restrictPayloadToSection` then keeps
+ * only the keys this page owns, so a section can never persist another's data
+ * even if a future edit lets a foreign value into state.
  *
  * `slug` stays out of this form — the owner never edits it directly. The server
  * keeps it in sync with the name while the listing is still a draft, then stops
@@ -24,16 +41,16 @@
  *   T-016 amenities / features
  */
 
-import type { Image, OpeningHours } from '@repo/schemas';
+import type { OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/commerce/destination-option';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
-import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
-import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
+import { buildCommerceEditorRegistry } from '@/lib/editor/commerce-editor-sections';
+import { buildEditorHubUrl } from '@/lib/editor/editor-registry';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -42,10 +59,7 @@ import {
     buildSlugRefreshPayload,
     shouldOfferPublishedSlugRefresh
 } from '@/lib/listing-slug-refresh';
-import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import type { CommerceFaq } from './CommerceFaqManager.client';
-import { CommerceFaqManager } from './CommerceFaqManager.client';
 import styles from './CommerceListingEditor.module.css';
 import {
     type CommerceI18nValues,
@@ -61,13 +75,15 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
-import fieldStyles from './editor/editor-fields.module.css';
+import {
+    type CommerceEditorFormSectionId,
+    restrictPayloadToSection
+} from './editor/commerce-section-payload';
 import {
     COMMERCE_FIELD_ID_SUFFIXES,
     COMMERCE_FIELD_PREFIX,
     OPENING_HOURS_AGGREGATE_FIELDS
 } from './editor/field-ids';
-import { MediaSection } from './editor/MediaSection.client';
 import { MeetingPointSection } from './editor/MeetingPointSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import {
@@ -81,6 +97,11 @@ import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 export interface CommerceListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
     readonly vertical: CommerceVertical;
+    /**
+     * Which section this page edits (HOS-1080). Decides what renders AND what
+     * the save may persist — see `commerce-section-payload.ts`.
+     */
+    readonly sectionId: CommerceEditorFormSectionId;
     /** UUID of the listing being edited. */
     readonly listingId: string;
     /** Active UI locale. */
@@ -106,35 +127,6 @@ export interface CommerceListingEditorProps {
      * callers/tests that omit it keep the prior behaviour.
      */
     readonly destinationsLoadFailed?: boolean;
-    /**
-     * `true` to render the commerce FAQ manager as a section of this editor,
-     * with the matching `editor-faqs` entry in the section nav.
-     *
-     * HOS-827 changed what this prop DOES, not what it means. It used to be a
-     * promise made by the hosting page — "I render the FAQ card below you and
-     * give it `id='editor-faqs'`" (H-153) — with the card living outside the
-     * form as a sibling of it. That split had two costs, both reported:
-     *
-     * - The card sat outside the form's grid, so it painted 202px wider and
-     *   227px further left than every other card, BELOW the save button
-     *   (HOS-827). It did not read as part of what was being edited.
-     * - It was a SEPARATE `client:idle` island. Anything that kept it from
-     *   hydrating turned the whole section into decoration — an "Agregar
-     *   pregunta" that opens nothing and a Guardar that fires no request, with
-     *   no error anywhere, which is exactly how HOS-811 was reported. Inside
-     *   this editor it shares the `client:load` island the rest of the form
-     *   already depends on, so the section is live whenever the form is.
-     *
-     * Still opt-in rather than always-on: the nav's contract is that every
-     * link resolves, and only a page that supplies `initialFaqs` should get a
-     * FAQ section. Defaults to `false`.
-     */
-    readonly hasFaqSection?: boolean;
-    /**
-     * FAQs already stored for this listing, pre-fetched SSR from the protected
-     * detail. Only read when {@link hasFaqSection} is `true`.
-     */
-    readonly initialFaqs?: readonly CommerceFaq[];
 }
 
 type SaveStatus =
@@ -407,20 +399,20 @@ function buildPatchPayload({
 }
 
 /**
- * Owner operational editor. Tracks which field groups changed and PATCHes ONLY
- * the dirty subset, so an owner who edits one section never re-submits the rest.
+ * Owner editor for ONE section. Tracks which field groups changed and PATCHes
+ * only the dirty subset of the keys this section owns, so a save here can never
+ * re-submit — let alone clobber — another section's data.
  */
 export function CommerceListingEditor({
     vertical,
+    sectionId,
     listingId,
     locale,
     initialData,
     amenities = [],
     features = [],
     destinations = [],
-    destinationsLoadFailed = false,
-    hasFaqSection = false,
-    initialFaqs = []
+    destinationsLoadFailed = false
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -456,16 +448,13 @@ export function CommerceListingEditor({
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
-    const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
-    // HOS-372: media is no longer buffered in this editor's state. MediaSection
-    // is now self-contained (per-operation persistence against the relational
+    // HOS-372: media is not buffered in this editor's state at all. MediaSection
+    // is self-contained (per-operation persistence against the relational
     // gastronomy_media / experience_media endpoints — see its file header) and
-    // hydrates its own state from the API. These two consts only feed its
-    // first-paint SSR placeholders (from the `media` response field); they are
-    // read once and never written back, so they stay outside `formData`.
-    const initialFeaturedImage = (initialMedia.featuredImage as Image | undefined) ?? null;
-    const initialGallery = (initialMedia.gallery as Image[] | undefined) ?? [];
+    // hydrates its own state from the API; since HOS-1080 it is mounted by its
+    // own route rather than by this island, so nothing about photos reaches
+    // here.
 
     // HOS-166 D-1: name + destinationId + description are identity fields the
     // owner may edit (description was widened alongside name/destinationId on
@@ -609,13 +598,16 @@ export function CommerceListingEditor({
      */
     const patchPayload = useMemo(
         () =>
-            buildPatchPayload({
-                current: formData,
-                baseline,
-                vertical,
-                lifecycleState: currentLifecycleState
+            restrictPayloadToSection({
+                payload: buildPatchPayload({
+                    current: formData,
+                    baseline,
+                    vertical,
+                    lifecycleState: currentLifecycleState
+                }),
+                sectionId
             }),
-        [formData, baseline, vertical, currentLifecycleState]
+        [formData, baseline, vertical, currentLifecycleState, sectionId]
     );
 
     const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
@@ -706,7 +698,13 @@ export function CommerceListingEditor({
     const isSaving = status.kind === 'saving';
 
     /**
-     * Leaves the editor for the listing index.
+     * Leaves the section for the editor hub.
+     *
+     * HOS-1080 changed the destination, not the mechanism: with one page per
+     * section, "Cancelar" means "leave this section", and the hub is the page
+     * every section was reached from. Dropping the owner all the way back to
+     * `mi-cuenta/comercio` from a section page would discard their place in the
+     * editor as well as their edits.
      *
      * `ActionBar` renders Cancel as a `<button>`, so this navigates in JS. The
      * bespoke bar this replaced used an `<a href>`, which middle-click and
@@ -714,98 +712,12 @@ export function CommerceListingEditor({
      * exchange for the three content editors sharing one action bar.
      */
     const handleCancel = useCallback(() => {
-        window.location.href = buildUrl({ locale, path: 'mi-cuenta/comercio' });
-    }, [locale]);
-
-    // AmenitiesSection returns null when BOTH catalogs are empty (see its early
-    // return), so its nav entry has to disappear with it: a link to a section
-    // that is not on the page scrolls nowhere and reads as a broken control.
-    // Every other section always renders, so only this one is conditional.
-    const hasCatalogs = amenities.length > 0 || features.length > 0;
-
-    // Mirrors the render order below, because `EditorSectionNav`'s scrollspy
-    // resolves ties by taking the FIRST entry of this array that is currently
-    // visible — a list in a different order than the DOM would highlight the
-    // wrong link whenever two sections share the viewport. Ids are the ones the
-    // section components emit themselves (`id="editor-*"`), not ids assigned
-    // here; `editor-translations` is the exception (see the wrapper in the JSX).
-    const navSections = useMemo<EditorSectionNavItem[]>(() => {
-        const sections: EditorSectionNavItem[] = [
-            {
-                id: 'editor-basicInfo',
-                label: t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')
-            },
-            // HOS-1048: experience-only, and inserted here rather than appended
-            // because the section renders directly after BasicInfo. The
-            // scrollspy resolves ties by taking the FIRST entry of this array
-            // that is visible, so an entry out of DOM order highlights the wrong
-            // link whenever two sections share the viewport.
-            ...(vertical === 'experience'
-                ? [
-                      {
-                          id: 'editor-meetingPoint',
-                          label: t(
-                              'commerce.owner.editor.sectionNav.meetingPoint',
-                              'Punto de encuentro'
-                          )
-                      },
-                      // HOS-898/1046/1047/1056, immediately after the meeting
-                      // point for the same DOM-order reason stated above: the
-                      // scrollspy takes the FIRST visible entry of this array,
-                      // so an entry out of order highlights the wrong link.
-                      {
-                          id: 'editor-practicalInfo',
-                          label: t(
-                              'commerce.owner.editor.sectionNav.practicalInfo',
-                              'Datos prácticos'
-                          )
-                      }
-                  ]
-                : []),
-            {
-                id: 'editor-contact',
-                label: t('commerce.owner.editor.sectionNav.contactInfo', 'Contacto')
-            },
-            {
-                id: 'editor-socialNetworks',
-                label: t('commerce.owner.editor.sectionNav.socialNetworks', 'Redes sociales')
-            },
-            {
-                id: 'editor-openingHours',
-                label: t('commerce.owner.editor.sectionNav.openingHours', 'Horarios')
-            },
-            { id: 'editor-media', label: t('commerce.owner.editor.sectionNav.media', 'Fotos') },
-            {
-                id: 'editor-translations',
-                label: t('commerce.owner.editor.sectionNav.translations', 'Traducciones')
-            }
-        ];
-
-        if (hasCatalogs) {
-            sections.push({
-                id: 'editor-amenities',
-                label: t('commerce.owner.editor.sectionNav.amenities', 'Servicios')
-            });
-        }
-
-        sections.push({
-            id: 'editor-price',
-            label: t('commerce.owner.editor.sectionNav.price', 'Precio')
+        window.location.href = buildEditorHubUrl({
+            locale,
+            registry: buildCommerceEditorRegistry({ vertical }),
+            entityId: listingId
         });
-
-        // H-153 added this entry; HOS-827 moved its target INTO this component,
-        // so the anchor and the link are now emitted by the same file and cannot
-        // drift apart. Appended last because the FAQ card renders last among the
-        // sections, which is what the scrollspy's first-match tie-break requires.
-        if (hasFaqSection) {
-            sections.push({
-                id: 'editor-faqs',
-                label: t('commerce.owner.editor.sectionNav.faqs', 'Preguntas frecuentes')
-            });
-        }
-
-        return sections;
-    }, [t, hasCatalogs, hasFaqSection, vertical]);
+    }, [locale, vertical, listingId]);
 
     // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
@@ -827,61 +739,66 @@ export function CommerceListingEditor({
             aria-busy={isSaving}
             noValidate
         >
-            <div className={styles.layout}>
-                <div className={styles.navSlot}>
-                    <EditorSectionNav
-                        locale={locale}
-                        sections={navSections}
-                    />
-                </div>
+            {sectionId === 'basicInfo' && (
+                <BasicInfoSection
+                    locale={locale}
+                    vertical={vertical}
+                    data={formData}
+                    destinations={destinations}
+                    destinationsLoadFailed={destinationsLoadFailed}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                    shouldOfferSlugRefresh={shouldOfferSlugRefresh}
+                />
+            )}
 
-                <div className={styles.sectionsColumn}>
-                    <BasicInfoSection
-                        locale={locale}
-                        vertical={vertical}
-                        data={formData}
-                        destinations={destinations}
-                        destinationsLoadFailed={destinationsLoadFailed}
-                        errors={fieldErrors}
-                        onFieldChange={onFieldChange}
-                        shouldOfferSlugRefresh={shouldOfferSlugRefresh}
-                    />
+            {/*
+             * HOS-1048: experience-only. The gate is the SHAPE of the schema,
+             * not an entitlement — `meetingPoint` exists on
+             * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one,
+             * so rendering it for a restaurant would offer a field every save
+             * silently strips. Since HOS-1080 the vertical gate lives one level
+             * up as well: `buildCommerceEditorSections` leaves this section out
+             * of a gastronomy registry entirely, so the route redirects instead
+             * of rendering an empty page. The check stays here too because this
+             * island is what decides what to send. The meeting point itself is
+             * free from the basic tier; only the map that draws it is paid
+             * (HOS-1049).
+             */}
+            {sectionId === 'meetingPoint' && vertical === 'experience' && (
+                <MeetingPointSection
+                    locale={locale}
+                    data={formData}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                />
+            )}
 
-                    {/*
-                     * HOS-1048: experience-only. The gate is the SHAPE of the
-                     * schema, not an entitlement — `meetingPoint` exists on
-                     * `ExperienceOwnerUpdateInputSchema` and not on the
-                     * gastronomy one, so rendering it for a restaurant would
-                     * offer a field every save silently strips. The meeting
-                     * point itself is free from the basic tier; only the map
-                     * that draws it is paid (HOS-1049).
-                     */}
-                    {vertical === 'experience' && (
-                        <MeetingPointSection
-                            locale={locale}
-                            data={formData}
-                            errors={fieldErrors}
-                            onFieldChange={onFieldChange}
-                        />
-                    )}
+            {/*
+             * HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. Experience-only on the
+             * same SHAPE gate as the meeting point above — the keys live on
+             * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one.
+             * NOT an entitlement gate: all four ship from the basic tier by
+             * owner decision (2026-09-01), so there is no plan check here and
+             * there must not be one.
+             */}
+            {sectionId === 'practicalInfo' && vertical === 'experience' && (
+                <PracticalInfoSection
+                    locale={locale}
+                    data={formData}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                />
+            )}
 
-                    {/*
-                     * HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. Experience-only
-                     * on the same SHAPE gate as the meeting point above — the
-                     * keys live on `ExperienceOwnerUpdateInputSchema` and not on
-                     * the gastronomy one. NOT an entitlement gate: all four ship
-                     * from the basic tier by owner decision (2026-09-01), so
-                     * there is no plan check here and there must not be one.
-                     */}
-                    {vertical === 'experience' && (
-                        <PracticalInfoSection
-                            locale={locale}
-                            data={formData}
-                            errors={fieldErrors}
-                            onFieldChange={onFieldChange}
-                        />
-                    )}
-
+            {/*
+             * Contact and social networks share one page, exactly as the
+             * accommodation editor's `contacto` route does — they are the same
+             * question ("how does someone reach you?") and splitting them would
+             * have made two nav items out of one errand.
+             */}
+            {sectionId === 'contact' && (
+                <>
                     <ContactSection
                         locale={locale}
                         contact={formData.contact}
@@ -895,97 +812,64 @@ export function CommerceListingEditor({
                         errors={fieldErrors}
                         onSocialChange={updateSocial}
                     />
+                </>
+            )}
 
-                    <OpeningHoursSection
-                        locale={locale}
-                        value={openingHours}
-                        errors={fieldErrors}
-                        onChange={(next) => {
-                            onFieldChange('openingHours', next);
-                        }}
-                    />
+            {sectionId === 'openingHours' && (
+                <OpeningHoursSection
+                    locale={locale}
+                    value={openingHours}
+                    errors={fieldErrors}
+                    onChange={(next) => {
+                        onFieldChange('openingHours', next);
+                    }}
+                />
+            )}
 
-                    <MediaSection
-                        locale={locale}
-                        vertical={vertical}
-                        listingId={listingId}
-                        initialFeaturedImage={initialFeaturedImage}
-                        initialGallery={initialGallery}
-                    />
+            {sectionId === 'translations' && (
+                <CommerceTranslationPanel
+                    locale={locale}
+                    initialValues={i18nValues}
+                    onChange={handleI18nChange}
+                />
+            )}
 
-                    {/*
-                     * T-023: i18n editing panel. Wrapped only to carry the nav anchor:
-                     * every other section emits its own `id="editor-*"`, but this panel
-                     * is shared with other surfaces and renders a bare `<fieldset>` with
-                     * no id prop, so the anchor has to live on a wrapper here.
-                     */}
-                    <div id="editor-translations">
-                        <CommerceTranslationPanel
-                            locale={locale}
-                            initialValues={i18nValues}
-                            onChange={handleI18nChange}
-                        />
-                    </div>
+            {sectionId === 'amenities' && (
+                <AmenitiesSection
+                    locale={locale}
+                    amenities={amenities}
+                    features={features}
+                    selectedAmenityIds={amenityIds}
+                    selectedFeatureIds={featureIds}
+                    onToggleAmenity={toggleAmenity}
+                    onToggleFeature={toggleFeature}
+                />
+            )}
 
-                    <AmenitiesSection
-                        locale={locale}
-                        amenities={amenities}
-                        features={features}
-                        selectedAmenityIds={amenityIds}
-                        selectedFeatureIds={featureIds}
-                        onToggleAmenity={toggleAmenity}
-                        onToggleFeature={toggleFeature}
-                    />
+            {sectionId === 'price' && (
+                <PriceSection
+                    locale={locale}
+                    vertical={vertical}
+                    data={formData}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                />
+            )}
 
-                    <PriceSection
-                        locale={locale}
-                        vertical={vertical}
-                        data={formData}
-                        errors={fieldErrors}
-                        onFieldChange={onFieldChange}
-                    />
+            {formError && (
+                <p
+                    className={styles.error}
+                    role="alert"
+                >
+                    {formError}
+                </p>
+            )}
 
-                    {/*
-                     * HOS-827: a section of the form, above the save button and
-                     * inside the same column as every other card — not a
-                     * full-width sibling below it. The wrapper carries the card
-                     * recipe (`fieldStyles.section`) and the nav anchor, because
-                     * `CommerceFaqManager` renders a bare <section> with neither:
-                     * it is also mounted standalone elsewhere.
-                     *
-                     * The FAQ endpoints are its own; nothing here reaches the
-                     * form's PATCH payload or its dirty tracking (HOS-811).
-                     */}
-                    {hasFaqSection && (
-                        <div
-                            id="editor-faqs"
-                            className={fieldStyles.section}
-                        >
-                            <CommerceFaqManager
-                                vertical={vertical}
-                                listingId={listingId}
-                                locale={locale}
-                                initialFaqs={initialFaqs}
-                            />
-                        </div>
-                    )}
-
-                    {formError && (
-                        <p
-                            className={styles.error}
-                            role="alert"
-                        >
-                            {formError}
-                        </p>
-                    )}
-
-                    <ActionBar
-                        locale={locale}
-                        isSaving={isSaving}
-                        onCancel={handleCancel}
-                    />
-                </div>
-            </div>
+            <ActionBar
+                locale={locale}
+                isSaving={isSaving}
+                onCancel={handleCancel}
+            />
         </form>
     );
 }

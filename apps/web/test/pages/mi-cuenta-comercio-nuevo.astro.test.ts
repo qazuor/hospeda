@@ -22,7 +22,19 @@ const PAGES_ROOT = resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/comercio
 const source = readFileSync(resolve(PAGES_ROOT, 'nuevo/[vertical].astro'), 'utf8');
 const verticalPickerSource = readFileSync(resolve(PAGES_ROOT, 'nuevo/index.astro'), 'utf8');
 const listingIndexSource = readFileSync(resolve(PAGES_ROOT, 'index.astro'), 'utf8');
-const editorSource = readFileSync(resolve(PAGES_ROOT, '[vertical]/[id]/editar.astro'), 'utf8');
+/**
+ * The commerce editor's shared front door.
+ *
+ * HOS-1080 split the single `[vertical]/[id]/editar.astro` into eleven routes,
+ * and the commerce-role gate moved into the resolver every one of them calls —
+ * which is the point of having one. That each route really goes through it is
+ * asserted in `commerce-editor-routes.test.ts`; that the gate is still IN it is
+ * asserted below.
+ */
+const editorResolverSource = readFileSync(
+    resolve(__dirname, '../../src/lib/editor/resolve-commerce-editor-page.ts'),
+    'utf8'
+);
 
 describe('mi-cuenta/comercio/nuevo/[vertical].astro — HOS-257 pre-fill removed (HOS-693 §6.2)', () => {
     it('no longer fetches the caller own lead — fetchMyCommerceLead and the lead endpoint are gone', () => {
@@ -58,7 +70,7 @@ describe('mi-cuenta/comercio/nuevo — the create path stops requiring the role 
     // this fails.
     it('the listing index and the editor KEEP their commerce-role gate', () => {
         expect(listingIndexSource).toContain('hasCommerceNavAccess');
-        expect(editorSource).toContain('hasCommerceNavAccess');
+        expect(editorResolverSource).toContain('hasCommerceNavAccess');
     });
 
     // AC-18 — the anonymous visitor comes back to the form they asked for.
