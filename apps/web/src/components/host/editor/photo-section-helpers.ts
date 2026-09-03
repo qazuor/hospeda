@@ -37,6 +37,76 @@ export type PluralTranslate = (
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
+// ----------------------------------------------------------------------------
+// Plan-derived gallery cap (HOS-1024)
+// ----------------------------------------------------------------------------
+
+/**
+ * Client-safe wire-value literal for `LimitKey.MAX_PHOTOS_PER_ACCOMMODATION`
+ * (`@repo/billing`). Kept as a plain string rather than importing the enum —
+ * this module is reachable from `PhotoSection.client.tsx`, a client island,
+ * and `@repo/billing`'s barrel is off-limits to any client-reachable module
+ * (its runtime closure pulls in `@repo/logger`, which reads `process.env` at
+ * module scope and throws during hydration — see
+ * `test/static-guards/billing-barrel-client-isolation.test.ts`). Same
+ * convention as `AnalyticsSection.client.tsx` / `PromotionList.client.tsx`.
+ */
+export const MAX_PHOTOS_LIMIT_KEY = 'max_photos_per_accommodation';
+
+/**
+ * Placeholder gallery cap used while the plan-derived limit is still in
+ * flight (HOS-1024). Large enough that `galleryItems.length >= cap` can never
+ * be true for a real gallery, so `usePhotoSection`'s `isGalleryFull` stays
+ * `false` during the loading window instead of falsely reporting the gallery
+ * as full. The actual gating during that window — disabling the upload
+ * control — is `PhotoSection.client.tsx`'s job, not this value's.
+ */
+export const GALLERY_CAP_PENDING_PLACEHOLDER = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Resolves the effective gallery cap shown to, and enforced against, the host
+ * (HOS-1024).
+ *
+ * Before this, every host saw the SAME number regardless of plan —
+ * `ENTITY_GALLERY_CAPS.accommodation` (50), the technical ceiling on the
+ * entity, unrelated to what any given plan actually grants (Owner Básico
+ * grants 15). That ceiling is untouched by this function and stays enforced
+ * server-side as a hard floor above the plan cap (`upload-entity.ts`'s
+ * `GALLERY_LIMIT_EXCEEDED` check) — this only decides what to show and what
+ * to enforce CLIENT-side, one layer below that ceiling.
+ *
+ * @param params.planLimit - The raw value from
+ *   `useMyEntitlements().limit(MAX_PHOTOS_LIMIT_KEY)`. `-1` is the hook's own
+ *   "loading or no data" sentinel (see its JSDoc); no plan in the current
+ *   catalogue grants `0` or a negative cap, so any non-positive value is
+ *   treated the same way — not actually resolved yet.
+ * @param params.isEntitlementsLoading - The hook's own `isLoading` flag.
+ * @returns `cap` — pass this to `usePhotoSection`'s `galleryCap` prop, and
+ *   display it only when `isResolved` is `true`.
+ *
+ * @example
+ * ```ts
+ * const { limit, isLoading } = useMyEntitlements();
+ * const { cap, isResolved } = resolveEffectiveGalleryCap({
+ *   planLimit: limit(MAX_PHOTOS_LIMIT_KEY),
+ *   isEntitlementsLoading: isLoading
+ * });
+ * ```
+ */
+export function resolveEffectiveGalleryCap({
+    planLimit,
+    isEntitlementsLoading
+}: {
+    readonly planLimit: number;
+    readonly isEntitlementsLoading: boolean;
+}): { readonly cap: number; readonly isResolved: boolean } {
+    const isResolved = !isEntitlementsLoading && planLimit > 0;
+    return {
+        cap: isResolved ? planLimit : GALLERY_CAP_PENDING_PLACEHOLDER,
+        isResolved
+    };
+}
+
 /**
  * Validate a single file's MIME type and size against the shared entity
  * upload limits.

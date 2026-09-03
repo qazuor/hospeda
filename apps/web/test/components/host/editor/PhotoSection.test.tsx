@@ -148,6 +148,23 @@ vi.mock('@repo/schemas', async (importOriginal) => ({
     ENTITY_GALLERY_CAPS: { accommodation: 50 }
 }));
 
+// HOS-1024: the gallery cap this suite exercises is now the PLAN limit read
+// through `useMyEntitlements`, not `ENTITY_GALLERY_CAPS.accommodation`
+// directly. Fixed at 50 here — same numeric value the suite already used —
+// so every existing assertion below (which was written against "the cap is
+// 50") keeps meaning exactly what it said without being rewritten; the
+// plan-derived-vs-entity-ceiling distinction itself is covered by
+// `PhotoSection.plan-cap.test.tsx`.
+vi.mock('@/hooks/useMyEntitlements', () => ({
+    useMyEntitlements: () => ({
+        has: () => false,
+        limit: () => 50,
+        plan: null,
+        isLoading: false,
+        error: null
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------

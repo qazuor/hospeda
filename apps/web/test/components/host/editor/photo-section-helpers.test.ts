@@ -11,8 +11,10 @@ import {
     buildCapExceededOnSelectMessage,
     buildPhotoMetadataUpdateBody,
     buildReorderPayload,
+    GALLERY_CAP_PENDING_PLACEHOLDER,
     mediaRowToItem,
     moveArrayItem,
+    resolveEffectiveGalleryCap,
     splitMediaRows,
     validatePhotoFile,
     validatePhotoMetadataFields
@@ -451,5 +453,65 @@ describe('mediaRowToItem — credit', () => {
         });
 
         expect(item.attribution?.photographer).toBe('Ana Gómez');
+    });
+});
+
+// ── resolveEffectiveGalleryCap (HOS-1024) ───────────────────────────────────
+
+describe('resolveEffectiveGalleryCap', () => {
+    it('resolves to the real plan limit once loaded', () => {
+        const result = resolveEffectiveGalleryCap({
+            planLimit: 15,
+            isEntitlementsLoading: false
+        });
+
+        expect(result).toEqual({ cap: 15, isResolved: true });
+    });
+
+    it('is unresolved while entitlements are loading, regardless of what limit() returns', () => {
+        // Real hook shape: limit() reports -1 while loading, but a stale/cached
+        // positive value could theoretically leak through too — isLoading alone
+        // must be the deciding factor either way.
+        const whileLoading = resolveEffectiveGalleryCap({
+            planLimit: -1,
+            isEntitlementsLoading: true
+        });
+        const loadingWithStalePositive = resolveEffectiveGalleryCap({
+            planLimit: 30,
+            isEntitlementsLoading: true
+        });
+
+        expect(whileLoading.isResolved).toBe(false);
+        expect(loadingWithStalePositive.isResolved).toBe(false);
+    });
+
+    it('is unresolved when loading has finished but the limit is the -1 sentinel', () => {
+        // The hook's own "no data" fallback (error or no active plan resolved).
+        const result = resolveEffectiveGalleryCap({
+            planLimit: -1,
+            isEntitlementsLoading: false
+        });
+
+        expect(result.isResolved).toBe(false);
+    });
+
+    it('is unresolved for a non-positive limit even when not loading', () => {
+        // Defensive: no plan in the catalogue grants 0 or a negative cap, but a
+        // malformed/degraded response must not be treated as "0 photos allowed".
+        expect(
+            resolveEffectiveGalleryCap({ planLimit: 0, isEntitlementsLoading: false }).isResolved
+        ).toBe(false);
+    });
+
+    it('returns the pending placeholder (never a false number) while unresolved', () => {
+        const result = resolveEffectiveGalleryCap({
+            planLimit: -1,
+            isEntitlementsLoading: true
+        });
+
+        expect(result.cap).toBe(GALLERY_CAP_PENDING_PLACEHOLDER);
+        // The whole point of the placeholder: large enough that no real gallery
+        // (however big) reads as "full" against it.
+        expect(result.cap).toBeGreaterThan(10_000);
     });
 });
