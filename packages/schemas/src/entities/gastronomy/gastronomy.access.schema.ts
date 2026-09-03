@@ -53,6 +53,11 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     // Gastronomy-specific public fields
     priceRange: true,
     menuUrl: true,
+    // HOS-895 — the uploaded photo/PDF alternative. Public: the ficha renders it
+    // exactly as it renders `menuUrl`. `menuFilePublicId` stays out: it is the
+    // provider handle used to delete the asset, not content.
+    menuFileUrl: true,
+    menuFileKind: true,
 
     // Destination reference
     destinationId: true,
@@ -190,6 +195,8 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     tags: true,
     priceRange: true,
     menuUrl: true,
+    menuFileUrl: true,
+    menuFileKind: true,
     openingHours: true,
 
     // Protected: ownership
