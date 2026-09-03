@@ -1,5 +1,5 @@
 {
-  "id": "72ba1798-7c73-4930-b1eb-49b665fa8797",
+  "id": "464a0613-26c9-4a66-9ce5-a7d1df2611ea",
   "prevId": "6971c57f-71ba-4e4c-b43d-ee64d7eab854",
   "version": "7",
   "dialect": "postgresql",
@@ -12911,6 +12911,13 @@
           "type": "double precision",
           "primaryKey": false,
           "notNull": false
+        },
+        "meeting_point_directions": {
+          "name": "meeting_point_directions",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
         },
         "duration_minutes": {
           "name": "duration_minutes",
@@ -33045,8 +33052,7 @@
         "SOCIAL_FOOTER",
         "SOCIAL_SETTINGS",
         "SOCIAL_AUDIT",
-        "INTEGRATION",
-        "QR_CODE"
+        "INTEGRATION"
       ]
     },
     "public.permission_effect_enum": {
@@ -33694,10 +33700,6 @@
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
-        "platform.qrCode.view",
-        "platform.qrCode.create",
-        "platform.qrCode.update",
-        "platform.qrCode.delete",
         "moderation.term.view",
         "moderation.term.create",
         "moderation.term.update",

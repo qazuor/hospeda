@@ -151,13 +151,32 @@ describe('experiencias/[slug].astro', () => {
             expect(src).not.toContain('loadEntitlements');
         });
 
-        it('draws no map on this page — the map is the paid half (HOS-1049)', () => {
-            // The meeting point ships from the basic tier; the map that draws
-            // its coordinates does not. A map here would hand every visitor the
-            // feature HOS-1049 exists to gate, and this page has no entitlement
-            // check to stop it.
-            expect(src).not.toContain('LocationMap');
-            expect(src).not.toContain('meetingPointLat');
+        it('hands the map and the directions to ExperienceMeetingPoint (HOS-1049)', () => {
+            // HOS-1048 asserted the opposite here — no map, no coordinates on
+            // this page — because the paid half did not exist yet. It does now,
+            // and the page's job is to FORWARD it: the coordinates, the
+            // instructions, and the flag that says whether either may be drawn.
+            //
+            // Dropping any one of the four is silent. A page that forgets
+            // `meetingPointDirectionsEnabled` renders a component whose gate
+            // reads `undefined` and shows nothing, on every listing, for every
+            // tier — a paid feature that ships and never appears.
+            expect(src).toContain('meetingPointLat={experience.meetingPointLat}');
+            expect(src).toContain('meetingPointLong={experience.meetingPointLong}');
+            expect(src).toContain('meetingPointDirections={experience.meetingPointDirections}');
+            expect(src).toContain(
+                'meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}'
+            );
+        });
+
+        it('still runs no entitlement machinery of its own (HOS-1049)', () => {
+            // The gate is resolved by the API and arrives as a boolean. This
+            // page must not grow a second, local answer to the same question —
+            // two gates that can disagree are worse than one that can be wrong.
+            // The `EntitlementKey`/`loadEntitlements` assertion above covers the
+            // mechanism; this pins the reason it still holds after HOS-1049.
+            expect(src).not.toContain('resolveOwnerGrants');
+            expect(src).not.toContain('manage_experience_directions');
         });
     });
 

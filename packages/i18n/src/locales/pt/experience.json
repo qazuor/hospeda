@@ -45,7 +45,9 @@
         },
         "hours": "Horário de funcionamento",
         "meetingPoint": {
-            "title": "Ponto de encontro"
+            "title": "Ponto de encontro",
+            "howToGetThere": "Como chegar",
+            "mapAriaLabel": "Mapa do ponto de encontro"
         },
         "openingHours": {
             "title": "Horário de funcionamento",

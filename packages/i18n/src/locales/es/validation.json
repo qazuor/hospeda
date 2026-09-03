@@ -2900,6 +2900,15 @@
         "meetingPoint": {
             "max": "El punto de encuentro no puede superar los {{max}} caracteres"
         },
+        "meetingPointDirections": {
+            "item": {
+                "max": "Cada indicación de cómo llegar no puede superar los {{max}} caracteres",
+                "min": "Las indicaciones de cómo llegar no pueden quedar vacías"
+            },
+            "max": "No podés cargar más de {{max}} indicaciones de cómo llegar",
+            "max_one": "No podés cargar más de {{max}} indicación de cómo llegar",
+            "max_other": "No podés cargar más de {{max}} indicaciones de cómo llegar"
+        },
         "meetingPointLat": {
             "max": "La latitud del punto de encuentro no puede superar {{max}}",
             "min": "La latitud del punto de encuentro debe ser al menos {{min}}"

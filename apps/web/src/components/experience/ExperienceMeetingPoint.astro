@@ -1,38 +1,85 @@
 ---
 /**
  * @file ExperienceMeetingPoint.astro
- * @description Where the experience starts (HOS-1048).
+ * @description Where the experience starts (HOS-1048), and how to get there
+ * (HOS-1049).
  *
  * The listing used to carry no address of its own. `destinationId` names the
  * CITY — enough to list and filter, useless for showing up somewhere — and
  * `contactInfo` is the provider's phone and mail. A traveller who booked had
  * nowhere on the page telling them where to be.
  *
- * ## Not a map, and not paid
+ * ## Two halves, one section, one gate between them
  *
- * This renders the owner's TEXT and nothing else. The map that draws
- * `meetingPointLat`/`meetingPointLong` and the how-to-get-there instructions are
- * the paid half of the feature (HOS-1049) and are deliberately absent here.
- * Owner decision (2026-09-01): the meeting point itself ships from the basic
- * tier, so this block carries no entitlement check of any kind — adding one
- * would be the bug, not the fix.
+ * The TEXT is free on every tier and always renders: knowing where you have to
+ * show up cannot be a paid feature. The MAP and the walking/parking
+ * instructions are `manage_experience_directions` (`experience-pro` and up),
+ * and both hang off the single `directionsEnabled` flag the API resolves live
+ * from the provider's CURRENT subscription.
  *
- * Renders NOTHING when there is no meeting point. `toExperienceDetailPageProps`
- * already collapses an empty/whitespace string to `null`, so the single
- * presence check below is the whole gate.
+ * The flag is why the coordinates alone are not the condition. They ship on
+ * every tier (HOS-1048, deliberately left free by HOS-1049), so `lat && long`
+ * would draw the paid map for a `-basico` listing. The flag is also why the
+ * instructions are not the condition: an entitled provider who pinned the spot
+ * without typing a word still gets their map.
+ *
+ * ## Why `LocationMap mode="exact"` and no new mode
+ *
+ * A meeting point is one marker at a known coordinate — precisely what
+ * `mode="exact"` already draws, and precisely how `ContactMiniMap.astro` and
+ * `DestinationMiniMap.astro` already call it with a bare lat/lng pair and a
+ * label. It resolves to the `LocationMapInner.client` chunk, NOT the
+ * `MultiMarkerMapInner.client` sibling: the multi-marker chunk pulls in
+ * `react-dom/server` plus the icon table to build POI pins, and the split
+ * exists so single-point maps do not pay for that. Adding a fourth mode here
+ * would have bought nothing `exact` does not already do.
+ *
+ * Renders NOTHING when there is no meeting point at all.
+ * `toExperienceDetailPageProps` already collapses an empty/whitespace string to
+ * `null`, so the single presence check below is the whole gate on the section.
  */
 
+import { LocationMap } from '@/components/maps/LocationMap.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
     /** The owner's meeting-point text, or `null` when none was declared. */
     readonly meetingPoint: string | null;
+    /** Latitude of the pinned spot, or `null` when nothing was pinned. */
+    readonly meetingPointLat: number | null;
+    /** Longitude of the pinned spot. See {@link Props.meetingPointLat}. */
+    readonly meetingPointLong: number | null;
+    /**
+     * How to get there, one instruction per line. Already `[]` when the API
+     * withheld them for an unentitled provider.
+     */
+    readonly meetingPointDirections: readonly string[];
+    /** Whether the provider's plan grants the map and the instructions. */
+    readonly meetingPointDirectionsEnabled: boolean;
     readonly locale: SupportedLocale;
 }
 
-const { meetingPoint, locale } = Astro.props;
+const {
+    meetingPoint,
+    meetingPointLat,
+    meetingPointLong,
+    meetingPointDirections,
+    meetingPointDirectionsEnabled,
+    locale
+} = Astro.props;
 const { t } = createTranslations(locale);
+
+// `typeof === 'number'`, not a truthiness check: 0 is a real coordinate and
+// `lat && long` would erase a point on the equator or the prime meridian —
+// the same trap `toExperienceDetailPageProps` documents on the way in.
+const hasCoordinates =
+    typeof meetingPointLat === 'number' && typeof meetingPointLong === 'number';
+
+const showsMap = meetingPointDirectionsEnabled && hasCoordinates;
+const showsDirections = meetingPointDirectionsEnabled && meetingPointDirections.length > 0;
+
+const markerLabel = meetingPoint ?? t('experience.detail.meetingPoint.title', 'Punto de encuentro');
 ---
 
 {meetingPoint && (
@@ -44,6 +91,40 @@ const { t } = createTranslations(locale);
             <span class="exp-meeting__icon" aria-hidden="true">📍</span>
             <span>{meetingPoint}</span>
         </p>
+
+        {showsMap && (
+            <div class="exp-meeting__map">
+                <LocationMap
+                    client:visible
+                    mode="exact"
+                    lat={meetingPointLat as number}
+                    lng={meetingPointLong as number}
+                    zoom={15}
+                    markerLabel={markerLabel}
+                    ariaLabel={t(
+                        'experience.detail.meetingPoint.mapAriaLabel',
+                        'Mapa del punto de encuentro'
+                    )}
+                    i18nStrings={{
+                        attribution: t('maps.attribution'),
+                        markerLabel
+                    }}
+                />
+            </div>
+        )}
+
+        {showsDirections && (
+            <div class="exp-meeting__directions">
+                <h4 class="exp-meeting__directions-title">
+                    {t('experience.detail.meetingPoint.howToGetThere', 'Cómo llegar')}
+                </h4>
+                <ul class="exp-meeting__directions-list">
+                    {meetingPointDirections.map((step) => (
+                        <li class="exp-meeting__directions-item">{step}</li>
+                    ))}
+                </ul>
+            </div>
+        )}
     </section>
 )}
 
@@ -76,5 +157,57 @@ const { t } = createTranslations(locale);
     .exp-meeting__icon {
         flex-shrink: 0;
         line-height: 1.6;
+    }
+
+    .exp-meeting__map {
+        height: 280px;
+        width: 100%;
+        margin-top: var(--space-4, 16px);
+        border-radius: var(--radius-md, 10px);
+        overflow: hidden;
+    }
+
+    .exp-meeting__map :global(.location-map),
+    .exp-meeting__map :global(.leaflet-container) {
+        height: 100%;
+        width: 100%;
+    }
+
+    .exp-meeting__directions {
+        margin-top: var(--space-4, 16px);
+    }
+
+    .exp-meeting__directions-title {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 8px);
+    }
+
+    .exp-meeting__directions-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    .exp-meeting__directions-item {
+        position: relative;
+        padding-left: 22px;
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+    }
+
+    .exp-meeting__directions-item::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--brand-primary);
     }
 </style>
