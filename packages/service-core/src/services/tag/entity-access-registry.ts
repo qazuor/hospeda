@@ -95,7 +95,8 @@ export const EntityAccessRegistry: Record<EntityTypeEnum, CanViewChecker> = {
     [EntityTypeEnum.BILLING_SUBSCRIPTION]: stubChecker(EntityTypeEnum.BILLING_SUBSCRIPTION),
     [EntityTypeEnum.PAYMENT]: stubChecker(EntityTypeEnum.PAYMENT),
     [EntityTypeEnum.EXPERIENCE]: stubChecker(EntityTypeEnum.EXPERIENCE),
-    [EntityTypeEnum.GASTRONOMY]: stubChecker(EntityTypeEnum.GASTRONOMY)
+    [EntityTypeEnum.GASTRONOMY]: stubChecker(EntityTypeEnum.GASTRONOMY),
+    [EntityTypeEnum.HOST_TRADE]: stubChecker(EntityTypeEnum.HOST_TRADE)
 };
 
 /**
