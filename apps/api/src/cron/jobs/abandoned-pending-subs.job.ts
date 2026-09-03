@@ -61,8 +61,8 @@ import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { CONFIRMED_TERMINAL_STATUSES } from '../../services/billing/reactivation-supersession-complete.js';
-import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -314,7 +314,7 @@ async function reapPendingCandidate(params: {
     // reconciles and only this reaper did not. No-op for accommodation subs (no
     // link row) and non-blocking by construction — both reconcilers swallow
     // their own errors, mirroring the webhook and dunning call sites.
-    await reconcileCommerceListingForSubscription({
+    await reconcileSubscriptionLinkedEntities({
         subscriptionId: row.id,
         subscriptionStatus: ABANDONED_STATUS,
         source: 'abandoned-pending-subs-cron'

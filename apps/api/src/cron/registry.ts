@@ -22,6 +22,7 @@ import {
     cronRunPurgeJob,
     destinationWeatherFetchJob,
     dunningJob,
+    entitySubscriptionCacheReconcileJob,
     entityViewsPurgeJob,
     exchangeRateFetchJob,
     featuredByEntitlementReconcileJob,
@@ -94,6 +95,7 @@ export const cronJobs: CronJobDefinition[] = [
     pollApifyReputationRunsJob,
     partnerExpiryJob,
     partnerUnpaidReaperJob,
+    entitySubscriptionCacheReconcileJob,
     featuredByEntitlementReconcileJob,
     reactivationSupersessionReconcileJob,
     preapprovalLessExpiryJob

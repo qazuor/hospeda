@@ -35,7 +35,7 @@ import { entitySubscriptions, eq, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
-import { reconcileCommerceListingForSubscription } from './commerce-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service.js';
 
 /**
  * Statuses under which a link row counts against the owner's cap.
@@ -142,7 +142,7 @@ export async function countAttachedListings(input: { subscriptionId: string }): 
  * 1. the link row, upserted on `(entity_type, entity_id)` — the same unique
  *    constraint the per-listing model used, now meaning "which subscription
  *    covers this listing" rather than "this listing's subscription";
- * 2. `reconcileCommerceListingForSubscription`, so an attach onto an already
+ * 2. `reconcileSubscriptionLinkedEntities`, so an attach onto an already
  *    `active` subscription publishes the listing immediately. Without it the
  *    listing sits PRIVATE until some unrelated webhook happens to fire for that
  *    subscription — the owner pays nothing extra, sees nothing appear, and has
@@ -187,7 +187,7 @@ export async function attachListingToSubscription(input: {
 
     // Non-throwing by contract (see the reconcile service), so a reconcile
     // failure cannot turn a successful attach into an error the owner retries.
-    await reconcileCommerceListingForSubscription({
+    await reconcileSubscriptionLinkedEntities({
         subscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
         source: 'commerce-attach'

@@ -75,6 +75,15 @@ vi.mock('@repo/db', () => ({
     }
 }));
 
+// HOS-1084: `owner-entitlement.ts` now consults the shared
+// `entity_subscriptions` status cache before walking QZPay. This suite covers
+// the LIVE resolution path, so every owner is forced to be a cache MISS —
+// which is precisely the behaviour a miss must have: fall through to exactly
+// what this module did before the cache existed.
+vi.mock('../../src/services/entity-subscription-cache.service', () => ({
+    readAccommodationSubscriptionCacheByOwnerIds: vi.fn(async () => new Map())
+}));
+
 // HOS-296: `resolveOwnerRoles` reads the hats through the shared `getUserRoles`
 // primitive, so the single-owner paths are stubbed here rather than through the
 // DB chain stub.

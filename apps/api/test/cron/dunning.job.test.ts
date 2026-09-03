@@ -24,18 +24,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // @sentry/node requires @sentry/opentelemetry at import time, which is not
 // available in the test environment. Stub it so transitive imports from
-// commerce-reconcile.service.ts (which uses service-core → renewal module)
+// subscription-linked-entities.service.ts (which uses service-core → renewal module)
 // don't fail.
 vi.mock('@sentry/node', () => ({
     captureException: vi.fn(),
     captureMessage: vi.fn()
 }));
 
-// commerce-reconcile.service imports @repo/service-core which transitively
-// imports @sentry/node. We mock the whole module since dunning tests don't
-// test commerce reconciliation (that's tested in its own suite).
-vi.mock('../../src/services/commerce-reconcile.service', () => ({
-    reconcileCommerceListingForSubscription: vi.fn().mockResolvedValue(undefined)
+// The single reconciler (HOS-1084) imports @repo/service-core which
+// transitively imports @sentry/node. We mock the whole module since dunning
+// tests don't test entity reconciliation (that has its own suites).
+vi.mock('../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: vi.fn().mockResolvedValue(undefined)
 }));
 
 const {

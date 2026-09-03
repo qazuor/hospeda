@@ -3,13 +3,15 @@
  *
  * "Chat IA" is an OWNER-level billing feature (EntitlementKey.AI_CHAT), not a
  * stored per-accommodation flag. The public list endpoint resolves the owning
- * host's entitlements (deduped by ownerId, cached) and attaches `hasAiChat` so
- * the listing card can show a "Chat IA" badge.
+ * host's entitlements (deduped by ownerId) and attaches `hasAiChat` so the
+ * listing card can show a "Chat IA" badge.
  *
- * This test mocks the service to return accommodations with known owners and
- * mocks the owner-entitlement resolver, asserting `hasAiChat` reflects the
- * owner's AI_CHAT entitlement, that each distinct owner is resolved once, and
- * that resolution failures fail closed (no badge).
+ * HOS-1084: the badge is read from the SAME batch resolution that gates
+ * `isVerified`, not from a second per-owner walk behind a route-local
+ * 5-minute `Map`. That map is gone, so what this suite pins is the property
+ * that survived it: one resolution per page, `hasAiChat` following the owner's
+ * AI_CHAT entitlement, and no badge when the resolver reports nothing for an
+ * owner (its documented failure mode).
  */
 
 import { EntitlementKey } from '@repo/billing';
@@ -20,7 +22,7 @@ import type { AppBindings } from '../../../../src/types';
 // ── Mock handles ──────────────────────────────────────────────────────────────
 
 const mockSearch = vi.fn();
-const mockResolveOwnerEntitlements = vi.fn();
+const mockResolveOwnerEntitlementsBatch = vi.fn();
 
 // ── Owner ids ────────────────────────────────────────────────────────────────
 
@@ -77,12 +79,10 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlements,
-    // SPEC-291 Phase 3b: stub the batch resolver added for the badge gate.
-    // Returns an empty Map so isVerified is not the concern of this test file —
-    // isVerified will be gated to false for all items, which doesn't affect
-    // hasAiChat assertions.
-    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
+    // HOS-1084: ONE resolver now feeds both badges. The single-owner resolver
+    // is no longer imported by this route at all, so stubbing it here would
+    // assert nothing.
+    resolveOwnerEntitlementsForOwnerIds: mockResolveOwnerEntitlementsBatch
 }));
 
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
@@ -156,9 +156,12 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
     });
 
     it('marks hasAiChat true only for accommodations whose owner has AI_CHAT', async () => {
-        mockResolveOwnerEntitlements.mockImplementation(async function (ownerId: string) {
-            return ownerId === OWNER_WITH_AI ? [EntitlementKey.AI_CHAT] : [];
-        });
+        mockResolveOwnerEntitlementsBatch.mockResolvedValue(
+            new Map([
+                [OWNER_WITH_AI, [EntitlementKey.AI_CHAT]],
+                [OWNER_WITHOUT_AI, []]
+            ])
+        );
         mockSearch.mockResolvedValue({
             data: {
                 items: [
@@ -180,8 +183,10 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         expect(items.find((i) => i.id === 'acc-2')?.hasAiChat).toBe(false);
     });
 
-    it('resolves each distinct owner only once (dedup by ownerId)', async () => {
-        mockResolveOwnerEntitlements.mockResolvedValue([EntitlementKey.AI_CHAT]);
+    it('resolves the whole page in ONE call, with owners deduped', async () => {
+        mockResolveOwnerEntitlementsBatch.mockResolvedValue(
+            new Map([[OWNER_WITH_AI, [EntitlementKey.AI_CHAT]]])
+        );
         mockSearch.mockResolvedValue({
             data: {
                 items: [
@@ -198,14 +203,16 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
 
-        // Both items share an owner → only one entitlement resolution.
-        expect(mockResolveOwnerEntitlements).toHaveBeenCalledTimes(1);
-        expect(mockResolveOwnerEntitlements).toHaveBeenCalledWith(OWNER_WITH_AI);
+        expect(mockResolveOwnerEntitlementsBatch).toHaveBeenCalledTimes(1);
+        expect(mockResolveOwnerEntitlementsBatch).toHaveBeenCalledWith([OWNER_WITH_AI]);
         expect(items.every((i) => i.hasAiChat === true)).toBe(true);
     });
 
-    it('fails closed (hasAiChat false) when entitlement resolution throws', async () => {
-        mockResolveOwnerEntitlements.mockRejectedValue(new Error('billing unavailable'));
+    it('fails closed (hasAiChat false) when the resolver reports nothing for the owner', async () => {
+        // The batch resolver never throws: a billing failure surfaces as an
+        // EMPTY entitlement array for that owner. So fail-closed here means the
+        // badge is absent, not that the request errors.
+        mockResolveOwnerEntitlementsBatch.mockResolvedValue(new Map([[OWNER_WITH_AI, []]]));
         mockSearch.mockResolvedValue({
             data: { items: [accommodation({ id: 'acc-1', ownerId: OWNER_WITH_AI })], total: 1 },
             error: null
@@ -219,21 +226,18 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const items = body.items as Array<Record<string, unknown>>;
         expect(items[0]?.hasAiChat).toBe(false);
     });
-});
 
-/**
- * Schema-contract guard. The route-factory mock above bypasses the real
- * `stripWithSchema` step, so it can't prove `hasAiChat` survives Zod parsing.
- * This asserts the field is declared on `AccommodationPublicSchema` — if it is
- * ever removed, `.strip()` would silently drop `hasAiChat` from every list
- * response and this test fails.
- */
-describe('AccommodationPublicSchema — F1 hasAiChat contract', () => {
-    it('declares an optional boolean hasAiChat so it survives serialization', async () => {
-        const { AccommodationPublicSchema } = await import('@repo/schemas');
-        expect(AccommodationPublicSchema.shape).toHaveProperty('hasAiChat');
-        // Accepts a boolean and is optional (undefined is valid).
-        expect(AccommodationPublicSchema.shape.hasAiChat.safeParse(true).success).toBe(true);
-        expect(AccommodationPublicSchema.shape.hasAiChat.safeParse(undefined).success).toBe(true);
+    it('fails closed when the owner is absent from the resolver map entirely', async () => {
+        mockResolveOwnerEntitlementsBatch.mockResolvedValue(new Map());
+        mockSearch.mockResolvedValue({
+            data: { items: [accommodation({ id: 'acc-1', ownerId: OWNER_WITH_AI })], total: 1 },
+            error: null
+        });
+
+        const app = await buildApp();
+        const res = await app.request('/');
+        const body = await res.json();
+        const items = body.items as Array<Record<string, unknown>>;
+        expect(items[0]?.hasAiChat).toBe(false);
     });
 });

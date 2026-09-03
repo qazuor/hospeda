@@ -23,6 +23,7 @@ import { RoleEnum } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../src/middlewares/owner-entitlement';
+import { readAccommodationSubscriptionCacheByOwnerIds } from '../../src/services/entity-subscription-cache.service';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -44,6 +45,15 @@ vi.mock('@repo/db', () => ({
     accommodations: { id: 'accommodations.id', ownerId: 'accommodations.ownerId' },
     users: { id: 'users.id' },
     userRole: { userId: 'user_role.user_id', role: 'user_role.role' }
+}));
+
+// HOS-1084: `owner-entitlement.ts` now consults the shared
+// `entity_subscriptions` status cache before walking QZPay. This suite covers
+// the LIVE resolution path, so every owner is forced to be a cache MISS —
+// which is precisely the behaviour a miss must have: fall through to exactly
+// what this module did before the cache existed.
+vi.mock('../../src/services/entity-subscription-cache.service', () => ({
+    readAccommodationSubscriptionCacheByOwnerIds: vi.fn(async () => new Map())
 }));
 
 // Mock PlanService (used by resolveOwnerLimitsForOwnerId, which is in the same
@@ -355,15 +365,14 @@ describe('resolveOwnerEntitlementsForOwnerIds', () => {
  * above uses distinct ownerIds that won't collide with the cache-contract test
  * below (which uses a dedicated 'owner-cache-hit' id).
  */
-describe('resolveOwnerEntitlementsForOwnerIds — cache behavior', () => {
+describe('resolveOwnerEntitlementsForOwnerIds — HOS-1084 cache behavior', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('serves a second call for the same ownerId from cache (no second DB query)', async () => {
+    it('re-reads on every call — there is no per-process memo left to go stale', async () => {
         const ownerId = 'owner-cache-hit-unique';
 
-        // First call — populates cache
         mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
         const billing = buildBillingMock('cust-cache', [EntitlementKey.HAS_VERIFICATION_BADGE]);
         vi.mocked(getQZPayBilling).mockReturnValue(
@@ -371,16 +380,96 @@ describe('resolveOwnerEntitlementsForOwnerIds — cache behavior', () => {
         );
 
         const first = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
-
         expect(first.get(ownerId)).toContain(EntitlementKey.HAS_VERIFICATION_BADGE);
         expect(mockSelect).toHaveBeenCalledTimes(1);
 
-        // Second call — should hit cache, no DB query
         vi.clearAllMocks();
+        mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
 
         const second = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
 
         expect(second.get(ownerId)).toContain(EntitlementKey.HAS_VERIFICATION_BADGE);
-        expect(mockSelect).not.toHaveBeenCalled();
+        // HOS-1084 deleted the 5-minute in-process Map this assertion used to
+        // protect. It was invisible to every other API instance and died on
+        // each deploy, so a host who changed plan saw one answer on one
+        // instance and another on the next, for five minutes, with nothing
+        // able to explain the difference. The shared `entity_subscriptions`
+        // row is the replacement; the query below is what reads it.
+        expect(mockSelect).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips the QZPay walk entirely when the shared cache answers for the owner', async () => {
+        const ownerId = 'owner-with-cached-row';
+
+        mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
+        const billing = buildBillingMock('cust-unused', [EntitlementKey.HAS_VERIFICATION_BADGE]);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(readAccommodationSubscriptionCacheByOwnerIds).mockResolvedValueOnce(
+            new Map([[ownerId, { status: 'active', planId: 'plan-uuid' }]])
+        );
+
+        const result = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
+
+        expect(result.get(ownerId)).toContain(EntitlementKey.HAS_VERIFICATION_BADGE);
+        // The point of the cache: the customer lookup and the subscription
+        // listing — two of the three QZPay round trips — never happen.
+        expect(billing.customers.getByExternalId).not.toHaveBeenCalled();
+        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
+        expect(billing.plans.get).toHaveBeenCalledWith('plan-uuid');
+    });
+
+    it('answers an empty set from a cached NON-granting status without touching QZPay', async () => {
+        const ownerId = 'owner-cached-cancelled';
+
+        mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
+        const billing = buildBillingMock('cust-unused-2', [EntitlementKey.HAS_VERIFICATION_BADGE]);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(readAccommodationSubscriptionCacheByOwnerIds).mockResolvedValueOnce(
+            new Map([[ownerId, { status: 'none', planId: null }]])
+        );
+
+        const result = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
+
+        expect(result.get(ownerId)).toEqual([]);
+        expect(billing.customers.getByExternalId).not.toHaveBeenCalled();
+        expect(billing.plans.get).not.toHaveBeenCalled();
+    });
+
+    it('resolves LIVE on a cache miss — a missing row is never a wrong answer', async () => {
+        const ownerId = 'owner-cache-miss';
+
+        mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
+        const billing = buildBillingMock('cust-live', [EntitlementKey.HAS_VERIFICATION_BADGE]);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        // Default mock returns an empty Map — every owner is a miss.
+
+        const result = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
+
+        expect(result.get(ownerId)).toContain(EntitlementKey.HAS_VERIFICATION_BADGE);
+        expect(billing.customers.getByExternalId).toHaveBeenCalledWith(ownerId);
+    });
+
+    it('resolves LIVE when the cache read itself throws', async () => {
+        const ownerId = 'owner-cache-broken';
+
+        mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
+        const billing = buildBillingMock('cust-live-2', [EntitlementKey.HAS_VERIFICATION_BADGE]);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(readAccommodationSubscriptionCacheByOwnerIds).mockRejectedValueOnce(
+            new Error('relation "entity_subscriptions" does not exist')
+        );
+
+        const result = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
+
+        expect(result.get(ownerId)).toContain(EntitlementKey.HAS_VERIFICATION_BADGE);
+        expect(billing.customers.getByExternalId).toHaveBeenCalledWith(ownerId);
     });
 });

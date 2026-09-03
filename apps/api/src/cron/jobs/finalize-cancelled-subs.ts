@@ -117,8 +117,8 @@ import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { hardCancelPreapprovalBestEffort } from '../../services/billing/preapproval-hard-cancel.js';
-import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
@@ -617,7 +617,7 @@ async function finalizeOne(
         // The sub was finalized to 'cancelled' → hide any linked commerce listing
         // (cancelled → PRIVATE). No-op for accommodation subs; non-blocking so a
         // reconcile failure never breaks the cron.
-        await reconcileCommerceListingForSubscription({
+        await reconcileSubscriptionLinkedEntities({
             subscriptionId,
             subscriptionStatus: 'cancelled',
             source: 'finalize-cancelled-cron'
