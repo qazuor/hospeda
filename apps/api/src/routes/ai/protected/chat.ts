@@ -72,6 +72,7 @@ import {
     type AiMessage,
     type LanguageEnum,
     PermissionEnum,
+    resolveAiChatTarget,
     ServiceErrorCode
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -212,6 +213,32 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const handlerStartMs = Date.now();
 
         // -----------------------------------------------------------------------
+        // Step 0 (HOS-400): resolve the target through the shared helper.
+        //
+        // `accommodationId` is now an OPTIONAL legacy alias, so reading it
+        // directly would resolve to `undefined` for any caller that sends the new
+        // `entityId` spelling. `resolveAiChatTarget` is the single place that
+        // knows about the alias.
+        //
+        // The request schema already accepts `entityType: 'gastronomy' |
+        // 'experience'`, but this route's per-vertical context assemblers and
+        // commerce owner-quota lookup are NOT wired yet. A commerce target is
+        // therefore refused explicitly rather than falling through into the
+        // accommodation lookup below, which would 404 while talking about an
+        // accommodation nobody asked about. This branch is the seam the
+        // assemblers replace; it must not survive the feature.
+        // -----------------------------------------------------------------------
+        const target = resolveAiChatTarget(body);
+        if (target.entityType !== 'accommodation') {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_IMPLEMENTED,
+                'El chat de IA todavía no está disponible para este tipo de ficha.',
+                { entityType: target.entityType }
+            );
+        }
+        const accommodationId = target.entityId;
+
+        // -----------------------------------------------------------------------
         // Step 1: Resolve ownerId from the accommodation row (pre-stream 404 guard).
         //
         // This is the seam described in SPEC-211 §7.3 step 1. The accommodation
@@ -223,13 +250,13 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const rows = await db
             .select({ ownerId: accommodations.ownerId })
             .from(accommodations)
-            .where(eq(accommodations.id, body.accommodationId))
+            .where(eq(accommodations.id, accommodationId))
             .limit(1);
 
         const ownerRow = rows[0] as { ownerId: string } | undefined;
         if (!ownerRow) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found.', {
-                accommodationId: body.accommodationId
+                accommodationId: accommodationId
             });
         }
         const ownerId = ownerRow.ownerId;
@@ -255,7 +282,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // -----------------------------------------------------------------------
         if (!ownerEntitlements.includes(EntitlementKey.AI_CHAT)) {
             apiLogger.warn(
-                { ownerId, accommodationId: body.accommodationId },
+                { ownerId, accommodationId: accommodationId },
                 'ai-chat: blocked — owner lacks AI_CHAT entitlement'
             );
             throw new ServiceError(
@@ -280,7 +307,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         if (ownerLimit !== -1) {
             if (ownerLimit === 0) {
                 apiLogger.warn(
-                    { ownerId, accommodationId: body.accommodationId },
+                    { ownerId, accommodationId: accommodationId },
                     'ai-chat: blocked — owner chat limit is 0 (feature disabled in plan)'
                 );
                 throw new ServiceError(
@@ -304,7 +331,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         ownerId,
-                        accommodationId: body.accommodationId,
+                        accommodationId: accommodationId,
                         currentCount: ownerUsed,
                         maxAllowed: ownerLimit
                     },
@@ -356,7 +383,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         if (consumerLimit !== -1) {
             if (consumerLimit === 0) {
                 apiLogger.warn(
-                    { userId: actor.id, accommodationId: body.accommodationId },
+                    { userId: actor.id, accommodationId: accommodationId },
                     'ai-chat: blocked — consumer chat limit is 0 (disabled in consumer plan)'
                 );
                 throw new ServiceError(
@@ -381,7 +408,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         userId: actor.id,
-                        accommodationId: body.accommodationId,
+                        accommodationId: accommodationId,
                         currentCount: consumerUsed,
                         maxAllowed: consumerLimit
                     },
@@ -406,14 +433,14 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
-                accommodationId: body.accommodationId,
+                accommodationId: accommodationId,
                 locale
             });
         }
 
         if (body.messages.length === AI_CHAT_MAX_MESSAGES) {
             captureChatEvent(actor.id, 'ai_chat_cap_reached', {
-                accommodationId: body.accommodationId,
+                accommodationId: accommodationId,
                 locale
             });
         }
@@ -422,7 +449,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const resolvedPrompt = composeSystemPrompt({ content, rules });
         const { contextBlock, systemMessage } = await assembleAccommodationContext({
             actor,
-            accommodationId: body.accommodationId,
+            accommodationId: accommodationId,
             resolvedPrompt,
             locale
         });
@@ -435,7 +462,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const maxTokens = await resolveChatMaxOutputTokens();
 
         captureChatEvent(actor.id, 'ai_chat_message_sent', {
-            accommodationId: body.accommodationId,
+            accommodationId: accommodationId,
             messageCount: body.messages.length,
             locale,
             ...(body.conversationId ? { conversationId: body.conversationId } : {})
@@ -461,7 +488,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 const aiMapping = mapAiEngineErrorToHttpStatus(error);
                 if (aiMapping?.code === 'MODERATION_BLOCKED') {
                     captureChatEvent(actor.id, 'ai_chat_moderation_blocked', {
-                        accommodationId: body.accommodationId,
+                        accommodationId: accommodationId,
                         locale
                     });
                 }
@@ -495,7 +522,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         ownerId,
-                        accommodationId: body.accommodationId,
+                        accommodationId: accommodationId,
                         error:
                             meteringError instanceof Error
                                 ? meteringError.message
@@ -530,7 +557,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         userId: actor.id,
-                        accommodationId: body.accommodationId,
+                        accommodationId: accommodationId,
                         error:
                             meteringError instanceof Error
                                 ? meteringError.message
@@ -543,7 +570,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             try {
                 const persistPromise = persistChatTurn({
                     userId: actor.id,
-                    accommodationId: body.accommodationId,
+                    accommodationId: accommodationId,
                     conversationId: body.conversationId ?? null,
                     userMessage: getLastUserTurn(body.messages),
                     assistantMessage: accumulatedAssistantText,
@@ -559,7 +586,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 if (resolvedConversationId === null) {
                     apiLogger.warn(
                         {
-                            accommodationId: body.accommodationId,
+                            accommodationId: accommodationId,
                             timeoutMs: PERSISTENCE_TIMEOUT_MS
                         },
                         'ai-chat: persistence timed out after 1500 ms (non-fatal)'
@@ -568,7 +595,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             } catch (error) {
                 apiLogger.error(
                     {
-                        accommodationId: body.accommodationId,
+                        accommodationId: accommodationId,
                         error: error instanceof Error ? error.message : String(error)
                     },
                     'ai-chat: persistence failed (non-fatal)'
@@ -576,7 +603,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             }
 
             captureChatEvent(actor.id, 'ai_chat_response_completed', {
-                accommodationId: body.accommodationId,
+                accommodationId: accommodationId,
                 locale,
                 provider: resolvedMeta.provider,
                 model: resolvedMeta.model,
@@ -606,7 +633,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                           resolvedPrompt,
                           systemMessage,
                           feature: FEATURE,
-                          accommodationId: body.accommodationId
+                          accommodationId: accommodationId
                       }
                   }
                 : {})

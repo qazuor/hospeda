@@ -140,6 +140,8 @@ async function seedSettingsWithFallback(
         providers: { stub: { enabled: true } },
         features: {
             chat: featureConfig,
+            chat_gastronomy: featureConfig,
+            chat_experience: featureConfig,
             text_improve: featureConfig,
             search: featureConfig,
             support: featureConfig,
@@ -230,6 +232,8 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
                 providers: { stub: { enabled: true } },
                 features: {
                     chat: newFeatureConfig,
+                    chat_gastronomy: newFeatureConfig,
+                    chat_experience: newFeatureConfig,
                     text_improve: newFeatureConfig,
                     search: newFeatureConfig,
                     support: newFeatureConfig,
@@ -294,6 +298,8 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
                 providers: { stub: { enabled: true } },
                 features: {
                     chat: updatedFeatureConfig,
+                    chat_gastronomy: updatedFeatureConfig,
+                    chat_experience: updatedFeatureConfig,
                     text_improve: updatedFeatureConfig,
                     search: updatedFeatureConfig,
                     support: updatedFeatureConfig,
@@ -335,6 +341,8 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
                 providers: { stub: { enabled: true } },
                 features: {
                     chat: updatedFeatureConfig,
+                    chat_gastronomy: updatedFeatureConfig,
+                    chat_experience: updatedFeatureConfig,
                     text_improve: updatedFeatureConfig,
                     search: updatedFeatureConfig,
                     support: updatedFeatureConfig,
