@@ -83,6 +83,23 @@ export class QrCodeService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Columns searched when the admin `search` (free-text) query param is given.
+     *
+     * The override is load-bearing, not decoration. The base class defaults to
+     * `['name']` and `qr_codes` has no `name` column — it has `label`. Unknown
+     * columns are dropped SILENTLY by `buildSearchCondition`, which then returns
+     * `undefined` for an empty condition list, so the default would attach no
+     * filter at all and `?search=plaza` would answer with every code in the
+     * table rather than the ones labelled "plaza".
+     *
+     * These are the same three columns `_buildSearchConditions` uses for the
+     * `search()` / `count()` carril, so both list paths match on the same fields.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['label', 'slug', 'targetUrl'];
+    }
+
     // ------------------------------------------------------------------
     // Permissions
     // ------------------------------------------------------------------
