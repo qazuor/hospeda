@@ -273,5 +273,15 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         key: EntitlementKey.PUBLISH_EXPERIENCE,
         name: 'Publish experience listings',
         description: 'Allows publishing experience listings on the platform'
+    },
+    // HOS-1058. Sits in the same trailing commerce section for the slicing
+    // reason above, but is granted differently from the four keys before it:
+    // those are uniform across a vertical's three tiers, this one is granted by
+    // the PREMIUM tier of each vertical only.
+    {
+        key: EntitlementKey.DOWNLOAD_LISTING_PDF,
+        name: 'Downloadable PDF listing sheet',
+        description:
+            'Allows downloading a print-ready PDF of the listing public page — photo, hours, contact and a QR back to the online sheet'
     }
 ];

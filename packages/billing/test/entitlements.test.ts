@@ -215,7 +215,7 @@ describe('Entitlement Configuration', () => {
             expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === 'ad_free')).toBeUndefined();
         });
 
-        it('should have 4 commerce vertical entitlements (HOS-1074)', () => {
+        it('should have 4 vertical-wide commerce entitlements (HOS-1074)', () => {
             // Arrange — one EDIT/PUBLISH pair per vertical. Cross-checked against
             // the vertical→keys map that `plans.config.ts` actually grants from,
             // so this list cannot drift from the catalogue.
@@ -234,16 +234,33 @@ describe('Entitlement Configuration', () => {
             }
         });
 
+        it('keeps the premium-only brochure key OUT of the vertical-wide map (HOS-1058)', () => {
+            // `ALL_COMMERCE_ENTITLEMENT_KEYS` is derived from the map the GATE
+            // reads as its floor for EVERY tier of a vertical. A tier
+            // differentiator listed there would be handed to básico as well,
+            // which is the whole failure this key is defined to avoid — so its
+            // absence from that map is the assertion, and its presence in the
+            // definitions is what makes it a real, labelled key.
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS]).not.toContain(
+                EntitlementKey.DOWNLOAD_LISTING_PDF
+            );
+            expect(
+                ENTITLEMENT_DEFINITIONS.find((e) => e.key === EntitlementKey.DOWNLOAD_LISTING_PDF)
+            ).toBeDefined();
+        });
+
         it('should have all 7 categories totaling to the full definitions count', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
             // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
-            // HOS-1074: commerce category added at 4)
+            // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
             const touristCount = 13;
             const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
-            const commerceCount = 4; // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical
+            // HOS-1074 — one EDIT/PUBLISH pair per commerce vertical (4);
+            // HOS-1058 — plus the premium-only printable ficha (1).
+            const commerceCount = 5;
 
             // Act & Assert
             expect(

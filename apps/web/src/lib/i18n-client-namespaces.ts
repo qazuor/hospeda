@@ -139,6 +139,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'blog.categories',
     'comments.form',
     'comments.thread',
+    // HOS-1058 — `BrochureDownloadButton.client.tsx` names all four states
+    // (`downloading`/`download`/`locked`/`error`) with an inline Spanish
+    // fallback, so a missing prefix does not render a raw key on an /en/ or
+    // /pt/ page — it silently prints Spanish there instead.
+    'commerce.brochure',
     'commerce.changePassword',
     // NOT an i18n key — a `PermissionEnum` VALUE (`commerce.editOwn`), named as a
     // string literal by `UserMenu.client.tsx` to decide the PostHog
