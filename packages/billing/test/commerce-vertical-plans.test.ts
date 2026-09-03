@@ -10,9 +10,10 @@
  * just as happily with the middleware unwired.
  *
  * Note the two things asserted by ABSENCE, both deliberate:
- * - a tier declares exactly ONE limit key, not the others at `-1`. Both read
- *   as unlimited downstream, but an absent key reads as "this plan does not
- *   meter that", which is what is true.
+ * - a tier declares exactly its OWN listing cap and its OWN vertical's AI-chat
+ *   cap (HOS-400) — never the other vertical's, and never `-1` for either.
+ *   Both read as unlimited downstream, but an absent key reads as "this plan
+ *   does not meter that", which is what is true.
  * - the vertical plans are absent from `ALL_PLANS`, which is what keeps the
  *   accommodation seed loop, the public plan list and the grant-matrix
  *   snapshot accommodation-only.
@@ -77,12 +78,23 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         ]);
     });
 
-    it('declares exactly one limit key per tier, and it is that vertical own cap', () => {
+    it('declares exactly two limit keys per tier: the listing cap and the vertical AI-chat cap (HOS-400)', () => {
+        // HOS-400 added a second limit to every tier of both catalogues: the
+        // vertical's own AI-chat quota, declared even by tiers that grant zero
+        // of it (see `commerceVerticalTier`'s doc — an omitted key would read
+        // as UNLIMITED downstream, not zero). "Exactly one" was true until then;
+        // it is "exactly two, in this order" now.
         for (const plan of ALL_GASTRONOMY_PLANS) {
-            expect(plan.limits.map((l) => l.key)).toEqual([LimitKey.MAX_GASTRONOMIES]);
+            expect(plan.limits.map((l) => l.key)).toEqual([
+                LimitKey.MAX_GASTRONOMIES,
+                LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH
+            ]);
         }
         for (const plan of ALL_EXPERIENCE_PLANS) {
-            expect(plan.limits.map((l) => l.key)).toEqual([LimitKey.MAX_EXPERIENCES]);
+            expect(plan.limits.map((l) => l.key)).toEqual([
+                LimitKey.MAX_EXPERIENCES,
+                LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH
+            ]);
         }
     });
 
@@ -142,16 +154,23 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // on sale again and is no longer priced identically to básico, so
         // "same price" is replaced by the assertion that actually has to hold
         // for a dearer tier to be honest: it costs MORE and gives at least as
-        // much. The cap and the trial stay byte-identical — the cap because one
-        // listing per owner is still the whole commercial substance of §6.8,
-        // the trial because no tier of either vertical sells a different one.
+        // much. The LISTING cap and the trial stay byte-identical — the cap
+        // because one listing per owner is still the whole commercial substance
+        // of §6.8, the trial because no tier of either vertical sells a
+        // different one. The AI-chat limit is deliberately EXCLUDED from that
+        // byte-identity (HOS-400): only premium grants `AI_CHAT`, so its quota
+        // is the one place premium and básico are meant to differ, and a
+        // superset check must not demand equality on the one limit that proves
+        // the entitlement gate actually means something.
         for (const [basico, premium] of [
             [GASTRONOMY_BASICO_PLAN, GASTRONOMY_PREMIUM_PLAN],
             [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PREMIUM_PLAN]
         ] as const) {
             expect(premium.isActive).toBe(true);
             expect(premium.monthlyPriceArs).toBeGreaterThan(basico.monthlyPriceArs);
-            expect(basico.limits).toEqual(premium.limits);
+            expect(basico.limits[0]).toEqual(premium.limits[0]);
+            expect(basico.limits[1]?.value).toBe(0);
+            expect(premium.limits[1]?.value).toBeGreaterThan(basico.limits[1]?.value ?? 0);
             expect(basico.hasTrial).toBe(premium.hasTrial);
             expect(basico.trialDays).toBe(premium.trialDays);
             for (const key of basico.entitlements) {
