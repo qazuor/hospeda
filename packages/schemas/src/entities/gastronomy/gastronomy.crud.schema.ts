@@ -264,6 +264,29 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     menuFileUrl: true,
     menuFilePublicId: true,
     menuFileKind: true,
+    // HOS-1113: three more that the owner PATCH already refuses and this
+    // create silently accepted, because a `.omit()` schema takes every base
+    // field it does not name. The owner-create body is spread verbatim into
+    // `GastronomyAdminCreateInputSchema.parse(...)` by the route handler and
+    // inserted, so "accepted here" means "written to the row".
+    //
+    // - `adminInfo` — the `admin_info` jsonb column: internal staff notes plus
+    //   a `favorite` flag. It has its own permission-gated write path
+    //   (`BaseCrudAdminService.setAdminInfo`) and is stripped from every public
+    //   projection, so a merchant filling it in on create is writing into the
+    //   staff surface from an unauthenticated-role body.
+    // - `translationMeta` — SPEC-212 curation metadata, written by the AI
+    //   translation pipeline and documented "exposed on admin responses only".
+    //   No `translation_meta` column exists on `gastronomies` today, so this is
+    //   inert rather than live — it is omitted so it cannot become live the day
+    //   the column lands.
+    // - `media` — the `media` jsonb column was DROPPED (HOS-372); photos live in
+    //   `gastronomy_media`. `GastronomyUpdateInputSchema` omits it for exactly
+    //   this reason (see HOS-382 below); accepting it here reproduces the same
+    //   silently-vanishing-photo path on the owner's first save.
+    adminInfo: true,
+    translationMeta: true,
+    media: true,
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
