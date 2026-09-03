@@ -277,10 +277,41 @@ accommodation entitlement engine:
   `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
   accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
   snapshot tests all stay accommodation-only.
-- `commerce_listing_subscriptions` — a link table (one row per listing, UNIQUE on
-  `(entity_type, entity_id)`) that ties an active commerce subscription to its
-  concrete listing. The commerce-visibility reconciler reads this table to decide
-  whether a listing is publicly visible.
+- `entity_subscriptions` (renamed from `commerce_listing_subscriptions` by
+  HOS-1084) — **ONE subscription-status cache for the three verticals**, not a
+  commerce-only link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
+  where `entity_type` is `'accommodation' | 'gastronomy' | 'experience'`. It does
+  two jobs and not every vertical needs both: it maps a subscription to the
+  listings it covers (commerce needs this; accommodation resolves its listings
+  from `accommodations.owner_id`), and it lets a public request read the status
+  without joining `billing_subscriptions` (both need this). The commerce
+  visibility reconciler reads it to decide whether a listing is public;
+  `owner-entitlement.ts` reads it to resolve a host's entitlements without
+  walking QZPay.
+  Three things not to break:
+  - the UNIQUE is per **listing**, never per subscription — one subscription
+    legitimately owns many rows (a host's whole portfolio, a commerce owner's
+    1/3/10 cap), and a unique on `subscription_id` would reject the second
+    property of every multi-property host;
+  - a row with `subscription_id = NULL` and `status = 'none'` is a **negative
+    cache** entry, not a broken row. It is how an unsubscribed host — the most
+    common one on the platform — stays a cache HIT instead of falling through to
+    the live billing walk on every request;
+  - a **missing** row is never a wrong answer: the public read falls back to the
+    live resolution. Only a row that is present AND wrong can lie, which is what
+    the write-through path and the reconcile cron defend.
+- **One reconciler, six sites.** `reconcileSubscriptionLinkedEntities`
+  (`apps/api/src/services/subscription-linked-entities.service.ts`) is the only
+  bridge from the billing lifecycle to the rest of the platform: the MP webhook,
+  dunning (both branches), `finalize-cancelled-subs`, `abandoned-pending-subs`,
+  `preapproval-less-expiry` and the commerce attach path all call it and nothing
+  else. It drives commerce visibility AND the accommodation cache, so "did every
+  site get wired?" has one answer instead of six. The accommodation half ignores
+  the status it was handed and **re-derives** the owner's current subscription
+  from the DB, so a late webhook for a superseded subscription cannot un-publish
+  the one they are paying for. Backstop: the 6-hourly
+  `entity-subscription-cache-reconcile` cron re-derives every accommodation row
+  and prunes orphans.
 - The `product_domain` columns on `billing_plans` and `billing_subscriptions` are
   typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — accessed via
   normal typed queries (HOS-75), not raw SQL or the extras carril. The old

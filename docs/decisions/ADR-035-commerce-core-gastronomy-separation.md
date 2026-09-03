@@ -96,6 +96,17 @@ A `commerce_listing_subscriptions` link table (one row per listing, UNIQUE on
 `(entity_type, entity_id)`) ties each active commerce subscription to the
 concrete listing it covers. This table IS managed by the Hospeda Drizzle schema.
 
+> **Superseded in part by HOS-1084 (2026-09-03).** The table is now
+> `entity_subscriptions` and serves all three verticals: `entity_type` accepts
+> `'accommodation'` alongside `'gastronomy'` and `'experience'`, `subscription_id`
+> is nullable (a `status = 'none'` row caches "this owner holds no subscription"),
+> and a `plan_id` column lets a public read resolve entitlements without walking
+> QZPay. Nothing about the isolation this ADR decided changed — the entitlement
+> engine still counts only `'accommodation'` subscriptions, and
+> `subscriptionMatchesDomain()` is still the only place that compares a domain.
+> What changed is that accommodation now uses the same cache instead of resolving
+> its owner's plan live on every public request.
+
 ### 3. Admin-sells flow
 
 Merchants do not self-onboard in v1. The flow is:
@@ -207,7 +218,8 @@ This section is the acceptance gate for the CORE/GASTRO separation. SPEC-240
   compile-time-checked Drizzle column on both tables.
 - (-) The admin-sells flow means no self-service merchant onboarding in v1;
   deferred to a future spec when demand justifies it.
-- (~) The `commerce_listing_subscriptions` link table adds a join on listing reads
+- (~) The link table (renamed `entity_subscriptions` by HOS-1084, which extended
+  it to accommodation as well) adds a join on listing reads
   that need to check visibility — acceptable at current scale.
 
 ## Alternatives Considered
