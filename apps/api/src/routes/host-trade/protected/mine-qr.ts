@@ -31,6 +31,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import {
     buildHostTradeQrLabel,
     HOST_TRADE_QR_ENTITY_TYPE,
+    HOST_TRADE_QR_PURPOSE,
     HostTradeService,
     QrCodeService,
     ServiceError
@@ -103,6 +104,7 @@ export async function handleGetMyQr(ctx: Context) {
         actor,
         entityType: HOST_TRADE_QR_ENTITY_TYPE,
         entityId: id,
+        purpose: HOST_TRADE_QR_PURPOSE,
         targetUrl: buildHostTradeUsageUrl({ slug, siteUrl }),
         label: buildHostTradeQrLabel({ name, slug })
     });
