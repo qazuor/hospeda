@@ -533,7 +533,7 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
 //
 // Like every price in this file these are `'commercial'` fields — the database
 // wins, so an operator override through the admin UI stands and moving a number
-// in production is a data-migration (`0089`), not a deploy.
+// in production is a data-migration (`0090`), not a deploy.
 //
 
 /**
@@ -905,7 +905,7 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
  * `billing_prices` row (a zero-amount price reads as a free plan rather than an
  * unpriced one). Checkout resolves the PRICE row, not the plan column, and
  * hard-throws `NO_MONTHLY_PRICE` without it — so pricing it is what actually
- * makes it buyable, and the `0089` data-migration has to create that row for
+ * makes it buyable, and the `0090` data-migration has to create that row for
  * every already-seeded environment. It also gains the 30-day trial its four
  * priced siblings carry: the `hasTrial: false` default it held only ever meant
  * "not sellable yet", never a decision to sell without one. (The commerce
