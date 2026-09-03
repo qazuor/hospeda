@@ -298,6 +298,10 @@
                 "title": "Ficha pública propia",
                 "description": "Con fotos, descripción rica, horarios, contacto, redes y menú o precios. Aparecés en listados y búsquedas."
             },
+            "venueEvents": {
+                "title": "Your venue’s own agenda",
+                "description": "Live music night, happy hour, dinner show, the Tuesday deal. On a date, or the same day every week — typed once and published on your page. Available from the Professional tier upwards."
+            },
             "reviewsFaqs": {
                 "title": "Reseñas y FAQs",
                 "description": "Recibí opiniones moderadas y respondé las preguntas frecuentes de tus clientes."

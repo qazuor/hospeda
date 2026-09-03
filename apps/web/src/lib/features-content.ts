@@ -220,11 +220,18 @@ export const ANFITRIONES_LIST: readonly FeatureListItem[] = [
     }
 ] as const;
 
-/** Gastronomía y experiencias section: 4 benefit rows. */
+/** Gastronomía y experiencias section: 5 benefit rows. */
 export const GASTRO_LIST: readonly FeatureListItem[] = [
     {
         titleKey: 'features.gastro.list.ownProfile.title',
         descriptionKey: 'features.gastro.list.ownProfile.description'
+    },
+    {
+        // HOS-1042 — the venue's own agenda. A `gastronomy-pro` capability, and
+        // the copy says so: every other row on this list is on every tier, so a
+        // row that quietly is not would be the page over-promising.
+        titleKey: 'features.gastro.list.venueEvents.title',
+        descriptionKey: 'features.gastro.list.venueEvents.description'
     },
     {
         titleKey: 'features.gastro.list.reviewsFaqs.title',

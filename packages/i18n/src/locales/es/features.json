@@ -298,6 +298,10 @@
                 "title": "Ficha pública propia",
                 "description": "Con fotos, descripción rica, horarios, contacto, redes y menú o precios. Aparecés en listados y búsquedas."
             },
+            "venueEvents": {
+                "title": "La agenda de tu local",
+                "description": "Noche de música en vivo, happy hour, cena show, la promo de los martes. Con fecha, o todas las semanas el mismo día — se cargan una vez y quedan publicadas en tu ficha. Va desde el escalón Profesional."
+            },
             "reviewsFaqs": {
                 "title": "Reseñas y FAQs",
                 "description": "Recibí opiniones moderadas y respondé las preguntas frecuentes de tus clientes."
