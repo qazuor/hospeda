@@ -63,7 +63,43 @@ const LOADED_MENU = {
                         name: 'Empanadas',
                         description: 'De carne cortada a cuchillo',
                         priceCents: 250_000,
-                        isAvailable: true
+                        isAvailable: true,
+                        // HOS-1045. Present and null, which is what the API
+                        // returns for a dish nobody photographed — NOT absent.
+                        // The distinction matters here: this fixture is also
+                        // what the 403 tests below save, and a dish carrying a
+                        // photo would take them down the PREMIUM upsell branch
+                        // instead of the Profesional one they assert.
+                        photoUrl: null,
+                        photoPublicId: null,
+                        photoAlt: null
+                    }
+                ]
+            }
+        ],
+        file: null
+    }
+};
+
+const PHOTO_URL = 'https://res.cloudinary.com/demo/empanadas.jpg';
+
+/** The same carta, with the dish photographed (HOS-1045). */
+const LOADED_MENU_WITH_PHOTO = {
+    ok: true as const,
+    data: {
+        sections: [
+            {
+                name: 'Entradas',
+                description: null,
+                items: [
+                    {
+                        name: 'Empanadas',
+                        description: 'De carne cortada a cuchillo',
+                        priceCents: 250_000,
+                        isAvailable: true,
+                        photoUrl: PHOTO_URL,
+                        photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
+                        photoAlt: 'Empanadas recién horneadas'
                     }
                 ]
             }
@@ -135,7 +171,10 @@ describe('CommerceMenuManager (HOS-895)', () => {
                                 name: 'Empanadas',
                                 description: 'De carne cortada a cuchillo',
                                 priceCents: 250_000,
-                                isAvailable: true
+                                isAvailable: true,
+                                photoUrl: null,
+                                photoPublicId: null,
+                                photoAlt: null
                             }
                         ]
                     }
@@ -240,6 +279,99 @@ describe('CommerceMenuManager (HOS-895)', () => {
         // And the two ungated fallbacks are still offered — a refused save must
         // not read as "there is no way to show a menu on your plan".
         expect(screen.getByRole('status').textContent?.includes('foto o un PDF')).toBe(true);
+    });
+
+    // ── The photo per dish (HOS-1045) ───────────────────────────────────────
+    //
+    // The load-bearing property of the whole design: the photo is NOT held in a
+    // table keyed by the dish's id — `PUT .../menu` mints a new id for every
+    // dish on every save — so it survives only by riding INSIDE the submitted
+    // document. A round trip that dropped it would look completely normal in
+    // the editor and lose every picture on the owner's next save.
+
+    it('round-trips the dish photo through a save, verbatim', async () => {
+        mockGet.mockResolvedValue(LOADED_MENU_WITH_PHOTO as never);
+        mockPut.mockResolvedValue({ ok: true, data: LOADED_MENU_WITH_PHOTO.data } as never);
+
+        render(
+            <CommerceMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+
+        await waitFor(() => {
+            expect(mockPut).toHaveBeenCalledTimes(1);
+        });
+
+        // The WHOLE body, spelled out. Not `expect.objectContaining`, which is
+        // blind to a field that stopped being sent — and a silently dropped
+        // `photoPublicId` is precisely the failure that would leave a billed
+        // Cloudinary asset with nothing able to destroy it.
+        expect(mockPut).toHaveBeenCalledWith({
+            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`,
+            body: {
+                sections: [
+                    {
+                        name: 'Entradas',
+                        description: null,
+                        items: [
+                            {
+                                name: 'Empanadas',
+                                description: 'De carne cortada a cuchillo',
+                                priceCents: 250_000,
+                                isAvailable: true,
+                                photoUrl: PHOTO_URL,
+                                photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
+                                photoAlt: 'Empanadas recién horneadas'
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+    });
+
+    it('shows the PREMIUM upsell when the refused document carried a photo', async () => {
+        // Two entitlements produce the same 403 with the same code, and the
+        // payload is what tells them apart. Asserted against its mirror — the
+        // `plan Profesional` test above saves a photo-less carta and gets the
+        // other message — so a component that showed one message for every 403
+        // fails one of the two.
+        mockGet.mockResolvedValue(LOADED_MENU_WITH_PHOTO as never);
+        mockPut.mockResolvedValue({
+            ok: false,
+            error: { status: 403, message: 'entitlement required' }
+        } as never);
+
+        render(
+            <CommerceMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toHaveTextContent(/plan Premium/);
+        });
+
+        // And Save stays usable. The way out of this refusal is to remove the
+        // photos and save the carta without them, which a disabled button would
+        // make impossible — the reason this lock is a separate state from the
+        // carta lock, which DOES disable Save.
+        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeEnabled();
     });
 
     it('shows a genuine failure as a failure, not as an upsell', async () => {
