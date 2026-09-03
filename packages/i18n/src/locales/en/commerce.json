@@ -377,7 +377,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Structured menu"
+            "manageGastronomyMenu": "Structured menu",
+            "issueExperienceCertificate": "Experience certificates"
         },
         "create": {
             "pickVertical": {

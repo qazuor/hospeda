@@ -309,6 +309,10 @@
             "seo": {
                 "title": "Buen SEO incluido",
                 "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."
+            },
+            "certificates": {
+                "title": "Certificados para quem fez o passeio",
+                "description": "Em experiências, emita um certificado para quem participou: o nome, o passeio e a data, em PDF para imprimir ou enviar. Leva um QR que volta para a sua página."
             }
         },
         "note": "Mientras tu suscripción está activa, tu ficha es pública. ¿Querés sumarte? Se hace desde «sumar mi negocio» y nuestro equipo te da el alta."

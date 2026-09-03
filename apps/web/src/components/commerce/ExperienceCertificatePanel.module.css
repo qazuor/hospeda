@@ -1,0 +1,131 @@
+/**
+ * Styles for `ExperienceCertificatePanel.client.tsx` (HOS-1057).
+ *
+ * Every value is a design token with a literal fallback, the convention the
+ * rest of `components/commerce` follows — `check-tokens` fails the build on a
+ * bare hex that is not a fallback.
+ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--core-border);
+}
+
+.heading {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.hint {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-muted-foreground);
+}
+
+.form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-2);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.label {
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+}
+
+.input {
+    padding: var(--space-2);
+    border: 1px solid var(--core-border);
+    border-radius: var(--radius-input, 0.5rem);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    min-width: 0;
+}
+
+.submit {
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    cursor: pointer;
+    transition: opacity 150ms ease;
+}
+
+.submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.submit:not(:disabled):hover {
+    opacity: 0.85;
+}
+
+.list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--text-body-sm, 0.9375rem);
+}
+
+.itemName {
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.itemDate {
+    color: var(--core-muted-foreground);
+}
+
+.link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--brand-accent);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.link:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.error {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--destructive, #b91c1c);
+}
