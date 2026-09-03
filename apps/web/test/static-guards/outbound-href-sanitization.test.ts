@@ -125,13 +125,13 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
     'pages/[lang]/partners/[slug].astro#{link.href}':
         "the `socialLinks` builder in this same file's frontmatter drops every value the sanitizer refuses",
     'pages/[lang]/contacto/index.astro#{channel.href}':
-        'mailto:/tel:/wa.me composed in this file from i18n copy — our own contact details',
+        'mailto:/tel:/wa.me composed in this file from i18n copy and @/lib/brand-phone (HOS-364) — our own contact details',
     'pages/[lang]/contacto/index.astro#{href}':
         "this file's literal instagram.com/facebook.com URLs plus the same wa.me link",
     'pages/[lang]/destinos/index.astro#{badgeHref}':
         'an internal facet URL from `buildBadgeHref`; outbound only because HOS-524 puts `rel="nofollow"` on facet chips',
     'pages/[lang]/preguntas-frecuentes/index.astro#{whatsappHref}':
-        "module constant 'https://wa.me/543442453797'"
+        'getBrandPhoneWhatsAppUrl() (@/lib/brand-phone, HOS-364) — composed from our own configured number'
 });
 
 /**

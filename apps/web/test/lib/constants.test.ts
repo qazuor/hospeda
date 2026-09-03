@@ -21,16 +21,18 @@ describe('constants', () => {
     });
 });
 
-describe('contact number — AR mobile format', () => {
-    // Argentine mobile numbers carry a `9` after the country code (54 9 ...).
-    // Without it, wa.me links don't open a chat to a cell phone. The contact
-    // page already used the `9` form; the footer/JSON-LD lagged behind.
+describe('contact number — single source, two derived forms (HOS-364)', () => {
+    // Argentine mobile numbers need a `9` after the country code (54 9 ...) to
+    // reach a mobile over WhatsApp — but that `9` does NOT belong on a plain
+    // phone call, which is what the schema.org Organization telephone
+    // represents. Both forms now derive from the same HOSPEDA_BRAND_PHONE
+    // (see @/lib/brand-phone) instead of being hand-typed per surface.
     it('WhatsApp link uses the AR mobile prefix 549', () => {
         const whatsapp = SOCIAL_PROFILES.find((p) => p.platform === 'whatsapp');
         expect(whatsapp?.url).toBe('https://wa.me/5493442453797');
     });
 
-    it('Organization telephone is E.164 with the AR mobile 9 (+549)', () => {
-        expect(ORGANIZATION_INFO.telephone).toBe('+5493442453797');
+    it('Organization telephone is E.164 WITHOUT the AR mobile 9 — a plain call, not WhatsApp', () => {
+        expect(ORGANIZATION_INFO.telephone).toBe('+543442453797');
     });
 });

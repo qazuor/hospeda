@@ -74,7 +74,7 @@ const NON_PHONE_SHAPE = /[\p{L}/:]/u;
 
 /** Input for {@link buildWhatsAppLink}. */
 export interface BuildWhatsAppLinkInput {
-    /** Raw phone number as stored, in any human format (`+54 9 3442 45-3797`). */
+    /** Raw phone number as stored, in any human format (`+54 9 11 2345-6789`). */
     readonly phone: string;
     /**
      * Optional prefilled chat message, passed RAW.
@@ -132,10 +132,10 @@ export interface BuildWhatsAppLinkResult {
  * @example
  * ```ts
  * buildWhatsAppLink({
- *   phone: '+54 9 3442 45-3797',
+ *   phone: '+54 9 11 2345-6789',
  *   message: 'Hola, me interesa'
  * });
- * // → { url: 'https://wa.me/5493442453797?text=Hola%2C%20me%20interesa' }
+ * // → { url: 'https://wa.me/5491123456789?text=Hola%2C%20me%20interesa' }
  * ```
  */
 export function buildWhatsAppLink({

@@ -42,12 +42,17 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
+// Brand contact phone, single source of truth (HOS-364) — this page's
+// copy is the owner-approved artifact verbatim; only the phone digits are
+// parameterized so a real number change does not require re-editing prose.
+const brandPhone = getBrandPhoneLocalDisplay();
 
 // --- Edge cacheability (HOS-369 W2-2) ---
 // No session and no API call: the content is hardcoded copy, so it only
@@ -311,7 +316,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
     <a class="cta" href="https://hospeda.com.ar/es/publicar">hospeda.com.ar/es/publicar</a>
     <div class="phone">
       <span class="fact__k">¿Preferís que te acompañemos?</span>
-      <strong>Llamanos o escribinos por WhatsApp al 3442 453797</strong>
+      <strong>Llamanos o escribinos por WhatsApp al {brandPhone}</strong>
       <span class="finelines">Te ayudamos a cargar la ficha la primera vez, si querés.</span>
     </div>
     <div class="finelines">

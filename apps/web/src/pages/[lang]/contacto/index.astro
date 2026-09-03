@@ -15,7 +15,12 @@ import ContactMiniMap from '@/components/contact/ContactMiniMap.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildWhatsAppLink } from '@/lib/whatsapp';
+import {
+	getBrandPhoneDisplay,
+	getBrandPhoneE164,
+	getBrandPhoneTelHref,
+	getBrandPhoneWhatsAppUrl
+} from '@/lib/brand-phone';
 import {
 	EmailIcon,
 	PhoneIcon,
@@ -49,15 +54,17 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_SITE_CONFIG]
 });
 
-// ─── Contact data (from i18n, with hardcoded coords) ──────────────────────────
-const phoneRaw = t('contact.phone.value', '+54 3442 453797');
-const phoneHref = phoneRaw.replace(/[^+\d]/g, '');
-const whatsappRaw = t('contact.whatsapp.value', '+54 9 3442 453797');
+// ─── Contact data (brand phone from the single source of truth, HOS-364) ──────
+// The phone and WhatsApp numbers are the SAME Hospeda contact line, no longer
+// duplicated per-locale in i18n — see `@/lib/brand-phone`.
+const phoneDisplay = getBrandPhoneDisplay();
+const phoneHref = getBrandPhoneTelHref();
+const phoneE164 = getBrandPhoneE164();
 // `null` when the configured value is not a dialable number. Every consumer
 // below must degrade instead of emitting `href={null}`: Astro drops the
 // attribute, leaving a fully-styled <a> that is neither a link nor
-// keyboard-focusable — see `@/lib/whatsapp`.
-const whatsappHref = buildWhatsAppLink({ phone: whatsappRaw }).url;
+// keyboard-focusable — see `@/lib/brand-phone`.
+const whatsappHref = getBrandPhoneWhatsAppUrl();
 const emailValue = t('contact.email.value', 'info@hospeda.com.ar');
 const addressValue = t('contact.address.value', 'Concepción del Uruguay, Entre Ríos, Argentina');
 
@@ -91,9 +98,9 @@ const channels = [
 			'contact.channels.phone.description',
 			'Lunes a viernes, 9 a 18 hs (UTC-3).'
 		),
-		value: phoneRaw,
+		value: phoneDisplay,
 		cta: t('contact.channels.phone.cta', 'Llamanos'),
-		href: `tel:${phoneHref}`,
+		href: phoneHref,
 		external: false
 	},
 	{
@@ -103,7 +110,7 @@ const channels = [
 			'contact.channels.whatsapp.description',
 			'Respuesta rápida en horario de oficina.'
 		),
-		value: whatsappRaw,
+		value: phoneDisplay,
 		cta: t('contact.channels.whatsapp.cta', 'Chatear por WhatsApp'),
 		href: whatsappHref,
 		external: true
@@ -149,7 +156,7 @@ const contactPageJsonLd = {
 		name: 'Hospeda',
 		url: siteBase,
 		email: emailValue,
-		telephone: phoneRaw,
+		telephone: phoneE164,
 		address: {
 			'@type': 'PostalAddress',
 			addressLocality: 'Concepción del Uruguay',
@@ -161,7 +168,7 @@ const contactPageJsonLd = {
 				'@type': 'ContactPoint',
 				contactType: 'customer support',
 				email: emailValue,
-				telephone: phoneRaw,
+				telephone: phoneE164,
 				availableLanguage: ['Spanish', 'English', 'Portuguese'],
 				areaServed: 'AR'
 			}
