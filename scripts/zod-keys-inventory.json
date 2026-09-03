@@ -1232,6 +1232,9 @@
         "zodError.gastronomy.menuItem.priceCents.int",
         "zodError.gastronomy.menuItem.priceCents.max",
         "zodError.gastronomy.menuItem.priceCents.min",
+        "zodError.gastronomy.menuItemPhoto.alt.max",
+        "zodError.gastronomy.menuItemPhoto.publicId.max",
+        "zodError.gastronomy.menuItemPhoto.url.invalid",
         "zodError.gastronomy.menuSection.description.max",
         "zodError.gastronomy.menuSection.items.max",
         "zodError.gastronomy.menuSection.name.max",
@@ -1904,7 +1907,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1903,
+    "total": 1906,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1945,7 +1948,7 @@
         "experienceFeature": 4,
         "feature": 61,
         "featureFlag": 6,
-        "gastronomy": 55,
+        "gastronomy": 58,
         "gastronomyFeature": 4,
         "health": 14,
         "hostTrade": 12,

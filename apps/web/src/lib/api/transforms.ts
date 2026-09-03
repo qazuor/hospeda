@@ -2718,7 +2718,8 @@ function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
 
 /**
  * Maps the raw `menuSections` array a gastronomy detail payload carries
- * (HOS-895 PR2) into the shape `GastronomyMenuSection.astro` renders.
+ * (HOS-895 PR2, per-dish photos added by HOS-1045) into the shape
+ * `GastronomyMenu.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing — the same treatment the
@@ -2745,7 +2746,12 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
                               : item.priceCents == null
                                 ? null
                                 : Number(item.priceCents),
-                      isAvailable: item.isAvailable !== false
+                      isAvailable: item.isAvailable !== false,
+                      // HOS-1045. Already withheld server-side for an owner
+                      // whose plan does not grant `menu_item_photos`, so a
+                      // present value here is one the API decided to publish.
+                      photoUrl: item.photoUrl == null ? null : String(item.photoUrl),
+                      photoAlt: item.photoAlt == null ? null : String(item.photoAlt)
                   }))
                 : []
         }))

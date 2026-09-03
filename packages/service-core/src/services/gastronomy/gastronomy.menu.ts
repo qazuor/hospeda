@@ -21,13 +21,18 @@
  * ## Why delete-and-reinsert rather than a diff
  *
  * Item ids are not stable across a save, and callers are told so by the payload
- * schema, which carries no ids at all. That is a real cost — HOS-1045 will hang
- * photos off an item id, and HOS-1054's per-dish allergens likewise — and it is
- * the reason both are named here rather than discovered later: when either
- * lands, this function grows a diff that preserves the id of an item whose
- * position and name are unchanged. Until something REFERENCES an item, a diff
- * would be machinery with no consequence, and the reinsert is what makes the
- * transaction trivially correct.
+ * schema, which carries no ids at all. HOS-895 named that as a cost it would
+ * have to pay back — "when HOS-1045 lands, this function grows a diff that
+ * preserves the id of an item whose position and name are unchanged".
+ *
+ * **HOS-1045 landed and it did not.** The photo is stored in COLUMNS on the
+ * item row and carried inside the submitted document, so it is reinserted with
+ * its dish and there is nothing keyed on the id to preserve. The diff would
+ * have bought exactly one thing — a stable id — and nothing needs one, so it
+ * stays unwritten and the reinsert stays trivially correct. HOS-1054's per-dish
+ * allergens can take the same road (a column or a JSONB array on the row); a
+ * diff becomes necessary only when something OUTSIDE this document points at an
+ * item, and nothing does yet.
  *
  * ## Permissions vs. entitlements
  *
@@ -285,6 +290,23 @@ export async function replaceGastronomyMenu(
                             // turn it into "a consultar".
                             priceCents: item.priceCents ?? null,
                             isAvailable: item.isAvailable,
+                            // HOS-1045 — the dish's photo. It rides INSIDE the
+                            // document rather than in a table keyed on the item
+                            // id, because this very function mints a new id for
+                            // every dish on every save; see the item table's
+                            // docblock. `|| null` and NOT `?? null` here (the
+                            // opposite of `priceCents` above): the client sends
+                            // `''` to mean "cleared", and an empty string in a
+                            // URL column is a photo that renders broken.
+                            //
+                            // Whether the caller's PLAN allows a dish photo is
+                            // decided BEFORE this, at the route
+                            // (`refuseUnentitledMenuItemPhotos`), the same
+                            // permission/entitlement split this module's
+                            // docblock describes.
+                            photoUrl: item.photoUrl || null,
+                            photoPublicId: item.photoPublicId || null,
+                            photoAlt: item.photoAlt || null,
                             displayOrder: itemIndex,
                             createdById: actor.id,
                             updatedById: actor.id

@@ -37,6 +37,19 @@
  *
  * A PDF and an image are NOT rendered the same way: `fileKind` decides
  * between an inline `<img>` and a "view PDF" link.
+ *
+ * ## The per-dish photo (HOS-1045)
+ *
+ * `item.photoUrl` arrives pre-filtered by the SAME route, under a NARROWER
+ * gate: the carta needs `manage_gastronomy_menu` (gastronomy-pro), a picture on
+ * a dish of it needs `menu_item_photos` (premium). So a carta with every
+ * `photoUrl` null is the ordinary shape for a `-pro` venue and is not a bug —
+ * this component has no gate of its own to apply and never asks why.
+ *
+ * The `<img>` is the LAST child of the row and is `loading="lazy"`, so a
+ * forty-dish carta does not fetch forty images before the page settles. Its
+ * `alt` falls back to the dish's own name rather than to `''`: an empty alt
+ * says "decorative", and a photo of the dish being described is not.
  */
 
 import type { GastronomyMenuSection } from '@/data/types';
@@ -113,6 +126,15 @@ const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No dispon
                                 )}
                                 {!item.isAvailable && (
                                     <span class="gastro-menu__item-badge">{unavailableLabel}</span>
+                                )}
+                                {resolveSafeExternalUrl(item.photoUrl) && (
+                                    <img
+                                        src={resolveSafeExternalUrl(item.photoUrl)}
+                                        alt={item.photoAlt || item.name}
+                                        class="gastro-menu__item-photo"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
                                 )}
                             </li>
                         ))}
@@ -237,6 +259,27 @@ const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No dispon
         font-size: 0.85rem;
         color: var(--core-muted-foreground);
         margin: 4px 0 0;
+    }
+
+    /*
+     * HOS-1045. Capped rather than full-bleed: the carta is a LIST and the
+     * photos are evidence for its rows, so a picture that grew to the column
+     * width would turn every dish into a card and bury the prices the list
+     * exists to show.
+     */
+    .gastro-menu__item-photo {
+        display: block;
+        margin-top: var(--space-2, 8px);
+        max-width: 220px;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: var(--radius-card, 24px);
+        border: 1px solid var(--border);
+    }
+
+    .gastro-menu__item[data-unavailable='true'] .gastro-menu__item-photo {
+        opacity: 0.55;
     }
 
     .gastro-menu__item-badge {

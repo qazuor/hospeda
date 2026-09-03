@@ -41,6 +41,7 @@ import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
 import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
+import { protectedUploadGastronomyMenuItemPhotoRoute } from './uploadMenuItemPhoto';
 import { protectedGastronomyViewStatsRoute } from './viewStats';
 import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
@@ -86,6 +87,13 @@ app.route('/', protectedUploadGastronomyMenuFileRoute);
 
 // DELETE /{id}/menu-file — clear it, asset included. Same gate as the upload.
 app.route('/', protectedDeleteGastronomyMenuFileRoute);
+
+// POST /{id}/menu-item-photo — upload ONE dish photo (HOS-1045). Gated on
+// MENU_ITEM_PHOTOS (gastronomy-premium), a strictly narrower gate than the
+// carta's: writing a carta is `-pro`, putting a picture on a dish of it is the
+// tier above. Returns the asset; the association is written by PUT /{id}/menu,
+// because a dish's id does not survive that write.
+app.route('/', protectedUploadGastronomyMenuItemPhotoRoute);
 
 // Menú del día (HOS-1041) — a dish with its own validity window. Registered
 // before /{id} for the same DEFENSIVE reason as the entries above.

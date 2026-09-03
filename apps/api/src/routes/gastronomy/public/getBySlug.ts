@@ -10,7 +10,7 @@ import {
     getGastronomyDailySpecials,
     getGastronomyEvents,
     getGastronomyMenu,
-    resolveOwnerGastronomyPlanEntitlements,
+    resolveOwnerGastronomyPlanEntitlementSet,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -75,13 +75,16 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // when the carta was typed or the file was uploaded. See the resolver's
         // own doc for why this is a live read rather than a synced column.
         //
-        // HOS-1042 adds the venue agenda on those same terms, and takes the
-        // plan's whole entitlement SET in ONE resolver call rather than asking
-        // a second boolean question. Two calls would be three extra queries per
-        // page view AND would let the carta and the agenda be answered from
-        // different reads of the same subscription if a plan change landed
-        // between them — a page that showed one paid feature and withheld the
-        // other, for no reason a reader could see.
+        // FOUR gated features now hang off this page — the carta (HOS-895), the
+        // per-dish photos (HOS-1045), the menú del día (HOS-1041) and the venue
+        // agenda (HOS-1042) — and they take the plan's whole entitlement SET in
+        // ONE resolver call. Per-feature calls would multiply a three-query
+        // lookup by four AND would let the four answers come from different
+        // reads of the same subscription if a plan change landed between them:
+        // a page showing one paid feature and withholding another, for no
+        // reason a reader could see. The nesting HOS-1045 warns about (a dish
+        // photo surviving a carta that was withheld) is impossible here for the
+        // same reason — one lookup, one instant.
         //
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the protected menu routes use.
@@ -125,7 +128,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
             getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
             getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today }),
-            resolveOwnerGastronomyPlanEntitlements({ ownerId: gastronomy.ownerId })
+            resolveOwnerGastronomyPlanEntitlementSet({ ownerId: gastronomy.ownerId })
         ]);
 
         const menuGate = applyGastronomyMenuManagementGate({
@@ -133,7 +136,8 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             menuSections: menuResult.error ? [] : menuResult.data.sections,
             ownerGrantsMenuManagement: ownerPlanEntitlements.has(
                 EntitlementKey.MANAGE_GASTRONOMY_MENU
-            )
+            ),
+            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS)
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({
