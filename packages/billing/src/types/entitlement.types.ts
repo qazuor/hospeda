@@ -102,6 +102,40 @@ export enum EntitlementKey {
      */
     MANAGE_GASTRONOMY_MENU = 'manage_gastronomy_menu',
 
+    /**
+     * Issuing a certificate to a person who did an experience (HOS-1057).
+     *
+     * Experience-only by name and on purpose, the exact mirror of
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}: a restaurant has nothing
+     * to certify, so there is no second vertical for this key to be shared
+     * with.
+     *
+     * A TIER differentiator — `experience-pro` and UPWARDS (owner decision,
+     * 2026-09-01) — so, like the two keys above it, it is deliberately NOT in
+     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`. That map is the floor
+     * `commerceVerticalEntitlementMiddleware` hands EVERY tier of a vertical at
+     * once, and a paid capability listed there would be given to
+     * `experience-basico` as well. It reaches the gate through the union
+     * `resolveCommerceVerticalGrants` already performs over the subscribed
+     * plan's own `entitlements` column.
+     *
+     * `-premium` repeats the grant rather than inheriting it, for the reason
+     * `MANAGE_GASTRONOMY_MENU` already documents: these arrays are literal per
+     * plan and nothing composes a tier from the one below it, so omitting it
+     * would mean the dearer plan silently lost a feature `-pro` has.
+     *
+     * ## What it gates, and what it does not
+     *
+     * It gates the whole `/api/v1/protected/experiences/{id}/certificates`
+     * surface — issuing, listing back, and the PDF. There is no PUBLIC
+     * certificate URL for it to gate: the artifact that travels is the PDF file
+     * itself, and the only link it carries is a QR back to the experience's own
+     * public page. See the module doc of
+     * `apps/api/src/services/experience-certificate/certificate-response.ts`
+     * for why that decision was taken rather than left implicit.
+     */
+    ISSUE_EXPERIENCE_CERTIFICATE = 'issue_experience_certificate',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

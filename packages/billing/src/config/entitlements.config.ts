@@ -292,5 +292,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Structured gastronomy menu',
         description:
             'Allows building the venue menu as sections and dishes with names, descriptions and prices, instead of only linking or uploading it'
+    },
+    // HOS-1057. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has nothing to certify. The exact mirror of the key above
+    // it, one vertical over.
+    {
+        key: EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+        name: 'Experience certificates',
+        description:
+            'Allows issuing a printable certificate to a person who did the experience, naming them, the outing and its date'
     }
 ];

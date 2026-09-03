@@ -824,7 +824,19 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     trialDays: COMMERCE_TRIAL_DAYS
 });
 
-/** Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
+/**
+ * Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}.
+ *
+ * **Still `isActive: false` and unpriced, and HOS-1057 deliberately did not
+ * change that.** Granting a tier a capability and putting that tier on sale are
+ * two different decisions — the shape HOS-1118 names, and the reason
+ * `gastronomy-pro` spent a release active, priced and unbuyable. The owner
+ * decided the certificate belongs to `pro` (2026-09-01); whether `experience-pro`
+ * goes on sale, and at what price, is a separate call nobody has made. Until it
+ * is, this grant reaches nobody, exactly as `DOWNLOAD_LISTING_PDF` reaches
+ * nobody on the retired premium tiers — and the presentation page says so in
+ * as many words rather than promising a feature that cannot be bought.
+ */
 export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-pro',
     name: 'Experiencias Profesional',
@@ -833,7 +845,11 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     maxListings: 1,
     sortOrder: 2,
     isActive: false,
-    monthlyPriceArs: 0
+    monthlyPriceArs: 0,
+    // HOS-1057 — the first thing that separates this tier from `-basico` by more
+    // than its name: the certificate a provider issues to whoever did the
+    // experience. Owner decision, 2026-09-01 — `pro` and upwards.
+    extraEntitlements: [EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE]
 });
 
 /**
@@ -856,7 +872,16 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // HOS-1058 — R-1: the two verticals are separate domains, so the same
     // capability is granted to each vertical's premium plan on its own. There
     // is no "commerce" plan to grant it once.
-    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF]
+    //
+    // HOS-1057 adds the experience certificate, which is a `-pro` capability.
+    // Repeated here rather than inherited, exactly as GASTRONOMY_PREMIUM_PLAN
+    // repeats the carta: these arrays are literal per plan and nothing composes
+    // a tier from the one below it, so omitting it would mean the dearer plan
+    // silently lost a feature `-pro` has.
+    extraEntitlements: [
+        EntitlementKey.DOWNLOAD_LISTING_PDF,
+        EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+    ]
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */
