@@ -50,6 +50,10 @@ export const adminCreateQrCodeRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
+        // TYPE-WORKAROUND: the route factory hands the handler an untyped
+        // `Record<string, unknown>`; the body was already validated against
+        // `QrCodeCreateHttpSchema` by the factory, and the service re-validates
+        // it against the domain create schema before anything is written.
         const result = await qrCodeService.create(actor, body as unknown as QrCodeCreateInput);
 
         if (result.error) {

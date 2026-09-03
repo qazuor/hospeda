@@ -68,9 +68,15 @@ export const adminUpdateQrCodeRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
+        // TYPE-WORKAROUND: the route factory hands the handler an untyped
+        // `Record<string, unknown>`; the body was already validated against
+        // `QrCodeUpdateHttpSchema` by the factory, and the service re-validates
+        // it against the domain update schema — which is what refuses a slug.
         const result = await qrCodeService.update(
             actor,
             params.id as string,
+            // TYPE-WORKAROUND: untyped factory body, already validated against
+            // the HTTP update schema and re-validated by the service.
             body as unknown as QrCodeUpdateInput
         );
 
