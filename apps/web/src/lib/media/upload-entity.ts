@@ -65,6 +65,14 @@ const MAX_UPLOAD_TIMEOUT_MS = 90_000;
  * rather than using one flat value keeps that protection without punishing the
  * large uploads the raised cap now permits.
  *
+ * HOS-332 evaluated reverting this scaling now that client-side compression
+ * (`@/lib/media/compress-image`) shrinks most uploads to 1-2 MB before they
+ * reach this function — and kept it. HEIC on Chrome (which cannot decode
+ * HEIC) is the reason: compression falls back to uploading the ORIGINAL,
+ * uncompressed file in that case, so a near-cap HEIC photo on a mobile
+ * connection is still a real, expected input here. A flat, small timeout
+ * would turn that legitimate case into a false timeout.
+ *
  * @param fileSizeBytes - Size of the file being uploaded
  * @returns The timeout in milliseconds
  */

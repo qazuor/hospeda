@@ -35,7 +35,19 @@ export type PluralTranslate = (
     params?: Record<string, unknown>
 ) => string;
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+/**
+ * MIME types accepted from the file picker / drag-and-drop.
+ *
+ * HOS-332: `image/heic` was added by owner decision even though Chrome
+ * cannot DECODE it (no `createImageBitmap`/`ImageDecoder` support for HEIC —
+ * Safari can). That asymmetry is fine here: this list only gates which files
+ * are accepted at all, and the compression step
+ * (`@/lib/media/compress-image`) already falls back to uploading an
+ * undecodable file as-is. The server has accepted `image/heic` since before
+ * this change (`packages/media/src/server/validate-media-file.ts`); this list
+ * used to be the only thing standing in the way.
+ */
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
 
 // ----------------------------------------------------------------------------
 // Plan-derived gallery cap (HOS-1024)
@@ -108,20 +120,35 @@ export function resolveEffectiveGalleryCap({
 }
 
 /**
- * Validate a single file's MIME type and size against the shared entity
- * upload limits.
+ * Validate a single file's MIME type against the shared entity upload
+ * allowlist.
  *
  * @param file - The file selected or dropped by the user
  * @param t - Active translator
- * @returns A localized error message, or `null` when the file is valid
+ * @returns A localized error message, or `null` when the type is accepted
  */
-export function validatePhotoFile(file: File, t: Translate): string | null {
+export function validatePhotoFileType(file: File, t: Translate): string | null {
     if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
         return t(
             'host.properties.editor.photo.invalidType',
-            'Solo se permiten archivos JPG, PNG o WebP'
+            'Solo se permiten archivos JPG, PNG, WebP o HEIC'
         );
     }
+    return null;
+}
+
+/**
+ * Validate a single file's size against the shared entity upload limit.
+ *
+ * Called AFTER client-side compression (HOS-332) against the (possibly
+ * shrunk) file that will actually be uploaded — not the original — so a
+ * heavy original that compresses under the cap is accepted.
+ *
+ * @param file - The file to check (post-compression, when applicable)
+ * @param t - Active translator
+ * @returns A localized error message, or `null` when the size is within cap
+ */
+export function validatePhotoFileSize(file: File, t: Translate): string | null {
     if (file.size > mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB)) {
         return t(
             'host.properties.editor.photo.tooLarge',
@@ -130,6 +157,44 @@ export function validatePhotoFile(file: File, t: Translate): string | null {
         );
     }
     return null;
+}
+
+/**
+ * Full validation (type + size) for a file, in one call.
+ *
+ * Kept for callers that validate BEFORE any compression attempt (there are
+ * none left in this editor as of HOS-332, but the pairing is a natural unit
+ * worth keeping available and covered).
+ *
+ * @param file - The file selected or dropped by the user
+ * @param t - Active translator
+ * @returns A localized error message, or `null` when the file is valid
+ */
+export function validatePhotoFile(file: File, t: Translate): string | null {
+    return validatePhotoFileType(file, t) ?? validatePhotoFileSize(file, t);
+}
+
+/**
+ * Message shown when a file could not be compressed (the browser cannot
+ * decode its format — the canonical case is a HEIC photo on Chrome, which
+ * cannot decode HEIC at all, only Safari can) AND it still exceeds the
+ * upload size cap after that failed attempt.
+ *
+ * Deliberately distinct from the generic {@link validatePhotoFileSize}
+ * message: "the file is too large" reads as fixable by picking a smaller
+ * photo, but here the real fix is different (convert the format, or use a
+ * device/browser that can decode it) and the host deserves to be told that
+ * rather than left retrying the same rejected file.
+ *
+ * @param t - Active translator
+ * @returns A localized, actionable error message
+ */
+export function buildCompressionUnsupportedTooLargeMessage(t: Translate): string {
+    return t(
+        'host.properties.editor.photo.compressionUnsupportedTooLarge',
+        'No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.',
+        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+    );
 }
 
 /**

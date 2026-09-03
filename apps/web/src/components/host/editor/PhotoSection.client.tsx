@@ -123,6 +123,7 @@ export function PhotoSection({
         featuredItem,
         galleryItems,
         isUploading,
+        isCompressing,
         uploadProgress,
         uploadBatch,
         error,
@@ -261,11 +262,20 @@ export function PhotoSection({
                     ref={featuredInputRef}
                     id="featured-image-input"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
                     className={styles.fileInput}
                     onChange={handleFeaturedSelect}
                 />
             </div>
+
+            {/* Compressing (HOS-332) — shown while a large file is being
+                resized/recompressed client-side, BEFORE anything is sent, so
+                the picker does not look stuck at 0% for a multi-second decode. */}
+            {isCompressing && (
+                <p className={styles.uploadBatchStatus}>
+                    {t('host.properties.editor.photo.processingImage', 'Optimizando imagen…')}
+                </p>
+            )}
 
             {/* Upload Progress */}
             {isUploading && uploadProgress !== null && (
@@ -372,7 +382,7 @@ export function PhotoSection({
                     ref={galleryInputRef}
                     id="gallery-image-input"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
                     multiple={remainingGallerySlots > 1}
                     className={styles.fileInput}
                     disabled={!isGalleryCapResolved}

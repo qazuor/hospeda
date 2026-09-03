@@ -155,16 +155,18 @@
         }
     },
     "avatar": {
-        "hint": "Apenas JPEG, PNG e WebP · Máx. {{maxSize}} MB",
+        "hint": "Apenas JPEG, PNG, WebP e HEIC · Máx. {{maxSize}} MB",
         "actions": {
             "change": "Alterar avatar",
-            "uploading": "Enviando..."
+            "uploading": "Enviando...",
+            "processing": "Otimizando…"
         },
         "alt": "Avatar",
         "success": "Avatar atualizado com sucesso",
         "errors": {
-            "invalidType": "Apenas JPEG, PNG e WebP são aceitos",
+            "invalidType": "Apenas JPEG, PNG, WebP e HEIC são aceitos",
             "fileTooLarge": "Arquivo muito grande (máx. {{maxSize}} MB)",
+            "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}} MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
             "uploadFailed": "Erro ao enviar a imagem",
             "updateFailed": "Erro ao atualizar o perfil",
             "unexpectedResponse": "Resposta inesperada do servidor"
@@ -875,10 +877,12 @@
             "errors": {
                 "fileTooLarge": "La imagen no puede superar los {{maxSize}} MB.",
                 "invalidType": "El archivo debe ser una imagen JPG, PNG o WebP.",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}} MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
                 "unexpectedResponse": "Respuesta inesperada del servidor.",
                 "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
             },
-            "uploading": "Subiendo..."
+            "uploading": "Subiendo...",
+            "processing": "Otimizando…"
         },
         "fields": {
             "firstName": "Nome",

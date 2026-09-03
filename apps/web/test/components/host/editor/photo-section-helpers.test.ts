@@ -9,6 +9,7 @@ import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { describe, expect, it, vi } from 'vitest';
 import {
     buildCapExceededOnSelectMessage,
+    buildCompressionUnsupportedTooLargeMessage,
     buildPhotoMetadataUpdateBody,
     buildReorderPayload,
     GALLERY_CAP_PENDING_PLACEHOLDER,
@@ -17,6 +18,8 @@ import {
     resolveEffectiveGalleryCap,
     splitMediaRows,
     validatePhotoFile,
+    validatePhotoFileSize,
+    validatePhotoFileType,
     validatePhotoMetadataFields
 } from '@/components/host/editor/photo-section-helpers';
 
@@ -52,7 +55,7 @@ describe('validatePhotoFile', () => {
 
     it('rejects an unsupported MIME type', () => {
         const file = new File(['x'], 'photo.gif', { type: 'image/gif' });
-        expect(validatePhotoFile(file, t)).toContain('JPG, PNG o WebP');
+        expect(validatePhotoFile(file, t)).toContain('JPG, PNG, WebP o HEIC');
     });
 
     it('rejects a file over the size cap', () => {
@@ -62,6 +65,51 @@ describe('validatePhotoFile', () => {
         });
         const result = validatePhotoFile(file, t);
         expect(result).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
+    });
+});
+
+describe('validatePhotoFileType (HOS-332)', () => {
+    it('accepts JPEG, PNG, WebP, and HEIC', () => {
+        for (const type of ['image/jpeg', 'image/png', 'image/webp', 'image/heic']) {
+            const file = new File(['x'], 'photo', { type });
+            expect(validatePhotoFileType(file, t)).toBeNull();
+        }
+    });
+
+    it('rejects an unsupported type like AVIF (not yet enabled client-side)', () => {
+        const file = new File(['x'], 'photo.avif', { type: 'image/avif' });
+        expect(validatePhotoFileType(file, t)).toContain('JPG, PNG, WebP o HEIC');
+    });
+
+    it('never checks size', () => {
+        const bytes = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB) + 1;
+        const file = new File([new Uint8Array(new ArrayBuffer(bytes))], 'big.jpg', {
+            type: 'image/jpeg'
+        });
+        expect(validatePhotoFileType(file, t)).toBeNull();
+    });
+});
+
+describe('validatePhotoFileSize (HOS-332)', () => {
+    it('accepts a file at or under the cap', () => {
+        const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+        expect(validatePhotoFileSize(file, t)).toBeNull();
+    });
+
+    it('rejects a file over the cap, regardless of type', () => {
+        const bytes = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB) + 1;
+        const file = new File([new Uint8Array(new ArrayBuffer(bytes))], 'big.heic', {
+            type: 'image/heic'
+        });
+        expect(validatePhotoFileSize(file, t)).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
+    });
+});
+
+describe('buildCompressionUnsupportedTooLargeMessage (HOS-332)', () => {
+    it('names the size cap and is distinct from the generic too-large message', () => {
+        const message = buildCompressionUnsupportedTooLargeMessage(t);
+        expect(message).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
+        expect(message).not.toBe(validatePhotoFile(new File(['x'], 'x', { type: 'image/gif' }), t));
     });
 });
 

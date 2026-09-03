@@ -21,15 +21,18 @@ import {
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
+    buildCompressionUnsupportedTooLargeMessage,
     MAX_PHOTOS_LIMIT_KEY,
     mediaRowToItem,
     type PhotoMetadataUpdateBody,
     splitMediaRows,
-    validatePhotoFile
+    validatePhotoFileSize,
+    validatePhotoFileType
 } from './photo-section-helpers';
 import { usePhotoGalleryMutations } from './use-photo-gallery-mutations';
 
@@ -85,6 +88,14 @@ export interface UsePhotoSectionResult {
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
     readonly isUploading: boolean;
+    /**
+     * Whether a selected file is currently being resized/recompressed
+     * client-side (HOS-332), BEFORE the upload itself starts. Surfaced
+     * separately from `isUploading` so the UI can show "optimizing image…"
+     * instead of a progress bar stuck at 0% while nothing has left the
+     * browser yet.
+     */
+    readonly isCompressing: boolean;
     readonly uploadProgress: number | null;
     readonly uploadBatch: UploadBatchProgress | null;
     readonly error: string | null;
@@ -145,6 +156,7 @@ export function usePhotoSection({
 
     const [isHydrated, setIsHydrated] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [uploadBatch, setUploadBatch] = useState<UploadBatchProgress | null>(null);
     const [opLoading, setOpLoading] = useState(false);
@@ -278,19 +290,40 @@ export function usePhotoSection({
 
     const processFeaturedFile = useCallback(
         async (file: File) => {
-            const validationError = validatePhotoFile(file, t);
-            if (validationError) {
-                reportUploadError(validationError);
+            const typeError = validatePhotoFileType(file, t);
+            if (typeError) {
+                reportUploadError(typeError);
                 return;
             }
 
             setError(null);
+
+            // HOS-332: resize/recompress before the size cap is checked, so a
+            // heavy original that shrinks under the cap is accepted. Any
+            // failure to compress (unsupported format, no canvas support)
+            // falls back to the original file — never blocks the upload by
+            // itself.
+            setIsCompressing(true);
+            const compression = await compressImageForUpload({ file });
+            setIsCompressing(false);
+
+            const uploadFile = compression.file;
+            const sizeError = validatePhotoFileSize(uploadFile, t);
+            if (sizeError) {
+                reportUploadError(
+                    isCompressionUnavailable(compression)
+                        ? buildCompressionUnsupportedTooLargeMessage(t)
+                        : sizeError
+                );
+                return;
+            }
+
             setIsUploading(true);
             setUploadProgress(0);
 
             try {
                 const uploaded = await uploadEntityImage({
-                    file,
+                    file: uploadFile,
                     accommodationId,
                     onProgress: setUploadProgress
                 });
@@ -363,12 +396,12 @@ export function usePhotoSection({
         (e: React.DragEvent<HTMLButtonElement>) => {
             e.preventDefault();
             setIsDragOverFeatured(false);
-            if (isUploading || opLoading) return;
+            if (isUploading || isCompressing || opLoading) return;
             const file = e.dataTransfer.files?.[0];
             if (!file) return;
             void processFeaturedFile(file);
         },
-        [processFeaturedFile, isUploading, opLoading]
+        [processFeaturedFile, isUploading, isCompressing, opLoading]
     );
 
     const handleFeaturedDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
@@ -399,18 +432,42 @@ export function usePhotoSection({
             }
 
             for (const file of files) {
-                const validationError = validatePhotoFile(file, t);
-                if (validationError) {
-                    reportUploadError(validationError);
+                const typeError = validatePhotoFileType(file, t);
+                if (typeError) {
+                    reportUploadError(typeError);
                     return;
                 }
             }
 
             setError(null);
+
+            // HOS-332: resize/recompress the whole batch BEFORE checking the
+            // size cap, so a heavy original that shrinks under the cap is
+            // accepted — mirrors `processFeaturedFile`. Run concurrently
+            // (decode/encode is CPU-bound, not I/O-bound) so the batch is not
+            // gated behind N sequential compressions before any upload starts.
+            setIsCompressing(true);
+            const compressions = await Promise.all(
+                files.map((file) => compressImageForUpload({ file }))
+            );
+            setIsCompressing(false);
+
+            for (const compression of compressions) {
+                const sizeError = validatePhotoFileSize(compression.file, t);
+                if (sizeError) {
+                    reportUploadError(
+                        isCompressionUnavailable(compression)
+                            ? buildCompressionUnsupportedTooLargeMessage(t)
+                            : sizeError
+                    );
+                    return;
+                }
+            }
+
             setIsUploading(true);
 
-            for (let index = 0; index < files.length; index += 1) {
-                const file = files[index];
+            for (let index = 0; index < compressions.length; index += 1) {
+                const file = compressions[index]?.file;
                 if (!file) continue;
                 setUploadProgress(0);
                 setUploadBatch(
@@ -488,11 +545,11 @@ export function usePhotoSection({
         (e: React.DragEvent<HTMLButtonElement>) => {
             e.preventDefault();
             setIsDragOverGallery(false);
-            if (isUploading || opLoading) return;
+            if (isUploading || isCompressing || opLoading) return;
             const files = Array.from(e.dataTransfer.files ?? []);
             void processGalleryFiles(files);
         },
-        [processGalleryFiles, isUploading, opLoading]
+        [processGalleryFiles, isUploading, isCompressing, opLoading]
     );
 
     const handleGalleryDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
@@ -522,13 +579,14 @@ export function usePhotoSection({
         reportUploadError
     });
 
-    const anyOpInFlight = isUploading || opLoading;
+    const anyOpInFlight = isUploading || isCompressing || opLoading;
     const opsReady = isHydrated;
 
     return {
         featuredItem,
         galleryItems,
         isUploading,
+        isCompressing,
         uploadProgress,
         uploadBatch,
         error,

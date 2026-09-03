@@ -11,10 +11,17 @@ import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import styles from './AvatarUpload.module.css';
 
-/** Accepted image MIME types */
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+/**
+ * Accepted image MIME types.
+ *
+ * HOS-332: `image/heic` was added by owner decision — the server already
+ * accepted it; the compression pipeline (`@/lib/media/compress-image`) falls
+ * back to uploading it as-is on a browser that cannot decode HEIC (Chrome).
+ */
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
 
 /** Maximum avatar size in bytes, from the canonical cap in `@repo/media`. */
 const MAX_FILE_BYTES = mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB);
@@ -68,6 +75,12 @@ export function AvatarUpload({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [displayUrl, setDisplayUrl] = useState<string | null>(currentImageUrl ?? null);
     const [isLoading, setIsLoading] = useState(false);
+    /**
+     * Whether the selected file is currently being resized/recompressed
+     * client-side (HOS-332), BEFORE the upload itself starts. Shares the
+     * overlay spinner with `isLoading` so a large file never looks stuck.
+     */
+    const [isCompressing, setIsCompressing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +95,7 @@ export function AvatarUpload({
     const initials = getInitials({ name: userName, email: userEmail });
     const base = apiUrl.replace(/\/$/, '');
     const avatarAlt = userName ?? t('account.avatar.alt', 'Avatar');
+    const isBusy = isLoading || isCompressing;
 
     function handleButtonClick() {
         fileInputRef.current?.click();
@@ -108,18 +122,8 @@ export function AvatarUpload({
             return;
         }
 
-        if (file.size > MAX_FILE_BYTES) {
-            setError(
-                t(
-                    'account.avatar.errors.fileTooLarge',
-                    'Archivo muy grande (máx. {{maxSize}} MB)',
-                    {
-                        maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
-                    }
-                )
-            );
-            return;
-        }
+        // Size is checked AFTER compression (HOS-332, inside `uploadFile`),
+        // so a heavy original that shrinks under the cap is still accepted.
 
         const objectUrl = URL.createObjectURL(file);
         setPreviewUrl(objectUrl);
@@ -132,9 +136,33 @@ export function AvatarUpload({
         clearMessages();
 
         try {
+            // HOS-332: resize/recompress before the size cap is checked. Any
+            // failure to compress (unsupported format, no canvas support)
+            // falls back to the original file — never blocks the upload.
+            setIsCompressing(true);
+            const compression = await compressImageForUpload({ file });
+            setIsCompressing(false);
+
+            const uploadableFile = compression.file;
+            if (uploadableFile.size > MAX_FILE_BYTES) {
+                throw new Error(
+                    isCompressionUnavailable(compression)
+                        ? t(
+                              'account.avatar.errors.compressionUnsupportedTooLarge',
+                              'No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}} MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.',
+                              { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
+                          )
+                        : t(
+                              'account.avatar.errors.fileTooLarge',
+                              'Archivo muy grande (máx. {{maxSize}} MB)',
+                              { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
+                          )
+                );
+            }
+
             // Step 1: Upload the file as multipart form data
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', uploadableFile);
 
             const uploadResponse = await fetch(`${base}/api/v1/protected/media/upload`, {
                 method: 'POST',
@@ -227,10 +255,10 @@ export function AvatarUpload({
 
                 {/* Hover / loading overlay */}
                 <div
-                    className={`${styles.overlay} ${isLoading ? styles.overlayVisible : ''}`}
+                    className={`${styles.overlay} ${isBusy ? styles.overlayVisible : ''}`}
                     aria-hidden="true"
                 >
-                    {isLoading ? (
+                    {isBusy ? (
                         <span className={styles.spinner} />
                     ) : (
                         <ImageIcon
@@ -247,21 +275,23 @@ export function AvatarUpload({
                 type="button"
                 className={styles.changeButton}
                 onClick={handleButtonClick}
-                disabled={isLoading}
-                aria-busy={isLoading}
+                disabled={isBusy}
+                aria-busy={isBusy}
             >
                 <UploadIcon
                     size={16}
                     weight="regular"
                     aria-hidden="true"
                 />
-                {isLoading
-                    ? t('account.avatar.actions.uploading')
-                    : t('account.avatar.actions.change')}
+                {isCompressing
+                    ? t('account.avatar.actions.processing', 'Optimizando…')
+                    : isLoading
+                      ? t('account.avatar.actions.uploading')
+                      : t('account.avatar.actions.change')}
             </button>
 
             <p className={styles.hint}>
-                {t('account.avatar.hint', 'Solo JPEG, PNG y WebP · Máx. {{maxSize}} MB', {
+                {t('account.avatar.hint', 'Solo JPEG, PNG, WebP y HEIC · Máx. {{maxSize}} MB', {
                     maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
                 })}
             </p>
@@ -270,7 +300,7 @@ export function AvatarUpload({
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,image/heic"
                 className={styles.fileInput}
                 onChange={handleFileChange}
                 aria-hidden="true"
