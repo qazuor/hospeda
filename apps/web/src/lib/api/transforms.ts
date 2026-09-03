@@ -3019,6 +3019,17 @@ export function toExperienceDetailPageProps({
         // real place (the Gulf of Guinea) and the falsy check would erase it.
         meetingPointLat: typeof item.meetingPointLat === 'number' ? item.meetingPointLat : null,
         meetingPointLong: typeof item.meetingPointLong === 'number' ? item.meetingPointLong : null,
+        // HOS-1049. Reuses `normalizeChecklist` — same shape, same blank-item
+        // problem as `whatToBring`. A withheld payload simply carries no key,
+        // which lands on the same `[]` as "the provider wrote none": the view
+        // has no reason to tell those apart, and the FLAG below is what decides
+        // whether the map is drawn.
+        meetingPointDirections: normalizeChecklist(item.meetingPointDirections),
+        // Strictly `=== true`, like `acceptsPrivateGroups`. Absent means the
+        // payload never resolved the entitlement (a list card, a legacy
+        // response), and only an explicit true may turn the paid map on — the
+        // one direction where guessing gives the product away.
+        meetingPointDirectionsEnabled: item.meetingPointDirectionsEnabled === true,
         // HOS-898. `typeof === 'number'`, NOT `Number(x) || null`: the falsy
         // check is wrong here for the same reason as on the coordinates, and a
         // legacy row simply carries no key at all.
