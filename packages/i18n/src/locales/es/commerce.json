@@ -96,6 +96,12 @@
                     "label_other": "{{current}} de {{max}} experiencias"
                 },
                 "upgrade": "Ampliar cupo"
+            },
+            "views": {
+                "title": "Vistas",
+                "unique": "únicos",
+                "total": "totales",
+                "error": "No pudimos cargar las vistas. Probá de nuevo más tarde."
             }
         },
         "editor": {

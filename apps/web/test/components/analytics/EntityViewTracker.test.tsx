@@ -239,3 +239,85 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
         expect(trackEventMock).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
+    const GASTRONOMY_PROPS = {
+        entityType: 'GASTRONOMY' as const,
+        slug: 'la-parrilla-del-puerto',
+        entityId: '550e8400-e29b-41d4-a716-446655440003',
+        locale: 'es' as const
+    };
+
+    const EXPERIENCE_PROPS = {
+        entityType: 'EXPERIENCE' as const,
+        slug: 'paseo-en-kayak',
+        entityId: '550e8400-e29b-41d4-a716-446655440004',
+        locale: 'es' as const
+    };
+
+    beforeEach(() => {
+        trackEventMock.mockClear();
+        sendViewBeaconMock.mockClear();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders null (no DOM output) for GASTRONOMY', () => {
+        const { container } = render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('calls sendViewBeacon with entityType GASTRONOMY and correct entityId', () => {
+        render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
+        expect(sendViewBeaconMock).toHaveBeenCalledWith({
+            entityType: 'GASTRONOMY',
+            entityId: GASTRONOMY_PROPS.entityId
+        });
+    });
+
+    it('calls sendViewBeacon with entityType EXPERIENCE and correct entityId', () => {
+        render(<EntityViewTracker {...EXPERIENCE_PROPS} />);
+
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
+        expect(sendViewBeaconMock).toHaveBeenCalledWith({
+            entityType: 'EXPERIENCE',
+            entityId: EXPERIENCE_PROPS.entityId
+        });
+    });
+
+    it('does NOT fire a PostHog trackEvent for GASTRONOMY (owner decision, HOS-734)', () => {
+        render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        expect(trackEventMock).not.toHaveBeenCalled();
+    });
+
+    it('does NOT fire a PostHog trackEvent for EXPERIENCE (owner decision, HOS-734)', () => {
+        render(<EntityViewTracker {...EXPERIENCE_PROPS} />);
+        expect(trackEventMock).not.toHaveBeenCalled();
+    });
+
+    it('fires again when entityId changes (View Transitions navigation) for GASTRONOMY', () => {
+        const { rerender } = render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
+
+        const newId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
+        act(() => {
+            rerender(
+                <EntityViewTracker
+                    {...GASTRONOMY_PROPS}
+                    entityId={newId}
+                    slug="otro-restaurante"
+                />
+            );
+        });
+
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(2);
+        expect(sendViewBeaconMock).toHaveBeenLastCalledWith({
+            entityType: 'GASTRONOMY',
+            entityId: newId
+        });
+    });
+});

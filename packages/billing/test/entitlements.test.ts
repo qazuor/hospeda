@@ -215,19 +215,25 @@ describe('Entitlement Configuration', () => {
             expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === 'ad_free')).toBeUndefined();
         });
 
-        it('should have 4 vertical-wide commerce entitlements (HOS-1074)', () => {
-            // Arrange — one EDIT/PUBLISH pair per vertical. Cross-checked against
-            // the vertical→keys map that `plans.config.ts` actually grants from,
-            // so this list cannot drift from the catalogue.
+        it('should have 6 vertical-wide commerce entitlements (HOS-1074, HOS-734)', () => {
+            // Arrange — one EDIT/PUBLISH pair per vertical, plus VIEW_BASIC_STATS
+            // on BOTH verticals (HOS-734: it is accommodation's tier-basic key, so
+            // it belongs in the floor every commerce tier gets too — not counted
+            // once, since `ALL_COMMERCE_ENTITLEMENT_KEYS` flattens per-vertical
+            // arrays without deduping). Cross-checked against the vertical→keys
+            // map that `plans.config.ts` actually grants from, so this list
+            // cannot drift from the catalogue.
             const commerceKeys: readonly EntitlementKey[] = [
                 EntitlementKey.EDIT_GASTRONOMY_INFO,
                 EntitlementKey.PUBLISH_GASTRONOMY,
+                EntitlementKey.VIEW_BASIC_STATS,
                 EntitlementKey.EDIT_EXPERIENCE_INFO,
-                EntitlementKey.PUBLISH_EXPERIENCE
+                EntitlementKey.PUBLISH_EXPERIENCE,
+                EntitlementKey.VIEW_BASIC_STATS
             ] as const;
 
             // Act & Assert
-            expect(commerceKeys).toHaveLength(4);
+            expect(commerceKeys).toHaveLength(6);
             expect([...ALL_COMMERCE_ENTITLEMENT_KEYS].sort()).toEqual([...commerceKeys].sort());
             for (const key of commerceKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();

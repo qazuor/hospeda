@@ -96,6 +96,12 @@
                     "label_other": "{{current}} of {{max}} experience listings"
                 },
                 "upgrade": "Add more capacity"
+            },
+            "views": {
+                "title": "Views",
+                "unique": "unique",
+                "total": "total",
+                "error": "We couldn't load your views. Please try again later."
             }
         },
         "editor": {
