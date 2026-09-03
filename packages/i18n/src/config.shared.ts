@@ -60,7 +60,6 @@ export const webNamespaces = [
     'cookieConsent',
     'cookies',
     'partners',
-    'qr-codes',
     'tags',
     'maps',
     'contributions',
@@ -154,7 +153,6 @@ import ownersEn from './locales/en/owners.json';
 import partnersEn from './locales/en/partners.json';
 import pricingEn from './locales/en/pricing.json';
 import privacyEn from './locales/en/privacy.json';
-import qrCodesEn from './locales/en/qr-codes.json';
 import revalidationEn from './locales/en/revalidation.json';
 import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
@@ -211,7 +209,6 @@ import ownersEs from './locales/es/owners.json';
 import partnersEs from './locales/es/partners.json';
 import pricingEs from './locales/es/pricing.json';
 import privacyEs from './locales/es/privacy.json';
-import qrCodesEs from './locales/es/qr-codes.json';
 import revalidationEs from './locales/es/revalidation.json';
 import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
@@ -269,7 +266,6 @@ import ownersPt from './locales/pt/owners.json';
 import partnersPt from './locales/pt/partners.json';
 import pricingPt from './locales/pt/pricing.json';
 import privacyPt from './locales/pt/privacy.json';
-import qrCodesPt from './locales/pt/qr-codes.json';
 import revalidationPt from './locales/pt/revalidation.json';
 import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
@@ -330,7 +326,6 @@ export const rawWebTranslations = {
         cookieConsent: cookieConsentEs,
         cookies: cookiesEs,
         partners: partnersEs,
-        'qr-codes': qrCodesEs,
         validation: validationEs,
         revalidation: revalidationEs,
         tags: tagsEs,
@@ -386,7 +381,6 @@ export const rawWebTranslations = {
         cookieConsent: cookieConsentEn,
         cookies: cookiesEn,
         partners: partnersEn,
-        'qr-codes': qrCodesEn,
         validation: validationEn,
         revalidation: revalidationEn,
         tags: tagsEn,
@@ -442,7 +436,6 @@ export const rawWebTranslations = {
         cookieConsent: cookieConsentPt,
         cookies: cookiesPt,
         partners: partnersPt,
-        'qr-codes': qrCodesPt,
         validation: validationPt,
         revalidation: revalidationPt,
         tags: tagsPt,
