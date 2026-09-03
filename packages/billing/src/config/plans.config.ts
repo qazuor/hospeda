@@ -845,12 +845,18 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // here for the reason the carta is: these arrays are literal per plan, so
     // omitting one would leave the dearer tier missing a feature its cheaper
     // neighbour has.
+    //
+    // HOS-1043 adds the multi-language carta, on the same terms as the photo
+    // per dish right above it: `-premium` alone, and layered on top of
+    // `MANAGE_GASTRONOMY_MENU` rather than replacing it — a translation has
+    // nowhere to live without a carta to translate.
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
         EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
         EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
-        EntitlementKey.MENU_ITEM_PHOTOS
+        EntitlementKey.MENU_ITEM_PHOTOS,
+        EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
     ]
 });
 

@@ -11,6 +11,7 @@
  */
 
 import type { MediaAttribution } from '../lib/media';
+import type { I18nTextLike } from '../lib/resolve-i18n-text';
 
 // Re-export UI types from split file for backward compatibility
 export type {
@@ -1108,6 +1109,17 @@ export interface GastronomyMenuItem {
     readonly id: string;
     readonly name: string;
     readonly description: string | null;
+    /**
+     * Localized name (HOS-1043), or `null`.
+     *
+     * `null` covers both "never translated" and "withheld server-side for a
+     * plan that does not grant `multilingual_gastronomy_menu`" — the API
+     * decides, the renderer draws what it is given, the same collapse
+     * {@link photoUrl} documents for its own gate.
+     */
+    readonly nameI18n: I18nTextLike | null;
+    /** Localized description (HOS-1043), or `null`. Same collapse as {@link nameI18n}. */
+    readonly descriptionI18n: I18nTextLike | null;
     /** Price in centavos, or `null` for "a consultar". */
     readonly priceCents: number | null;
     readonly isAvailable: boolean;
@@ -1134,6 +1146,10 @@ export interface GastronomyMenuSection {
     readonly id: string;
     readonly name: string;
     readonly description: string | null;
+    /** Localized heading (HOS-1043), or `null`. Same collapse as {@link GastronomyMenuItem.nameI18n}. */
+    readonly nameI18n: I18nTextLike | null;
+    /** Localized blurb (HOS-1043), or `null`. */
+    readonly descriptionI18n: I18nTextLike | null;
     readonly items: readonly GastronomyMenuItem[];
 }
 

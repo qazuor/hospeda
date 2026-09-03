@@ -75,12 +75,13 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // when the carta was typed or the file was uploaded. See the resolver's
         // own doc for why this is a live read rather than a synced column.
         //
-        // FOUR gated features now hang off this page — the carta (HOS-895), the
-        // per-dish photos (HOS-1045), the menú del día (HOS-1041) and the venue
-        // agenda (HOS-1042) — and they take the plan's whole entitlement SET in
-        // ONE resolver call. Per-feature calls would multiply a three-query
-        // lookup by four AND would let the four answers come from different
-        // reads of the same subscription if a plan change landed between them:
+        // FIVE gated features now hang off this page — the carta (HOS-895), the
+        // per-dish photos (HOS-1045), the menú del día (HOS-1041), the venue
+        // agenda (HOS-1042) and the carta's translations (HOS-1043) — and they
+        // take the plan's whole entitlement SET in ONE resolver call.
+        // Per-feature calls would multiply a three-query lookup by five AND
+        // would let the answers come from different reads of the same
+        // subscription if a plan change landed between them:
         // a page showing one paid feature and withholding another, for no
         // reason a reader could see. The nesting HOS-1045 warns about (a dish
         // photo surviving a carta that was withheld) is impossible here for the
@@ -137,7 +138,10 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             ownerGrantsMenuManagement: ownerPlanEntitlements.has(
                 EntitlementKey.MANAGE_GASTRONOMY_MENU
             ),
-            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS)
+            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS),
+            ownerGrantsMenuTranslations: ownerPlanEntitlements.has(
+                EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
+            )
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({

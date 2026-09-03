@@ -232,7 +232,11 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // describe an endpoint that does not exist, and the guard is presence-only
     // (HOS-1114) so nothing would ever contradict it. The gate this predicate
     // feeds is enforced by the row for `gastronomy/protected/putMenu.ts`.
-    'gastronomy/protected/menu-item-photo-gate.ts'
+    'gastronomy/protected/menu-item-photo-gate.ts',
+    // Pure payload predicate (`menuPayloadCarriesTranslations`) consumed by
+    // putMenu.ts — not a Hono route, exact same shape and same reason as
+    // `menu-item-photo-gate.ts` right above it. HOS-1043.
+    'gastronomy/protected/menu-translations-gate.ts'
 ]);
 
 /**

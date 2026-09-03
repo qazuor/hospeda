@@ -52,9 +52,10 @@
  * says "decorative", and a photo of the dish being described is not.
  */
 
-import type { GastronomyMenuSection } from '@/data/types';
+import type { GastronomyMenuItem, GastronomyMenuSection } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { formatPrice } from '@/lib/format-utils';
 
@@ -69,6 +70,59 @@ const { menuSections = [], fileUrl, fileKind, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const hasStructuredMenu = menuSections.length > 0;
+
+/**
+ * The three-way language switcher on the carta (HOS-1043).
+ *
+ * Unlike `gastronomy_faqs.question_i18n` (resolved server-side to the page's
+ * OWN locale, with no client-side switch — see `resolveFaqField` in
+ * `transforms.ts`), the carta renders a switcher independent of the page's
+ * URL locale: a Brazilian visitor reading the Spanish page may still want to
+ * read the menu in Portuguese without leaving it. So every translated leg the
+ * API sent travels to the browser as a `data-*` attribute, and a small inline
+ * script swaps `textContent` on click — no island, no framework, matching the
+ * platform's "Astro by default, minimal client JS" rule for `apps/web`.
+ *
+ * `hasTranslations` gates the switcher's own visibility: an owner without
+ * `multilingual_gastronomy_menu` (or one who never translated) has every
+ * `nameI18n`/`descriptionI18n` `null`, and a switcher with nothing to switch
+ * to would be a dead control.
+ */
+const hasTranslations = menuSections.some(
+    (section) =>
+        section.nameI18n !== null ||
+        section.descriptionI18n !== null ||
+        section.items.some((item) => item.nameI18n !== null || item.descriptionI18n !== null)
+);
+
+/** One locale's text for a translatable field, falling back to the legacy `es` source. */
+function localeText(
+    i18n: GastronomyMenuSection['nameI18n'],
+    legacy: string,
+    lang: SupportedLocale
+): string {
+    return i18n ? resolveI18nText(i18n, lang) || legacy : legacy;
+}
+
+/** The three `data-name-*` attributes a name element carries for the switcher. */
+function nameLangAttrs(i18n: GastronomyMenuItem['nameI18n'], legacy: string) {
+    return {
+        'data-name-es': i18n?.es || legacy,
+        'data-name-en': i18n?.en || legacy,
+        'data-name-pt': i18n?.pt || legacy
+    };
+}
+
+/** The three `data-desc-*` attributes a description element carries for the switcher. */
+function descLangAttrs(i18n: GastronomyMenuItem['descriptionI18n'], legacy: string) {
+    return {
+        'data-desc-es': i18n?.es || legacy,
+        'data-desc-en': i18n?.en || legacy,
+        'data-desc-pt': i18n?.pt || legacy
+    };
+}
+
+const LANGUAGE_LABELS: Record<SupportedLocale, string> = { es: 'ES', en: 'EN', pt: 'PT' };
 // `fileKind` is required by the schema whenever `fileUrl` is set (the API
 // never reports "half an attachment" — see GastronomyMenuFileSchema's doc),
 // but the safe-URL check still runs before anything is rendered.
@@ -94,18 +148,49 @@ const attachmentPdfTitle = t('gastronomy.detail.menuCarta.attachmentPdf', 'Carta
 const viewPdfLabel = t('gastronomy.detail.menuCarta.viewPdf', 'Ver carta en PDF');
 const consultLabel = t('gastronomy.detail.menuCarta.consultPrice', 'A consultar');
 const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No disponible');
+const switchLanguageLabel = t('gastronomy.detail.menuCarta.switchLanguage', 'Ver la carta en:');
 ---
 
 <section class="gastro-menu" id="gastro-menu">
     <h2 class="gastro-menu__title">{title}</h2>
 
+    {hasStructuredMenu && hasTranslations && (
+        <div
+            class="gastro-menu__lang-switch"
+            role="group"
+            aria-label={switchLanguageLabel}
+        >
+            <span class="gastro-menu__lang-switch-label">{switchLanguageLabel}</span>
+            {Object.entries(LANGUAGE_LABELS).map(([lang, label]) => (
+                <button
+                    type="button"
+                    class="gastro-menu__lang-button"
+                    data-menu-lang={lang}
+                    aria-pressed={lang === locale ? 'true' : 'false'}
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
+    )}
+
     {hasStructuredMenu && (
         <div class="gastro-menu__sections">
             {menuSections.map((section) => (
                 <div class="gastro-menu__section">
-                    <h3 class="gastro-menu__section-name">{section.name}</h3>
+                    <h3
+                        class="gastro-menu__section-name"
+                        {...nameLangAttrs(section.nameI18n, section.name)}
+                    >
+                        {localeText(section.nameI18n, section.name, locale)}
+                    </h3>
                     {section.description && (
-                        <p class="gastro-menu__section-description">{section.description}</p>
+                        <p
+                            class="gastro-menu__section-description"
+                            {...descLangAttrs(section.descriptionI18n, section.description)}
+                        >
+                            {localeText(section.descriptionI18n, section.description, locale)}
+                        </p>
                     )}
                     <ul class="gastro-menu__items">
                         {section.items.map((item) => (
@@ -114,7 +199,12 @@ const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No dispon
                                 data-unavailable={item.isAvailable ? undefined : 'true'}
                             >
                                 <div class="gastro-menu__item-main">
-                                    <span class="gastro-menu__item-name">{item.name}</span>
+                                    <span
+                                        class="gastro-menu__item-name"
+                                        {...nameLangAttrs(item.nameI18n, item.name)}
+                                    >
+                                        {localeText(item.nameI18n, item.name, locale)}
+                                    </span>
                                     <span class="gastro-menu__item-price">
                                         {item.priceCents == null
                                             ? consultLabel
@@ -122,7 +212,12 @@ const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No dispon
                                     </span>
                                 </div>
                                 {item.description && (
-                                    <p class="gastro-menu__item-description">{item.description}</p>
+                                    <p
+                                        class="gastro-menu__item-description"
+                                        {...descLangAttrs(item.descriptionI18n, item.description)}
+                                    >
+                                        {localeText(item.descriptionI18n, item.description, locale)}
+                                    </p>
                                 )}
                                 {!item.isAvailable && (
                                     <span class="gastro-menu__item-badge">{unavailableLabel}</span>
@@ -175,6 +270,61 @@ const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No dispon
     )}
 </section>
 
+{
+    hasTranslations && (
+        /**
+         * The carta's language switcher (HOS-1043) — vanilla JS, no island.
+         *
+         * Scoped to `#gastro-menu` (the section's own id, unique per page) so
+         * two instances never fight — not a concern today, but the query
+         * would otherwise select from the WHOLE document. Reads the
+         * `data-name-*`/`data-desc-*` attributes rendered onto each name and
+         * description element (see `nameLangAttrs`/`descLangAttrs` above) and
+         * swaps `textContent` on click. A description's visibility toggles
+         * with it: a dish whose only content in a given language is its name
+         * must not keep showing a stale paragraph from the previous one.
+         */
+        <script>
+            /** Capitalizes a locale code ("en" → "En") to match the `data-name-En` casing camelCase turns `data-name-en` into. */
+            function capitalize(lang: string): string {
+                return lang.charAt(0).toUpperCase() + lang.slice(1);
+            }
+
+            const root = document.getElementById('gastro-menu');
+            if (root) {
+                root.addEventListener('click', (event) => {
+                    const target = event.target;
+                    if (!(target instanceof Element)) return;
+                    const button = target.closest<HTMLElement>('[data-menu-lang]');
+                    if (!button) return;
+
+                    const lang = button.dataset.menuLang;
+                    if (!lang) return;
+
+                    const suffix = capitalize(lang);
+
+                    for (const b of root.querySelectorAll<HTMLElement>('[data-menu-lang]')) {
+                        b.setAttribute('aria-pressed', String(b === button));
+                    }
+
+                    for (const el of root.querySelectorAll<HTMLElement>('[data-name-es]')) {
+                        const text = (el.dataset as Record<string, string | undefined>)[`name${suffix}`];
+                        if (text) el.textContent = text;
+                    }
+
+                    for (const el of root.querySelectorAll<HTMLElement>('[data-desc-es]')) {
+                        const text = (el.dataset as Record<string, string | undefined>)[`desc${suffix}`];
+                        if (text) {
+                            el.textContent = text;
+                            el.hidden = false;
+                        }
+                    }
+                });
+            }
+        </script>
+    )
+}
+
 <style>
     .gastro-menu {
         display: flex;
@@ -189,6 +339,48 @@ const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No dispon
         font-weight: 600;
         color: var(--core-foreground);
         margin: 0;
+    }
+
+    /* HOS-1043 — the language switcher. */
+    .gastro-menu__lang-switch {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+
+    .gastro-menu__lang-switch-label {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .gastro-menu__lang-button {
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: var(--radius-button, 8px);
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--core-foreground);
+        cursor: pointer;
+        transition: background-color 150ms ease-out;
+    }
+
+    .gastro-menu__lang-button:hover {
+        background-color: var(--muted, rgba(0, 0, 0, 0.05));
+    }
+
+    .gastro-menu__lang-button[aria-pressed='true'] {
+        background-color: var(--brand-primary);
+        border-color: var(--brand-primary);
+        color: var(--primary-foreground, #fff);
+    }
+
+    .gastro-menu__lang-button:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
     }
 
     .gastro-menu__sections {

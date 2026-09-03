@@ -122,7 +122,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-1042 — the venue's own agenda. Same shape as the carta above:
             // tier-dependent, gastronomy-only, and tickable on any plan here
             // because the editor is a flat checklist.
-            EntitlementKey.MANAGE_GASTRONOMY_EVENTS
+            EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
+            // HOS-1043 — translating the carta into `{es,en,pt}`. Same shape
+            // and same tier as `MENU_ITEM_PHOTOS` above: gastronomy PREMIUM
+            // only, layered on top of the carta key rather than replacing it.
+            EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
         ]
     }
 ];
