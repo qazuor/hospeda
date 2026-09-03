@@ -268,7 +268,7 @@ const MULTI_ROUTE_INDEX_FILES: ReadonlySet<string> = new Set([
  *   - Specific multi-route index.ts files listed in MULTI_ROUTE_INDEX_FILES
  *   - Top-level handler files that appear in the matrix (auth/, billing/
  *     non-public, app-logs/, cron-admin/, event/comments/public/,
- *     experience/public/)
+ *     experience/public/, qr-code/public/)
  *
  * Excluded:
  *   - index.ts barrel files (unless explicitly listed in MULTI_ROUTE_INDEX_FILES)
@@ -337,6 +337,12 @@ function shouldIncludeRouteFile(relPath: string): boolean {
         'cron-admin/',
         'event/comments/public/',
         'experience/public/',
+        // HOS-981 — the public QR resolution route. Listed so the matrix and the
+        // filesystem agree in BOTH directions: without it the row added for
+        // `qr-code/public/resolve.ts` would be reported as a matrix reference to
+        // a file the walk never enumerates, and the route's gate decision would
+        // stop being enforced the day someone deletes the row.
+        'qr-code/public/',
         'integrations/mercadolibre-oauth/'
     ];
 

@@ -979,6 +979,8 @@
 | `PUT /api/v1/admin/points-of-interest/{id}/categories` | `point-of-interest/admin/categories.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143). Permission: POI_CATEGORY_UPDATE (documented deviation from the nominal POINT_OF_INTEREST_UPDATE — see the route's deviation comment) |
 | **POI-CATEGORY — ADMIN** | | | | | |
 | `GET /api/v1/admin/poi-categories` | `poi-category/admin/list.ts` | none | - | n/a | POI-category catalog admin route — no billing entitlement gate; permission-gated only (HOS-144 NG-1, closing an HOS-143 gap). Permission: POI_CATEGORY_VIEW |
+| **QR CODES — PUBLIC (HOS-981)** | | | | | |
+| `GET /api/v1/public/qr/{slug}` | `qr-code/public/resolve.ts` | none | - | n/a | Unauthenticated by construction: the caller is whoever pointed a camera at a printed sticker, so there is no actor to gate and no entitlement to check. What keeps the payload safe is the query, not a gate — `resolveBySlug` matches only rows that are active and not soft-deleted, and the response is projected to `{id, slug, targetUrl}` so no audit column or operator label leaves the endpoint. Deliberately uncached (it counts a scan and carries an operator-editable target) and rate-limited at 240/min rather than gated |
 
 ---
 
