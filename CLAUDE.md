@@ -122,6 +122,7 @@ centrales, y los modos degradados forzados a mano.
 | En vez de | Corré | Ahorro |
 |---|---|---|
 | Pollear el CI con monitores y notificaciones sueltas | `hops ci --wait` | ~20 llamadas → 1 |
+| Armar el `gh pr view --json mergeable,mergeStateStatus,statusCheckRollup --jq …` antes de cada merge | `hops merge` | 4-6 llamadas → 1 |
 
 **`hops ci --wait`** bloquea hasta que el run cierra y devuelve una línea. Leé
 el **exit code**, no el texto:
@@ -139,7 +140,16 @@ re-corren; no se debuggean. Con una falla genuina en la mezcla vuelve a decir
 `3` y `4` **NO son fallas**: son las dos formas de no saber. Reportar
 cualquiera de las dos como "el CI falló" manda a debuggear un rojo inexistente.
 No dice por qué falló (eso es diagnóstico aparte) ni si el PR se puede mergear
-(`BEHIND`/`BLOCKED` no entran en el veredicto). Detalle completo en
+(para eso está `hops merge`).
+
+**`hops merge`** dictamina si el PR se puede mergear y **NO mergea** — el merge
+sigue siendo decisión del usuario. Da UNA razón, la primera que bloquea. Exit
+`0` LISTO · `1` BLOQUEADO · `3` NO SÉ (GitHub nunca calculó la mergeabilidad;
+tampoco es una falla). Dos cosas que el método manual dejaba pasar y este no:
+`mergeable` viene `UNKNOWN` en la primera consulta porque GitHub lo calcula
+recién cuando se lo pedís (medido: 3 de 8 PRs, resueltos todos en la segunda),
+y **`BEHIND` bloquea aunque esté todo verde**, porque esos checks corrieron
+sobre otro merge-base. Detalle completo en
 [`scripts/client-tools/README.md`](scripts/client-tools/README.md).
 
 ### Coding Standards

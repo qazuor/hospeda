@@ -28,13 +28,25 @@
         "featured": "Destacada"
     },
     "detail": {
+        "amenities": {
+            "title": "Servicios y comodidades"
+        },
+        "cancellationPolicy": {
+            "title": "Si la salida no sale"
+        },
         "contact": "Contacto",
-        "contactPhoneAriaLabel": "Llamar al prestador",
         "contactEmailAriaLabel": "Enviar un email al prestador",
+        "contactPhoneAriaLabel": "Llamar al prestador",
         "contactWebsiteAriaLabel": "Visitar el sitio web del prestador",
-        "whatsapp": "Consultar por WhatsApp",
-        "whatsappMessage": "Hola, me interesa obtener más información sobre {{name}}",
+        "duration": {
+            "dayShort": "d",
+            "hourShort": "h",
+            "minuteShort": "min"
+        },
         "hours": "Horarios de atención",
+        "meetingPoint": {
+            "title": "Punto de encuentro"
+        },
         "openingHours": {
             "title": "Horarios de atención",
             "closed": "Cerrado",
@@ -48,13 +60,20 @@
             "saturday": "Sábado",
             "sunday": "Domingo"
         },
-        "social": "Redes sociales",
-        "amenities": {
-            "title": "Servicios y comodidades"
+        "privateGroups": {
+            "title": "Grupos privados",
+            "body": "Hacemos precio especial para grupos privados: familias grandes, empresas, o si querés la salida entera para vos.",
+            "cta": "Consultanos por tu grupo"
         },
-        "meetingPoint": {
-            "title": "Punto de encuentro"
-        }
+        "requirements": {
+            "title": "Requisitos"
+        },
+        "social": "Redes sociales",
+        "whatToBring": {
+            "title": "Qué llevar"
+        },
+        "whatsapp": "Consultar por WhatsApp",
+        "whatsappMessage": "Hola, me interesa obtener más información sobre {{name}}"
     },
     "type": {
         "CAR_RENTAL": "Alquiler de autos",

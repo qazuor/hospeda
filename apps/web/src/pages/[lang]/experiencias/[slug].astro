@@ -21,11 +21,15 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceMeetingPoint from '@/components/experience/ExperienceMeetingPoint.astro';
+import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
+import ExperienceCancellationPolicy from '@/components/experience/ExperienceCancellationPolicy.astro';
+import ExperiencePrivateGroups from '@/components/experience/ExperiencePrivateGroups.astro';
 import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
+import { hasPublicContactChannel } from '@/lib/experience-contact';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -179,6 +183,18 @@ const seoDescription =
     experience.summary ||
     t('experience.listing.subtitle', 'Experiencias y servicios en el Litoral Entrerriano');
 
+/**
+ * HOS-1056: whether `ExperienceContactBlock` will render anything at all.
+ *
+ * Computed HERE, from the same predicate the block itself uses, because the
+ * private-groups CTA is an anchor into that block: if the block self-hides for
+ * lack of a publishable channel, the CTA has to degrade to plain text instead of
+ * linking to an element that is not on the page. Two independent checks would be
+ * free to drift, and a dead anchor reports nothing — no console error, nothing
+ * visibly wrong, just a click that does nothing.
+ */
+const hasContactBlock = hasPublicContactChannel({ contactInfo: experience.contactInfo });
+
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
@@ -257,6 +273,33 @@ const breadcrumbItems = [
              (HOS-1049) and are not on this page. -->
         <ExperienceMeetingPoint
             meetingPoint={experience.meetingPoint}
+            locale={locale}
+        />
+
+        <!-- What to bring and what is required (HOS-1046). Right after the
+             meeting point, because the reading order of somebody planning a
+             morning is: where do I go, what do I take, can I even go. Both
+             halves self-hide on an empty list. -->
+        <ExperiencePreparation
+            whatToBring={experience.whatToBring}
+            requirements={experience.requirements}
+            locale={locale}
+        />
+
+        <!-- What happens if the outing does not run (HOS-1047). Free text,
+             rendered as TEXT and never as HTML — it is owner-authored and
+             published with no review in between. Self-hides when absent. -->
+        <ExperienceCancellationPolicy
+            cancellationPolicy={experience.cancellationPolicy}
+            locale={locale}
+        />
+
+        <!-- The private-groups invitation (HOS-1056). `hasContactBlock` is what
+             keeps its CTA from becoming a dead anchor when the contact block
+             below self-hides — see the constant's docstring. -->
+        <ExperiencePrivateGroups
+            acceptsPrivateGroups={experience.acceptsPrivateGroups}
+            hasContactBlock={hasContactBlock}
             locale={locale}
         />
 

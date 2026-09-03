@@ -13,12 +13,21 @@
  *   - meetingPoint (TEXT, optional — address or landmark)
  *   - meetingPointLat / meetingPointLong (NUMBER, optional — WGS84 degrees)
  *
+ * plus a practical-details section (HOS-898 / HOS-1047 / HOS-1056):
+ *   - durationMinutes (NUMBER, optional — total minutes)
+ *   - cancellationPolicy (TEXTAREA, optional — free text)
+ *   - acceptsPrivateGroups (SWITCH, optional)
+ *
+ * The two HOS-1046 checklists (`whatToBring` / `requirements`) are absent on
+ * purpose — see {@link createPracticalDetailsSection} for why a `text[]` has no
+ * safe control here.
+ *
  * Used by both the view/edit flow (`EntityPageBase`) and the create flow
  * (`EntityCreatePageBase`).
  */
 
 import type { useTranslations } from '@repo/i18n';
-import { ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
+import { ExperienceTypeEnum, MAX_EXPERIENCE_DURATION_MINUTES, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     ConsolidatedEntityConfig,
@@ -257,6 +266,103 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
 }
 
 // ---------------------------------------------------------------------------
+// Practical-details section (HOS-898 / HOS-1047 / HOS-1056)
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the practical-details section — how long it lasts, what happens when
+ * it does not run, and whether the provider takes private groups.
+ *
+ * ## What is deliberately NOT here
+ *
+ * `whatToBring` and `requirements` (HOS-1046) are `text[]` columns, and this
+ * form system has no string-list control: its closest field type is `TEXTAREA`,
+ * which binds a STRING. Wiring one to a `string[]` would submit a string the
+ * owner-update schema rejects, so staff would get a validation error on a field
+ * that looks like it should work. Both checklists are therefore edited from the
+ * OWNER editor (`PracticalInfoSection.client.tsx`), which converts lines to
+ * items on both sides — and the owner is the person who knows what to pack
+ * anyway. Adding a `STRING_LIST` field type is the prerequisite for putting
+ * them here, not a tweak to this file.
+ *
+ * ## Duration is stored in MINUTES
+ *
+ * One integer column, so one NUMBER input — no hours/minutes pair as in the
+ * owner editor, because staff correcting a value are reading the stored number
+ * and a split control would hide it. The hint says so.
+ *
+ * The permissions are the ordinary commerce ones. There is NO entitlement gate
+ * here and there must not be one: the owner decided (2026-09-01) that all of
+ * this is ficha data available from the basic tier.
+ *
+ * @returns A `ConsolidatedSectionConfig` for the practical-details fields.
+ */
+function createPracticalDetailsSection(): ConsolidatedSectionConfig {
+    return {
+        id: 'experience-practical-details',
+        title: 'Datos Prácticos',
+        description: 'Duración, cancelación y grupos privados',
+        layout: LayoutTypeEnum.GRID,
+        modes: ['view', 'edit', 'create'],
+        permissions: {
+            view: [PermissionEnum.COMMERCE_VIEW_ALL],
+            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+        },
+        fields: [
+            {
+                id: 'durationMinutes',
+                type: FieldTypeEnum.NUMBER,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Duración (minutos)',
+                description:
+                    'Cuánto dura la experiencia, en minutos. 150 son dos horas y media. Vacío = sin declarar.',
+                placeholder: '150',
+                permissions: {
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
+                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                },
+                typeConfig: {
+                    min: 1,
+                    max: MAX_EXPERIENCE_DURATION_MINUTES,
+                    step: 1
+                }
+            },
+            {
+                id: 'cancellationPolicy',
+                type: FieldTypeEnum.TEXTAREA,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Política de Cancelación',
+                description:
+                    'Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.',
+                placeholder:
+                    'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.',
+                permissions: {
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
+                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                },
+                typeConfig: {}
+            },
+            {
+                id: 'acceptsPrivateGroups',
+                type: FieldTypeEnum.SWITCH,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Acepta Grupos Privados',
+                description:
+                    'Cuando está activo, la ficha pública muestra una invitación a consultar por grupos. No publica tarifario.',
+                permissions: {
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
+                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                },
+                typeConfig: {}
+            }
+        ]
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Public factory
 // ---------------------------------------------------------------------------
 
@@ -267,7 +373,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
  *  1. Commerce identity section (shared — name, slug, summary, description, …)
  *  2. Experience-specific section (type, priceUnit, priceFrom, isPriceOnRequest)
  *  3. Meeting-point section (HOS-1048 — meetingPoint + optional lat/long)
- *  4. Commerce operational section (shared — contact, social, media, hours, …)
+ *  4. Practical-details section (HOS-898 / HOS-1047 / HOS-1056)
+ *  5. Commerce operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
@@ -282,6 +389,7 @@ export const createExperienceConsolidatedConfig = (
         createCommerceIdentitySection(),
         createExperienceSpecificSection(),
         createMeetingPointSection(),
+        createPracticalDetailsSection(),
         createCommerceOperationalSection()
     ],
     metadata: {

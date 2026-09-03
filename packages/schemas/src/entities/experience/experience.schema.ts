@@ -27,6 +27,63 @@ export const ExperienceIdSchema = z.string().uuid({ message: 'zodError.common.id
 export type ExperienceId = z.infer<typeof ExperienceIdSchema>;
 
 /**
+ * Upper bound for `durationMinutes` (HOS-898): 30 days expressed in minutes.
+ *
+ * Generous on purpose — a multi-day trip is a real experience and must fit —
+ * but still finite, so a typo that slips two extra zeroes onto "180" is
+ * rejected at the boundary instead of rendering "125 días" on a public ficha.
+ */
+export const MAX_EXPERIENCE_DURATION_MINUTES = 30 * 24 * 60;
+
+/** Maximum number of lines in a `whatToBring` / `requirements` list (HOS-1046). */
+export const MAX_EXPERIENCE_CHECKLIST_ITEMS = 20;
+
+/** Maximum length of a single `whatToBring` / `requirements` line (HOS-1046). */
+export const MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH = 160;
+
+/**
+ * Builds the schema for one of the two experience checklists (HOS-1046).
+ *
+ * `whatToBring` and `requirements` are separate COLUMNS but share a shape, and
+ * the shape carries three decisions worth stating once:
+ *
+ * 1. Items are `.trim()`ed and each must be non-empty afterwards. A form that
+ *    posts a blank row would otherwise persist `''` and the ficha would render
+ *    a bullet over nothing — the same "heading over nothing" failure
+ *    `normalizeMeetingPoint` had to fix on the read side (HOS-1048).
+ * 2. The list DEFAULTS to `[]`, matching the `NOT NULL DEFAULT '{}'` column, so
+ *    "no items" has exactly one representation instead of `null` and `[]` both.
+ * 3. Error keys are passed in per field, so a rejected `requirements` line does
+ *    not tell the owner their packing list is wrong.
+ *
+ * The three message keys are parameters rather than built from a field name
+ * with a template literal ON PURPOSE: `scripts/extract-zod-keys.ts` collects
+ * keys with a static regex over string literals, so an interpolated key would
+ * land in the inventory verbatim (`zodError.experience.${field}.item.min`) and
+ * the `--verify` guard would then demand a translation for a key that can never
+ * exist. Literals at the call site keep the key greppable and the guard honest.
+ *
+ * @param messages - The three i18n keys for this checklist's failure modes.
+ * @returns A Zod array schema for that checklist.
+ */
+function experienceChecklistSchema(messages: {
+    readonly itemMin: string;
+    readonly itemMax: string;
+    readonly listMax: string;
+}): z.ZodDefault<z.ZodArray<z.ZodString>> {
+    return z
+        .array(
+            z
+                .string()
+                .trim()
+                .min(1, { message: messages.itemMin })
+                .max(MAX_EXPERIENCE_CHECKLIST_ITEM_LENGTH, { message: messages.itemMax })
+        )
+        .max(MAX_EXPERIENCE_CHECKLIST_ITEMS, { message: messages.listMax })
+        .default([]);
+}
+
+/**
  * Experience Entity Schema — commerce listing for tourism services and experiences.
  *
  * Composed by spreading shared base-field const objects (same composition pattern
@@ -52,6 +109,14 @@ export type ExperienceId = z.infer<typeof ExperienceIdSchema>;
  * - `isPriceOnRequest` — when true, hides priceFrom and shows "Consultar precio"
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
  *   experience starts (HOS-1048); ficha data, never entitlement-gated.
+ * - `durationMinutes` — how long it lasts, in minutes (HOS-898)
+ * - `whatToBring` / `requirements` — two free-text checklists (HOS-1046)
+ * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
+ * - `acceptsPrivateGroups` — group-enquiry toggle (HOS-1056)
+ *
+ * Those four are ficha data too, and like the meeting point they are NEVER
+ * entitlement-gated: owner decision (2026-09-01), they ship from the basic
+ * tier. Do not add an `EntitlementKey` for any of them.
  * - `hasActiveSubscription` — denormalized flag driven by the binary subscription
  *   lifecycle hook from the SPEC-239 core; controls public visibility.
  *
@@ -155,6 +220,92 @@ export const ExperienceSchema = z.object({
         .min(-180, { message: 'zodError.experience.meetingPointLong.min' })
         .max(180, { message: 'zodError.experience.meetingPointLong.max' })
         .nullish(),
+
+    /**
+     * How long the experience lasts, in whole MINUTES (HOS-898).
+     *
+     * A number rather than free text ("2 horas aprox") because the ficha
+     * renders in es/en/pt: prose typed once in Spanish is shown untranslated to
+     * the other two, while an integer is formatted per locale at render time.
+     * Minutes, not hours, because a 45-minute walk and a 90-minute boat ride
+     * are both real durations and neither is a whole number of hours.
+     *
+     * Bounds: at least 1 minute (0 is not a duration), at most
+     * {@link MAX_EXPERIENCE_DURATION_MINUTES}. Nullish; NOT entitlement-gated —
+     * ficha data from the basic tier.
+     */
+    durationMinutes: z
+        .number()
+        .int({ message: 'zodError.experience.durationMinutes.int' })
+        .min(1, { message: 'zodError.experience.durationMinutes.min' })
+        .max(MAX_EXPERIENCE_DURATION_MINUTES, {
+            message: 'zodError.experience.durationMinutes.max'
+        })
+        .nullish(),
+
+    /**
+     * What the traveller has to BRING — repellent, closed shoes, swimsuit
+     * (HOS-1046). One free-text line per item.
+     *
+     * Separate from {@link requirements} rather than one list carrying a `type`
+     * discriminator (the decision HOS-1046 delegated). The two answer different
+     * questions — this is a packing list the traveller acts on, `requirements`
+     * is an eligibility gate that may exclude them — they render under
+     * different headings, and a discriminator would exist only to re-derive at
+     * read time a split already known at write time.
+     */
+    whatToBring: experienceChecklistSchema({
+        itemMin: 'zodError.experience.whatToBring.item.min',
+        itemMax: 'zodError.experience.whatToBring.item.max',
+        listMax: 'zodError.experience.whatToBring.max'
+    }),
+
+    /**
+     * REQUIREMENTS to take part — minimum age, knowing how to swim, fitness
+     * level, health restrictions (HOS-1046). One free-text line per item.
+     *
+     * Free text rather than a catalog of tick-boxes: "edad mínima 12 años" and
+     * "no apto para embarazadas" carry a number and a nuance no fixed catalog
+     * row holds, and every provider's threshold differs. See
+     * {@link whatToBring} for why the two lists are separate columns.
+     */
+    requirements: experienceChecklistSchema({
+        itemMin: 'zodError.experience.requirements.item.min',
+        itemMax: 'zodError.experience.requirements.item.max',
+        listMax: 'zodError.experience.requirements.max'
+    }),
+
+    /**
+     * What happens when the experience does not run — rain, wind, a low river,
+     * not reaching the minimum group size (HOS-1047).
+     *
+     * FREE TEXT, which is the decision HOS-1047 delegated. A structured
+     * (deadline + outcome) policy only earns its complexity once money has
+     * changed hands and something must be computed from it — that is HOS-1050
+     * (deposits), and it is deferred. Until then the only consumer is a person
+     * reading the ficha, and prose says "si baja el río reprogramamos sin
+     * cargo" in a way no enum pair does.
+     *
+     * Nullish; NOT entitlement-gated.
+     */
+    cancellationPolicy: z
+        .string()
+        .max(1500, { message: 'zodError.experience.cancellationPolicy.max' })
+        .nullish(),
+
+    /**
+     * Whether the provider offers a special arrangement for private groups
+     * (HOS-1056).
+     *
+     * A single flag on purpose: it turns on a CTA to contact the provider and
+     * nothing else — no rate card, no quote calculator, no group booking. The
+     * toggle captures the intent; the conversation closes the deal.
+     *
+     * Defaults to `false` and is never nullish, mirroring
+     * {@link isPriceOnRequest}: for a CTA that only appears when the flag is
+     * on, "did not say" and "does not offer it" are the same answer.
+     */
+    acceptsPrivateGroups: z.boolean().default(false),
 
     /**
      * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.

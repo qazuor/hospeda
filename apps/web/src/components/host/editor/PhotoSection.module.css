@@ -151,6 +151,14 @@
     margin-top: 0.5rem;
 }
 
+/* Sober, single-line upsell link (HOS-1024) shown inline within the
+ * gallery-cap-reached message — deliberately just a link, not a banner. */
+.upsellLink {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
 .gallery {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

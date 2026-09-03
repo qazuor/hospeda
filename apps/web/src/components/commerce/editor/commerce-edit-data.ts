@@ -88,6 +88,36 @@ export interface CommerceEditData {
     readonly meetingPointLat: number | null;
     /** Longitude of the meeting point, or `null`. See {@link meetingPointLat}. */
     readonly meetingPointLong: number | null;
+    /**
+     * Whole hours of the experience's duration (HOS-898), or `null` when the
+     * box is empty.
+     *
+     * The duration is ONE column (`durationMinutes`) but TWO pieces of form
+     * state, deliberately. Deriving hours and minutes from the total on every
+     * render would rewrite the boxes while the owner types — "90" typed into
+     * the minutes box would turn into "1 h 30 min" mid-keystroke. Keeping the
+     * two halves independent means what you type stays put, and
+     * `buildPatchPayload` joins them once, at save time.
+     */
+    readonly durationHours: number | null;
+    /**
+     * The leftover minutes of the duration (HOS-898), or `null` when empty.
+     * Named `...Part` because it is NOT the stored total. See
+     * {@link durationHours}.
+     */
+    readonly durationMinutesPart: number | null;
+    /**
+     * What the traveller has to bring (HOS-1046). Already split into items —
+     * the textarea in `PracticalInfoSection` converts on the way in and out, so
+     * this state matches the column and the PATCH body exactly.
+     */
+    readonly whatToBring: readonly string[];
+    /** Requirements to take part (HOS-1046). See {@link whatToBring}. */
+    readonly requirements: readonly string[];
+    /** Free-text cancellation policy (HOS-1047); `''` when not declared. */
+    readonly cancellationPolicy: string;
+    /** Whether the owner offers an arrangement for private groups (HOS-1056). */
+    readonly acceptsPrivateGroups: boolean;
     readonly amenityIds: ReadonlySet<string>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: CommerceI18nValues;

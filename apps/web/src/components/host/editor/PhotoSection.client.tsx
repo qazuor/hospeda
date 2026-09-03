@@ -7,6 +7,16 @@
  * add/remove/set-featured call hits the API immediately — no buffering in the
  * parent PATCH payload.
  *
+ * HOS-1024: the gallery cap shown/enforced here is the host's EFFECTIVE plan
+ * cap (`useMyEntitlements().limit(MAX_PHOTOS_LIMIT_KEY)`, plan + addons —
+ * see `addon-limit-recalculation.service.ts`), not the flat entity ceiling
+ * every host used to see regardless of plan. `ENTITY_GALLERY_CAPS.accommodation`
+ * still exists and is still enforced server-side
+ * (`routes/media/protected/upload-entity.ts`'s `GALLERY_LIMIT_EXCEEDED`
+ * check) as a hard technical ceiling ABOVE the plan cap — this component just
+ * no longer shows or gates on that number. See `photo-section-helpers.ts`'s
+ * `resolveEffectiveGalleryCap` for the loading-window contract.
+ *
  * HOS-122 added four owner-declared gaps on top of that persistence layer,
  * all UI-only (the backend already existed):
  *   1. Multi-select gallery upload — the gallery `<input>` now takes
@@ -38,22 +48,20 @@
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, getMediaUrl } from '@repo/media';
-import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
+import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PhotoGalleryItem } from './PhotoGalleryItem.client';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
+import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
 import { usePhotoSection } from './use-photo-section';
 
 // Re-export upload helper so existing callers of PhotoSection.client can still import it
 export { uploadEntityImage } from '@/lib/media/upload-entity';
 // Re-export types for consumers that import from this module
 export type { AccommodationMediaItem, MediaImage };
-
-/** Gallery cap for accommodation entities (mirrors server-side enforcement). */
-const ACCOMMODATION_GALLERY_CAP = ENTITY_GALLERY_CAPS.accommodation;
 
 /**
  * @deprecated Legacy shape kept for backwards compat; no longer emitted by the
@@ -102,6 +110,15 @@ export function PhotoSection({
 }: PhotoSectionProps) {
     const { t, tPlural } = createTranslations(locale);
 
+    // HOS-1024: the effective cap is the host's PLAN limit (+ addons), not
+    // the flat entity ceiling. See `resolveEffectiveGalleryCap`'s JSDoc for
+    // the pending-window contract this drives below.
+    const { limit: getEntitlementLimit, isLoading: isEntitlementsLoading } = useMyEntitlements();
+    const { cap: galleryCap, isResolved: isGalleryCapResolved } = resolveEffectiveGalleryCap({
+        planLimit: getEntitlementLimit(MAX_PHOTOS_LIMIT_KEY),
+        isEntitlementsLoading
+    });
+
     const {
         featuredItem,
         galleryItems,
@@ -113,6 +130,7 @@ export function PhotoSection({
         isDragOverFeatured,
         isDragOverGallery,
         isGalleryFull,
+        capUpsell,
         opsReady,
         anyOpInFlight,
         featuredInputRef,
@@ -134,24 +152,32 @@ export function PhotoSection({
     } = usePhotoSection({
         locale,
         accommodationId,
-        galleryCap: ACCOMMODATION_GALLERY_CAP,
+        galleryCap,
         initialFeaturedImage,
         initialGallery
     });
 
-    const remainingGallerySlots = Math.max(ACCOMMODATION_GALLERY_CAP - galleryItems.length, 0);
+    const remainingGallerySlots = isGalleryCapResolved
+        ? Math.max(galleryCap - galleryItems.length, 0)
+        : 0;
 
     return (
         <div className={styles.section}>
             <h3 className={styles.sectionTitle}>
                 {t('host.properties.editor.section.photos', 'Fotos')}
             </h3>
-            <p className={styles.sectionDescription}>
-                {tPlural(
-                    'host.properties.editor.section.photosDescription',
-                    ACCOMMODATION_GALLERY_CAP,
-                    { cap: ACCOMMODATION_GALLERY_CAP }
-                )}
+            <p
+                className={styles.sectionDescription}
+                aria-busy={!isGalleryCapResolved}
+            >
+                {isGalleryCapResolved
+                    ? tPlural('host.properties.editor.section.photosDescription', galleryCap, {
+                          cap: galleryCap
+                      })
+                    : t(
+                          'host.properties.editor.section.photosDescriptionLoading',
+                          'Cargando tu límite de fotos…'
+                      )}
             </p>
 
             {/* Featured Image (Portada) */}
@@ -278,18 +304,35 @@ export function PhotoSection({
                 <label
                     htmlFor="gallery-image-input"
                     className={styles.uploadTextStrong}
+                    aria-busy={!isGalleryCapResolved}
                 >
-                    {t('host.properties.editor.photo.gallery', 'Galería de fotos (máx. {{cap}})', {
-                        cap: ACCOMMODATION_GALLERY_CAP
-                    })}
+                    {isGalleryCapResolved
+                        ? t(
+                              'host.properties.editor.photo.gallery',
+                              'Galería de fotos (máx. {{cap}})',
+                              { cap: galleryCap }
+                          )
+                        : t('host.properties.editor.photo.galleryLoading', 'Galería de fotos')}
                 </label>
 
                 {isGalleryFull && (
                     <p className={styles.error}>
-                        {tPlural(
-                            'host.properties.editor.photo.galleryCapReached',
-                            ACCOMMODATION_GALLERY_CAP,
-                            { cap: ACCOMMODATION_GALLERY_CAP }
+                        {tPlural('host.properties.editor.photo.galleryCapReached', galleryCap, {
+                            cap: galleryCap
+                        })}
+                        {/* HOS-1024: sober, single-line upsell — the same copy/CTA
+                            the failed-upload toast already uses, reused here rather
+                            than re-derived. */}
+                        {capUpsell && (
+                            <>
+                                {' '}
+                                <a
+                                    href={capUpsell.action.href}
+                                    className={styles.upsellLink}
+                                >
+                                    {capUpsell.action.label}
+                                </a>
+                            </>
                         )}
                     </p>
                 )}
@@ -316,11 +359,15 @@ export function PhotoSection({
                         <button
                             type="button"
                             className={`${styles.galleryAddButton} ${isDragOverGallery ? styles.galleryDragOver : ''}`}
-                            onClick={() => !anyOpInFlight && galleryInputRef.current?.click()}
+                            onClick={() =>
+                                !anyOpInFlight &&
+                                isGalleryCapResolved &&
+                                galleryInputRef.current?.click()
+                            }
                             onDrop={handleGalleryDrop}
                             onDragOver={handleGalleryDragOver}
                             onDragLeave={handleGalleryDragLeave}
-                            disabled={anyOpInFlight}
+                            disabled={anyOpInFlight || !isGalleryCapResolved}
                             aria-label={t(
                                 'host.properties.editor.photo.addToGallery',
                                 'Agregar fotos a la galería'
@@ -338,6 +385,7 @@ export function PhotoSection({
                     accept="image/jpeg,image/png,image/webp,image/heic"
                     multiple={remainingGallerySlots > 1}
                     className={styles.fileInput}
+                    disabled={!isGalleryCapResolved}
                     onChange={handleGallerySelect}
                 />
             </div>

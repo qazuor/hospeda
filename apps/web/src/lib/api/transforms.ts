@@ -2916,6 +2916,25 @@ function normalizeMeetingPoint(raw: unknown): string | null {
 }
 
 /**
+ * Collapses a raw `text[]` checklist to a clean array of items (HOS-1046).
+ *
+ * Four inputs mean "nothing declared" and must all arrive at the view as `[]`:
+ * the key absent, the column null, a non-array value, and an array whose entries
+ * are all blank. Non-string entries are DROPPED rather than coerced — `String(x)`
+ * would publish a stray `null` as the literal bullet "null" on the ficha.
+ *
+ * @param raw - The value as it came off the public payload.
+ * @returns The trimmed, non-empty items, in order.
+ */
+function normalizeChecklist(raw: unknown): readonly string[] {
+    if (!Array.isArray(raw)) return [];
+    return raw
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+}
+
+/**
  * Transforms a raw API experience item to ExperienceDetailData props.
  *
  * Used on the experience detail page where the full public schema shape
@@ -2956,6 +2975,21 @@ export function toExperienceDetailPageProps({
         // real place (the Gulf of Guinea) and the falsy check would erase it.
         meetingPointLat: typeof item.meetingPointLat === 'number' ? item.meetingPointLat : null,
         meetingPointLong: typeof item.meetingPointLong === 'number' ? item.meetingPointLong : null,
+        // HOS-898. `typeof === 'number'`, NOT `Number(x) || null`: the falsy
+        // check is wrong here for the same reason as on the coordinates, and a
+        // legacy row simply carries no key at all.
+        durationMinutes: typeof item.durationMinutes === 'number' ? item.durationMinutes : null,
+        // HOS-1046. Blank items are dropped so the view never renders an empty
+        // bullet, and a missing column reads as `[]` rather than `undefined`.
+        whatToBring: normalizeChecklist(item.whatToBring),
+        requirements: normalizeChecklist(item.requirements),
+        // HOS-1047: reuses the meeting point's normaliser — same problem, same
+        // answer. A whitespace-only policy must not render a heading over
+        // nothing.
+        cancellationPolicy: normalizeMeetingPoint(item.cancellationPolicy),
+        // HOS-1056: strictly `=== true`. A legacy row has no key, and only an
+        // explicit true may turn the CTA on.
+        acceptsPrivateGroups: item.acceptsPrivateGroups === true,
         seo: seoObj
             ? {
                   title: seoObj.title == null ? null : String(seoObj.title),

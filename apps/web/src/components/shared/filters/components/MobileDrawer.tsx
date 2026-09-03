@@ -6,6 +6,12 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
+// Shared with every other modal-like surface (Dialog, the AI search drawer,
+// the AI chat widget). This file used to keep a private copy of the
+// selector + boundary-only Tab cycling, bound to the PANEL rather than
+// `document` — worse than the shared trap's own prior bug, because a panel
+// listener never runs once focus has fallen out to `<body>` (HOS-350).
+import { FOCUSABLE_SELECTORS, trapFocus } from '@/lib/focus-trap';
 import styles from './MobileDrawer.module.css';
 
 /** Props for the MobileDrawer component. */
@@ -51,38 +57,25 @@ export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDra
         };
     }, [isOpen]);
 
-    // Trap focus inside the drawer when open
+    // Trap focus inside the drawer when open. Bound to `document` (not the
+    // panel) so it still catches Tab once focus has fallen out to `<body>` —
+    // see `@/lib/focus-trap` for why that matters.
     useEffect(() => {
         if (!isOpen || !panelRef.current) return;
         const panel = panelRef.current;
-        const focusable = panel.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        first?.focus();
+        const focusable = panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+        focusable[0]?.focus();
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 onClose();
                 return;
             }
-            if (e.key !== 'Tab') return;
-            if (e.shiftKey) {
-                if (document.activeElement === first) {
-                    e.preventDefault();
-                    last?.focus();
-                }
-            } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first?.focus();
-                }
-            }
+            trapFocus(panel, e);
         };
 
-        panel.addEventListener('keydown', handleKeyDown);
-        return () => panel.removeEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
     return (

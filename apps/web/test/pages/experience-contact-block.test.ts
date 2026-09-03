@@ -233,9 +233,25 @@ describe('HOS-815 wiring — the component follows the site conventions', () => 
     it('renders nothing when there is no publishable channel', () => {
         // The three seeded experience listings have an empty `contact_info`;
         // an empty contact card would be worse than none.
+        //
+        // HOS-1056 moved the predicate out of this file — the assertion follows
+        // it rather than being dropped. It used to pin the literal
+        // `if (phones.length === 0 && !workEmail && !websiteHref)`, which stopped
+        // matching the moment the same decision had to be shared. It is shared
+        // because the private-groups CTA is an ANCHOR into this block: the block's
+        // render decision and the CTA's link decision must be ONE answer, or the
+        // CTA points at an element that is not on the page.
         expect(COMPONENT_CODE).toMatch(
-            /if\s*\(phones\.length === 0 && !workEmail && !websiteHref\)\s*\{\s*return;/
+            /if\s*\(!hasPublicContactChannel\(\{\s*contactInfo\s*\}\)\)/
         );
+        expect(COMPONENT_CODE).toContain("from '@/lib/experience-contact'");
+    });
+
+    it('exposes the anchor the private-groups CTA targets (HOS-1056)', () => {
+        // The id comes from the shared constant, not a literal on either side:
+        // a hard-coded `href="#..."` here and a hard-coded `id` there is a pair
+        // that can be renamed apart, and a dead anchor reports nothing at all.
+        expect(COMPONENT_CODE).toContain('id={EXPERIENCE_CONTACT_ANCHOR_ID}');
     });
 });
 

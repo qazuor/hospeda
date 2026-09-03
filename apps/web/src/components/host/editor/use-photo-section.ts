@@ -14,7 +14,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
-import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
+import {
+    buildLimitReachedPayloadFromDetails,
+    type LimitReachedToastPayload
+} from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -24,6 +27,7 @@ import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
     buildCompressionUnsupportedTooLargeMessage,
+    MAX_PHOTOS_LIMIT_KEY,
     mediaRowToItem,
     type PhotoMetadataUpdateBody,
     splitMediaRows,
@@ -98,6 +102,12 @@ export interface UsePhotoSectionResult {
     readonly isDragOverFeatured: boolean;
     readonly isDragOverGallery: boolean;
     readonly isGalleryFull: boolean;
+    /**
+     * Sober "at the plan cap" upsell payload (HOS-1024) — `null` unless
+     * {@link UsePhotoSectionResult.isGalleryFull} is `true`. See the
+     * assignment site for why it reuses `buildLimitReachedPayloadFromDetails`.
+     */
+    readonly capUpsell: LimitReachedToastPayload | null;
     readonly opsReady: boolean;
     readonly anyOpInFlight: boolean;
     readonly featuredInputRef: React.RefObject<HTMLInputElement | null>;
@@ -155,6 +165,33 @@ export function usePhotoSection({
     const [isDragOverGallery, setIsDragOverGallery] = useState(false);
 
     const isGalleryFull = galleryItems.length >= galleryCap;
+
+    /**
+     * Sober "at the plan cap" upsell payload (HOS-1024). Reuses the exact
+     * copy/CTA builder the failed-upload path already uses below
+     * (`reportAddMediaError`), so the passive "gallery is full" state and the
+     * active "upload rejected" state never show different copy or a
+     * different CTA for the same limit — one source, two moments it renders
+     * at.
+     *
+     * `null` whenever the gallery is not full — including the entire "plan
+     * cap not yet known" window, since the caller
+     * (`PhotoSection.client.tsx`) passes a placeholder `galleryCap` large
+     * enough that `isGalleryFull` cannot be `true` until the real,
+     * plan-derived cap has resolved.
+     */
+    const capUpsell: LimitReachedToastPayload | null = isGalleryFull
+        ? buildLimitReachedPayloadFromDetails({
+              details: {
+                  limitKey: MAX_PHOTOS_LIMIT_KEY,
+                  currentCount: galleryItems.length,
+                  maxAllowed: galleryCap,
+                  usagePercent: 100,
+                  upgradeAudience: 'host'
+              },
+              locale
+          })
+        : null;
 
     // --- Hydrate from API on mount ---
 
@@ -556,6 +593,7 @@ export function usePhotoSection({
         isDragOverFeatured,
         isDragOverGallery,
         isGalleryFull,
+        capUpsell,
         opsReady,
         anyOpInFlight,
         featuredInputRef,

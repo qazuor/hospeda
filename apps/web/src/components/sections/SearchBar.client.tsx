@@ -27,6 +27,7 @@ import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { foldForRanking } from '@/lib/rank-city-suggestions';
 import styles from './SearchBar.module.css';
 
 /**
@@ -443,20 +444,32 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         trigger?.focus();
     }, [activePanel]);
 
-    /** Substring-filtered destinations driven by the panel search input. */
+    /**
+     * Substring-filtered destinations driven by the panel search input.
+     *
+     * Diacritic-insensitive: a visitor typing on a phone keyboard rarely
+     * types accents, so both sides are folded with `foldForRanking` (HOS-979)
+     * before comparing — same fold the sign-up city autocomplete uses to stay
+     * in sync with the server's `unaccent()`, so `Colon` still matches
+     * `Colón` and `cabana` still matches `Cabaña`.
+     */
     const filteredDestinations = useMemo(() => {
-        const needle = destinationQuery.trim().toLowerCase();
+        const needle = foldForRanking(destinationQuery);
         if (needle.length === 0) return destinations;
-        return destinations.filter((dest) => dest.name.toLowerCase().includes(needle));
+        return destinations.filter((dest) => foldForRanking(dest.name).includes(needle));
     }, [destinations, destinationQuery]);
 
-    /** Substring-filtered accommodation types driven by the panel search input. */
+    /**
+     * Substring-filtered accommodation types driven by the panel search input.
+     * Diacritic-insensitive for the same reason as `filteredDestinations`
+     * (HOS-979) — e.g. `cabana` must still match the "Cabaña" type label.
+     */
     const filteredTypes = useMemo(() => {
-        const needle = typeQuery.trim().toLowerCase();
+        const needle = foldForRanking(typeQuery);
         if (needle.length === 0) return ACCOMMODATION_TYPES;
         return ACCOMMODATION_TYPES.filter((value) => {
-            const label = t(`home.searchBar.types.${value}`, value).toLowerCase();
-            return label.includes(needle);
+            const label = t(`home.searchBar.types.${value}`, value);
+            return foldForRanking(label).includes(needle);
         });
     }, [typeQuery, t]);
 

@@ -8,6 +8,7 @@ import { StarIcon } from '@repo/icons';
 import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { foldForRanking } from '@/lib/rank-city-suggestions';
 import styles from './SelectSearchFilter.module.css';
 
 /** Configuration for a select-search filter group. */
@@ -47,9 +48,10 @@ export function SelectSearchFilter({ config, value, onChange, locale }: SelectSe
     const [showAll, setShowAll] = useState(false);
     const maxVisible = config.maxVisible ?? 8;
 
-    const filtered = config.options.filter((opt) =>
-        opt.label.toLowerCase().includes(searchText.toLowerCase())
-    );
+    // Diacritic-insensitive (HOS-979): a query typed without accents still
+    // matches an accented option label (e.g. destination/amenity names).
+    const needle = foldForRanking(searchText);
+    const filtered = config.options.filter((opt) => foldForRanking(opt.label).includes(needle));
 
     const visibleOptions = showAll ? filtered : filtered.slice(0, maxVisible);
     const hasMore = filtered.length > maxVisible;

@@ -127,6 +127,81 @@ export const experiences = pgTable(
          */
         meetingPointLong: doublePrecision('meeting_point_long'),
         /**
+         * How long the experience lasts, in whole MINUTES (HOS-898).
+         *
+         * Structured rather than free text ("2 horas aprox") for one decisive
+         * reason: the ficha renders in es/en/pt, and a free-text duration is
+         * written once in one language and shown untranslated to the other two.
+         * An integer is formatted per locale at render time.
+         *
+         * Minutes, not hours, because a 45-minute city walk and a 90-minute
+         * boat ride are both real and neither is a whole number of hours. The
+         * editor asks for hours + minutes and multiplies; the column stores the
+         * sum, so there is exactly one number to compare, sort or filter on
+         * later.
+         *
+         * Nullable: an owner who has not declared a duration is not an error.
+         * NOT entitlement-gated — ficha data from the basic tier.
+         */
+        durationMinutes: integer('duration_minutes'),
+        /**
+         * What the traveller has to BRING — repellent, closed shoes, swimsuit
+         * (HOS-1046). One free-text line per item.
+         *
+         * A separate column from {@link requirements}, not one list with a
+         * `type` discriminator. The two answer different questions: this is a
+         * packing list the traveller acts on, `requirements` is an eligibility
+         * gate that may exclude them outright. They render under different
+         * headings with different tone, and a discriminator would exist only to
+         * re-derive at read time a split we already know at write time.
+         *
+         * `text[]` with `NOT NULL DEFAULT '{}'` following the
+         * `amenities.applicable_verticals` precedent: "no items" is an empty
+         * array, never NULL, so every consumer has exactly one empty value to
+         * test instead of two.
+         */
+        whatToBring: text('what_to_bring').array().notNull().default([]),
+        /**
+         * REQUIREMENTS to take part — minimum age, knowing how to swim, fitness
+         * level, health restrictions (HOS-1046). One free-text line per item.
+         *
+         * Free text rather than a catalog of tick-boxes: "edad mínima 12 años"
+         * and "no apto para embarazadas" carry a number and a nuance a fixed
+         * catalog row cannot hold, and every provider's threshold differs.
+         * See {@link whatToBring} for why this is its own column.
+         */
+        requirements: text('requirements').array().notNull().default([]),
+        /**
+         * What happens when the experience does not run — rain, wind, a low
+         * river, not reaching the minimum group size (HOS-1047).
+         *
+         * FREE TEXT, deliberately, not a structured (deadline + outcome)
+         * policy. A structured policy only earns its complexity once money has
+         * changed hands and something has to be computed from it — that is
+         * HOS-1050 (deposits), which is deferred. Until then the only consumer
+         * is a human reading the ficha, and prose says "si baja el río
+         * reprogramamos sin cargo" in a way no enum pair does.
+         *
+         * Nullable; NOT entitlement-gated.
+         */
+        cancellationPolicy: text('cancellation_policy'),
+        /**
+         * Whether the provider offers a special arrangement for private groups
+         * (HOS-1056). A single flag, on purpose: it turns on a CTA to contact
+         * the provider and nothing else — no rate card, no quote calculator, no
+         * group booking.
+         *
+         * A column rather than a catalog feature row (the issue offered both):
+         * a feature row renders as one more tick in the amenities grid, and a
+         * tick cannot carry a call to action. The behaviour attached to this
+         * value is what makes it a column.
+         *
+         * NOT NULL with a `false` default — "did not say" and "does not offer
+         * it" are the same answer for a CTA that only ever appears when the
+         * flag is on.
+         */
+        acceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
+        /**
          * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.
          * When false, the experience is hidden from public listing and detail pages.
          * Flipped by the subscription reconciler — never edited directly via CRUD.

@@ -70,6 +70,11 @@ import {
 import { MediaSection } from './editor/MediaSection.client';
 import { MeetingPointSection } from './editor/MeetingPointSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
+import {
+    joinDuration,
+    PracticalInfoSection,
+    splitDuration
+} from './editor/PracticalInfoSection.client';
 import { PriceSection } from './editor/PriceSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 
@@ -166,6 +171,26 @@ function strField(source: Record<string, unknown>, key: string): string {
 function numField(source: Record<string, unknown>, key: string): number | null {
     const value = source[key];
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Read a `text[]` column as a readonly array of strings (HOS-1046).
+ *
+ * Anything that is not an array of strings collapses to `[]` — including the
+ * key being absent, which is what a listing saved before the column existed
+ * looks like. Non-string entries are dropped rather than coerced: `String(x)`
+ * would turn a stray `null` into the literal item `"null"` and publish it as a
+ * bullet on the ficha.
+ */
+function strArrayField(source: Record<string, unknown>, key: string): readonly string[] {
+    const value = source[key];
+    if (!Array.isArray(value)) return [];
+    return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+/** Shallow equality for the two checklist arrays, used by the PATCH diff. */
+function sameStringList(a: readonly string[], b: readonly string[]): boolean {
+    return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
 /** Drop empty-string entries, mapping them to undefined for the payload. */
@@ -333,6 +358,49 @@ function buildPatchPayload({
         if (current.meetingPointLong !== baseline.meetingPointLong) {
             payload.meetingPointLong = current.meetingPointLong;
         }
+
+        // HOS-898: two boxes, one column. The diff has to be taken on the JOINED
+        // value, not on the two halves — a change from 90 minutes to 1 h 30 min
+        // moves both boxes and changes nothing the row can tell apart, and
+        // emitting it would mark the form dirty and trip the unsaved-changes
+        // guard over a no-op.
+        const currentDuration = joinDuration({
+            hours: current.durationHours,
+            minutes: current.durationMinutesPart
+        });
+        const baselineDuration = joinDuration({
+            hours: baseline.durationHours,
+            minutes: baseline.durationMinutesPart
+        });
+        if (currentDuration !== baselineDuration) {
+            // Explicit `null` when both boxes are emptied, for the same reason
+            // as the meeting point: omitting the key means "no change" and the
+            // stale duration would survive the save in silence.
+            payload.durationMinutes = currentDuration;
+        }
+
+        // HOS-1046: `[]` is a meaningful value here, not an absence — it is how
+        // the owner removes every item. So the key ships whenever the list
+        // differs, empty or not; only an UNCHANGED list is omitted.
+        if (!sameStringList(current.whatToBring, baseline.whatToBring)) {
+            payload.whatToBring = [...current.whatToBring];
+        }
+        if (!sameStringList(current.requirements, baseline.requirements)) {
+            payload.requirements = [...current.requirements];
+        }
+
+        // HOS-1047: nullable free text, so it clears to `null` like the meeting
+        // point rather than to `''` — the column and the schema both say "not
+        // declared" with null, and `''` would be a declared empty policy.
+        if (current.cancellationPolicy !== baseline.cancellationPolicy) {
+            payload.cancellationPolicy = current.cancellationPolicy || null;
+        }
+
+        // HOS-1056: NOT NULL with a false default, so it never sends null —
+        // turning the toggle off is `false`, a real value, not an absence.
+        if (current.acceptsPrivateGroups !== baseline.acceptsPrivateGroups) {
+            payload.acceptsPrivateGroups = current.acceptsPrivateGroups;
+        }
     }
 
     return payload;
@@ -440,6 +508,20 @@ export function CommerceListingEditor({
         meetingPoint: strField(data, 'meetingPoint'),
         meetingPointLat: numField(data, 'meetingPointLat'),
         meetingPointLong: numField(data, 'meetingPointLong'),
+        // HOS-898: one stored column, two boxes. `splitDuration` runs ONCE here
+        // and never again on re-render, which is what stops the boxes from
+        // rewriting themselves while the owner types.
+        durationHours: splitDuration({ totalMinutes: numField(data, 'durationMinutes') }).hours,
+        durationMinutesPart: splitDuration({
+            totalMinutes: numField(data, 'durationMinutes')
+        }).minutes,
+        // HOS-1046 / HOS-1047 / HOS-1056: experience-only, same as the meeting
+        // point above — a gastronomy listing reads them as empty and
+        // `buildPatchPayload` never emits them for that vertical.
+        whatToBring: strArrayField(data, 'whatToBring'),
+        requirements: strArrayField(data, 'requirements'),
+        cancellationPolicy: strField(data, 'cancellationPolicy'),
+        acceptsPrivateGroups: data.acceptsPrivateGroups === true,
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
@@ -666,6 +748,17 @@ export function CommerceListingEditor({
                               'commerce.owner.editor.sectionNav.meetingPoint',
                               'Punto de encuentro'
                           )
+                      },
+                      // HOS-898/1046/1047/1056, immediately after the meeting
+                      // point for the same DOM-order reason stated above: the
+                      // scrollspy takes the FIRST visible entry of this array,
+                      // so an entry out of order highlights the wrong link.
+                      {
+                          id: 'editor-practicalInfo',
+                          label: t(
+                              'commerce.owner.editor.sectionNav.practicalInfo',
+                              'Datos prácticos'
+                          )
                       }
                   ]
                 : []),
@@ -765,6 +858,23 @@ export function CommerceListingEditor({
                      */}
                     {vertical === 'experience' && (
                         <MeetingPointSection
+                            locale={locale}
+                            data={formData}
+                            errors={fieldErrors}
+                            onFieldChange={onFieldChange}
+                        />
+                    )}
+
+                    {/*
+                     * HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. Experience-only
+                     * on the same SHAPE gate as the meeting point above — the
+                     * keys live on `ExperienceOwnerUpdateInputSchema` and not on
+                     * the gastronomy one. NOT an entitlement gate: all four ship
+                     * from the basic tier by owner decision (2026-09-01), so
+                     * there is no plan check here and there must not be one.
+                     */}
+                    {vertical === 'experience' && (
+                        <PracticalInfoSection
                             locale={locale}
                             data={formData}
                             errors={fieldErrors}

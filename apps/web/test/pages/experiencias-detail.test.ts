@@ -112,6 +112,45 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('meetingPoint={experience.meetingPoint}');
         });
 
+        // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. SOURCE reads, with the same
+        // limit as the meeting-point one above: they prove the page IMPORTS each
+        // component and hands it the right prop, never that a block appears.
+        // What appears is decided by the VALUE of the prop, covered in
+        // `test/lib/api/transform-experience-practical-info.test.ts`, and by
+        // whether the field survives the tier projection at all, covered by the
+        // full public parse under `packages/schemas`.
+        it('wires the two HOS-1046 checklists to the transformed lists', () => {
+            expect(src).toContain('ExperiencePreparation');
+            expect(src).toContain('whatToBring={experience.whatToBring}');
+            expect(src).toContain('requirements={experience.requirements}');
+        });
+
+        it('wires the cancellation policy (HOS-1047)', () => {
+            expect(src).toContain('ExperienceCancellationPolicy');
+            expect(src).toContain('cancellationPolicy={experience.cancellationPolicy}');
+        });
+
+        it('wires the private-groups block with the contact-block guard (HOS-1056)', () => {
+            // `hasContactBlock` is the load-bearing prop: the CTA anchors into
+            // `ExperienceContactBlock`, which self-hides when the listing
+            // publishes no usable channel. Passing the flag is what lets the CTA
+            // degrade to plain text instead of linking to an element that is not
+            // on the page — the HOS-363 failure mode, silent by construction.
+            expect(src).toContain('ExperiencePrivateGroups');
+            expect(src).toContain('acceptsPrivateGroups={experience.acceptsPrivateGroups}');
+            expect(src).toContain('hasContactBlock={hasContactBlock}');
+            expect(src).toContain('hasPublicContactChannel');
+        });
+
+        it('never gates the practical fields on an entitlement', () => {
+            // Owner decision (2026-09-01): all four ship from the basic tier.
+            // The HOS-974 audit found three entitlements granted and demanded by
+            // no route; a key per ficha field manufactures exactly that. This
+            // page carries no entitlement machinery at all, and must not start.
+            expect(src).not.toContain('EntitlementKey');
+            expect(src).not.toContain('loadEntitlements');
+        });
+
         it('draws no map on this page — the map is the paid half (HOS-1049)', () => {
             // The meeting point ships from the basic tier; the map that draws
             // its coordinates does not. A map here would hand every visitor the

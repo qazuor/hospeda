@@ -19,6 +19,7 @@ import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
+import { isApiError } from '@/lib/errors';
 import type { PartnerAdminPlanOption } from '../hooks/usePartnerQuery';
 
 // ---------------------------------------------------------------------------
@@ -71,6 +72,22 @@ function toInputDate(value: Date | string | null | undefined): string {
     if (!value) return '';
     const date = value instanceof Date ? value : new Date(value);
     return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+}
+
+/**
+ * Extracts the conflicting field name from a 409 `ALREADY_EXISTS` API error
+ * message (HOS-1061), e.g. `"A partner with this slug already exists"` → `"slug"`.
+ *
+ * Matches the message shape `handleRouteError` builds in
+ * `apps/api/src/utils/response-helpers.ts` for a unique-constraint violation.
+ * Returns `null` when the message doesn't match — the caller falls back to a
+ * form-wide error only, still visible via `role="alert"`.
+ *
+ * @param message - The `ApiError#message` from a failed save.
+ */
+function extractConflictField(message: string): string | null {
+    const match = message.match(/with this (\w+) already exists/i);
+    return match?.[1] ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +191,16 @@ export function PartnerForm({
     // ran" from "the save was vetoed". Nothing else distinguishes the two:
     // `form.handleSubmit()` resolves the same way either way.
     const submitHandlerRan = React.useRef(false);
+    // HOS-1061: a 409 ALREADY_EXISTS rejection from `onSubmit` (e.g. a slug
+    // already used by another partner) names its conflicting field here so
+    // the field itself gets marked, on top of the `globalError` alert below.
+    // Before this fix a rejected `onSubmit` had NO handler at all: the
+    // promise rejection went uncaught, nothing rendered, and the operator was
+    // left believing the save had succeeded while their edit was discarded.
+    const [conflictField, setConflictField] = React.useState<{
+        readonly field: string;
+        readonly message: string;
+    } | null>(null);
 
     const form = useForm<PartnerFormValues>({
         defaultValues: {
@@ -194,13 +221,35 @@ export function PartnerForm({
         onSubmit: async ({ value }) => {
             submitHandlerRan.current = true;
             setGlobalError(null);
+            setConflictField(null);
             const result = createPartnerSchema.safeParse(value);
             if (!result.success) {
                 const firstIssue = result.error.issues[0];
                 setGlobalError(firstIssue?.message ?? 'Datos inválidos. Revisá el formulario.');
                 return;
             }
-            await onSubmit(result.data);
+
+            // HOS-1061: `onSubmit` (the caller's mutation) rejects on any API
+            // failure — including a 409 slug conflict, previously uncaught
+            // here. An uncaught rejection left the operator with no error, no
+            // marked field, and their stale input still on screen: the worst
+            // failure mode, because it reads exactly like a successful save.
+            try {
+                await onSubmit(result.data);
+            } catch (error) {
+                if (isApiError(error) && error.status === 409) {
+                    const field = extractConflictField(error.message);
+                    if (field) setConflictField({ field, message: error.message });
+                    setGlobalError(error.message);
+                    return;
+                }
+
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : 'No pudimos guardar los cambios. Intentá de nuevo.';
+                setGlobalError(message);
+            }
         }
     });
 
@@ -297,14 +346,26 @@ export function PartnerForm({
                                     label="Slug"
                                     htmlFor={field.name}
                                     required
-                                    error={fieldError(field.state.meta, submitAttempted)}
+                                    error={
+                                        conflictField?.field === 'slug'
+                                            ? conflictField.message
+                                            : fieldError(field.state.meta, submitAttempted)
+                                    }
                                 >
                                     <input
                                         id={field.name}
                                         name={field.name}
                                         value={(field.state.value as string) ?? ''}
                                         onBlur={field.handleBlur}
-                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        onChange={(e) => {
+                                            field.handleChange(e.target.value);
+                                            // Clear a server-reported conflict as soon as the
+                                            // operator edits the field again (HOS-1061) — it
+                                            // is stale the moment the value changes.
+                                            if (conflictField?.field === 'slug') {
+                                                setConflictField(null);
+                                            }
+                                        }}
                                         placeholder="ej: municipalidad-cdu"
                                         className={INPUT_CLASS}
                                         disabled={isSubmitting}

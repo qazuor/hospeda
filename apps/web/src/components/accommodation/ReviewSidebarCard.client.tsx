@@ -26,6 +26,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
@@ -145,6 +146,11 @@ export function ReviewSidebarCard({
             setSuccess(false);
         }, 200);
     }, []);
+
+    // Back button closes the dialog instead of leaving the page (HOS-334).
+    // This form uses a native <dialog>, not the shared `Dialog`, so it wires
+    // the hook directly — same pattern as AiChatWidget.
+    useDialogHistoryBack({ isOpen: open, onClose: handleClose });
 
     const setStar = useCallback((key: RatingKey, value: number) => {
         setRatings((prev) => ({ ...prev, [key]: value }));

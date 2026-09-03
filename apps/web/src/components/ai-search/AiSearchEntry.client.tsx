@@ -20,6 +20,11 @@
 import { FullscreenIcon, MinimizeIcon, SearchIcon, SparkleIcon } from '@repo/icons';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
+// Shared with every other modal-like surface (Dialog, the AI chat widget).
+// This file used to keep a byte-equivalent private copy of the selector +
+// boundary-only Tab cycling, so a fix to the shared trap silently left this
+// one leaking (HOS-350).
+import { FOCUSABLE_SELECTORS, trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AiSearchEntry.module.css';
@@ -56,13 +61,6 @@ function AiSearchCompositeIcon({ className }: { readonly className?: string }) {
         </span>
     );
 }
-
-/**
- * Selector matching the elements that can receive keyboard focus inside the
- * drawer. Used for the initial-focus move and the focus trap (a11y).
- */
-const FOCUSABLE_SELECTOR =
-    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * `useLayoutEffect` runs before paint (so focus restore on drawer close does
@@ -135,24 +133,6 @@ export function AiSearchEntry({
         setIsMaximized((prev) => !prev);
     }, []);
 
-    // Focus trap: keep Tab focus cycling inside the modal drawer (a11y).
-    const handleDrawerKeyDown = useCallback((e: React.KeyboardEvent): void => {
-        if (e.key !== 'Tab') return;
-        const drawer = drawerRef.current;
-        if (!drawer) return;
-        const focusables = drawer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-        }
-    }, []);
-
     // IntersectionObserver: show FAB when search bar leaves viewport.
     useEffect(() => {
         const target = searchBarRef.current;
@@ -171,7 +151,7 @@ export function AiSearchEntry({
     }, []);
 
     // Back button closes the drawer instead of leaving the page (HOS-310).
-    useDialogHistoryBack({ isOpen, onClose: handleClose });
+    const { isTopmost } = useDialogHistoryBack({ isOpen, onClose: handleClose });
 
     // Lock body scroll while the drawer is open (SPEC-265 D).
     useEffect(() => {
@@ -183,17 +163,32 @@ export function AiSearchEntry({
         };
     }, [isOpen]);
 
+    // Focus trap: keep Tab focus cycling inside the modal drawer, and recover
+    // focus that was LOST while the drawer was open (a11y). Bound to
+    // `document` (not the drawer) so it still catches Tab once focus has
+    // fallen out to `<body>` — see `@/lib/focus-trap` for why that matters.
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent): void => {
+            if (drawerRef.current) trapFocus(drawerRef.current, event);
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
+
     // Close on Escape key (SPEC-265 D). Routed through handleClose (not a bare
     // setIsOpen(false)) so the maximize state reset (HOS-111 T-005) applies
-    // on every close path, not just the close button.
+    // on every close path, not just the close button. Gated on `isTopmost`
+    // (HOS-350) so a second overlay opened on top of this drawer (e.g. the
+    // feedback modal via Ctrl+Shift+F) is the only one that closes on Escape.
     useEffect(() => {
         if (!isOpen) return;
         const handler = (e: KeyboardEvent): void => {
-            if (e.key === 'Escape') handleClose();
+            if (e.key === 'Escape' && isTopmost) handleClose();
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [isOpen, handleClose]);
+    }, [isOpen, handleClose, isTopmost]);
 
     // Focus management (a11y): on open, remember the trigger and move focus
     // into the drawer; on close, restore focus to the trigger. Runs as a layout
@@ -201,7 +196,7 @@ export function AiSearchEntry({
     useIsomorphicLayoutEffect(() => {
         if (!isOpen) return;
         previousFocusRef.current = document.activeElement as HTMLElement | null;
-        const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+        const firstFocusable = drawerRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTORS);
         firstFocusable?.focus();
         return () => {
             previousFocusRef.current?.focus();
@@ -275,7 +270,6 @@ export function AiSearchEntry({
                         role="dialog"
                         aria-modal="true"
                         aria-label={t('aiSearch.panelTitle', 'Búsqueda inteligente')}
-                        onKeyDown={handleDrawerKeyDown}
                     >
                         {/* HOS-111 T-001: single visible header for the whole
                              panel — the drawer owns the title; the inner

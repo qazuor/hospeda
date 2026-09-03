@@ -208,6 +208,20 @@ export const httpToDomainExperienceCreate = (
     visibility: VisibilityEnum.PUBLIC,
     hasActiveSubscription: false,
 
+    // HOS-1046 / HOS-1056: the flat HTTP create surface does not collect the
+    // practical ficha fields — they are filled in afterwards, from the owner
+    // editor or the admin edit form, both of which post the domain schema
+    // directly. They are emitted here as their EMPTY values rather than left
+    // out because the domain type requires them (they carry `.default()`, so
+    // `z.infer` makes them non-optional on the output side), and because "no
+    // items" must keep exactly one representation all the way down.
+    //
+    // `durationMinutes` and `cancellationPolicy` are absent on purpose: both
+    // are `.nullish()`, so an omitted key already means "not declared".
+    whatToBring: [],
+    requirements: [],
+    acceptsPrivateGroups: false,
+
     // Contact info mapping from flat HTTP fields
     ...(httpData.phone !== undefined ||
     httpData.email !== undefined ||

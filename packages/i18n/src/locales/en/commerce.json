@@ -101,7 +101,8 @@
                 "amenities": "Amenities",
                 "price": "Price",
                 "faqs": "FAQs",
-                "meetingPoint": "Meeting point"
+                "meetingPoint": "Meeting point",
+                "practicalInfo": "Practical details"
             },
             "sections": {
                 "type": "Category",
@@ -130,7 +131,21 @@
                 "meetingPointHint": "Where the experience starts. It can be an address or a landmark.",
                 "meetingPointLat": "Latitude (optional)",
                 "meetingPointLong": "Longitude (optional)",
-                "meetingPointCoordsHint": "If you add the coordinates, we can show the spot on a map later on. You can leave them empty."
+                "meetingPointCoordsHint": "If you add the coordinates, we can show the spot on a map later on. You can leave them empty.",
+                "durationHours": "Duration — hours",
+                "durationMinutes": "Duration — minutes",
+                "durationHint": "How long the experience lasts. Leave both fields empty if you would rather not publish it.",
+                "whatToBring": "What to bring",
+                "whatToBringPlaceholder": "Insect repellent\nClosed shoes\nSwimsuit",
+                "whatToBringHint": "One item per line. What the person signing up has to bring.",
+                "requirements": "Requirements",
+                "requirementsPlaceholder": "Minimum age 12\nMust know how to swim\nNot suitable during pregnancy",
+                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in.",
+                "cancellationPolicy": "Cancellation policy",
+                "cancellationPolicyPlaceholder": "If there is a weather alert or the river runs low, we let you know 12 hours ahead and reschedule at no cost.",
+                "cancellationPolicyHint": "What happens if the outing does not run: rain, wind, a low river, or not reaching the minimum group size.",
+                "acceptsPrivateGroups": "I offer special pricing for private groups",
+                "acceptsPrivateGroupsHint": "When this is on, the listing invites people to write to you about groups. We publish no rate card."
             },
             "acceptsEvents": {
                 "label": "We accept events (birthdays, corporate, weddings)",

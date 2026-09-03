@@ -113,7 +113,16 @@ export function zodIssuesToFieldErrors(
 
         const params: Record<string, unknown> = {};
         if (issue.minimum !== undefined) params.min = Number(issue.minimum);
-        if (issue.maximum !== undefined) params.max = Number(issue.maximum);
+        if (issue.maximum !== undefined) {
+            // `count` mirrors `max` so a message split into a CLDR `_one`/`_other`
+            // pair (HOS-898, e.g. "cannot exceed N minutes") resolves the right
+            // sibling via `resolveValidationMessage` → `pluralize()`. Harmless for
+            // the vast majority of `.max()` messages with no such pair — they have
+            // no `_one`/`_other` sibling to select, so `pluralize()` falls back to
+            // the base key exactly as before.
+            params.max = Number(issue.maximum);
+            params.count = Number(issue.maximum);
+        }
 
         errors[key] = resolveValidationMessage({
             key: issue.message,
