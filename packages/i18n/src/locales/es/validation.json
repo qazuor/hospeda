@@ -3,6 +3,10 @@
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres"
         },
+        "entityRef": {
+            "forbiddenForManual": "Un código manual no puede estar asociado a una entidad",
+            "requiredForGenerated": "Un código generado debe indicar la entidad de la que proviene"
+        },
         "entityType": {
             "max": "El tipo de entidad no puede superar los {{max}} caracteres"
         },

@@ -132,6 +132,81 @@ describe('QrCodeCreateInputSchema', () => {
         expect(QrCodeCreateInputSchema.safeParse({ ...base, label: '' }).success).toBe(false);
     });
 
+    /**
+     * `source` and the entity reference must agree. Before this invariant
+     * existed the JSDoc asserted it and nothing applied it, so a MANUAL code
+     * could be saved pointing at an entity that never generated it, and a
+     * GENERATED one could be saved naming no entity at all — unreachable
+     * forever by the (entity_type, entity_id) lookup that is the whole point
+     * of those columns.
+     */
+    describe('source / entity reference invariant', () => {
+        const ENTITY = { entityType: 'ACCOMMODATION', entityId: VALID_UUID };
+
+        it('accepts a MANUAL code with no entity reference', () => {
+            expect(QrCodeCreateInputSchema.safeParse(base).success).toBe(true);
+        });
+
+        it('accepts a MANUAL code with the reference explicitly nulled', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    entityType: null,
+                    entityId: null
+                }).success
+            ).toBe(true);
+        });
+
+        it('rejects a MANUAL code that names an entity', () => {
+            expect(QrCodeCreateInputSchema.safeParse({ ...base, ...ENTITY }).success).toBe(false);
+        });
+
+        it('accepts a GENERATED code that names its entity', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    source: QrCodeSourceEnum.GENERATED,
+                    ...ENTITY
+                }).success
+            ).toBe(true);
+        });
+
+        it('rejects a GENERATED code with no entity reference', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    source: QrCodeSourceEnum.GENERATED
+                }).success
+            ).toBe(false);
+        });
+
+        /**
+         * Half a reference is not half-identified, it is unidentified: the
+         * composite index needs both columns to answer "does this subject
+         * already have a code?".
+         */
+        it('rejects a GENERATED code carrying only entityType', () => {
+            const result = QrCodeCreateInputSchema.safeParse({
+                ...base,
+                source: QrCodeSourceEnum.GENERATED,
+                entityType: 'ACCOMMODATION'
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.issues.map((issue) => issue.path.join('.'))).toContain('entityId');
+        });
+
+        it('rejects a GENERATED code carrying only entityId', () => {
+            expect(
+                QrCodeCreateInputSchema.safeParse({
+                    ...base,
+                    source: QrCodeSourceEnum.GENERATED,
+                    entityId: VALID_UUID
+                }).success
+            ).toBe(false);
+        });
+    });
+
     it('rejects audit fields supplied by the caller', () => {
         expect(
             QrCodeCreateInputSchema.safeParse({ ...base, createdById: VALID_UUID }).success

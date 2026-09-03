@@ -3,6 +3,10 @@
         "description": {
             "max": "The description must not exceed {{max}} characters"
         },
+        "entityRef": {
+            "forbiddenForManual": "A manual code cannot be attached to an entity",
+            "requiredForGenerated": "A generated code must name the entity it came from"
+        },
         "entityType": {
             "max": "The entity type must not exceed {{max}} characters"
         },
