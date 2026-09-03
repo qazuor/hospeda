@@ -3,11 +3,13 @@
  * Returns a single gastronomy listing projected through GastronomyPublicSchema.
  * Returns null (404) when the listing is not found or not publicly visible.
  */
+import { EntitlementKey } from '@repo/billing';
 import { GastronomyPublicSchema } from '@repo/schemas';
 import {
     GastronomyService,
+    getGastronomyEvents,
     getGastronomyMenu,
-    resolveOwnerGrantsGastronomyMenuManagement,
+    resolveOwnerGastronomyPlanEntitlements,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -19,6 +21,7 @@ import {
 } from '../../../utils/commerce-catalog-relations';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { applyGastronomyVenueEventsGate } from './events-projection';
 import { applyGastronomyMenuManagementGate } from './menu-projection';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
@@ -64,11 +67,18 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // as "loaded, and there are none" from a payload that never joined.
         //
         // HOS-895 PR2: the structured carta and the uploaded photo/PDF are read
-        // in the same parallel batch, and gated by the SAME live check —
-        // `resolveOwnerGrantsGastronomyMenuManagement` reads the owner's
-        // CURRENT gastronomy subscription, not whatever plan was active when
-        // the carta was typed or the file was uploaded. See the resolver's own
-        // doc for why this is a live read rather than a synced column.
+        // in the same parallel batch, and gated by a live check that reads the
+        // owner's CURRENT gastronomy subscription, not whatever plan was active
+        // when the carta was typed or the file was uploaded. See the resolver's
+        // own doc for why this is a live read rather than a synced column.
+        //
+        // HOS-1042 adds the venue agenda on those same terms, and takes the
+        // plan's whole entitlement SET in ONE resolver call rather than asking
+        // a second boolean question. Two calls would be three extra queries per
+        // page view AND would let the carta and the agenda be answered from
+        // different reads of the same subscription if a plan change landed
+        // between them — a page that showed one paid feature and withheld the
+        // other, for no reason a reader could see.
         //
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the protected menu routes use.
@@ -76,25 +86,36 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             gastronomyService as unknown as { model: Parameters<typeof getGastronomyMenu>[0] }
         ).model;
 
-        const [amenitiesData, featuresData, menuResult, ownerGrantsMenuManagement] =
+        const [amenitiesData, featuresData, menuResult, eventsResult, ownerPlanEntitlements] =
             await Promise.all([
                 fetchGastronomyAmenities(gastronomy.id),
                 fetchGastronomyFeatures(gastronomy.id),
                 getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-                resolveOwnerGrantsGastronomyMenuManagement({ ownerId: gastronomy.ownerId })
+                getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
+                resolveOwnerGastronomyPlanEntitlements({ ownerId: gastronomy.ownerId })
             ]);
 
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement
+            ownerGrantsMenuManagement: ownerPlanEntitlements.has(
+                EntitlementKey.MANAGE_GASTRONOMY_MENU
+            )
+        });
+
+        const eventsGate = applyGastronomyVenueEventsGate({
+            events: eventsResult.error ? [] : eventsResult.data.events,
+            ownerGrantsVenueEvents: ownerPlanEntitlements.has(
+                EntitlementKey.MANAGE_GASTRONOMY_EVENTS
+            )
         });
 
         return {
             ...gastronomy,
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,
-            ...menuGate
+            ...menuGate,
+            ...eventsGate
         };
     },
     options: {

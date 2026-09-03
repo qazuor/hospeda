@@ -25,10 +25,12 @@ import { protectedGetGastronomyBrochureRoute } from './brochure';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
 import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
+import { protectedGetGastronomyEventsRoute } from './getEvents';
 import { protectedGetGastronomyMediaRoute } from './getMedia';
 import { protectedGetGastronomyMenuRoute } from './getMenu';
 import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedPatchGastronomyRoute } from './patch';
+import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
@@ -82,6 +84,17 @@ app.route('/', protectedUploadGastronomyMenuFileRoute);
 
 // DELETE /{id}/menu-file — clear it, asset included. Same gate as the upload.
 app.route('/', protectedDeleteGastronomyMenuFileRoute);
+
+// Venue events (HOS-1042) — the venue's own agenda. Registered before /{id}
+// for the same DEFENSIVE reason as every static-segment entry above.
+//
+// GET /{id}/events — read the agenda. NOT entitlement-gated: an owner whose
+// plan no longer grants it still owns the rows, and only writing is paid.
+app.route('/', protectedGetGastronomyEventsRoute);
+
+// PUT /{id}/events — replace the agenda. Gated on MANAGE_GASTRONOMY_EVENTS
+// (gastronomy-pro and above).
+app.route('/', protectedPutGastronomyEventsRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetGastronomyByIdRoute);

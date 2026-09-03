@@ -1315,6 +1315,13 @@ export function createDbMock() {
         GastronomyMenuItemModel: GenericMockModel,
         gastronomyMenuItemModel: new GenericMockModel(),
 
+        // HOS-1042: the venue agenda. `gastronomy.events.ts` constructs the
+        // CLASS itself, same as the carta above, so it has to be in this
+        // inventory or `new GastronomyEventModel()` throws "not a constructor"
+        // at request time instead of failing a visible assertion.
+        GastronomyEventModel: GenericMockModel,
+        gastronomyEventModel: new GenericMockModel(),
+
         // HOS-277: AllianceLeadModel — instantiated at module scope by
         // AllianceLeadService when the alliance lead routes load. A GenericMockModel
         // no-op stub is sufficient for route-level permission-gate tests (no real DB
