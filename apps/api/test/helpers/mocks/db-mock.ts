@@ -227,6 +227,7 @@ const qrCodesTableStub = {
     source: 'source',
     entityType: 'entity_type',
     entityId: 'entity_id',
+    purpose: 'purpose',
     renderOptions: 'render_options',
     isActive: 'is_active',
     createdAt: 'created_at',

@@ -108,6 +108,10 @@ describe('GET /mine/qr', () => {
         const input = mockGetOrCreateForEntity.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(input.entityId).toBe(HT_ID);
         expect(input.entityType).toBe('HOST_TRADE');
+        // Half the lookup key. A code provisioned with a null purpose sits
+        // OUTSIDE the partial unique index, so the concurrent-GET race reopens
+        // for that provider with nothing anywhere to show it.
+        expect(input.purpose).toBe('HOST_TRADE_USAGE');
         expect(input.targetUrl).toBe(
             'http://localhost:4321/mi-cuenta/directorio-proveedores/plomero-centro/registrar-uso'
         );

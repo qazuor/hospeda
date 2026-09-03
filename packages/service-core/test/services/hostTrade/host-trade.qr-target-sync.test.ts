@@ -19,7 +19,7 @@
  */
 
 import type { AccommodationModel, HostTradeModel } from '@repo/db';
-import { EntityTypeEnum, PermissionEnum, QrCodeSourceEnum } from '@repo/schemas';
+import { EntityTypeEnum, PermissionEnum, QrCodePurposeEnum, QrCodeSourceEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostTradeService } from '../../../src/services/hostTrade/host-trade.service';
 import type { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
@@ -77,15 +77,23 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
               source: QrCodeSourceEnum.GENERATED,
               entityType: EntityTypeEnum.HOST_TRADE,
               entityId: HT_ID,
+              purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
               isActive: true,
               deletedAt: null
           }
         : null;
 
-    /** Keys that ADDRESS the row rather than patch it. Everything else is a write. */
-    const ADDRESSING_KEYS = new Set(['actor', 'entityType', 'entityId', 'ctx']);
+    /**
+     * Keys that ADDRESS the row rather than patch it. Everything else is a
+     * write. `purpose` is addressing: it is half the lookup key and immutable
+     * once written, never a column this call may set.
+     */
+    const ADDRESSING_KEYS = new Set(['actor', 'entityType', 'entityId', 'purpose', 'ctx']);
 
-    const findLiveCodeForEntity = vi.fn(async () => ({ data: stored, error: undefined }));
+    const findLiveCodeForEntity = vi.fn(async (_input: Record<string, unknown>) => ({
+        data: stored,
+        error: undefined
+    }));
     const setEntityTargetUrl = vi.fn(async (input: Record<string, unknown>) => {
         if (!stored) return { data: { updated: false }, error: undefined };
 
@@ -156,6 +164,27 @@ describe('HostTradeService — QR target sync on slug change', () => {
 
         expect(result.error).toBeUndefined();
         expect(qr.stored?.targetUrl).toBe(usageUrl(NEW_SLUG));
+    });
+
+    /**
+     * Both QR calls must name the SAME purpose, or the hook reads one row and
+     * writes another. Nothing else in the system would notice: the read would
+     * find the provider's code, the write would silently address a row that
+     * does not exist, and `target_url` would stay stale with no error anywhere.
+     */
+    it('addresses the listing’s code by its HOST_TRADE_USAGE purpose on both calls', async () => {
+        const qr = makeQrDouble({ slug: 'k7Qm2XbT', targetUrl: usageUrl(OLD_SLUG) });
+        const { service } = buildService({ qr });
+
+        await service.update(admin, HT_ID, {
+            slug: NEW_SLUG
+        } as Parameters<typeof service.update>[2]);
+
+        const read = qr.findLiveCodeForEntity.mock.calls[0]?.[0] as Record<string, unknown>;
+        const write = qr.setEntityTargetUrl.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(read.purpose).toBe(QrCodePurposeEnum.HOST_TRADE_USAGE);
+        expect(write.purpose).toBe(QrCodePurposeEnum.HOST_TRADE_USAGE);
+        expect(write.purpose).toBe(read.purpose);
     });
 
     /**

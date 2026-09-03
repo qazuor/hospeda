@@ -11,7 +11,7 @@
  */
 
 import type { QrCodeModel, QrCodeScanModel } from '@repo/db';
-import { EntityTypeEnum, QrCodeSourceEnum } from '@repo/schemas';
+import { EntityTypeEnum, QrCodePurposeEnum, QrCodeSourceEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
 import { createActor } from '../../factories/actorFactory';
@@ -43,6 +43,7 @@ const existingCode = {
     source: QrCodeSourceEnum.GENERATED,
     entityType: EntityTypeEnum.HOST_TRADE,
     entityId: HOST_TRADE_ID,
+    purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
     renderOptions: RENDER_OPTIONS,
     isActive: true,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -98,6 +99,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL,
                 label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
             });
@@ -105,6 +107,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL,
                 label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
             });
@@ -117,6 +120,92 @@ describe('QrCodeService — entity provisioning', () => {
             // Idempotence is only worth anything if the second call did not
             // mint a second permanent slug.
             expect(modelMock.create).not.toHaveBeenCalled();
+        });
+
+        /**
+         * The reason `purpose` is part of the key rather than a label.
+         *
+         * A gastronomy listing carries a door code (its listing) and a table
+         * code (its menu) at the same time, and an experience carries its
+         * listing code and its certificate code — which resolve to the SAME URL
+         * today, so neither the target nor the entity tells them apart. If the
+         * lookup ignored `purpose`, asking for the menu code would hand back
+         * the listing's, the menu would never get a code of its own, and the
+         * question the whole feature exists to answer — which printed code
+         * brings people in — would have no way to be asked.
+         */
+        it('treats two purposes on one entity as two different codes', async () => {
+            const doorCode = {
+                ...existingCode,
+                id: QR_ID,
+                slug: 'k7Qm2XbT',
+                purpose: QrCodePurposeEnum.LISTING
+            };
+            const tableCode = {
+                ...existingCode,
+                id: SECOND_QR_ID,
+                slug: 'Zx9Wp2Qm',
+                purpose: QrCodePurposeEnum.MENU
+            };
+
+            // The model answers per-purpose, exactly as the three-column filter
+            // makes it. Reading `where.purpose` here is what proves the service
+            // asked the narrow question rather than filtering afterwards.
+            modelMock.findAll.mockImplementation(async (where: Record<string, unknown>) => {
+                if (where.purpose === QrCodePurposeEnum.LISTING) {
+                    return { items: [doorCode], total: 1 };
+                }
+                if (where.purpose === QrCodePurposeEnum.MENU) {
+                    return { items: [tableCode], total: 1 };
+                }
+                return { items: [], total: 0 };
+            });
+
+            const listing = await service.getOrCreateForEntity({
+                actor,
+                entityType: EntityTypeEnum.HOST_TRADE,
+                entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.LISTING,
+                targetUrl: USAGE_URL,
+                label: 'Listing'
+            });
+            const menu = await service.getOrCreateForEntity({
+                actor,
+                entityType: EntityTypeEnum.HOST_TRADE,
+                entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.MENU,
+                targetUrl: USAGE_URL,
+                label: 'Menu'
+            });
+
+            expect(listing.error).toBeUndefined();
+            expect(menu.error).toBeUndefined();
+            expect(listing.data?.id).toBe(QR_ID);
+            expect(menu.data?.id).toBe(SECOND_QR_ID);
+            // Two different physical stickers: different slugs, different rows.
+            expect(menu.data?.slug).not.toBe(listing.data?.slug);
+            // Neither was mistaken for a missing code, so nothing was minted.
+            expect(modelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('sends the purpose to the database as part of the filter', async () => {
+            modelMock.findAll.mockResolvedValue({ items: [existingCode], total: 1 });
+
+            await service.getOrCreateForEntity({
+                actor,
+                entityType: EntityTypeEnum.HOST_TRADE,
+                entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
+                targetUrl: USAGE_URL,
+                label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
+            });
+
+            // Field by field: `objectContaining` cannot see a key that was
+            // never sent, which is the exact failure this pins.
+            const where = modelMock.findAll.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(where.entityType).toBe(EntityTypeEnum.HOST_TRADE);
+            expect(where.entityId).toBe(HOST_TRADE_ID);
+            expect(where.purpose).toBe(QrCodePurposeEnum.HOST_TRADE_USAGE);
         });
 
         it('creates a GENERATED code carrying the entity, the target and a minted slug', async () => {
@@ -132,6 +221,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL,
                 label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
             });
@@ -145,6 +235,10 @@ describe('QrCodeService — entity provisioning', () => {
             expect(written.source).toBe(QrCodeSourceEnum.GENERATED);
             expect(written.entityType).toBe(EntityTypeEnum.HOST_TRADE);
             expect(written.entityId).toBe(HOST_TRADE_ID);
+            // Written, not just filtered on: a row stored with a null purpose
+            // sits OUTSIDE the partial unique index, so the race it exists to
+            // close reopens silently for that subject.
+            expect(written.purpose).toBe(QrCodePurposeEnum.HOST_TRADE_USAGE);
             expect(written.targetUrl).toBe(USAGE_URL);
             expect(written.isActive).toBe(true);
             expect(written.renderOptions).toEqual(RENDER_OPTIONS);
@@ -169,6 +263,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL,
                 label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
             });
@@ -190,6 +285,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL,
                 label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
             });
@@ -214,6 +310,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL,
                 label: 'Host trade usage QR — Plomero Centro (plomero-centro)'
             });
@@ -248,7 +345,8 @@ describe('QrCodeService — entity provisioning', () => {
             const result = await service.findLiveCodeForEntity({
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
-                entityId: HOST_TRADE_ID
+                entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE
             });
 
             expect(result.error).toBeUndefined();
@@ -261,7 +359,8 @@ describe('QrCodeService — entity provisioning', () => {
             const result = await service.findLiveCodeForEntity({
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
-                entityId: HOST_TRADE_ID
+                entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE
             });
 
             expect(result.error).toBeUndefined();
@@ -281,6 +380,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: RENAMED_URL
             });
 
@@ -304,6 +404,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: USAGE_URL
             });
 
@@ -319,6 +420,7 @@ describe('QrCodeService — entity provisioning', () => {
                 actor,
                 entityType: EntityTypeEnum.HOST_TRADE,
                 entityId: HOST_TRADE_ID,
+                purpose: QrCodePurposeEnum.HOST_TRADE_USAGE,
                 targetUrl: RENAMED_URL
             });
 
