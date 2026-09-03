@@ -558,6 +558,17 @@
         }
     },
     "ai": {
+        "chat": {
+            "accommodationId": {
+                "invalidUuid": "The accommodation ID must be a valid UUID",
+                "notAllowedForEntityType": "accommodationId cannot be sent when the question is about a gastronomy or experience listing"
+            },
+            "entityId": {
+                "conflictsWithAccommodationId": "entityId and accommodationId point to different listings",
+                "invalidUuid": "The listing ID must be a valid UUID",
+                "required": "The ID of the listing being asked about is missing"
+            }
+        },
         "textImprove": {
             "entityId": {
                 "invalidUuid": "The entity ID must be a valid UUID"
