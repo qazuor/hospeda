@@ -117,7 +117,8 @@
                 "faqs": "Preguntas frecuentes",
                 "meetingPoint": "Punto de encuentro",
                 "practicalInfo": "Datos prácticos",
-                "contactSocial": "Contacto y redes"
+                "contactSocial": "Contacto y redes",
+                "menu": "Carta"
             },
             "sections": {
                 "type": "Categoría",
@@ -275,6 +276,43 @@
             },
             "amenities": {
                 "catalogUnavailable": "No pudimos cargar el listado de servicios y características. Recargá la página para reintentar."
+            },
+            "menuManager": {
+                "title": "Carta",
+                "intro": "Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.",
+                "fileTitle": "Foto o PDF del menú",
+                "filePdf": "Ver el PDF",
+                "fileImage": "Ver la foto",
+                "fileUnavailable": "No se puede abrir este archivo. Eliminalo y subilo de nuevo.",
+                "addFile": "Subir foto o PDF",
+                "replaceFile": "Reemplazar el archivo",
+                "removeFile": "Eliminar",
+                "uploaded": "Archivo del menú subido.",
+                "fileRemoved": "Archivo del menú eliminado.",
+                "uploadError": "No se pudo subir el archivo del menú.",
+                "deleteError": "No se pudo eliminar el archivo del menú.",
+                "sectionsTitle": "Platos por sección",
+                "newSection": "Nueva sección",
+                "sectionName": "Nombre de la sección",
+                "sectionNamePlaceholder": "Entradas, Principales, Postres…",
+                "addSection": "Agregar sección",
+                "removeSection": "Quitar",
+                "moveSectionUp": "Subir la sección",
+                "moveSectionDown": "Bajar la sección",
+                "itemName": "Nombre del plato",
+                "itemNamePlaceholder": "Nombre del plato",
+                "itemDescription": "Descripción del plato",
+                "itemDescriptionPlaceholder": "Ingredientes, porción…",
+                "itemPrice": "Precio del plato",
+                "itemPricePlaceholder": "A consultar",
+                "itemAvailable": "Disponible",
+                "addItem": "Agregar plato",
+                "removeItem": "Quitar",
+                "save": "Guardar carta",
+                "saving": "Guardando…",
+                "saved": "Carta guardada.",
+                "saveError": "No se pudo guardar la carta.",
+                "locked": "Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace."
             }
         },
         "checklist": {

@@ -692,7 +692,10 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     maxListings: 1,
     sortOrder: 2,
     isActive: false,
-    monthlyPriceArs: 0
+    monthlyPriceArs: 0,
+    // HOS-895 — the first thing that separates `-pro` from `-basico` by more
+    // than its name: the structured carta. Owner decision, `pro` and upwards.
+    extraEntitlements: [EntitlementKey.MANAGE_GASTRONOMY_MENU]
 });
 
 /**
@@ -730,10 +733,14 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
-    // HOS-1058, and the first thing that separates this tier from básico by
-    // more than its name: the printable PDF ficha. Owner decision, 2026-09-01
-    // — premium, in both verticals.
-    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF]
+    // HOS-1058: the printable PDF ficha. Owner decision, 2026-09-01 — premium,
+    // in both verticals.
+    //
+    // HOS-895 adds the structured carta, which is a `-pro` capability. Repeated
+    // here rather than inherited, because these arrays are literal per plan and
+    // nothing composes a tier from the one below it: omitting it would mean the
+    // dearer plan silently lost a feature `-pro` has.
+    extraEntitlements: [EntitlementKey.DOWNLOAD_LISTING_PDF, EntitlementKey.MANAGE_GASTRONOMY_MENU]
 });
 
 /**

@@ -62,6 +62,9 @@ export type CommerceEditorSection =
     | 'servicios'
     | 'fotos'
     | 'contacto'
+    // HOS-895 — gastronomy only, the mirror of the two experience-only slugs
+    // above. Opening it on an experience listing redirects to the hub.
+    | 'carta'
     | 'preguntas'
     | 'traducciones';
 
