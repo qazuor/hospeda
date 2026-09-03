@@ -10,7 +10,7 @@ import { billingAddonPurchases } from './billing_addon_purchase.dbschema.ts';
  * `billing_addon_purchases` has no accommodation reference and a
  * unique-active-per-(customerId, addonSlug) constraint (an owner can only ever
  * have ONE active purchase per addon slug regardless of accommodation count).
- * Mirrors the `commerce_listing_subscriptions` link-table pattern.
+ * Mirrors the `entity_subscriptions` link-table pattern.
  *
  * No denormalized `status`/`expiresAt` columns here — the featured-entitlement
  * resolver (T-004) JOINs to `billing_addon_purchases` for

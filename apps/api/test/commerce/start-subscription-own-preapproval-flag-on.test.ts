@@ -105,8 +105,8 @@ vi.mock('@repo/db', () => ({
     and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     billingPendingCheckouts: { __table: 'billing_pending_checkouts' },
-    commerceListingSubscriptions: {
-        __table: 'commerce_listing_subscriptions',
+    entitySubscriptions: {
+        __table: 'entity_subscriptions',
         entityType: 'entity_type',
         entityId: 'entity_id'
     },
@@ -114,7 +114,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { commerceListingSubscriptions } from '@repo/db';
+import { entitySubscriptions } from '@repo/db';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import { initiateCommerceMonthlySubscription } from '../../src/services/subscription-checkout.service';
@@ -217,12 +217,12 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
         expect(call).not.toHaveProperty('externalReference');
     });
 
-    it('writeDomainLinkRow inserts into commerceListingSubscriptions with the SAME transaction client', async () => {
+    it('writeDomainLinkRow inserts into entitySubscriptions with the SAME transaction client', async () => {
         const billing = createBillingMock();
 
         await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
 
-        expect(txStub.insert).toHaveBeenCalledWith(commerceListingSubscriptions);
+        expect(txStub.insert).toHaveBeenCalledWith(entitySubscriptions);
         expect(insertValues).toHaveBeenCalledWith(
             expect.objectContaining({
                 subscriptionId: LOCAL_SUB_ID,

@@ -38,7 +38,7 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 
 /**
  * The domain bridge row that ties an entity (commerce listing / partner) to its
- * current billing subscription. Both `commerce_listing_subscriptions` and
+ * current billing subscription. Both `entity_subscriptions` and
  * `partner_subscriptions` are upserted per entity, so at most one exists.
  */
 export interface CheckoutBridgeSnapshot {

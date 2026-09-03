@@ -551,7 +551,7 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  * tier differentiator in either catalogue — the cap is.
  *
  * This replaced the previous `entitlements: []`, whose stated reason was that
- * commerce visibility runs through `commerce_listing_subscriptions` + the
+ * commerce visibility runs through `entity_subscriptions` + the
  * reconciler rather than the entitlement engine. That remains true of
  * VISIBILITY; what changed (owner decision, 2026-09-01) is that the platform
  * now wants ONE mechanism rather than two, so commerce gets real keys and the

@@ -121,7 +121,7 @@ export interface CreateOwnPreapprovalSubscriptionInput extends CreatePaidSubscri
      */
     readonly domainMetadata?: Readonly<Record<string, string>>;
     /**
-     * Optional domain-specific write (commerce_listing_subscriptions /
+     * Optional domain-specific write (entity_subscriptions /
      * partner_subscriptions upsert), executed in the SAME local transaction as
      * the status/`productDomain`/`metadata` UPDATE this function issues.
      *

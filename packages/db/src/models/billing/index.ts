@@ -5,3 +5,4 @@ export * from './billingMpPlan.model.ts';
 export * from './billingNotificationLog.model.ts';
 export * from './billingSettings.model.ts';
 export * from './billingSubscriptionEvent.model.ts';
+export * from './entitySubscription.model.ts';

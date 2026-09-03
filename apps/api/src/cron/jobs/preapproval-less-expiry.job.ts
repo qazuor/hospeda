@@ -47,7 +47,7 @@
  * ## Commerce listings
  *
  * A commerce listing's public visibility is driven by a DENORMALIZED copy of
- * the status on `commerce_listing_subscriptions`, not by `billing_subscriptions`
+ * the status on `entity_subscriptions`, not by `billing_subscriptions`
  * itself. `reconcileCommerceListingForSubscription` is the bridge that keeps
  * the two in step, and every other status-changing path (MP webhook, dunning,
  * finalize-cancelled-subs) calls it. This job does too: expiring the
@@ -272,7 +272,7 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
 
                     // Commerce listings do not read `billing_subscriptions`.
                     // They read a denormalized copy of the status on
-                    // `commerce_listing_subscriptions`, and this bridge is what
+                    // `entity_subscriptions`, and this bridge is what
                     // keeps the two in step — the MP webhook, dunning and
                     // finalize-cancelled-subs all call it for the same reason.
                     // Skipping it here would expire the subscription while

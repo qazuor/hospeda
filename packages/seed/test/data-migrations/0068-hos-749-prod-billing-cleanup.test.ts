@@ -22,7 +22,7 @@ import {
     billingPayments,
     billingPendingCheckouts,
     billingSubscriptions,
-    commerceListingSubscriptions,
+    entitySubscriptions,
     partnerSubscriptions
 } from '@repo/db';
 import { getTableName } from 'drizzle-orm';
@@ -476,7 +476,7 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
         const probe = buildFakeDb({
             subscriptions: INVENTORY_SUBSCRIPTIONS,
             retainedRows: {
-                [getTableName(commerceListingSubscriptions)]: [{ id: 'cls-still-active' }]
+                [getTableName(entitySubscriptions)]: [{ id: 'cls-still-active' }]
             }
         });
 

@@ -46,7 +46,7 @@ import { LimitKey } from '../types/plan.types.js';
 
 /**
  * The two commerce verticals, spelled the way both
- * `commerce_listing_subscriptions.entity_type` and
+ * `entity_subscriptions.entity_type` and
  * `billing_subscriptions.product_domain` spell them.
  *
  * The collision is deliberate (see `ProductDomainEnum`'s doc): it makes a link

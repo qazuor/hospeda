@@ -176,7 +176,7 @@ export interface CreatePendingProviderSubscriptionInput {
      * for commerce, `{ partnerId }` for partner).
      *
      * It exists because the domain link rows only encode the INVERSE direction
-     * and cannot be trusted to survive: `commerce_listing_subscriptions` is
+     * and cannot be trusted to survive: `entity_subscriptions` is
      * UNIQUE on `(entity_type, entity_id)` and `partner_subscriptions` on
      * `partner_id`, and both are UPSERTED. Path C creates one subscription per
      * checkout CLICK, so a second click overwrites the only pointer to the
@@ -196,7 +196,7 @@ export interface CreatePendingProviderSubscriptionInput {
      * subscription row and the correlation row.
      *
      * The commerce and partner checkouts each own a link table
-     * (`commerce_listing_subscriptions` / `partner_subscriptions`) whose row must
+     * (`entity_subscriptions` / `partner_subscriptions`) whose row must
      * exist for their reconcilers to find the listing/partner when the webhook
      * later activates the subscription. Writing it after this function returned
      * would leave a window in which a `pending_provider` commerce subscription

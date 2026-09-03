@@ -5,7 +5,7 @@
  * ---
  * THE CASE THAT DOES NOT EXIST UNDER PER-LISTING BILLING
  *
- * Until HOS-688, `commerce_listing_subscriptions` had one row per listing and
+ * Until HOS-688, `entity_subscriptions` had one row per listing and
  * that row stood in for a subscription of its own: two restaurants meant two
  * MercadoPago preapprovals. Under the per-owner model the same table maps each
  * listing to its VERTICAL's subscription for that owner, and the checkout route
@@ -31,7 +31,7 @@ import {
     commerceVerticalToProductDomain,
     isEntitlementGrantingStatus
 } from '@repo/billing';
-import { commerceListingSubscriptions, eq, getDb } from '@repo/db';
+import { entitySubscriptions, eq, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
@@ -126,9 +126,9 @@ export async function findOwnerVerticalSubscription(input: {
 export async function countAttachedListings(input: { subscriptionId: string }): Promise<number> {
     const db = getDb();
     const rows = await db
-        .select({ status: commerceListingSubscriptions.status })
-        .from(commerceListingSubscriptions)
-        .where(eq(commerceListingSubscriptions.subscriptionId, input.subscriptionId));
+        .select({ status: entitySubscriptions.status })
+        .from(entitySubscriptions)
+        .where(eq(entitySubscriptions.subscriptionId, input.subscriptionId));
 
     return rows.filter((row) => SLOT_OCCUPYING_STATUSES.includes(row.status)).length;
 }
@@ -163,7 +163,7 @@ export async function attachListingToSubscription(input: {
     const productDomain = commerceVerticalToProductDomain(entityType);
 
     await db
-        .insert(commerceListingSubscriptions)
+        .insert(entitySubscriptions)
         .values({
             subscriptionId: subscription.id,
             productDomain,
@@ -172,10 +172,7 @@ export async function attachListingToSubscription(input: {
             status: subscription.status
         })
         .onConflictDoUpdate({
-            target: [
-                commerceListingSubscriptions.entityType,
-                commerceListingSubscriptions.entityId
-            ],
+            target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
             set: {
                 subscriptionId: subscription.id,
                 status: subscription.status,

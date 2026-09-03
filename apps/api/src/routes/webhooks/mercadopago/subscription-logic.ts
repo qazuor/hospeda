@@ -1307,7 +1307,7 @@ export async function processSubscriptionUpdated({
     }
 
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
-    // No-op for accommodation subs (no commerce_listing_subscriptions row).
+    // No-op for accommodation subs (no entity_subscriptions row).
     // Non-blocking: never breaks webhook processing.
     await reconcileCommerceListingForSubscription({
         subscriptionId: localSubscription.id,

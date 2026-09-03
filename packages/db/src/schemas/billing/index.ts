@@ -7,4 +7,5 @@ export * from './billing_pending_checkout.dbschema.ts';
 export * from './billing_plan_price_change.dbschema.ts';
 export * from './billing_settings.dbschema.ts';
 export * from './billing_subscription_event.dbschema.ts';
+export * from './entity_subscription.dbschema.ts';
 export * from './featured_listing_addon_grant.dbschema.ts';

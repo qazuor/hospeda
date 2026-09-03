@@ -8,10 +8,10 @@
 import {
     accommodationReviews,
     accommodations,
-    commerceListingSubscriptions,
     type DrizzleClient,
     destinationReviews,
     destinations,
+    entitySubscriptions,
     eq,
     eventLocations,
     eventOrganizers,
@@ -848,7 +848,7 @@ interface SeedCommerceListingSubscriptionOverrides {
 }
 
 /**
- * Seeds a `commerce_listing_subscriptions` link row tying a gastronomy
+ * Seeds an `entity_subscriptions` link row tying a gastronomy
  * listing to a stub billing subscription row.
  *
  * Because the billing subscription table (`billing_subscriptions`) is managed
@@ -885,7 +885,7 @@ export async function seedCommerceListingSubscription(
     `);
 
     // Insert a minimal billing_subscriptions stub row to satisfy the FK from
-    // commerce_listing_subscriptions.  Uses raw SQL to ensure billing_interval
+    // entity_subscriptions.  Uses raw SQL to ensure billing_interval
     // (NOT NULL in the qzpay-drizzle schema) is provided without relying on
     // Drizzle client-side $defaultFn which does not fire inside raw tx contexts.
     await tx.execute(sql`
@@ -904,14 +904,14 @@ export async function seedCommerceListingSubscription(
         )
     `);
 
-    await tx.insert(commerceListingSubscriptions).values({
+    await tx.insert(entitySubscriptions).values({
         id: linkId,
         subscriptionId,
         entityType: 'gastronomy',
         entityId: options.gastronomyId,
         status: options.status,
         productDomain: 'commerce'
-    } as typeof commerceListingSubscriptions.$inferInsert);
+    } as typeof entitySubscriptions.$inferInsert);
 
     return { linkId, subscriptionId };
 }

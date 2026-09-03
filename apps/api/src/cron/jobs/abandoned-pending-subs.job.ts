@@ -307,7 +307,7 @@ async function reapPendingCandidate(params: {
     }
 
     // Propagate the terminal status to the domain link tables. A commerce or
-    // partner checkout owns a `commerce_listing_subscriptions` /
+    // partner checkout owns a `entity_subscriptions` /
     // `partner_subscriptions` row created at checkout time; without these calls
     // it keeps reporting the pre-abandon status forever, since every OTHER
     // status-changing path (webhook, dunning, finalize-cancelled) already

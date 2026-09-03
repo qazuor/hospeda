@@ -129,7 +129,7 @@ import {
     and,
     billingPlans,
     billingSubscriptions,
-    commerceListingSubscriptions,
+    entitySubscriptions,
     eq,
     isNull,
     sql
@@ -172,10 +172,10 @@ async function resolveSubscriptionVerticals(
 ): Promise<ReadonlyMap<string, 'gastronomy' | 'experience'>> {
     const linkRows = await db
         .select({
-            subscriptionId: commerceListingSubscriptions.subscriptionId,
-            entityType: commerceListingSubscriptions.entityType
+            subscriptionId: entitySubscriptions.subscriptionId,
+            entityType: entitySubscriptions.entityType
         })
-        .from(commerceListingSubscriptions);
+        .from(entitySubscriptions);
 
     // subscriptionId -> resolved vertical, or `null` once a disagreement or an
     // unrecognized entityType is observed (poisoned — never resolved after).
@@ -242,9 +242,9 @@ async function rewriteCommerceDomain(
             // entityType. Distinguish only for reporting — both leave the
             // subscription at 'commerce' untouched, never guessed.
             const [anyLink] = await db
-                .select({ subscriptionId: commerceListingSubscriptions.subscriptionId })
-                .from(commerceListingSubscriptions)
-                .where(eq(commerceListingSubscriptions.subscriptionId, sub.id))
+                .select({ subscriptionId: entitySubscriptions.subscriptionId })
+                .from(entitySubscriptions)
+                .where(eq(entitySubscriptions.subscriptionId, sub.id))
                 .limit(1);
             if (anyLink) {
                 subscriptionsWithAmbiguousLinkRows += 1;
@@ -271,17 +271,17 @@ async function rewriteCommerceDomain(
         subscriptionsRewritten += 1;
 
         const updatedLinks = await db
-            .update(commerceListingSubscriptions)
+            .update(entitySubscriptions)
             .set({ productDomain: vertical })
             .where(
                 and(
-                    eq(commerceListingSubscriptions.subscriptionId, sub.id),
+                    eq(entitySubscriptions.subscriptionId, sub.id),
                     // Literal 'commerce', not `ProductDomainEnum.COMMERCE` — see the
                     // comment on the `commerceSubs` query above.
-                    eq(commerceListingSubscriptions.productDomain, 'commerce')
+                    eq(entitySubscriptions.productDomain, 'commerce')
                 )
             )
-            .returning({ id: commerceListingSubscriptions.id });
+            .returning({ id: entitySubscriptions.id });
         linkRowsRewritten += updatedLinks.length;
     }
 

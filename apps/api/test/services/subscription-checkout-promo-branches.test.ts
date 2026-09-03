@@ -131,7 +131,7 @@ vi.mock('@repo/db', async () => {
             insert: vi.fn(() => ({ values: dbInsertValuesMock }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
-        commerceListingSubscriptions: { __table: 'commerce_listing_subscriptions' },
+        entitySubscriptions: { __table: 'entity_subscriptions' },
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
         withTransaction: vi.fn()
     };

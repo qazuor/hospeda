@@ -117,7 +117,7 @@ vi.mock('@repo/db', () => ({
     and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     billingPendingCheckouts: { __table: 'billing_pending_checkouts' },
-    commerceListingSubscriptions: {
+    entitySubscriptions: {
         entityType: 'entity_type',
         entityId: 'entity_id'
     },
