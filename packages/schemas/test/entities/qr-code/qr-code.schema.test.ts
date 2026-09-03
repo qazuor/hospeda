@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    EntityTypeEnum,
     QR_CODE_DEFAULT_BACKGROUND_COLOR,
     QR_CODE_DEFAULT_FOREGROUND_COLOR,
     QR_CODE_DEFAULT_MARGIN,
@@ -141,7 +142,28 @@ describe('QrCodeCreateInputSchema', () => {
      * of those columns.
      */
     describe('source / entity reference invariant', () => {
-        const ENTITY = { entityType: 'ACCOMMODATION', entityId: VALID_UUID };
+        const ENTITY = { entityType: EntityTypeEnum.HOST_TRADE, entityId: VALID_UUID };
+
+        /**
+         * `entityType` is the shared enum, not free text (HOS-981). This is the
+         * failure the enum exists to stop: the generator writing `'hostTrade'`
+         * while an operator types `'host_trade'`, the (entityType, entityId)
+         * lookup missing the existing code, and a second permanent slug being
+         * minted for the same provider.
+         */
+        it('rejects an entityType outside EntityTypeEnum', () => {
+            for (const bogus of ['hostTrade', 'host_trade', 'HOSTTRADE', 'provider']) {
+                expect(
+                    QrCodeCreateInputSchema.safeParse({
+                        ...base,
+                        source: QrCodeSourceEnum.GENERATED,
+                        entityType: bogus,
+                        entityId: VALID_UUID
+                    }).success,
+                    `entityType "${bogus}" must be rejected`
+                ).toBe(false);
+            }
+        });
 
         it('accepts a MANUAL code with no entity reference', () => {
             expect(QrCodeCreateInputSchema.safeParse(base).success).toBe(true);
