@@ -11,9 +11,17 @@
  *   plus the composed-media read attach helpers
  * - Projection utilities — projectExperiencePublic / projectExperienceOwnerAvatar
  * - Permission helpers — granular COMMERCE_* gate wrappers
+ * - Certificate helpers (HOS-1057) — issueExperienceCertificate /
+ *   listExperienceCertificates / getExperienceCertificate
  * - Types — ExperienceHookState
  */
 
+// Certificate helpers (HOS-1057)
+export {
+    getExperienceCertificate,
+    issueExperienceCertificate,
+    listExperienceCertificates
+} from './experience.certificate';
 // FAQ helpers
 export {
     addExperienceFaq,
