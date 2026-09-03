@@ -1,12 +1,9 @@
 {
     "title": "QR codes",
-    "singular": "QR code",
-    "plural": "QR codes",
     "description": "A printed code always points at the same short address; the destination is changed here, with nothing reprinted.",
     "create": "Create QR code",
     "edit": "Edit QR code",
     "detail": "Code detail",
-    "empty": "No QR codes yet.",
     "search": {
         "placeholder": "Search by name, code or destination"
     },
@@ -32,7 +29,6 @@
         "slugPlaceholder": "Generated for you if left empty",
         "slugHelp": "Appears in the printed URL. Can only be chosen at creation.",
         "slugLocked": "The short code cannot be changed: it is already printed.",
-        "sourceLabel": "Source",
         "isActiveLabel": "Active",
         "isActiveHelp": "An inactive code stops redirecting but keeps every scan already recorded.",
         "renderTitle": "How it is drawn",
@@ -81,6 +77,10 @@
         "deleted": "QR code deleted",
         "deleteError": "The QR code could not be deleted",
         "deleteConfirm": "Delete this code? The short code stays reserved forever and the recorded scans are kept.",
-        "notFound": "No such QR code"
+        "notFound": "No such QR code",
+        "requiredLabel": "The name is missing: it is what lets you find this code a year from now.",
+        "requiredTargetUrl": "The destination URL is missing: without it the code leads nowhere.",
+        "invalid": "Check the marked fields: something here the server will not accept.",
+        "fieldInvalid": "Check this field."
     }
 }

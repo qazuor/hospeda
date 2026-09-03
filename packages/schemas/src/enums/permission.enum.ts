@@ -95,7 +95,20 @@ export enum PermissionCategoryEnum {
     SOCIAL_SETTINGS = 'SOCIAL_SETTINGS',
     SOCIAL_AUDIT = 'SOCIAL_AUDIT',
     /** Third-party integrations (e.g. MercadoLibre OAuth) (HOS-45 / SPEC-278). */
-    INTEGRATION = 'INTEGRATION'
+    INTEGRATION = 'INTEGRATION',
+    /**
+     * Redirectable QR codes (HOS-981).
+     *
+     * Declared even though `FEATURE_FLAG_MANAGE` — the value these permissions
+     * are modelled on — has no category of its own. Category assignment is a
+     * longest-prefix match on the enum KEY with a silent `SYSTEM` fallback, so
+     * without this the four `QR_CODE_*` permissions land in the catch-all and
+     * become near-impossible to find in the admin's categorized picker. That
+     * picker is precisely how an operator would delegate the QR manager to
+     * somebody without granting them settings wholesale, which is the reason
+     * the family exists at all.
+     */
+    QR_CODE = 'QR_CODE'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -936,6 +949,41 @@ export enum PermissionEnum {
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
+
+    // REDIRECTABLE QR CODES (HOS-981): the Plataforma → Códigos QR manager.
+    //
+    // ## Why a family of its own rather than the borrowed SETTINGS_MANAGE
+    //
+    // PR 1 leaned on `SETTINGS_MANAGE` because no route existed yet, and a
+    // permission with nothing behind it is a `role_permission` row nobody can
+    // explain later. Six routes exist now, and the borrowed gate has a concrete
+    // cost: handing the QR manager to somebody in marketing means also handing
+    // them SEO defaults, system tags and everything else `SETTINGS_MANAGE`
+    // opens. These four are what make that delegation possible without it.
+    //
+    // ## Spelling
+    //
+    // `platform.qrCode.*`, following `platform.featureFlag.manage` directly
+    // above — same area of the panel, same shape. Note that
+    // `permission-naming-convention.guard.test.ts` freezes 13 values whose
+    // `first.second` segments merge into an EXISTING family prefix
+    // (`event.organizer.*` shadowing `eventOrganizer.*`). `platform.qrCode.*`
+    // merges to `platformqrcode`, which is nobody's family prefix, so it does
+    // not join that list — exactly like the feature-flag value above.
+    //
+    // ## Four verbs, not one `manage`
+    //
+    // The read half is what a marketing or content person needs to find a
+    // printed code and download its image, and it is worth being able to grant
+    // that WITHOUT the ability to repoint every sticker in the province.
+    // `view` covers list, detail AND download: a download renders an existing
+    // row and writes nothing. There is no `hardDelete` because the delete route
+    // is soft-only by construction — the slug stays reserved forever (it is
+    // already printed) and the recorded scans stay attached to it.
+    QR_CODE_VIEW = 'platform.qrCode.view', // Allows listing, viewing and downloading redirectable QR codes (HOS-981).
+    QR_CODE_CREATE = 'platform.qrCode.create', // Allows creating a redirectable QR code (HOS-981).
+    QR_CODE_UPDATE = 'platform.qrCode.update', // Allows editing a QR code — above all its target URL, which is the entity's whole purpose (HOS-981).
+    QR_CODE_DELETE = 'platform.qrCode.delete', // Allows soft-deleting a QR code (HOS-981). No hard delete exists: the slug is already printed.
 
     // MODERATION: Content auto-moderation permissions (SPEC-195)
     MODERATION_TERM_VIEW = 'moderation.term.view', // Allows viewing moderation terms and the term list.

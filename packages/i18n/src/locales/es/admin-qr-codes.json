@@ -1,12 +1,9 @@
 {
     "title": "Códigos QR",
-    "singular": "Código QR",
-    "plural": "Códigos QR",
     "description": "Un código impreso apunta siempre a la misma dirección corta; el destino se cambia acá, sin reimprimir nada.",
     "create": "Crear código QR",
     "edit": "Editar código QR",
     "detail": "Detalle del código",
-    "empty": "Todavía no hay ningún código QR.",
     "search": {
         "placeholder": "Buscar por nombre, código o destino"
     },
@@ -32,7 +29,6 @@
         "slugPlaceholder": "Se genera solo si lo dejás vacío",
         "slugHelp": "Aparece en la URL impresa. Solo se puede elegir al crear.",
         "slugLocked": "El código corto no se puede cambiar: ya está impreso.",
-        "sourceLabel": "Origen",
         "isActiveLabel": "Activo",
         "isActiveHelp": "Un código inactivo deja de redirigir, pero conserva los escaneos registrados.",
         "renderTitle": "Cómo se dibuja",
@@ -81,6 +77,10 @@
         "deleted": "Código QR eliminado",
         "deleteError": "No se pudo eliminar el código QR",
         "deleteConfirm": "¿Eliminar este código? El código corto queda reservado para siempre y los escaneos se conservan.",
-        "notFound": "No existe ese código QR"
+        "notFound": "No existe ese código QR",
+        "requiredLabel": "Falta el nombre: es lo que te va a permitir encontrar este código dentro de un año.",
+        "requiredTargetUrl": "Falta la URL de destino: sin ella el código no lleva a ninguna parte.",
+        "invalid": "Revisá los campos marcados: hay algo que el servidor no va a aceptar.",
+        "fieldInvalid": "Revisá este campo."
     }
 }
