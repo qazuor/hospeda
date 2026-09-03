@@ -51,6 +51,7 @@ import {
 import {
     buildHostTradeUsageUrl,
     HOST_TRADE_QR_ENTITY_TYPE,
+    HOST_TRADE_QR_PURPOSE,
     resolveSiteUrlFromTargetUrl
 } from './host-trade-qr';
 
@@ -425,6 +426,7 @@ export class HostTradeService extends BaseCrudService<
                 actor,
                 entityType: HOST_TRADE_QR_ENTITY_TYPE,
                 entityId: entity.id,
+                purpose: HOST_TRADE_QR_PURPOSE,
                 ctx
             });
 
@@ -447,6 +449,7 @@ export class HostTradeService extends BaseCrudService<
                 actor,
                 entityType: HOST_TRADE_QR_ENTITY_TYPE,
                 entityId: entity.id,
+                purpose: HOST_TRADE_QR_PURPOSE,
                 targetUrl: buildHostTradeUsageUrl({ slug: entity.slug, siteUrl }),
                 ctx
             });

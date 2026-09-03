@@ -10,6 +10,7 @@ import type {
     EntityTypeEnum,
     QrCode,
     QrCodeCreateInput,
+    QrCodePurposeEnum,
     QrCodeScan,
     QrCodeSearchInput
 } from '@repo/schemas';
@@ -19,6 +20,7 @@ import {
     QR_CODE_TARGET_URL_MAX_LENGTH,
     QrCodeAdminSearchSchema,
     QrCodeCreateInputSchema,
+    QrCodePurposeEnumSchema,
     QrCodeRenderOptionsSchema,
     QrCodeSearchInputSchema,
     QrCodeSourceEnum,
@@ -77,10 +79,18 @@ const POSTGRES_UNIQUE_VIOLATION = '23505';
  */
 const ENTITY_CODE_LOOKUP_PAGE_SIZE = 10;
 
-/** Shared entity-reference shape for the provisioning methods. */
+/**
+ * Shared entity-reference shape for the provisioning methods.
+ *
+ * `purpose` is REQUIRED here even though the column is nullable. The nullable
+ * column exists for MANUAL codes an operator typed in; a code reached through
+ * provisioning is by definition a system code, and a lookup that omitted the
+ * purpose would match whichever of the subject's codes came back first.
+ */
 const EntityRefInputSchema = z.object({
     entityType: EntityTypeEnumSchema,
-    entityId: z.string().uuid()
+    entityId: z.string().uuid(),
+    purpose: QrCodePurposeEnumSchema
 });
 
 const GetOrCreateForEntityInputSchema = EntityRefInputSchema.extend({
@@ -293,6 +303,7 @@ export class QrCodeService extends BaseCrudService<
         if (params.source) where.source = params.source;
         if (params.entityType) where.entityType = params.entityType;
         if (params.entityId) where.entityId = params.entityId;
+        if (params.purpose) where.purpose = params.purpose;
         if (params.isActive !== undefined) where.isActive = params.isActive;
 
         return where;
@@ -398,15 +409,22 @@ export class QrCodeService extends BaseCrudService<
     // ------------------------------------------------------------------
 
     /**
-     * Reads the live `GENERATED` code belonging to one entity, if it has one.
+     * Reads the live `GENERATED` code a subject holds FOR ONE PURPOSE.
+     *
+     * The key is all three of `(entityType, entityId, purpose)`, never the
+     * first two. A gastronomy listing carries a door code and a table code; an
+     * experience carries a listing code and a certificate code that resolve to
+     * the same URL. Looking up by entity alone would answer with whichever of
+     * them the database happened to return, and the provisioner would then
+     * treat the menu's code as the listing's.
      *
      * Soft-deleted rows are filtered HERE rather than in the `where` object:
      * `BaseModelImpl` builds its filter from column equality and a
      * `deletedAt: null` key is not equality, so a mistyped attempt at it would
      * be dropped silently and this would start returning retired codes. The
-     * oldest live row wins, deterministically, so two callers racing to
-     * provision the same entity converge on the same answer afterwards even in
-     * the window described on {@link getOrCreateForEntity}.
+     * oldest live row wins, deterministically — belt-and-braces now that the
+     * partial UNIQUE index makes a second live row for one purpose impossible,
+     * and still meaningful for the rows written before that index existed.
      *
      * No permission check: this is a system read on behalf of a caller the
      * ROUTE has already authorised by row ownership, exactly like
@@ -416,22 +434,24 @@ export class QrCodeService extends BaseCrudService<
      * @param input.actor - Actor performing the action.
      * @param input.entityType - The entity's type.
      * @param input.entityId - The entity's id.
+     * @param input.purpose - WHICH of the subject's codes is wanted.
      * @returns Service output carrying the code, or `null`.
      */
     public async findLiveCodeForEntity(input: {
         actor: Actor;
         entityType: EntityTypeEnum;
         entityId: string;
+        purpose: QrCodePurposeEnum;
         ctx?: ServiceContext;
     }): Promise<ServiceOutput<QrCode | null>> {
-        const { actor, entityType, entityId, ctx } = input;
+        const { actor, entityType, entityId, purpose, ctx } = input;
 
         return this.runWithLoggingAndValidation({
             methodName: 'findLiveCodeForEntity',
-            input: { actor, entityType, entityId },
+            input: { actor, entityType, entityId, purpose },
             schema: EntityRefInputSchema.extend({ actor: z.any() }),
             ctx,
-            execute: async () => this._findLiveCodeForEntity({ entityType, entityId, ctx })
+            execute: async () => this._findLiveCodeForEntity({ entityType, entityId, purpose, ctx })
         });
     }
 
@@ -445,25 +465,28 @@ export class QrCodeService extends BaseCrudService<
      * with no backfill, and it means an entity nobody ever prints a code for
      * never occupies a slug.
      *
-     * ## The race, and what is actually guaranteed
+     * ## The race, and how the two halves divide the work
      *
-     * This runs inside a `GET`, so two concurrent requests can reach the insert
-     * together. On a UNIQUE violation the insert is not retried blindly: the
-     * entity is re-read and the winner's row is returned, so the loser answers
-     * with the same code rather than with a 500. That is what
-     * {@link POSTGRES_UNIQUE_VIOLATION} is doing below.
+     * This runs inside a `GET`, so two concurrent requests reach the insert
+     * together. The DATABASE is what makes that safe: the partial unique index
+     * `(entity_type, entity_id, purpose) WHERE deleted_at IS NULL`
+     * (`extras/040`) refuses the second insert outright, so the entity cannot
+     * end up holding two live codes for one purpose no matter how the requests
+     * interleave.
      *
-     * What that does NOT yet cover, stated plainly rather than left to be
-     * discovered: `qr_codes` has a UNIQUE index on `slug` and only a plain
-     * index on `(entity_type, entity_id)`. Two racing requests for the SAME
-     * entity draw two DIFFERENT random slugs, so neither insert violates
-     * anything and the entity ends up with two live codes — both valid, both
-     * pointing at the same target. Closing that window needs a partial UNIQUE
-     * index on `(entity_type, entity_id) WHERE deleted_at IS NULL`, which is a
-     * migration and therefore an owner decision, not one taken here. Until it
-     * exists, {@link findLiveCodeForEntity} picks the oldest row so every later
-     * read is at least consistent, and the second slug is a wasted id rather
-     * than a wrong redirect.
+     * The catch below is the RECOVERY, not the guarantee, and it is still
+     * needed for exactly that reason: without it the loser of the race receives
+     * a raw constraint violation as a 500 while a perfectly good code sits in
+     * the table. It re-reads by the same three-part key and answers with the
+     * winner's row. Two distinct constraints can fire here — the entity/purpose
+     * one just described, and the far rarer `slug` collision — and only the
+     * first leaves a row to recover, which is why the re-read result decides
+     * whether to return or rethrow rather than the constraint name.
+     *
+     * Note the index is over `purpose`, NOT over `(entity_type, entity_id)`
+     * alone: a restaurant's door code and its table code are two live rows for
+     * one subject on purpose, and a two-column index would reject the second
+     * and take that feature with it.
      *
      * ## No permission check
      *
@@ -477,6 +500,9 @@ export class QrCodeService extends BaseCrudService<
      * @param input.actor - Actor performing the action.
      * @param input.entityType - The entity's type.
      * @param input.entityId - The entity's id.
+     * @param input.purpose - WHICH of the subject's codes this is. Part of the
+     *   identity, not a label: a different purpose is a different code, not a
+     *   duplicate.
      * @param input.targetUrl - Where a scan should land. Used only on creation;
      *   an existing code keeps whatever target it already has, because that
      *   value is operator-editable and must not be silently reverted on a read.
@@ -487,21 +513,23 @@ export class QrCodeService extends BaseCrudService<
         actor: Actor;
         entityType: EntityTypeEnum;
         entityId: string;
+        purpose: QrCodePurposeEnum;
         targetUrl: string;
         label: string;
         ctx?: ServiceContext;
     }): Promise<ServiceOutput<QrCode>> {
-        const { actor, entityType, entityId, targetUrl, label, ctx } = input;
+        const { actor, entityType, entityId, purpose, targetUrl, label, ctx } = input;
 
         return this.runWithLoggingAndValidation({
             methodName: 'getOrCreateForEntity',
-            input: { actor, entityType, entityId, targetUrl, label },
+            input: { actor, entityType, entityId, purpose, targetUrl, label },
             schema: GetOrCreateForEntityInputSchema.extend({ actor: z.any() }),
             ctx,
             execute: async (validated, validActor) => {
                 const existing = await this._findLiveCodeForEntity({
                     entityType: validated.entityType,
                     entityId: validated.entityId,
+                    purpose: validated.purpose,
                     ctx
                 });
                 if (existing) return existing;
@@ -515,6 +543,7 @@ export class QrCodeService extends BaseCrudService<
                             source: QrCodeSourceEnum.GENERATED,
                             entityType: validated.entityType,
                             entityId: validated.entityId,
+                            purpose: validated.purpose,
                             renderOptions: QrCodeRenderOptionsSchema.parse({}),
                             isActive: true,
                             createdById: validActor.id,
@@ -529,12 +558,13 @@ export class QrCodeService extends BaseCrudService<
                     const winner = await this._findLiveCodeForEntity({
                         entityType: validated.entityType,
                         entityId: validated.entityId,
+                        purpose: validated.purpose,
                         ctx
                     });
-                    // Only a competing insert for THIS entity is recoverable. A
-                    // violation with no row to show for it means the slug was
-                    // taken by a different entity, and swallowing that would
-                    // hand the caller a success with no code in it.
+                    // Only the entity/purpose constraint leaves a row behind. A
+                    // violation with nothing to show for it was the `slug`
+                    // index firing against a DIFFERENT subject, and swallowing
+                    // that would hand the caller a success with no code in it.
                     if (winner) return winner;
                     throw error;
                 }
@@ -559,6 +589,10 @@ export class QrCodeService extends BaseCrudService<
      * @param input.actor - Actor performing the action.
      * @param input.entityType - The entity's type.
      * @param input.entityId - The entity's id.
+     * @param input.purpose - WHICH of the subject's codes to repoint. Required,
+     *   and it must be: repointing "the entity's code" is not a well-formed
+     *   request once a restaurant holds a door code and a table code that go to
+     *   different places.
      * @param input.targetUrl - The new absolute target URL.
      * @returns Service output saying whether a row was actually written.
      */
@@ -566,20 +600,22 @@ export class QrCodeService extends BaseCrudService<
         actor: Actor;
         entityType: EntityTypeEnum;
         entityId: string;
+        purpose: QrCodePurposeEnum;
         targetUrl: string;
         ctx?: ServiceContext;
     }): Promise<ServiceOutput<{ updated: boolean }>> {
-        const { actor, entityType, entityId, targetUrl, ctx } = input;
+        const { actor, entityType, entityId, purpose, targetUrl, ctx } = input;
 
         return this.runWithLoggingAndValidation({
             methodName: 'setEntityTargetUrl',
-            input: { actor, entityType, entityId, targetUrl },
+            input: { actor, entityType, entityId, purpose, targetUrl },
             schema: SetEntityTargetUrlInputSchema.extend({ actor: z.any() }),
             ctx,
             execute: async (validated, validActor) => {
                 const existing = await this._findLiveCodeForEntity({
                     entityType: validated.entityType,
                     entityId: validated.entityId,
+                    purpose: validated.purpose,
                     ctx
                 });
 
@@ -604,10 +640,15 @@ export class QrCodeService extends BaseCrudService<
     private async _findLiveCodeForEntity(input: {
         entityType: EntityTypeEnum;
         entityId: string;
+        purpose: QrCodePurposeEnum;
         ctx?: ServiceContext;
     }): Promise<QrCode | null> {
         const { items } = await this.model.findAll(
-            { entityType: input.entityType, entityId: input.entityId },
+            {
+                entityType: input.entityType,
+                entityId: input.entityId,
+                purpose: input.purpose
+            },
             { page: 1, pageSize: ENTITY_CODE_LOOKUP_PAGE_SIZE, sortBy: 'createdAt' },
             undefined,
             input.ctx?.tx

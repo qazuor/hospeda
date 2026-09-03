@@ -1,4 +1,4 @@
-import { EntityTypeEnum } from '@repo/schemas';
+import { EntityTypeEnum, QrCodePurposeEnum } from '@repo/schemas';
 
 /**
  * Where a provider's QR sends a host, and how that code is labelled in the
@@ -29,6 +29,18 @@ const QR_CODE_LABEL_MAX_LENGTH = 200;
 
 /** The entity type every provider QR is filed under. */
 export const HOST_TRADE_QR_ENTITY_TYPE = EntityTypeEnum.HOST_TRADE;
+
+/**
+ * WHICH of a listing's codes this module is about.
+ *
+ * A host trade holds exactly one code today, so naming its purpose looks like
+ * ceremony. It is not: `purpose` is half the lookup key, and the two call sites
+ * that use it — the provisioning route and the rename hook — must agree on the
+ * value or the second one silently stops finding the first one's row. Binding
+ * it to one exported constant is what makes disagreement impossible rather than
+ * unlikely.
+ */
+export const HOST_TRADE_QR_PURPOSE = QrCodePurposeEnum.HOST_TRADE_USAGE;
 
 /**
  * Builds the URL a provider's QR REDIRECTS TO.
