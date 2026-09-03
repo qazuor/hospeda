@@ -122,6 +122,31 @@ export const GastronomyMenuItemSchema = z.object({
     priceCents: z.number().int().min(0).max(GASTRONOMY_MENU_MAX_ITEM_PRICE_CENTS).nullable(),
     /** Whether the dish is currently on offer. */
     isAvailable: z.boolean(),
+    /**
+     * Delivery URL of the dish's photo, or `null` (HOS-1045).
+     *
+     * Three FLAT fields rather than one nested `photo` object, unlike
+     * {@link GastronomyMenuFileSchema} next door — and the difference is not an
+     * oversight. That schema is nested because a URL whose `kind` is unknown is
+     * a half-attachment the renderer cannot decide how to draw. Here the only
+     * load-bearing field is the URL: `alt` degrades to the dish's own name and
+     * `publicId` is never rendered at all, so there is no half-value to make
+     * unrepresentable. What flat fields buy instead is that this schema stays a
+     * faithful mirror of the COLUMNS — it is the type `GastronomyMenuItemModel`
+     * is parameterised by, and a nested object here would force a mapping layer
+     * between every row read and every row written.
+     *
+     * Validated with a bare `z.string()`, not {@link mediaAssetUrl}: this is
+     * the STORED shape, and a legacy row must be readable, not rejected. The
+     * scheme allowlist lives on the INPUT schema (the write gate) and again at
+     * render time via `resolveSafeExternalUrl` — the same two-sided layering
+     * `menuFileUrl` uses.
+     */
+    photoUrl: z.string().nullable(),
+    /** Cloudinary `public_id` of that asset, or `null`. Never published. */
+    photoPublicId: z.string().nullable(),
+    /** Alt text for the photo, or `null` (falls back to the dish's name). */
+    photoAlt: z.string().nullable(),
     /** Position within its section. */
     displayOrder: z.number().int().min(0),
     createdAt: z.coerce.date(),
@@ -130,10 +155,21 @@ export const GastronomyMenuItemSchema = z.object({
 });
 export type GastronomyMenuItem = z.infer<typeof GastronomyMenuItemSchema>;
 
-/** A dish as a reader sees it — the stored row minus its audit authors. */
+/**
+ * A dish as a reader sees it — the stored row minus its audit authors and
+ * minus the photo's Cloudinary id.
+ *
+ * `photoPublicId` is omitted DELIBERATELY, not by inheritance: a derived
+ * schema accepts everything it does not name, so every field added to the base
+ * lands on the public page unless a decision is taken here. This one is an
+ * internal handle for destroying the asset; the diner needs the URL and
+ * nothing else, and publishing the id would put a Cloudinary write handle in
+ * the page source for no reader benefit.
+ */
 export const GastronomyMenuItemPublicSchema = GastronomyMenuItemSchema.omit({
     createdById: true,
-    updatedById: true
+    updatedById: true,
+    photoPublicId: true
 });
 export type GastronomyMenuItemPublic = z.infer<typeof GastronomyMenuItemPublicSchema>;
 
@@ -213,9 +249,61 @@ export const GastronomyMenuItemInputSchema = z.object({
         })
         .nullish(),
     /** Whether the dish is on offer. Defaults to `true`. */
-    isAvailable: z.boolean().default(true)
+    isAvailable: z.boolean().default(true),
+    /**
+     * Delivery URL of the dish's photo (HOS-1045), as returned by
+     * `POST .../menu-item-photo`. `null`/omitted removes it.
+     *
+     * {@link mediaAssetUrl} and NOT `z.string().url()`: the latter accepts
+     * `javascript:`, `data:` and `vbscript:`, and this value becomes an
+     * `<img src>` on a public page. This is the write gate; the read side
+     * gets a second one at render.
+     *
+     * Accepting it from the body is safe in a way `menuFileUrl` was not (see
+     * `CommerceMenuManager`'s scheme-gate note): the value is only ever a URL
+     * to render, it is scheme-checked here, and the ENTITLEMENT for having a
+     * dish photo at all is enforced by the route before this parses.
+     */
+    photoUrl: mediaAssetUrl('zodError.gastronomy.menuItemPhoto.url.invalid').nullish(),
+    /**
+     * Cloudinary `public_id` of that asset, round-tripped by the client so a
+     * later cleanup can destroy it rather than merely forget it.
+     */
+    photoPublicId: z
+        .string()
+        .trim()
+        .max(255, { message: 'zodError.gastronomy.menuItemPhoto.publicId.max' })
+        .nullish(),
+    /**
+     * Alt text. Optional, and its absence is not an accessibility hole — the
+     * public renderer falls back to the dish's own name, which is required.
+     */
+    photoAlt: z
+        .string()
+        .trim()
+        .max(200, { message: 'zodError.gastronomy.menuItemPhoto.alt.max' })
+        .nullish()
 });
 export type GastronomyMenuItemInput = z.input<typeof GastronomyMenuItemInputSchema>;
+
+/**
+ * Output of the per-dish photo upload route (HOS-1045).
+ *
+ * The route uploads the BYTES and returns them described; it does not write a
+ * row, because at upload time the dish it belongs to may not exist yet (the
+ * carta is saved as a whole document afterwards). That is the one place this
+ * flow differs from `POST .../menu-file`, which can persist immediately
+ * because its target is a column on the listing itself.
+ */
+export const GastronomyMenuItemPhotoUploadOutputSchema = z.object({
+    /** Public delivery URL of the uploaded photo. */
+    url: mediaAssetUrl('zodError.gastronomy.menuItemPhoto.url.invalid'),
+    /** Cloudinary `public_id`, for the client to round-trip into the document. */
+    publicId: z.string()
+});
+export type GastronomyMenuItemPhotoUploadOutput = z.infer<
+    typeof GastronomyMenuItemPhotoUploadOutputSchema
+>;
 
 /** A course heading as the owner submits it. See {@link GastronomyMenuItemInputSchema}. */
 export const GastronomyMenuSectionInputSchema = z.object({
