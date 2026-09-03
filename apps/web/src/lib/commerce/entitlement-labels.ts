@@ -29,12 +29,14 @@
  * the picker.
  */
 export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
-    manage_gastronomy_menu: 'manageGastronomyMenu'
+    manage_gastronomy_menu: 'manageGastronomyMenu',
+    manage_gastronomy_events: 'manageGastronomyEvents'
 };
 
 /**
  * Spanish fallback label per entitlement key, passed as `t()`'s fallback arg.
  */
 export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
-    manage_gastronomy_menu: 'Carta estructurada'
+    manage_gastronomy_menu: 'Carta estructurada',
+    manage_gastronomy_events: 'Eventos del local'
 };
