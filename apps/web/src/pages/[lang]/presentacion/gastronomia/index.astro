@@ -33,20 +33,25 @@
  * `lib/middleware-helpers.ts`), so the page would render unstyled in prod while
  * looking perfect locally. Do not add `is:inline` here.
  *
- * KNOWN STALE COPY, NOT FIXED HERE (noted by HOS-1041, needs an owner
- * decision). The printable-PDF bullet still ends with "el único plan que se
- * puede comprar ahora es el Básico". That stopped being true before HOS-1041
- * touched this file: HOS-895 PR2 activated `gastronomy-pro` for sale
- * (`isActive: true`, ARS 45.000/mo) and HOS-1119 made it actually reachable
- * from checkout. So the page under-sells the tier that two features — the
- * structured carta and now the menú del día — are sold on.
+ * THE "NOT FOR SALE YET" CLAUSE IS GONE (HOS-975). Until this change several
+ * bullets ended with "que hoy no está a la venta: el único plan que se puede
+ * comprar ahora es el Básico". HOS-975 priced the six commerce tiers and
+ * activated the three that were still dark, so ALL of them — Básico,
+ * Profesional and Premium, in both verticals — are on sale, and the sentence
+ * became a claim the page could no longer make honestly.
  *
- * HOS-1041 deliberately did NOT rewrite that sentence. This page's copy is the
- * owner-approved artifact verbatim (see above) and what the business says it
- * sells is an owner decision, not an implementer's. The menú del día bullet
- * added below therefore states its tier and says nothing about buyability,
- * rather than contradicting the neighbouring line. Fixing the stale sentence is
- * a one-line follow-up once the owner confirms the wording.
+ * Only the clause was removed, and only because the merge made it false;
+ * nothing was rewritten. The bullets still name their tier ("va en el escalón
+ * Premium"), which is what a reader needs and is still true. The commercial
+ * rewrite of this section — the prices themselves, which tier to push — stays
+ * an owner decision and is deliberately NOT attempted here, on the same
+ * reasoning HOS-1041 used when it declined to touch the sentence at all: this
+ * page's copy is the owner-approved artifact verbatim (see above).
+ *
+ * That earlier deferral is worth keeping in view. HOS-895 PR2 had already made
+ * the clause false (it activated `gastronomy-pro` for sale) and HOS-1119 made
+ * that tier reachable from checkout, so the page under-sold its own paid tiers
+ * for two releases before anyone deleted one sentence.
  *
  * @route /{lang}/presentacion/gastronomia/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
@@ -220,7 +225,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gas
       <li><span class="tick">&check;</span><span><strong>Horarios día por día</strong>, con más de un turno si cerrás al mediodía.</span></li>
       <li><span class="tick">&check;</span><span>El <strong>enlace a tu carta</strong> y el rango de precios, para que el que llega sepa a qué atenerse. El enlace está en <strong>todos los planes</strong>, incluido el Básico.</span></li>
       <li><span class="tick">&check;</span><span><strong>La carta cargada plato por plato</strong>: secciones (entradas, principales, postres), cada plato con su nombre, su descripción y su precio — o &laquo;a consultar&raquo;, que también es un precio honesto. Se lee en tu página sin que nadie tenga que abrir un archivo, y Google la lee igual. Si preferís, subís una <strong>foto o un PDF</strong> del menú impreso y listo. Las dos formas van <strong>desde el plan Profesional</strong>.</span></li>
-      <li><span class="tick tick--no">!</span><span><strong>Una foto por plato</strong>, al lado del plato en la carta — no una galería suelta donde nadie sabe cuál milanesa es cuál. La subís desde la fila del plato mientras cargás la carta. <strong>Va en el escalón Premium</strong>, que hoy no está a la venta: el único plan que se puede comprar ahora es el Básico.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>Una foto por plato</strong>, al lado del plato en la carta — no una galería suelta donde nadie sabe cuál milanesa es cuál. La subís desde la fila del plato mientras cargás la carta. <strong>Va en el escalón Premium</strong>.</span></li>
       <li><span class="tick">&check;</span><span><strong>Lo que ofrece el local</strong>, tildado de una lista: si aceptás tarjeta, si hacés delivery o take away, si tomás reservas, si hay estacionamiento, terraza, wifi, música en vivo, si se puede ir con perro o si <strong>aceptás eventos</strong> (cumpleaños, empresas, casamientos) — con un botón de contacto directo en tu ficha.</span></li>
       <li><span class="tick">&check;</span><span><strong>Los aptos de tu carta</strong>: sin TACC, vegano, vegetariano, sin lactosa, sin frutos secos. Se tildan igual que el resto, aparecen en tu página y <strong>el que busca puede filtrar por ellos</strong> antes de elegir dónde comer. Están en todos los planes, desde el más básico: no le vamos a cobrar a nadie por avisar algo que a otro le puede hacer daño no saber.</span></li>
       <li><span class="tick">&check;</span><span><strong>El tipo de cocina</strong>: argentina, de río, italiana, peruana, internacional, asiática, mediterránea o de fusión — se tilda todo lo que corresponda, porque un mismo local puede ser parrilla y cocina de río a la vez. Aparece en tu página y sirve para que te encuentre el que ya sabe qué se le antoja comer.</span></li>
@@ -228,8 +233,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gas
       <li><span class="tick">&check;</span><span><strong>Preguntas frecuentes propias</strong>: si aceptás tarjeta, si hay estacionamiento, si se puede ir con perro, o cualquier cosa que te pregunten seguido por teléfono.</span></li>
       <li><span class="tick">&check;</span><span>Tu página en español, inglés y portugués.</span></li>
       <li><span class="tick tick--no">!</span><span><strong>El menú del día, con fecha de vencimiento</strong>: cargás el plato del día o la sugerencia del chef, le ponés hasta cuándo vale, y cuando esa fecha pasa <strong>deja de mostrarse solo</strong>. Nadie tiene que acordarse de sacarlo — que es justamente lo que hoy no pasa, y por eso las fichas terminan anunciando el pescado del martes pasado. <strong>Va en el escalón Profesional.</strong></span></li>
-      <li><span class="tick tick--no">!</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el folleto del mostrador del hotel, el volante de la cabaña o la pila de la oficina de turismo — el único lugar donde tu ficha funciona sin internet. Ya está construida, pero <strong>va en el escalón Premium</strong>, que hoy no está a la venta: el único plan que se puede comprar ahora es el Básico.</span></li>
-      <li><span class="tick tick--no">!</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el folleto del mostrador del hotel, el volante de la cabaña o la pila de la oficina de turismo — el único lugar donde tu ficha funciona sin internet. Ya está construida, pero <strong>va en el escalón Premium</strong>, que hoy no está a la venta.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el folleto del mostrador del hotel, el volante de la cabaña o la pila de la oficina de turismo — el único lugar donde tu ficha funciona sin internet. Ya está construida, pero <strong>va en el escalón Premium</strong>.</span></li>
       <li><span class="tick">&check;</span><span><strong>La agenda de tu local</strong>: la noche de música en vivo, el happy hour, la cena show, la promo de los martes. Se cargan con fecha, o «todos los jueves de 18 a 20» si es algo que se repite todas las semanas, y aparecen en tu página. Podés apagar uno sin borrarlo — el show de invierno vuelve el año que viene y no hace falta volver a escribirlo. <strong>Va desde el escalón Profesional.</strong></span></li>
     </ul>
     <p class="subhead">
