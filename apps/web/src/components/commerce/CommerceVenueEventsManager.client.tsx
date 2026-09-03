@@ -65,6 +65,14 @@ export interface CommerceVenueEventsManagerProps {
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
+    /**
+     * The seven weekday names, already localised, `0` = Sunday … `6` = Saturday.
+     *
+     * Threaded straight through to `CommerceVenueEventEntryCard` — see that
+     * prop's doc for why these are resolved on the Astro page instead of looked
+     * up inside the island.
+     */
+    readonly weekdayLabels: readonly string[];
 }
 
 const EMPTY_DRAFT: EventDraft = {
@@ -97,7 +105,8 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
 
 export function CommerceVenueEventsManager({
     listingId,
-    locale
+    locale,
+    weekdayLabels
 }: CommerceVenueEventsManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -270,6 +279,7 @@ export function CommerceVenueEventsManager({
                     entry={entry}
                     index={index}
                     t={t}
+                    weekdayLabels={weekdayLabels}
                     onPatch={patchEntry}
                     onMove={moveEntry}
                     onRemove={removeEntry}

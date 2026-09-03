@@ -23,6 +23,26 @@ export interface CommerceVenueEventEntryCardProps {
     readonly entry: EventDraft;
     readonly index: number;
     readonly t: TranslationFn;
+    /**
+     * The seven weekday names, already localised, indexed the way
+     * {@link WEEKDAY_I18N_KEYS} is (`0` = Sunday … `6` = Saturday).
+     *
+     * Resolved on the Astro page rather than looked up here — the same pattern,
+     * and the same stated reason, as `AccommodationsListingMap`'s `typeLabels`:
+     * it keeps the island i18n-agnostic for these strings.
+     *
+     * Here that is not only style. The names live under
+     * `gastronomy.detail.openingHours.*`, and `gastronomy.detail` does NOT ship
+     * to the browser: 25 of its 32 keys are named only by `.astro` files
+     * rendering server-side, so declaring the prefix in
+     * `CLIENT_I18N_KEY_PREFIXES` would push 1,205 B brotli of never-named
+     * strings into the client dictionary to deliver 303 B of useful ones —
+     * measured, and exactly the shape the two-segment prefix cut exists to
+     * remove. Passing the seven resolved strings costs nothing in the
+     * dictionary and creates no second copy of names the opening-hours section
+     * already owns.
+     */
+    readonly weekdayLabels: readonly string[];
     readonly onPatch: (index: number, patch: Partial<EventDraft>) => void;
     readonly onMove: (index: number, delta: number) => void;
     readonly onRemove: (index: number) => void;
@@ -33,6 +53,7 @@ export function CommerceVenueEventEntryCard({
     entry,
     index,
     t,
+    weekdayLabels,
     onPatch,
     onMove,
     onRemove,
@@ -158,7 +179,7 @@ export function CommerceVenueEventEntryCard({
                                 key={dayKey}
                                 value={dayIndex}
                             >
-                                {t(`gastronomy.detail.openingHours.${dayKey}`, dayKey)}
+                                {weekdayLabels[dayIndex] ?? dayKey}
                             </option>
                         ))}
                     </select>
