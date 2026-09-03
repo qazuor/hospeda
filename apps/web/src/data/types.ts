@@ -1111,6 +1111,19 @@ export interface GastronomyMenuItem {
     /** Price in centavos, or `null` for "a consultar". */
     readonly priceCents: number | null;
     readonly isAvailable: boolean;
+    /**
+     * Delivery URL of the dish's photo (HOS-1045), or `null`.
+     *
+     * `null` covers THREE situations the page cannot and need not tell apart:
+     * the venue attached no photo to this dish, the owner's current plan does
+     * not grant `menu_item_photos`, or their plan no longer grants
+     * `manage_gastronomy_menu` (in which case the whole carta is withheld and
+     * this field never arrives at all). The API decides; the renderer draws
+     * what it is given.
+     */
+    readonly photoUrl: string | null;
+    /** Alt text for {@link photoUrl}. `null` falls back to the dish's name. */
+    readonly photoAlt: string | null;
 }
 
 /**

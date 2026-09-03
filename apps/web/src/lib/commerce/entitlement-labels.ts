@@ -29,12 +29,17 @@
  * the picker.
  */
 export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
-    manage_gastronomy_menu: 'manageGastronomyMenu'
+    manage_gastronomy_menu: 'manageGastronomyMenu',
+    // HOS-1045 — the first key that separates gastronomy PREMIUM from `-pro`,
+    // so it is the first entry here that will ever be rendered by the premium
+    // column of the tier picker.
+    menu_item_photos: 'menuItemPhotos'
 };
 
 /**
  * Spanish fallback label per entitlement key, passed as `t()`'s fallback arg.
  */
 export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
-    manage_gastronomy_menu: 'Carta estructurada'
+    manage_gastronomy_menu: 'Carta estructurada',
+    menu_item_photos: 'Foto por plato'
 };
