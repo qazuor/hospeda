@@ -60,12 +60,28 @@ import type { CommerceVertical } from './commerce-limits.config.js';
  * {@link EntitlementKey.PUBLISH_ACCOMMODATIONS}, and these two pairs are the
  * commerce mirror of that decision. What separates the tiers is the cap and
  * (later) the feature keys layered above these.
+ *
+ * {@link EntitlementKey.VIEW_BASIC_STATS} was added by HOS-734 for the same
+ * reason: it is accommodation's TIER-BASIC entitlement (every accommodation
+ * plan grants it — see `plans.config.ts`), so it belongs in the FLOOR every
+ * commerce tier gets too, not on a single premium plan row. A premium-only
+ * commerce key (e.g. `DOWNLOAD_LISTING_PDF`) stays OUT of this map and lives
+ * only on that vertical's premium plan row instead — see
+ * `gastronomy/protected/brochure.ts`'s JSDoc for that contrast.
  */
 export const ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL: Readonly<
     Record<CommerceVertical, readonly EntitlementKey[]>
 > = {
-    gastronomy: [EntitlementKey.EDIT_GASTRONOMY_INFO, EntitlementKey.PUBLISH_GASTRONOMY],
-    experience: [EntitlementKey.EDIT_EXPERIENCE_INFO, EntitlementKey.PUBLISH_EXPERIENCE]
+    gastronomy: [
+        EntitlementKey.EDIT_GASTRONOMY_INFO,
+        EntitlementKey.PUBLISH_GASTRONOMY,
+        EntitlementKey.VIEW_BASIC_STATS
+    ],
+    experience: [
+        EntitlementKey.EDIT_EXPERIENCE_INFO,
+        EntitlementKey.PUBLISH_EXPERIENCE,
+        EntitlementKey.VIEW_BASIC_STATS
+    ]
 } as const;
 
 /**
