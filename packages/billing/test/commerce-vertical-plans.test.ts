@@ -44,13 +44,33 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(ALL_EXPERIENCE_PLANS).toHaveLength(3);
     });
 
-    it('enables exactly one tier per vertical, and since HOS-818 it is the BASIC one', () => {
+    it('keeps básico the DEFAULT sellable tier per vertical, since HOS-818', () => {
         // Owner decision (HOS-818): "premium" is reserved for a future step that
         // actually carries more functionality, so today's buyers land on the entry
-        // tier. Asserting the identity (not just the count) is what makes a silent
-        // slide back to premium fail here rather than in production.
-        expect(ALL_GASTRONOMY_PLANS.filter((p) => p.isActive)).toEqual([GASTRONOMY_BASICO_PLAN]);
+        // tier by DEFAULT. Asserting the identity (not just membership) is what
+        // makes a silent slide back to premium fail here rather than in
+        // production. `resolveCommercePlanSlug` / `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL`
+        // is the ONE place that decides which `isActive` tier a real checkout
+        // actually resolves to — see that constant's own test below.
+        expect(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy).toBe(GASTRONOMY_BASICO_PLAN.slug);
+        expect(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience).toBe(EXPERIENCE_BASICO_PLAN.slug);
+    });
+
+    it('activated gastronomy-pro (HOS-895 PR2) without touching experience', () => {
+        // Owner decision (2026-09-03): gastronomy now has TWO `isActive` tiers —
+        // básico stays the checkout DEFAULT (see the test above), and `-pro` is a
+        // second valid subscription target that grants `manage_gastronomy_menu`
+        // (the structured carta). Experience is asserted unchanged by the SAME
+        // activation, since a commerce-vertical edit touching the sibling
+        // vertical is exactly the class of drift HOS-1074 warns about.
+        expect(ALL_GASTRONOMY_PLANS.filter((p) => p.isActive)).toEqual([
+            GASTRONOMY_BASICO_PLAN,
+            GASTRONOMY_PRO_PLAN
+        ]);
         expect(ALL_EXPERIENCE_PLANS.filter((p) => p.isActive)).toEqual([EXPERIENCE_BASICO_PLAN]);
+        expect(GASTRONOMY_PRO_PLAN.monthlyPriceArs).toBe(4_500_000);
+        expect(GASTRONOMY_PRO_PLAN.hasTrial).toBe(true);
+        expect(GASTRONOMY_PRO_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
     });
 
     it('declares exactly one limit key per tier, and it is that vertical own cap', () => {
@@ -204,6 +224,9 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // subscriptions hang off them (HOS-818). Zeroing the baseline would
         // describe a state no real database is in — and would make rolling the
         // rename back a second migration instead of an env-var edit.
+        //
+        // HOS-895 PR2 activated `gastronomy-pro`, so it moved OUT of this set —
+        // experience-pro is now the only tier left that has never been sold.
         const retired = new Set([GASTRONOMY_PREMIUM_PLAN.slug, EXPERIENCE_PREMIUM_PLAN.slug]);
         const neverSold = [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS].filter(
             (plan) => !plan.isActive && !retired.has(plan.slug)
@@ -212,7 +235,7 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // Guards the filter itself: an empty list would make every assertion
         // below vacuously true, which is exactly how this test would rot into
         // green after a future retier.
-        expect(neverSold.length).toBe(2);
+        expect(neverSold.map((p) => p.slug)).toEqual([EXPERIENCE_PRO_PLAN.slug]);
         for (const plan of neverSold) {
             expect(plan.hasTrial).toBe(false);
             expect(plan.trialDays).toBe(0);
