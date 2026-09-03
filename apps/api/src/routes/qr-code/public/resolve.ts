@@ -177,6 +177,3 @@ export const publicResolveQrCodeRoute = createPublicRoute({
         customRateLimit: { requests: 240, windowMs: 60_000 }
     }
 });
-
-/** Re-exported for tests. */
-export { QR_NOT_FOUND_MESSAGE };

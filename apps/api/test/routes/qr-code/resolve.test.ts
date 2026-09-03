@@ -51,9 +51,13 @@ vi.mock(
     async (importOriginal) => await importOriginal<Record<string, unknown>>()
 );
 
-// Extends the global db mock with the two QR models, which it does not carry.
-// Everything else keeps the shared stub so the rest of service-core still
-// imports cleanly.
+// OVERRIDES the two QR models with controllable ones. The global mock
+// (`helpers/mocks/db-mock.ts`) already carries both — it has to, because
+// `routes/index.ts` constructs a `QrCodeService` at module scope and every
+// app-booting test would otherwise throw — but its stubs are static, and these
+// probes need `findOne` to answer differently per slug and `create` to be
+// spy-able. Everything else keeps the shared stub so the rest of service-core
+// still imports cleanly.
 vi.mock('@repo/db', async () => {
     const { createDbMock } = await import('../../helpers/mocks/db-mock');
     const base = createDbMock() as Record<string, unknown>;
@@ -231,6 +235,14 @@ describe('GET /public/qr/{slug} — every unresolvable slug answers the same thi
         const error = (retired.body as { error?: { code?: string; message?: string } }).error;
         expect(error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(error?.code).not.toBe(ServiceErrorCode.INTERNAL_ERROR);
+
+        // R5 / anti-enumeration: the refusal names neither the slug that was
+        // asked about nor the reason it failed. Echoing the slug back would
+        // hand a scanner a way to confirm which of its guesses reached a row,
+        // and naming the reason would undo the collapse above.
+        expect(error?.message).toEqual(expect.any(String));
+        expect(error?.message).not.toContain(RETIRED_SLUG);
+        expect(error?.message).not.toMatch(/retired|inactive|deleted|disabled/i);
     });
 
     it('a soft-deleted code is indistinguishable from one that never existed', async () => {
