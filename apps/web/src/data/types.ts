@@ -1362,13 +1362,34 @@ export interface ExperienceDetailData extends ExperienceCardData {
      * Latitude of the meeting point in decimal degrees, or `null` when the
      * owner described the spot without pinning it.
      *
-     * Carried here because the public payload carries it, but deliberately NOT
-     * rendered by this page: nothing draws a map yet (that is HOS-1049), and a
-     * raw decimal tells a traveller nothing.
+     * Drawn on a map since HOS-1049 — but only when
+     * {@link meetingPointDirectionsEnabled} is true. The coordinate itself
+     * still ships on every tier, so it is NOT what decides whether the map
+     * appears.
      */
     readonly meetingPointLat: number | null;
     /** Longitude of the meeting point. See {@link meetingPointLat}. */
     readonly meetingPointLong: number | null;
+    /**
+     * How to GET to the meeting point (HOS-1049) — one instruction per line:
+     * where to park, which bus, how far the walk is.
+     *
+     * `[]` both when the provider wrote none AND when the API withheld them
+     * because their plan does not grant `manage_experience_directions`. The
+     * view does not need to tell those apart: it renders the list when it is
+     * non-empty and nothing when it is not.
+     */
+    readonly meetingPointDirections: readonly string[];
+    /**
+     * Whether the provider's plan grants the how-to-get-there presentation
+     * (HOS-1049) — the instructions above AND the map.
+     *
+     * The map needs its own signal because the coordinates ride the public
+     * payload on every tier (HOS-1048, deliberately not moved to the paid
+     * side), so their presence says nothing about entitlement. An entitled
+     * provider who pinned the spot without typing a word still gets the map.
+     */
+    readonly meetingPointDirectionsEnabled: boolean;
     /**
      * How long the experience lasts, in whole minutes (HOS-898), or `null` when
      * the owner has not declared it.

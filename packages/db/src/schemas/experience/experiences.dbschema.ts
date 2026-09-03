@@ -127,6 +127,35 @@ export const experiences = pgTable(
          */
         meetingPointLong: doublePrecision('meeting_point_long'),
         /**
+         * HOW TO GET THERE — the paid half of the meeting point (HOS-1049).
+         * One free-text instruction per item: where to park, which bus, how far
+         * the walk is from the road, what landmark to look for.
+         *
+         * ## Why a list and not one prose block
+         *
+         * Same reasoning as {@link whatToBring} and {@link requirements}, which
+         * this column sits beside: "estacioná en la bajada municipal",
+         * "el colectivo 4 te deja en la rotonda" and "son 300 m por camino de
+         * tierra" are three independent facts a traveller reads one at a time,
+         * not a paragraph. A list also renders as a list on the ficha without a
+         * markdown pipeline, so this needs no sanitisation surface and does not
+         * overlap `richDescription`'s own entitlement.
+         *
+         * `text[]` with `NOT NULL DEFAULT '{}'`, following the same precedent:
+         * "no instructions" is an empty array, never NULL, so every consumer
+         * has exactly ONE empty value to test instead of two.
+         *
+         * ## This one IS entitlement-gated — the only ficha column that is
+         *
+         * `meeting_point` and its two coordinates are ficha data on every tier
+         * (HOS-1048). This column, and the MAP drawn from those coordinates,
+         * are `manage_experience_directions` — `experience-pro` and above
+         * (owner decision, 2026-09-01). The rows are never deleted on a
+         * downgrade: the public route withholds them live, exactly as
+         * `manage_gastronomy_menu` withholds a downgraded venue's carta.
+         */
+        meetingPointDirections: text('meeting_point_directions').array().notNull().default([]),
+        /**
          * How long the experience lasts, in whole MINUTES (HOS-898).
          *
          * Structured rather than free text ("2 horas aprox") for one decisive
