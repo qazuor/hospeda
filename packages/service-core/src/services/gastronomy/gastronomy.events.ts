@@ -89,6 +89,44 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
         : a.displayOrder - b.displayOrder;
 
 /**
+ * Truncates a Postgres `time` value back to the `HH:MM` the API speaks.
+ *
+ * **This is not cosmetic.** A `time` column does not return what you put in it:
+ * `'18:00'` goes in and `'18:00:00'` comes out — measured against this repo's
+ * own Postgres, not assumed. `GastronomyEventTimeSchema` rejects seconds ON
+ * PURPOSE (two spellings of one instant is a field whose equality checks are
+ * wrong somewhere downstream), so without this every read would fail its own
+ * response schema and the editor would round-trip a value it cannot re-submit.
+ *
+ * Truncation rather than reformatting: the seconds a `time` column appends are
+ * always `:00` here, because the only writer parses `HH:MM` first. A value
+ * already in `HH:MM` passes through unchanged, so this is safe to apply twice.
+ *
+ * @param value - The raw column value, or `null`.
+ * @returns The value as `HH:MM`, or `null`.
+ */
+export function toClockTime(value: string): string;
+export function toClockTime(value: string | null): string | null;
+export function toClockTime(value: string | null): string | null {
+    return value === null ? null : value.slice(0, 5);
+}
+
+/**
+ * Projects one stored row onto the wire shape.
+ *
+ * The only transformation is {@link toClockTime} on the two time columns —
+ * everything else round-trips as stored, `date` included (a `date` column
+ * returns exactly the `YYYY-MM-DD` it was given, which is why it is a `date`
+ * and not a `timestamp`).
+ *
+ * @param row - The stored row.
+ * @returns The row with its times normalised to `HH:MM`.
+ */
+export function projectEvent<T extends { startTime: string; endTime: string | null }>(row: T): T {
+    return { ...row, startTime: toClockTime(row.startTime), endTime: toClockTime(row.endTime) };
+}
+
+/**
  * Reads a listing's agenda, ordered.
  *
  * Returns EVERY entry, `isActive: false` ones included. Hiding an inactive
@@ -132,7 +170,7 @@ export async function getGastronomyEvents(
             ctx?.tx
         );
 
-        return { data: { events: [...rows].sort(byDisplayOrder) } };
+        return { data: { events: [...rows].sort(byDisplayOrder).map(projectEvent) } };
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
