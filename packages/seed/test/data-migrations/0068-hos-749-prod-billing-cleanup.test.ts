@@ -481,7 +481,7 @@ describe('0068-hos-749-prod-billing-cleanup', () => {
         });
 
         await expect(migration.up(buildCtx(probe.db))).rejects.toThrow(
-            /commerce_listing_subscriptions row\(s\) still hold an entitlement-granting status/
+            /entity_subscriptions row\(s\) still hold an entitlement-granting status/
         );
         expect(probe.writeOrder).toHaveLength(0);
     });

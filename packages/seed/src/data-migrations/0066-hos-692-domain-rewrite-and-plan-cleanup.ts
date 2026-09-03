@@ -182,6 +182,14 @@ async function resolveSubscriptionVerticals(
     const bySubscription = new Map<string, 'gastronomy' | 'experience' | null>();
 
     for (const row of linkRows) {
+        // HOS-1084 made `subscription_id` nullable so accommodation can cache
+        // "this owner holds no subscription". Such a row is not a commerce link
+        // and carries no subscription whose vertical could be resolved. It
+        // post-dates every database this migration has already run against, so
+        // skipping it changes nothing about what it did historically.
+        if (row.subscriptionId === null) {
+            continue;
+        }
         const isKnown = KNOWN_VERTICALS.has(row.entityType);
         const existing = bySubscription.get(row.subscriptionId);
 
