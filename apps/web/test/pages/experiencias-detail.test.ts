@@ -212,4 +212,16 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('experience.summary');
         });
     });
+
+    describe('view tracking (HOS-734)', () => {
+        it('mounts EntityViewTracker with entityType EXPERIENCE, client:idle', () => {
+            expect(src).toContain(
+                "import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';"
+            );
+            expect(src).toContain('<EntityViewTracker');
+            expect(src).toContain('client:idle');
+            expect(src).toContain('entityType="EXPERIENCE"');
+            expect(src).toContain('entityId={experience.id}');
+        });
+    });
 });
