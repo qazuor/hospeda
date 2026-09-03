@@ -15,6 +15,7 @@ import {
     QrCodeCreateInputSchema,
     QrCodeErrorCorrectionLevelEnum,
     QrCodeFormatEnum,
+    QrCodeRenderOptionsPatchSchema,
     QrCodeRenderOptionsSchema,
     QrCodeScanSchema,
     QrCodeSlugSchema,
@@ -356,5 +357,89 @@ describe('QrCodeScanSchema', () => {
             'qrCodeId',
             'scannedAt'
         ]);
+    });
+});
+
+/**
+ * HOS-981 PR 3 — a render patch must stay as small as the caller wrote it.
+ *
+ * The failure this whole block exists for is silent: the schema completes an
+ * omitted field with its default, the completed object is written over the one
+ * `jsonb` column, and a code somebody configured red comes back black with no
+ * error raised anywhere. Every assertion here is therefore about the ABSENCE of
+ * keys, using `toStrictEqual` — `objectContaining` is blind to a field being
+ * present that should not be, and it is exactly the extra fields that do the
+ * damage.
+ */
+describe('QrCodeRenderOptionsPatchSchema', () => {
+    it('returns exactly the keys it was given', () => {
+        expect(QrCodeRenderOptionsPatchSchema.parse({ margin: 8 })).toStrictEqual({ margin: 8 });
+    });
+
+    /**
+     * The one field whose loss is invisible and permanent, named on its own so
+     * a failure says what broke rather than "objects differ".
+     */
+    it('does not invent a foreground colour', () => {
+        expect(QrCodeRenderOptionsPatchSchema.parse({ margin: 8 })).not.toHaveProperty(
+            'foregroundColor'
+        );
+    });
+
+    it('parses an empty patch to an empty object, not to six defaults', () => {
+        expect(QrCodeRenderOptionsPatchSchema.parse({})).toStrictEqual({});
+    });
+
+    /**
+     * Non-vacuity: stripping the defaults must not have stripped the
+     * validation with them. A margin past the printable range is still refused.
+     */
+    it('still enforces the field constraints it kept', () => {
+        expect(QrCodeRenderOptionsPatchSchema.safeParse({ margin: 999 }).success).toBe(false);
+        expect(QrCodeRenderOptionsPatchSchema.safeParse({ foregroundColor: 'red' }).success).toBe(
+            false
+        );
+    });
+
+    /** `.strict()` survives the rebuild: an unknown drawing key is refused. */
+    it('refuses an unknown render option', () => {
+        expect(
+            QrCodeRenderOptionsPatchSchema.safeParse({ logoUrl: 'https://example.com/l.png' })
+                .success
+        ).toBe(false);
+    });
+
+    /**
+     * The create path is the counterpart and must NOT change: a code is stored
+     * with a complete render document, so an absent option there really does
+     * mean "use the default".
+     */
+    it('leaves the create schema completing its defaults', () => {
+        expect(QrCodeRenderOptionsSchema.parse({})).toStrictEqual({
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.M,
+            format: QrCodeFormatEnum.SVG,
+            margin: QR_CODE_DEFAULT_MARGIN,
+            size: null,
+            foregroundColor: QR_CODE_DEFAULT_FOREGROUND_COLOR,
+            backgroundColor: QR_CODE_DEFAULT_BACKGROUND_COLOR
+        });
+    });
+});
+
+describe('the update schemas carry the render patch, not the full document', () => {
+    it.each([
+        ['domain', QrCodeUpdateInputSchema],
+        ['HTTP', QrCodeUpdateHttpSchema]
+    ])('%s update: a margin-only patch leaves the colours untouched', (_label, schema) => {
+        const parsed = schema.parse({ renderOptions: { margin: 8 } });
+
+        expect(parsed).toStrictEqual({ renderOptions: { margin: 8 } });
+    });
+
+    it.each([
+        ['domain', QrCodeUpdateInputSchema],
+        ['HTTP', QrCodeUpdateHttpSchema]
+    ])('%s update: the slug is refused, not ignored', (_label, schema) => {
+        expect(schema.safeParse({ slug: 'Rena2ed4' }).success).toBe(false);
     });
 });

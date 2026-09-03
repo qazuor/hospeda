@@ -158,8 +158,8 @@ import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
-// Redirectable QR codes: public resolution tier only for now (HOS-981)
-import { publicQrCodeRoutes } from './qr-code';
+// Redirectable QR codes (HOS-981): public resolution + admin CRUD
+import { adminQrCodeRoutes, publicQrCodeRoutes } from './qr-code';
 import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
@@ -704,6 +704,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
         app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
+
+        // Redirectable QR codes admin (HOS-981): CRUD plus the rendered
+        // download. Gated on SETTINGS_MANAGE — a borrowed gate, kept until a
+        // dedicated QR_CODE_* family is worth the role_permission migration.
+        app.route('/api/v1/admin/qr-codes', adminQrCodeRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
