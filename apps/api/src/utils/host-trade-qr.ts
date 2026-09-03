@@ -1,4 +1,5 @@
-import QRCode from 'qrcode';
+import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
+import { renderQrSvg } from './qr-render.js';
 
 /**
  * The provider's static usage QR (HOS-376 §6.2a, T-029).
@@ -13,6 +14,12 @@ import QRCode from 'qrcode';
  * The cost of that is the constraint every function here works under: the same
  * slug must always render the same image. Nothing in this module may depend on
  * the clock, on randomness, or on anything a redeploy could change.
+ *
+ * Since HOS-981 the drawing itself is delegated to the shared engine in
+ * `./qr-render.js`. The options below are the SAME values the engine would
+ * default to; they stay written out here because this module's contract is that
+ * its output never moves, and a code already printed on a van must not change
+ * because someone later changed a default somewhere else.
  */
 
 /** Quiet zone, in modules, around the symbol. */
@@ -26,7 +33,7 @@ const QR_MARGIN = 4;
  * light. The extra modules cost print area, which is cheap; a code that stops
  * scanning once it is dirty costs the declaration the whole channel exists for.
  */
-const QR_ERROR_CORRECTION = 'M';
+const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.M;
 
 /** Path the QR sends a host to, relative to the site root. */
 const USAGE_PATH_PREFIX = '/mi-cuenta/directorio-proveedores';
@@ -64,9 +71,11 @@ export async function renderHostTradeQrSvg(input: {
     slug: string;
     siteUrl: string;
 }): Promise<string> {
-    return QRCode.toString(buildHostTradeUsageUrl(input), {
-        type: 'svg',
-        margin: QR_MARGIN,
-        errorCorrectionLevel: QR_ERROR_CORRECTION
+    return renderQrSvg({
+        data: buildHostTradeUsageUrl(input),
+        options: {
+            margin: QR_MARGIN,
+            errorCorrectionLevel: QR_ERROR_CORRECTION
+        }
     });
 }
