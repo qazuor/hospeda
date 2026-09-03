@@ -78,6 +78,32 @@ export const SESSION_OPTIONAL_SEGMENTS = [
  */
 export const STATIC_PREFIXES = ['/_astro/', '/favicon', '/api/'] as const;
 
+/**
+ * URL path prefixes that live OUTSIDE the `/{lang}/` tree on purpose, and must
+ * therefore never be 301-redirected into it.
+ *
+ * There is exactly one today: `/qr/`. A QR code is printed on a physical sign
+ * and has no language — the URL is set in ink and cannot be changed afterwards,
+ * which is the whole reason the slug is indirected through a database row in
+ * the first place. Prefixing it with a locale would mean choosing, at print
+ * time, which language every future scanner reads the site in.
+ *
+ * **Removing `/qr/` from this list breaks the route, it does not merely slow it
+ * down.** `qr` is a two-letter segment, so it matches `LOCALE_SHAPED_SEGMENT`
+ * in `middleware-helpers.ts` and is treated as a request for an unsupported
+ * LANGUAGE rather than as a path segment. That branch REPLACES the segment, so
+ * `/qr/Live2345/` resolves to `restOfPath = /Live2345/` and redirects to
+ * `/es/Live2345/` — a 404 with the `qr` eaten, not `/es/qr/Live2345/`. Any
+ * future entry here shorter than three characters inherits the same trap; a
+ * longer one would merely be redirected intact.
+ *
+ * These paths are exempt from the locale redirect ONLY. Every other middleware
+ * step still runs for them — in particular the trailing-slash normalisation and
+ * the 404 rewrite, so a slug that does not resolve reaches the real site 404
+ * page instead of a blank body (HOS-981).
+ */
+export const LANGUAGE_NEUTRAL_PREFIXES = ['/qr/'] as const;
+
 /** Type representing a protected route segment. */
 export type ProtectedSegment = (typeof PROTECTED_SEGMENTS)[number];
 

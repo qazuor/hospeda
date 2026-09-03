@@ -15,6 +15,7 @@ import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
     CHANGE_PASSWORD_SEGMENT,
+    LANGUAGE_NEUTRAL_PREFIXES,
     PROFILE_COMPLETION_BYPASS_ROLES,
     PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
     PROFILE_COMPLETION_SEGMENT,
@@ -46,6 +47,23 @@ export interface LocaleExtractionResult {
  * is two letters. A future two-letter route segment would be swallowed by this
  * check — which is a reason to not create one, since it would collide with a
  * language tag for visitors regardless of what this function does.
+ *
+ * **That segment now exists: `/qr/` (HOS-981).** The warning above was right —
+ * `qr` matches this pattern, so this function classifies it as an unsupported
+ * LANGUAGE and returns a `restOfPath` with the `qr` REPLACED, which would send
+ * `/qr/Live2345/` to `/es/Live2345/` and a 404. It was created anyway, because
+ * the segment is printed on physical signs and cannot carry a locale.
+ *
+ * It is resolved OUTSIDE this function, by {@link isLanguageNeutralRoute} /
+ * `LANGUAGE_NEUTRAL_PREFIXES`, which makes the middleware skip the locale
+ * redirect for that prefix — so this pattern still matches `qr` and simply
+ * never gets to act on it. Do NOT "fix" the collision by special-casing `qr`
+ * here: the exemption is the fix, and narrowing this regex would change how
+ * every unsupported two-letter language tag behaves for every visitor.
+ *
+ * The constraint the warning states still holds for anything new: a two-letter
+ * top-level segment needs an entry in `LANGUAGE_NEUTRAL_PREFIXES`, or it is
+ * silently eaten.
  */
 const LOCALE_SHAPED_SEGMENT = /^[a-z]{2}(-[a-z]{2})?$/i;
 
@@ -211,6 +229,33 @@ export function isProfileCompletionRequiredSessionOptionalRoute({
     return (PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(
         segments[1] ?? ''
     );
+}
+
+/**
+ * Checks whether a URL path belongs to a route that deliberately lives outside
+ * the `/{lang}/` tree, and must therefore not be 301-redirected into it.
+ *
+ * Unlike {@link isStaticAssetRoute} this does NOT bypass the middleware: it
+ * suppresses the locale redirect and nothing else, so the trailing-slash
+ * normalisation, the 404 rewrite and the security headers all still apply. A
+ * language-neutral route that bypassed the pipeline would answer an unresolved
+ * slug with a blank 404 body instead of the site's 404 page.
+ *
+ * @param params - Object containing the URL path string.
+ * @returns True when the path must keep its locale-less form.
+ */
+export function isLanguageNeutralRoute({ path }: { readonly path: string }): boolean {
+    if (!path) {
+        return false;
+    }
+
+    for (const prefix of LANGUAGE_NEUTRAL_PREFIXES) {
+        if (path.startsWith(prefix)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**

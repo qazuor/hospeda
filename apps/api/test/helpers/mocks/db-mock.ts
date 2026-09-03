@@ -553,6 +553,57 @@ export function createDbMock() {
             }
         },
 
+        /**
+         * HOS-981 — Mock QrCodeModel.
+         *
+         * Needed by every `apps/api` test that boots the app, not just the QR
+         * ones: `routes/index.ts` imports the public QR router, whose module
+         * scope constructs a `QrCodeService`, whose constructor does
+         * `new QrCodeModel()`. Without this entry that construction throws
+         * `No "QrCodeModel" export is defined on the "@repo/db" mock` at import
+         * time, so the failure lands on whichever unrelated route test happens
+         * to pull the app in — which is why omitting it reddened all five unit
+         * shards rather than one file.
+         */
+        QrCodeModel: class MockQrCodeModel {
+            async findOne(_where: unknown) {
+                return null;
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+            async create(_data: unknown) {
+                return { id: 'qr_code_mock_id', createdAt: new Date() };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+        },
+
+        /**
+         * HOS-981 — Mock QrCodeScanModel. Same construction path as
+         * `QrCodeModel` above: the service instantiates both in its
+         * constructor. Append-only, so it carries no soft-delete or audit
+         * methods.
+         */
+        QrCodeScanModel: class MockQrCodeScanModel {
+            async create(_data: unknown) {
+                return { id: 'qr_code_scan_mock_id', scannedAt: new Date() };
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+        },
+
         // Mock REntityTagModel
         REntityTagModel: class MockREntityTagModel {
             async findAll(_filters: unknown) {
