@@ -6,11 +6,8 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import {
-    acquireDialogHistoryEntry,
-    getTopDialogEntryId,
-    subscribeToDialogStack
-} from '@/lib/dialog-history';
+import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
+import { useIsTopmostOverlay } from './useIsTopmostOverlay';
 
 interface UseDialogHistoryBackParams {
     /** Whether the modal surface is currently open. */
@@ -23,18 +20,13 @@ interface UseDialogHistoryBackParams {
 export interface UseDialogHistoryBackResult {
     /**
      * Whether THIS surface is the topmost currently-open modal-like surface,
-     * per the shared `dialog-history` stack (HOS-350). Consumers gate their
-     * own Escape-to-close on this so that when two overlays are stacked
-     * (e.g. the feedback modal opened via Ctrl+Shift+F over an already-open
-     * drawer), only the outer one closes on a single Escape press instead of
-     * both firing at once.
+     * per `useIsTopmostOverlay`'s shared open-overlays registry (HOS-350).
+     * Consumers gate their own Escape-to-close on this so that when two
+     * overlays are stacked (e.g. the feedback modal opened via
+     * Ctrl+Shift+F over an already-open drawer), only the outer one closes
+     * on a single Escape press instead of both firing at once.
      *
-     * Defaults to `true` when THIS surface has no claimed history entry
-     * (transitions disabled, navigation in flight, a page/test with no
-     * `<ClientRouter />`) — the stack cannot arbitrate anything for a surface
-     * it does not know about, and silently muting Escape for it would be
-     * worse than the bug this exists to fix. See `dialog-history.ts`'s own
-     * "fail-safe, not fail-broken" stance.
+     * See {@link useIsTopmostOverlay} for the fail-open default.
      */
     readonly isTopmost: boolean;
 }
@@ -79,49 +71,22 @@ export function useDialogHistoryBack({
     // declined, the bump is what re-runs the effect to claim a replacement.
     const [claimToken, setClaimToken] = useState(0);
 
-    // This surface's own entry id, once claimed — read by the isTopmost
-    // effect below. A ref, not state: it is written and read entirely inside
-    // effects (never during render), so it needs no re-render of its own.
-    const entryIdRef = useRef<number | undefined>(undefined);
-
     // biome-ignore lint/correctness/useExhaustiveDependencies: `claimToken` is a re-run trigger, not a value the effect reads — see the comment above.
     useEffect(() => {
         if (!isOpen) return;
-        const { release, id } = acquireDialogHistoryEntry({
+        const { release } = acquireDialogHistoryEntry({
             onPopped: () => {
                 onCloseRef.current();
                 setClaimToken((token) => token + 1);
             }
         });
-        entryIdRef.current = id;
-        return () => {
-            entryIdRef.current = undefined;
-            release();
-        };
+        return release;
     }, [isOpen, claimToken]);
 
-    /**
-     * See {@link UseDialogHistoryBackResult.isTopmost} for the fail-open
-     * rule when this surface has no entry of its own.
-     */
-    const computeIsTopmost = (): boolean => {
-        const id = entryIdRef.current;
-        if (id === undefined) return true;
-        return id === getTopDialogEntryId();
-    };
-
-    const [isTopmost, setIsTopmost] = useState(computeIsTopmost);
-
-    // Runs AFTER the acquire effect above (declaration order), so
-    // `entryIdRef.current` already reflects this render's claim by the time
-    // this reads it. Re-subscribes whenever the claim itself changes
-    // (`isOpen`/`claimToken`) so a stale id from a previous claim is never
-    // compared against the live stack.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: `computeIsTopmost` closes over the ref above, not over reactive state — see the comment above.
-    useEffect(() => {
-        setIsTopmost(computeIsTopmost());
-        return subscribeToDialogStack(() => setIsTopmost(computeIsTopmost()));
-    }, [isOpen, claimToken]);
+    // Topmost arbitration (HOS-350) is a presence concern, not a
+    // history-claiming one — see `useIsTopmostOverlay`'s module doc for why
+    // it is a separate registry rather than a read of `stack` above.
+    const isTopmost = useIsTopmostOverlay({ isOpen });
 
     return { isTopmost };
 }

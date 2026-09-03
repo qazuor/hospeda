@@ -80,14 +80,6 @@ interface AcquireResult {
      * safe when the claim was skipped or has not landed yet.
      */
     readonly release: () => void;
-    /**
-     * This claim's position in {@link stack}, or `undefined` when no entry
-     * could be claimed at all (transitions disabled, navigation in flight, a
-     * page with no `<ClientRouter />`). Lets a caller ask "am I the topmost
-     * open surface?" via {@link getTopDialogEntryId} (HOS-350) — see
-     * `useDialogHistoryBack`'s `isTopmost`.
-     */
-    readonly id: number | undefined;
 }
 
 /**
@@ -118,42 +110,84 @@ const unwinding = new Set<number>();
 /** Resolved once, so claims after the first are synchronous. */
 let cachedNavigate: NavigateFn | null = null;
 
-const NO_ENTRY: AcquireResult = { release: () => undefined, id: undefined };
+const NO_ENTRY: AcquireResult = { release: () => undefined };
 
 /**
- * Subscribers to {@link stack} membership/order changes (HOS-350). A separate
- * concern from the back-button plumbing above: this is a read-only "the top
- * may have changed" signal that lets a modal-like surface ask "am I still the
- * topmost one?" (e.g. to decide whether IT should react to Escape when
- * another surface just opened on top of it). Nothing here decides what
- * closes — see `useDialogHistoryBack`'s `isTopmost`.
+ * Subscribers to {@link openOverlays} membership/order changes (HOS-350).
+ * This is a read-only "the top may have changed" signal that lets a
+ * modal-like surface ask "am I still the topmost one?" (e.g. to decide
+ * whether IT should react to Escape when another surface just opened on top
+ * of it). Nothing here decides what closes — see `useIsTopmostOverlay`.
  */
-const stackListeners = new Set<() => void>();
+const overlayListeners = new Set<() => void>();
 
-function notifyStackListeners(): void {
-    for (const listener of stackListeners) listener();
+function notifyOverlayListeners(): void {
+    for (const listener of overlayListeners) listener();
 }
 
 /**
- * Subscribes to {@link stack} changes. Returns an unsubscribe function.
+ * Subscribes to {@link openOverlays} changes. Returns an unsubscribe function.
  *
- * @internal exported for `useDialogHistoryBack`.
+ * @internal exported for `useIsTopmostOverlay`.
  */
-export function subscribeToDialogStack(listener: () => void): () => void {
-    stackListeners.add(listener);
+export function subscribeToOpenOverlays(listener: () => void): () => void {
+    overlayListeners.add(listener);
     return () => {
-        stackListeners.delete(listener);
+        overlayListeners.delete(listener);
     };
 }
 
 /**
- * The id of the innermost (topmost) entry currently in {@link stack}, or
- * `undefined` when nothing is claimed right now.
- *
- * @internal exported for `useDialogHistoryBack`.
+ * Every currently-open modal-like surface (HOS-350), deliberately
+ * independent of {@link stack}: `stack` only ever holds surfaces that
+ * successfully claim a browser-history entry, and some never can. The
+ * mobile filters drawer (`MobileDrawer.tsx`) opens over a listing page that
+ * rewrites its own URL on every filter tap, which buries any entry the
+ * drawer might claim — so it cannot appear in `stack` regardless of whether
+ * `<ClientRouter />` is even present. It still needs to participate in "who
+ * is on top", which is all this array is for: presence only, no history
+ * claim, no popstate interaction.
  */
-export function getTopDialogEntryId(): number | undefined {
-    return stack[stack.length - 1]?.id;
+const openOverlays: { id: number }[] = [];
+let nextOverlayId = 1;
+
+/** Handle returned by {@link registerOpenOverlay}. */
+export interface OpenOverlayHandle {
+    /** This registration's position in {@link openOverlays}. */
+    readonly id: number;
+    /** Removes this registration. Safe to call more than once. */
+    readonly unregister: () => void;
+}
+
+/**
+ * Registers a modal-like surface as open, purely for Escape/topmost
+ * arbitration (HOS-350) — no browser-history claim, no popstate handling.
+ * Consumers normally reach this through `useIsTopmostOverlay` rather than
+ * calling it directly.
+ */
+export function registerOpenOverlay(): OpenOverlayHandle {
+    const entry = { id: nextOverlayId++ };
+    openOverlays.push(entry);
+    notifyOverlayListeners();
+    return {
+        id: entry.id,
+        unregister: () => {
+            const index = openOverlays.indexOf(entry);
+            if (index === -1) return;
+            openOverlays.splice(index, 1);
+            notifyOverlayListeners();
+        }
+    };
+}
+
+/**
+ * The id of the innermost (topmost) currently-registered overlay, or
+ * `undefined` when none is open.
+ *
+ * @internal exported for `useIsTopmostOverlay`.
+ */
+export function getTopOpenOverlayId(): number | undefined {
+    return openOverlays[openOverlays.length - 1]?.id;
 }
 
 /** The dialog id stamped on the current history entry, if any. */
@@ -192,7 +226,6 @@ function handlePopState(): void {
     if (currentId !== undefined && currentId > top.id) return;
 
     stack.pop();
-    notifyStackListeners();
     // A claim still resolving has no entry to own any more; letting it land
     // would strand a fragment in the URL that nothing will ever unwind.
     if (!top.pushed) top.cancelled = true;
@@ -222,7 +255,6 @@ function abandonAll(): void {
     }
     stack.length = 0;
     pendingBackSteps = 0;
-    notifyStackListeners();
 }
 
 function attachListeners(): void {
@@ -290,7 +322,6 @@ export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireR
         cancelled: false
     };
     stack.push(entry);
-    notifyStackListeners();
 
     const navigateNow = cachedNavigate;
     if (navigateNow) {
@@ -316,7 +347,7 @@ export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireR
             });
     }
 
-    return { release: () => releaseDialogHistoryEntry(entry), id: entry.id };
+    return { release: () => releaseDialogHistoryEntry(entry) };
 }
 
 /** The URL of the entry this module would claim, or `null` if it cannot. */
@@ -386,7 +417,6 @@ function dropEntry(entry: DialogHistoryEntry): void {
     const index = stack.indexOf(entry);
     if (index === -1) return;
     stack.splice(index, 1);
-    notifyStackListeners();
 }
 
 /**
@@ -473,6 +503,11 @@ export function resetDialogHistoryForTests(): void {
     pendingBackSteps = 0;
     backScheduled = false;
     unwinding.clear();
+    // HOS-350: the open-overlays registry is independent of `stack` above,
+    // so it needs its own reset — otherwise a suite whose components don't
+    // unmount between tests would leak registrations across cases.
+    openOverlays.length = 0;
+    nextOverlayId = 1;
     // Rotated with `nextId`, or a leftover entry from an earlier test would
     // carry the same (id, stamp) pair as a fresh one — recreating exactly the
     // impersonation the stamp exists to prevent, inside the suite.
