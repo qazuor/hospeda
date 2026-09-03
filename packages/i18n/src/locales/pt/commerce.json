@@ -391,9 +391,9 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Cardápio estruturado",
-"menuItemPhotos": "Foto por prato",
-"manageExperienceDirections": "Mapa e como chegar",
-"issueExperienceCertificate": "Certificados de experiência"
+            "menuItemPhotos": "Foto por prato",
+            "manageExperienceDirections": "Mapa e como chegar",
+            "issueExperienceCertificate": "Certificados de experiência"
         },
         "create": {
             "pickVertical": {

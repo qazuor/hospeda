@@ -391,9 +391,9 @@
         },
         "entitlements": {
             "manageGastronomyMenu": "Structured menu",
-"menuItemPhotos": "Photo per dish",
-"manageExperienceDirections": "Map and how to get there",
-"issueExperienceCertificate": "Experience certificates"
+            "menuItemPhotos": "Photo per dish",
+            "manageExperienceDirections": "Map and how to get there",
+            "issueExperienceCertificate": "Experience certificates"
         },
         "create": {
             "pickVertical": {
