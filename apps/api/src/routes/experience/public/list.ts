@@ -18,6 +18,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
+import { withholdExperienceDirectionsFromList } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -55,7 +56,12 @@ export const publicListExperiencesRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        const items = result.data?.items || [];
+        // HOS-1049: a card is not the paid presentation. A list resolves no
+        // entitlement (one owner lookup per card would turn a page into 24
+        // extra round trips), and `meetingPointDirections` is named on
+        // `ExperiencePublicSchema` — so it is withheld here unconditionally,
+        // through the same gate the detail routes use.
+        const items = withholdExperienceDirectionsFromList(result.data?.items || []);
 
         return {
             items,
