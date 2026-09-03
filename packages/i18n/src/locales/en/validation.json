@@ -1,4 +1,38 @@
 {
+    "qrCode": {
+        "description": {
+            "max": "The description must not exceed {{max}} characters"
+        },
+        "entityType": {
+            "max": "The entity type must not exceed {{max}} characters"
+        },
+        "label": {
+            "max": "The QR code name must not exceed {{max}} characters",
+            "min": "The QR code name is required"
+        },
+        "renderOptions": {
+            "color": {
+                "invalid": "The colour must be hexadecimal, in #rgb, #rrggbb or #rrggbbaa form"
+            },
+            "margin": {
+                "max": "The margin must not exceed {{max}} modules",
+                "min": "The margin must not be smaller than {{min}} modules"
+            },
+            "size": {
+                "max": "The size must not exceed {{max}} pixels",
+                "min": "The size must be at least {{min}} pixels for a camera to read the code"
+            }
+        },
+        "slug": {
+            "invalidPattern": "The code may only use unambiguous characters: no 0, O, 1, l or I",
+            "max": "The code must not exceed {{max}} characters",
+            "min": "The code must be at least {{min}} characters"
+        },
+        "targetUrl": {
+            "invalidUrl": "The destination must be a valid URL",
+            "max": "The destination must not exceed {{max}} characters"
+        }
+    },
     "reviewMarkedFields": "Check the highlighted fields.",
     "accommodation": {
         "address": {
@@ -2418,6 +2452,15 @@
         },
         "productType": {
             "invalid": "El product type no es válido"
+        },
+        "qrCodeErrorCorrectionLevel": {
+            "invalid": "Invalid error correction level"
+        },
+        "qrCodeFormat": {
+            "invalid": "Invalid QR code format"
+        },
+        "qrCodeSource": {
+            "invalid": "Invalid QR code source"
         },
         "recurrenceType": {
             "invalid": "El recurrence type no es válido"
