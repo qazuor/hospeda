@@ -881,6 +881,56 @@ export const DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL = {
 } as const;
 
 /**
+ * Every tier of each commerce vertical, in display order (HOS-1119).
+ *
+ * {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL} above answers "which ONE plan
+ * does a vertical fall back to"; this answers the question HOS-1119 needed and
+ * nothing could: "which plans is a vertical ALLOWED to be on at all". The two
+ * are complementary, not alternatives — the default is still exactly what a
+ * checkout that asks for nothing gets.
+ *
+ * Built from {@link ALL_GASTRONOMY_PLANS} / {@link ALL_EXPERIENCE_PLANS} rather
+ * than re-listing the tiers, so a seventh tier added to either array is
+ * selectable by construction and cannot be forgotten here.
+ */
+export const COMMERCE_PLANS_BY_VERTICAL: Readonly<
+    Record<CommerceVertical, readonly PlanDefinition[]>
+> = {
+    gastronomy: ALL_GASTRONOMY_PLANS,
+    experience: ALL_EXPERIENCE_PLANS
+} as const;
+
+/**
+ * Finds the commerce plan definition a vertical knows by that slug (HOS-1119).
+ *
+ * **This is a MEMBERSHIP test, not a sellability test, and the split is the
+ * point.** It answers only "does this slug name a tier of this vertical" — a
+ * structural fact fixed in this catalogue that no operator can change at
+ * runtime. Whether that tier is currently *sellable* is a `billing_plans.active`
+ * question, read from the DATABASE at checkout time, exactly as
+ * `loadVerticalBaseLimit` reads the cap from the database rather than from this
+ * file: activating or retiring a tier must take effect without a deploy.
+ *
+ * Keeping membership in code is what preserves HOS-688 AC-35's real invariant:
+ * a gastronomy checkout can never be pointed at an experience plan, and so never
+ * at the other vertical's MercadoPago `preapproval_plan`. That is the property
+ * the per-vertical free trial rests on, and it is now enforced by a lookup
+ * instead of by there having been only one possible answer.
+ *
+ * @param input.vertical - The vertical the request belongs to.
+ * @param input.slug - The plan slug the caller asked for.
+ * @returns The matching {@link PlanDefinition}, or `undefined` when the slug
+ *   names no tier of that vertical — including when it names a tier of the OTHER
+ *   vertical, which is the case that matters.
+ */
+export function findCommercePlanForVertical(input: {
+    vertical: CommerceVertical;
+    slug: string;
+}): PlanDefinition | undefined {
+    return COMMERCE_PLANS_BY_VERTICAL[input.vertical].find((plan) => plan.slug === input.slug);
+}
+
+/**
  * Dedicated partner-directory plan (SPEC-271).
  *
  * Seeded into `billing_plans` and stamped with `product_domain='partner'`, but
