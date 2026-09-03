@@ -147,7 +147,11 @@
                 "meetingPointHint": "Onde a experiência começa. Pode ser um endereço ou uma referência do lugar.",
                 "meetingPointLat": "Latitude (opcional)",
                 "meetingPointLong": "Longitude (opcional)",
-                "meetingPointCoordsHint": "Se você informar as coordenadas, mais adiante podemos mostrar o ponto num mapa. Pode deixá-las vazias.",
+                "meetingPointCoordsHint": "Se você informar as coordenadas, mostramos o ponto num mapa. Pode deixá-las vazias.",
+                "meetingPointDirections": "Como chegar",
+                "meetingPointDirectionsPlaceholder": "Estacione na descida municipal, na beira do rio\nO ônibus 4 deixa você na rotatória\nSão 300 m por estrada de saibro, procure o píer de madeira",
+                "meetingPointDirectionsHint": "Uma indicação por linha. Onde estacionar, qual ônibus, quanto se caminha desde a estrada, que referência procurar.",
+                "meetingPointDirectionsLocked": "O mapa e as indicações de como chegar não estão incluídos no seu plano. O ponto de encontro está, e continua publicado.",
                 "durationHours": "Duração — horas",
                 "durationMinutes": "Duração — minutos",
                 "durationHint": "Quanto dura a experiência. Deixe os dois campos vazios se preferir não publicar.",
@@ -357,7 +361,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Cardápio estruturado"
+            "manageGastronomyMenu": "Cardápio estruturado",
+            "manageExperienceDirections": "Mapa e como chegar"
         },
         "create": {
             "pickVertical": {
