@@ -554,6 +554,37 @@ export function createDbMock() {
         },
 
         /**
+         * HOS-1057 — Mock ExperienceCertificateModel.
+         *
+         * This mock is an explicit INVENTORY: an export missing from it arrives
+         * `undefined`, and the `new ExperienceCertificateModel()` inside the
+         * service-core certificate helpers then throws at CALL time rather than
+         * at import time — which reads as a broken handler instead of a missing
+         * stub. Registered here so the certificate route tests exercise the real
+         * chain up to the database and no further.
+         */
+        ExperienceCertificateModel: class MockExperienceCertificateModel {
+            async findOne(_where: unknown) {
+                return null;
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+            async create(_data: unknown) {
+                return { id: 'experience_certificate_mock_id', createdAt: new Date() };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+        },
+
+        /**
          * HOS-981 — Mock QrCodeModel.
          *
          * Needed by every `apps/api` test that boots the app, not just the QR

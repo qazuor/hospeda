@@ -40,6 +40,7 @@ import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { BrochureDownloadButton } from './BrochureDownloadButton.client';
 import styles from './CommerceListingActions.module.css';
 import { CommercePlanPicker } from './CommercePlanPicker.client';
+import { ExperienceCertificatePanel } from './ExperienceCertificatePanel.client';
 
 export interface CommerceListingActionsProps {
     /** The listing summary + completeness preview to render actions for. */
@@ -333,6 +334,21 @@ export function CommerceListingActions({
                     slug={listing.slug}
                     locale={locale}
                 />
+                {/*
+                 * HOS-1057. Experiences only — a restaurant has nothing to
+                 * certify — and only in the `published` state, for the same
+                 * reason as the brochure above: the certificate carries a QR
+                 * back to the PUBLIC ficha, so a draft would print a permanent
+                 * 404 onto a piece of paper somebody keeps. The API enforces
+                 * that rule on the PDF route itself; this only avoids offering a
+                 * panel whose download could not work.
+                 */}
+                {listing.vertical === 'experience' && (
+                    <ExperienceCertificatePanel
+                        listingId={listing.id}
+                        locale={locale}
+                    />
+                )}
             </div>
         );
     }
