@@ -1,0 +1,49 @@
+---
+/**
+ * @file traducciones.astro
+ * @description Translations section of the commerce editor (HOS-1080).
+ *
+ * The four i18n fields travel as ONE unit through the listing PATCH — the panel
+ * edits them together and `buildPatchPayload` emits all four whenever any of
+ * them changed.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/traducciones/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'traducciones',
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="traducciones"
+	title={t('commerce.owner.editor.sectionNav.translations', 'Traducciones')}
+>
+	<CommerceListingEditor
+		client:load
+		sectionId="translations"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+	/>
+</CommerceEditorSectionLayout>

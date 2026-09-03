@@ -1,0 +1,52 @@
+---
+/**
+ * @file preguntas.astro
+ * @description FAQ section of the commerce editor (HOS-1080).
+ *
+ * `CommerceFaqManager` owns its own endpoints (HOS-811) — nothing here reaches
+ * the listing PATCH or its dirty tracking — so this page mounts it directly,
+ * with no form and no save button, exactly as the accommodation editor's
+ * `preguntas` route does.
+ *
+ * The FAQs are preloaded server-side so the manager paints real data on first
+ * paint rather than flashing empty and filling in.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/preguntas/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { readCommerceListingFaqs } from '@/lib/commerce/commerce-editor-detail';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: 'preguntas' });
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+
+const initialFaqs = readCommerceListingFaqs({ detail });
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="preguntas"
+	title={t('commerce.owner.editor.sectionNav.faqs', 'Preguntas frecuentes')}
+>
+	<CommerceFaqManager
+		client:load
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialFaqs={initialFaqs}
+	/>
+</CommerceEditorSectionLayout>

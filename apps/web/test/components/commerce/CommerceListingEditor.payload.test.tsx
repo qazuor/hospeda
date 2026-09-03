@@ -29,6 +29,7 @@ import { ExperiencePriceUnitEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
+import type { CommerceEditorFormSectionId } from '../../../src/components/commerce/editor/commerce-section-payload';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
 
 const { I18N_INITIAL, I18N_EDITED } = vi.hoisted(() => {
@@ -185,13 +186,22 @@ function buildListing(overrides: Record<string, unknown> = {}): CommerceListingD
     } as unknown as CommerceListingDetail;
 }
 
+/**
+ * Renders ONE section of the editor (HOS-1080).
+ *
+ * The section is explicit in every call because it decides both what renders
+ * and which keys the save may carry — a payload assertion made against the
+ * wrong section would pass vacuously with an empty body.
+ */
 function renderEditor(
     vertical: 'gastronomy' | 'experience',
-    initialData: CommerceListingDetail = buildListing()
+    initialData: CommerceListingDetail = buildListing(),
+    sectionId: CommerceEditorFormSectionId = 'basicInfo'
 ) {
     return render(
         <CommerceListingEditor
             vertical={vertical}
+            sectionId={sectionId}
             listingId="abc"
             locale="es"
             initialData={initialData}
@@ -257,7 +267,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('gastronomy price fields clear to null', () => {
         it('sends priceRange as an explicit null when the tier is cleared', async () => {
-            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }));
+            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }), 'price');
 
             const select = screen.getByLabelText('Rango de precios');
             expect(select).toHaveValue('MID');
@@ -271,7 +281,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends menuUrl as an explicit null when the link is cleared', async () => {
-            renderEditor('gastronomy', buildListing({ menuUrl: 'https://old.test/menu' }));
+            renderEditor('gastronomy', buildListing({ menuUrl: 'https://old.test/menu' }), 'price');
 
             const input = screen.getByLabelText('Enlace al menú');
             expect(input).toHaveValue('https://old.test/menu');
@@ -284,7 +294,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends menuUrl as the new value when set', async () => {
-            renderEditor('gastronomy');
+            renderEditor('gastronomy', buildListing(), 'price');
 
             fireEvent.change(screen.getByLabelText('Enlace al menú'), {
                 target: { value: 'https://menu.test/carta' }
@@ -328,7 +338,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
     describe('experience price fields omit the key instead of sending null (T-021)', () => {
         it('omits priceFrom from the wire body when cleared', async () => {
             // HOS-809: 50000 centavos on the row, $ 500 in the field.
-            renderEditor('experience', buildListing({ priceFrom: 50000 }));
+            renderEditor('experience', buildListing({ priceFrom: 50000 }), 'price');
 
             const input = screen.getByLabelText(/Precio desde/);
             expect(input).toHaveValue(500);
@@ -351,7 +361,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         // `priceRange` already did.
         it('sends priceUnit as an explicit null when cleared (H-156)', async () => {
             const seededUnit = Object.values(ExperiencePriceUnitEnum)[0] as string;
-            renderEditor('experience', buildListing({ priceUnit: seededUnit }));
+            renderEditor('experience', buildListing({ priceUnit: seededUnit }), 'price');
 
             const select = screen.getByLabelText('Unidad de precio');
             // Guard against a vacuous pass: the field must genuinely start with a
@@ -367,7 +377,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends priceFrom as centavos for a price typed in pesos (HOS-809)', async () => {
-            renderEditor('experience');
+            renderEditor('experience', buildListing(), 'price');
 
             // The owner types $ 750. The column is centavos, so the wire body
             // must carry 75000 — sending 750 published a $ 7,50 experience.
@@ -383,7 +393,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             // multiplies on save without dividing on load would show 350000 in
             // the field here, and every open-and-save would inflate the stored
             // price by another factor of 100.
-            renderEditor('experience', buildListing({ priceFrom: 350000 }));
+            renderEditor('experience', buildListing({ priceFrom: 350000 }), 'price');
 
             const input = screen.getByLabelText(/Precio desde/);
             expect(input).toHaveValue(3500);
@@ -396,7 +406,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends priceUnit as the selected enum value when set', async () => {
-            renderEditor('experience');
+            renderEditor('experience', buildListing(), 'price');
 
             const select = screen.getByLabelText('Unidad de precio');
             const unit = firstRealOption(select);
@@ -408,7 +418,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends isPriceOnRequest as a boolean when toggled', async () => {
-            renderEditor('experience');
+            renderEditor('experience', buildListing(), 'price');
 
             fireEvent.click(screen.getByLabelText('Precio a consultar'));
             fireEvent.click(saveButton());
@@ -427,7 +437,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                         mobilePhone: '+5491100000000',
                         workEmail: 'dueno@test.com'
                     }
-                })
+                }),
+                'contact'
             );
 
             // HOS-371: the editable control is the local-number input; the
@@ -456,7 +467,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                         facebook: 'https://facebook.com/old',
                         instagram: 'https://instagram.com/keepme'
                     }
-                })
+                }),
+                'contact'
             );
 
             fireEvent.change(screen.getByLabelText('facebook'), {
@@ -472,7 +484,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends all four i18n fields together when any locale is edited', async () => {
-            renderEditor('gastronomy');
+            renderEditor('gastronomy', buildListing(), 'translations');
 
             fireEvent.click(screen.getByTestId('i18n-trigger'));
             fireEvent.click(saveButton());
@@ -518,13 +530,19 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('never fires the client-side Cloudinary delete', async () => {
-            renderEditor('gastronomy', buildListing({ media: { gallery: [galleryImage] } }));
+            renderEditor(
+                'gastronomy',
+                buildListing({ media: { gallery: [galleryImage] } }),
+                'basicInfo'
+            );
 
-            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
             // Removal goes through `commerceMediaApi.removeMedia`, which deletes
             // the binary server-side. `delete-entity` rejects commerce verticals
-            // with a 400, so any call here is a regression.
+            // with a 400, so any call here is a regression. Since HOS-1080 the
+            // photos live on their own route, which makes the guarantee stronger
+            // rather than weaker: no section but `fotos` can reach media at all.
             expect(mockDeleteMedia).not.toHaveBeenCalled();
+            expect(mockListMedia).not.toHaveBeenCalled();
         });
     });
 
@@ -624,26 +642,51 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(mockPatch).not.toHaveBeenCalled();
         });
 
-        it('carries every dirty group in a single PATCH', async () => {
-            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }));
+        it('carries every dirty field of the section in a single PATCH', async () => {
+            renderEditor('gastronomy');
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
             });
-            fireEvent.change(screen.getByLabelText('Número'), {
-                target: { value: '91100000000' }
-            });
-            fireEvent.change(screen.getByLabelText('Rango de precios'), {
-                target: { value: '' }
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Un resumen suficientemente largo para validar.' }
             });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
             expect(body).toEqual({
                 name: 'La Nueva Parrilla',
-                contactInfo: { mobilePhone: '+54 91100000000' },
-                priceRange: null
+                summary: 'Un resumen suficientemente largo para validar.'
             });
+        });
+    });
+
+    describe('section isolation (HOS-1080)', () => {
+        it('renders no foreign control, so a save cannot carry a foreign key', async () => {
+            // The FIRST of the two guarantees behind the split, and the one this
+            // suite can observe: a page that does not render another section's
+            // control cannot produce a diff for it, whatever the form state
+            // holds. Measured deliberately as an absence plus a body, not as a
+            // claim about `restrictPayloadToSection` — removing that call does
+            // NOT make this fail, precisely because the rendering already
+            // prevents the case. The restriction is the second guarantee, and it
+            // is asserted where it can actually be broken:
+            // `editor/commerce-section-payload.test.ts` unit-tests the function
+            // and statically guards that the editor still routes the payload
+            // through it.
+            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }), 'price');
+
+            expect(screen.queryByLabelText('Nombre del comercio')).toBeNull();
+            expect(screen.queryByLabelText('Resumen')).toBeNull();
+            expect(screen.queryByLabelText('Número')).toBeNull();
+
+            fireEvent.change(screen.getByLabelText('Rango de precios'), {
+                target: { value: '' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ priceRange: null });
         });
     });
 });

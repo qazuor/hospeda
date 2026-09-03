@@ -32,6 +32,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import { CONTACT_KEYS, SOCIAL_KEYS } from '@/components/commerce/editor/commerce-edit-data';
 import {
+    COMMERCE_SECTION_PAYLOAD_KEYS,
+    type CommerceEditorFormSectionId
+} from '@/components/commerce/editor/commerce-section-payload';
+import {
     COMMERCE_FIELD_ID_SUFFIXES,
     COMMERCE_FIELD_PREFIX
 } from '@/components/commerce/editor/field-ids';
@@ -90,15 +94,47 @@ const BASE_DATA = {
 
 type Vertical = 'gastronomy' | 'experience';
 
-function renderEditor(vertical: Vertical) {
+/**
+ * Renders EVERY form section of the editor at once (HOS-1080).
+ *
+ * Since the split, no single page holds all the fields — but the contract this
+ * suite pins is about the editor as a whole: for every Zod key the API can
+ * reject, SOME page must render a control `focusFirstInvalidField` can reach.
+ * Mounting all eight sections side by side is how that whole is observed, and it
+ * strengthens the assertion rather than weakening it: a key that lost its home
+ * in the split resolves to nothing here, exactly as a key that never had one.
+ */
+/** Renders ONE section, for assertions that need a single Save button. */
+function renderSection(vertical: Vertical, sectionId: CommerceEditorFormSectionId) {
     return render(
         <CommerceListingEditor
             vertical={vertical}
+            sectionId={sectionId}
             listingId="abc"
             locale="es"
             initialData={BASE_DATA}
             destinations={[{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }]}
         />
+    );
+}
+
+function renderEditor(vertical: Vertical) {
+    const sectionIds = Object.keys(COMMERCE_SECTION_PAYLOAD_KEYS) as CommerceEditorFormSectionId[];
+
+    return render(
+        <>
+            {sectionIds.map((sectionId) => (
+                <CommerceListingEditor
+                    key={sectionId}
+                    vertical={vertical}
+                    sectionId={sectionId}
+                    listingId="abc"
+                    locale="es"
+                    initialData={BASE_DATA}
+                    destinations={[{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }]}
+                />
+            ))}
+        </>
     );
 }
 
@@ -212,6 +248,13 @@ describe('commerce editor — derived field ids (HOS-385 AC-5)', () => {
                         `id "${idFor(key)}" resolves to a <${(element as HTMLElement).tagName.toLowerCase()}>, ` +
                             'which cannot take focus.'
                     ).toBe(true);
+                    // Exactly one home. A duplicate id across two sections would
+                    // make the focus move land on whichever happened to render
+                    // first — arbitrary, and invisible until a host reports it.
+                    expect(
+                        document.querySelectorAll(`[id="${idFor(key)}"]`),
+                        `id "${idFor(key)}" is rendered by more than one section.`
+                    ).toHaveLength(1);
                 });
             }
 
@@ -236,7 +279,10 @@ describe('commerce editor — derived field ids (HOS-385 AC-5)', () => {
         // right namespace — with `fieldIdPrefix: 'acc'` both would still pass
         // and focus would silently do nothing, which is precisely the failure
         // HOS-385 exists to remove. So assert the round trip once, end to end.
-        renderEditor('gastronomy');
+        // One section, not all eight: eight mounted forms would each render a
+        // "Guardar" and the query below would be ambiguous. `summary` lives on
+        // basic info, so that is the page whose round trip is asserted.
+        renderSection('gastronomy', 'basicInfo');
 
         // `summary` has a 10-character minimum. It is not the first field on
         // the page, which is the point: the helper picks the first INVALID

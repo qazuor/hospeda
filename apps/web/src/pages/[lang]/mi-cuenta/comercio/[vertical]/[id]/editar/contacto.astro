@@ -1,0 +1,51 @@
+---
+/**
+ * @file contacto.astro
+ * @description Contact and social-networks section of the commerce editor (HOS-1080).
+ *
+ * The two field groups share one page, exactly as the accommodation editor's
+ * `contacto` route does: they answer the same question, and splitting them
+ * would have made two nav items out of one errand. Both are JSONB blocks the
+ * API REPLACES rather than merges, so each ships whole whenever any member of
+ * it changed.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/contacto/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'contacto',
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="contacto"
+	title={t('commerce.owner.editor.sectionNav.contactSocial', 'Contacto y redes')}
+>
+	<CommerceListingEditor
+		client:load
+		sectionId="contact"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+	/>
+</CommerceEditorSectionLayout>

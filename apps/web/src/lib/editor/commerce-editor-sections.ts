@@ -1,0 +1,173 @@
+/**
+ * @file commerce-editor-sections.ts
+ * @description Section registry for the gastronomy and experience editors
+ * (HOS-1080, closing HOS-892).
+ *
+ * The commerce editor used to be ONE route rendering every field group as an
+ * anchor on a single page, while the accommodation editor had thirteen routes.
+ * HOS-892 reported the symptom of that ("un formulario larguísimo sin
+ * encabezados"); the owner's decision was to level up rather than down, so this
+ * file is the commerce counterpart of `accommodation-editor-sections.ts` and the
+ * nav, the hub and the breadcrumbs all derive from it.
+ *
+ * ## One registry per vertical, built at call time
+ *
+ * `buildCommerceEditorRegistry` is a function, not a constant, for two reasons
+ * that both matter:
+ *
+ * 1. **The hub path carries the vertical** (`mi-cuenta/comercio/<vertical>/…`),
+ *    so a registry that did not know it could not build a single URL.
+ * 2. **Two sections exist only for experiences.** `meetingPoint` and
+ *    `practicalInfo` are gated by the SHAPE of the schema — their keys live on
+ *    `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one — so for a
+ *    restaurant they are not "hidden", they do not exist. Leaving them out of
+ *    the registry entirely means `findEditorSectionBySlug` returns `undefined`
+ *    for `/gastronomy/<id>/editar/punto-de-encuentro`, and the shared resolver
+ *    already sends an unknown slug to the hub. A `visibilityKey` would have hidden
+ *    the nav item while leaving the route renderable, which is the weaker answer.
+ *
+ * No section here uses a runtime `visibilityKey`. The amenities page was the
+ * candidate — `AmenitiesSection` renders nothing when both catalogs come back
+ * empty — but answering that on the nav would mean fetching both catalogs on
+ * ALL eleven pages to decide whether to draw one link. The accommodation editor
+ * makes the same trade (its `servicios` entry is unconditional and only its own
+ * route fetches the catalog); the `servicios` route below carries the empty-
+ * catalog case as a visible notice instead, which is a better answer than a
+ * silently missing nav item anyway.
+ */
+
+import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
+
+/** Sections every commerce vertical has, in nav order. */
+const SHARED_SECTIONS: readonly EditorSection[] = [
+    {
+        id: 'basicInfo',
+        slug: 'datos',
+        group: 'property',
+        labelKey: 'commerce.owner.editor.sectionNav.basicInfo'
+    },
+    {
+        id: 'openingHours',
+        slug: 'horarios',
+        group: 'property',
+        labelKey: 'commerce.owner.editor.sectionNav.openingHours'
+    },
+    {
+        id: 'price',
+        slug: 'precio',
+        group: 'property',
+        labelKey: 'commerce.owner.editor.sectionNav.price'
+    },
+    {
+        id: 'amenities',
+        slug: 'servicios',
+        group: 'property',
+        labelKey: 'commerce.owner.editor.sectionNav.amenities'
+    },
+    {
+        id: 'media',
+        slug: 'fotos',
+        group: 'content',
+        labelKey: 'commerce.owner.editor.sectionNav.media'
+    },
+    {
+        id: 'contact',
+        slug: 'contacto',
+        group: 'content',
+        // Not `sectionNav.contactInfo` — this page absorbs the former standalone
+        // "Redes sociales" section too, exactly as the accommodation editor's
+        // `contacto` page does, so the label has to cover both.
+        labelKey: 'commerce.owner.editor.sectionNav.contactSocial'
+    },
+    {
+        id: 'faqs',
+        slug: 'preguntas',
+        group: 'content',
+        labelKey: 'commerce.owner.editor.sectionNav.faqs'
+    },
+    {
+        id: 'translations',
+        slug: 'traducciones',
+        group: 'management',
+        labelKey: 'commerce.owner.editor.sectionNav.translations'
+    }
+];
+
+/**
+ * Sections that exist only on the experience vertical.
+ *
+ * Inserted directly after `basicInfo`, which is where they render in the
+ * pre-split editor and therefore where an owner already expects them.
+ */
+const EXPERIENCE_ONLY_SECTIONS: readonly EditorSection[] = [
+    {
+        id: 'meetingPoint',
+        slug: 'punto-de-encuentro',
+        group: 'property',
+        labelKey: 'commerce.owner.editor.sectionNav.meetingPoint'
+    },
+    {
+        id: 'practicalInfo',
+        slug: 'datos-practicos',
+        group: 'property',
+        labelKey: 'commerce.owner.editor.sectionNav.practicalInfo'
+    }
+];
+
+/** Group order for rendering. */
+export const COMMERCE_EDITOR_SECTION_GROUPS = ['property', 'content', 'management'] as const;
+
+/**
+ * i18n key for each group heading.
+ *
+ * The bucket ids are shared with the accommodation editor (see
+ * `EditorSectionGroup`); only the visible headings differ, which is the whole
+ * reason the labels live on the registry rather than on the type.
+ */
+export const COMMERCE_EDITOR_GROUP_LABEL_KEYS = {
+    property: 'commerce.owner.editor.group.listing',
+    content: 'commerce.owner.editor.group.content',
+    management: 'commerce.owner.editor.group.management'
+} as const;
+
+/**
+ * Builds the section list for one vertical, in nav order.
+ *
+ * @param params - The vertical whose editor is being rendered.
+ * @returns The sections, experience-only entries included only for experiences.
+ */
+export function buildCommerceEditorSections({
+    vertical
+}: {
+    readonly vertical: CommerceVertical;
+}): readonly EditorSection[] {
+    if (vertical !== 'experience') return SHARED_SECTIONS;
+
+    const [basicInfo, ...rest] = SHARED_SECTIONS;
+    // `SHARED_SECTIONS` is a non-empty literal, so `basicInfo` is always defined;
+    // the guard exists because TypeScript cannot see that through `readonly[]`.
+    return basicInfo ? [basicInfo, ...EXPERIENCE_ONLY_SECTIONS, ...rest] : SHARED_SECTIONS;
+}
+
+/**
+ * Builds the editor registry for one commerce listing's vertical.
+ *
+ * @param params - The vertical whose editor is being rendered.
+ * @returns The registry the shared nav / hub / breadcrumb machinery reads.
+ */
+export function buildCommerceEditorRegistry({
+    vertical
+}: {
+    readonly vertical: CommerceVertical;
+}): EditorRegistry {
+    return {
+        id: vertical,
+        sections: buildCommerceEditorSections({ vertical }),
+        groups: COMMERCE_EDITOR_SECTION_GROUPS,
+        groupLabelKeys: COMMERCE_EDITOR_GROUP_LABEL_KEYS,
+        indexPath: 'mi-cuenta/comercio',
+        indexLabelKey: 'commerce.owner.editor.breadcrumb.listings',
+        buildHubPath: ({ entityId }) => `mi-cuenta/comercio/${vertical}/${entityId}/editar`
+    };
+}
