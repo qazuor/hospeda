@@ -3199,6 +3199,17 @@
                 "max": "The dish price exceeds the maximum allowed"
             }
         },
+        "menuItemPhoto": {
+            "url": {
+                "invalid": "The dish photo URL is not valid"
+            },
+            "publicId": {
+                "max": "The dish photo identifier cannot exceed {{max}} characters"
+            },
+            "alt": {
+                "max": "The dish photo description cannot exceed {{max}} characters"
+            }
+        },
         "menuSection": {
             "name": {
                 "min": "The section name is required",

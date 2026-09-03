@@ -3199,6 +3199,17 @@
                 "max": "El precio del plato supera el máximo permitido"
             }
         },
+        "menuItemPhoto": {
+            "url": {
+                "invalid": "La URL de la foto del plato no es válida"
+            },
+            "publicId": {
+                "max": "El identificador de la foto del plato no puede superar los {{max}} caracteres"
+            },
+            "alt": {
+                "max": "La descripción de la foto del plato no puede superar los {{max}} caracteres"
+            }
+        },
         "menuSection": {
             "name": {
                 "min": "El nombre de la sección es obligatorio",
