@@ -118,7 +118,8 @@
                 "meetingPoint": "Meeting point",
                 "practicalInfo": "Practical details",
                 "contactSocial": "Contact and social",
-                "menu": "Menu"
+                "menu": "Menu",
+                "dailySpecials": "Today's menu"
             },
             "sections": {
                 "type": "Category",
@@ -313,6 +314,30 @@
                 "saved": "Menu saved.",
                 "saveError": "The menu could not be saved.",
                 "locked": "Entering the menu dish by dish is available from the Professional plan onwards. In the meantime you can upload a photo or a PDF of the menu, or leave the link."
+            },
+            "dailySpecials": {
+                "title": "Today's menu",
+                "intro": "The dish of the day or the chef's suggestion. Each one runs until the date you set and then stops showing on its own — you never have to take it down.",
+                "newSpecial": "New daily special",
+                "titleLabel": "Dish",
+                "titlePlaceholder": "Milanesa napolitana with mashed potato",
+                "descriptionLabel": "Details",
+                "descriptionPlaceholder": "With a side and dessert",
+                "priceLabel": "Price in pesos",
+                "pricePlaceholder": "Price",
+                "from": "From",
+                "until": "Until",
+                "moveUp": "Move up",
+                "moveDown": "Move down",
+                "remove": "Remove",
+                "add": "Add daily special",
+                "save": "Save today's menu",
+                "saving": "Saving…",
+                "saved": "Today's menu saved.",
+                "saveError": "Today's menu could not be saved.",
+                "locked": "Today's menu is available from the Professional plan.",
+                "expired": "Expired — not being shown.",
+                "scheduled": "Scheduled — not shown yet."
             }
         },
         "checklist": {
@@ -357,7 +382,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Structured menu"
+            "manageGastronomyMenu": "Structured menu",
+            "manageGastronomyDailySpecial": "Today's menu"
         },
         "create": {
             "pickVertical": {

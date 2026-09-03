@@ -103,7 +103,12 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-895 — likewise tier-dependent, and gastronomy-only: it is
             // tickable on any plan here because the editor is a flat checklist,
             // but only a gastronomy plan has a carta for it to unlock.
-            EntitlementKey.MANAGE_GASTRONOMY_MENU
+            EntitlementKey.MANAGE_GASTRONOMY_MENU,
+            // HOS-1041 — the menú del día, same tier and same gastronomy-only
+            // caveat as the carta above it. A separate box rather than folded
+            // into that one because they are separate keys: an operator must be
+            // able to grant a venue today's menu without the full carta.
+            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
         ]
     }
 ];
