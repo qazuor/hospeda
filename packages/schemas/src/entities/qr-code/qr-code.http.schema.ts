@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { QrCodeRenderOptionsSchema, QrCodeSchema, QrCodeSlugSchema } from './qr-code.schema.js';
@@ -39,7 +40,7 @@ export const QrCodeCreateHttpSchema = z
         label: z.string().min(1),
         description: z.string().nullable().optional(),
         source: QrCodeSourceEnumSchema,
-        entityType: z.string().nullable().optional(),
+        entityType: EntityTypeEnumSchema.nullable().optional(),
         entityId: z.string().uuid().nullable().optional(),
         renderOptions: QrCodeRenderOptionsSchema.optional(),
         /**

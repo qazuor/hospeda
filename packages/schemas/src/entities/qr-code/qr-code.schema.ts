@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodeErrorCorrectionLevelEnum } from '../../enums/qr-code-error-correction-level.enum.js';
 import { QrCodeErrorCorrectionLevelEnumSchema } from '../../enums/qr-code-error-correction-level.schema.js';
 import { QrCodeFormatEnum } from '../../enums/qr-code-format.enum.js';
@@ -10,7 +11,6 @@ export const QR_CODE_SLUG_MAX_LENGTH = 64;
 export const QR_CODE_LABEL_MAX_LENGTH = 200;
 export const QR_CODE_DESCRIPTION_MAX_LENGTH = 2000;
 export const QR_CODE_TARGET_URL_MAX_LENGTH = 2048;
-export const QR_CODE_ENTITY_TYPE_MAX_LENGTH = 100;
 
 /** Smallest quiet zone, in modules, the renderer will accept. */
 export const QR_CODE_MIN_MARGIN = 0;
@@ -147,12 +147,16 @@ export const QrCodeSchema = z.object({
 
     source: QrCodeSourceEnumSchema,
 
-    /** Entity this code was derived from, when `source` is `GENERATED`. */
-    entityType: z
-        .string()
-        .max(QR_CODE_ENTITY_TYPE_MAX_LENGTH, { message: 'zodError.qrCode.entityType.max' })
-        .nullable()
-        .optional(),
+    /**
+     * Entity this code was derived from, when `source` is `GENERATED`.
+     *
+     * The shared `EntityTypeEnumSchema`, not a bounded string: every reference
+     * to a domain entity in this repo goes through that enum. A free string
+     * would let `'hostTrade'` and `'host_trade'` both be stored for the same
+     * subject, after which the `(entityType, entityId)` lookup stops finding the
+     * existing code and mints a second, permanent slug for it.
+     */
+    entityType: EntityTypeEnumSchema.nullable().optional(),
 
     entityId: z.string().uuid().nullable().optional(),
 

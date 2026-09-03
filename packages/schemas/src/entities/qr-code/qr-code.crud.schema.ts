@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseSearchSchema } from '../../common/base.schema.js';
+import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodeSourceEnum } from '../../enums/qr-code-source.enum.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -148,7 +149,7 @@ export type QrCodeUpdateOutput = z.infer<typeof QrCodeUpdateOutputSchema>;
 
 export const QrCodeSearchInputSchema = BaseSearchSchema.extend({
     source: QrCodeSourceEnumSchema.optional(),
-    entityType: z.string().optional(),
+    entityType: EntityTypeEnumSchema.optional(),
     entityId: z.string().uuid().optional(),
     isActive: z.boolean().optional()
 }).strict();

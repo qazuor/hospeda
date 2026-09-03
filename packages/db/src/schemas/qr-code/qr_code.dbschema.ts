@@ -10,7 +10,7 @@ import {
     uuid,
     varchar
 } from 'drizzle-orm/pg-core';
-import { QrCodeSourcePgEnum } from '../enums.dbschema.ts';
+import { EntityTypePgEnum, QrCodeSourcePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 /**
@@ -48,8 +48,20 @@ export const qrCodes = pgTable(
         /** MANUAL (an operator made it) vs GENERATED (the platform did, for an entity). */
         source: QrCodeSourcePgEnum('source').notNull(),
 
-        /** The entity this code was derived from, when `source = GENERATED`. */
-        entityType: varchar('entity_type', { length: 100 }),
+        /**
+         * The entity this code was derived from, when `source = GENERATED`.
+         *
+         * The shared `EntityTypePgEnum`, not free text: this names a business
+         * entity, so it follows the same rule as `entity_comment`,
+         * `user_bookmark`, `r_entity_tag` and `entity_view`. Free `text` in this
+         * repo is for infra logs. The concrete failure a varchar invites is that
+         * the generator writes `'hostTrade'` while an operator types
+         * `'host_trade'`, the `(entity_type, entity_id)` lookup below finds
+         * nothing, a second slug is minted for the same subject, and — since a
+         * slug is UNIQUE forever and already printed — two live codes end up
+         * pointing at destinations free to diverge.
+         */
+        entityType: EntityTypePgEnum('entity_type'),
         entityId: uuid('entity_id'),
 
         /**
