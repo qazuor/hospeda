@@ -40,6 +40,10 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // HOS-1057. Same reasoning, same tier: labelled now so the raw key can
     // never reach the picker.
     issue_experience_certificate: 'issueExperienceCertificate',
+    // HOS-1041 — the second thing `gastronomy-pro` adds over `-basico`, so the
+    // plan picker's "adds" list must name it or the tier reads as one feature
+    // dearer than it is.
+    manage_gastronomy_daily_special: 'manageGastronomyDailySpecial',
     manage_gastronomy_events: 'manageGastronomyEvents'
 };
 
@@ -50,5 +54,6 @@ export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_gastronomy_menu: 'Carta estructurada',
     manage_experience_directions: 'Mapa y cómo llegar',
     issue_experience_certificate: 'Certificados de experiencia',
+    manage_gastronomy_daily_special: 'Menú del día',
     manage_gastronomy_events: 'Eventos del local'
 };

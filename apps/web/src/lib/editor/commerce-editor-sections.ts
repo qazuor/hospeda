@@ -128,6 +128,22 @@ const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
         group: 'content',
         labelKey: 'commerce.owner.editor.sectionNav.menu'
     },
+    // HOS-1041 — the menú del día, immediately after the carta it is adjacent
+    // to in meaning: the carta is what the venue cooks all year, this is what
+    // it is cooking today. Same `content` group and same structure (a
+    // self-persisting manager with its own endpoints and no save button), and
+    // gastronomy-only for the same reason — an experience has no plato del día.
+    //
+    // No `visibilityKey`, matching this file's rule. The tier is enforced by
+    // the API on the WRITE; the page itself must stay reachable on every
+    // gastronomy tier so a `-basico` owner sees the panel and its upsell rather
+    // than a nav that silently lacks an entry.
+    {
+        id: 'dailySpecials',
+        slug: 'menu-del-dia',
+        group: 'content',
+        labelKey: 'commerce.owner.editor.sectionNav.dailySpecials'
+    },
     {
         id: 'venueEvents',
         slug: 'eventos',

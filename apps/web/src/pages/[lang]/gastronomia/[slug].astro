@@ -20,6 +20,7 @@ import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
+import GastronomyDailySpecials from '@/components/gastronomy/GastronomyDailySpecials.astro';
 import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
 import GastronomyVenueEvents from '@/components/gastronomy/GastronomyVenueEvents.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
@@ -318,6 +319,16 @@ const breadcrumbItems = [
             summary={gastronomy.summary}
             descriptionText={descriptionText}
             richDescription={gastronomy.richDescription}
+        />
+
+        <!-- Menú del día (HOS-1041): what is on offer TODAY, above the carta
+             on purpose — it answers the question a diner choosing lunch in
+             twenty minutes is actually asking. Arrives already filtered to the
+             current day (in the AR market timezone) AND already
+             entitlement-gated by the API; renders nothing when empty. -->
+        <GastronomyDailySpecials
+            dailySpecials={gastronomy.dailySpecials}
+            locale={locale}
         />
 
         <!-- Menu (HOS-895 PR2): structured carta and/or the uploaded photo/PDF.

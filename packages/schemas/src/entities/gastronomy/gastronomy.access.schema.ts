@@ -7,6 +7,7 @@ import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
+import { GastronomyDailySpecialPublicSchema } from './subtypes/gastronomy.daily-special.schema.js';
 import { GastronomyEventPublicSchema } from './subtypes/gastronomy.event.schema.js';
 import { GastronomyMenuSectionPublicSchema } from './subtypes/gastronomy.menu.schema.js';
 
@@ -177,6 +178,21 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * even though the ROWS are not deleted.
      */
     menuSections: z.array(GastronomyMenuSectionPublicSchema).optional(),
+    /**
+     * The menú del día (HOS-1041), joined from `gastronomy_daily_specials`.
+     *
+     * Populated by the public `getBySlug` route only, and — unlike every other
+     * joined array on this schema — **already filtered by the validity window**
+     * before it gets here. The route asks for the specials valid on TODAY (in
+     * the AR market timezone), so a consumer never has to know a window exists:
+     * what arrives is what is on offer right now, and an elapsed special is
+     * indistinguishable from one that was never written.
+     *
+     * Empty (not omitted) when the owner's current plan does not grant
+     * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — withheld live, exactly like
+     * `menuSections`, without the rows being deleted.
+     */
+    dailySpecials: z.array(GastronomyDailySpecialPublicSchema).optional(),
     /**
      * The venue's own agenda (HOS-1042), read from `gastronomy_events`.
      *

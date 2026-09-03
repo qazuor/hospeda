@@ -26,6 +26,7 @@ import type {
     ExperienceDetailData,
     ExperienceSocialNetworks,
     GastronomyCardData,
+    GastronomyDailySpecial,
     GastronomyDetailData,
     GastronomyMenuSection,
     GastronomyOpeningHoursEntry,
@@ -2752,6 +2753,39 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
 }
 
 /**
+ * Maps the payload's `dailySpecials` into renderer-ready specials (HOS-1041).
+ *
+ * Defensive in the same way `mapGastronomyMenuSections` is: every field is
+ * coerced, and an untitled row is dropped rather than rendered as a blank line
+ * on the public page.
+ *
+ * `validFrom`/`validUntil` are NOT carried through, and their absence is the
+ * point. What arrives here has already been filtered by the API to the specials
+ * valid today; re-deriving that in the browser would evaluate the same window
+ * in the visitor's timezone and could disagree with the server about which day
+ * it is.
+ *
+ * @param raw - The payload's `dailySpecials` value, of unknown shape.
+ * @returns Renderer-ready specials; empty when absent or malformed.
+ */
+function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpecial[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((special) => ({
+            id: String(special.id ?? ''),
+            title: String(special.title ?? ''),
+            description: special.description == null ? null : String(special.description),
+            priceCents:
+                typeof special.priceCents === 'number'
+                    ? special.priceCents
+                    : special.priceCents == null
+                      ? null
+                      : Number(special.priceCents)
+        }))
+        .filter((special) => special.title.length > 0);
+}
+
+/**
  * Maps the raw `venueEvents` array a gastronomy detail payload carries
  * (HOS-1042) into the shape `GastronomyVenueEvents.astro` renders.
  *
@@ -2819,6 +2853,10 @@ export function toGastronomyDetailPageProps({
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
         menuSections: mapGastronomyMenuSections(item.menuSections),
+        // HOS-1041: already filtered to TODAY and already entitlement-gated by
+        // the API — see GastronomyPublicSchema's field docs. Nothing here
+        // re-applies either.
+        dailySpecials: mapGastronomyDailySpecials(item.dailySpecials),
         venueEvents: mapGastronomyVenueEvents(item.venueEvents),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj

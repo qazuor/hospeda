@@ -85,8 +85,18 @@ export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
 }
 
 /**
+
+ * Input for {@link resolveOwnerGrantsGastronomyEntitlement}.
+ */
+export interface ResolveOwnerGrantsGastronomyEntitlementInput
+    extends ResolveOwnerGrantsGastronomyMenuManagementInput {
+    /** The key to test against the resolved plan's `entitlements` array. */
+    readonly entitlementKey: EntitlementKey;
+}
+
+/**
  * Resolves the FULL entitlement set of the owner's current gastronomy plan
- * (HOS-1042).
+ * (HOS-1042, merged with HOS-1041's key-parameterised resolver).
  *
  * Introduced when a SECOND tier-gated gastronomy capability appeared — the
  * venue events agenda alongside the structured carta — and the public detail
@@ -107,6 +117,27 @@ export interface ResolveOwnerGrantsGastronomyMenuManagementInput {
  * `string[]` and this function's job is to report what the plan row says; the
  * caller compares against a known key, so a retired grant spelled like an
  * entitlement matches nothing.
+ *
+
+ * ## One body, and why it returns the SET rather than a boolean
+ *
+ * HOS-1041 and HOS-1042 independently refactored this module away from the
+ * inlined `MANAGE_GASTRONOMY_MENU` it was born with, and for the same stated
+ * reason: a copied three-query body is how `featured-entitlement.resolver.ts`
+ * records `ENTITLEMENT_GRANTING_STATUSES` drifting across three PRs. They
+ * differed only in the shape of the seam — a key PARAMETER returning a boolean,
+ * or no parameter returning the whole set.
+ *
+ * The set wins on the merged branch because the public detail route now needs
+ * THREE keys about the same owner on the same render (carta, menú del día,
+ * agenda). Per-key booleans would be nine queries where this is three, and —
+ * worse — would let the three answers come from different reads of the same
+ * subscription if a plan change landed mid-render, publishing one paid feature
+ * while withholding another for no reason a reader could see.
+ *
+ * `resolveOwnerGrantsGastronomyEntitlement` is kept as HOS-1041 defined it and
+ * now delegates here, so both call styles exist and there is still exactly one
+ * query body.
  *
  * @param input - The owner id to resolve.
  * @returns The entitlement keys the owner's gastronomy plan grants. Empty when
@@ -169,17 +200,32 @@ export async function resolveOwnerGastronomyPlanEntitlements(
 }
 
 /**
- * Resolves whether the owner's CURRENT gastronomy subscription plan grants
- * `MANAGE_GASTRONOMY_MENU`.
+ * Resolves whether the owner's CURRENT gastronomy plan grants ONE key
+ * (HOS-1041).
  *
- * Thin projection of {@link resolveOwnerGastronomyPlanEntitlements}, kept as a
- * named function because "does this owner still have the carta" is the question
- * the public route asks and reading it as a set membership at the call site
- * would bury it.
+ * Delegates to {@link resolveOwnerGastronomyPlanEntitlements}. Correct for a
+ * caller that needs a single answer; a caller needing SEVERAL keys on the same
+ * render must take the set once instead of calling this N times, for the two
+ * reasons that function's doc gives.
  *
- * A caller needing MORE than one key on the same render must use the set
- * function directly rather than calling two of these — see that function's doc
- * for why.
+ * @param input.ownerId - The owner id to resolve.
+ * @param input.entitlementKey - The entitlement to look for.
+ * @returns `true` when the owner's gastronomy plan includes the key; `false`
+ *   otherwise.
+ */
+export async function resolveOwnerGrantsGastronomyEntitlement(
+    input: ResolveOwnerGrantsGastronomyEntitlementInput
+): Promise<boolean> {
+    const entitlements = await resolveOwnerGastronomyPlanEntitlements({
+        ownerId: input.ownerId
+    });
+    return entitlements.has(input.entitlementKey);
+}
+
+/**
+ * Resolves whether the owner's CURRENT gastronomy plan grants
+ * `MANAGE_GASTRONOMY_MENU` — the structured carta and the uploaded photo/PDF
+ * (HOS-895 PR2).
  *
  * @param input - The owner id to resolve.
  * @returns `true` when the owner's gastronomy plan includes
@@ -188,6 +234,31 @@ export async function resolveOwnerGastronomyPlanEntitlements(
 export async function resolveOwnerGrantsGastronomyMenuManagement(
     input: ResolveOwnerGrantsGastronomyMenuManagementInput
 ): Promise<boolean> {
-    const entitlements = await resolveOwnerGastronomyPlanEntitlements(input);
-    return entitlements.has(EntitlementKey.MANAGE_GASTRONOMY_MENU);
+    return await resolveOwnerGrantsGastronomyEntitlement({
+        ownerId: input.ownerId,
+        entitlementKey: EntitlementKey.MANAGE_GASTRONOMY_MENU
+    });
+}
+
+/**
+ * Resolves whether the owner's CURRENT gastronomy plan grants
+ * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — the menú del día (HOS-1041).
+ *
+ * Used by the public detail route to withhold today's specials from a listing
+ * whose owner is no longer on `-pro` or above. The rows are NOT deleted: a
+ * downgraded owner's specials are still theirs, and they reappear the moment
+ * the plan does — the same live-read stance the carta takes, for the same
+ * reason.
+ *
+ * @param input - The owner id to resolve.
+ * @returns `true` when the owner's gastronomy plan includes
+ *   `MANAGE_GASTRONOMY_DAILY_SPECIAL`; `false` otherwise.
+ */
+export async function resolveOwnerGrantsGastronomyDailySpecial(
+    input: ResolveOwnerGrantsGastronomyMenuManagementInput
+): Promise<boolean> {
+    return await resolveOwnerGrantsGastronomyEntitlement({
+        ownerId: input.ownerId,
+        entitlementKey: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+    });
 }

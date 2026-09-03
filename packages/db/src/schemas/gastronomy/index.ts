@@ -1,4 +1,5 @@
 export * from './gastronomy.dbschema.ts';
+export * from './gastronomy_daily_special.dbschema.ts';
 export * from './gastronomy_event.dbschema.ts';
 export * from './gastronomy_faq.dbschema.ts';
 export * from './gastronomy_media.dbschema.ts';

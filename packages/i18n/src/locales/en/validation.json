@@ -3171,6 +3171,36 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "dailySpecial": {
+            "title": {
+                "min": "The daily special name is required",
+                "max": "The daily special name cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The daily special description cannot exceed {{max}} characters"
+            },
+            "priceCents": {
+                "int": "The daily special price must be a whole number of cents",
+                "min": "The daily special price cannot be negative",
+                "max": "The daily special price exceeds the maximum allowed"
+            },
+            "validFrom": {
+                "invalid": "The start date must be a valid date in YYYY-MM-DD format"
+            },
+            "validOn": {
+                "invalid": "The lookup date must be a valid date in YYYY-MM-DD format"
+            },
+            "validUntil": {
+                "invalid": "The end date must be a valid date in YYYY-MM-DD format",
+                "beforeValidFrom": "The end date cannot be earlier than the start date",
+                "windowTooLong": "A daily special cannot run for more than {{max}} days",
+                "windowTooLong_one": "A daily special cannot run for more than {{max}} day",
+                "windowTooLong_other": "A daily special cannot run for more than {{max}} days"
+            }
+        },
+        "dailySpecials": {
+            "max": "Today's menu cannot have more than {{max}} dishes"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"

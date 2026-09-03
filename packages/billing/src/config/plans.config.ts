@@ -753,10 +753,15 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     // HOS-895 — the first thing that separates `-pro` from `-basico` by more
     // than its name: the structured carta. Owner decision, `pro` and upwards.
     //
-    // HOS-1042 adds the venue's own events agenda on the same terms and by the
-    // same owner decision (2026-09-01): `pro` and upwards, gastronomy only.
+    // HOS-1041 — and the menú del día, which is the second. Owner decision,
+    // 2026-09-01, same tier: an operational feature used daily by whoever uses
+    // it. A separate key from the carta on purpose (see the enum member).
+    //
+    // HOS-1042 adds the venue's own events agenda as the third, on the same
+    // terms and by the same owner decision: `pro` and upwards, gastronomy only.
     extraEntitlements: [
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
         EntitlementKey.MANAGE_GASTRONOMY_EVENTS
     ]
 });
@@ -804,10 +809,12 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     // nothing composes a tier from the one below it: omitting it would mean the
     // dearer plan silently lost a feature `-pro` has.
     //
-    // HOS-1042's venue events agenda is repeated here for that same reason.
+    // HOS-1041's menú del día and HOS-1042's venue events agenda are repeated
+    // here for that same reason.
     extraEntitlements: [
         EntitlementKey.DOWNLOAD_LISTING_PDF,
         EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
         EntitlementKey.MANAGE_GASTRONOMY_EVENTS
     ]
 });

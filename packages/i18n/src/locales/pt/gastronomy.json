@@ -56,6 +56,11 @@
             "consultPrice": "A consultar",
             "unavailable": "Indisponível"
         },
+        "dailySpecials": {
+            "title": "Menu do dia",
+            "intro": "O que se oferece hoje",
+            "consultPrice": "Consultar"
+        },
         "reviews": {
             "title": "Avaliações",
             "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",

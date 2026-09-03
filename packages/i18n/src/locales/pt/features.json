@@ -310,6 +310,10 @@
                 "title": "Vos editás el contenido",
                 "description": "Actualizás horarios, contacto, media y menú cuando quieras, desde tu panel. Sin depender de nadie."
             },
+            "dailySpecials": {
+                "title": "Menu do dia que vence sozinho",
+                "description": "Publique o prato do dia ou a sugestão do chef com a data até quando vale. Quando passa, deixa de aparecer sozinho: o menu da semana passada nunca fica na sua página. Disponível a partir do plano Profissional."
+            },
             "seo": {
                 "title": "Buen SEO incluido",
                 "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."

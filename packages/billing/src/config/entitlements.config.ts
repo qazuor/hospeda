@@ -311,6 +311,17 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description:
             'Allows publishing how to reach the meeting point — where to park, which bus, how far the walk is — and drawing it on a map, on top of the meeting point address every tier already carries'
     },
+    // HOS-1041. Same tier and same shape as the carta above — `gastronomy-pro`
+    // upwards, gastronomy-only, kept out of the vertical floor map — but a
+    // SEPARATE key: the carta is the year's menu, this is today's, and they are
+    // bought for different reasons. See the enum member for why they are not
+    // merged.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        name: 'Menú del día',
+        description:
+            'Allows publishing a dish of the day with its own validity window, which stops being shown on the public page when the window passes'
+    },
     // HOS-1042. Granted from `gastronomy-pro` upwards and gastronomy-only, on
     // exactly the terms the carta above is, and appended to this same trailing
     // commerce section for the slicing reason stated at its head.

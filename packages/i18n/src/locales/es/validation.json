@@ -3171,6 +3171,36 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "dailySpecial": {
+            "title": {
+                "min": "El nombre del plato del día es obligatorio",
+                "max": "El nombre del plato del día no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción del plato del día no puede superar los {{max}} caracteres"
+            },
+            "priceCents": {
+                "int": "El precio del plato del día debe ser un número entero de centavos",
+                "min": "El precio del plato del día no puede ser negativo",
+                "max": "El precio del plato del día supera el máximo permitido"
+            },
+            "validFrom": {
+                "invalid": "La fecha de inicio debe ser una fecha válida con formato AAAA-MM-DD"
+            },
+            "validOn": {
+                "invalid": "La fecha de consulta debe ser una fecha válida con formato AAAA-MM-DD"
+            },
+            "validUntil": {
+                "invalid": "La fecha de fin debe ser una fecha válida con formato AAAA-MM-DD",
+                "beforeValidFrom": "La fecha de fin no puede ser anterior a la de inicio",
+                "windowTooLong": "El plato del día no puede estar vigente más de {{max}} días",
+                "windowTooLong_one": "El plato del día no puede estar vigente más de {{max}} día",
+                "windowTooLong_other": "El plato del día no puede estar vigente más de {{max}} días"
+            }
+        },
+        "dailySpecials": {
+            "max": "El menú del día no puede tener más de {{max}} platos"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"

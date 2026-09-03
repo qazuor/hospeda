@@ -7,6 +7,7 @@ import { EntitlementKey } from '@repo/billing';
 import { GastronomyPublicSchema } from '@repo/schemas';
 import {
     GastronomyService,
+    getGastronomyDailySpecials,
     getGastronomyEvents,
     getGastronomyMenu,
     resolveOwnerGastronomyPlanEntitlements,
@@ -14,6 +15,7 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { getActorFromContext } from '../../../utils/actor';
 import {
     fetchGastronomyAmenities,
@@ -21,6 +23,7 @@ import {
 } from '../../../utils/commerce-catalog-relations';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { applyGastronomyDailySpecialsGate } from './daily-specials-projection';
 import { applyGastronomyVenueEventsGate } from './events-projection';
 import { applyGastronomyMenuManagementGate } from './menu-projection';
 
@@ -86,14 +89,44 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             gastronomyService as unknown as { model: Parameters<typeof getGastronomyMenu>[0] }
         ).model;
 
-        const [amenitiesData, featuresData, menuResult, eventsResult, ownerPlanEntitlements] =
-            await Promise.all([
-                fetchGastronomyAmenities(gastronomy.id),
-                fetchGastronomyFeatures(gastronomy.id),
-                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-                getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
-                resolveOwnerGastronomyPlanEntitlements({ ownerId: gastronomy.ownerId })
-            ]);
+        // HOS-1041: the menú del día joins the same parallel batch, read with
+        // `validOn` set to TODAY. That argument is the entire expiry mechanism
+        // — a special whose window has passed is filtered out in SQL on this
+        // very read, so no cron ever runs and there is no state to be behind
+        // on. It is resolved in the AR MARKET timezone, not UTC: at 21:00 in
+        // Concepción del Uruguay the UTC day has already rolled over, and a UTC
+        // "today" would retire the dish of the day in the middle of dinner
+        // service.
+        //
+        // The route's `cacheTTL` (300s) therefore bounds how long a just-lapsed
+        // special can survive at the edge. Five minutes past midnight is an
+        // acceptable tail for a feature whose alternative was "until the owner
+        // remembers"; if it ever stops being acceptable, the fix is the cache
+        // tag, not a job.
+        const today = getTodayInMarketTimezone();
+
+        // ONE entitlement resolution for all THREE gated features. Each of the
+        // three arrived with its own boolean resolver call; kept that way this
+        // batch would issue nine billing queries per public render instead of
+        // three, and — worse — the three answers could come from different
+        // reads of the same subscription if a plan change landed mid-render,
+        // publishing one paid feature while withholding another for no reason a
+        // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
+        const [
+            amenitiesData,
+            featuresData,
+            menuResult,
+            eventsResult,
+            dailySpecialsResult,
+            ownerPlanEntitlements
+        ] = await Promise.all([
+            fetchGastronomyAmenities(gastronomy.id),
+            fetchGastronomyFeatures(gastronomy.id),
+            getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
+            getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
+            getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today }),
+            resolveOwnerGastronomyPlanEntitlements({ ownerId: gastronomy.ownerId })
+        ]);
 
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
@@ -110,12 +143,20 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             )
         });
 
+        const dailySpecialsGate = applyGastronomyDailySpecialsGate({
+            dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
+            ownerGrantsDailySpecial: ownerPlanEntitlements.has(
+                EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
+            )
+        });
+
         return {
             ...gastronomy,
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,
             ...menuGate,
-            ...eventsGate
+            ...eventsGate,
+            ...dailySpecialsGate
         };
     },
     options: {
