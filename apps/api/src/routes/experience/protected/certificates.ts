@@ -84,6 +84,9 @@ const CERTIFICATE_GATE = [
  * reason: a public accessor would widen the service's surface for one caller.
  */
 function experienceModel(): Parameters<typeof issueExperienceCertificate>[0] {
+    // TYPE-WORKAROUND: the certificate helpers take the model, and the service
+    // exposes it as `protected`; a public accessor would widen the service's
+    // surface for one caller.
     return (
         experienceService as unknown as {
             model: Parameters<typeof issueExperienceCertificate>[0];

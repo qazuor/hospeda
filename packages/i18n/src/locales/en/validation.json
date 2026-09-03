@@ -2946,6 +2946,16 @@
             "max_other": "You cannot add more than {{max}} what-to-bring items"
         }
     },
+    "experienceCertificate": {
+        "recipientName": {
+            "required": "Enter the name of the person who did the experience",
+            "tooLong": "The name cannot exceed 120 characters",
+            "invalidCharacters": "The name cannot contain control characters"
+        },
+        "completedAt": {
+            "format": "The date must use the YYYY-MM-DD format"
+        }
+    },
     "experienceFeature": {
         "comments": {
             "max": "El comments no puede superar los {{max}} caracteres",

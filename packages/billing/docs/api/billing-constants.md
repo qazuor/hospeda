@@ -143,6 +143,7 @@ deliberately absent from that map.
 | `EDIT_EXPERIENCE_INFO` | `'edit_experience_info'` | every experience tier |
 | `PUBLISH_EXPERIENCE` | `'publish_experience'` | every experience tier |
 | `DOWNLOAD_LISTING_PDF` | `'download_listing_pdf'` | `gastronomy-premium`, `experience-premium` |
+| `ISSUE_EXPERIENCE_CERTIFICATE` | `'issue_experience_certificate'` | `experience-pro`, `experience-premium` |
 
 ## LimitKey Enum
 
