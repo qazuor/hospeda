@@ -186,6 +186,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.retry',
     'common.saving',
     'common.untitled',
+    // HOS-734 — `CommerceViewsWidget.client.tsx` names `common.window.7d` /
+    // `.30d` / `.ariaLabel` for its time-window toggle, reusing the same keys
+    // admin's `WindowToggle` already used (admin ships its own bundle, so this
+    // entry is new here specifically because a WEB client island now names it).
+    'common.window',
     'contact.form',
     'contributions.form',
     'conversations.actions',

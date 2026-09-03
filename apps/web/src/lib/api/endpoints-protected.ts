@@ -3401,6 +3401,86 @@ export const hostAnalyticsApi = {
     }
 };
 
+// --- Commerce Analytics (Protected — HOS-734) ---
+
+/** The two commerce verticals — matches `CommerceVertical` in `@repo/billing`. */
+type CommerceAnalyticsVertical = 'gastronomy' | 'experience';
+
+/** Path segment each vertical mounts its protected routes under. */
+const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>> = {
+    gastronomy: 'gastronomies',
+    experience: 'experiences'
+};
+
+/**
+ * Protected commerce (gastronomy/experience) basic-stats API endpoints
+ * (HOS-734). Mirrors `hostAnalyticsApi`'s accommodation views shape — same
+ * `entity_views` telemetry table, same `view_basic_stats` entitlement,
+ * applied to the two commerce verticals instead of ACCOMMODATION.
+ *
+ * Advanced commerce analytics (gastronomy: QR scans, most-viewed dishes;
+ * experience: origin destinations) are explicitly OUT of scope here — owner
+ * decision, HOS-734 — and will define their own endpoints and entitlement key
+ * in a follow-up spec.
+ */
+export const commerceAnalyticsApi = {
+    /**
+     * Get view stats (cumulative) for every listing the caller owns in one
+     * commerce vertical, over a rolling window.
+     *
+     * @param params - `{ vertical, window }`
+     * @returns One `{ entityId, unique, total }` entry per owned listing.
+     */
+    getViews({
+        vertical,
+        window: windowParam
+    }: {
+        readonly vertical: CommerceAnalyticsVertical;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<
+            readonly {
+                readonly entityId: string;
+                readonly unique: number;
+                readonly total: number;
+            }[]
+        >
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get the gap-filled daily view-count series for every listing the
+     * caller owns in one commerce vertical, over a rolling window. Not
+     * currently rendered by any web UI (the `mi-cuenta/comercio` widget shows
+     * cumulative totals only, HOS-734) — kept here so a future daily chart
+     * does not need a new backend round-trip.
+     *
+     * @param params - `{ vertical, window }`
+     * @returns Daily series `{ window, items: { date, total }[] }`.
+     */
+    getViewsDailySeries({
+        vertical,
+        window: windowParam
+    }: {
+        readonly vertical: CommerceAnalyticsVertical;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: '7d' | '30d';
+            readonly items: readonly { readonly date: string; readonly total: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
+            params: { window: windowParam }
+        });
+    }
+};
+
 // --- Accommodation Contact (Protected) ---
 
 /** Contact info returned by the protected endpoint. */

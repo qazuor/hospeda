@@ -31,6 +31,7 @@ import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import {
+    commerceEditorUrl,
     saveCommerceEditor,
     waitForCommerceEditorHydration
 } from '../../fixtures/commerce-editor-helpers.ts';
@@ -134,12 +135,20 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Open gastronomy editor ───────────────────────────────────────────
-        // Trailing slash required: Astro trailingSlash:'always' returns a 404
-        // (not a redirect) for URLs without trailing slash in SSR mode.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // ── Open the gastronomy editor's contact section ─────────────────────
+        // HOS-1080: contact and social networks share ONE page (the same pairing
+        // the accommodation editor's `contacto` route uses), so both assertions
+        // below are about this one route. `…/editar/` is the hub and renders
+        // neither fieldset.
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'contacto'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for the React island to hydrate.
         //
@@ -181,12 +190,16 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Open editor ──────────────────────────────────────────────────────
-        // Trailing slash required: Astro trailingSlash:'always' returns a 404
-        // (not a redirect) for URLs without trailing slash in SSR mode.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // ── Open the editor's contact section (HOS-1080) ─────────────────────
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'contacto'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for React hydration.
         //
@@ -211,12 +224,16 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
-        // ── Re-open editor: assert linkedIn input is pre-filled ──────────────
-        // Trailing slash required: Astro trailingSlash:'always' returns a 404
-        // (not a redirect) for URLs without trailing slash in SSR mode.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // ── Re-open the contact section: assert linkedIn is pre-filled ───────
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'contacto'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // No hydration gate needed here: this only READS the persisted value,
         // which the SSR HTML already carries — nothing is typed into the form.

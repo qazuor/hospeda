@@ -96,6 +96,12 @@
                     "label_other": "{{current}} de {{max}} experiências"
                 },
                 "upgrade": "Ampliar cota"
+            },
+            "views": {
+                "title": "Visualizações",
+                "unique": "únicos",
+                "total": "totais",
+                "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde."
             }
         },
         "editor": {
@@ -110,7 +116,8 @@
                 "price": "Preço",
                 "faqs": "Perguntas frequentes",
                 "meetingPoint": "Ponto de encontro",
-                "practicalInfo": "Dados práticos"
+                "practicalInfo": "Dados práticos",
+                "contactSocial": "Contato e redes"
             },
             "sections": {
                 "type": "Categoria",
@@ -244,6 +251,30 @@
                 "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
                 "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
                 "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+            },
+            "group": {
+                "listing": "Sua ficha",
+                "content": "Conteúdo",
+                "management": "Gestão"
+            },
+            "breadcrumb": {
+                "listings": "Meus comércios"
+            },
+            "pageDescription": "Editar as informações da sua ficha",
+            "hub": {
+                "subtitle": "Escolha o que você quer editar",
+                "status": {
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
+                    "faqs_one": "{{count}} pergunta",
+                    "faqs_other": "{{count}} perguntas",
+                    "selected_one": "{{count}} selecionado",
+                    "selected_other": "{{count}} selecionados",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                }
+            },
+            "amenities": {
+                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente."
             }
         },
         "checklist": {

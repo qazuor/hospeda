@@ -1,0 +1,137 @@
+---
+/**
+ * @file EditorShellLayout.astro
+ * @description Vertical-agnostic shell for every "one section, one page" editor
+ * page (HOS-1080; extracted from `EditorSectionLayout.astro`, HOS-318 T-010).
+ *
+ * Wraps `AccountLayout` — UNCHANGED, and that is the point. HOS-318 D-1 rejected
+ * a "focus mode" that retracts the account sidebar inside the editor: for an
+ * older, non-technical owner, a menu that transforms itself according to where
+ * you are is disorienting. The sidebar looks and behaves identically inside the
+ * editor and outside it.
+ *
+ * It also follows the same *content* conventions as the rest of `/mi-cuenta`:
+ * `AccountLayout` renders its children directly, with `AccountPageHeader` as the
+ * page's single `<h1>`. It deliberately does NOT wrap anything in
+ * `<main class="section">` — that class carries `padding-block: var(--space-section)`
+ * (120px), which is the public-site section rhythm and pushes every account page
+ * far down the viewport. The pre-split editors did wrap themselves that way; this
+ * does not.
+ *
+ * Every editor page of every vertical renders through here, so the two-column
+ * geometry, the breadcrumb trail and the route nav are written once instead of
+ * once per vertical. What differs per vertical is entirely carried by the
+ * `registry` prop.
+ */
+
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import EditorRouteNav from '@/components/host/editor/EditorRouteNav.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { buildEditorBreadcrumbItems } from '@/lib/editor/editor-breadcrumbs-model';
+import type { EditorRegistry, EditorSectionVisibility } from '@/lib/editor/editor-registry';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** The vertical's section registry — drives the nav, the paths and the trail. */
+	readonly registry: EditorRegistry;
+	readonly entityId: string;
+	readonly entityName: string;
+	/** `null` on the hub, where no section is active. */
+	readonly currentSectionId: string | null;
+	/** `null` on the hub. Drives the last breadcrumb. */
+	readonly currentSectionSlug: string | null;
+	/** Runtime answers to the registry's visibility keys. */
+	readonly visibility?: EditorSectionVisibility;
+	/** Which account-sidebar entry is highlighted (`propiedades`, `comercio`, …). */
+	readonly accountSection: string;
+	readonly title: string;
+	readonly description?: string;
+	/** Optional subtitle under the page heading. */
+	readonly subtitle?: string;
+}
+
+const {
+	locale,
+	registry,
+	entityId,
+	entityName,
+	currentSectionId,
+	currentSectionSlug,
+	visibility = {},
+	accountSection,
+	title,
+	description,
+	subtitle,
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+
+// The shared Breadcrumbs component takes the FULL trail (current page last),
+// drops the current page itself — it is already the <h1> — and prepends Inicio.
+const breadcrumbItems = buildEditorBreadcrumbItems({
+	registry,
+	entityId,
+	entityName,
+	currentSectionSlug,
+	indexLabel: t(registry.indexLabelKey),
+	sectionLabel: title,
+});
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
+	<Breadcrumbs locale={locale} items={breadcrumbItems} class="editor-shell__crumbs" />
+
+	<AccountPageHeader title={title} description={subtitle} />
+
+	<div class="editor-shell">
+		<div class="editor-shell__nav">
+			<EditorRouteNav
+				locale={locale}
+				registry={registry}
+				entityId={entityId}
+				currentSectionId={currentSectionId}
+				visibility={visibility}
+			/>
+		</div>
+
+		<div class="editor-shell__body">
+			<slot />
+		</div>
+	</div>
+</AccountLayout>
+
+<style>
+	.editor-shell__crumbs {
+		margin-bottom: var(--space-3, 1rem);
+	}
+
+	/* Same two-column geometry the pre-split editor used (220px nav from
+	   1100px up). Desktop must not visibly change shape — see D-1. */
+	.editor-shell {
+		display: block;
+	}
+
+	.editor-shell__nav {
+		align-self: stretch;
+	}
+
+	.editor-shell__body {
+		max-width: 720px;
+	}
+
+	@media (min-width: 1100px) {
+		.editor-shell {
+			display: grid;
+			grid-template-columns: 220px 1fr;
+			gap: var(--space-8, 32px);
+			align-items: start;
+		}
+
+		.editor-shell__body {
+			max-width: none;
+		}
+	}
+</style>

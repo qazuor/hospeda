@@ -1,0 +1,82 @@
+---
+/**
+ * @file servicios.astro
+ * @description Amenities and features section of the commerce editor (HOS-1080).
+ *
+ * The only route that fetches the amenity/feature catalogs, scoped to the
+ * listing's vertical (SPEC-266). When BOTH come back empty — a genuinely empty
+ * catalog or a failed fetch, which degrade the same way — the page says so
+ * instead of rendering an editor with nothing in it: `AmenitiesSection` returns
+ * `null` on that input, and a page holding only a Save button reads as broken.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/servicios/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'servicios',
+	need: ['catalog']
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+
+// `AmenitiesSection` returns null when BOTH catalogs are empty, so mounting the
+// editor here would render a page whose only control is "Guardar". The notice
+// says which of the two situations it is in the only way this page can tell
+// them apart: it cannot, and both are the owner's cue to come back later.
+const hasCatalogs = resolution.amenities.length > 0 || resolution.features.length > 0;
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="servicios"
+	title={t('commerce.owner.editor.sectionNav.amenities', 'Servicios')}
+>
+	{
+		hasCatalogs ? (
+			<CommerceListingEditor
+				client:load
+				sectionId="amenities"
+				vertical={vertical}
+				listingId={listingId}
+				locale={locale}
+				initialData={detail}
+				amenities={resolution.amenities}
+				features={resolution.features}
+			/>
+		) : (
+			<p class="commerce-editor-empty">
+				{t(
+					'commerce.owner.editor.amenities.catalogUnavailable',
+					'No pudimos cargar el listado de servicios y características. Recargá la página para reintentar.',
+				)}
+			</p>
+		)
+	}
+</CommerceEditorSectionLayout>
+
+<style>
+	.commerce-editor-empty {
+		margin: 0;
+		padding: var(--space-4, 1rem);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md, 0.625rem);
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-muted-foreground);
+	}
+</style>

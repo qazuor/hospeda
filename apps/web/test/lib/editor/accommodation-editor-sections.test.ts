@@ -165,7 +165,9 @@ describe('ACCOMMODATION_EDITOR_SECTIONS', () => {
     });
 
     it('should mark translations as the only conditional section', () => {
-        const conditional = ACCOMMODATION_EDITOR_SECTIONS.filter((section) => section.conditional);
+        const conditional = ACCOMMODATION_EDITOR_SECTIONS.filter(
+            (section) => section.visibilityKey !== undefined
+        );
 
         expect(conditional.map((section) => section.id)).toEqual(['translations']);
     });

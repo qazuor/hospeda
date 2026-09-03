@@ -96,6 +96,12 @@
                     "label_other": "{{current}} de {{max}} experiencias"
                 },
                 "upgrade": "Ampliar cupo"
+            },
+            "views": {
+                "title": "Vistas",
+                "unique": "únicos",
+                "total": "totales",
+                "error": "No pudimos cargar las vistas. Probá de nuevo más tarde."
             }
         },
         "editor": {
@@ -110,7 +116,8 @@
                 "price": "Precio",
                 "faqs": "Preguntas frecuentes",
                 "meetingPoint": "Punto de encuentro",
-                "practicalInfo": "Datos prácticos"
+                "practicalInfo": "Datos prácticos",
+                "contactSocial": "Contacto y redes"
             },
             "sections": {
                 "type": "Categoría",
@@ -244,6 +251,30 @@
                 "notice": "Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.",
                 "warning": "Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
                 "checkbox": "Cambiar igual la dirección web para que siga este nuevo nombre"
+            },
+            "group": {
+                "listing": "Tu ficha",
+                "content": "Contenido",
+                "management": "Gestión"
+            },
+            "breadcrumb": {
+                "listings": "Mis comercios"
+            },
+            "pageDescription": "Editar la información de tu ficha",
+            "hub": {
+                "subtitle": "Elegí qué querés editar",
+                "status": {
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
+                    "faqs_one": "{{count}} pregunta",
+                    "faqs_other": "{{count}} preguntas",
+                    "selected_one": "{{count}} seleccionado",
+                    "selected_other": "{{count}} seleccionados",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                }
+            },
+            "amenities": {
+                "catalogUnavailable": "No pudimos cargar el listado de servicios y características. Recargá la página para reintentar."
             }
         },
         "checklist": {

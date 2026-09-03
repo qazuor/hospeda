@@ -1,15 +1,22 @@
 ---
 /**
  * @file EditorRouteNav.astro
- * @description Sticky section navigation for the accommodation editor (HOS-318).
+ * @description Sticky section navigation for every route-based editor
+ * (HOS-318; registry-driven across verticals since HOS-1080).
  *
  * ## Why this exists next to EditorSectionNav
  *
  * `EditorSectionNav.client.tsx` scroll-spies anchors inside ONE long page, and
  * `EventEditor` / `PostEditor` still work that way — so it stays, untouched
- * (HOS-318 OQ-2). This component is its route-based counterpart for the
- * accommodation editor, where every section is now its own page. When the other
- * two editors migrate, they adopt this and the old one goes.
+ * (HOS-318 OQ-2). This component is its route-based counterpart, used by the
+ * accommodation editor and — since HOS-1080 — by gastronomy and experience,
+ * where every section is now its own page. When the post/event editors migrate,
+ * they adopt this and the old one goes.
+ *
+ * It lives under `components/host/editor/` for the same reason
+ * `CommerceListingEditor` already imports `ActionBar` and `EditorSectionNav`
+ * from there: the two editors agreed on this UX long before HOS-1080, and
+ * moving the file would have been a rename with no behaviour behind it.
  *
  * ## Why it ships zero JavaScript
  *
@@ -24,24 +31,29 @@
 
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import type { EditorRegistry, EditorSectionVisibility } from '@/lib/editor/editor-registry';
 import { buildEditorNavModel } from '@/lib/editor/editor-route-nav-model';
 
 interface Props {
 	readonly locale: SupportedLocale;
-	readonly accommodationId: string;
+	/** The vertical's section registry. */
+	readonly registry: EditorRegistry;
+	readonly entityId: string;
 	/** `null` on the hub, where no section is active. */
 	readonly currentSectionId: string | null;
-	readonly hasTranslations: boolean;
+	/** Runtime answers to the registry's visibility keys. */
+	readonly visibility?: EditorSectionVisibility;
 }
 
-const { locale, accommodationId, currentSectionId, hasTranslations } = Astro.props;
+const { locale, registry, entityId, currentSectionId, visibility = {} } = Astro.props;
 const { t } = createTranslations(locale);
 
 const groups = buildEditorNavModel({
 	locale,
-	accommodationId,
+	registry,
+	entityId,
 	currentSectionId,
-	hasTranslations,
+	visibility,
 });
 ---
 

@@ -120,6 +120,7 @@ function renderEditor() {
     return render(
         <CommerceListingEditor
             vertical="gastronomy"
+            sectionId="basicInfo"
             listingId="abc"
             locale="es"
             initialData={baseData}

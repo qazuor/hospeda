@@ -96,6 +96,12 @@
                     "label_other": "{{current}} of {{max}} experience listings"
                 },
                 "upgrade": "Add more capacity"
+            },
+            "views": {
+                "title": "Views",
+                "unique": "unique",
+                "total": "total",
+                "error": "We couldn't load your views. Please try again later."
             }
         },
         "editor": {
@@ -110,7 +116,8 @@
                 "price": "Price",
                 "faqs": "FAQs",
                 "meetingPoint": "Meeting point",
-                "practicalInfo": "Practical details"
+                "practicalInfo": "Practical details",
+                "contactSocial": "Contact and social"
             },
             "sections": {
                 "type": "Category",
@@ -244,6 +251,30 @@
                 "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
                 "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
                 "checkbox": "Change the web address too so it follows this new name"
+            },
+            "group": {
+                "listing": "Your listing",
+                "content": "Content",
+                "management": "Management"
+            },
+            "breadcrumb": {
+                "listings": "My businesses"
+            },
+            "pageDescription": "Edit your listing information",
+            "hub": {
+                "subtitle": "Choose what you want to edit",
+                "status": {
+                    "photos_one": "{{count}} photo",
+                    "photos_other": "{{count}} photos",
+                    "faqs_one": "{{count}} question",
+                    "faqs_other": "{{count}} questions",
+                    "selected_one": "{{count}} selected",
+                    "selected_other": "{{count}} selected",
+                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
+                }
+            },
+            "amenities": {
+                "catalogUnavailable": "We could not load the list of services and features. Reload the page to try again."
             }
         },
         "checklist": {

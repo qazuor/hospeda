@@ -33,7 +33,11 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
-import { normalizeStoredSubscriptionStatus, subscriptionMatchesDomain } from '@repo/service-core';
+import {
+    hydrateSubscriptionProductDomains,
+    normalizeStoredSubscriptionStatus,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import { inArray } from 'drizzle-orm';
 
 /**
@@ -278,7 +282,18 @@ async function anyCancelledSubscriptionWasAuthorized(
  */
 export async function hasAnyPriorSubscription(input: TrialEligibilityInput): Promise<boolean> {
     const { billing, customerId, productDomain } = input;
-    const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+    const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+
+    // HOS-1104: `getByCustomerId()` never populates `productDomain` (it is a
+    // qzpay-drizzle column outside qzpay-core's mapped interface — see
+    // `hydrateSubscriptionProductDomains`'s doc). Without this, every
+    // subscription below reaches `subscriptionMatchesDomain` with
+    // `productDomain = undefined`, which for a non-accommodation `productDomain`
+    // fails CLOSED on every row (never matches), and for `ACCOMMODATION` fails
+    // OPEN on every row (matches even a customer's unrelated commerce
+    // subscription) — either way the domain scoping this function exists for
+    // was a no-op.
+    const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
     const cancelledSubscriptionIds: string[] = [];
     for (const sub of subscriptions) {
@@ -287,14 +302,7 @@ export async function hasAnyPriorSubscription(input: TrialEligibilityInput): Pro
         // in the codebase allowed to compare a domain, and it reads
         // asymmetrically on purpose: accommodation fails OPEN (the column
         // post-dates most rows) while every other domain fails CLOSED.
-        //
-        // The cast is deliberate and matches the precedent in
-        // `commerce-subscription-attach.service.ts`: qzpay's
-        // `QZPaySubscription` type does not declare `productDomain`, but its
-        // repository reads the row with a bare `select()` over a schema whose
-        // `product_domain` column is NOT NULL with a default, so the property
-        // IS present at runtime. The type is behind the schema, not the data.
-        if (!subscriptionMatchesDomain(sub as unknown, productDomain)) {
+        if (!subscriptionMatchesDomain(sub, productDomain)) {
             continue;
         }
 

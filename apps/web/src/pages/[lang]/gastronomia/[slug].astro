@@ -31,6 +31,7 @@ import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro';
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
@@ -404,6 +405,16 @@ const breadcrumbItems = [
         {faqs.length > 0 && (
             <FaqAccordion faqs={faqs} lang={locale} />
         )}
+
+        <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
+             basic view stats in mi-cuenta/comercio. -->
+        <EntityViewTracker
+            client:idle
+            entityType="GASTRONOMY"
+            slug={slug}
+            entityId={gastronomy.id}
+            locale={locale}
+        />
     </div>
 </DetailLayout>
 

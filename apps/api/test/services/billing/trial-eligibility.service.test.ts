@@ -1,5 +1,5 @@
 /**
- * Unit tests for the trial-eligibility resolver (HOS-226, HOS-230).
+ * Unit tests for the trial-eligibility resolver (HOS-226, HOS-230, HOS-1104).
  *
  * Covers:
  * - `hasAnyPriorSubscription` counts only subscriptions the provider actually
@@ -15,6 +15,14 @@
  *   stays eligible.
  * - The event-history query runs ONLY when every prior row is `cancelled`; an
  *   unambiguously-authorized subscription short-circuits it.
+ * - HOS-1104: `getByCustomerId()` never populates `productDomain` on its own
+ *   (qzpay-core's mapper builds objects field-by-field from the fields
+ *   `QZPaySubscription` declares — see `hydrateSubscriptionProductDomains`'s
+ *   doc in `@repo/service-core`). The domain-scoping fixtures below never set
+ *   `productDomain` directly on the billing-SDK stub (that shape never occurs
+ *   in production and would mask the exact bug this hydration exists to fix)
+ *   — instead `mockDb({ storedDomains })` simulates the batched recovery
+ *   SELECT `hydrateSubscriptionProductDomains` issues against `getDb()`.
  *
  * @module test/services/billing/trial-eligibility.service
  */
@@ -26,11 +34,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 // Module mocks (must be declared BEFORE importing the service).
 // The resolver reads `billing_subscription_events` via `getDb()` to
-// disambiguate `cancelled` rows; mock the DB layer so these stay unit tests.
-// `drizzle-orm`'s `inArray` is stubbed to a plain marker (the mocked `.where`
-// ignores it anyway). `normalizeStoredSubscriptionStatus` / `SubscriptionStatusEnum`
-// are the REAL implementations — the classification logic under test depends on
-// their true behavior.
+// disambiguate `cancelled` rows, and (HOS-1104) `hydrateSubscriptionProductDomains`
+// (a real, unmocked `@repo/service-core` function here) reads `billingSubscriptions`
+// via the SAME `getDb()` to recover `productDomain`. `mockDb()` below routes
+// each call by the table passed to `.from()`.
+// `drizzle-orm`'s `inArray` is stubbed to a plain marker for the events query
+// (the mocked `.where` ignores it); `@repo/db`'s own `inArray` re-export is
+// stubbed the same way for the hydration recovery query.
+// `normalizeStoredSubscriptionStatus` / `SubscriptionStatusEnum` are the REAL
+// implementations — the classification logic under test depends on their true
+// behavior.
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/db', () => ({
@@ -39,14 +52,21 @@ vi.mock('@repo/db', () => ({
         subscriptionId: 'subscription_id',
         previousStatus: 'previous_status',
         newStatus: 'new_status'
-    }
+    },
+    // HOS-1104: `hydrateSubscriptionProductDomains` (real implementation, from
+    // `@repo/service-core`) selects `{ id, productDomain }` from this table.
+    billingSubscriptions: {
+        id: 'id',
+        productDomain: 'product_domain'
+    },
+    inArray: vi.fn((column: unknown, values: unknown) => ({ column, values }))
 }));
 
 vi.mock('drizzle-orm', () => ({
     inArray: vi.fn((column: unknown, values: unknown) => ({ column, values }))
 }));
 
-import { getDb } from '@repo/db';
+import { billingSubscriptions, getDb } from '@repo/db';
 import {
     hasAnyPriorSubscription,
     resolveTrialEligibility
@@ -61,8 +81,7 @@ interface EventRow {
     /**
      * Which subscription the event belongs to. The real select reads this
      * column, because an absent audit trail now fails closed PER SUBSCRIPTION.
-     * Defaulted by {@link mockSubscriptionEvents} so the single-row tests below
-     * stay readable.
+     * Defaulted by {@link mockDb} so the single-row tests below stay readable.
      */
     readonly subscriptionId?: string;
 }
@@ -79,31 +98,58 @@ function makeBilling(subscriptions: ReadonlyArray<Record<string, unknown>>): QZP
     } as unknown as QZPayBilling;
 }
 
+/** Spies for the two independent `getDb()` consumers, set by the last {@link mockDb} call. */
+let dbSpies: {
+    eventsWhere: ReturnType<typeof vi.fn>;
+    hydrationWhere: ReturnType<typeof vi.fn>;
+};
+
 /**
- * Point the mocked `getDb()` at a fake query chain that resolves the
- * `billing_subscription_events` select to the given rows.
+ * Points the mocked `getDb()` at a fake query chain that routes by target
+ * table: the `billing_subscription_events` audit-trail select (`events`) and
+ * the HOS-1104 `hydrateSubscriptionProductDomains` recovery select
+ * (`storedDomains`, keyed by subscription id — a missing key resolves like a
+ * real legacy row with no `product_domain` value, i.e. no row returned).
  */
-function mockSubscriptionEvents(
-    events: ReadonlyArray<EventRow>,
-    defaultSubscriptionId = 'sub-1'
+function mockDb(
+    {
+        events = [] as ReadonlyArray<EventRow>,
+        storedDomains = {} as Record<string, string | null>,
+        defaultSubscriptionId = 'sub-1'
+    }: {
+        events?: ReadonlyArray<EventRow>;
+        storedDomains?: Record<string, string | null>;
+        defaultSubscriptionId?: string;
+    } = {} as never
 ): void {
-    const rows = events.map((event) => ({
+    const eventRows = events.map((event) => ({
         subscriptionId: event.subscriptionId ?? defaultSubscriptionId,
         previousStatus: event.previousStatus,
         newStatus: event.newStatus
     }));
-    const chain = {
-        select: vi.fn(() => chain),
-        from: vi.fn(() => chain),
-        where: vi.fn(() => Promise.resolve(rows))
-    };
-    vi.mocked(getDb).mockReturnValue(chain as never);
+    const eventsWhere = vi.fn(() => Promise.resolve(eventRows));
+    const hydrationWhere = vi.fn((clause: { values?: readonly string[] }) => {
+        const ids = clause?.values ?? [];
+        const rows = ids
+            .filter((id) => id in storedDomains)
+            .map((id) => ({ id, productDomain: storedDomains[id] ?? null }));
+        return Promise.resolve(rows);
+    });
+    dbSpies = { eventsWhere, hydrationWhere };
+    vi.mocked(getDb).mockReturnValue({
+        select: vi.fn(() => ({
+            from: vi.fn((table: unknown) => ({
+                where: table === billingSubscriptions ? hydrationWhere : eventsWhere
+            }))
+        }))
+    } as never);
 }
 
 beforeEach(() => {
     vi.clearAllMocks();
-    // Default: no events. Any test exercising a `cancelled` row overrides this.
-    mockSubscriptionEvents([]);
+    // Default: no events, no stored domains. Any test exercising a `cancelled`
+    // row or a real product-domain vertical overrides this.
+    mockDb();
 });
 
 describe('hasAnyPriorSubscription', () => {
@@ -118,7 +164,8 @@ describe('hasAnyPriorSubscription', () => {
 
         expect(result).toBe(false);
         expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledWith(CUSTOMER_ID);
-        // No cancelled rows -> the event-history query must not run.
+        // No subscriptions at all -> neither the hydration recovery nor the
+        // event-history query has anything to run against.
         expect(getDb).not.toHaveBeenCalled();
     });
 
@@ -132,8 +179,10 @@ describe('hasAnyPriorSubscription', () => {
                 productDomain: ProductDomainEnum.ACCOMMODATION
             })
         ).toBe(true);
-        // An unambiguously-authorized row short-circuits the event query.
-        expect(getDb).not.toHaveBeenCalled();
+        // An unambiguously-authorized row short-circuits the event query (the
+        // HOS-1104 hydration recovery query still runs — every fixture here
+        // omits `productDomain`, matching the real SDK shape).
+        expect(dbSpies.eventsWhere).not.toHaveBeenCalled();
     });
 
     it('returns true when the only prior subscription is a comp grant', async () => {
@@ -146,7 +195,7 @@ describe('hasAnyPriorSubscription', () => {
                 productDomain: ProductDomainEnum.ACCOMMODATION
             })
         ).toBe(true);
-        expect(getDb).not.toHaveBeenCalled();
+        expect(dbSpies.eventsWhere).not.toHaveBeenCalled();
     });
 
     it('returns true when the only prior subscription is past_due', async () => {
@@ -252,10 +301,12 @@ describe('hasAnyPriorSubscription', () => {
     // A subscription cancelled AFTER being authorized (active -> cancelled) DID
     // consume the trial. The event history carries an authorized status.
     it('returns true for a cancelled row that was previously active (real cancellation)', async () => {
-        mockSubscriptionEvents([
-            { previousStatus: 'pending_provider', newStatus: 'active' },
-            { previousStatus: 'active', newStatus: 'cancelled' }
-        ]);
+        mockDb({
+            events: [
+                { previousStatus: 'pending_provider', newStatus: 'active' },
+                { previousStatus: 'active', newStatus: 'cancelled' }
+            ]
+        });
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
         expect(
@@ -265,11 +316,11 @@ describe('hasAnyPriorSubscription', () => {
                 productDomain: ProductDomainEnum.ACCOMMODATION
             })
         ).toBe(true);
-        expect(getDb).toHaveBeenCalledOnce();
+        expect(dbSpies.eventsWhere).toHaveBeenCalledOnce();
     });
 
     it('returns true for a cancelled row whose history shows it was trialing', async () => {
-        mockSubscriptionEvents([{ previousStatus: 'trialing', newStatus: 'cancelled' }]);
+        mockDb({ events: [{ previousStatus: 'trialing', newStatus: 'cancelled' }] });
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
         expect(
@@ -286,7 +337,7 @@ describe('hasAnyPriorSubscription', () => {
     // must NOT consume the trial (the round-3 finding — the HOS-230 bug via the
     // reject-at-checkout trigger).
     it('returns false for a cancelled row reached directly from pending_provider (never authorized)', async () => {
-        mockSubscriptionEvents([{ previousStatus: 'pending_provider', newStatus: 'cancelled' }]);
+        mockDb({ events: [{ previousStatus: 'pending_provider', newStatus: 'cancelled' }] });
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
         expect(
@@ -296,7 +347,7 @@ describe('hasAnyPriorSubscription', () => {
                 productDomain: ProductDomainEnum.ACCOMMODATION
             })
         ).toBe(false);
-        expect(getDb).toHaveBeenCalledOnce();
+        expect(dbSpies.eventsWhere).toHaveBeenCalledOnce();
     });
 
     // HOS-1012: INVERTED. An empty audit trail is not evidence of a backout, it
@@ -305,7 +356,7 @@ describe('hasAnyPriorSubscription', () => {
     // who already paid and cancelled. The HOS-230 backout is unaffected — it
     // writes its `pending_provider` -> `cancelled` event (the test above).
     it('returns true for a cancelled row with no event history at all (fails closed)', async () => {
-        mockSubscriptionEvents([]);
+        mockDb({ events: [] });
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
         expect(
@@ -322,9 +373,15 @@ describe('hasAnyPriorSubscription', () => {
     // documented cancellation re-open the trial for a row nothing is known
     // about, which is the hole this whole branch exists to close.
     it('fails closed on the history-less row even when a sibling row has a full trail', async () => {
-        mockSubscriptionEvents([
-            { subscriptionId: 'sub-1', previousStatus: 'pending_provider', newStatus: 'cancelled' }
-        ]);
+        mockDb({
+            events: [
+                {
+                    subscriptionId: 'sub-1',
+                    previousStatus: 'pending_provider',
+                    newStatus: 'cancelled'
+                }
+            ]
+        });
         const billing = makeBilling([
             { id: 'sub-1', status: 'cancelled' },
             { id: 'sub-2', status: 'cancelled' }
@@ -343,7 +400,7 @@ describe('hasAnyPriorSubscription', () => {
     // admin revoke) is trial-consuming even though it was never provider-
     // authorized. Its only event carries previousStatus 'comp'; it must count.
     it('returns true for a cancelled row whose history shows it was a comp grant (revoked comp)', async () => {
-        mockSubscriptionEvents([{ previousStatus: 'comp', newStatus: 'cancelled' }]);
+        mockDb({ events: [{ previousStatus: 'comp', newStatus: 'cancelled' }] });
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
         expect(
@@ -358,10 +415,12 @@ describe('hasAnyPriorSubscription', () => {
     // The event query must batch ALL cancelled rows; one authorized among them
     // disqualifies.
     it('returns true when one of several cancelled rows was authorized', async () => {
-        mockSubscriptionEvents([
-            { previousStatus: 'pending_provider', newStatus: 'cancelled' }, // sub-1 backout
-            { previousStatus: 'active', newStatus: 'cancelled' } // sub-2 real cancel
-        ]);
+        mockDb({
+            events: [
+                { previousStatus: 'pending_provider', newStatus: 'cancelled' }, // sub-1 backout
+                { previousStatus: 'active', newStatus: 'cancelled' } // sub-2 real cancel
+            ]
+        });
         const billing = makeBilling([
             { id: 'sub-1', status: 'cancelled' },
             { id: 'sub-2', status: 'cancelled' }
@@ -391,7 +450,7 @@ describe('hasAnyPriorSubscription', () => {
                 productDomain: ProductDomainEnum.ACCOMMODATION
             })
         ).toBe(true);
-        expect(getDb).not.toHaveBeenCalled();
+        expect(dbSpies.eventsWhere).not.toHaveBeenCalled();
     });
 });
 
@@ -460,7 +519,7 @@ describe('resolveTrialEligibility', () => {
     // Round-3 regression: a rejected-at-MP cancelled checkout keeps the customer
     // eligible for their trial.
     it('stays eligible when the only prior row is a pending -> cancelled backout', async () => {
-        mockSubscriptionEvents([{ previousStatus: 'pending_provider', newStatus: 'cancelled' }]);
+        mockDb({ events: [{ previousStatus: 'pending_provider', newStatus: 'cancelled' }] });
         const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
 
         const result = await resolveTrialEligibility({
@@ -483,13 +542,20 @@ describe('resolveTrialEligibility', () => {
 // The asymmetry below is the part that breaks silently and is therefore tested
 // in BOTH directions: accommodation fails OPEN on a missing domain (the column
 // post-dates most rows) while every other domain fails CLOSED.
+//
+// HOS-1104: every fixture's billing-SDK object below omits `productDomain`
+// (the real `getByCustomerId()` shape); a subscription's REAL domain is
+// supplied via `mockDb({ storedDomains })`, simulating the recovery SELECT
+// `hydrateSubscriptionProductDomains` runs against `getDb()`. Setting
+// `productDomain` directly on the billing-SDK fixture would fabricate a field
+// the SDK never populates and mask this exact bug (see HOS-934's identical
+// fix for `entitlements-product-domain.test.ts`).
 // ---------------------------------------------------------------------------
 
 describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => {
     it('a spent gastronomy trial leaves the accommodation trial available', async () => {
-        const billing = makeBilling([
-            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' }
-        ]);
+        mockDb({ storedDomains: { 'sub-gastro': 'gastronomy' } });
+        const billing = makeBilling([{ id: 'sub-gastro', status: 'active' }]);
 
         const result = await hasAnyPriorSubscription({
             billing,
@@ -501,9 +567,8 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
     });
 
     it('a spent accommodation trial leaves the gastronomy trial available', async () => {
-        const billing = makeBilling([
-            { id: 'sub-accom', status: 'active', productDomain: 'accommodation' }
-        ]);
+        mockDb({ storedDomains: { 'sub-accom': 'accommodation' } });
+        const billing = makeBilling([{ id: 'sub-accom', status: 'active' }]);
 
         const result = await hasAnyPriorSubscription({
             billing,
@@ -515,9 +580,8 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
     });
 
     it('a prior subscription in the SAME domain still consumes the trial', async () => {
-        const billing = makeBilling([
-            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' }
-        ]);
+        mockDb({ storedDomains: { 'sub-gastro': 'gastronomy' } });
+        const billing = makeBilling([{ id: 'sub-gastro', status: 'active' }]);
 
         const result = await hasAnyPriorSubscription({
             billing,
@@ -529,9 +593,8 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
     });
 
     it('gastronomy and experience are separate verticals, not one commerce bucket', async () => {
-        const billing = makeBilling([
-            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' }
-        ]);
+        mockDb({ storedDomains: { 'sub-gastro': 'gastronomy' } });
+        const billing = makeBilling([{ id: 'sub-gastro', status: 'active' }]);
 
         const result = await hasAnyPriorSubscription({
             billing,
@@ -546,7 +609,9 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
         it('a legacy row with NO domain consumes the ACCOMMODATION trial (fails open)', async () => {
             // The column post-dates most rows, so an absent value must read as
             // accommodation — otherwise every pre-column subscriber silently
-            // regains a trial they already spent.
+            // regains a trial they already spent. No `storedDomains` entry for
+            // 'sub-legacy' -> the recovery SELECT finds no row -> `null`, the
+            // same as a genuinely-absent column.
             const billing = makeBilling([{ id: 'sub-legacy', status: 'active' }]);
 
             const result = await hasAnyPriorSubscription({
@@ -570,6 +635,11 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
             expect(result).toBe(false);
         });
 
+        // Unlike the two cases above, an EXPLICIT `null` already on the
+        // billing-SDK object is a real, documented input shape for
+        // `hydrateSubscriptionProductDomains` (a value already present, even
+        // `null`, is left untouched) — not a fabrication of a field the SDK
+        // never sets, so this fixture legitimately sets it directly.
         it('an explicit null domain behaves the same as an absent one', async () => {
             const billing = makeBilling([
                 { id: 'sub-legacy', status: 'active', productDomain: null }
@@ -589,9 +659,8 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
         // Deliberate: a leftover 'commerce' row goes dark rather than silently
         // matching a vertical it was never resolved to. Per CLAUDE.md that is
         // the intended failure mode, not a bug to widen the comparison for.
-        const billing = makeBilling([
-            { id: 'sub-legacy-commerce', status: 'active', productDomain: 'commerce' }
-        ]);
+        mockDb({ storedDomains: { 'sub-legacy-commerce': 'commerce' } });
+        const billing = makeBilling([{ id: 'sub-legacy-commerce', status: 'active' }]);
 
         for (const domain of [
             ProductDomainEnum.GASTRONOMY,
@@ -611,9 +680,8 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
     it('keeps excluding never-authorized checkouts WITHIN the matching domain (HOS-230)', async () => {
         // The domain filter must narrow the candidate set, not replace the
         // authorization rule that runs over it.
-        const billing = makeBilling([
-            { id: 'sub-gastro', status: 'pending_provider', productDomain: 'gastronomy' }
-        ]);
+        mockDb({ storedDomains: { 'sub-gastro': 'gastronomy' } });
+        const billing = makeBilling([{ id: 'sub-gastro', status: 'pending_provider' }]);
 
         const result = await hasAnyPriorSubscription({
             billing,
@@ -628,10 +696,11 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
         // A cancelled accommodation row is ambiguous and would trigger the
         // event-history lookup — but when asking about gastronomy it is not a
         // candidate at all, so the lookup must never run.
-        mockSubscriptionEvents([{ previousStatus: 'active', newStatus: 'cancelled' }]);
-        const billing = makeBilling([
-            { id: 'sub-accom', status: 'cancelled', productDomain: 'accommodation' }
-        ]);
+        mockDb({
+            events: [{ previousStatus: 'active', newStatus: 'cancelled' }],
+            storedDomains: { 'sub-accom': 'accommodation' }
+        });
+        const billing = makeBilling([{ id: 'sub-accom', status: 'cancelled' }]);
 
         const result = await hasAnyPriorSubscription({
             billing,
@@ -640,5 +709,6 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
         });
 
         expect(result).toBe(false);
+        expect(dbSpies.eventsWhere).not.toHaveBeenCalled();
     });
 });

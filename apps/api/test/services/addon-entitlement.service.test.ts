@@ -40,7 +40,12 @@ vi.mock('@repo/service-core', () => ({
     // subscriptions. All test stubs here are accommodation subs (no productDomain),
     // so this should always return true — matching the real function's no-op behaviour
     // on legacy/null productDomain rows.
-    isAccommodationSubscription: () => true
+    isAccommodationSubscription: () => true,
+    // HOS-1104: pass-through stub. Deliberately does NOT fabricate a
+    // `productDomain` value onto the fixtures (that would hide the exact bug
+    // this hydration exists to fix) — it mirrors the real function's own
+    // no-op behaviour when there is nothing to recover from the DB.
+    hydrateSubscriptionProductDomains: (subs: unknown[]) => Promise.resolve(subs)
 }));
 
 // ─── Addon stubs matching the shapes the service expects from AddonCatalogService ──
