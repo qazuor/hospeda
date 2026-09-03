@@ -23,7 +23,8 @@ import type { QrCode } from '@repo/schemas';
 import { QrCodeErrorCorrectionLevelEnum, QrCodeFormatEnum, QrCodeSourceEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { diffRenderOptions, QrCodeForm } from '../QrCodeForm';
+import { QrCodeForm } from '../QrCodeForm';
+import { diffRenderOptions } from '../qr-code-form.payload';
 
 const RED = '#ff0000';
 
@@ -212,5 +213,136 @@ describe('diffRenderOptions', () => {
         expect(
             diffRenderOptions({ ...original, foregroundColor: '#0000ff' }, original)
         ).toStrictEqual({ foregroundColor: '#0000ff' });
+    });
+});
+
+/**
+ * A refused submit has to SAY SO (HOS-981 PR 3, F3).
+ *
+ * The defect: the only validation was a `safeParse` inside `form.onSubmit`
+ * whose failure path threw a raw i18n key into a `form.handleSubmit()` nobody
+ * caught. Leaving the destination blank and pressing Save produced nothing at
+ * all — no toast, no red field, no console line, no request. Every assertion
+ * here therefore checks BOTH that `onSubmit` was not reached AND that the
+ * operator was told; either one alone would pass against a form that silently
+ * refuses or one that silently accepts.
+ */
+describe('QrCodeForm — a refused submit says so', () => {
+    function renderCreateForm() {
+        const onSubmit = vi.fn().mockResolvedValue(undefined);
+        render(
+            <QrCodeForm
+                mode="create"
+                onSubmit={onSubmit}
+                onCancel={vi.fn()}
+            />
+        );
+        return { onSubmit };
+    }
+
+    it('an empty destination is refused, and reported', async () => {
+        const { onSubmit } = renderCreateForm();
+
+        fireEvent.change(screen.getByLabelText(/labelLabel/i), {
+            target: { value: 'Cartelera plaza' }
+        });
+        // targetUrl deliberately left blank.
+        submit();
+
+        await waitFor(() =>
+            expect(screen.getByTestId('qr-code-form-error')).toHaveTextContent(/requiredTargetUrl/)
+        );
+        expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it('an empty name is refused, and reported', async () => {
+        const { onSubmit } = renderCreateForm();
+
+        fireEvent.change(screen.getByLabelText(/targetUrlLabel/i), {
+            target: { value: 'https://hospeda.com.ar/es/' }
+        });
+        submit();
+
+        await waitFor(() =>
+            expect(screen.getByTestId('qr-code-form-error')).toHaveTextContent(/requiredLabel/)
+        );
+        expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    /**
+     * A malformed destination and an out-of-range size are stopped by the
+     * BROWSER, before any of this code runs: the inputs are `type="url"` and
+     * `type="number" min=64`, so the form is `:invalid` and no `submit` event is
+     * ever fired. jsdom implements that faithfully, which is why these assert on
+     * `checkValidity()` and on the absence of a request rather than on the
+     * banner — a banner assertion here would be asserting something the operator
+     * never sees, because they get the browser's own bubble instead.
+     *
+     * The property under test is the same one either way: a click never
+     * silently does nothing.
+     */
+    it.each([
+        ['a destination with no scheme', /targetUrlLabel/i, 'hospeda.com.ar'],
+        ['a size below the printable floor', /sizeLabel/i, '10']
+    ])('%s is stopped by native validation, not silently swallowed', async (_label, query, value) => {
+        const { onSubmit } = renderCreateForm();
+
+        fireEvent.change(screen.getByLabelText(/labelLabel/i), {
+            target: { value: 'Cartelera plaza' }
+        });
+        fireEvent.change(screen.getByLabelText(/targetUrlLabel/i), {
+            target: { value: 'https://hospeda.com.ar/es/' }
+        });
+        const field = screen.getByLabelText(query) as HTMLInputElement;
+        fireEvent.change(field, { target: { value } });
+        submit();
+
+        expect(field.checkValidity()).toBe(false);
+        await waitFor(() => expect(onSubmit).not.toHaveBeenCalled());
+    });
+
+    /**
+     * The case the browser CANNOT catch, and therefore the one that proves the
+     * banner path is wired: the slug is a plain text input with no pattern
+     * attribute, so a value outside the QR alphabet sails past native validation
+     * and is refused by the schema inside the submit handler.
+     */
+    it('a slug outside the QR alphabet is refused, reported, and marks the field', async () => {
+        const { onSubmit } = renderCreateForm();
+
+        fireEvent.change(screen.getByLabelText(/labelLabel/i), {
+            target: { value: 'Cartelera plaza' }
+        });
+        fireEvent.change(screen.getByLabelText(/targetUrlLabel/i), {
+            target: { value: 'https://hospeda.com.ar/es/' }
+        });
+        fireEvent.change(screen.getByLabelText(/slugLabel/i), { target: { value: 'no-0k-slug' } });
+        submit();
+
+        await waitFor(() =>
+            expect(screen.getByTestId('qr-code-form-error')).toHaveTextContent(/messages\.invalid/)
+        );
+        expect(onSubmit).not.toHaveBeenCalled();
+        // The banner names the form; this names the input.
+        expect(screen.getAllByText(/messages\.fieldInvalid/)).not.toHaveLength(0);
+    });
+
+    /**
+     * Non-vacuity: the same form with everything filled in DOES submit. Without
+     * this, a form that refused every input would pass all four tests above.
+     */
+    it('a complete form still submits', async () => {
+        const { onSubmit } = renderCreateForm();
+
+        fireEvent.change(screen.getByLabelText(/labelLabel/i), {
+            target: { value: 'Cartelera plaza' }
+        });
+        fireEvent.change(screen.getByLabelText(/targetUrlLabel/i), {
+            target: { value: 'https://hospeda.com.ar/es/' }
+        });
+        submit();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        expect(screen.queryByTestId('qr-code-form-error')).toBeNull();
     });
 });
