@@ -158,6 +158,8 @@ import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+// Redirectable QR codes: public resolution tier only for now (HOS-981)
+import { publicQrCodeRoutes } from './qr-code';
 import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
@@ -357,6 +359,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/poi-categories', publicPoiCategoryRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
+
+        // Redirectable QR codes (HOS-981): resolves a printed slug to its
+        // current target and records the scan in the same call. Deliberately
+        // uncached — the response both counts a scan and carries an
+        // operator-editable target.
+        app.route('/api/v1/public/qr', publicQrCodeRoutes);
 
         // Exchange rates (public read-only — consumed by the web frontend
         // for USD/ARS price conversion).
