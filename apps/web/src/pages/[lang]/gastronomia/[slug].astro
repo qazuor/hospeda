@@ -21,6 +21,7 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
 import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
+import GastronomyVenueEvents from '@/components/gastronomy/GastronomyVenueEvents.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
 import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
 // Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
@@ -336,6 +337,15 @@ const breadcrumbItems = [
                 locale={locale}
             />
         )}
+
+        <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
+             deal. NOT the same as the "accepts events" CTA below — see
+             GastronomyVenueEvents.astro's frontmatter. Pre-filtered by the API
+             the same way menuSections is, so no gate is needed here. -->
+        <GastronomyVenueEvents
+            venueEvents={gastronomy.venueEvents}
+            locale={locale}
+        />
 
         <!-- Amenities and features the owner ticked (HOS-1072): medios de pago,
              delivery, takeaway, reservas, estacionamiento… Both grids self-hide

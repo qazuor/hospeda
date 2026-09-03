@@ -1125,6 +1125,30 @@ export interface GastronomyMenuSection {
 }
 
 /**
+ * One entry on a venue's own agenda (HOS-1042) — live music night, happy
+ * hour, the Tuesday deal. Mirrors `GastronomyEventPublic` (`@repo/schemas`)
+ * with only the fields the public detail page renders.
+ *
+ * `date` and `weekday` are mutually exclusive per `recurrence`, exactly as the
+ * schema enforces server-side: a `once` entry carries `date` and a `null`
+ * `weekday`; a `weekly` entry carries `weekday` and a `null` `date`.
+ */
+export interface GastronomyVenueEvent {
+    readonly id: string;
+    readonly title: string;
+    readonly description: string | null;
+    readonly recurrence: 'once' | 'weekly';
+    /** `YYYY-MM-DD`, for a `once` entry; `null` for a `weekly` one. */
+    readonly date: string | null;
+    /** `0` (Sunday) … `6` (Saturday), for a `weekly` entry; `null` for a `once` one. */
+    readonly weekday: number | null;
+    /** `HH:MM`, local venue time. */
+    readonly startTime: string;
+    /** `HH:MM`, or `null` when the venue does not say. */
+    readonly endTime: string | null;
+}
+
+/**
  * Typed data shape for the gastronomy detail page (SPEC-239).
  * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
  *
@@ -1152,6 +1176,12 @@ export interface GastronomyDetailData extends GastronomyCardData {
      * entitlement — same withholding as {@link menuFileUrl}.
      */
     readonly menuSections?: readonly GastronomyMenuSection[];
+    /**
+     * The venue's own agenda, in order (HOS-1042). Empty/absent when the venue
+     * has none, OR when the owner's current plan does not grant
+     * `manage_gastronomy_events` — same withholding as {@link menuSections}.
+     */
+    readonly venueEvents?: readonly GastronomyVenueEvent[];
     /** Social network links provided by the owner. */
     readonly socialNetworks: GastronomySocialNetworks | null;
     /** SEO metadata fields. */

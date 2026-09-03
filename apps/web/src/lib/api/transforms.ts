@@ -30,6 +30,7 @@ import type {
     GastronomyMenuSection,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
+    GastronomyVenueEvent,
     PartnerData,
     PartnerDetailData,
     ReviewCardData
@@ -2751,6 +2752,35 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
 }
 
 /**
+ * Maps the raw `venueEvents` array a gastronomy detail payload carries
+ * (HOS-1042) into the shape `GastronomyVenueEvents.astro` renders.
+ *
+ * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
+ * API's live entitlement check returns nothing, or drops an entry with no
+ * `title` — the same treatment `mapGastronomyMenuSections` gives a malformed
+ * row. `date`/`weekday` are passed through as-is (already mutually exclusive
+ * per `recurrence` on the server), never re-derived here.
+ *
+ * @param raw - The payload's `venueEvents` value, of unknown shape.
+ * @returns Renderer-ready agenda entries; empty when absent or malformed.
+ */
+function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((event) => ({
+            id: String(event.id ?? ''),
+            title: String(event.title ?? ''),
+            description: event.description == null ? null : String(event.description),
+            recurrence: event.recurrence === 'weekly' ? ('weekly' as const) : ('once' as const),
+            date: event.date == null ? null : String(event.date),
+            weekday: typeof event.weekday === 'number' ? event.weekday : null,
+            startTime: String(event.startTime ?? ''),
+            endTime: event.endTime == null ? null : String(event.endTime)
+        }))
+        .filter((event) => event.id.length > 0 && event.title.length > 0);
+}
+
+/**
  * Transforms a raw API gastronomy item to GastronomyDetailData props.
  *
  * Used on the gastronomy detail page where the full `GastronomyPublic` shape
@@ -2789,6 +2819,7 @@ export function toGastronomyDetailPageProps({
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
         menuSections: mapGastronomyMenuSections(item.menuSections),
+        venueEvents: mapGastronomyVenueEvents(item.venueEvents),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
