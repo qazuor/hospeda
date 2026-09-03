@@ -139,6 +139,20 @@ describe('/qr/{slug}/ page — cacheability and failure mode', () => {
         expect(source).toMatch(/new Response\(null,\s*\{\s*status:\s*404\s*\}\)/);
     });
 
+    it('guards on targetUrl, not merely on data, before building the redirect', () => {
+        // `apiClient.get` unwraps the API envelope WITHOUT validating it against
+        // a schema, so a 200 whose body lacks `targetUrl` yields a truthy `data`
+        // and an undefined target. `Headers.set` stringifies that to the literal
+        // "undefined" and the scanner gets a 302 to `/qr/undefined`.
+        //
+        // Asserted as the guard's exact text rather than "mentions targetUrl":
+        // the page names that field twice, so a looser pattern would be
+        // satisfied by the line that READS it, which is the line the bug is in.
+        const guard = source.match(/if\s*\(![^)]*result[^)]*\)\s*\{/);
+        expect(guard, 'no `if (!result...)` guard found').not.toBeNull();
+        expect(guard?.[0]).toContain('targetUrl');
+    });
+
     it('never sends an unresolved slug to the home page instead of a 404', () => {
         // The failure mode this page exists to avoid: somebody who scanned a
         // dead sticker silently landing on the home page with no explanation.

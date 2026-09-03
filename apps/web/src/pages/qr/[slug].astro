@@ -14,7 +14,14 @@
  * changed afterwards — that indirection is the entire product. Putting a locale
  * in it would mean the print run chose, permanently, which language every
  * future scanner reads the site in. `isLanguageNeutralRoute` in the middleware
- * is what stops the locale redirect from adding one.
+ * is what stops the locale redirect from touching it.
+ *
+ * "Touching", not "adding a prefix": `qr` is two letters, so it matches
+ * `LOCALE_SHAPED_SEGMENT` and the middleware would read it as a request for an
+ * unsupported language, REPLACING the segment rather than keeping it. Dropping
+ * the exemption sends `/qr/Live2345/` to `/es/Live2345/` — a 404 — not to
+ * `/es/qr/Live2345/`. This route depends on that exemption for existence, not
+ * for speed.
  *
  * ## Why it is never cached
  *
@@ -56,7 +63,13 @@ applyCacheHeaders({
 
 const result = await qrApi.resolve(slug);
 
-if (!result.ok || !result.data) {
+// `targetUrl` is checked, not just `data`. `apiClient.get` unwraps the API
+// envelope WITHOUT validating it against a schema, so a 200 carrying a body
+// that lacks the field yields a truthy `data` and an `undefined` target — which
+// `Headers.set` would stringify into the literal `Location: "undefined"`,
+// sending a scanner to `/qr/undefined`. A missing target is a code that does
+// not resolve, and it takes the same 404 as every other such case.
+if (!result.ok || !result.data?.targetUrl) {
     return new Response(null, { status: 404 });
 }
 
