@@ -48,7 +48,10 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // plan picker's "adds" list must name it or the tier reads as one feature
     // dearer than it is.
     manage_gastronomy_daily_special: 'manageGastronomyDailySpecial',
-    manage_gastronomy_events: 'manageGastronomyEvents'
+    manage_gastronomy_events: 'manageGastronomyEvents',
+    // HOS-1043 — same tier and same reasoning as `menu_item_photos`: the
+    // second key that separates gastronomy PREMIUM from `-pro`.
+    multilingual_gastronomy_menu: 'multilingualGastronomyMenu'
 };
 
 /**
@@ -60,5 +63,6 @@ export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_experience_directions: 'Mapa y cómo llegar',
     issue_experience_certificate: 'Certificados de experiencia',
     manage_gastronomy_daily_special: 'Menú del día',
-    manage_gastronomy_events: 'Eventos del local'
+    manage_gastronomy_events: 'Eventos del local',
+    multilingual_gastronomy_menu: 'Carta en varios idiomas'
 };

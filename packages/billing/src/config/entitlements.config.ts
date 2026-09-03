@@ -343,5 +343,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Venue events agenda',
         description:
             'Allows publishing the venue’s own events — live music night, happy hour, dinner show — on a date or repeating every week'
+    },
+    // HOS-1043. Granted by `gastronomy-premium` ALONE, same tier and shape as
+    // `MENU_ITEM_PHOTOS`, and appended to this same trailing commerce section
+    // for the slicing reason stated at its head.
+    {
+        key: EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU,
+        name: 'Multi-language menu',
+        description:
+            'Allows translating the structured menu into English and Portuguese, shown to the visitor with a language switcher on the public page'
     }
 ];

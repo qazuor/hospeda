@@ -343,13 +343,29 @@ describe('Entitlement Configuration', () => {
             ).toBeDefined();
         });
 
+        it('keeps the premium-only multi-language-menu key OUT of the vertical-wide map (HOS-1043)', () => {
+            // Same shape and same tier as `MENU_ITEM_PHOTOS`: `gastronomy-premium`
+            // alone. Listing it in the floor map would hand it to `-basico` AND
+            // `-pro`, erasing another capability that makes premium a step
+            // rather than a name.
+            expect([...ALL_COMMERCE_ENTITLEMENT_KEYS]).not.toContain(
+                EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
+            );
+            expect(
+                ENTITLEMENT_DEFINITIONS.find(
+                    (e) => e.key === EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
+                )
+            ).toBeDefined();
+        });
+
         it('should have all 7 categories totaling to the full definitions count', () => {
             // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12; SPEC-287: tourist 12→13;
             // HOS-16: tourist 13→12 (AD_FREE removed); HOS-21 T-003: tourist 12→13 (VIP_PROMOTIONS_ACCESS added);
             // HOS-1074: commerce category added at 4; HOS-1058: commerce 4→5;
             // HOS-895: commerce 5→6; HOS-1049: commerce 6→7;
             // HOS-1057: commerce 7→8; HOS-1041: commerce 8→9;
-            // HOS-1045: commerce 9→10; HOS-1042: commerce 10→11)
+            // HOS-1045: commerce 9→10; HOS-1042: commerce 10→11;
+            // HOS-1043: commerce 11→12)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
@@ -362,8 +378,9 @@ describe('Entitlement Configuration', () => {
             // HOS-1057 — plus the pro-and-above experience certificate (1);
             // HOS-1041 — plus the pro-and-above menú del día (1);
             // HOS-1045 — plus the premium-only photo per dish (1);
-            // HOS-1042 — plus the pro-and-above venue events agenda (1).
-            const commerceCount = 11;
+            // HOS-1042 — plus the pro-and-above venue events agenda (1);
+            // HOS-1043 — plus the premium-only multi-language menu (1).
+            const commerceCount = 12;
 
             // Act & Assert
             expect(
