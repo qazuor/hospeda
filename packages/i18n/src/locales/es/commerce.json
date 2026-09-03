@@ -312,7 +312,16 @@
                 "saving": "Guardando…",
                 "saved": "Carta guardada.",
                 "saveError": "No se pudo guardar la carta.",
-                "locked": "Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace."
+                "locked": "Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace.",
+                "addPhoto": "Agregar foto",
+                "replacePhoto": "Cambiar la foto",
+                "removePhoto": "Quitar la foto",
+                "photoPreview": "Foto del plato",
+                "photoAlt": "Texto alternativo de la foto",
+                "photoAltPlaceholder": "Describí la foto (opcional)",
+                "photoAttached": "Foto agregada. Acordate de guardar la carta.",
+                "photoUploadError": "No se pudo subir la foto del plato.",
+                "photoLocked": "Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual."
             }
         },
         "checklist": {
@@ -357,7 +366,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Carta estructurada"
+            "manageGastronomyMenu": "Carta estructurada",
+            "menuItemPhotos": "Foto por plato"
         },
         "create": {
             "pickVertical": {

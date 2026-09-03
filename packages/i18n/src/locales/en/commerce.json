@@ -312,7 +312,16 @@
                 "saving": "Saving…",
                 "saved": "Menu saved.",
                 "saveError": "The menu could not be saved.",
-                "locked": "Entering the menu dish by dish is available from the Professional plan onwards. In the meantime you can upload a photo or a PDF of the menu, or leave the link."
+                "locked": "Entering the menu dish by dish is available from the Professional plan onwards. In the meantime you can upload a photo or a PDF of the menu, or leave the link.",
+                "addPhoto": "Add photo",
+                "replacePhoto": "Change the photo",
+                "removePhoto": "Remove the photo",
+                "photoPreview": "Dish photo",
+                "photoAlt": "Alt text for the photo",
+                "photoAltPlaceholder": "Describe the photo (optional)",
+                "photoAttached": "Photo added. Remember to save the menu.",
+                "photoUploadError": "The dish photo could not be uploaded.",
+                "photoLocked": "Photos per dish are available on the Premium plan. You can remove the photos and save the menu anyway."
             }
         },
         "checklist": {
@@ -357,7 +366,8 @@
             }
         },
         "entitlements": {
-            "manageGastronomyMenu": "Structured menu"
+            "manageGastronomyMenu": "Structured menu",
+            "menuItemPhotos": "Photo per dish"
         },
         "create": {
             "pickVertical": {
