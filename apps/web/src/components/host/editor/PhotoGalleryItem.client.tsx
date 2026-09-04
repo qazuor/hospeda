@@ -13,6 +13,17 @@
  * pointer-only drag gesture excludes keyboard and screen-reader users. Plain
  * `<button>` elements get full keyboard operability (Tab + Enter/Space) for
  * free, which a custom drag implementation would have to build by hand.
+ *
+ * HOS-1023: the move-up/move-down/promote toolbar lives BELOW the thumbnail
+ * (in `.galleryItemWrapper`'s normal flow), not overlaid on top of it. The
+ * overlay covered ~39.5% of a 167x125px thumbnail and let the "Portada"
+ * button overflow its own frame by ~14px (`.toolbarButtonPromote` is a
+ * `flex: 1` item with no `min-width: 0`, so it refuses to shrink below its
+ * content width). Moving the toolbar out of the photo removes both problems
+ * at the source instead of shrinking touch targets or lightening the
+ * background — HOS-790 fixed those for contrast/tap-area reasons and both
+ * are preserved unchanged. Only the `✕` remove button stays overlaid, in its
+ * own corner, since a single 44x44 control doesn't recreate the same issue.
  */
 
 import { getMediaUrl } from '@repo/media';
@@ -94,47 +105,47 @@ export function PhotoGalleryItem({
                         ✕
                     </button>
                 </div>
-                <div className={styles.galleryItemToolbar}>
-                    <button
-                        type="button"
-                        className={styles.toolbarButton}
-                        onClick={() => onMoveUp(item)}
-                        disabled={!canOperate || isFirst}
-                        aria-label={t(
-                            'host.properties.editor.photo.moveUpAria',
-                            'Mover foto {{index}} hacia arriba',
-                            { index: position }
-                        )}
-                    >
-                        ↑
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.toolbarButton}
-                        onClick={() => onMoveDown(item)}
-                        disabled={!canOperate || isLast}
-                        aria-label={t(
-                            'host.properties.editor.photo.moveDownAria',
-                            'Mover foto {{index}} hacia abajo',
-                            { index: position }
-                        )}
-                    >
-                        ↓
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.toolbarButtonPromote}
-                        onClick={() => onPromote(item)}
-                        disabled={!canOperate}
-                        aria-label={t(
-                            'host.properties.editor.photo.promoteToFeaturedAria',
-                            'Usar foto {{index}} como portada',
-                            { index: position }
-                        )}
-                    >
-                        {t('host.properties.editor.photo.promoteToFeaturedShort', 'Portada')}
-                    </button>
-                </div>
+            </div>
+            <div className={styles.galleryItemToolbar}>
+                <button
+                    type="button"
+                    className={styles.toolbarButton}
+                    onClick={() => onMoveUp(item)}
+                    disabled={!canOperate || isFirst}
+                    aria-label={t(
+                        'host.properties.editor.photo.moveUpAria',
+                        'Mover foto {{index}} hacia arriba',
+                        { index: position }
+                    )}
+                >
+                    ↑
+                </button>
+                <button
+                    type="button"
+                    className={styles.toolbarButton}
+                    onClick={() => onMoveDown(item)}
+                    disabled={!canOperate || isLast}
+                    aria-label={t(
+                        'host.properties.editor.photo.moveDownAria',
+                        'Mover foto {{index}} hacia abajo',
+                        { index: position }
+                    )}
+                >
+                    ↓
+                </button>
+                <button
+                    type="button"
+                    className={styles.toolbarButtonPromote}
+                    onClick={() => onPromote(item)}
+                    disabled={!canOperate}
+                    aria-label={t(
+                        'host.properties.editor.photo.promoteToFeaturedAria',
+                        'Usar foto {{index}} como portada',
+                        { index: position }
+                    )}
+                >
+                    {t('host.properties.editor.photo.promoteToFeaturedShort', 'Portada')}
+                </button>
             </div>
             <PhotoMetadataEditor
                 locale={locale}

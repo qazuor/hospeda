@@ -230,16 +230,17 @@
 
 /* Per-photo reorder / promote toolbar (HOS-122). Always visible (not
  * hover-only) so keyboard and screen-reader users can find the actions
- * without first hovering the thumbnail. */
+ * without first hovering the thumbnail.
+ *
+ * HOS-1023: moved out of `.galleryItem` into normal flow (a sibling in
+ * `.galleryItemWrapper`, between the thumbnail and the metadata toggle) —
+ * it used to be an absolutely-positioned overlay on the bottom of the
+ * photo, covering ~39.5% of it. No background of its own is needed here:
+ * each button below keeps its own opaque `rgba(15, 23, 42, 0.9)` fill from
+ * HOS-790, which is what carries the AA contrast, not this container. */
 .galleryItemToolbar {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
     display: flex;
     gap: 0.5rem;
-    padding: 0.5rem;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.92) 100%);
 }
 
 .toolbarButton {
@@ -274,6 +275,7 @@
 .toolbarButtonPromote {
     composes: toolbarButton;
     width: auto;
+    min-width: 0;
     flex: 1;
     min-height: 44px;
     padding: 0 0.75rem;
@@ -285,7 +287,10 @@
  * (.galleryItem) clips overflow to keep its fixed aspect-ratio, so the
  * expandable panel lives in a plain-flow wrapper alongside it instead of
  * inside it — expanding the panel grows this wrapper (and its grid row),
- * never the thumbnail. */
+ * never the thumbnail. Since HOS-1023, the reorder/promote toolbar
+ * (`.galleryItemToolbar`) lives here too, between the thumbnail and the
+ * metadata toggle, for the same reason: it needs real layout space the
+ * fixed-aspect-ratio thumbnail can't give it without covering the photo. */
 .galleryItemWrapper {
     display: flex;
     flex-direction: column;
