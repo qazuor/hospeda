@@ -53,6 +53,21 @@
  * that tier reachable from checkout, so the page under-sold its own paid tiers
  * for two releases before anyone deleted one sentence.
  *
+ * THE PRICE BLOCK IS NO LONGER A NUMBER (HOS-1134). "El costo" used to say
+ * "está en el orden de los quince mil pesos por mes" — half of what
+ * `gastronomy-basico` actually costs ($30.000) once HOS-975 priced the six
+ * tiers. Hardcoded prose goes stale the moment the base repriced and nobody
+ * remembered to edit this artifact; the base itself does not. The owner's
+ * decision (2026-09-03) was to remove the number altogether and link to
+ * `/{lang}/publicar-restaurante/`, which reads the real price from
+ * `fetchPublicPlans({ domain: 'gastronomy' })` — not `/{lang}/planes/`,
+ * which does not exist, and not the per-vertical `/precios/` page from
+ * HOS-1032, which does not exist either. This is now the SECOND documented
+ * exception to "verbatim artifact" after the HOS-975 clause removal above:
+ * the price paragraph was rewritten (owner-approved text, transcribed
+ * verbatim) and one bullet was added for HOS-1043's multi-language carta,
+ * which the artifact predates and had no bullet for at all.
+ *
  * @route /{lang}/presentacion/gastronomia/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
  */
@@ -65,6 +80,7 @@ import PresentationThemeToggle from '@/components/presentacion/PresentationTheme
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
+import { buildUrl } from '@/lib/urls';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -204,9 +220,12 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gas
       <h2>Una cuota fija, sin sorpresas</h2>
     </div>
     <p>
-      <strong>Está en el orden de los quince mil pesos por mes</strong> — lo que sale un par de
-      cubiertos. Es lo mismo si te llaman dos personas o doscientas: no hay comisión ni cargo
-      por consulta. El valor exacto está siempre publicado en el sitio.
+      Una cuota fija por mes, con tres escalones según cuánto quieras mostrar. Es lo mismo si
+      te llaman dos personas o doscientas: no hay comisión ni cargo por consulta.
+    </p>
+    <p class="subhead">
+      Los valores de cada escalón están siempre publicados en
+      <a href={buildUrl({ locale, path: 'publicar-restaurante' })}>el sitio</a>.
     </p>
     <p class="subhead">
       Con eso tenés <strong>una ficha publicada</strong>. Si manejás más de un local, se suma
@@ -226,6 +245,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gas
       <li><span class="tick">&check;</span><span>El <strong>enlace a tu carta</strong> y el rango de precios, para que el que llega sepa a qué atenerse. El enlace está en <strong>todos los planes</strong>, incluido el Básico.</span></li>
       <li><span class="tick">&check;</span><span><strong>La carta cargada plato por plato</strong>: secciones (entradas, principales, postres), cada plato con su nombre, su descripción y su precio — o &laquo;a consultar&raquo;, que también es un precio honesto. Se lee en tu página sin que nadie tenga que abrir un archivo, y Google la lee igual. Si preferís, subís una <strong>foto o un PDF</strong> del menú impreso y listo. Las dos formas van <strong>desde el plan Profesional</strong>.</span></li>
       <li><span class="tick tick--no">!</span><span><strong>Una foto por plato</strong>, al lado del plato en la carta — no una galería suelta donde nadie sabe cuál milanesa es cuál. La subís desde la fila del plato mientras cargás la carta. <strong>Va en el escalón Premium</strong>.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>La carta traducida al inglés y al portugués</strong>, con un selector de idioma en tu página para que el turista la lea en el suyo. Se arma sola a partir de la carta que ya cargaste, plato por plato. <strong>Va en el escalón Premium</strong>.</span></li>
       <li><span class="tick">&check;</span><span><strong>Lo que ofrece el local</strong>, tildado de una lista: si aceptás tarjeta, si hacés delivery o take away, si tomás reservas, si hay estacionamiento, terraza, wifi, música en vivo, si se puede ir con perro o si <strong>aceptás eventos</strong> (cumpleaños, empresas, casamientos) — con un botón de contacto directo en tu ficha.</span></li>
       <li><span class="tick">&check;</span><span><strong>Los aptos de tu carta</strong>: sin TACC, vegano, vegetariano, sin lactosa, sin frutos secos. Se tildan igual que el resto, aparecen en tu página y <strong>el que busca puede filtrar por ellos</strong> antes de elegir dónde comer. Están en todos los planes, desde el más básico: no le vamos a cobrar a nadie por avisar algo que a otro le puede hacer daño no saber.</span></li>
       <li><span class="tick">&check;</span><span><strong>El tipo de cocina</strong>: argentina, de río, italiana, peruana, internacional, asiática, mediterránea o de fusión — se tilda todo lo que corresponda, porque un mismo local puede ser parrilla y cocina de río a la vez. Aparece en tu página y sirve para que te encuentre el que ya sabe qué se le antoja comer.</span></li>
