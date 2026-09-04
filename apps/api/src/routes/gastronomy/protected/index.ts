@@ -31,6 +31,7 @@ import { protectedGetGastronomyMediaRoute } from './getMedia';
 import { protectedGetGastronomyMenuRoute } from './getMenu';
 import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedGetGastronomyMenuQrRoute } from './menuQr';
+import { protectedGetGastronomyMenuQrScansRoute } from './menuQrScans';
 import { protectedPatchGastronomyRoute } from './patch';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
@@ -101,6 +102,13 @@ app.route('/', protectedUploadGastronomyMenuItemPhotoRoute);
 // MENU_QR_ANALYTICS (gastronomy-premium). Registered before /{id} for the
 // same DEFENSIVE reason as the entries above.
 app.route('/', protectedGetGastronomyMenuQrRoute);
+
+// GET /{id}/menu-qr/scans — the scan aggregate for that same QR (HOS-1044
+// §6.4): total, daily series, device/OS/language breakdowns. Never mints —
+// a venue with no code yet gets an all-zero aggregate. Same gate as above,
+// three literal segments so ordering relative to /{id}/menu-qr is defensive
+// only (Hono matches exact segment counts).
+app.route('/', protectedGetGastronomyMenuQrScansRoute);
 
 // Menú del día (HOS-1041) — a dish with its own validity window. Registered
 // before /{id} for the same DEFENSIVE reason as the entries above.
