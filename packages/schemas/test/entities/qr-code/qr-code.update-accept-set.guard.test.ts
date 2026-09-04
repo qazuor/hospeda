@@ -55,7 +55,6 @@ const ACCEPTED_UPDATE_KEYS = [
     'isActive',
     'label',
     'renderOptions',
-    'source',
     'targetUrl'
 ] as const;
 
@@ -84,6 +83,11 @@ const FROZEN_UPDATE_FIELDS: ReadonlyArray<{ key: string; sample: unknown; why: s
         key: 'entityId',
         sample: '33333333-3333-4333-8333-333333333333',
         why: "part of the uniqueness key; re-pointing it at another subject makes a printed sticker send its owner's customers to someone else's page"
+    },
+    {
+        key: 'source',
+        sample: 'MANUAL',
+        why: 'records how the row came into existence, not how it is configured — and with the entity reference frozen, every flip of it contradicts the extras/039 CHECK and comes back as a 500 carrying a constraint name'
     }
 ];
 
