@@ -64,12 +64,16 @@ export interface BrochureContent {
     /**
      * Absolute URL of the public ficha.
      *
-     * Printed as readable text beside the code, and — since HOS-1129 — the
-     * value the QR REDIRECTS TO rather than the one it encodes. The symbol
-     * carries `{site}/qr/{qrSlug}/`, so a listing whose address moves does not
-     * strand every sheet already printed. The text stays the real address on
-     * purpose: it is there for a reader who cannot scan, and an opaque
-     * `/qr/K7Qm2XbT/` would tell that reader nothing.
+     * Since HOS-1129 this is where the QR LANDS, not what it encodes: the
+     * symbol carries `{site}/qr/{qrSlug}/`, so a listing whose address moves
+     * does not strand every sheet already printed. The route reads this to
+     * provision the code's `targetUrl`.
+     *
+     * It is NOT drawn on the sheet. The readable line beside the code is the
+     * bare domain instead — a deep URL printed next to a correctable symbol
+     * ages differently from it, and the day the ficha moves that line is dead
+     * while the code beside it still works. See `printedDomain` in
+     * `brochure-render`.
      */
     readonly url: string;
     /** Cover photo URL, already filtered for moderation state. */

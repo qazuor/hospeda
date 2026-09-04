@@ -121,11 +121,12 @@ export interface BrochureRenderInput {
      * What the QR encodes: `{site}/qr/{qrSlug}/`, the platform's own redirect
      * (HOS-1129).
      *
-     * Separate from `content.url` — which is the listing's real address, and is
-     * what gets PRINTED as readable text beside the code — because the two are
-     * no longer the same string and must not be confused. Resolving this one
-     * needs the database, so it is passed in rather than derived here: the
-     * renderer stays a pure function of its inputs.
+     * Separate from `content.url`, which is the listing's real address and is
+     * where this redirect LANDS. Nothing on the sheet draws `content.url` any
+     * more: the readable line beside the code is the bare domain, taken from
+     * this value's host (see `printedDomain`). Resolving this one needs the
+     * database, so it is passed in rather than derived here: the renderer stays
+     * a pure function of its inputs.
      */
     readonly qrUrl: string;
 }
@@ -371,6 +372,43 @@ function drawParagraph(input: {
  * not editable, and a code that points at us is a code we can repoint and
  * count.
  */
+/**
+ * What the readable line beside the QR says, when `qrUrl` cannot be parsed.
+ *
+ * A brochure must print something rather than a blank line, and this is the one
+ * string on the sheet that is true regardless of any row in any table.
+ */
+const FALLBACK_PRINTED_DOMAIN = 'hospeda.com.ar';
+
+/**
+ * The bare domain printed under the QR hint.
+ *
+ * DELIBERATELY the domain and NOT the listing's ficha — resist the urge to
+ * "improve" this by putting the full URL back. The symbol beside it is
+ * correctable (it encodes `/qr/{slug}/`, which we can repoint); the ink is not.
+ * Printing the deep address makes the two AGE DIFFERENTLY: the day the ficha
+ * moves the QR keeps working and the line under it is dead, on the same piece
+ * of paper, with nothing on the page to say which half to trust.
+ *
+ * Printing `/qr/{slug}/` instead would remove that asymmetry and cost the whole
+ * point of the line, which is the reader who cannot scan: nobody types,
+ * remembers or recognises an opaque identifier. The bare domain keeps that
+ * reader — the business's name is already set large at the top of the sheet, so
+ * the domain is enough to get there — and cannot die, because it points at
+ * nothing that can move. The accepted cost is that it stops being a direct
+ * link.
+ *
+ * Derived from `qrUrl` rather than taken from `content.url`, so the listing's
+ * real address no longer travels into the renderer merely to be printed.
+ */
+function printedDomain(qrUrl: string): string {
+    try {
+        return new URL(qrUrl).host;
+    } catch {
+        return FALLBACK_PRINTED_DOMAIN;
+    }
+}
+
 function drawQr(input: { page: PDFPage; url: string; x: number; y: number; size: number }): void {
     const { page, x, y, size } = input;
     const qr = renderQrMatrix({
@@ -599,8 +637,11 @@ export async function renderBrochurePdf(
         textY += BODY_SIZE * LEADING;
     }
     textY += 4;
+    // The bare domain, not the ficha's address — see `printedDomain`. Paper is
+    // not correctable and a deep URL printed beside a redirectable symbol ages
+    // differently from it.
     for (const line of wrapText({
-        text: content.url,
+        text: printedDomain(qrUrl),
         font: fonts.regular,
         size: SMALL_SIZE,
         maxWidth: textWidth
