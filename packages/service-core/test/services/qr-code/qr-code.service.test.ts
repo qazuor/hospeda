@@ -291,7 +291,8 @@ describe('QrCodeService', () => {
                 margin: 4,
                 size: null,
                 foregroundColor: '#000000',
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                centerLogo: 'NONE'
             });
         });
 
