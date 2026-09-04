@@ -39,7 +39,7 @@ src/
 | Set | Count | Definition file |
 |-----|-------|-----------------|
 | `EntitlementKey` enum members | 51 | `src/types/entitlement.types.ts` |
-| `LimitKey` enum members | 19 | `src/types/plan.types.ts` |
+| `LimitKey` enum members | 21 | `src/types/plan.types.ts` |
 | Runtime guards | 2 (`isEntitlementKey`, `isLimitKey`) | `src/types/guards.ts` |
 
 Guards use `Object.values(...)` to build `ReadonlySet` look-up tables at

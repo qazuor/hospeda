@@ -70,7 +70,34 @@ export enum LimitKey {
      * The experience-side twin of {@link MAX_GASTRONOMIES} — see its doc for
      * why the two caps are separate rather than pooled.
      */
-    MAX_EXPERIENCES = 'max_experiences'
+    MAX_EXPERIENCES = 'max_experiences',
+
+    /**
+     * Monthly AI-chat quota borne by a GASTRONOMY listing's owner (HOS-400).
+     *
+     * The gastronomy twin of {@link MAX_AI_CHAT_PER_MONTH}, which stays
+     * accommodation-only. The caps are separate for the same reason
+     * {@link MAX_GASTRONOMIES} and {@link MAX_EXPERIENCES} are: commerce
+     * billing is per-OWNER and per-VERTICAL, and SPEC-239 isolates the domains
+     * on purpose. A single pooled AI-chat cap would let an owner who is at once
+     * a host and a restaurateur spend their accommodation plan's chat budget on
+     * gastronomy traffic (and the reverse) — exactly the cross-domain leak
+     * `subscriptionMatchesDomain()` exists to prevent.
+     *
+     * A separate cap is only HALF the isolation. The quota is enforced by
+     * counting `ai_usage` rows keyed by `(userId, feature)`, so each vertical's
+     * cap is paired with its own `AiFeature` (`chat_gastronomy`). Two limit keys
+     * over one shared `'chat'` counter would be two numbers reading the same
+     * bucket.
+     */
+    MAX_AI_CHAT_GASTRONOMY_PER_MONTH = 'max_ai_chat_gastronomy_per_month',
+    /**
+     * Monthly AI-chat quota borne by an EXPERIENCE listing's owner (HOS-400).
+     * The experience-side twin of {@link MAX_AI_CHAT_GASTRONOMY_PER_MONTH} — see
+     * its doc for why each vertical carries both its own cap AND its own
+     * `AiFeature` counter rather than sharing either.
+     */
+    MAX_AI_CHAT_EXPERIENCE_PER_MONTH = 'max_ai_chat_experience_per_month'
 }
 
 /**

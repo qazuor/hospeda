@@ -39,7 +39,7 @@
  */
 
 import { aiConversations, aiMessages, getDb } from '@repo/db';
-import type { AiFeature, StreamTextFinalMeta } from '@repo/schemas';
+import type { AiChatEntityType, AiFeature, StreamTextFinalMeta } from '@repo/schemas';
 import { apiLogger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
@@ -217,8 +217,23 @@ export async function persistConversationTurn(
 export interface PersistChatTurnInput {
     /** The authenticated user's id (FK → `users.id`). */
     readonly userId: string;
-    /** The accommodation being chatted about (stored in `contextNote` JSON). */
-    readonly accommodationId: string;
+    /**
+     * The listing being chatted about, stored in the `contextNote` JSON
+     * (HOS-400).
+     *
+     * `entityType` is written alongside `entityId` because the id alone is
+     * ambiguous once three verticals share this table: a UUID in `contextNote`
+     * says nothing about which table it points into, and a reader would have to
+     * probe all three to find out.
+     *
+     * `accommodationId` is ALSO written, and only for `'accommodation'`, so rows
+     * created before this change keep the same shape as rows created after it —
+     * anything already reading that key keeps working. It is a compatibility
+     * echo, not a second source of truth: prefer `entityType` + `entityId`.
+     */
+    readonly entityType: AiChatEntityType;
+    /** The listing id. See {@link entityType}. */
+    readonly entityId: string;
     /**
      * Existing conversation id, or `null` for the first turn. When `null`,
      * a new `aiConversations` row is created; when a UUID, the helper
@@ -258,8 +273,17 @@ export type PersistChatTurnOutput = PersistConversationTurnOutput;
 export async function persistChatTurn(input: PersistChatTurnInput): Promise<PersistChatTurnOutput> {
     return persistConversationTurn({
         userId: input.userId,
+        // The conversation `feature` column stays `'chat'` for every vertical.
+        // It groups a user's chat history in the inbox, where three buckets that
+        // read identically to a person would be noise; the METERING feature (the
+        // one that must differ per vertical) lives on `ai_usage`, not here.
         feature: 'chat',
-        contextNote: JSON.stringify({ accommodationId: input.accommodationId }),
+        contextNote: JSON.stringify({
+            entityType: input.entityType,
+            entityId: input.entityId,
+            // Compatibility echo — see PersistChatTurnInput.entityType.
+            ...(input.entityType === 'accommodation' ? { accommodationId: input.entityId } : {})
+        }),
         conversationId: input.conversationId,
         userMessage: input.userMessage,
         assistantMessage: input.assistantMessage,

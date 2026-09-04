@@ -30,6 +30,10 @@ export type AiProvidersMap = Record<string, AiProviderConfig>;
 export type AiFeatureId =
     | 'text_improve'
     | 'chat'
+    // HOS-400: per-vertical chat features (own metering counter each), same
+    // product and same entitlement as `chat` — see FEATURE_LABELS below.
+    | 'chat_gastronomy'
+    | 'chat_experience'
     | 'search'
     | 'support'
     | 'translate'
@@ -162,7 +166,13 @@ export function getProviderLabel(providerId: AiProviderId): string {
 /** Display-friendly feature name map. */
 export const FEATURE_LABELS: Record<AiFeatureId, string> = {
     text_improve: 'Mejora de texto',
-    chat: 'Chat',
+    // HOS-400: three chat features, one per vertical. They are the same product
+    // gated by the same entitlement — the split exists so each vertical's
+    // monthly quota counts its own `ai_usage` rows. Labelled by vertical here so
+    // the usage and cost panels do not show three rows all called "Chat".
+    chat: 'Chat (alojamientos)',
+    chat_gastronomy: 'Chat (gastronomía)',
+    chat_experience: 'Chat (experiencias)',
     search: 'Búsqueda',
     support: 'Soporte',
     translate: 'Traducción',

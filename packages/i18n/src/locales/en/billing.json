@@ -364,6 +364,12 @@
         "max_ai_chat_consumer_per_month": {
             "title": "You've reached your AI assistant chat limit"
         },
+        "max_ai_chat_gastronomy_per_month": {
+            "title": "You've reached your gastronomy AI chat limit"
+        },
+        "max_ai_chat_experience_per_month": {
+            "title": "You've reached your experience AI chat limit"
+        },
         "max_ai_search_per_month": {
             "title": "You've reached your AI search limit"
         },
@@ -637,6 +643,8 @@
             "max_ai_text_improve_per_month": "AI text improvements per month",
             "max_ai_chat_per_month": "AI chat queries per month",
             "max_ai_chat_consumer_per_month": "AI assistant queries per month",
+            "max_ai_chat_gastronomy_per_month": "AI chat queries (gastronomy) per month",
+            "max_ai_chat_experience_per_month": "AI chat queries (experiences) per month",
             "max_ai_search_per_month": "AI searches per month",
             "max_ai_support_per_month": "AI support queries per month",
             "max_ai_translate_per_month": "AI translations per month",
@@ -657,6 +665,8 @@
         "max_ai_text_improve_per_month": "How many times a month you can ask the AI to improve your texts. The quota resets at the start of each month.",
         "max_ai_chat_per_month": "How many questions the AI can answer about your places each month. Once spent, it comes back the following month.",
         "max_ai_chat_consumer_per_month": "How many questions you can ask the AI assistant each month. Once spent, the quota resets the following month.",
+        "max_ai_chat_gastronomy_per_month": "How many questions the AI can answer about your restaurant each month. Once spent, it comes back the following month.",
+        "max_ai_chat_experience_per_month": "How many questions the AI can answer about your experience each month. Once spent, it comes back the following month.",
         "max_ai_search_per_month": "How many AI searches you can run each month. Once spent, you keep using the regular search until the following month.",
         "max_ai_support_per_month": "How many questions a month you can ask the AI support assistant. The quota resets at the start of each month.",
         "max_ai_translate_per_month": "How many automatic translations of your content you can request each month. The quota resets at the start of each month.",

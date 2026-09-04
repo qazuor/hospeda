@@ -7,12 +7,16 @@
  */
 
 import { ChatIcon } from '@repo/icons';
+import type { AiChatEntityType } from '@repo/schemas';
 import { forwardRef } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AiChatFab.module.css';
+import { aiChatCopyKey } from './AiChatWidget';
 
 export interface AiChatFabProps {
+    /** Which kind of listing the chat is about, for the vertical-specific label. */
+    readonly entityType: AiChatEntityType;
     readonly isOpen: boolean;
     readonly onClick: () => void;
     readonly locale: SupportedLocale;
@@ -27,7 +31,7 @@ export interface AiChatFabProps {
  * @param ref - Forwarded ref to the underlying `<button>` element.
  */
 export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function AiChatFab(
-    { isOpen, onClick, locale },
+    { isOpen, onClick, locale, entityType },
     ref
 ) {
     if (isOpen) return null;
@@ -40,7 +44,7 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             type="button"
             className={styles.fab}
             onClick={onClick}
-            aria-label={t('accommodations.aiChat.fabLabel')}
+            aria-label={t(aiChatCopyKey(entityType, 'fabLabel'))}
         >
             <ChatIcon
                 size={24}

@@ -78,6 +78,11 @@ const AI_FEATURE_BY_LIMIT_KEY: Readonly<Record<string, string | undefined>> = {
     [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 'text_improve',
     [LimitKey.MAX_AI_CHAT_PER_MONTH]: 'chat',
     [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: 'chat',
+    // HOS-400 — each commerce vertical meters under its OWN AiFeature, which is
+    // what keeps the counts from pooling. Mapping either of these to 'chat'
+    // would report an owner's accommodation usage against their gastronomy cap.
+    [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: 'chat_gastronomy',
+    [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: 'chat_experience',
     [LimitKey.MAX_AI_SEARCH_PER_MONTH]: 'search',
     [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: 'support',
     [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: 'translate',
@@ -140,6 +145,12 @@ const USAGE_KIND_BY_LIMIT_KEY: Readonly<Record<string, UsageKindValue>> = {
     [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_CHAT_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: UsageKind.MONTHLY,
+    // HOS-400 — MEASURED, not unbuilt. `usageKindForLimit` defaults an unmapped
+    // key to UNBUILT, so leaving these out would hide a commerce owner's real
+    // chat consumption from their own subscription page forever, with nothing
+    // failing anywhere.
+    [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_SEARCH_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: UsageKind.MONTHLY,

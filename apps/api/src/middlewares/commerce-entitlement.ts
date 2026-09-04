@@ -90,10 +90,15 @@
  */
 
 import {
+    AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
     type CommerceVertical,
     commerceVerticalToProductDomain,
     ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL,
-    type EntitlementKey,
+    // Imported as a VALUE, not `import type`: HOS-400 reads `EntitlementKey.AI_CHAT`
+    // to detect a plan row that grants the chat without capping it. An enum
+    // import serves as both the type and the value, so `Set<EntitlementKey>`
+    // below is unaffected.
+    EntitlementKey,
     getUnlimitedEntitlements,
     isEntitlementGrantingStatus,
     isEntitlementKey,
@@ -124,6 +129,26 @@ import { getQZPayBilling } from './billing';
  * and {@link loadVerticalBaseLimit} reads it on every cache miss.
  */
 const FALLBACK_VERTICAL_CAP = 1;
+
+/**
+ * AI-chat quota for a commerce owner whose plan row does not supply one (HOS-400).
+ *
+ * ZERO, not the "unknown" of {@link FALLBACK_VERTICAL_CAP}. The listing cap and
+ * the chat cap fail in opposite directions on purpose:
+ *
+ * - A listing cap that cannot be read must still let an owner keep the listing
+ *   they already paid for, so it falls back to a permissive one.
+ * - A chat quota that cannot be read must not authorise spend. There is no
+ *   "already bought" chat to protect, and every layer beneath this one resolves
+ *   an unresolved cap as UNLIMITED — so "I don't know" has to be answered here,
+ *   with a number, or it becomes an uncapped bill.
+ *
+ * This is not the gate. `AI_CHAT` is absent from the code floor, so an owner
+ * without a granting plan row is refused by the entitlement check before the
+ * quota is read at all. The zero covers what the gate cannot see: a plan row
+ * that grants the chat and forgets to cap it.
+ */
+const AI_CHAT_CAP_WITHOUT_PLAN = 0;
 
 /** TTL of the per-vertical base-cap memo. Matches the entitlement cache TTL. */
 const BASE_LIMIT_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -291,24 +316,26 @@ export async function resolveCommerceVerticalCap(input: {
 export async function resolveCommerceVerticalGrants(input: {
     customerId: string | null | undefined;
     vertical: CommerceVertical;
-}): Promise<{ cap: number; entitlements: Set<EntitlementKey> }> {
+}): Promise<{ cap: number; aiChatCap: number; entitlements: Set<EntitlementKey> }> {
     const { customerId, vertical } = input;
     const limitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
+    const aiChatLimitKey = AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
     const baseCap = await loadVerticalBaseLimit(vertical);
 
     // The floor, from code. Never narrowed below this point — only added to.
     const entitlements = new Set<EntitlementKey>(ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[vertical]);
 
     if (!customerId) {
-        return { cap: baseCap, entitlements };
+        return { cap: baseCap, aiChatCap: AI_CHAT_CAP_WITHOUT_PLAN, entitlements };
     }
 
     const billing = getQZPayBilling();
     if (!billing) {
-        return { cap: baseCap, entitlements };
+        return { cap: baseCap, aiChatCap: AI_CHAT_CAP_WITHOUT_PLAN, entitlements };
     }
 
     let cap = baseCap;
+    let aiChatCap = AI_CHAT_CAP_WITHOUT_PLAN;
 
     try {
         const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
@@ -336,6 +363,33 @@ export async function resolveCommerceVerticalGrants(input: {
                         planId: activeSubscription.planId
                     },
                     'commerce subscription plan does not declare the vertical cap — keeping the base cap'
+                );
+            }
+
+            // HOS-400 — the vertical's AI-chat quota, off the SAME plan row.
+            // Unlike the listing cap there is no DB "base" to fall back to, and
+            // the fallback direction is the opposite one: a row that does not
+            // declare the key leaves the quota at zero, never unlimited.
+            //
+            // That is consistent rather than merely cautious. `AI_CHAT` is NOT
+            // in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, so it reaches an owner
+            // ONLY from this same plan row — a lagging row therefore fails the
+            // entitlement gate first and the quota is never consulted. The zero
+            // is what covers the one incoherent state left: a row that grants
+            // the chat but declares no cap, which would otherwise resolve to
+            // unlimited through the layers beneath.
+            const planAiChatCap = plan?.limits?.[aiChatLimitKey];
+            if (typeof planAiChatCap === 'number') {
+                aiChatCap = planAiChatCap;
+            } else if (plan?.entitlements?.includes(EntitlementKey.AI_CHAT)) {
+                apiLogger.warn(
+                    {
+                        vertical,
+                        subscriptionId: activeSubscription.id,
+                        planId: activeSubscription.planId,
+                        aiChatLimitKey
+                    },
+                    'commerce plan grants AI_CHAT but declares no chat quota — refusing the chat rather than leaving it uncapped'
                 );
             }
 
@@ -375,7 +429,7 @@ export async function resolveCommerceVerticalGrants(input: {
         );
     }
 
-    return { cap, entitlements };
+    return { cap, aiChatCap, entitlements };
 }
 
 /**

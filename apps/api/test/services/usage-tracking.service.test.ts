@@ -829,7 +829,11 @@ describe('UsageTrackingService', () => {
             // Act
             const result = await service.getUsageSummary(mockCustomerId);
 
-            // Assert — the eight account-wide stocks plus the seven AI meters.
+            // Assert — the eight account-wide stocks plus the NINE AI meters.
+            // HOS-400 took the AI meters from seven to nine: each commerce
+            // vertical's chat cap is measured, because it has a real counter
+            // (its own AiFeature, via AI_FEATURE_BY_LIMIT_KEY). Recounted from
+            // USAGE_KIND_BY_LIMIT_KEY, not incremented from the old number.
             expect(result.success).toBe(true);
             const measured = result
                 .data!.limits.filter((l) => l.isMeasured)
@@ -849,6 +853,8 @@ describe('UsageTrackingService', () => {
                     LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
                     LimitKey.MAX_AI_CHAT_PER_MONTH,
                     LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
+                    LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH,
+                    LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH,
                     LimitKey.MAX_AI_SEARCH_PER_MONTH,
                     LimitKey.MAX_AI_SUPPORT_PER_MONTH,
                     LimitKey.MAX_AI_TRANSLATE_PER_MONTH,

@@ -109,7 +109,8 @@ async function renderOpenPanel() {
     mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
     render(
         <AiChatWidget
-            accommodationId="550e8400-e29b-41d4-a716-446655440000"
+            entityType="accommodation"
+            entityId="550e8400-e29b-41d4-a716-446655440000"
             locale="es"
             apiUrl="http://localhost:3001"
         />

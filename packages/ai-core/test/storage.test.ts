@@ -107,6 +107,23 @@ const VALID_SETTINGS_BLOB = {
             model: 'claude-3-5-sonnet-20241022',
             params: {}
         },
+        // HOS-400: separate AiFeature values from `chat` (own metering
+        // counter per commerce vertical); the write record requires every
+        // AiFeature key.
+        chat_gastronomy: {
+            enabled: false,
+            primaryProvider: 'openai' as const,
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
+        },
+        chat_experience: {
+            enabled: false,
+            primaryProvider: 'openai' as const,
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
+        },
         search: {
             enabled: false,
             primaryProvider: 'openai' as const,

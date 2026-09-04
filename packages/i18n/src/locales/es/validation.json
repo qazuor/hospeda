@@ -558,6 +558,17 @@
         }
     },
     "ai": {
+        "chat": {
+            "accommodationId": {
+                "invalidUuid": "El ID del alojamiento debe ser un UUID válido",
+                "notAllowedForEntityType": "No se puede enviar accommodationId cuando la consulta es sobre gastronomía o experiencias"
+            },
+            "entityId": {
+                "conflictsWithAccommodationId": "entityId y accommodationId apuntan a fichas distintas",
+                "invalidUuid": "El ID de la ficha debe ser un UUID válido",
+                "required": "Falta el ID de la ficha sobre la que se consulta"
+            }
+        },
         "textImprove": {
             "entityId": {
                 "invalidUuid": "El ID de la entidad debe ser un UUID válido"

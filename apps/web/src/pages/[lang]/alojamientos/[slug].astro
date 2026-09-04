@@ -666,7 +666,8 @@ const faqSections = accommodation.faqs.map((faq) => ({
          position:fixed, so appearing after hydration shifts nothing. -->
     <AiChatWidget
         client:idle
-        accommodationId={accommodation.id}
+        entityType="accommodation"
+        entityId={accommodation.id}
         locale={locale}
         apiUrl={getApiUrl()}
     />

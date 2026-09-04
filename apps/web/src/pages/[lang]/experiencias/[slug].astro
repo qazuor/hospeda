@@ -34,6 +34,8 @@ import { hasPublicContactChannel } from '@/lib/experience-contact';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getApiUrl } from '@/lib/env';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq } from '@/data/types';
 
@@ -346,6 +348,20 @@ const breadcrumbItems = [
             locale={locale}
         />
     </div>
+    <!-- AI chat widget (HOS-400) — signed-in visitors only, resolved in the
+         browser. Mounted unconditionally, exactly as the accommodation page
+         does: the widget renders nothing until it resolves a session, and both
+         the FAB and the panel are position:fixed, so appearing after hydration
+         shifts nothing. Whether the OWNER's plan grants the chat is decided
+         server-side; an owner without it answers 403 with the vertical's own
+         copy rather than a message about an accommodation. -->
+    <AiChatWidget
+        client:idle
+        entityType="experience"
+        entityId={experience.id}
+        locale={locale}
+        apiUrl={getApiUrl()}
+    />
 </DetailLayout>
 
 <style>

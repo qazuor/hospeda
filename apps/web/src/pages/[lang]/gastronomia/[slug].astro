@@ -38,6 +38,7 @@ import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.clie
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -448,6 +449,20 @@ const breadcrumbItems = [
             locale={locale}
         />
     </div>
+    <!-- AI chat widget (HOS-400) — signed-in visitors only, resolved in the
+         browser. Mounted unconditionally, exactly as the accommodation page
+         does: the widget renders nothing until it resolves a session, and both
+         the FAB and the panel are position:fixed, so appearing after hydration
+         shifts nothing. Whether the OWNER's plan grants the chat is decided
+         server-side; an owner without it answers 403 with the vertical's own
+         copy rather than a message about an accommodation. -->
+    <AiChatWidget
+        client:idle
+        entityType="gastronomy"
+        entityId={gastronomy.id}
+        locale={locale}
+        apiUrl={getApiUrl()}
+    />
 </DetailLayout>
 
 <style>
