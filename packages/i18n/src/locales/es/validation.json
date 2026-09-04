@@ -12,6 +12,11 @@
             "min": "El nombre del código QR es obligatorio"
         },
         "renderOptions": {
+            "centerLogo": {
+                "levelRequiredWithLogo": "Al activar el logo central hay que indicar también el nivel de corrección de errores, porque el guardado no se puede ver desde acá",
+                "logoRequiredWithLevel": "Al bajar el nivel de corrección de errores hay que indicar también si el código lleva logo central, porque el guardado no se puede ver desde acá",
+                "requiresErrorCorrection": "Para llevar el logo central, el código necesita un nivel de corrección de errores más alto (Q o H): el logo tapa parte del símbolo y sólo la corrección lo vuelve legible"
+            },
             "color": {
                 "invalid": "El color debe ser hexadecimal, con el formato #rgb, #rrggbb o #rrggbbaa"
             },
@@ -2470,6 +2475,9 @@
         },
         "productType": {
             "invalid": "El product type no es válido"
+        },
+        "qrCodeCenterLogo": {
+            "invalid": "El logo central del código QR no es válido"
         },
         "qrCodeErrorCorrectionLevel": {
             "invalid": "El nivel de corrección de errores no es válido"

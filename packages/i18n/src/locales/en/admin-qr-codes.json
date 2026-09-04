@@ -35,6 +35,9 @@
         "renderHelp": "Only the fields you touch are saved; the rest stay as they were.",
         "formatLabel": "Format",
         "errorCorrectionLabel": "Error correction",
+        "centerLogoLabel": "Centre logo",
+        "centerLogoHelp": "The logo covers part of the symbol; error correction is what keeps it readable.",
+        "centerLogoNeedsCorrection": "A centre logo does not fit at this error-correction level. Raise it to Q or H.",
         "marginLabel": "Margin (modules)",
         "sizeLabel": "Size (pixels)",
         "sizePlaceholder": "Empty = scales freely",
@@ -54,6 +57,10 @@
         "M": "M — medium (~15%)",
         "Q": "Q — high (~25%)",
         "H": "H — highest (~30%)"
+    },
+    "centerLogo": {
+        "NONE": "No logo",
+        "HOSPEDA": "Hospeda logo"
     },
     "download": {
         "title": "Download",

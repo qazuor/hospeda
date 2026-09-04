@@ -11,6 +11,7 @@ import {
     QR_CODE_DEFAULT_FOREGROUND_COLOR,
     QR_CODE_DEFAULT_MARGIN,
     QrCodeAdminSearchSchema,
+    QrCodeCenterLogoEnum,
     QrCodeCreateHttpSchema,
     QrCodeCreateInputSchema,
     QrCodeErrorCorrectionLevelEnum,
@@ -67,7 +68,8 @@ describe('QrCodeRenderOptionsSchema', () => {
             margin: 2,
             size: 512,
             foregroundColor: '#123456',
-            backgroundColor: '#abcdef12'
+            backgroundColor: '#abcdef12',
+            centerLogo: QrCodeCenterLogoEnum.HOSPEDA
         });
 
         expect(parsed).toStrictEqual({
@@ -76,7 +78,8 @@ describe('QrCodeRenderOptionsSchema', () => {
             margin: 2,
             size: 512,
             foregroundColor: '#123456',
-            backgroundColor: '#abcdef12'
+            backgroundColor: '#abcdef12',
+            centerLogo: QrCodeCenterLogoEnum.HOSPEDA
         });
     });
 
@@ -421,7 +424,8 @@ describe('QrCodeRenderOptionsPatchSchema', () => {
             margin: QR_CODE_DEFAULT_MARGIN,
             size: null,
             foregroundColor: QR_CODE_DEFAULT_FOREGROUND_COLOR,
-            backgroundColor: QR_CODE_DEFAULT_BACKGROUND_COLOR
+            backgroundColor: QR_CODE_DEFAULT_BACKGROUND_COLOR,
+            centerLogo: QrCodeCenterLogoEnum.NONE
         });
     });
 });

@@ -4,7 +4,11 @@
  * @module test/utils/qr-render
  */
 
-import { QrCodeErrorCorrectionLevelEnum, QrCodeFormatEnum } from '@repo/schemas';
+import {
+    QrCodeCenterLogoEnum,
+    QrCodeErrorCorrectionLevelEnum,
+    QrCodeFormatEnum
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     renderQr,
@@ -24,7 +28,8 @@ describe('resolveQrRenderOptions', () => {
             margin: 4,
             size: null,
             foregroundColor: '#000000',
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            centerLogo: QrCodeCenterLogoEnum.NONE
         });
     });
 
@@ -37,7 +42,8 @@ describe('resolveQrRenderOptions', () => {
                     margin: 1,
                     size: 256,
                     foregroundColor: '#112233',
-                    backgroundColor: '#eeddcc'
+                    backgroundColor: '#eeddcc',
+                    centerLogo: QrCodeCenterLogoEnum.HOSPEDA
                 }
             })
         ).toStrictEqual({
@@ -46,7 +52,8 @@ describe('resolveQrRenderOptions', () => {
             margin: 1,
             size: 256,
             foregroundColor: '#112233',
-            backgroundColor: '#eeddcc'
+            backgroundColor: '#eeddcc',
+            centerLogo: QrCodeCenterLogoEnum.HOSPEDA
         });
     });
 

@@ -3,8 +3,10 @@ import {
     QR_CODE_MAX_SIZE,
     QR_CODE_MIN_MARGIN,
     QR_CODE_MIN_SIZE,
+    QrCodeCenterLogoEnum,
     QrCodeErrorCorrectionLevelEnum,
-    QrCodeFormatEnum
+    QrCodeFormatEnum,
+    qrCodeCenterLogoFits
 } from '@repo/schemas';
 import type { ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,6 +136,68 @@ export function QrCodeRenderFields({ Field, invalidFields }: QrCodeRenderFieldsP
                             </Select>
                             {fieldError('renderOptions.errorCorrectionLevel')}
                         </div>
+                    )}
+                </Field>
+
+                {/*
+                 * The centre mark, nested inside a read-only Field on the
+                 * correction level so the two can be shown together.
+                 *
+                 * Nested rather than read off `form.state`, which is frozen at
+                 * first render — the warning would then keep saying the level
+                 * is too low after the operator had already raised it, or worse,
+                 * stop saying it after they lowered it. A nested Field
+                 * re-renders with the value.
+                 *
+                 * The select is never disabled. The server refuses the pair and
+                 * says why; a control that silently could not be clicked would
+                 * leave an operator with no idea what to change.
+                 */}
+                <Field name="renderOptions.errorCorrectionLevel">
+                    {(level: FieldApiLike<QrCodeErrorCorrectionLevelEnum>) => (
+                        <Field name="renderOptions.centerLogo">
+                            {(field: FieldApiLike<QrCodeCenterLogoEnum>) => (
+                                <div className="space-y-1">
+                                    <Label htmlFor="centerLogo">
+                                        {t('admin-qr-codes.form.centerLogoLabel')}
+                                    </Label>
+                                    <Select
+                                        value={field.state.value}
+                                        onValueChange={(v) =>
+                                            field.handleChange(v as QrCodeCenterLogoEnum)
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            id="centerLogo"
+                                            className="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value={QrCodeCenterLogoEnum.NONE}>
+                                                {t('admin-qr-codes.centerLogo.NONE')}
+                                            </SelectItem>
+                                            <SelectItem value={QrCodeCenterLogoEnum.HOSPEDA}>
+                                                {t('admin-qr-codes.centerLogo.HOSPEDA')}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {qrCodeCenterLogoFits({
+                                        centerLogo: field.state.value,
+                                        errorCorrectionLevel: level.state.value
+                                    }) ? (
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('admin-qr-codes.form.centerLogoHelp')}
+                                        </p>
+                                    ) : (
+                                        <p className="text-destructive text-xs">
+                                            {t('admin-qr-codes.form.centerLogoNeedsCorrection')}
+                                        </p>
+                                    )}
+                                    {fieldError('renderOptions.centerLogo')}
+                                </div>
+                            )}
+                        </Field>
                     )}
                 </Field>
 

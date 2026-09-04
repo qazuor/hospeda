@@ -658,7 +658,8 @@ describe('POST /admin/qr-codes', () => {
             margin: 4,
             size: null,
             foregroundColor: '#000000',
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            centerLogo: 'NONE'
         });
     });
 
