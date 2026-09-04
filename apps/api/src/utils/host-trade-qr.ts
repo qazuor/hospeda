@@ -1,5 +1,6 @@
 import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
 import { buildHostTradeUsageUrl } from '@repo/service-core';
+import { buildQrScanUrl } from './entity-qr.js';
 import { renderQrSvg } from './qr-render.js';
 
 /**
@@ -51,9 +52,6 @@ const QR_MARGIN = 4;
  */
 const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.M;
 
-/** Top-level path of the platform's own redirect endpoint. */
-const QR_SCAN_PATH_PREFIX = '/qr';
-
 /**
  * Re-exported so `apps/api` keeps one import site for the provider QR's two
  * URLs. The builder itself lives in `@repo/service-core` because
@@ -65,14 +63,12 @@ export { buildHostTradeUsageUrl };
 /**
  * Builds the URL the QR actually encodes.
  *
- * The trailing slash is deliberate: `apps/web` runs with
- * `trailingSlash: 'always'`, so the slash-less form costs every single scan an
- * extra redirect hop before the one the code exists to perform. On a printed
- * code that hop is not recoverable later.
- *
- * The path is language-neutral on purpose — `/qr/…`, never `/{lang}/qr/…`. A
- * locale baked into ink would choose, permanently, what language every future
- * scanner reads the site in. See `apps/web/src/pages/qr/[slug].astro`.
+ * A thin alias over {@link buildQrScanUrl} since HOS-1129, which gave the
+ * brochure and the certificate the same redirect. The path itself is spelled
+ * once, in `utils/entity-qr.ts`: a second spelling would not fail anywhere —
+ * it would quietly start sending one family of already-printed codes to a 404.
+ * The name survives so the provider's call sites still say which code they
+ * mean.
  *
  * @param input - Input parameters.
  * @param input.qrSlug - The QR CODE's slug (`qr_codes.slug`), not the listing's.
@@ -84,12 +80,7 @@ export function buildHostTradeQrScanUrl(input: {
     readonly qrSlug: string;
     readonly siteUrl: string;
 }): string {
-    const base = input.siteUrl.replace(/\/$/, '');
-    // The QR alphabet has no URL metacharacters, so this encodes nothing today.
-    // It is here so a value from outside that alphabet 404s rather than
-    // truncating the path into a different page.
-    const qrSlug = encodeURIComponent(input.qrSlug);
-    return `${base}${QR_SCAN_PATH_PREFIX}/${qrSlug}/`;
+    return buildQrScanUrl(input);
 }
 
 /**
