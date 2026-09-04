@@ -14,6 +14,7 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
+import FeaturedAddonOffer from '@/components/host/editor/FeaturedAddonOffer.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import {
 	ACCOMMODATION_EDITOR_REGISTRY,
@@ -83,4 +84,24 @@ const statuses = resolveEditorSectionStatuses({
 		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
 	/>
+
+	{/*
+	 * HOS-318 D-10 / HOS-929: no nav item and no hub row — rendered here at
+	 * the foot, where it costs the hub nothing. Self-hides once the listing
+	 * is featured from either source (see the component header).
+	 */}
+	<div class="editor-hub-page__extra">
+		<FeaturedAddonOffer
+			locale={locale}
+			isFeatured={accommodation.isFeatured}
+			featuredByEntitlement={accommodation.featuredByEntitlement}
+		/>
+	</div>
 </EditorSectionLayout>
+
+<style>
+	.editor-hub-page__extra {
+		max-width: 720px;
+		margin-top: var(--space-5, 1.5rem);
+	}
+</style>

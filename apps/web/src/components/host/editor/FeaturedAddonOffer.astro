@@ -1,0 +1,149 @@
+---
+/**
+ * @file FeaturedAddonOffer.astro
+ * @description The featured-listing addon upsell in the accommodation editor
+ * hub (HOS-728, restored HOS-929).
+ *
+ * HOS-929 (2026-08-29 owner decision) retired the owner self-service featured
+ * TOGGLE: holding a FEATURED_LISTING entitlement (plan or accommodation-scoped
+ * addon) now features the listing automatically, with no second owner
+ * gesture. `FeaturedToggleSection.client.tsx`, which rendered both the toggle
+ * AND this upsell, was deleted along with it — but the upsell itself is a
+ * separate concern (HOS-728: the visibility-boost add-ons are a third of the
+ * sellable catalog with no other discovery path — they raise no quota and
+ * block no action) and the owner asked for it back in this same change.
+ *
+ * Rendered SSR-only, deliberately NOT a React island: the page already has
+ * the accommodation's `isFeatured` / `featuredByEntitlement` columns loaded
+ * server-side (`resolveEditorPage`), so there is nothing left to fetch on
+ * mount. The original component's HOS-1031 bug (a `client:visible` island
+ * whose first render was `return null`, so its zero-size `<astro-island>`
+ * wrapper never got an observable area to hydrate against) cannot recur here
+ * because there is no island and no client-side loading state at all.
+ *
+ * Self-hides when the listing is already featured, from either source: the
+ * gesture "you should buy this" makes no sense once it is already true.
+ */
+import { translateAddonName } from '@/lib/addon-labels';
+import {
+	buildFeaturedAddonOffers,
+	isAccommodationAlreadyFeatured
+} from '@/lib/billing/featured-addon-offer';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** Admin-curated flag — true means already featured regardless of entitlement. */
+	readonly isFeatured: boolean;
+	/** Billing-derived flag (SPEC-292/SPEC-309 OQ-3) — true means an active plan or addon entitlement currently features this listing. */
+	readonly featuredByEntitlement: boolean;
+}
+
+const { locale, isFeatured, featuredByEntitlement } = Astro.props;
+const { t } = createTranslations(locale);
+
+const alreadyFeatured = isAccommodationAlreadyFeatured({ isFeatured, featuredByEntitlement });
+const offers = alreadyFeatured ? [] : buildFeaturedAddonOffers({ locale });
+---
+
+{!alreadyFeatured && (
+	<section class="featured-offer" aria-labelledby="featured-offer-title" data-testid="featured-addon-offer">
+		<p class="featured-offer__notice">
+			{t('account.addons.featuredOffer.notFeaturedNotice', 'Your accommodation is not featured. This add-on features it automatically, no extra step needed.')}
+		</p>
+
+		<h2 id="featured-offer-title" class="featured-offer__title">
+			{t('account.addons.featuredOffer.title', 'Feature this accommodation')}
+		</h2>
+
+		<p class="featured-offer__body">
+			{t('account.addons.featuredOffer.body', 'A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.')}
+		</p>
+
+		<p class="featured-offer__scope">
+			{t('account.addons.featuredOffer.scope', 'Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.')}
+		</p>
+
+		<ul class="featured-offer__list">
+			{offers.map((offer) => (
+				<li>
+					<a class="featured-offer__link" href={offer.href} data-addon-slug={offer.slug}>
+						{translateAddonName({ t, slug: offer.slug, fallback: offer.nameFallback })}
+						<span class="sr-only">{` ${t('account.addons.featuredOffer.linkSr', 'for this accommodation')}`}</span>
+					</a>
+				</li>
+			))}
+		</ul>
+	</section>
+)}
+
+<style>
+	.featured-offer {
+		display: flex;
+		flex-direction: column;
+		gap: 0.625rem;
+		max-width: 720px;
+		padding: 1rem 1.125rem;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md, 10px);
+		background-color: var(--surface-warm);
+	}
+
+	.featured-offer__notice {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.8125rem);
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.featured-offer__title {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.featured-offer__body,
+	.featured-offer__scope {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.8125rem);
+		color: var(--core-muted-foreground);
+	}
+
+	.featured-offer__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		list-style: none;
+		margin: 0.25rem 0 0;
+		padding: 0;
+	}
+
+	.featured-offer__link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0.5rem 1rem;
+		border-radius: var(--radius-md, 10px);
+		background-color: var(--brand-primary);
+		color: var(--brand-primary-foreground, #fff);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm, 0.8125rem);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity 150ms ease-out;
+	}
+
+	.featured-offer__link:hover {
+		opacity: 0.9;
+	}
+
+	.featured-offer__link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+</style>
