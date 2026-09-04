@@ -1,149 +1,29 @@
 ---
 /**
  * @file suscriptores/planes/turistas/index.astro
- * @description Tourist pricing page. Thin wrapper around <PricingCardsGrid>;
- * page-specific copy, metadata, and JSON-LD live here, the card UI itself
- * is shared with /suscriptores/planes/anfitriones/.
+ * @description Permanent redirect to the traveller pricing page's new home,
+ * `/planes/turistas/precios/` (HOS-1032 AC-51).
  *
- * HOS-942 moved this page here from /suscriptores/turistas/, which now serves
- * a permanent (301) redirect to this URL (AC-4). The comparison table it links
- * to deliberately stayed at /suscriptores/turistas/comparar/ — moving it was
- * out of H1's scope.
+ * See `/suscriptores/planes/anfitriones/index.astro` for the shared rationale.
+ * What is specific to this audience is the chain: `/suscriptores/turistas/`
+ * redirected HERE, and this URL now redirects onward, so that first URL was
+ * repointed at the final destination in the same change. Two 301s in a row is a
+ * link spending two requests to land and losing a slice of its ranking signal
+ * on the way; each of the three URLs now emits exactly one.
  *
- * Fetches pricing from the public API at runtime (SSR) so that operator
- * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
- * The edge caches the rendered HTML; how long for comes from the `pricing`
- * cache class (`lib/cache/cache-classes.ts`), and a plan write purges it via
- * `PlanService.triggerPricingRevalidation`.
- *
- * @route /{lang}/suscriptores/planes/turistas/
- * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
- *   time; edge-cacheable, TTL from the `pricing` cache class.
+ * @route     /{lang}/suscriptores/planes/turistas/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
-import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
-import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
-import PlanCatalogueNav from '@/components/billing/PlanCatalogueNav.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { getIntlLocale } from '@/lib/pricing-plans';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
-import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { BeachUmbrellaIcon, CompassIcon, SunIcon } from '@repo/icons';
 
 export const prerender = false;
 
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
+const locale = Astro.locals.locale;
 
-// Cache at the edge, tagged so a plan write purges exactly these pages instead
-// of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
-// is the writer that purges `pricing`.
-//
-// This goes through `applyCacheHeaders` rather than setting the header directly
-// (HOS-426): setting `Cache-Control` and declaring the tags as two independent
-// statements meant a namespace that failed to resolve produced a cacheable
-// response with NO purge tag — cached content nothing could evict, and nothing
-// would report it. `applyCacheHeaders` demotes to private in that case.
-applyCacheHeaders({
-	locals: Astro.locals,
-	headers: Astro.response.headers,
-	cacheable: true,
-	cacheClass: 'pricing',
-	tags: [CACHE_TAG_PRICING]
-});
-
-// Fetch active plans from the public API endpoint at runtime.
-const fetchResult = await fetchPublicPlans();
-const touristPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'tourist')
-	: [];
-
-const intlLocale = getIntlLocale(locale);
-const hasPlans = touristPlans.length > 0;
-
-// Build absolute URL for each plan (used by JSON-LD Offer entries).
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes/turistas' })}`;
-
-// One resolution of the comparison URL, read by the nav above the cards and by
-// the teaser below them. Note this is the TOURIST table, at a different path
-// from the owner one.
-const comparisonHref = buildUrl({ locale, path: 'suscriptores/turistas/comparar' });
-
-const jsonLdPlans = touristPlans.map((plan) => ({
-	name: plan.name,
-	description: plan.description,
-	priceCurrency: 'ARS',
-	price: plan.monthlyPriceArs / 100,
-	url: planPageUrl,
-}));
-
-// Split heading to underline the last word with a handwritten accent.
-const headingFull = t('pricing.tourist.heading', 'Planes para turistas');
-const headingWords = headingFull.trim().split(/\s+/);
-const headingAccent = headingWords.pop() ?? headingFull;
-const headingMain = headingWords.join(' ');
+return Astro.redirect(
+    buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist }),
+    301
+);
 ---
-
-<MarketingLayout
-	locale={locale}
-	title={t('pricing.tourist.title', 'Planes para turistas')}
-	description={t(
-		'pricing.tourist.description',
-		'Suscribite y disfrutá de beneficios exclusivos en tus viajes por el litoral.'
-	)}
->
-	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
-
-	<MarketingHero
-		tagline={t('pricing.tourist.tagline', 'Planes y precios')}
-		titleMain={headingMain}
-		titleAccent={headingAccent}
-		subtitle={t(
-			'pricing.tourist.subtitle',
-			'Elegí el plan que mejor se adapte a tu forma de viajar.'
-		)}
-	>
-		<Fragment slot="icon-1"><BeachUmbrellaIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-2"><CompassIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-3"><SunIcon size="md" weight="duotone" /></Fragment>
-	</MarketingHero>
-
-	{/*
-		Above the cards: back to the audience index, and across to the comparison
-		table. The comparison link is deliberately in BOTH places — the teaser at
-		the foot of the page is unchanged, but a reader still choosing between
-		tiers should not have to scroll past every card to reach the surface that
-		compares them.
-	*/}
-	<PlanCatalogueNav locale={locale} comparisonHref={comparisonHref} />
-
-	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
-		<PricingCardsGrid
-			locale={locale}
-			plans={touristPlans}
-			intlLocale={intlLocale}
-			audience="tourist"
-			sectionHeading={t(
-				'pricing.tourist.cardsHeading',
-				'Comparativa de planes para turistas'
-			)}
-			emptyMessage={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
-			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
-			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
-			ctaText={t('pricing.cta', 'Empezar')}
-		/>
-	</section>
-
-	{hasPlans && (
-		<section class="comparison-link section">
-			<ComparisonLinkTeaser locale={locale} href={comparisonHref} />
-		</section>
-	)}
-</MarketingLayout>
