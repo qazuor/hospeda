@@ -20,7 +20,12 @@
  */
 
 import type { QrCode } from '@repo/schemas';
-import { QrCodeErrorCorrectionLevelEnum, QrCodeFormatEnum, QrCodeSourceEnum } from '@repo/schemas';
+import {
+    QrCodeCenterLogoEnum,
+    QrCodeErrorCorrectionLevelEnum,
+    QrCodeFormatEnum,
+    QrCodeSourceEnum
+} from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QrCodeForm } from '../QrCodeForm';
@@ -45,7 +50,8 @@ function redQrCode(): QrCode {
             margin: 4,
             size: null,
             foregroundColor: RED,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            centerLogo: QrCodeCenterLogoEnum.NONE
         },
         isActive: true,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -178,7 +184,8 @@ describe('diffRenderOptions', () => {
         margin: 4,
         size: '',
         foregroundColor: RED,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        centerLogo: QrCodeCenterLogoEnum.NONE
     };
 
     it('returns undefined when nothing moved', () => {
@@ -213,6 +220,50 @@ describe('diffRenderOptions', () => {
         expect(
             diffRenderOptions({ ...original, foregroundColor: '#0000ff' }, original)
         ).toStrictEqual({ foregroundColor: '#0000ff' });
+    });
+
+    /**
+     * The centre logo and the correction level travel TOGETHER (HOS-981 PR 5).
+     *
+     * The one deliberate exception to "send only what moved", and it is not a
+     * convenience: `QrCodeRenderOptionsPatchSchema` refuses a lone
+     * `{centerLogo: 'HOSPEDA'}` and a lone level reduction, because the server
+     * sees only the payload and a mark's affordability depends on both. A panel
+     * that sent one of them would be refused with a validation error the
+     * operator cannot act on — they changed exactly one control.
+     */
+    it('sends the correction level alongside a centre-logo change', () => {
+        expect(
+            diffRenderOptions({ ...original, centerLogo: QrCodeCenterLogoEnum.HOSPEDA }, original)
+        ).toStrictEqual({
+            centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.M
+        });
+    });
+
+    it('sends the centre logo alongside a correction-level change', () => {
+        expect(
+            diffRenderOptions(
+                { ...original, errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H },
+                original
+            )
+        ).toStrictEqual({
+            centerLogo: QrCodeCenterLogoEnum.NONE,
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H
+        });
+    });
+
+    /**
+     * The pairing is scoped to the pair. Without this, "send both when either
+     * moves" could have been implemented as "send everything", which would
+     * reintroduce the very defect `diffRenderOptions` exists to prevent —
+     * repainting a stored red code black on an unrelated edit.
+     */
+    it('does not drag the pair into an unrelated edit', () => {
+        const patch = diffRenderOptions({ ...original, margin: 8 }, original);
+
+        expect(patch).not.toHaveProperty('centerLogo');
+        expect(patch).not.toHaveProperty('errorCorrectionLevel');
     });
 });
 

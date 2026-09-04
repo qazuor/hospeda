@@ -35,6 +35,9 @@
         "renderHelp": "Só os campos que você mexer são salvos; o resto fica como estava.",
         "formatLabel": "Formato",
         "errorCorrectionLabel": "Correção de erros",
+        "centerLogoLabel": "Logo central",
+        "centerLogoHelp": "O logo cobre parte do símbolo; a correção de erros é o que o mantém legível.",
+        "centerLogoNeedsCorrection": "Com este nível de correção de erros o logo central não cabe. Suba para Q ou H.",
         "marginLabel": "Margem (módulos)",
         "sizeLabel": "Tamanho (pixels)",
         "sizePlaceholder": "Vazio = escala livre",
@@ -54,6 +57,10 @@
         "M": "M — média (~15%)",
         "Q": "Q — alta (~25%)",
         "H": "H — máxima (~30%)"
+    },
+    "centerLogo": {
+        "NONE": "Sem logo",
+        "HOSPEDA": "Logo da Hospeda"
     },
     "download": {
         "title": "Baixar",

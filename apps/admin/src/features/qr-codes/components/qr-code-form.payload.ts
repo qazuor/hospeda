@@ -1,5 +1,6 @@
 import type { QrCode, QrCodeCreateHttp, QrCodeUpdateHttp } from '@repo/schemas';
 import {
+    QrCodeCenterLogoEnum,
     QrCodeCreateHttpSchema,
     QrCodeErrorCorrectionLevelEnum,
     QrCodeFormatEnum,
@@ -33,6 +34,8 @@ export type RenderOptionsValues = {
     size: string;
     foregroundColor: string;
     backgroundColor: string;
+    /** Which mark, if any, is painted over the middle of the symbol. */
+    centerLogo: QrCodeCenterLogoEnum;
 };
 
 /** Everything the form holds. `slug` is only ever populated in create mode. */
@@ -71,7 +74,8 @@ export const DEFAULT_RENDER_OPTIONS: RenderOptionsValues = {
     margin: 4,
     size: '',
     foregroundColor: '#000000',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    centerLogo: QrCodeCenterLogoEnum.NONE
 };
 
 /** Turns a stored render document into the form's string-friendly shape. */
@@ -84,7 +88,8 @@ export function toFormRenderOptions(qrCode?: QrCode): RenderOptionsValues {
         margin: stored.margin,
         size: stored.size === null ? '' : String(stored.size),
         foregroundColor: stored.foregroundColor,
-        backgroundColor: stored.backgroundColor
+        backgroundColor: stored.backgroundColor,
+        centerLogo: stored.centerLogo
     };
 }
 
@@ -103,6 +108,23 @@ export function parseSize(size: string): number | null {
  * sends no `renderOptions` key at all. Comparing against the LOADED row rather
  * than against the schema defaults is the point: a code stored red must not be
  * reported as "changed to black" merely because black is the default.
+ *
+ * ## The one exception to "only what changed" (HOS-981 PR 5)
+ *
+ * `centerLogo` and `errorCorrectionLevel` are sent TOGETHER whenever either of
+ * them moves, even though that means sending a value the operator did not
+ * touch. `QrCodeRenderOptionsPatchSchema` demands the pair, and it demands it
+ * for a reason no amount of client cleverness removes: a mark is affordable or
+ * not depending on the level, the server sees only the payload, and the two
+ * one-sided patches — a mark with no level, a lowered level with no mark — are
+ * exactly how an unscannable code gets written through a 200.
+ *
+ * Sending the unchanged half is safe HERE and nowhere else, and the difference
+ * is worth naming: this function's whole reason for existing is that the values
+ * come from the LOADED ROW, so the "unchanged" half is the stored value, not a
+ * default. Re-sending it writes back what is already there. That is the same
+ * property that makes the colour handling correct, used deliberately rather
+ * than violated.
  */
 export function diffRenderOptions(
     current: RenderOptionsValues,
@@ -111,9 +133,6 @@ export function diffRenderOptions(
     const patch: Record<string, unknown> = {};
 
     if (current.format !== original.format) patch.format = current.format;
-    if (current.errorCorrectionLevel !== original.errorCorrectionLevel) {
-        patch.errorCorrectionLevel = current.errorCorrectionLevel;
-    }
     if (Number(current.margin) !== Number(original.margin)) patch.margin = Number(current.margin);
     if (current.size.trim() !== original.size.trim()) patch.size = parseSize(current.size);
     if (current.foregroundColor !== original.foregroundColor) {
@@ -121,6 +140,14 @@ export function diffRenderOptions(
     }
     if (current.backgroundColor !== original.backgroundColor) {
         patch.backgroundColor = current.backgroundColor;
+    }
+
+    if (
+        current.errorCorrectionLevel !== original.errorCorrectionLevel ||
+        current.centerLogo !== original.centerLogo
+    ) {
+        patch.errorCorrectionLevel = current.errorCorrectionLevel;
+        patch.centerLogo = current.centerLogo;
     }
 
     return Object.keys(patch).length > 0 ? patch : undefined;
@@ -183,7 +210,8 @@ export function buildCreatePayload(values: QrCodeFormValues): QrCodeFormBuildRes
             margin: Number(values.renderOptions.margin),
             size: parseSize(values.renderOptions.size),
             foregroundColor: values.renderOptions.foregroundColor,
-            backgroundColor: values.renderOptions.backgroundColor
+            backgroundColor: values.renderOptions.backgroundColor,
+            centerLogo: values.renderOptions.centerLogo
         }
     };
 
