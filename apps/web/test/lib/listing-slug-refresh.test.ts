@@ -123,6 +123,33 @@ describe('listing-slug-refresh', () => {
 });
 
 /**
+ * HOS-879 UI gap fix: the UI's `isListingPublished` used `=== 'ACTIVE'`,
+ * disagreeing with the backend's `!== DRAFT` gate
+ * (`packages/service-core/src/utils/listing-slug-policy.ts`). A host with an
+ * INACTIVE (paused) or ARCHIVED listing — or one with no recognized lifecycle
+ * state at all — never saw the opt-in even though the backend would have
+ * honored the flag had it arrived. These five cases are the full decision
+ * table the fix must satisfy.
+ */
+describe('shouldOfferPublishedSlugRefresh: every non-DRAFT state is published (HOS-879 gap fix)', () => {
+    it.each([
+        ['DRAFT', false],
+        ['ACTIVE', true],
+        ['INACTIVE', true],
+        ['ARCHIVED', true],
+        [undefined, true]
+    ] as const)('currentLifecycleState=%s -> offered=%s', (currentLifecycleState, expected) => {
+        expect(
+            shouldOfferPublishedSlugRefresh({
+                currentLifecycleState,
+                initialName: 'Nombre original',
+                currentName: 'Nombre nuevo'
+            })
+        ).toBe(expected);
+    });
+});
+
+/**
  * HOS-879 UX follow-up. The opt-in notice used to render pinned next to
  * `name` regardless of which field actually changed — a host who changed
  * only `type` on a published listing saw it next to a field they never
@@ -226,28 +253,37 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
  * editor does cannot disagree.
  */
 describe('isListingPublished (HOS-834)', () => {
-    it('treats ACTIVE as published', () => {
-        expect(isListingPublished({ lifecycleState: 'ACTIVE' })).toBe(true);
+    it('treats DRAFT as not published — the only state that is not', () => {
+        expect(isListingPublished({ lifecycleState: 'DRAFT' })).toBe(false);
+    });
+
+    // HOS-879 UI gap fix: the backend policy (`listing-slug-policy.ts`) treats
+    // anything other than DRAFT as published — INACTIVE (paused), ARCHIVED, and
+    // an absent/unrecognized state included. Before this fix, the UI used
+    // `=== 'ACTIVE'`, so a paused or archived listing never saw the slug-refresh
+    // opt-in even though the backend would have honored the flag had it arrived.
+    it.each([
+        'ACTIVE',
+        'INACTIVE',
+        'ARCHIVED',
+        'PENDING_REVIEW'
+    ])('treats %s as published', (lifecycleState) => {
+        expect(isListingPublished({ lifecycleState })).toBe(true);
     });
 
     it.each([
-        'DRAFT',
-        'ARCHIVED',
-        'PENDING_REVIEW',
+        null,
+        undefined,
         ''
-    ])('treats %s as not published', (lifecycleState) => {
-        expect(isListingPublished({ lifecycleState })).toBe(false);
-    });
-
-    it.each([null, undefined])('treats a missing state (%s) as not published', (lifecycleState) => {
-        expect(isListingPublished({ lifecycleState })).toBe(false);
+    ])('treats a missing/unknown state (%s) as published — cannot prove it was never published', (lifecycleState) => {
+        expect(isListingPublished({ lifecycleState })).toBe(true);
     });
 
     it('is the SAME predicate the slug-refresh opt-in gates on', () => {
         // Pinned as an equivalence rather than two independent truths: a second
         // definition of "published" that drifted from this one is exactly the
         // failure the notice is supposed to stop being an example of.
-        for (const lifecycleState of ['ACTIVE', 'DRAFT', 'ARCHIVED']) {
+        for (const lifecycleState of ['ACTIVE', 'DRAFT', 'INACTIVE', 'ARCHIVED']) {
             const offered = shouldOfferPublishedSlugRefresh({
                 currentLifecycleState: lifecycleState,
                 initialName: 'Nombre original',

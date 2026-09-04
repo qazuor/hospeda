@@ -1,4 +1,4 @@
-const ACTIVE_LISTING_STATE = 'ACTIVE';
+import { LifecycleStatusEnum } from '@repo/schemas';
 
 function normalizeName(name: string | null | undefined): string {
     return name?.trim() ?? '';
@@ -14,11 +14,27 @@ function normalizeName(name: string | null | undefined): string {
  * slug-refresh opt-in below already uses. A notice that disagrees with the
  * behaviour is worse than the ambiguous one it replaced.
  *
+ * Mirrors the backend's `shouldRegenerateSlugOnListingChange`
+ * (`packages/service-core/src/utils/listing-slug-policy.ts`): published means
+ * **anything other than `DRAFT`** — `ACTIVE`, `INACTIVE` (paused), `ARCHIVED`,
+ * and an absent/unrecognized state all fall on the published side. A paused
+ * or archived listing still has a public URL that was indexed and shared, so
+ * its address moves only if the owner asks for it, same as an active one. An
+ * absent/unknown state falls on the published side for the same reason the
+ * backend does: "cannot prove it was never published" has to mean "leave the
+ * address alone" — the UI gate has to fail on the SAME side as the backend
+ * policy it fronts, or a host on a state this predicate doesn't recognize
+ * would get their slug silently regenerated with no opt-in offered.
+ *
+ * Before HOS-879's UI fix this used `=== 'ACTIVE'`, so a host with a
+ * paused/archived listing never saw the opt-in even though the backend would
+ * have honored the flag had it arrived.
+ *
  * @param input.lifecycleState - The listing's current lifecycle state.
  * @returns `true` once the listing is live and its slug is frozen.
  */
 export function isListingPublished(input: { readonly lifecycleState?: string | null }): boolean {
-    return input.lifecycleState === ACTIVE_LISTING_STATE;
+    return input.lifecycleState !== LifecycleStatusEnum.DRAFT;
 }
 
 /** Shared shape for the two change-detection helpers below. */

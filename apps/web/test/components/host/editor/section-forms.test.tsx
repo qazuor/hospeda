@@ -320,6 +320,69 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
 });
 
 // ---------------------------------------------------------------------------
+// HOS-879 UI gap fix: the UI used to gate the opt-in on `=== 'ACTIVE'` while
+// the backend gate (`listing-slug-policy.ts`) treats anything other than
+// DRAFT as published — so a paused (INACTIVE) or archived (ARCHIVED)
+// listing, or one with no recognized lifecycle state at all, never saw the
+// checkbox even though the backend would have honored the flag had it
+// arrived. `isListingPublished` now mirrors the backend's `!== DRAFT` gate.
+// ---------------------------------------------------------------------------
+
+describe('HOS-879 gap fix: non-ACTIVE published states also offer the opt-in', () => {
+    it('offers the opt-in on an INACTIVE (paused) listing', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'INACTIVE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('offers the opt-in on an ARCHIVED listing', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ARCHIVED' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('offers the opt-in when lifecycleState is absent — cannot prove it was never published', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // HOS-879 UX follow-up: the opt-in notice used to render pinned next to
 // `name` regardless of which field actually changed, so a host who edited
 // only `type` on a published listing saw it next to a field they never
