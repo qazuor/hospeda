@@ -17,15 +17,40 @@
  * HOS-1023: the move-up/move-down/promote toolbar lives BELOW the thumbnail
  * (in `.galleryItemWrapper`'s normal flow), not overlaid on top of it. The
  * overlay covered ~39.5% of a 167x125px thumbnail and let the "Portada"
- * button overflow its own frame by ~14px (`.toolbarButtonPromote` is a
- * `flex: 1` item with no `min-width: 0`, so it refuses to shrink below its
- * content width). Moving the toolbar out of the photo removes both problems
- * at the source instead of shrinking touch targets or lightening the
- * background — HOS-790 fixed those for contrast/tap-area reasons and both
- * are preserved unchanged. Only the `✕` remove button stays overlaid, in its
- * own corner, since a single 44x44 control doesn't recreate the same issue.
+ * text button overflow its own frame by ~14px. Moving the toolbar out of
+ * the photo removes the overlap problem at the source instead of shrinking
+ * touch targets or lightening the background — HOS-790 fixed those for
+ * contrast/tap-area reasons and both are preserved unchanged. Only the `✕`
+ * remove button stays overlaid, in its own corner, since a single 44x44
+ * control doesn't recreate the same issue.
+ *
+ * The promote button went a step further and dropped its text entirely,
+ * replaced by a `StarIcon` (owner decision, once the text version turned
+ * out to still overflow at the grid's 150px column floor even out of the
+ * photo): with no text to measure, it's a fixed 44x44 icon button exactly
+ * like `↑`/`↓`, so there is no width budget to get wrong. `flex-wrap` stays
+ * on `.galleryItemToolbar` as a safety net regardless (see that class's
+ * comment in PhotoSection.module.css).
+ *
+ * The star's weight follows `item.isFeatured` — filled ("this already IS
+ * the portada") vs outline ("promote this to portada") — reusing the field
+ * `AccommodationMediaItem` already carries for this exact distinction
+ * elsewhere, not a new prop. In practice every item passed to this
+ * component today has `isFeatured: false`: `PhotoSection.client.tsx` keeps
+ * the featured row in its own separate `featuredItem` slot (with no
+ * promote button of its own — it's already the cover) and only ever puts
+ * `isFeatured: false` rows into the `galleryItems` array this component
+ * renders (see that file's docblock, and both `isFeatured: false`
+ * assignments in `use-photo-section.ts`). The filled branch is wired
+ * correctly and stays for whichever of those two invariants changes first,
+ * but it does not currently render in this grid.
+ *
+ * A `title` mirrors the button's own `aria-label` text, so a mouse user
+ * gets the same information on hover that a screen reader announces —
+ * necessary now that there's no visible label at all.
  */
 
+import { StarIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -80,6 +105,14 @@ export function PhotoGalleryItem({
     // `width: 300` matches this grid's realistic cell size instead of the
     // preset's own 640px default meant for a half-width gallery cell.
     const thumbnailUrl = getMediaUrl(item.url, { preset: 'galleryHalf', width: 300 });
+    // Shared verbatim between `aria-label` and `title` on the promote button
+    // below — the icon carries no text of its own, so both the accessible
+    // name and the mouse-hover tooltip must say the exact same thing.
+    const promoteAriaLabel = t(
+        'host.properties.editor.photo.promoteToFeaturedAria',
+        'Usar foto {{index}} como portada',
+        { index: position }
+    );
 
     return (
         <div className={styles.galleryItemWrapper}>
@@ -135,16 +168,17 @@ export function PhotoGalleryItem({
                 </button>
                 <button
                     type="button"
-                    className={styles.toolbarButtonPromote}
+                    className={styles.toolbarButton}
                     onClick={() => onPromote(item)}
                     disabled={!canOperate}
-                    aria-label={t(
-                        'host.properties.editor.photo.promoteToFeaturedAria',
-                        'Usar foto {{index}} como portada',
-                        { index: position }
-                    )}
+                    aria-label={promoteAriaLabel}
+                    title={promoteAriaLabel}
                 >
-                    {t('host.properties.editor.photo.promoteToFeaturedShort', 'Portada')}
+                    <StarIcon
+                        size="sm"
+                        weight={item.isFeatured ? 'fill' : 'regular'}
+                        color="#ffffff"
+                    />
                 </button>
             </div>
             <PhotoMetadataEditor
