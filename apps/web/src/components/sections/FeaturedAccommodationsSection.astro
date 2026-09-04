@@ -19,6 +19,7 @@ import { buildUrl } from '@/lib/urls';
 import { slugForAccommodationType } from '@/lib/facet-slugs';
 import { accommodationsApi, SSR_PUBLIC_CACHE_TTL_MS, toAccommodationCardProps } from '@/lib/api';
 import type { AccommodationCardData } from '@/lib/api/transforms';
+import { filterFeaturedCards } from '@/lib/sections/featured-accommodations';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
@@ -57,19 +58,21 @@ const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map((type) => (
 // HOS-929: `isFeatured` as a QUERY FILTER is a no-op at the model layer today
 // (only `featuredFirst` ordering is implemented — see `accommodation.model.ts`),
 // so it is kept here only as a documented intent, not relied upon. The section
-// is filtered to genuinely featured cards CLIENT-side instead, using the
-// `isFeatured` value the public list route now returns already OR'd with the
-// billing-derived `featuredByEntitlement` column (see
+// is filtered to genuinely featured cards with `filterFeaturedCards` instead
+// (unit-tested — see `apps/web/test/lib/sections/featured-accommodations.test.ts`),
+// using the `isFeatured` value the public list route now returns already OR'd
+// with the billing-derived `featuredByEntitlement` column (see
 // `apps/api/src/utils/accommodation-featured.ts`). `featuredFirst` (forced
 // server-side) still guarantees featured cards sort first within the fetched
 // page, so this filter never has to look past the first `pageSize` results.
-let items: AccommodationCardData[] = [];
+let items: readonly AccommodationCardData[] = [];
 try {
   const result = await accommodationsApi.list({ isFeatured: true, pageSize: 8, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
   if (result.ok) {
-    items = result.data.items
-      .map((raw) => toAccommodationCardProps({ item: raw as Record<string, unknown>, locale }))
-      .filter((card) => card.isFeatured);
+    const mapped = result.data.items.map((raw) =>
+      toAccommodationCardProps({ item: raw as Record<string, unknown>, locale })
+    );
+    items = filterFeaturedCards(mapped);
   }
 } catch (err) {
   webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });
