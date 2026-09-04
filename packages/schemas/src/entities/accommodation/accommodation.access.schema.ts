@@ -564,6 +564,13 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     richDescription: true,
     richDescriptionI18n: true,
     isFeatured: true,
+    // HOS-929: the owner's own editor needs BOTH source columns to know
+    // whether the listing is CURRENTLY featured for any reason — the addon
+    // upsell in the editor hub reads this to decide whether to show at all.
+    // Same sensitivity class as `isFeatured` (a billing-status boolean, not
+    // premium content), so it rides the same pick/omit path, including into
+    // `AccommodationProtectedCardSchema` embeds.
+    featuredByEntitlement: true,
     destinationId: true,
     media: true,
     videos: true,

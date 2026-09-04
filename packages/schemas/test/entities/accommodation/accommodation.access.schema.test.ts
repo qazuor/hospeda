@@ -135,6 +135,50 @@ describe('AccommodationAdminSchema — archivedGallery preserved (SPEC-167)', ()
 });
 
 // ---------------------------------------------------------------------------
+// HOS-929 PIN: featuredByEntitlement must never leak to public consumers
+// ---------------------------------------------------------------------------
+
+/**
+ * Same base fixture, with `featuredByEntitlement: true` set explicitly.
+ * `entityPayload` leaves it at the Zod default (`false`), which cannot tell
+ * "stripped" apart from "just false" — this fixture can.
+ */
+const entityPayloadFeaturedByEntitlement = {
+    ...entityPayload,
+    featuredByEntitlement: true
+};
+
+describe('AccommodationPublicSchema — featuredByEntitlement strip (HOS-929)', () => {
+    it('strips featuredByEntitlement from the parsed public payload', () => {
+        const result = AccommodationPublicSchema.safeParse(entityPayloadFeaturedByEntitlement);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('featuredByEntitlement');
+        }
+    });
+});
+
+describe('AccommodationProtectedSchema — featuredByEntitlement retained (HOS-929)', () => {
+    it('keeps featuredByEntitlement on the owner-facing payload', () => {
+        const result = AccommodationProtectedSchema.safeParse(entityPayloadFeaturedByEntitlement);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).toHaveProperty('featuredByEntitlement', true);
+        }
+    });
+});
+
+describe('AccommodationAdminSchema — featuredByEntitlement retained (HOS-929)', () => {
+    it('keeps featuredByEntitlement on the admin payload', () => {
+        const result = AccommodationAdminSchema.safeParse(entityPayloadFeaturedByEntitlement);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).toHaveProperty('featuredByEntitlement', true);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // socialNetworks inclusion in access schemas
 // ---------------------------------------------------------------------------
 
