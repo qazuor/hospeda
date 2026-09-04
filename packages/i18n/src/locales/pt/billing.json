@@ -266,7 +266,9 @@
             "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
             "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
             "errorNewUsersOnly": "Este código é apenas para novos clientes.",
-            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código."
+            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código.",
+            "pendingAuthMessage": "Você vai poder aplicar o código {{code}} assim que terminar de se cadastrar.",
+            "registerCta": "Cadastrar-me"
         },
         "payerEmailConfirm": {
             "title": "Com qual email você vai poder pagar",
