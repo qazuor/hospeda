@@ -38,6 +38,16 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
 // `data-label-${planStatus}`, so without this attribute a `comp` subscriber
 // keeps the placeholder and the card reads as if they had nothing (H-130).
 const statCompStatus = t('account.pages.dashboard.stats.compStatus', 'Bonificado');
+// HOS-1066: an account can hold more than one active subscription across
+// product domains (e.g. an accommodation host who also runs a gastronomy
+// listing). `/users/me/stats` then reports `plan: null` with
+// `activeSubscriptionsCount > 1` instead of picking one arbitrarily — the
+// client script interpolates `{count}` into this template at runtime, since
+// the actual count is only known after the client-side fetch.
+const statMultipleSubscriptions = t(
+    'account.pages.dashboard.stats.multipleSubscriptions',
+    '{count} suscripciones activas'
+);
 const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis propiedades');
 const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
 const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
@@ -123,6 +133,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
             id="stat-subscription"
             class="account__stat-value stat-value--loading"
             data-label-free={statFreeStatus}
+            data-label-multiple={statMultipleSubscriptions}
             aria-live="polite"
         >
             {statSubscriptionDesc}
