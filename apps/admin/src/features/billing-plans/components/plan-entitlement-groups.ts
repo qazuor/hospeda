@@ -126,7 +126,11 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-1043 — translating the carta into `{es,en,pt}`. Same shape
             // and same tier as `MENU_ITEM_PHOTOS` above: gastronomy PREMIUM
             // only, layered on top of the carta key rather than replacing it.
-            EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
+            EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU,
+            // HOS-1044 — the table QR and its scan-analytics panel. Same
+            // shape and tier as the translated carta right above it:
+            // gastronomy PREMIUM only.
+            EntitlementKey.MENU_QR_ANALYTICS
         ]
     }
 ];

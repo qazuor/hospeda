@@ -352,5 +352,14 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Multi-language menu',
         description:
             'Allows translating the structured menu into English and Portuguese, shown to the visitor with a language switcher on the public page'
+    },
+    // HOS-1044. Granted by `gastronomy-premium` ALONE, same tier and shape as
+    // `MULTILINGUAL_GASTRONOMY_MENU`, and appended to this same trailing
+    // commerce section for the slicing reason stated at its head.
+    {
+        key: EntitlementKey.MENU_QR_ANALYTICS,
+        name: 'Menu QR with scan analytics',
+        description:
+            'Allows minting a table QR that opens the venue menu and viewing a scan-analytics panel for it — total scans, a daily series, and a breakdown by device, OS and browser language'
     }
 ];

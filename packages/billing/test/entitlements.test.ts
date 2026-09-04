@@ -365,7 +365,7 @@ describe('Entitlement Configuration', () => {
             // HOS-895: commerce 5→6; HOS-1049: commerce 6→7;
             // HOS-1057: commerce 7→8; HOS-1041: commerce 8→9;
             // HOS-1045: commerce 9→10; HOS-1042: commerce 10→11;
-            // HOS-1043: commerce 11→12)
+            // HOS-1043: commerce 11→12; HOS-1044: commerce 12→13)
             const ownerCount = 9;
             const accommodationCount = 7;
             const complexCount = 4;
@@ -379,8 +379,9 @@ describe('Entitlement Configuration', () => {
             // HOS-1041 — plus the pro-and-above menú del día (1);
             // HOS-1045 — plus the premium-only photo per dish (1);
             // HOS-1042 — plus the pro-and-above venue events agenda (1);
-            // HOS-1043 — plus the premium-only multi-language menu (1).
-            const commerceCount = 12;
+            // HOS-1043 — plus the premium-only multi-language menu (1);
+            // HOS-1044 — plus the premium-only menu QR scan analytics (1).
+            const commerceCount = 13;
 
             // Act & Assert
             expect(
