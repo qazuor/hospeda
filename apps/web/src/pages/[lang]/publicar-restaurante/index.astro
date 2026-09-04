@@ -34,11 +34,22 @@
  * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
-import { buildUrl } from '@/lib/urls';
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale;
 
-return Astro.redirect(buildUrl({ locale, path: 'planes/gastronomia' }), 301);
+// The query string is FORWARDED, not rebuilt away. `?interval=` on the
+// trial-ending nudge is the live case: dropping it shows monthly prices to a
+// customer who chose annual, and nothing about the redirect looks wrong when it
+// happens. See `lib/pricing-redirect.ts`.
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: 'planes/gastronomia',
+        search: Astro.url.search
+    }),
+    301
+);
 ---
