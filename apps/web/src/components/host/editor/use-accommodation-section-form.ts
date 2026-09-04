@@ -208,16 +208,6 @@ export function useAccommodationSectionForm<TValues extends object>({
      * the pattern the commerce editor already uses
      * (`CommerceListingEditor.client.tsx`'s `handleCancel`).
      */
-    /**
-     * Leaves the section for the editor hub.
-     *
-     * HOS-1014: was `window.history.back()`, which lands wherever the user
-     * happened to arrive from (a bookmark, a direct link, another section) —
-     * not necessarily this accommodation's hub. The hub is the page every
-     * section is reached from, so it's always the right destination, matching
-     * the pattern the commerce editor already uses
-     * (`CommerceListingEditor.client.tsx`'s `handleCancel`).
-     */
     const handleCancel = useCallback(() => {
         if (typeof window === 'undefined') return;
         window.location.href = buildEditorHubUrl({ locale, accommodationId });
