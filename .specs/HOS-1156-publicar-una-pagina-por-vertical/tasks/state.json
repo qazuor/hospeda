@@ -8,132 +8,132 @@
             "id": "T-001",
             "title": "Add the shared publish-page i18n keys (es)",
             "description": "Add the keys the three publish pages share by structure (hero tagline/title/paragraph slots, the 'Cómo funciona' step labels, the plan-link labels, and the signed-out CTA). Spanish only; en/pt land in T-004. Copy is per vertical (spec §1), so these are the STRUCTURAL keys, not the prose. Files: packages/i18n/src/locales/es/**. Tests: the existing i18n structure guards must still pass; note they check structure, never content (AC-16).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-017", "T-018"],
             "subtasks": [
                 {
                     "title": "Hero + steps + plan-link key skeleton",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Signed-out CTA keys (D-1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run the i18n structure guards",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "web"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T22:26:36.024992Z",
+                "completed": "2026-09-04T22:26:36.024992Z"
             }
         },
         {
             "id": "T-002",
             "title": "Write the gastronomy publish-page copy (es)",
             "description": "The gastronomy page's own prose: hero, three steps, condensed benefits. Does NOT reuse the accommodation or experience copy (spec §1 — they share the mould, not the words). Source the tone from the existing /planes/gastronomia/ sales page without copying it verbatim. Files: packages/i18n/src/locales/es/**.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-020"],
             "subtasks": [
                 {
                     "title": "Hero copy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Three steps + benefits",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "content"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T22:26:36.024992Z",
+                "completed": "2026-09-04T22:26:36.024992Z"
             }
         },
         {
             "id": "T-003",
             "title": "Write the experiences publish-page copy (es)",
             "description": "The experiences page's own prose: hero, three steps, condensed benefits. Same independence rule as T-002. Files: packages/i18n/src/locales/es/**.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-021"],
             "subtasks": [
                 {
                     "title": "Hero copy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Three steps + benefits",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "content"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T22:26:36.024992Z",
+                "completed": "2026-09-04T22:26:36.024992Z"
             }
         },
         {
             "id": "T-004",
             "title": "Mirror every new key into en and pt",
             "description": "AC-16. Every key added by T-001..T-003 must exist in en and pt. Files: packages/i18n/src/locales/{en,pt}/**. Tests: the i18n parity guards. Caveat to state in the PR: these guards see structure, never content — presence is not translation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002", "T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "en",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run the parity guards",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T22:26:36.024992Z",
+                "completed": "2026-09-04T22:26:36.024992Z"
             }
         },
         {
