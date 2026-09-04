@@ -127,12 +127,35 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/autores")))
 ```
 
-**Pending application (HOS-519, drafted 2026-09-04, not yet live).** Neither
-the three `partners` clauses nor the nine `planes`/`presentacion`/`autores`
-clauses above are in the dashboard rule yet — see
+**Applied and verified, 2026-09-04.** Both rules now carry all thirty-six
+`starts_with` terms above — see
 [W2-5 (HOS-519)](#w2-5-hos-519--partner-gold-pages) and
 [W2-6 (HOS-519)](#w2-6-hos-519--pricing-static-presentation-and-author-pages)
-below for why each was added and what to verify once they are pasted in.
+below for why each family was added, and
+[Verified after application (2026-09-04)](#verified-after-application-2026-09-04)
+for the measurements taken immediately afterwards.
+
+Two corrections to what this document claimed while W2-6 was being drafted,
+both found by reading the dashboard rather than by trusting the note:
+
+- **W2-5 was already live before this session applied anything.** The three
+  `partners` clauses were in rules 1 and 4 when the dashboard was opened, and
+  rule 1's stored expression measured exactly 2,581 characters — the figure
+  this document predicted for the post-W2-5 state. Somebody applied them
+  between the 2026-08-15 measurement and 2026-09-04 without updating this file.
+  That is precisely the drift the README warns about: a rule that exists only
+  in the dashboard is a rule that will be wrong within a quarter.
+- **Only W2-6's nine clauses were actually pasted in this session**, appended
+  before the closing `))` of each rule. Rule 1 went 2,581 → 3,070 characters
+  and rule 4 went 2,573 → 3,062; the eight-character difference between the
+  twins is exactly the length of `staging.` in the hostname, which is what
+  confirms nothing else diverged.
+
+**Read the dashboard before editing it.** Had these nine clauses been applied
+by pasting the full expression from this document instead of by appending to
+what was actually stored, the `partners` clauses would have been fine by
+coincidence — but any other undocumented dashboard edit would have been
+silently reverted.
 
 The live rule stores this on a single line (2419 characters through W2-4, 2581
 once W2-5 is applied, 3070 once W2-6 is also applied — verified character by
@@ -537,6 +560,45 @@ Expected on the second request for each cacheable path: `cf-cache-status:
 HIT`, non-zero `age`, and `Cache-Control` without the injected
 `max-age=14400` (see the Browser TTL note under [Settings](#settings) — its
 absence is what proves this rule, not the zone default, produced the hit).
+
+### Verified after application (2026-09-04)
+
+Measured against **staging** immediately after saving both rules, two requests
+per URL, two seconds apart:
+
+| URL | HTTP | `cf-cache-status` | `age` (req 2) | `Cache-Control` |
+|---|---|---|---|---|
+| `/es/partners/autoservice-litoral/` | 200 | **HIT** | 2 | `s-maxage=3600, swr=3600` |
+| `/es/planes/anfitriones/` | 200 | **HIT** | 2 | `s-maxage=3600, swr=3600` |
+| `/es/presentacion/aliados/` | 200 | **HIT** | 2 | `s-maxage=86400, swr=3600` |
+| `/es/alojamientos/` (control) | 200 | **HIT** | 2 | `s-maxage=3600, swr=3600` |
+
+Three things make this a real verification rather than four green ticks:
+
+- **`presentacion` came back with `s-maxage=86400` while the other three
+  returned `3600`.** Those are different `cacheClass` values in the origin —
+  `static` versus `pricing`/`detail`. A rule matching a path it was not meant
+  to match would not reproduce that split; the edge is honoring what each page
+  actually declares.
+- **No response carried the injected `max-age=14400`.** Per the Browser TTL
+  note under [Settings](#settings), its absence is what distinguishes a hit
+  produced by *this* rule from one produced by the zone default.
+- **`/es/partners/<slug>/` answered 200 on staging**, closing out HOS-519's
+  original finding. It answers 404 in production for the reason recorded in
+  [W2-5](#w2-5-hos-519--partner-gold-pages) — the `0059` seed data-migration
+  hard-deleted both partners there, and that migration is gated to
+  `NODE_ENV === 'production'`, so staging kept them.
+
+The `planes` and `presentacion` families also answer **404 in production**
+today: those pages ship from `staging` and have not been promoted to `main`
+yet. The rules are already in place for when they are, and matching a prefix
+whose pages do not exist costs nothing — `bypass_by_default` means a 404 is
+never cached.
+
+Still not verified, and deliberately so: the two-partner purge-scoping check
+described in [W2-5](#w2-5-hos-519--partner-gold-pages), which needs a second
+gold partner on staging before it can distinguish a scoped purge from a
+zone-wide one.
 The `suscriptores/turistas` probe should show `HTTP/2 301` on every request,
 never `cf-cache-status: HIT` — confirming the drift finding above rather than
 contradicting it.
