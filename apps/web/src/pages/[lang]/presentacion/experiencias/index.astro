@@ -32,6 +32,23 @@
  * `lib/middleware-helpers.ts`), so the page would render unstyled in prod
  * while looking perfect locally. Do not add `is:inline` here.
  *
+ * THE PRICE BLOCK IS NO LONGER A NUMBER (HOS-1134). "El costo" used to say
+ * "está en el orden de los quince mil pesos mensuales", true as the floor of
+ * `experience-basico` ($15.000) but describing what was, by the time HOS-975
+ * priced the six commerce tiers, ONE of three sellable steps ($15.000/
+ * $35.000/$50.000) — the sentence still assumed a single plan. This is the
+ * SECOND documented exception to "verbatim artifact" (see the file banner
+ * above): the price paragraph was rewritten to drop the number and link to
+ * `/{lang}/publicar-experiencia/`, which reads the real price from
+ * `fetchPublicPlans({ domain: 'experience' })` — never `/{lang}/planes/`
+ * (does not exist) nor the per-vertical `/precios/` page from HOS-1032
+ * (does not exist either). Unlike gastronomía's page, no owner-approved
+ * verbatim text existed for this vertical, so the replacement here is a
+ * rewrite of the original comparison ("no es un cargo por salida ni por
+ * pasajero" in place of "lo que sale una o dos plazas de una salida", which
+ * stops making sense once there is no number to compare against) rather
+ * than a transcription.
+ *
  * @route /{lang}/presentacion/experiencias/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
  */
@@ -44,6 +61,7 @@ import PresentationThemeToggle from '@/components/presentacion/PresentationTheme
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
+import { buildUrl } from '@/lib/urls';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -200,9 +218,13 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
       <h2>Una cuota fija por mes</h2>
     </div>
     <p>
-      <strong>Está en el orden de los quince mil pesos mensuales</strong>: lo que sale una o dos
-      plazas de una salida. Es lo mismo si te contactan dos personas o cincuenta — no hay
-      comisión ni cargo por consulta. El valor exacto está siempre publicado en el sitio.
+      Una cuota fija por mes, con tres escalones según cuánto quieras mostrar. No es un cargo
+      por salida ni por pasajero: es lo mismo si te contactan dos personas o cincuenta, y no hay
+      comisión ni cargo por consulta.
+    </p>
+    <p class="subhead">
+      Los valores de cada escalón están siempre publicados en
+      <a href={buildUrl({ locale, path: 'publicar-experiencia' })}>el sitio</a>.
     </p>
     <p class="subhead">Con eso tenés <strong>una experiencia publicada</strong>.</p>
   </section>
