@@ -46,7 +46,10 @@ export interface AllianceLeadSpecificFieldConfig {
      * declared `false` here even though it IS conditionally required — that
      * rule depends on the sibling `benefitType` value at submit time, which
      * a static per-field flag cannot express (see
-     * {@link validateAllianceLeadSpecificFields}).
+     * {@link validateAllianceLeadSpecificFields}). For the same reason,
+     * `AllianceLead.client.tsx` does NOT use this flag to decide whether to
+     * render the required-field asterisk on `benefitValue` — it substitutes
+     * its own live `benefitValueApplicable` condition there instead (HOS-652).
      */
     readonly required: boolean;
     /**
