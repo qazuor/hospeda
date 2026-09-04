@@ -62,7 +62,9 @@
             "viewPdf": "Ver cardápio em PDF",
             "consultPrice": "A consultar",
             "unavailable": "Indisponível",
-            "switchLanguage": "Ver o cardápio em:"
+            "switchLanguage": "Ver o cardápio em:",
+            "seoDescription": "Cardápio de {{name}}",
+            "backToListing": "← Voltar à ficha"
         },
         "dailySpecials": {
             "title": "Menu do dia",
