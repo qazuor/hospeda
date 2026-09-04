@@ -29,7 +29,7 @@
  *    if they try to leave again with photos still missing alt text.
  */
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -126,9 +126,22 @@ export function usePhotoAltWarningGuard({
 
     const shouldWarn = missingAltCount > 0 && !isDismissed;
 
+    // Memoized because it sits in the base hook's effect dependency array, and
+    // `PhotoSection` re-renders on every `uploadProgress` / `isCompressing`
+    // tick during an upload. An inline closure would unregister and re-register
+    // the leave warning on each of those renders for no reason.
+    const handleConfirm = useCallback(() => writeDismissed(accommodationId), [accommodationId]);
+
     useUnsavedChangesGuard({
         isDirty: shouldWarn,
         includeBeforeUnload: false,
+        // Lets the registry recognize this warning when the Fotos page's other
+        // island (`VideoSection`) is guarding real unsaved edits at the same
+        // time, and build one dialog that states both — see
+        // `lib/forms/leave-warning-copy.ts`.
+        kind: 'photo-alt',
+        count: missingAltCount,
+        locale,
         title: t('host.properties.editor.photo.altWarningTitle', 'Fotos sin texto alternativo'),
         message: tPlural('host.properties.editor.photo.altWarningMessage', missingAltCount, {
             count: missingAltCount
@@ -138,6 +151,6 @@ export function usePhotoAltWarningGuard({
             'Continuar sin completarlos'
         ),
         cancelLabel: t('host.properties.editor.photo.altWarningGoBack', 'Volver y completarlos'),
-        onConfirm: () => writeDismissed(accommodationId)
+        onConfirm: handleConfirm
     });
 }

@@ -26,6 +26,25 @@
  * Measurements behind this are in
  * `.specs/HOS-373-unsaved-changes-guard-and-invalid-field-focus/docs/r1-probe-findings.md`.
  *
+ * ## Where the click listener actually lives (HOS-1018)
+ *
+ * Not here. This hook registers its warning into
+ * `leave-warning-registry.ts`, which owns the ONE capture-phase listener for
+ * the whole page. Two listeners of this kind cannot coexist: the first to run
+ * calls `preventDefault()` and the second bails on `defaultPrevented`, so a
+ * page with two guards could only ever show one of the two dialogs. See that
+ * module's header for the failure it was extracted to fix.
+ *
+ * With a single active warning the registry shows this hook's `message` /
+ * `title` / `confirmLabel` / `cancelLabel` verbatim, so nothing changes for a
+ * page that mounts one guard — which is every page except the accommodation
+ * editor's Fotos section.
+ *
+ * `beforeunload` stays here, per-consumer: the browser renders its own
+ * non-customizable string, so overlapping listeners produce one prompt anyway,
+ * and `includeBeforeUnload: false` has to keep meaning "this condition does
+ * not raise the native prompt".
+ *
  * ## Not covered
  *
  * Back/forward navigation. By the time any event fires the browser has already
@@ -33,11 +52,10 @@
  * spec's NG-6. A user who presses back still loses unsaved edits.
  */
 
-import { useEffect, useRef } from 'react';
-import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
-
-/** Shape of the router's `navigate`, kept local to avoid a static virtual-module import. */
-type NavigateFn = (href: string) => void;
+import { useEffect } from 'react';
+import type { LeaveWarningKind } from '@/lib/forms/leave-warning-registry';
+import { registerLeaveWarning } from '@/lib/forms/leave-warning-registry';
+import type { SupportedLocale } from '@/lib/i18n';
 
 /** Options accepted by {@link useUnsavedChangesGuard}. */
 export interface UseUnsavedChangesGuardOptions {
@@ -72,50 +90,30 @@ export interface UseUnsavedChangesGuardOptions {
      * Called synchronously right after the user confirms leaving, before the
      * navigation itself runs. Lets a caller persist a "handled" flag (e.g. in
      * `sessionStorage`) without reaching into the navigation flow.
+     *
+     * When several warnings are active at once, EVERY active one's `onConfirm`
+     * runs — the host was shown, and answered, all of them in a single dialog.
      */
     readonly onConfirm?: () => void;
-}
-
-/**
- * Returns true when a click should be left alone: anything the router itself
- * would ignore, plus any link that stays on the current document. Mirrors the
- * bail-out conditions in `ClientRouter.astro` so the guard never intercepts a
- * navigation the router was not going to handle either.
- */
-function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolean {
-    if (event.defaultPrevented) return true;
-    // Left button only. `button` is 0 for the primary button.
-    if (event.button !== 0) return true;
-    // Modifier keys open a new tab/window or download instead of navigating.
-    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return true;
-    if (anchor.hasAttribute('download')) return true;
-    if (anchor.target && anchor.target !== '_self') return true;
-    if (anchor.dataset.astroReload !== undefined) return true;
-
-    const href = anchor.getAttribute('href');
-    if (!href) return true;
-
-    let target: URL;
-    try {
-        target = new URL(anchor.href, window.location.href);
-    } catch {
-        return true;
-    }
-
-    // Another origin leaves the app entirely — `beforeunload` covers that one.
-    if (target.origin !== window.location.origin) return true;
-
-    // Same document: an in-page anchor, or a link back to the page we are
-    // already on. Nothing is discarded either way, so never prompt. Deliberately
-    // does NOT require the hash to differ — the editors' own section nav
-    // preventDefaults its clicks and scrolls without writing the hash, so a
-    // second click on the already-active section would otherwise compare equal
-    // hashes and pop a confirm in the middle of editing.
-    if (target.pathname === window.location.pathname && target.search === window.location.search) {
-        return true;
-    }
-
-    return false;
+    /**
+     * What this warning is about. Defaults to `'unsaved-changes'`, which is
+     * what every consumer of this hook meant before kinds existed. Only used to
+     * pick the combined copy when another guard is active on the same page.
+     */
+    readonly kind?: LeaveWarningKind;
+    /**
+     * How many items the warning is about, for kinds whose combined copy is
+     * pluralized. Ignored when this warning is the only active one — `message`
+     * already carries its own count in that case.
+     */
+    readonly count?: number;
+    /**
+     * Locale used to build the COMBINED copy when this warning shares a page
+     * with another one. Optional, and irrelevant while this is the only guard
+     * on the page: that path shows `message` verbatim and never translates
+     * anything.
+     */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -145,28 +143,14 @@ export function useUnsavedChangesGuard({
     confirmLabel,
     cancelLabel,
     includeBeforeUnload = true,
-    onConfirm
+    onConfirm,
+    kind = 'unsaved-changes',
+    count,
+    locale
 }: UseUnsavedChangesGuardOptions): void {
-    // Resolved up front, mirroring `dialog-history.ts`'s `warmRouter()`: the
-    // click handler must decide synchronously, so awaiting the import there
-    // would let the navigation slip. If it never resolves we fall back to a
-    // full load — the user already accepted losing the edits.
-    const navigateRef = useRef<NavigateFn | null>(null);
-    const confirmationOpenRef = useRef(false);
-
     useEffect(() => {
         if (!isDirty) {
             return;
-        }
-
-        if (!navigateRef.current) {
-            void (import('astro:transitions/client') as Promise<{ navigate: NavigateFn }>)
-                .then(({ navigate }) => {
-                    navigateRef.current = navigate;
-                })
-                .catch(() => {
-                    // Leave it null; the click handler falls back to location.
-                });
         }
 
         const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
@@ -178,57 +162,37 @@ export function useUnsavedChangesGuard({
             event.returnValue = '';
         };
 
-        const handleClickCapture = (event: MouseEvent): void => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-
-            const anchor = target.closest('a');
-            if (!(anchor instanceof HTMLAnchorElement)) return;
-            if (shouldIgnoreClick(event, anchor)) return;
-
-            // Stops both the router (it bails on defaultPrevented) and the
-            // anchor's own navigation. Nothing has been fetched or swapped yet.
-            event.preventDefault();
-
-            if (confirmationOpenRef.current) {
-                return;
-            }
-
-            confirmationOpenRef.current = true;
-            const href = anchor.href;
-
-            void showConfirmationDialog({ message, title, confirmLabel, cancelLabel })
-                .then((confirmed) => {
-                    if (!confirmed) {
-                        return;
-                    }
-
-                    onConfirm?.();
-
-                    const routerNavigate = navigateRef.current;
-                    if (routerNavigate) {
-                        routerNavigate(href);
-                    } else {
-                        window.location.href = href;
-                    }
-                })
-                .finally(() => {
-                    confirmationOpenRef.current = false;
-                });
-        };
-
         if (includeBeforeUnload) {
             window.addEventListener('beforeunload', handleBeforeUnload);
         }
-        // Capture phase is load-bearing: the router listens in the bubble
-        // phase, so this must run first for `defaultPrevented` to reach it.
-        document.addEventListener('click', handleClickCapture, true);
+
+        // The internal-link half lives in the registry so that a page holding
+        // more than one guard asks ONE question instead of silently dropping
+        // all but the first — see this file's header and HOS-1018.
+        const unregister = registerLeaveWarning({
+            kind,
+            count,
+            locale,
+            copy: { message, title, confirmLabel, cancelLabel },
+            onConfirm
+        });
 
         return () => {
             if (includeBeforeUnload) {
                 window.removeEventListener('beforeunload', handleBeforeUnload);
             }
-            document.removeEventListener('click', handleClickCapture, true);
+            unregister();
         };
-    }, [isDirty, message, title, confirmLabel, cancelLabel, includeBeforeUnload, onConfirm]);
+    }, [
+        isDirty,
+        message,
+        title,
+        confirmLabel,
+        cancelLabel,
+        includeBeforeUnload,
+        onConfirm,
+        kind,
+        count,
+        locale
+    ]);
 }
