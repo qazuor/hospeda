@@ -178,6 +178,13 @@ const MEASURING_SITES: ReadonlyArray<{
         method: 'mediaModel.count',
         calls: 1,
         measures: 'service-layer gallery cap inside addMedia (experience)'
+    },
+    {
+        file: 'packages/service-core/src/services/media/owned-media-featured-port.ts',
+        method: 'mediaModel.count',
+        calls: 1,
+        measures:
+            'the gallery room check inside the born-featured cover path (HOS-803), shared by every vertical. This one read decides whether the cover being replaced is demoted into the gallery or archived out of it — so dropping the filter here would count the outgoing cover against the gallery and archive a photo that had room.'
     }
 ];
 

@@ -11,6 +11,7 @@
  * Exposes:
  *  - useCommerceMediaList(vertical, entityId)        → list query (GET)
  *  - useCommerceMediaAdd(vertical, entityId)         → add mutation (POST)
+ *  - useCommerceMediaAddFeatured(vertical, entityId) → cover upload (POST, HOS-803)
  *  - useCommerceMediaRemove(vertical, entityId)      → remove mutation (DELETE)
  *  - useCommerceMediaSetFeatured(vertical, entityId) → set-featured mutation (PUT)
  *
@@ -187,6 +188,62 @@ export function useCommerceMediaAdd(vertical: CommerceMediaVertical, entityId: s
                 );
             }
             return media;
+        },
+        onSuccess: () => {
+            invalidateAfterMediaMutation(queryClient, vertical, entityId);
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Add-featured mutation (HOS-803)
+// ---------------------------------------------------------------------------
+
+/**
+ * Mutation to register an uploaded photo as the listing's COVER, in one request.
+ *
+ * Replaces the `add` + `setFeatured` pair the portada uploader used to run. That
+ * pair was refused at its first step once the gallery reached the per-entity cap
+ * — the cap counts the gallery alone, because a cover is not a gallery item
+ * (HOS-791) — so a listing with a full gallery could not replace the one photo
+ * that does not occupy a slot in it. The row is now created already featured and
+ * the previous cover is disposed of in the same transaction, leaving no
+ * intermediate gallery row to be capped.
+ *
+ * The response reports what became of the previous cover — `demoted` (it joined
+ * the gallery) or `archived` (the gallery was full, so it left the visible set).
+ * This hook invalidates and refetches rather than branching on it, but it is
+ * returned so an optimistic caller can.
+ *
+ * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param entityId - UUID of the listing.
+ */
+export function useCommerceMediaAddFeatured(vertical: CommerceMediaVertical, entityId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: CommerceMediaAddPayload) => {
+            const response = await fetchApi<unknown>({
+                path: `${mediaEndpoint(vertical, entityId)}/featured`,
+                method: 'POST',
+                body: payload
+            });
+            const body = response.data as {
+                data?: {
+                    media?: CommerceMedia;
+                    previousFeatured?: {
+                        readonly id: string;
+                        readonly disposition: 'demoted' | 'archived';
+                    } | null;
+                };
+            };
+            const media = body.data?.media;
+            if (!media) {
+                throw new Error(
+                    'addFeaturedMedia response did not include the expected data.media payload'
+                );
+            }
+            return { media, previousFeatured: body.data?.previousFeatured ?? null };
         },
         onSuccess: () => {
             invalidateAfterMediaMutation(queryClient, vertical, entityId);
