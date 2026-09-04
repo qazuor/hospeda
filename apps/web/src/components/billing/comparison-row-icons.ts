@@ -25,6 +25,7 @@ import {
     EditIcon,
     FavoriteIcon,
     FileTextIcon,
+    ForkKnifeIcon,
     GlobeIcon,
     HomeIcon,
     type IconProps,
@@ -85,5 +86,27 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     aiImport: ImportIcon,
     // Same icon as `aiChat` on purpose — distinct audiences, never co-rendered.
     aiChatOwner: ChatIcon,
-    aiSupport: BriefcaseIcon
+    aiSupport: BriefcaseIcon,
+    // Gastronomy (HOS-1032). `PlanComparisonTable` guards with `{RowIcon && …}`,
+    // so an unmapped row degrades silently — which is why the two commerce
+    // tables would otherwise have rendered ONE iconed row among fifteen, beside
+    // owner and tourist tables where every row has one.
+    maxGastronomies: ForkKnifeIcon,
+    publishGastronomy: HomeIcon,
+    editGastronomyInfo: EditIcon,
+    gastronomyMenu: FileTextIcon,
+    gastronomyDailySpecial: CalendarIcon,
+    gastronomyEvents: MegaphoneIcon,
+    menuItemPhotos: ImageIcon,
+    multilingualMenu: GlobeIcon,
+    // Experiences (HOS-1032)
+    maxExperiences: CompassIcon,
+    publishExperience: HomeIcon,
+    editExperienceInfo: EditIcon,
+    experienceDirections: CompassIcon,
+    experienceCertificate: CheckCircleIcon,
+    // Shared by both commerce verticals
+    listingPdf: FileTextIcon,
+    // Same icon as `aiChat` / `aiChatOwner`, same reason: distinct audiences.
+    aiChatCommerce: ChatIcon
 };

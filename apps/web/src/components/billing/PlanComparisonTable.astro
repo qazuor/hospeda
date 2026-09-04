@@ -148,8 +148,22 @@ function formatPriceArs(cents: number): string {
 								start at this URL, and ship React to render it.
 							*/}
 							{isAccommodationAudience ? (
+								/*
+									`client:visible`, not `client:load` (HOS-1032). This
+									table used to be the whole of its own page, where
+									eager hydration was the right call. It now renders
+									BELOW the card grid on the pricing page, which mounts
+									one purchase island per card already — so `client:load`
+									here doubled the eager React on the most
+									conversion-critical page on the site to hydrate three
+									buttons nobody has scrolled to yet.
+
+									Nothing is lost: the island is interactive by the time
+									it is on screen, and the column's price and label are
+									server-rendered either way.
+								*/
 								<PlanPurchaseButton
-									client:load
+									client:visible
 									planSlug={plan.slug}
 									monthlyPrice={plan.monthlyPriceArs}
 									annualPrice={plan.annualPriceArs ?? null}

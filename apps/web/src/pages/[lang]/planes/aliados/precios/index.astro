@@ -41,10 +41,24 @@
  * - **No comparison table.** Every partner tier carries `entitlements: []` and
  *   `limits: []`, because what separates them is the `/partners/<slug>/` page,
  *   which the entitlement engine knows nothing about. A table built from those
- *   rows would be a wall of "no incluido" under-selling both. The cards already
- *   list what each level gives, which is the job the table would be doing.
+ *   rows would be a wall of "no incluido" under-selling both.
  *   `PlanComparisonTable` refuses `'partner'` by type so this cannot be added
  *   back by analogy.
+ *
+ * ## What DOES differentiate the two levels here
+ *
+ * The plan DESCRIPTION, and nothing else — silver's names the carousel and the
+ * campaigns, gold's names the own page on top of them. That is deliberate and
+ * it is also the whole reason those descriptions had to be translated: the same
+ * empty `entitlements` that makes a comparison table useless makes the card's
+ * bullet list empty, so the description is the only surface left that can tell
+ * a reader what they get.
+ *
+ * Two facts, one cause. An earlier draft of this file justified omitting the
+ * table by saying "the cards already list what each level gives" — they did
+ * not, for exactly the reason the table was being omitted. The delta heading
+ * that used to sit above that empty list ("Este plan incluye:") is now gated on
+ * there being a list, so the card no longer announces one that never follows.
  *
  * The CTA goes to the lead form, not a checkout: a partnership is agreed in a
  * conversation. The systems behind that conversation — per-partner pricing and

@@ -199,7 +199,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     // table moved onto the pricing page itself (D-11) and the two commerce
     // landings whose price block moved down a level (D-9 for the slug).
     //
-    // All nine leave the sitemap in the SAME change that turns them into
+    // All seven leave the sitemap in the SAME change that turns them into
     // redirects. Their successors are listed above; a sitemap naming both would
     // be advertising two URLs for one page and spending a crawl request to
     // learn that one of them moved.
