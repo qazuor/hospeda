@@ -56,8 +56,8 @@ import {
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { buildQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
-import { buildQrScanUrl } from '../../../utils/qr-public-url';
 import { renderQr } from '../../../utils/qr-render';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { qrCodeService } from './_singletons';
@@ -103,7 +103,11 @@ export const adminDownloadQrCodeRoute = createAdminRoute({
         const format =
             (query?.format as QrCodeFormatEnum | undefined) ?? qrCode.renderOptions.format;
 
-        const scanUrl = buildQrScanUrl({ slug: qrCode.slug, siteUrl: env.HOSPEDA_SITE_URL });
+        // `utils/entity-qr` is the one place `/qr/{slug}/` is spelled in this
+        // app. This endpoint used to carry its own copy of the builder, which
+        // agreed with it — a second spelling never fails, it just starts
+        // routing one family of printed codes to a 404 the day it drifts.
+        const scanUrl = buildQrScanUrl({ qrSlug: qrCode.slug, siteUrl: env.HOSPEDA_SITE_URL });
 
         // The stored options, with only `format` overridden. Spreading the row
         // rather than rebuilding an option set is what keeps a download

@@ -54,10 +54,18 @@ const qrCodeService = new QrCodeService({ logger: apiLogger });
  * locale baked into ink would choose, permanently, what language every future
  * scanner reads the site in. See `apps/web/src/pages/qr/[slug].astro`.
  *
- * This is the ONE spelling of that path in `apps/api`: the provider sticker's
- * own builder delegates here rather than repeating it. Two spellings would not
- * fail — they would quietly start redirecting one family of printed codes to a
- * 404.
+ * This is the ONE spelling of that path in `apps/api`, and everything that
+ * needs it delegates here rather than repeating it: the provider sticker's
+ * builder (`utils/host-trade-qr.ts`) and the admin download endpoint
+ * (`routes/qr-code/admin/download.ts`), which renders the file an operator
+ * actually sends to a print shop.
+ *
+ * Worth spelling out, because a second copy would not fail anywhere — no type
+ * error, no red test, no 500. It would quietly start sending one family of
+ * already-printed codes to a 404. `utils/qr-public-url.ts` WAS that second
+ * copy until it was folded in here; it agreed with this one character for
+ * character, so nothing was wrong, which is exactly why nothing would have
+ * said so had it drifted.
  *
  * @param input - Input parameters.
  * @param input.qrSlug - The QR CODE's slug (`qr_codes.slug`), not the entity's.
