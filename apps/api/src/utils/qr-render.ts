@@ -49,6 +49,28 @@ export type QrRenderPngResult = {
 export type QrRenderResult = QrRenderSvgResult | QrRenderPngResult;
 
 /**
+ * The symbol's raw module grid — what a QR *is*, before anybody decides how to
+ * paint it.
+ *
+ * Exists because two consumers do not want an image at all: the brochure and
+ * the certificate draw the dark modules as filled rectangles inside a PDF, so
+ * that the code stays vector at any print size (a QR is the one graphic where
+ * resampling costs scans). Handing them an SVG string to re-parse, or a PNG to
+ * embed, would be strictly worse than handing them the grid.
+ *
+ * Publishing the grid here rather than letting each of them call `qrcode`
+ * directly is the whole point: `qrcode` has exactly one importer in this repo,
+ * enforced by `scripts/check-qrcode-engine-isolation.sh`. Two parallel
+ * generators is not a hypothetical — it is what HOS-1129 was opened to undo.
+ */
+export type QrModuleMatrix = {
+    /** Side of the square grid, in modules. Excludes the quiet zone. */
+    readonly size: number;
+    /** Whether the module at `(row, col)` is dark. Out-of-range reads as light. */
+    readonly isDark: (row: number, col: number) => boolean;
+};
+
+/**
  * Fills in the defaults an omitted option takes.
  *
  * Kept separate and exported so a caller can see exactly what will be drawn
@@ -93,6 +115,44 @@ function toLibraryOptions(options: QrCodeRenderOptions): {
         errorCorrectionLevel: options.errorCorrectionLevel,
         color: { dark: options.foregroundColor, light: options.backgroundColor },
         ...(options.size === null ? {} : { width: options.size })
+    };
+}
+
+/**
+ * Computes the module grid for `data`.
+ *
+ * Synchronous, unlike its three siblings: `QRCode.create` does no I/O, and
+ * wrapping it in a promise would force every PDF drawing helper that consumes a
+ * grid to become async for nothing.
+ *
+ * Only the error-correction level is accepted, and that is deliberate rather
+ * than an oversight: a grid has no margin, no colours and no pixel size, so an
+ * options bag that quietly ignored three of its five fields would be a
+ * fail-open — a caller would set `margin` here, see no error, and print a code
+ * with no quiet zone. The quiet zone is the CALLER's layout problem, because
+ * only the caller knows what sits behind the symbol on the page.
+ *
+ * @param input - Options object (RO-RO).
+ * @param input.data - The string the code encodes (usually a URL).
+ * @param input.errorCorrectionLevel - Recovery level; defaults to the engine's.
+ * @returns The module grid, identical for a given data + level pair.
+ */
+export function renderQrMatrix(input: {
+    data: string;
+    errorCorrectionLevel?: QrCodeErrorCorrectionLevelEnum;
+}): QrModuleMatrix {
+    const { errorCorrectionLevel } = resolveQrRenderOptions({
+        options: { errorCorrectionLevel: input.errorCorrectionLevel }
+    });
+
+    const qr = QRCode.create(input.data, { errorCorrectionLevel });
+    const size = qr.modules.size;
+    const data = qr.modules.data;
+
+    return {
+        size,
+        isDark: (row: number, col: number): boolean =>
+            row >= 0 && row < size && col >= 0 && col < size && data[row * size + col] === 1
     };
 }
 

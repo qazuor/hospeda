@@ -43,14 +43,19 @@ const FILENAME_PREFIX = 'ficha';
  * @param input.content - The printable content, already built from the
  *   listing's PUBLIC projection.
  * @param input.slug - The listing slug, used for the download filename.
+ * @param input.qrUrl - What the QR encodes: the platform's own
+ *   `{site}/qr/{qrSlug}/` redirect, resolved by the route (HOS-1129). NOT
+ *   `content.url` — that is the destination, and printing it into the symbol is
+ *   what made the sheet uncorrectable and its scans uncountable.
  * @returns A `Response` carrying `application/pdf`.
  */
 export async function buildBrochureResponse(input: {
     content: BrochureContent;
     slug: string;
+    qrUrl: string;
 }): Promise<Response> {
     const cover = await loadBrochureCover({ url: input.content.coverImageUrl });
-    const pdf = await renderBrochurePdf({ content: input.content, cover });
+    const pdf = await renderBrochurePdf({ content: input.content, cover, qrUrl: input.qrUrl });
 
     const safeSlug = input.slug.toLowerCase().replace(FILENAME_SAFE, '-').replace(/-+/g, '-');
     const filename = `${FILENAME_PREFIX}-${safeSlug || 'hospeda'}.pdf`;

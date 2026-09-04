@@ -87,13 +87,18 @@ function toFilenameFragment(value: string): string {
  *
  * @param input.content - The printable content.
  * @param input.recipientName - Who it was issued to, used for the filename.
+ * @param input.qrUrl - What the QR encodes: the platform's own
+ *   `{site}/qr/{qrSlug}/` redirect, resolved by the route (HOS-1129). NOT
+ *   `content.publicUrl` — that is where the redirect lands, and a framed sheet
+ *   is the least correctable surface the product prints on.
  * @returns A `Response` carrying `application/pdf`.
  */
 export async function buildCertificateResponse(input: {
     content: CertificateContent;
     recipientName: string;
+    qrUrl: string;
 }): Promise<Response> {
-    const pdf = await renderCertificatePdf({ content: input.content });
+    const pdf = await renderCertificatePdf({ content: input.content, qrUrl: input.qrUrl });
 
     const fragment = toFilenameFragment(input.recipientName);
     const filename = `${FILENAME_PREFIX}-${fragment || 'hospeda'}.pdf`;

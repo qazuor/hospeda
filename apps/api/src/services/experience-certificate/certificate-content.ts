@@ -57,7 +57,15 @@ export interface CertificateContent {
     readonly qrHint: string;
     /** The closing line. */
     readonly footer: string;
-    /** Absolute URL the QR points at — the experience's PUBLIC ficha. */
+    /**
+     * The experience's PUBLIC ficha.
+     *
+     * Since HOS-1129 this is where the QR LANDS, not what it encodes: the
+     * symbol carries `{site}/qr/{qrSlug}/` and the platform 302s here, so the
+     * destination of a framed certificate stays editable. It is not drawn
+     * anywhere on the sheet — the route reads it to provision the code's
+     * `targetUrl`.
+     */
     readonly publicUrl: string;
 }
 

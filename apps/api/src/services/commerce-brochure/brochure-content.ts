@@ -61,7 +61,20 @@ export interface BrochureContent {
     readonly price: string | null;
     /** Titled blocks, in print order. */
     readonly sections: readonly BrochureSection[];
-    /** Absolute URL of the public ficha. Printed AND encoded in the QR. */
+    /**
+     * Absolute URL of the public ficha.
+     *
+     * Since HOS-1129 this is where the QR LANDS, not what it encodes: the
+     * symbol carries `{site}/qr/{qrSlug}/`, so a listing whose address moves
+     * does not strand every sheet already printed. The route reads this to
+     * provision the code's `targetUrl`.
+     *
+     * It is NOT drawn on the sheet. The readable line beside the code is the
+     * bare domain instead — a deep URL printed next to a correctable symbol
+     * ages differently from it, and the day the ficha moves that line is dead
+     * while the code beside it still works. See `printedDomain` in
+     * `brochure-render`.
+     */
     readonly url: string;
     /** Cover photo URL, already filtered for moderation state. */
     readonly coverImageUrl: string | null;

@@ -44,6 +44,7 @@
  * @module services/commerce-brochure/brochure-render
  */
 
+import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
 import {
     type Color,
     PageSizes,
@@ -54,8 +55,8 @@ import {
     rgb,
     StandardFonts
 } from 'pdf-lib';
-import QRCode from 'qrcode';
 import { apiLogger } from '../../utils/logger.js';
+import { renderQrMatrix } from '../../utils/qr-render.js';
 import type { BrochureContent } from './brochure-content.js';
 import type { BrochureCover } from './brochure-cover.js';
 
@@ -94,7 +95,7 @@ const LEADING = 1.35;
 const QR_SIZE = 92;
 
 /** Error correction of the printed QR: paper gets folded, scuffed and copied. */
-const QR_ERROR_CORRECTION = 'M';
+const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.M;
 
 /** Max height of the cover photo. Leaves room for text on the same page. */
 const COVER_MAX_HEIGHT = 180;
@@ -116,6 +117,18 @@ export interface BrochureRenderInput {
      * outside so this function's only I/O is what `pdf-lib` does in memory.
      */
     readonly cover: BrochureCover | null;
+    /**
+     * What the QR encodes: `{site}/qr/{qrSlug}/`, the platform's own redirect
+     * (HOS-1129).
+     *
+     * Separate from `content.url`, which is the listing's real address and is
+     * where this redirect LANDS. Nothing on the sheet draws `content.url` any
+     * more: the readable line beside the code is the bare domain, taken from
+     * this value's host (see `printedDomain`). Resolving this one needs the
+     * database, so it is passed in rather than derived here: the renderer stays
+     * a pure function of its inputs.
+     */
+    readonly qrUrl: string;
 }
 
 /**
@@ -352,12 +365,57 @@ function drawParagraph(input: {
  * costs scans, and the module grid is cheaper to express as rectangles than as
  * an embedded bitmap. Horizontal runs of dark modules are merged into a single
  * rectangle, which roughly halves the operator count.
+ *
+ * The grid comes from `utils/qr-render.ts`, the one module in this repo allowed
+ * to import `qrcode` (HOS-1129). What is drawn is `content.qrUrl` — the
+ * platform's own `/qr/{slug}/` redirect, never the listing's final URL: ink is
+ * not editable, and a code that points at us is a code we can repoint and
+ * count.
  */
+/**
+ * What the readable line beside the QR says, when `qrUrl` cannot be parsed.
+ *
+ * A brochure must print something rather than a blank line, and this is the one
+ * string on the sheet that is true regardless of any row in any table.
+ */
+const FALLBACK_PRINTED_DOMAIN = 'hospeda.com.ar';
+
+/**
+ * The bare domain printed under the QR hint.
+ *
+ * DELIBERATELY the domain and NOT the listing's ficha — resist the urge to
+ * "improve" this by putting the full URL back. The symbol beside it is
+ * correctable (it encodes `/qr/{slug}/`, which we can repoint); the ink is not.
+ * Printing the deep address makes the two AGE DIFFERENTLY: the day the ficha
+ * moves the QR keeps working and the line under it is dead, on the same piece
+ * of paper, with nothing on the page to say which half to trust.
+ *
+ * Printing `/qr/{slug}/` instead would remove that asymmetry and cost the whole
+ * point of the line, which is the reader who cannot scan: nobody types,
+ * remembers or recognises an opaque identifier. The bare domain keeps that
+ * reader — the business's name is already set large at the top of the sheet, so
+ * the domain is enough to get there — and cannot die, because it points at
+ * nothing that can move. The accepted cost is that it stops being a direct
+ * link.
+ *
+ * Derived from `qrUrl` rather than taken from `content.url`, so the listing's
+ * real address no longer travels into the renderer merely to be printed.
+ */
+function printedDomain(qrUrl: string): string {
+    try {
+        return new URL(qrUrl).host;
+    } catch {
+        return FALLBACK_PRINTED_DOMAIN;
+    }
+}
+
 function drawQr(input: { page: PDFPage; url: string; x: number; y: number; size: number }): void {
     const { page, x, y, size } = input;
-    const qr = QRCode.create(input.url, { errorCorrectionLevel: QR_ERROR_CORRECTION });
-    const count = qr.modules.size;
-    const data = qr.modules.data;
+    const qr = renderQrMatrix({
+        data: input.url,
+        errorCorrectionLevel: QR_ERROR_CORRECTION
+    });
+    const count = qr.size;
     const module = size / count;
 
     // White ground: the quiet zone is drawn by the caller's layout, but a
@@ -368,7 +426,7 @@ function drawQr(input: { page: PDFPage; url: string; x: number; y: number; size:
     for (let row = 0; row < count; row += 1) {
         let runStart = -1;
         for (let col = 0; col <= count; col += 1) {
-            const dark = col < count && data[row * count + col] === 1;
+            const dark = qr.isDark(row, col);
             if (dark && runStart === -1) {
                 runStart = col;
             } else if (!dark && runStart !== -1) {
@@ -425,7 +483,7 @@ async function embedCover(input: {
 export async function renderBrochurePdf(
     input: BrochureRenderInput
 ): Promise<Uint8Array<ArrayBuffer>> {
-    const { content, cover } = input;
+    const { content, cover, qrUrl } = input;
     const doc = await PDFDocument.create();
     doc.setTitle(content.title);
     doc.setProducer('Hospeda');
@@ -556,7 +614,7 @@ export async function renderBrochurePdf(
     // land on different sheets.
     cursor.reserve({ height: QR_SIZE + 24 });
     const qrTop = cursor.top;
-    drawQr({ page: cursor.page, url: content.url, x: MARGIN, y: qrTop, size: QR_SIZE });
+    drawQr({ page: cursor.page, url: qrUrl, x: MARGIN, y: qrTop, size: QR_SIZE });
 
     const textX = MARGIN + QR_SIZE + 18;
     const textWidth = CONTENT_WIDTH - QR_SIZE - 18;
@@ -579,8 +637,11 @@ export async function renderBrochurePdf(
         textY += BODY_SIZE * LEADING;
     }
     textY += 4;
+    // The bare domain, not the ficha's address — see `printedDomain`. Paper is
+    // not correctable and a deep URL printed beside a redirectable symbol ages
+    // differently from it.
     for (const line of wrapText({
-        text: content.url,
+        text: printedDomain(qrUrl),
         font: fonts.regular,
         size: SMALL_SIZE,
         maxWidth: textWidth

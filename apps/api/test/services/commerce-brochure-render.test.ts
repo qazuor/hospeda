@@ -30,6 +30,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
+import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
 import type { BrochureContent } from '../../src/services/commerce-brochure/brochure-content.js';
@@ -42,8 +43,16 @@ import {
     toDrawableText,
     wrapText
 } from '../../src/services/commerce-brochure/brochure-render.js';
+import { renderQrMatrix } from '../../src/utils/qr-render.js';
 
 const FIXTURES = join(import.meta.dirname, '..', 'fixtures');
+
+/**
+ * What the QR encodes since HOS-1129: the platform's own redirect, never the
+ * listing's address. The two are deliberately different strings here — a test
+ * that passed the same value for both could not tell which one got drawn.
+ */
+const QR_URL = 'https://hospeda.com.ar/qr/K7Qm2XbT/';
 
 /** A progressive JPEG: the case that motivated replacing the hand-written writer. */
 const PROGRESSIVE_JPEG = new Uint8Array(readFileSync(join(FIXTURES, 'cover-progressive.jpg')));
@@ -156,7 +165,7 @@ describe('the fixtures are what they claim to be (HOS-1058)', () => {
 
 describe('the brochure file (HOS-1058)', () => {
     it('is an A4 PDF of one page carrying the listing name as its title', async () => {
-        const bytes = await renderBrochurePdf({ content: content(), cover: null });
+        const bytes = await renderBrochurePdf({ content: content(), cover: null, qrUrl: QR_URL });
 
         expect(Buffer.from(bytes).subarray(0, 5).toString('latin1')).toBe('%PDF-');
         expect(Buffer.from(bytes).toString('latin1').trimEnd().endsWith('%%EOF')).toBe(true);
@@ -169,7 +178,7 @@ describe('the brochure file (HOS-1058)', () => {
     });
 
     it('draws the copy it was given, accents and separators included', async () => {
-        const bytes = await renderBrochurePdf({ content: content(), cover: null });
+        const bytes = await renderBrochurePdf({ content: content(), cover: null, qrUrl: QR_URL });
 
         expect(drawsText(bytes, 'La Parrilla del Puerto')).toBe(true);
         expect(drawsText(bytes, 'Parrilla \xb7 Concepci\xf3n del Uruguay')).toBe(true);
@@ -178,8 +187,8 @@ describe('the brochure file (HOS-1058)', () => {
     });
 
     it('is byte-identical across runs, so the same listing yields the same file', async () => {
-        const first = await renderBrochurePdf({ content: content(), cover: null });
-        const second = await renderBrochurePdf({ content: content(), cover: null });
+        const first = await renderBrochurePdf({ content: content(), cover: null, qrUrl: QR_URL });
+        const second = await renderBrochurePdf({ content: content(), cover: null, qrUrl: QR_URL });
         expect(Buffer.from(first).equals(Buffer.from(second))).toBe(true);
     });
 
@@ -187,7 +196,8 @@ describe('the brochure file (HOS-1058)', () => {
         const lines = Array.from({ length: 90 }, (_, index) => `Línea número ${index} del menú.`);
         const bytes = await renderBrochurePdf({
             content: content({ sections: [{ heading: 'Carta', lines }] }),
-            cover: null
+            cover: null,
+            qrUrl: QR_URL
         });
 
         expect((await reread(bytes)).pages).toBeGreaterThan(1);
@@ -198,11 +208,143 @@ describe('the brochure file (HOS-1058)', () => {
         // than guessing — an uncaught raise is a 500 on a download.
         const bytes = await renderBrochurePdf({
             content: content({ title: 'Sushi 漢 del Puerto' }),
-            cover: null
+            cover: null,
+            qrUrl: QR_URL
         });
 
         expect((await reread(bytes)).pages).toBe(1);
         expect(drawsText(bytes, 'Sushi ? del Puerto')).toBe(true);
+    });
+});
+
+/**
+ * WHICH string ends up inside the symbol (HOS-1129).
+ *
+ * The QR is drawn as merged horizontal runs of dark modules, so the number of
+ * `re` (rectangle) operators in the page's content stream is a fingerprint of
+ * the encoded string — and everything else on this page is held constant. That
+ * gives two assertions no `toContain` could make:
+ *
+ * - moving `content.url` must leave the FILE byte-identical (the sheet stopped
+ *   drawing it entirely — see the readable-line test below), and
+ * - moving `qrUrl` MUST move the rectangle count, by exactly the number of runs
+ *   the engine says that string produces.
+ *
+ * Asserting only the first would pass for a renderer that draws a constant; only
+ * the second would pass for one that draws both. Together they pin the source.
+ */
+describe('what the QR encodes (HOS-1129)', () => {
+    /**
+     * Filled paths in the page content — one per drawn rectangle.
+     *
+     * `pdf-lib` does NOT emit the `re` operator: a rectangle comes out as
+     * `m`/`l`/`l`/`l` followed by `h` (closepath) and `f` (fill), so that pair
+     * is the thing to count. Worth stating because the obvious `\sre\s` finds
+     * zero in every file, and a difference of zero minus zero is a green test
+     * that measured nothing — which is exactly what happened on the first run
+     * of this suite.
+     */
+    function filledPaths(bytes: Uint8Array): number {
+        const streams = inflatedStreams(bytes).toString('latin1');
+        return (streams.match(/\nh\nf\n/g) ?? []).length;
+    }
+
+    /** Merged horizontal dark runs — exactly what `drawQr` emits per symbol. */
+    function darkRuns(url: string): number {
+        // Same level `brochure-render.ts` prints at — a different one would
+        // yield a different grid and make the comparison meaningless.
+        const matrix = renderQrMatrix({
+            data: url,
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.M
+        });
+        let runs = 0;
+        for (let row = 0; row < matrix.size; row += 1) {
+            let inRun = false;
+            for (let col = 0; col <= matrix.size; col += 1) {
+                const dark = matrix.isDark(row, col);
+                if (dark && !inRun) inRun = true;
+                else if (!dark && inRun) {
+                    runs += 1;
+                    inRun = false;
+                }
+            }
+        }
+        return runs;
+    }
+
+    /** A much longer redirect — a different QR version, so a different count. */
+    const OTHER_QR_URL = `https://hospeda.com.ar/qr/${'K7Qm2XbT'.repeat(8)}/`;
+
+    it('ignores content.url, which the sheet no longer draws anywhere', async () => {
+        const short = await renderBrochurePdf({
+            content: content({ url: 'https://hospeda.com.ar/es/gastronomia/a/' }),
+            cover: null,
+            qrUrl: QR_URL
+        });
+        const long = await renderBrochurePdf({
+            content: content({
+                url: `https://hospeda.com.ar/es/gastronomia/${'un-slug-larguisimo-'.repeat(6)}/`
+            }),
+            cover: null,
+            qrUrl: QR_URL
+        });
+
+        // A count of zero would make the comparison below vacuous, so say out
+        // loud that rectangles were actually found.
+        expect(filledPaths(short)).toBeGreaterThan(100);
+        // Nothing on the sheet depends on the ficha's address any more — not
+        // the symbol and not the readable line beside it — so a different one
+        // must change nothing whatsoever in the file.
+        expect(Buffer.from(short).equals(Buffer.from(long))).toBe(true);
+    });
+
+    /**
+     * The readable line beside the code is the BARE DOMAIN (owner decision).
+     *
+     * The symbol is correctable and the ink is not, so printing the ficha's
+     * real address makes the two age differently: the day the listing moves,
+     * the QR keeps working and the line under it is dead on the same sheet.
+     * Printing `/qr/{slug}/` instead would fix that and lose the reader who
+     * cannot scan. The domain does both — it cannot die, and it is something a
+     * person can actually act on.
+     *
+     * The footer is overridden here because the default one CONTAINS the
+     * domain, and a positive assertion satisfied by a different line on the
+     * page would pass with this feature deleted.
+     */
+    it('prints the bare domain beside the code, not the listing address', async () => {
+        const bytes = await renderBrochurePdf({
+            content: content({
+                url: 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/',
+                footer: 'Hospeda'
+            }),
+            cover: null,
+            qrUrl: QR_URL
+        });
+
+        expect(drawsText(bytes, 'hospeda.com.ar')).toBe(true);
+        // The deep path is the half that would rot. Assert the whole address
+        // and the path alone: a renderer that printed either is caught.
+        expect(
+            drawsText(bytes, 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/')
+        ).toBe(false);
+        expect(drawsText(bytes, '/es/gastronomia/')).toBe(false);
+        // Nor the opaque redirect, which was the other option on the table.
+        expect(drawsText(bytes, 'K7Qm2XbT')).toBe(false);
+    });
+
+    it('follows qrUrl, module for module', async () => {
+        const first = await renderBrochurePdf({ content: content(), cover: null, qrUrl: QR_URL });
+        const second = await renderBrochurePdf({
+            content: content(),
+            cover: null,
+            qrUrl: OTHER_QR_URL
+        });
+
+        expect(darkRuns(OTHER_QR_URL)).not.toBe(darkRuns(QR_URL));
+        expect(filledPaths(second) - filledPaths(first)).toBe(
+            darkRuns(OTHER_QR_URL) - darkRuns(QR_URL)
+        );
     });
 });
 
@@ -214,7 +356,7 @@ describe('the cover photo (HOS-1058)', () => {
     }
 
     async function renderWith(cover: BrochureCover | null): Promise<Uint8Array> {
-        return renderBrochurePdf({ content: content(), cover });
+        return renderBrochurePdf({ content: content(), cover, qrUrl: QR_URL });
     }
 
     it('embeds a PROGRESSIVE jpeg — the photo the old writer dropped on the floor', async () => {

@@ -8,6 +8,7 @@ import { QrCodeErrorCorrectionLevelEnum, QrCodeFormatEnum } from '@repo/schemas'
 import { describe, expect, it } from 'vitest';
 import {
     renderQr,
+    renderQrMatrix,
     renderQrPng,
     renderQrSvg,
     resolveQrRenderOptions
@@ -156,5 +157,154 @@ describe('renderQr', () => {
         if (result.format !== QrCodeFormatEnum.PNG) throw new Error('unreachable');
         expect(result.dataUrl.startsWith('data:image/png;base64,')).toBe(true);
         expect(Buffer.isBuffer(result.png)).toBe(true);
+    });
+});
+
+/**
+ * The module grid the two PDF renderers consume (HOS-1129).
+ *
+ * These matter more than they look: `renderQrMatrix` is the reason
+ * `brochure-render.ts` and `certificate-render.ts` no longer import `qrcode`
+ * themselves, and a grid that silently answered the wrong shape would print a
+ * dead code onto paper with nothing on the page to say so.
+ */
+describe('renderQrMatrix (HOS-1129)', () => {
+    it('returns a square grid whose side is a valid QR version', () => {
+        const matrix = renderQrMatrix({ data: DATA });
+
+        // Every QR version is 21 + 4n modules a side.
+        expect(matrix.size).toBeGreaterThanOrEqual(21);
+        expect((matrix.size - 21) % 4).toBe(0);
+    });
+
+    it('draws the three finder patterns, which is what makes it a QR at all', () => {
+        const matrix = renderQrMatrix({ data: DATA });
+        const last = matrix.size - 1;
+
+        // A finder is 7×7: a dark outer ring, a light ring inside it, and a
+        // 3×3 dark core. Read along the diagonal that is dark-light-dark. The
+        // fourth corner never carries one, which is what orients the symbol.
+        const corners: readonly (readonly [number, number])[] = [
+            [0, 0],
+            [0, last - 6],
+            [last - 6, 0]
+        ];
+        for (const [row, col] of corners) {
+            expect(matrix.isDark(row, col)).toBe(true);
+            expect(matrix.isDark(row + 1, col + 1)).toBe(false);
+            expect(matrix.isDark(row + 2, col + 2)).toBe(true);
+        }
+        expect(matrix.isDark(last, last)).toBe(false);
+    });
+
+    /**
+     * Which index is the ROW (HOS-1129 review).
+     *
+     * Every other assertion in this suite is symmetric about the diagonal, so
+     * reading the flat module array as `data[col * size + row]` — a
+     * one-character slip — survived all of them: the three finder probes sit at
+     * `[0,0]`, `[0,last-6]` and `[last-6,0]`, and transposing merely swaps the
+     * last two, both of which are finders; `isDark(last,last) === false` holds
+     * either way; and determinism and "encodes the string it was given" compare
+     * the grid against itself. Measured: transposing left 39 tests green across
+     * 2 files. A transposed QR is a mirrored QR, and a mirrored QR does not
+     * scan — on paper, permanently.
+     *
+     * The timing patterns are NOT usable here, tempting as they look: row 6 and
+     * column 6 are the same alternating string, so transposing swaps two
+     * identical values (verified — `row6 === col6` for this symbol). What does
+     * separate the two orientations:
+     *
+     * - the DARK MODULE, which the spec fixes dark at `(4·version + 9, 8)` in
+     *   every symbol of every version, while its mirror `(8, size - 8)` is an
+     *   ordinary format-information bit; and
+     * - the two copies of the format information itself, which carry the same
+     *   15 bits in opposite orders along row 8 and column 8.
+     *
+     * The two lines are frozen as literals rather than derived, because
+     * anything derived from the grid is exactly what a transposed grid would
+     * also satisfy. They are tied to `DATA`: change that string and both
+     * change together, which is a rewrite of this test and not a silent pass.
+     */
+    it('fixes which index is the row, so a transposed read is not this grid', () => {
+        const matrix = renderQrMatrix({ data: DATA });
+
+        // `DATA` is a version-3 symbol; the goldens below are 29 characters.
+        expect(matrix.size).toBe(29);
+
+        // Spec-guaranteed dark, at any version. Its mirror is not.
+        expect(matrix.isDark(matrix.size - 8, 8)).toBe(true);
+        expect(matrix.isDark(8, matrix.size - 8)).toBe(false);
+
+        const read = (at: (index: number) => boolean): string =>
+            Array.from({ length: matrix.size }, (_, index) => (at(index) ? '#' : '.')).join('');
+        const row8 = read((col) => matrix.isDark(8, col));
+        const col8 = read((row) => matrix.isDark(row, 8));
+
+        expect(row8).toBe('#.##.###...#.##.##.#..#..#.##');
+        expect(col8).toBe('##.#..##..#.##.##....###.##.#');
+        // Stated out loud: the pair above is only evidence because the two
+        // strings differ. Two equal goldens would be a symmetric assertion
+        // wearing a golden's clothes.
+        expect(row8).not.toBe(col8);
+    });
+
+    it('reads light outside the grid instead of throwing or wrapping around', () => {
+        const matrix = renderQrMatrix({ data: DATA });
+
+        // The run-merging loops in both PDF renderers walk one column PAST the
+        // edge to flush the last run. If that read wrapped to the next row's
+        // first module the final run would be drawn one module too wide.
+        expect(matrix.isDark(0, matrix.size)).toBe(false);
+        expect(matrix.isDark(matrix.size, 0)).toBe(false);
+        expect(matrix.isDark(-1, 0)).toBe(false);
+        expect(matrix.isDark(0, -1)).toBe(false);
+    });
+
+    it('is deterministic: the same string yields the same grid', () => {
+        const first = renderQrMatrix({ data: DATA });
+        const second = renderQrMatrix({ data: DATA });
+
+        expect(second.size).toBe(first.size);
+        for (let row = 0; row < first.size; row += 1) {
+            for (let col = 0; col < first.size; col += 1) {
+                expect(second.isDark(row, col)).toBe(first.isDark(row, col));
+            }
+        }
+    });
+
+    it('encodes the string it was given, not some other one', () => {
+        const mine = renderQrMatrix({ data: DATA });
+        const other = renderQrMatrix({ data: `${DATA}/different` });
+
+        const differs =
+            other.size !== mine.size ||
+            (() => {
+                for (let row = 0; row < mine.size; row += 1) {
+                    for (let col = 0; col < mine.size; col += 1) {
+                        if (other.isDark(row, col) !== mine.isDark(row, col)) return true;
+                    }
+                }
+                return false;
+            })();
+
+        expect(differs).toBe(true);
+    });
+
+    it('honours the error-correction level, defaulting to the engine default', () => {
+        const defaulted = renderQrMatrix({ data: DATA });
+        const explicitM = renderQrMatrix({
+            data: DATA,
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.M
+        });
+        const high = renderQrMatrix({
+            data: DATA,
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H
+        });
+
+        expect(defaulted.size).toBe(explicitM.size);
+        // H spends far more modules on recovery, so the same string needs a
+        // bigger symbol. If the level were being dropped these would match.
+        expect(high.size).toBeGreaterThan(explicitM.size);
     });
 });

@@ -280,6 +280,11 @@ jobs:
         run: bash scripts/check-qzpay-wave-convergence.sh
       - name: Check published contact addresses use hospeda.com.ar (HOS-928)
         run: bash scripts/check-hospeda-email-domain.sh
+      # Not redundant with `pnpm check:guards`: this job runs each guard as its
+      # own step (see the note above), so a guard listed only in that npm script
+      # never executes here.
+      - name: Check 'qrcode' has exactly one importer (HOS-1129)
+        run: bash scripts/check-qrcode-engine-isolation.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

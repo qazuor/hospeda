@@ -23,7 +23,13 @@
  */
 
 import { EntitlementKey } from '@repo/billing';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    PermissionEnum,
+    QrCodePurposeEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
@@ -37,6 +43,7 @@ import { buildExperienceBrochureContent } from '../../../services/commerce-broch
 import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
 import { ExperienceBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
 import { getActorFromContext } from '../../../utils/actor';
+import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -84,7 +91,25 @@ export async function handleGetExperienceBrochure(
         siteUrl: env.HOSPEDA_SITE_URL
     });
 
-    return buildBrochureResponse({ content, slug: parsed.data.slug });
+    // The sheet's QR encodes the platform's own redirect, never `content.url`
+    // (HOS-1129). `BROCHURE`, not `CERTIFICATE`: the same experience carries
+    // both, they land in different places, and `purpose` is what keeps the
+    // lookup from handing one document the other's code.
+    const qrUrl = await resolveEntityQrScanUrl({
+        actor,
+        entityType: EntityTypeEnum.EXPERIENCE,
+        entityId: entity.id,
+        purpose: QrCodePurposeEnum.BROCHURE,
+        targetUrl: content.url,
+        label: buildEntityQrLabel({
+            description: 'Experience brochure QR',
+            name: entity.name,
+            slug: parsed.data.slug
+        }),
+        siteUrl: env.HOSPEDA_SITE_URL
+    });
+
+    return buildBrochureResponse({ content, slug: parsed.data.slug, qrUrl });
 }
 
 /**
