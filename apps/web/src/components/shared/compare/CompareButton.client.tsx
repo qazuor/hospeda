@@ -29,6 +29,7 @@ import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { useCompareMode } from '@/store/compare-store';
 import { addToast } from '@/store/toast-store';
 import styles from './CompareButton.module.css';
@@ -97,7 +98,7 @@ export const CompareButton: FC<CompareButtonProps> = ({
 
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
+    const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     const ariaLabel = selected
         ? t('accommodations.comparison.button.removeAriaLabel', 'Quitar de comparación', {

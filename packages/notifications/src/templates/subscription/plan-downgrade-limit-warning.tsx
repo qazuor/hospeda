@@ -120,8 +120,18 @@ export function PlanDowngradeLimitWarning({
                     Volvé a un plan que incluya el límite que necesitás y todo seguirá funcionando
                     sin cambios. Es la opción más rápida si tu contenido es importante.
                 </Text>
+                {/*
+                    HOS-1032 moved the host pricing page to
+                    `/planes/anfitriones/precios/`. The old URL still 301s, so
+                    this link would not have broken — which is exactly why an
+                    email link is the worst place to leave one: it cannot be
+                    re-followed cheaply once sent, several corporate link
+                    scanners do not follow 3xx, and this template lives outside
+                    `apps/web`, where a repointing pass scoped to the web app
+                    never looks.
+                */}
                 <Section style={styles.buttonContainer}>
-                    <Button href={`${baseUrl}/es/suscriptores/planes/anfitriones/`}>
+                    <Button href={`${baseUrl}/es/planes/anfitriones/precios/`}>
                         Ver planes disponibles
                     </Button>
                 </Section>

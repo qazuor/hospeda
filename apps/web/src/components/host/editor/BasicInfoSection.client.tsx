@@ -12,6 +12,7 @@ import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { AiTextImprovePanel } from './AiTextImprovePanel.client';
 import styles from './BasicInfoSection.module.css';
@@ -222,7 +223,7 @@ export function BasicInfoSection({
                                     <a
                                         href={buildUrl({
                                             locale,
-                                            path: 'suscriptores/planes/anfitriones'
+                                            path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
                                         })}
                                     >
                                         {t(

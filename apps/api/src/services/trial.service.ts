@@ -94,8 +94,20 @@ const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
  * silently ignored. Every trial-eligible plan today is an owner plan (see
  * {@link DEFAULT_TRIAL_PLAN_SLUG}), so the owner pricing page is the correct,
  * single nudge target for every trial regardless of which plan it started on.
+ *
+ * HOS-1032 moved that page to `/planes/anfitriones/precios/`. The old URL still
+ * 301s there, so an unrepointed link would not 404 — it would cost a round trip
+ * and, worse, DROP THE QUERY STRING, which is the one thing this URL exists to
+ * carry. An `?interval=annual` nudge would have landed on the monthly toggle,
+ * silently, for the customer who had already chosen annual.
+ *
+ * Spelled here rather than imported: `apps/api` does not depend on `apps/web`,
+ * so `PRICING_PAGE_PATH_BY_AUDIENCE` is not reachable from this package. The
+ * static guard `apps/web/test/static-guards/retired-pricing-urls.guard.test.ts`
+ * is what keeps this literal from going stale again — it scans `apps/` and
+ * `packages/` for the retired paths, not just `apps/web`.
  */
-const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/anfitriones/';
+const TRIAL_UPGRADE_PATH = '/es/planes/anfitriones/precios/';
 
 /**
  * Builds the trial→paid conversion nudge URL sent on the `TRIAL_ENDING_REMINDER`

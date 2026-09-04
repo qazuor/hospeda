@@ -45,6 +45,7 @@ import { getAccommodationTypeLabel } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { useCompareStore } from '@/store/compare-store';
 import styles from './ComparisonMatrix.module.css';
 import { computeBestValue } from './computeBestValue';
@@ -198,7 +199,7 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
 
     const listingHref = `/${locale}/alojamientos/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
+    const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     if (status.kind === 'empty') {
         return (

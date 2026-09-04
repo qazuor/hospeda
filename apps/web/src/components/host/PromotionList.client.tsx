@@ -19,6 +19,7 @@ import { transformOwnerPromotionList } from '@/lib/api/transforms';
 import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PromotionList.module.css';
 
@@ -273,7 +274,7 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
     // ── Render: ready ─────────────────────────────────────────────────────
     const { items, canCreate } = state;
     const freeNightLabel = t('host.promotions.discountTypes.free_night', 'Noche gratis');
-    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
+    const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
     return (
         <div className={styles.container}>

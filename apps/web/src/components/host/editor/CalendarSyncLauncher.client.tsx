@@ -32,6 +32,7 @@ import {
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './CalendarSyncLauncher.module.css';
 import { CalendarSyncPanel } from './CalendarSyncPanel.client';
@@ -78,7 +79,7 @@ export function CalendarSyncLauncher({ locale, accommodationId }: CalendarSyncLa
     }, []);
 
     const closeLabel = t('host.properties.editor.calendarSync.close', 'Cerrar');
-    const plansUrl = buildUrl({ locale, path: '/suscriptores/planes/anfitriones' });
+    const plansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
     return (
         <div className={styles.launcher}>
