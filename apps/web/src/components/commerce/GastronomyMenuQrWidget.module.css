@@ -1,0 +1,226 @@
+.widget {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+}
+
+.title {
+    margin: 0;
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.toggle {
+    display: inline-flex;
+    margin: 0;
+    min-width: 0;
+    border: none;
+    gap: var(--space-1, 0.25rem);
+    padding: 0.125rem;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--surface-warm, rgba(0, 0, 0, 0.04));
+}
+
+.toggleButton,
+.toggleActive {
+    padding: 0.25rem 0.75rem;
+    border: none;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-caption, 0.75rem);
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--core-muted-foreground);
+}
+
+.toggleActive {
+    background: var(--core-card, #fff);
+    color: var(--core-foreground);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-4, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--core-card, var(--core-background));
+}
+
+.cardName {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.locked,
+.error,
+.empty {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm, 0.9375rem);
+}
+
+.totalRow {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2, 0.5rem);
+}
+
+.totalNumber {
+    font-size: var(--text-heading-3, 1.5rem);
+    font-weight: 700;
+    color: var(--core-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.totalLabel {
+    color: var(--core-muted-foreground);
+    font-size: var(--text-caption, 0.75rem);
+}
+
+.series {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.seriesRow {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr 1.5rem;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.seriesDate {
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.seriesTrack {
+    height: 6px;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+    overflow: hidden;
+}
+
+.seriesBar {
+    display: block;
+    height: 100%;
+    min-width: 2px;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--brand-accent);
+}
+
+.seriesValue {
+    text-align: right;
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.breakdowns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+.breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.breakdownTitle {
+    margin: 0;
+    font-size: var(--text-caption, 0.75rem);
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.breakdownList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.breakdownRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-foreground);
+}
+
+.breakdownValue {
+    color: var(--core-muted-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.qrBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+    padding-top: var(--space-2, 0.5rem);
+    border-top: 1px solid var(--border);
+}
+
+.qrImage {
+    width: 128px;
+    height: 128px;
+    border-radius: var(--radius-sm, 0.25rem);
+    background: #fff;
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border);
+}
+
+.qrTarget {
+    margin: 0;
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    word-break: break-all;
+}
+
+.downloadButton {
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 0.5rem);
+    background: var(--core-card, #fff);
+    color: var(--core-foreground);
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    cursor: pointer;
+}
+
+.downloadButton:hover {
+    background: var(--surface-warm, rgba(0, 0, 0, 0.04));
+}
+
+.downloaded {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-caption, 0.75rem);
+}

@@ -17,9 +17,12 @@
  *
  * **What's explicitly NOT here (owner decision, HOS-734):** the daily-series
  * chart (API route exists, `commerceAnalyticsApi.getViewsDailySeries`, ready
- * for a future addition) and any advanced stat — QR scans / most-viewed
- * dishes for gastronomy, origin destinations for experiences. Those need
- * their own spec, per vertical.
+ * for a future addition) and most-viewed dishes for gastronomy / origin
+ * destinations for experiences — those still need their own spec, per
+ * vertical. Gastronomy's menu QR and its scan analytics are NOT in that list
+ * anymore: HOS-1044 built them (`GastronomyMenuQrWidget.client.tsx`, gated by
+ * the `menu_qr_analytics` entitlement), rendered as a separate widget below
+ * this one rather than folded in here.
  *
  * Hydration: `client:visible` — sits below the listing list, not above the
  * fold.

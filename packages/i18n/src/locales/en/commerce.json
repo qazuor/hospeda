@@ -122,6 +122,21 @@
                 "unique": "unique",
                 "total": "total",
                 "error": "We couldn't load your views. Please try again later."
+            },
+            "menuQr": {
+                "title": "Menu QR",
+                "scans": "scans",
+                "device": "Device",
+                "os": "Operating system",
+                "language": "Language",
+                "unknown": "Unknown",
+                "download": "Download QR (PNG)",
+                "downloaded": "Done, downloaded.",
+                "qrAlt": "QR code linking to {{name}}'s menu",
+                "encodes": "Links to: {{url}}",
+                "locked": "The menu QR and its scan analytics are available on the gastronomy Premium plan.",
+                "error": "We couldn't load the QR scans. Please try again later.",
+                "empty": "No scans yet in this period."
             }
         },
         "editor": {
