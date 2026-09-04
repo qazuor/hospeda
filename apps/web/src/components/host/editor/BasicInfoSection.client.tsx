@@ -10,7 +10,7 @@ import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import { buildFieldId } from '@/lib/forms/build-field-id';
-import type { SupportedLocale } from '@/lib/i18n';
+import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
@@ -70,9 +70,89 @@ export interface BasicInfoSectionProps {
         destinationId?: string;
     }>;
     readonly onFieldChange: (field: keyof AccommodationEditData, value: string) => void;
-    readonly shouldOfferSlugRefresh?: boolean;
+    /**
+     * Whether the published-slug opt-in notice/checkbox should render next to
+     * the `name` field — i.e. the name changed on a published listing.
+     */
+    readonly shouldOfferSlugRefreshNearName?: boolean;
+    /**
+     * Same opt-in, next to the `type` field — i.e. the type changed on a
+     * published listing (HOS-879). `nearName` and `nearType` are independent:
+     * either, both, or neither can be true, but both control the SAME
+     * `refreshSlugFromName` state (see below) — there is only one opt-in, just
+     * rendered wherever the host is looking.
+     */
+    readonly shouldOfferSlugRefreshNearType?: boolean;
     readonly refreshSlugFromName?: boolean;
     readonly onRefreshSlugFromNameChange?: (value: boolean) => void;
+}
+
+/** Disambiguator for the two possible render positions of the shared opt-in. */
+type SlugRefreshPosition = 'name' | 'type';
+
+/** Props for the shared published-slug opt-in notice. */
+interface SlugRefreshNoticeProps {
+    readonly position: SlugRefreshPosition;
+    readonly t: TranslationFn;
+    readonly refreshSlugFromName: boolean;
+    readonly onRefreshSlugFromNameChange?: (value: boolean) => void;
+}
+
+/**
+ * The published-slug opt-in notice + checkbox, rendered next to whichever
+ * field (`name`, `type`, or both) actually changed (HOS-879 UX follow-up).
+ *
+ * It is ONE logical control that can render in two DOM positions at once, so
+ * each instance gets its own id via `buildFieldId`'s `suffix` — two `<input>`s
+ * sharing an id would break the `label`/`input` association for assistive
+ * tech. Both instances read and write the same `refreshSlugFromName` state
+ * from the parent, so checking either one moves both in lockstep.
+ */
+function SlugRefreshNotice({
+    position,
+    t,
+    refreshSlugFromName,
+    onRefreshSlugFromNameChange
+}: SlugRefreshNoticeProps) {
+    const checkboxId = buildFieldId({
+        prefix: ACCOMMODATION_FIELD_PREFIX,
+        name: 'slugRefresh',
+        suffix: position
+    });
+
+    return (
+        <div className={styles.slugNotice}>
+            <p className={styles.fieldHint}>
+                {t(
+                    'host.properties.editor.slugRefresh.notice',
+                    'Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre o el tipo.'
+                )}
+            </p>
+            <p className={styles.fieldHint}>
+                {t(
+                    'host.properties.editor.slugRefresh.warning',
+                    'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                )}
+            </p>
+            <label
+                htmlFor={checkboxId}
+                className={styles.slugCheckbox}
+            >
+                <input
+                    id={checkboxId}
+                    type="checkbox"
+                    checked={refreshSlugFromName}
+                    onChange={(event) => onRefreshSlugFromNameChange?.(event.target.checked)}
+                />
+                <span>
+                    {t(
+                        'host.properties.editor.slugRefresh.checkbox',
+                        'Cambiar igual la dirección web para que siga estos cambios'
+                    )}
+                </span>
+            </label>
+        </div>
+    );
 }
 
 /**
@@ -85,7 +165,8 @@ export function BasicInfoSection({
     destinations,
     errors,
     onFieldChange,
-    shouldOfferSlugRefresh = false,
+    shouldOfferSlugRefreshNearName = false,
+    shouldOfferSlugRefreshNearType = false,
     refreshSlugFromName = false,
     onRefreshSlugFromNameChange
 }: BasicInfoSectionProps) {
@@ -112,36 +193,13 @@ export function BasicInfoSection({
                     maxLength={NAME_MAX_LENGTH}
                     counter={{ locale, min: NAME_MIN_LENGTH, testId: 'name-char-counter' }}
                 />
-                {shouldOfferSlugRefresh ? (
-                    <div className={styles.slugNotice}>
-                        <p className={styles.fieldHint}>
-                            {t(
-                                'host.properties.editor.slugRefresh.notice',
-                                'Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre o el tipo.'
-                            )}
-                        </p>
-                        <p className={styles.fieldHint}>
-                            {t(
-                                'host.properties.editor.slugRefresh.warning',
-                                'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
-                            )}
-                        </p>
-                        <label className={styles.slugCheckbox}>
-                            <input
-                                type="checkbox"
-                                checked={refreshSlugFromName}
-                                onChange={(event) =>
-                                    onRefreshSlugFromNameChange?.(event.target.checked)
-                                }
-                            />
-                            <span>
-                                {t(
-                                    'host.properties.editor.slugRefresh.checkbox',
-                                    'Cambiar igual la dirección web para que siga estos cambios'
-                                )}
-                            </span>
-                        </label>
-                    </div>
+                {shouldOfferSlugRefreshNearName ? (
+                    <SlugRefreshNotice
+                        position="name"
+                        t={t}
+                        refreshSlugFromName={refreshSlugFromName}
+                        onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+                    />
                 ) : null}
             </div>
 
@@ -333,6 +391,14 @@ export function BasicInfoSection({
                     <option value="ESTANCIA">Estancia</option>
                     <option value="BED_AND_BREAKFAST">Bed & Breakfast</option>
                 </TextField>
+                {shouldOfferSlugRefreshNearType ? (
+                    <SlugRefreshNotice
+                        position="type"
+                        t={t}
+                        refreshSlugFromName={refreshSlugFromName}
+                        onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+                    />
+                ) : null}
             </div>
 
             <div className={styles.field}>

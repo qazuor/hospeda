@@ -320,6 +320,98 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
 });
 
 // ---------------------------------------------------------------------------
+// HOS-879 UX follow-up: the opt-in notice used to render pinned next to
+// `name` regardless of which field actually changed, so a host who edited
+// only `type` on a published listing saw it next to a field they never
+// touched. It must now render next to whichever field(s) changed.
+// ---------------------------------------------------------------------------
+
+describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
+    it('shows a single opt-in next to Name when only the name changed', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        // Exactly one instance — the type field was never touched, so the
+        // type-position notice must not appear alongside the name-position one.
+        expect(screen.getAllByLabelText(/cambiar igual la dirección web/i)).toHaveLength(1);
+
+        // It renders inside `name`'s own field wrapper, not `type`'s: the
+        // checkbox and the name input share the same `.field` ancestor.
+        const checkbox = screen.getByLabelText(/cambiar igual la dirección web/i);
+        expect(checkbox.closest('.field')?.contains(name)).toBe(true);
+    });
+
+    it('shows a single opt-in next to Type when only the type changed', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        expect(screen.getAllByLabelText(/cambiar igual la dirección web/i)).toHaveLength(1);
+    });
+
+    it('shows the opt-in in BOTH positions when both name and type changed, sharing one state', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        const checkboxes = screen.getAllByLabelText(/cambiar igual la dirección web/i);
+        expect(checkboxes).toHaveLength(2);
+
+        // Distinct DOM ids (no duplicate-id a11y violation) ...
+        expect(checkboxes[0]?.id).not.toBe(checkboxes[1]?.id);
+
+        // ... but ONE shared `refreshSlugFromName` state: checking either
+        // instance checks both.
+        await user.click(checkboxes[0] as HTMLElement);
+        const [nameCheckbox, typeCheckbox] = screen.getAllByLabelText(
+            /cambiar igual la dirección web/i
+        );
+        expect(nameCheckbox).toBeChecked();
+        expect(typeCheckbox).toBeChecked();
+
+        submitFrom(typeSelect);
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        expect(firstPatchBody()).toEqual({
+            name: 'Hotel Renombrado',
+            type: 'CABIN',
+            refreshSlugFromName: true
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
 

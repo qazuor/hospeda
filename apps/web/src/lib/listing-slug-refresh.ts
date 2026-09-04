@@ -21,8 +21,8 @@ export function isListingPublished(input: { readonly lifecycleState?: string | n
     return input.lifecycleState === ACTIVE_LISTING_STATE;
 }
 
-export function shouldOfferPublishedSlugRefresh(input: {
-    readonly currentLifecycleState?: string | null;
+/** Shared shape for the two change-detection helpers below. */
+interface SlugRefreshChangeInput {
     readonly initialName?: string | null;
     readonly currentName?: string | null;
     /**
@@ -35,19 +35,53 @@ export function shouldOfferPublishedSlugRefresh(input: {
      */
     readonly initialType?: string | null;
     readonly currentType?: string | null;
-}): boolean {
-    if (!isListingPublished({ lifecycleState: input.currentLifecycleState })) return false;
+}
 
+function computeNameChanged(input: SlugRefreshChangeInput): boolean {
     const initialName = normalizeName(input.initialName);
     const currentName = normalizeName(input.currentName);
-    const nameChanged = currentName.length > 0 && currentName !== initialName;
+    return currentName.length > 0 && currentName !== initialName;
+}
 
-    const typeChanged =
+function computeTypeChanged(input: SlugRefreshChangeInput): boolean {
+    return (
         input.initialType !== undefined &&
         input.currentType !== undefined &&
-        normalizeName(input.initialType) !== normalizeName(input.currentType);
+        normalizeName(input.initialType) !== normalizeName(input.currentType)
+    );
+}
 
-    return nameChanged || typeChanged;
+export function shouldOfferPublishedSlugRefresh(
+    input: SlugRefreshChangeInput & { readonly currentLifecycleState?: string | null }
+): boolean {
+    if (!isListingPublished({ lifecycleState: input.currentLifecycleState })) return false;
+
+    return computeNameChanged(input) || computeTypeChanged(input);
+}
+
+/**
+ * Where the published-slug opt-in notice/checkbox should appear (HOS-879 UX
+ * follow-up).
+ *
+ * The opt-in used to render in a single fixed spot next to `name`, so a host
+ * who changed only `type` saw the checkbox pinned to a field they never
+ * touched — easy to miss, and the one case (a published listing) where
+ * missing it actually matters. The notice now follows whichever field(s)
+ * changed: `nearName` when the name changed, `nearType` when the type changed,
+ * both when both did. The two flags describe placement only — the checkbox
+ * they gate is the SAME shared `refreshSlugFromName` state wherever it shows.
+ *
+ * @param input - Lifecycle state plus the baseline/current name and type.
+ * @returns Which position(s) should render the opt-in.
+ */
+export function getSlugRefreshOptInPlacement(
+    input: SlugRefreshChangeInput & { readonly currentLifecycleState?: string | null }
+): { readonly nearName: boolean; readonly nearType: boolean } {
+    if (!isListingPublished({ lifecycleState: input.currentLifecycleState })) {
+        return { nearName: false, nearType: false };
+    }
+
+    return { nearName: computeNameChanged(input), nearType: computeTypeChanged(input) };
 }
 
 export function buildSlugRefreshPayload(input: {

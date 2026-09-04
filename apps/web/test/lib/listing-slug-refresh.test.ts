@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     buildSlugRefreshPayload,
+    getSlugRefreshOptInPlacement,
     isListingPublished,
     shouldOfferPublishedSlugRefresh
 } from '@/lib/listing-slug-refresh';
@@ -118,6 +119,99 @@ describe('listing-slug-refresh', () => {
                 refreshSlugFromName: true
             })
         ).toEqual({ refreshSlugFromName: true });
+    });
+});
+
+/**
+ * HOS-879 UX follow-up. The opt-in notice used to render pinned next to
+ * `name` regardless of which field actually changed — a host who changed
+ * only `type` on a published listing saw it next to a field they never
+ * touched, easy to miss. `getSlugRefreshOptInPlacement` is the function that
+ * decides WHERE the (single, shared) opt-in should render.
+ */
+describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
+    it('offers it only near name when only the name changed', () => {
+        expect(
+            getSlugRefreshOptInPlacement({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Nombre original',
+                currentName: 'Nombre nuevo',
+                initialType: 'HOTEL',
+                currentType: 'HOTEL'
+            })
+        ).toEqual({ nearName: true, nearType: false });
+    });
+
+    it('offers it only near type when only the type changed', () => {
+        expect(
+            getSlugRefreshOptInPlacement({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: 'CABIN'
+            })
+        ).toEqual({ nearName: false, nearType: true });
+    });
+
+    it('offers it in BOTH positions when both name and type changed', () => {
+        expect(
+            getSlugRefreshOptInPlacement({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa Renombrada',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: 'CABIN'
+            })
+        ).toEqual({ nearName: true, nearType: true });
+    });
+
+    it('offers it in neither position when nothing changed', () => {
+        expect(
+            getSlugRefreshOptInPlacement({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río',
+                initialType: 'CABIN',
+                currentType: 'CABIN'
+            })
+        ).toEqual({ nearName: false, nearType: false });
+    });
+
+    it('offers it in neither position on a DRAFT listing, even if both changed', () => {
+        expect(
+            getSlugRefreshOptInPlacement({
+                currentLifecycleState: 'DRAFT',
+                initialName: 'Casa del Río',
+                currentName: 'Casa Renombrada',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: 'CABIN'
+            })
+        ).toEqual({ nearName: false, nearType: false });
+    });
+
+    it('is consistent with shouldOfferPublishedSlugRefresh: the OR of both positions', () => {
+        const cases = [
+            { name: 'changed', type: 'unchanged' as const },
+            { name: 'unchanged', type: 'changed' as const },
+            { name: 'changed', type: 'changed' as const },
+            { name: 'unchanged', type: 'unchanged' as const }
+        ];
+
+        for (const { name, type } of cases) {
+            const input = {
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: name === 'changed' ? 'Casa Renombrada' : 'Casa del Río',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: type === 'changed' ? 'CABIN' : 'COUNTRY_HOUSE'
+            };
+
+            const placement = getSlugRefreshOptInPlacement(input);
+            expect(placement.nearName || placement.nearType).toBe(
+                shouldOfferPublishedSlugRefresh(input)
+            );
+        }
     });
 });
 
