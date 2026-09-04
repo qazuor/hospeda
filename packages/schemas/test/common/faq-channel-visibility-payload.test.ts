@@ -23,9 +23,10 @@
  *    object comparison, never `expect.objectContaining` — that matcher is blind
  *    to a MISSING key, which is precisely the failure mode here, so it would
  *    have stayed green throughout the entire bug.
- * 2. The plain schemas REJECT the flags instead of dropping them. The three
- *    entities that have no such column (`destination`, `gastronomy`,
- *    `experience`) must answer "I do not accept that field", not "saved".
+ * 2. The plain schemas REJECT the flags instead of dropping them. `destination`
+ *    — the one entity left with no such column after HOS-400 gave `gastronomy`
+ *    and `experience` the same two columns as `accommodation` — must answer
+ *    "I do not accept that field", not "saved".
  *
  * @see packages/schemas/src/common/faq.schema.ts
  */
@@ -93,9 +94,11 @@ describe('FAQ channel-visibility payload schemas (H-119 / H-59)', () => {
     });
 
     describe('plain schemas reject the flags instead of discarding them', () => {
-        // The three entities whose FAQ tables have no such column route their
-        // bodies through these schemas. Until HOS-400 adds the columns, an
-        // attempt to set a flag there must be an error the caller can see.
+        // `destination` is the entity left routing its bodies through these
+        // plain schemas after HOS-400 moved `gastronomy` and `experience` to
+        // the flag-carrying ones. Destinations have no such column and no AI
+        // chat, so an attempt to set a flag there must be an error the caller
+        // can see, not a silent discard.
         it('rejects isVisibleOnListing on create', () => {
             const result = FaqCreatePayloadSchema.safeParse({
                 ...VALID_TEXT,

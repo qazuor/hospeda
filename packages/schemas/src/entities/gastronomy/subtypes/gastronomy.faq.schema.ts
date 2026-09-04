@@ -3,9 +3,10 @@ import { SuccessSchema } from '../../../api/result.schema.js';
 import {
     BaseFaqPublicSchema,
     BaseFaqSchema,
-    FaqCreatePayloadSchema,
+    FaqChannelVisibilityFields,
     FaqReorderPayloadSchema,
-    FaqUpdatePayloadSchema
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    FaqWithChannelVisibilityUpdatePayloadSchema
 } from '../../../common/faq.schema.js';
 
 /**
@@ -20,7 +21,11 @@ export const GastronomyFaqSchema = BaseFaqSchema.extend({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     /** The gastronomy listing this FAQ belongs to. */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    // HOS-400: channel visibility, adopting the HOS-393 fragment. Required-with-default
+    // on read — the DB columns are NOT NULL DEFAULT true, so a row always has a value.
+    ...FaqChannelVisibilityFields
 });
 
 /** TypeScript type for {@link GastronomyFaqSchema}. */
@@ -67,7 +72,7 @@ export type GastronomyFaqPublicListOutput = z.infer<typeof GastronomyFaqPublicLi
  */
 export const GastronomyFaqAddInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    faq: FaqCreatePayloadSchema
+    faq: FaqWithChannelVisibilityCreatePayloadSchema
 });
 export type GastronomyFaqAddInput = z.infer<typeof GastronomyFaqAddInputSchema>;
 
@@ -77,7 +82,7 @@ export type GastronomyFaqAddInput = z.infer<typeof GastronomyFaqAddInputSchema>;
 export const GastronomyFaqUpdateInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    faq: FaqUpdatePayloadSchema
+    faq: FaqWithChannelVisibilityUpdatePayloadSchema
 });
 export type GastronomyFaqUpdateInput = z.infer<typeof GastronomyFaqUpdateInputSchema>;
 
