@@ -274,7 +274,7 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                  React island with inline confirmation) -->
             <DeleteButton
                 client:load
-                accommodationId={property.id}
+                listingId={property.id}
                 locale={locale}
                 label={t('host.properties.card.actions.delete', 'Eliminar')}
                 confirmText={t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.')}

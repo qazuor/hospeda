@@ -3857,6 +3857,48 @@ export const publishApi = {
             path: `${PROTECTED}/publish/precheck/${vertical}`,
             cookieHeader
         });
+    },
+
+    /**
+     * Soft-deletes one DRAFT listing the caller owns, in any publish vertical
+     * (HOS-1156 T-015, AC-14).
+     *
+     * The precheck panel's "borrar el borrador" is the FREE way past a full
+     * plan, and it must delete a draft OF THE VERTICAL BEING PUBLISHED — a
+     * gastronomy owner blocked on gastronomy is not helped by deleting a
+     * property.
+     *
+     * ## Why this dispatches instead of calling one endpoint
+     *
+     * The two halves land on different routes on purpose. Accommodation keeps
+     * `DELETE /protected/accommodations/{id}`, which has accepted its owner
+     * since BETA-197 and is live in production; routing it through the commerce
+     * endpoint would move a working flow for no gain (HOS-1156 R-2). Commerce
+     * had no owner-facing delete at all before this change, so it gets the new
+     * one. The branch lives here, in the API layer that already knows about
+     * endpoints, rather than inside the island that renders the button.
+     *
+     * @param params.vertical - Which vertical's draft to delete.
+     * @param params.id - The listing id.
+     * @returns The delete result.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.deleteDraft({ vertical: 'gastronomy', id });
+     * if (result.ok) window.location.reload();
+     * ```
+     */
+    deleteDraft({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        if (vertical === 'accommodation') {
+            return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
+        }
+        return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
     }
 };
 

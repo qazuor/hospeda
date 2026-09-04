@@ -19,6 +19,7 @@ import {
     protectedCreateExperienceListingRoute,
     protectedCreateGastronomyListingRoute
 } from './create';
+import { protectedDeleteCommerceDraftRoute } from './delete-draft';
 import { startCommerceSubscriptionRouter } from './start-subscription';
 
 const router = createRouter();
@@ -33,6 +34,10 @@ router.route('/', startCommerceSubscriptionRouter);
 // Keyed by VERTICAL, not by listing: since HOS-688 a commerce subscription
 // belongs to an owner and a vertical, and several listings hang off one.
 router.route('/', commerceChangePlanRouter);
+// DELETE /listings/:vertical/:id — owner discards one of their own DRAFTs
+// (HOS-1156 AC-14). One route for both verticals, unlike the create pair above:
+// a delete has no payload, so the vertical only picks which service answers.
+router.route('/', protectedDeleteCommerceDraftRoute);
 
 /**
  * Protected commerce routes:
@@ -40,5 +45,6 @@ router.route('/', commerceChangePlanRouter);
  * - POST /listings/experience
  * - POST /listings/:entityType/:entityId/start-subscription
  * - POST /subscriptions/:entityType/change-plan
+ * - DELETE /listings/:vertical/:id
  */
 export const protectedCommerceRoutes = router;

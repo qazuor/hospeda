@@ -160,7 +160,8 @@ const deleteErrorText = t(
             ) : draftIdForDelete ? (
                 <DeleteButton
                     client:load
-                    accommodationId={draftIdForDelete}
+                    listingId={draftIdForDelete}
+                    vertical={vertical}
                     locale={locale}
                     label={deleteLabel}
                     confirmText={deleteConfirmText}
