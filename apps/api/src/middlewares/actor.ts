@@ -179,11 +179,22 @@ export const ACTOR_OPTIONAL_PATH_PATTERNS: readonly RegExp[] = [
  * Whether a failed actor resolution on this request may degrade to a guest
  * actor rather than answering 503.
  *
+ * ## Exported for the same reason as the array, and it is NOT redundant
+ *
+ * Freezing {@link ACTOR_OPTIONAL_PATH_PATTERNS} pins the DATA; this pins the
+ * CODE THAT READS IT. Rewriting this body to `=> true` opens the fail-open on
+ * every route in the API while leaving the array untouched — so the length, the
+ * literal patterns and the semantic block all still pass. The guard has to
+ * assert both or it only covers half of what it appears to cover.
+ *
+ * That gap was real and measured, not hypothetical: it is the same shape as the
+ * one that bit HOS-1139, where a guard covered the instance and not the class.
+ *
  * @param params - Options object (RO-RO).
  * @param params.path - The request path, as `c.req.path` reports it.
  * @returns `true` when the route tolerates an anonymous fallback.
  */
-const actorIsOptionalFor = (params: { path: string }): boolean =>
+export const actorIsOptionalFor = (params: { path: string }): boolean =>
     ACTOR_OPTIONAL_PATH_PATTERNS.some((pattern) => pattern.test(params.path));
 
 /**
