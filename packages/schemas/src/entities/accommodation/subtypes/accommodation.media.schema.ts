@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+    PlanGalleryCapSchema,
+    PreviousFeaturedOutcomeSchema
+} from '../../../common/featured-media.schema.js';
 import { AccommodationIdSchema, AccommodationMediaIdSchema } from '../../../common/id.schema.js';
 import { ImageAttributionSchema, mediaAssetUrl } from '../../../common/media.schema.js';
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
@@ -229,6 +233,61 @@ export const AccommodationMediaAddInputSchema = z.object({
 
 /** Inferred type for the full add-media service input. */
 export type AccommodationMediaAddInput = z.infer<typeof AccommodationMediaAddInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Born-featured cover upload (HOS-803)
+// ----------------------------------------------------------------------------
+
+/**
+ * Full service input for `AccommodationService.addFeaturedMedia`.
+ *
+ * The photo payload is the SAME one `addMedia` accepts — a cover differs from a
+ * gallery photo in what the server does with it, not in what the client sends.
+ * Reusing the payload verbatim is what keeps `isFeatured` unreachable from a
+ * request body: the caller never states the outcome, the endpoint does.
+ *
+ * `planGalleryCap` is the exception and is deliberately NOT part of the HTTP
+ * body schema (`AccommodationMediaAddPayloadSchema`). It lives one level up,
+ * where only the route can populate it from the entitlement context.
+ */
+export const AccommodationFeaturedMediaAddInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /** Photo payload received from the caller — identical to add-media. */
+    media: AccommodationMediaAddPayloadSchema,
+    /**
+     * The owner's plan photo allowance, resolved server-side by the route.
+     * Never client-supplied. Omitted for actors with no plan cap (staff).
+     */
+    planGalleryCap: PlanGalleryCapSchema
+});
+
+/** Inferred type for the featured-media service input. */
+export type AccommodationFeaturedMediaAddInput = z.infer<
+    typeof AccommodationFeaturedMediaAddInputSchema
+>;
+
+/**
+ * Response shape for the born-featured cover endpoint.
+ *
+ * Carries `previousFeatured` alongside the created row because a cover upload
+ * changes TWO rows. The client cannot infer the second from the first: whether
+ * the old cover joined the gallery or was archived out of it depends on how
+ * much room the gallery had, which only the server knows. A response that
+ * omitted it would leave the replaced photo rendered in a gallery it is no
+ * longer part of.
+ */
+export const AccommodationFeaturedMediaAddOutputSchema = z.object({
+    /** The newly created row, already featured. */
+    media: AccommodationMediaSchema,
+    /** The cover this one replaced, or `null` when there was none. */
+    previousFeatured: PreviousFeaturedOutcomeSchema.nullable()
+});
+
+/** Inferred type for the featured-media response. */
+export type AccommodationFeaturedMediaAddOutput = z.infer<
+    typeof AccommodationFeaturedMediaAddOutputSchema
+>;
 
 // ----------------------------------------------------------------------------
 // Command Output Schemas (SPEC-204 granular gallery endpoints)
