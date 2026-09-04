@@ -17,6 +17,7 @@
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import {
     SubscriptionDashboard,
     type SubscriptionDashboardUser
@@ -490,7 +491,7 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         renderDashboard(USER_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
         });
     });
 
@@ -499,7 +500,7 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         renderDashboard(HOST_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`);
         });
     });
 
@@ -1039,7 +1040,7 @@ describe('SubscriptionDashboard — empty state', () => {
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
         });
     });
 
@@ -1049,7 +1050,7 @@ describe('SubscriptionDashboard — empty state', () => {
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`);
         });
     });
 });

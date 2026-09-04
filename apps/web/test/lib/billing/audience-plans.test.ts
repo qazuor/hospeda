@@ -182,12 +182,36 @@ describe('audience card model', () => {
 
     it('routes every audience to its intended destination', () => {
         expect(AUDIENCE_CARD_PATHS).toEqual({
-            host: 'suscriptores/planes/anfitriones',
-            tourist: 'suscriptores/planes/turistas',
-            gastronomy: 'publicar-restaurante',
-            experience: 'publicar-experiencia',
-            partner: 'sumate/partner'
+            host: 'planes/anfitriones/precios',
+            tourist: 'planes/turistas/precios',
+            gastronomy: 'planes/gastronomia',
+            experience: 'planes/experiencias',
+            partner: 'planes/aliados'
         });
+    });
+
+    it('never sends a card at a URL that redirects', () => {
+        // HOS-1032 turned `/publicar-restaurante/`, `/publicar-experiencia/` and
+        // both `/suscriptores/planes/<audiencia>/` pages into 301s. The index
+        // pointed at three of them, so this froze a link graph that had gone one
+        // hop stale in the same change that moved the pages.
+        //
+        // Listed as the retired URLs rather than as "must start with planes/",
+        // because the point is not the prefix: it is that no card may name a URL
+        // this repo now answers with a redirect.
+        const RETIRED = [
+            'publicar-restaurante',
+            'publicar-experiencia',
+            'suscriptores/planes/anfitriones',
+            'suscriptores/planes/turistas',
+            'suscriptores/planes/comparar',
+            'suscriptores/turistas',
+            'suscriptores/turistas/comparar',
+            'suscriptores/propietarios'
+        ];
+        for (const id of AUDIENCE_CARD_ORDER) {
+            expect(RETIRED).not.toContain(AUDIENCE_CARD_PATHS[id]);
+        }
     });
 
     it('gives every audience a distinct destination', () => {

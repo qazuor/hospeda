@@ -67,10 +67,15 @@ describe('beneficios/index.astro — the five audience sections', () => {
 
     it("gives every section a CTA pointing at that audience's own page", () => {
         // HOS-985 retired `/suscriptores/propietarios/`; the owner section now
-        // points at the sales page that replaced it.
+        // points at the sales page that replaced it. HOS-1032 retired
+        // `/publicar-experiencia/` and `/publicar-restaurante/` the same way —
+        // both are now 301s (see `test/pages/publicar-experiencia-index.test.ts`
+        // / `publicar-restaurante-index.test.ts`) — so the gastronomy and
+        // experience sections were repointed at their own sales pages directly,
+        // rather than at a URL that immediately forwards them there.
         expect(src).toContain("path: 'planes/anfitriones'");
-        expect(src).toContain("path: 'publicar-experiencia'");
-        expect(src).toContain("path: 'publicar-restaurante'");
+        expect(src).toContain("path: 'planes/experiencias'");
+        expect(src).toContain("path: 'planes/gastronomia'");
         expect(src).toContain("path: 'sumate/partner'");
     });
 });

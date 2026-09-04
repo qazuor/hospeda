@@ -20,6 +20,7 @@
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
@@ -153,7 +154,7 @@ describe('PriceAlertButton — resolved gate', () => {
         // BETA-201: the upsell targets the TOURIST plans page, since every owner
         // plan already inherits this entitlement.
         const link = await screen.findByRole('link');
-        expect(link.getAttribute('href')).toContain('suscriptores/planes/turistas');
+        expect(link.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.tourist);
     });
 
     it('disables the button when the plan limit is reached', async () => {

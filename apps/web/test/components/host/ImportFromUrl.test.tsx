@@ -10,6 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 const { mockImportFromUrl, mockUseImportStatus } = vi.hoisted(() => ({
     mockImportFromUrl: vi.fn(),
@@ -805,7 +806,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes/anfitriones');
+        expect(cta.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
     });
 
     it('targets the tourist plans page when the server says so', async () => {
@@ -819,7 +820,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes/turistas');
+        expect(cta.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.tourist);
     });
 
     it('falls back to the owner plans page when the audience is missing', async () => {
@@ -828,7 +829,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes/anfitriones');
+        expect(cta.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
     });
 
     it('renders an update-payment-method CTA pointing at the account subscription page for an overdue payment (HOS-348 Part C)', async () => {
