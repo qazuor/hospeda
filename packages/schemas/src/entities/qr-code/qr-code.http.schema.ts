@@ -5,6 +5,7 @@ import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import {
+    QrCodeRenderOptionsOverrideSchema,
     QrCodeRenderOptionsPatchSchema,
     QrCodeRenderOptionsSchema,
     QrCodeSchema,
@@ -151,18 +152,23 @@ export type QrCodeResolution = z.infer<typeof QrCodeResolutionSchema>;
  * `renderOptions` for one request. All optional: omitting everything renders the
  * code exactly as it is configured.
  *
- * It IS {@link QrCodeRenderOptionsPatchSchema}, and was rewritten to say so in
- * HOS-981 PR 5. It used to read `QrCodeRenderOptionsSchema.partial()`, which
- * Zod 4 now refuses outright — `.partial() cannot be used on object schemas
- * containing refinements`, thrown at module load, the moment the centre-logo
- * gate was attached. Reaching for the patch schema is not just the repair: a
- * one-request override and a stored partial patch are the same object, both
- * need the defaults stripped for the same reason (a `?margin=8` that silently
- * carried five more "overrides" would repaint the code), and both need the
- * centre-logo pairing rule for the same reason (an override that turned the
- * mark on without raising the level would render an unscannable download).
+ * It IS {@link QrCodeRenderOptionsOverrideSchema}. Two corrections landed here
+ * in HOS-981 PR 5, and the second undid an overreach in the first:
+ *
+ * 1. It used to read `QrCodeRenderOptionsSchema.partial()`, which Zod 4 refuses
+ *    outright — `.partial() cannot be used on object schemas containing
+ *    refinements`, thrown at module load — the moment the centre-logo gate was
+ *    attached. It also needs the defaults stripped for the same reason the patch
+ *    does: a `?margin=8` that silently carried six more "overrides" would
+ *    repaint the code.
+ * 2. It was then pointed at the PATCH schema, which dragged the pairing rule
+ *    along — and that rule is bought by a fact an override does not have: a
+ *    patch is MERGED into the stored document, an override is discarded after
+ *    one response. `?errorCorrectionLevel=L` on a code stored without a mark is
+ *    harmless and was answering 400. See the override schema's own note for
+ *    what the split leaves to the caller.
  */
-export const QrCodeRenderQuerySchema = QrCodeRenderOptionsPatchSchema;
+export const QrCodeRenderQuerySchema = QrCodeRenderOptionsOverrideSchema;
 
 export type QrCodeRenderQuery = z.infer<typeof QrCodeRenderQuerySchema>;
 

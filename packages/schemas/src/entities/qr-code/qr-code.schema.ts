@@ -61,34 +61,65 @@ export const QR_CODE_CENTER_LOGO_MAX_COVERAGE =
     QR_CODE_CENTER_LOGO_SIZE_RATIO * QR_CODE_CENTER_LOGO_SIZE_RATIO;
 
 /**
- * The largest covered-area fraction that STILL DECODED, per correction level.
+ * The largest covered-area fraction at which EVERY sampled render still
+ * decoded, per correction level.
  *
- * MEASURED, not quoted. Every number here came out of a sweep run on
- * 2026-09-04: for each level, the platform's own `/qr/{slug}/` URL was rendered
- * as a real PNG at 256, 512 and 1024 px, a centre plate of increasing size was
- * painted onto it, and the result was fed to a real decoder (`jsqr`). The value
- * below is the largest coverage at which all nine renders still returned the
- * original URL; the next step up returned nothing at all. The sweep is
- * reproduced as a test — see `qr-center-logo.decode.test.ts`.
+ * MEASURED, not quoted. Re-measured on 2026-09-04 over a deliberately wider
+ * corpus than the first pass — SEVEN `/q/` and `/qr/` URLs across two hosts, at
+ * 256, 384, 512, 768 and 1024 px, so 35 renders per step — with the plate swept
+ * by whole odd modules exactly as the renderer emits it, each result fed to a
+ * real decoder (`jsqr`). Raw:
  *
- * ## These are roughly HALF the level's nominal percentage, and that is the point
+ * ```
+ * L   3 mod  1.07%  35/35     M   3 mod  1.07%  35/35
+ * L   5 mod  2.97%  35/35     M   5 mod  2.97%  35/35
+ * L   7 mod  5.83%   0/35     M   7 mod  5.83%  35/35
+ *                             M   9 mod  9.63%  10/35   <- partial
+ *                             M  11 mod 14.39%   0/35
+ * Q   5 mod  2.30%  35/35     H   5 mod  2.30%  35/35
+ * Q   7 mod  4.50%  35/35     H   9 mod  7.44%  35/35
+ * Q  11 mod 11.11%  35/35     H  13 mod 14.61%  35/35
+ * Q  13 mod 15.52%   0/35     H  15 mod 19.50%  10/35   <- partial
+ *                             H  17 mod 24.99%   0/35
+ * ```
+ *
+ * ## Two corrections to what the first pass claimed (HOS-981 PR 5 review)
+ *
+ * 1. **The old L ceiling of `0.03` did not reproduce.** A reviewer sweeping
+ *    other URLs got 6/9 at ~3.1% coverage, not 9/9. The wider sweep above puts
+ *    the last all-pass step at 2.97%, so the constant was sitting a hair ABOVE
+ *    the honest number. Same for H, and by more: the old `0.164` came from a
+ *    longer URL landing on a bigger symbol, and 14.61% is what all 35 renders
+ *    survive. Both are corrected below.
+ * 2. **The transition is NOT a cliff.** The first pass showed adjacent
+ *    all-pass/all-fail steps because it happened to sample the two rows that
+ *    bracket the whole degradation band. There IS a band — visible above at M
+ *    (10/35) and H (10/35), and wider still under a finer, content-varying
+ *    sweep — and where it starts depends on the string being encoded, because
+ *    the string decides the QR version and therefore how many codewords a given
+ *    area destroys. Treat these as "the last step nothing failed at", not as a
+ *    threshold with cliff edges. Anyone raising
+ *    {@link QR_CODE_CENTER_LOGO_SIZE_RATIO} must re-run the sweep over their
+ *    own corpus rather than reading a headroom off these four numbers.
+ *
+ * ## They are roughly HALF the level's nominal percentage, and that is the point
  *
  * The QR standard's familiar "L≈7%, M≈15%, Q≈25%, H≈30%" describes CODEWORDS a
  * decoder can repair, and repairing a codeword whose position is unknown costs
  * two error-correction codewords, not one. A contiguous blob also destroys
  * whole codewords at its edges that it only partly covers. So reading those
  * percentages as an area budget overstates what a logo can spend by about a
- * factor of two — measured: M's nominal 15% broke at 9.6% of area, H's nominal
- * 30% broke at 21.1%. Sizing a logo against the nominal numbers is exactly how
- * a code that passes on a screen fails on a wall.
+ * factor of two — measured: M's nominal 15% first lost renders at 9.6% of area,
+ * H's nominal 30% at 19.5%. Sizing a logo against the nominal numbers is exactly
+ * how a code that passes on a screen fails on a wall.
  */
 export const QR_CODE_ERROR_CORRECTION_DECODE_CEILING: Readonly<
     Record<QrCodeErrorCorrectionLevelEnum, number>
 > = {
-    [QrCodeErrorCorrectionLevelEnum.L]: 0.03,
+    [QrCodeErrorCorrectionLevelEnum.L]: 0.029,
     [QrCodeErrorCorrectionLevelEnum.M]: 0.058,
     [QrCodeErrorCorrectionLevelEnum.Q]: 0.111,
-    [QrCodeErrorCorrectionLevelEnum.H]: 0.164
+    [QrCodeErrorCorrectionLevelEnum.H]: 0.146
 } as const;
 
 /**
@@ -155,17 +186,41 @@ export const QrCodeSlugSchema = z
     });
 
 /**
- * How a code is drawn.
+ * How a code is drawn, AS STORED — every field validated, no cross-field gate.
  *
  * Stored as a single `jsonb` column rather than a spread of typed columns: this
- * object is expected to grow (a centre logo lands with the admin panel that
- * configures it), and absorbing that growth in a document avoids a second
- * migration over a table that will already hold production rows.
+ * object is expected to grow, and absorbing that growth in a document avoids a
+ * second migration over a table that will already hold production rows.
  *
  * Every field carries a default, so an empty `{}` is a valid, fully-specified
  * render configuration.
+ *
+ * ## Why this is separate from {@link QrCodeRenderOptionsSchema} (HOS-981 PR 5)
+ *
+ * Because a READ is not a WRITE, and the centre-logo gate is a rule about what
+ * may be written. `QrCodeSchema.renderOptions` — and therefore
+ * `QrCodeAdminSchema`, the RESPONSE contract — is parsed on the way OUT by
+ * `stripWithSchema`, which fail-closes to HTTP 500 by design.
+ *
+ * Attaching the gate to the entity shape made a stored row the API could not
+ * serve. Measured on 2026-09-04, with one row carrying
+ * `{centerLogo: 'HOSPEDA', errorCorrectionLevel: 'L'}`:
+ *
+ * ```
+ * getById on a non-affordable row => REJECTED: renderOptions.centerLogo
+ * list page with 3 good + 1 bad   => WHOLE PAGE REJECTED (z.array fails on one element)
+ * ```
+ *
+ * No write path can produce such a row today, so it was latent — but a seed, a
+ * data-migration or one `UPDATE ... SET render_options` is all it takes, and
+ * the symptom would be a 500 on the entire admin list rather than one odd code.
+ * A gate that makes bad data UNREADABLE cannot be used to fix bad data.
+ *
+ * The general lesson, worth carrying to the next cross-field refine: ask which
+ * paths PARSE a schema, not only which paths validate against it. An entity
+ * schema in this repo is a response contract too.
  */
-export const QrCodeRenderOptionsSchema = z
+export const QrCodeRenderOptionsStoredSchema = z
     .object({
         /** Damage tolerance. See {@link QrCodeErrorCorrectionLevelEnumSchema}. */
         errorCorrectionLevel: QrCodeErrorCorrectionLevelEnumSchema.default(
@@ -216,27 +271,36 @@ export const QrCodeRenderOptionsSchema = z
          *
          * This is DAMAGE, not decoration: the plate blanks whatever modules sit
          * under it, and the code survives only because Reed-Solomon can rebuild
-         * them. Which is why it is gated below rather than merely offered.
+         * them. Which is why {@link QrCodeRenderOptionsSchema} gates it rather
+         * than merely offering it.
          */
         centerLogo: QrCodeCenterLogoEnumSchema.default(QrCodeCenterLogoEnum.NONE)
     })
-    .strict()
-    /**
-     * The geometric gate: refuse a mark the correction level cannot pay for.
-     *
-     * `.strict()` runs BEFORE this — measured on Zod 4.3.6: parsing
-     * `{centerLogo: 'HOSPEDA', errorCorrectionLevel: 'L', zzz: 1}` yields only
-     * `unrecognized_keys`, never the custom issue. That is fine here (an
-     * unknown key is refused either way) and is noted because it is exactly
-     * what makes a cross-field refine unreachable when the fields it reads have
-     * been omitted from the shape — the trap `QrCodeUpdateInputSchema` fell
-     * into with `source`.
-     *
-     * The issue is attached to `centerLogo` rather than to
-     * `errorCorrectionLevel` because turning the mark on is what an operator
-     * just did; the level is the thing they now have to raise.
-     */
-    .superRefine((data, ctx) => {
+    .strict();
+
+export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsStoredSchema>;
+
+/**
+ * How a code MAY BE WRITTEN: the stored shape, plus the centre-logo gate.
+ *
+ * This is the schema every write path takes — the create input (domain and
+ * HTTP), and `QrCodeService._beforeCreate`, which materialises the stored
+ * document. The entity/response shape deliberately does NOT carry it; see
+ * {@link QrCodeRenderOptionsStoredSchema} for the 500 that taught us why.
+ *
+ * `.strict()` runs BEFORE the refine — measured on Zod 4.3.6: parsing
+ * `{centerLogo: 'HOSPEDA', errorCorrectionLevel: 'L', zzz: 1}` yields only
+ * `unrecognized_keys`, never the custom issue. That is fine here (an unknown
+ * key is refused either way) and is noted because it is exactly what makes a
+ * cross-field refine unreachable when the fields it reads have been omitted
+ * from the shape — the trap `QrCodeUpdateInputSchema` fell into with `source`.
+ *
+ * The issue is attached to `centerLogo` rather than to `errorCorrectionLevel`
+ * because turning the mark on is what an operator just did; the level is the
+ * thing they now have to raise.
+ */
+export const QrCodeRenderOptionsSchema = QrCodeRenderOptionsStoredSchema.superRefine(
+    (data, ctx) => {
         if (qrCodeCenterLogoFits(data)) return;
 
         ctx.addIssue({
@@ -244,9 +308,8 @@ export const QrCodeRenderOptionsSchema = z
             message: 'zodError.qrCode.renderOptions.centerLogo.requiresErrorCorrection',
             path: ['centerLogo']
         });
-    });
-
-export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsSchema>;
+    }
+);
 
 /**
  * The same render options as a PATCH: every field optional, no field defaulted.
@@ -302,8 +365,32 @@ export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsSchema>;
  * statement of what the server can and cannot check, and the admin form sends
  * the pair for exactly this reason (`diffRenderOptions`).
  */
+/**
+ * The half of the rule that needs no stored document: if a partial object
+ * states BOTH fields, they must fit.
+ *
+ * Shared by the PATCH schema and the one-request render override, because it is
+ * the only part of the gate they genuinely have in common — see
+ * {@link QrCodeRenderOptionsOverrideSchema} for what the override deliberately
+ * does NOT inherit.
+ *
+ * @param data - The partial render options being checked.
+ * @returns `true` when both fields are stated and the pair does not fit.
+ */
+function statedCenterLogoPairIsUnaffordable(data: {
+    centerLogo?: QrCodeCenterLogoEnum;
+    errorCorrectionLevel?: QrCodeErrorCorrectionLevelEnum;
+}): boolean {
+    if (data.centerLogo === undefined || data.errorCorrectionLevel === undefined) return false;
+
+    return !qrCodeCenterLogoFits({
+        centerLogo: data.centerLogo,
+        errorCorrectionLevel: data.errorCorrectionLevel
+    });
+}
+
 export const QrCodeRenderOptionsPatchSchema = z
-    .object(stripShapeDefaults(QrCodeRenderOptionsSchema.shape))
+    .object(stripShapeDefaults(QrCodeRenderOptionsStoredSchema.shape))
     .partial()
     .strict()
     .superRefine((data, ctx) => {
@@ -313,15 +400,7 @@ export const QrCodeRenderOptionsPatchSchema = z
         if (!statesLogo && !statesLevel) return;
 
         if (statesLogo && statesLevel) {
-            if (
-                qrCodeCenterLogoFits({
-                    centerLogo: data.centerLogo as QrCodeCenterLogoEnum,
-                    errorCorrectionLevel:
-                        data.errorCorrectionLevel as QrCodeErrorCorrectionLevelEnum
-                })
-            ) {
-                return;
-            }
+            if (!statedCenterLogoPairIsUnaffordable(data)) return;
 
             ctx.addIssue({
                 code: 'custom',
@@ -363,6 +442,58 @@ export const QrCodeRenderOptionsPatchSchema = z
     });
 
 export type QrCodeRenderOptionsPatch = z.infer<typeof QrCodeRenderOptionsPatchSchema>;
+
+/**
+ * Render options overridden for ONE request, never written anywhere.
+ *
+ * Shaped like the patch — every field optional, no defaults, unknown keys
+ * refused — and it carries the gate ONLY in the form that is decidable from the
+ * override itself: if it states both `centerLogo` and `errorCorrectionLevel`,
+ * the pair must fit.
+ *
+ * ## What it deliberately does NOT inherit, and why (HOS-981 PR 5 review)
+ *
+ * The PATCH schema also demands that the two fields TRAVEL TOGETHER. That rule
+ * is bought by one specific fact: a patch is MERGED into the stored `jsonb`, so
+ * a lone `{centerLogo: 'HOSPEDA'}` becomes a permanent row whose level this
+ * schema never saw. An override is merged with nothing and outlives nothing —
+ * it decorates a single response and is gone.
+ *
+ * Carrying the pairing rule here would therefore charge the cost with none of
+ * the motive: `?errorCorrectionLevel=L` against a code stored with
+ * `centerLogo: NONE` is completely harmless and would have answered 400.
+ * Measured before the split:
+ *
+ * ```
+ * renderQuery {errorCorrectionLevel:L} => FAIL centerLogo.logoRequiredWithLevel
+ * renderQuery {errorCorrectionLevel:M} => FAIL centerLogo.logoRequiredWithLevel
+ * ```
+ *
+ * ## What that leaves uncovered, said out loud
+ *
+ * A one-sided override IS still merged over the stored options at RENDER time
+ * (`{...qrCode.renderOptions, ...override}`), so `?errorCorrectionLevel=L` on a
+ * code stored WITH a mark would render one unscannable image. This schema
+ * cannot see that — the stored document is not in the query string. Whoever
+ * wires a render endpoint to this schema must run {@link qrCodeCenterLogoFits}
+ * over the MERGED object before drawing. There is no consumer today; that is
+ * the whole reason this is a note and not a route change.
+ */
+export const QrCodeRenderOptionsOverrideSchema = z
+    .object(stripShapeDefaults(QrCodeRenderOptionsStoredSchema.shape))
+    .partial()
+    .strict()
+    .superRefine((data, ctx) => {
+        if (!statedCenterLogoPairIsUnaffordable(data)) return;
+
+        ctx.addIssue({
+            code: 'custom',
+            message: 'zodError.qrCode.renderOptions.centerLogo.requiresErrorCorrection',
+            path: ['centerLogo']
+        });
+    });
+
+export type QrCodeRenderOptionsOverride = z.infer<typeof QrCodeRenderOptionsOverrideSchema>;
 
 /**
  * A redirectable QR code (HOS-981).
@@ -422,7 +553,16 @@ export const QrCodeSchema = z.object({
      */
     purpose: QrCodePurposeEnumSchema.nullable().optional(),
 
-    renderOptions: QrCodeRenderOptionsSchema,
+    /**
+     * The STORED shape, ungated on purpose (HOS-981 PR 5).
+     *
+     * This schema is a response contract as much as an entity model —
+     * `QrCodeAdminSchema` is literally this object, and `stripWithSchema` parses
+     * every response through it and fail-closes to 500. Gating here would mean a
+     * row written by a seed or a hand-run `UPDATE` could not be read back, and
+     * one such row 500s the WHOLE admin list page, not just itself.
+     */
+    renderOptions: QrCodeRenderOptionsStoredSchema,
 
     /** Retiring a code without losing the scans already recorded against it. */
     isActive: z.boolean().default(true),

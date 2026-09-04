@@ -27,10 +27,19 @@ import {
     QR_CODE_CENTER_LOGO_MAX_COVERAGE,
     QR_CODE_CENTER_LOGO_SIZE_RATIO,
     QR_CODE_ERROR_CORRECTION_DECODE_CEILING,
+    QrCodeAdminListResponseSchema,
+    QrCodeAdminSchema,
     QrCodeCenterLogoEnum,
+    QrCodeCreateHttpSchema,
+    QrCodeCreateInputSchema,
     QrCodeErrorCorrectionLevelEnum,
+    QrCodeRenderOptionsOverrideSchema,
     QrCodeRenderOptionsPatchSchema,
     QrCodeRenderOptionsSchema,
+    QrCodeRenderOptionsStoredSchema,
+    QrCodeRenderQuerySchema,
+    QrCodeSchema,
+    QrCodeSourceEnum,
     QrCodeUpdateHttpSchema,
     QrCodeUpdateInputSchema,
     qrCodeCenterLogoFits
@@ -318,4 +327,258 @@ describe('the update schemas carry the gate, both of them', () => {
             });
         });
     }
+});
+
+/**
+ * The gate is a WRITE rule, and the read path must stay open (HOS-981 PR 5 review).
+ *
+ * `QrCodeAdminSchema` IS `QrCodeSchema`, and `stripWithSchema`
+ * (`apps/api/src/utils/response-helpers.ts`) parses every response through it
+ * and fail-closes to HTTP 500. So a cross-field refine on the entity's
+ * `renderOptions` does not merely reject bad writes — it makes an already-stored
+ * row UNSERVABLE. Measured before the split, with one row carrying
+ * `{centerLogo: 'HOSPEDA', errorCorrectionLevel: 'L'}`:
+ *
+ * ```
+ * getById on a non-affordable row => REJECTED: renderOptions.centerLogo
+ * list page with 3 good + 1 bad   => WHOLE PAGE REJECTED (z.array fails on one element)
+ * ```
+ *
+ * No write path can produce that row today. But a seed, a data-migration or a
+ * hand-run `UPDATE` can, and the symptom would be a 500 on the entire admin
+ * list — the one screen an operator would use to find and fix the bad row.
+ *
+ * These tests pin BOTH halves, because either alone is a trap: reading must
+ * work (or bad data becomes unfixable), and writing must not (or the gate is
+ * decorative).
+ */
+describe('the gate applies to writes, never to reads', () => {
+    const storedRow = {
+        id: '11111111-1111-4111-8111-111111111111',
+        slug: 'Live2345',
+        targetUrl: 'https://hospeda.com.ar/es/destinos/colon/',
+        label: 'Cartelera plaza Ramirez',
+        description: null,
+        source: QrCodeSourceEnum.MANUAL,
+        entityType: null,
+        entityId: null,
+        purpose: null,
+        renderOptions: {
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.L,
+            format: 'SVG',
+            margin: 4,
+            size: null,
+            foregroundColor: '#000000',
+            backgroundColor: '#ffffff',
+            // The combination the gate refuses. Reachable in the database only
+            // by a path that bypasses the write schemas.
+            centerLogo: QrCodeCenterLogoEnum.HOSPEDA
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdById: null,
+        updatedById: null
+    };
+
+    /**
+     * Both names, on purpose. `QrCodeAdminSchema` is what the route declares as
+     * its `responseSchema` and therefore what `stripWithSchema` actually parses;
+     * `QrCodeSchema` is where the field lives. They are the same object today —
+     * asserted below — and if that ever stops being true, this test must follow
+     * the one the ROUTE uses, not the one that is convenient to import.
+     */
+    it('reads a non-affordable stored row back without complaint', () => {
+        expect(QrCodeAdminSchema, 'the admin response schema is no longer the entity schema').toBe(
+            QrCodeSchema
+        );
+
+        const result = QrCodeAdminSchema.safeParse(storedRow);
+
+        expect(
+            result.success,
+            'The admin RESPONSE schema rejected a stored row. `stripWithSchema` turns that into a ' +
+                '500, so this code can no longer be fetched — and the row can no longer be ' +
+                'corrected through the panel that would fix it.'
+        ).toBe(true);
+    });
+
+    it('serves a LIST page that contains one, instead of 500ing the whole page', () => {
+        const good = {
+            ...storedRow,
+            id: '22222222-2222-4222-8222-222222222222',
+            // No `o`, no `l`, no `I`, no `O`, no `U`: the slug alphabet drops
+            // every ambiguous character, because these get typed off a sticker
+            // by hand. `Good2345` is NOT a valid slug, and using it here made
+            // this test fail for a reason that had nothing to do with the gate.
+            slug: 'Zx9Wp2Qm',
+            renderOptions: {
+                ...storedRow.renderOptions,
+                centerLogo: QrCodeCenterLogoEnum.NONE
+            }
+        };
+
+        const result = QrCodeAdminListResponseSchema.safeParse({
+            items: [good, good, storedRow, good],
+            total: 4
+        });
+
+        expect(
+            result.success,
+            'The page was rejected. If the failing path is `items.2.renderOptions.centerLogo`, ' +
+                'the gate has crept back onto the entity schema and one bad row now 500s a page ' +
+                'of four via `z.array`. Any OTHER path is a broken fixture in this test. Issues: ' +
+                JSON.stringify(
+                    result.success ? [] : result.error.issues.map((i) => i.path.join('.'))
+                )
+        ).toBe(true);
+    });
+
+    it('still refuses to WRITE the same combination, through every input schema', () => {
+        const renderOptions = storedRow.renderOptions;
+        const base = {
+            targetUrl: 'https://hospeda.com.ar/es/destinos/colon/',
+            label: 'Cartelera plaza Ramirez',
+            source: QrCodeSourceEnum.MANUAL
+        };
+
+        expect(
+            QrCodeCreateInputSchema.safeParse({ ...base, renderOptions }).success,
+            'the domain create schema let the gate through'
+        ).toBe(false);
+        expect(
+            QrCodeCreateHttpSchema.safeParse({ ...base, renderOptions }).success,
+            'the HTTP create schema let the gate through'
+        ).toBe(false);
+        expect(
+            QrCodeRenderOptionsSchema.safeParse(renderOptions).success,
+            'the write schema — which `_beforeCreate` parses through — let the gate through'
+        ).toBe(false);
+    });
+
+    /**
+     * The two schemas differ by the refine and by NOTHING else. Without this a
+     * field could be added to one and forgotten in the other, and the read
+     * shape would start silently dropping (or refusing) a stored key.
+     */
+    it('keeps the stored and write shapes identical apart from the gate', () => {
+        expect(Object.keys(QrCodeRenderOptionsStoredSchema.shape).sort()).toEqual(
+            Object.keys(QrCodeRenderOptionsSchema.shape).sort()
+        );
+
+        const affordable = {
+            errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H,
+            format: 'PNG',
+            margin: 2,
+            size: 512,
+            foregroundColor: '#123456',
+            backgroundColor: '#abcdef',
+            centerLogo: QrCodeCenterLogoEnum.HOSPEDA
+        };
+
+        expect(QrCodeRenderOptionsStoredSchema.parse(affordable)).toStrictEqual(
+            QrCodeRenderOptionsSchema.parse(affordable)
+        );
+        expect(QrCodeRenderOptionsStoredSchema.parse({})).toStrictEqual(
+            QrCodeRenderOptionsSchema.parse({})
+        );
+    });
+
+    /** The stored shape is still strict — it is permissive about the PAIR, not about keys. */
+    it('does not become a dumping ground: unknown keys are still refused on read', () => {
+        expect(
+            QrCodeRenderOptionsStoredSchema.safeParse({ centerLogoUrl: 'https://x.test/l.png' })
+                .success
+        ).toBe(false);
+    });
+});
+
+/**
+ * A one-request override is not a stored patch (HOS-981 PR 5 review).
+ *
+ * `QrCodeRenderQuerySchema` briefly WAS the patch schema, and inherited its
+ * pairing rule. That rule is paid for by one fact: a patch is merged into the
+ * stored `jsonb`, so a lone `{centerLogo: 'HOSPEDA'}` becomes permanent. An
+ * override is merged with nothing and discarded after one response, so it gets
+ * the cost with none of the motive — `?errorCorrectionLevel=L` against a code
+ * stored with no mark is harmless, and was answering 400.
+ */
+describe('QrCodeRenderOptionsOverrideSchema — the gate without the pairing rule', () => {
+    it('is what the render query resolves to', () => {
+        expect(QrCodeRenderQuerySchema).toBe(QrCodeRenderOptionsOverrideSchema);
+    });
+
+    /**
+     * The same claim, asserted through the EXPORTED NAME a route would import
+     * and by BEHAVIOUR rather than by identity.
+     *
+     * Measured: with `QrCodeRenderQuerySchema` re-aliased to the patch schema,
+     * the identity test above was the only thing that went red — one test, and
+     * one that a different mistake (copying the pairing rule INTO the override
+     * schema) would not trip at all. An alias is not the property; the property
+     * is that a lone level override is accepted here.
+     */
+    it.each(
+        ALL_LEVELS
+    )('QrCodeRenderQuerySchema accepts a lone %s override, by behaviour', (level) => {
+        const result = QrCodeRenderQuerySchema.safeParse({ errorCorrectionLevel: level });
+
+        expect(
+            result.success,
+            `?errorCorrectionLevel=${level} was refused. A render override is discarded after ` +
+                'one response — it is merged into nothing and outlives nothing — so the ' +
+                "pairing rule's justification does not reach it. Against a code stored with " +
+                'no mark this is a 400 for a completely harmless request.'
+        ).toBe(true);
+    });
+
+    it.each(ALL_LEVELS)('accepts a lone %s override, including the refused levels', (level) => {
+        expect(
+            QrCodeRenderOptionsOverrideSchema.safeParse({ errorCorrectionLevel: level }).success,
+            `A one-request ?errorCorrectionLevel=${level} override is discarded after the ` +
+                'response. Refusing it charges the pairing rule with none of its motive.'
+        ).toBe(true);
+    });
+
+    it('accepts a lone centerLogo override', () => {
+        expect(
+            QrCodeRenderOptionsOverrideSchema.safeParse({
+                centerLogo: QrCodeCenterLogoEnum.HOSPEDA
+            }).success
+        ).toBe(true);
+    });
+
+    /**
+     * The half it DOES keep. Both fields stated is fully decidable without the
+     * stored document, so an override that asks for an unscannable image on its
+     * own terms is still refused.
+     */
+    it.each(ALL_LEVELS)('still judges a STATED pair at %s exactly as the gate does', (level) => {
+        expect(
+            QrCodeRenderOptionsOverrideSchema.safeParse({
+                centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
+                errorCorrectionLevel: level
+            }).success
+        ).toBe(EXPECTED_VERDICT[level]);
+    });
+
+    /**
+     * And the PATCH schema keeps the pairing rule the override dropped. Stated
+     * as a contrast, in one place, so the split cannot silently collapse back
+     * into one schema in either direction.
+     */
+    it('is NOT the patch schema: the patch still demands the pair', () => {
+        const loneLevel = { errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.L };
+
+        expect(QrCodeRenderOptionsOverrideSchema.safeParse(loneLevel).success).toBe(true);
+        expect(QrCodeRenderOptionsPatchSchema.safeParse(loneLevel).success).toBe(false);
+    });
+
+    it('strips defaults like the patch does, so an override overrides only what it names', () => {
+        expect(QrCodeRenderOptionsOverrideSchema.parse({ margin: 8 })).toStrictEqual({ margin: 8 });
+    });
+
+    it('is still strict about unknown keys', () => {
+        expect(QrCodeRenderOptionsOverrideSchema.safeParse({ nope: 1 }).success).toBe(false);
+    });
 });
