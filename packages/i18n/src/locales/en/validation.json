@@ -12,6 +12,11 @@
             "min": "The QR code name is required"
         },
         "renderOptions": {
+            "centerLogo": {
+                "levelRequiredWithLogo": "Turning the centre logo on must also state the error-correction level, because the stored one is not visible from here",
+                "logoRequiredWithLevel": "Lowering the error-correction level must also state whether the code carries a centre logo, because the stored one is not visible from here",
+                "requiresErrorCorrection": "A centre logo needs a higher error-correction level (Q or H): the logo covers part of the symbol, and only error correction makes it readable again"
+            },
             "color": {
                 "invalid": "The colour must be hexadecimal, in #rgb, #rrggbb or #rrggbbaa form"
             },
@@ -2470,6 +2475,9 @@
         },
         "productType": {
             "invalid": "El product type no es válido"
+        },
+        "qrCodeCenterLogo": {
+            "invalid": "The QR code centre logo is not valid"
         },
         "qrCodeErrorCorrectionLevel": {
             "invalid": "Invalid error correction level"
