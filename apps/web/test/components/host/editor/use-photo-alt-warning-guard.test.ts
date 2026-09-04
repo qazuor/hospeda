@@ -13,22 +13,21 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
 import type { AccommodationMediaItem } from '@/lib/api/types';
+import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
 import { __setNavigateImpl } from '../../../stubs/astro-transitions-client';
 
 const ACCOMMODATION_ID = 'acc-hos-1018-a';
 
 const { showConfirmationDialogMock } = vi.hoisted(() => ({
-    showConfirmationDialogMock: vi.fn<
-        [
-            {
+    showConfirmationDialogMock:
+        vi.fn<
+            (options: {
                 readonly message: string;
                 readonly title: string;
                 readonly confirmLabel: string;
                 readonly cancelLabel: string;
-            }
-        ],
-        Promise<boolean>
-    >()
+            }) => Promise<boolean>
+        >()
 }));
 
 vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
@@ -95,19 +94,21 @@ async function flushRouterImport(): Promise<void> {
 }
 
 describe('usePhotoAltWarningGuard', () => {
-    let navigateSpy: ReturnType<typeof vi.fn>;
+    let navigateSpy: ReturnType<typeof vi.fn<(href: string) => void>>;
 
     beforeEach(() => {
-        navigateSpy = vi.fn();
+        navigateSpy = vi.fn<(href: string) => void>();
         __setNavigateImpl(navigateSpy);
         showConfirmationDialogMock.mockReset();
         window.sessionStorage.clear();
+        __resetLeaveWarningRegistry();
     });
 
     afterEach(() => {
         __setNavigateImpl(null);
         document.body.replaceChildren();
         window.sessionStorage.clear();
+        __resetLeaveWarningRegistry();
         vi.restoreAllMocks();
     });
 
@@ -225,6 +226,62 @@ describe('usePhotoAltWarningGuard', () => {
 
             expect(event.defaultPrevented).toBe(false);
             expect(showConfirmationDialogMock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('when sessionStorage throws', () => {
+        // HOS-1018 H-3. Private browsing and blocked-storage settings make both
+        // `getItem` and `setItem` throw, and the hook's try/catch is the only
+        // thing between that and a crashed editor. These pin it so nobody
+        // "simplifies" the guard away.
+        it('still warns when reading the dismissed flag throws', () => {
+            vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new DOMException('The operation is insecure.', 'SecurityError');
+            });
+            showConfirmationDialogMock.mockResolvedValue(false);
+
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [buildItem({ id: 'g1', alt: '' })]
+                })
+            );
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+
+            const event = clickAnchor(anchor);
+
+            // A read that throws must read as "nothing dismissed yet", not as
+            // an exception escaping the render.
+            expect(event.defaultPrevented).toBe(true);
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('still navigates when persisting the dismissed flag throws', async () => {
+            const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+            });
+            showConfirmationDialogMock.mockResolvedValue(true);
+
+            renderHook(() =>
+                usePhotoAltWarningGuard({
+                    locale: 'es',
+                    accommodationId: ACCOMMODATION_ID,
+                    featuredItem: null,
+                    galleryItems: [buildItem({ id: 'g1', alt: '' })]
+                })
+            );
+            await flushRouterImport();
+            const anchor = addAnchor('/es/mi-cuenta/propiedades/');
+
+            clickAnchor(anchor);
+            await flushRouterImport();
+
+            // The write failing only costs the "do not ask again" memory; it
+            // must never swallow the navigation the host just confirmed.
+            expect(setItemSpy).toHaveBeenCalled();
+            expect(navigateSpy).toHaveBeenCalledTimes(1);
         });
     });
 
