@@ -331,9 +331,11 @@ describe('PricingCardsGrid.astro', () => {
 
     describe('grid stays centred at one, two or three tiers (AC-14, absorbs HOS-891)', () => {
         it('exposes the rendered card count on the grid, clamped to three', () => {
-            expect(src).toContain(
-                '<div class="pricing-cards__grid" data-count={Math.min(cards.length, 3)}>'
-            );
+            // HOS-984 added an `id` attribute to this element (the promo-entry
+            // anchor's scroll target), so this checks the load-bearing pieces
+            // independently rather than one exact attribute-order string.
+            expect(src).toContain('class="pricing-cards__grid"');
+            expect(src).toContain('data-count={Math.min(cards.length, 3)}');
         });
 
         it('gives the one-card and two-card grids their own column template and width', () => {
