@@ -935,6 +935,7 @@
         "zodError.enums.productType.invalid",
         "zodError.enums.qrCodeErrorCorrectionLevel.invalid",
         "zodError.enums.qrCodeFormat.invalid",
+        "zodError.enums.qrCodePurpose.invalid",
         "zodError.enums.qrCodeSource.invalid",
         "zodError.enums.recurrenceType.invalid",
         "zodError.enums.refundStatus.invalid",
@@ -1912,7 +1913,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1911,
+    "total": 1912,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1941,7 +1942,7 @@
         "entityTag": 1,
         "entityTags": 1,
         "entityView": 20,
-        "enums": 78,
+        "enums": 79,
         "event": 53,
         "eventLocation": 22,
         "eventOrganizer": 13,

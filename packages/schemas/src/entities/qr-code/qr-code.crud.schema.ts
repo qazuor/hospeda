@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseSearchSchema } from '../../common/base.schema.js';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
+import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnum } from '../../enums/qr-code-source.enum.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -135,6 +136,54 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  * feature: the slug is the part that is already printed on a sticker somewhere.
  * `targetUrl` is exactly what an update is for.
  *
+ * ## The whole uniqueness key is frozen, not a third of it (HOS-981 PR 4)
+ *
+ * `purpose`, `entityType` and `entityId` are ALL absent, and they have to move
+ * together because they are one key: `(entityType, entityId, purpose)`. Moving
+ * any single column makes the row invisible to the provisioner that owns it,
+ * the next get-or-create finds nothing, mints a SECOND permanent slug for the
+ * same subject, and leaves two live codes whose targets are free to diverge —
+ * the failure the key exists to prevent, reintroduced through PATCH.
+ *
+ * Freezing only `purpose` (as this first did) left the worst version of that
+ * reachable. `PATCH {entityId: <provider B>}` on provider A's GENERATED code
+ * re-points the row at B while A's sticker is already on a van: A's panel mints
+ * a fresh code, and the printed one now sends A's customers to B's page and
+ * credits B with the scans. Nothing in the response says so.
+ *
+ * A second reason applies to `entityId` alone: moving it onto a subject that
+ * already holds a live code for the same purpose raises a 23505 on an UPDATE,
+ * and the recovery in `QrCodeService.getOrCreateForEntity` only wraps the
+ * INSERT — so that path surfaces a raw constraint name as a 500.
+ *
+ * ## `source` is frozen too, and could not be anything else
+ *
+ * `source` records how the row came into existence — a historical fact, not a
+ * setting. A MANUAL code an operator typed in did not later become GENERATED.
+ *
+ * It is also unchangeable in practice now that the entity reference is frozen,
+ * which is what settles it. `extras/039` requires GENERATED to name an entity
+ * and MANUAL not to; since a PATCH can no longer move `entityType`/`entityId`,
+ * EVERY `source` flip lands on a row whose entity columns contradict the new
+ * value. `PATCH {source:'MANUAL'}` on a generated code, and `{source:
+ * 'GENERATED'}` on a manual one, both reach Postgres and come back as a 500
+ * carrying a constraint name. Accepting the field converts a nonsense request
+ * into a server error and buys nothing.
+ *
+ * A schema-level refine cannot rescue it either: the payload does not carry the
+ * stored entity columns, so nothing in a `superRefine` can see what the new
+ * `source` would contradict. (`.strict()` also runs BEFORE any refine, so once
+ * `entityType`/`entityId` left the shape, a refine over the three fields
+ * together became unreachable code.)
+ *
+ * ## Reassigning and converting are not edits
+ *
+ * Neither pointing a code at another entity nor converting it between MANUAL
+ * and GENERATED is an edit, and for the same underlying reason: the old sticker
+ * goes on existing whatever the row says. If either becomes a real requirement
+ * it needs its own operation, with the retire-and-reissue semantics a printed
+ * code demands.
+ *
  * ## Why `renderOptions` is re-declared (HOS-981 PR 3)
  *
  * `stripShapeDefaults` removes TOP-LEVEL defaults only — by design, and it says
@@ -159,7 +208,15 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  */
 export const QrCodeUpdateInputSchema = z
     .object({
-        ...stripShapeDefaults(QrCodeCreateInputBaseSchema.omit({ slug: true }).shape),
+        ...stripShapeDefaults(
+            QrCodeCreateInputBaseSchema.omit({
+                slug: true,
+                purpose: true,
+                entityType: true,
+                entityId: true,
+                source: true
+            }).shape
+        ),
         renderOptions: QrCodeRenderOptionsPatchSchema
     })
     .partial()
@@ -181,6 +238,12 @@ export const QrCodeSearchInputSchema = BaseSearchSchema.extend({
     source: QrCodeSourceEnumSchema.optional(),
     entityType: EntityTypeEnumSchema.optional(),
     entityId: z.string().uuid().optional(),
+    /**
+     * Filterable because a subject can now hold several codes: without it,
+     * "show me this restaurant's codes" answers with the door and the table
+     * code and no way to say which row is which.
+     */
+    purpose: QrCodePurposeEnumSchema.optional(),
     isActive: z.boolean().optional()
 }).strict();
 

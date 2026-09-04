@@ -75,6 +75,7 @@ export * from './hostTrade/host-trade.service';
 // unreachable from `@repo/service-core`, so no API route can construct one —
 // which is exactly how they shipped invisible until T-030 needed them.
 export * from './hostTrade/host-trade-aggregates';
+export * from './hostTrade/host-trade-qr';
 export * from './hostTrade/host-trade-review.permissions';
 export * from './hostTrade/host-trade-review.service';
 export * from './hostTrade/host-trade-review-reply.service';

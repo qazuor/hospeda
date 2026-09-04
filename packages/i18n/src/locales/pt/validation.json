@@ -2477,6 +2477,9 @@
         "qrCodeFormat": {
             "invalid": "Formato de código QR inválido"
         },
+        "qrCodePurpose": {
+            "invalid": "Finalidade do código QR inválida"
+        },
         "qrCodeSource": {
             "invalid": "Origem do código QR inválida"
         },

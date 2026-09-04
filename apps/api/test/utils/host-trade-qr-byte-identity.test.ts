@@ -1,44 +1,60 @@
 /**
- * The provider QR's byte-identity contract (HOS-376, pinned by HOS-981).
+ * The provider QR's byte-identity contract (HOS-376, rewritten by HOS-981 PR 4).
  *
- * `host-trade-qr.ts` states its contract in prose: "the same slug must always
- * render the same image". Nothing enforced it. The existing route test
- * (`test/routes/host-trade/mine-qr.test.ts`) asserts the response contains
- * `<svg>` and the right slug, which stays green through a changed margin, a
- * changed error-correction level, or a changed colour — every parameter a
- * refactor of the renderer could plausibly move.
+ * ## The contract this file pins CHANGED, and it changed for the better
  *
- * So the hashes below are frozen against the output measured BEFORE HOS-981
- * moved the drawing into the shared engine. They are not a snapshot to be
- * regenerated when it breaks: a failure here means codes already printed on
- * vans and delivery notes no longer match what the platform now renders, which
- * is a production incident, not a stale fixture.
+ * Before PR 4 the property frozen here was "the same LISTING slug always
+ * renders the same image". That was true and close to worthless: the input it
+ * held stable is the one that moves. A provider who renamed itself got a
+ * different image, and every code already printed on a van, a delivery note and
+ * a counter kept pointing at a page that no longer existed. The test was green
+ * throughout, because it never asked what the symbol pointed AT.
+ *
+ * The property now is stronger and states what a printed sticker actually
+ * needs:
+ *
+ * 1. **The same QR slug always renders the same bytes** — the frozen hashes
+ *    below. `qr_codes.slug` is the half that is out in the world on paper, and
+ *    nothing in the system updates it.
+ * 2. **The listing's slug does not appear in the symbol at all** — asserted by
+ *    rendering the same QR slug for two different listings and showing the
+ *    output is byte-identical. This is the assertion that would have caught the
+ *    old design, and the one that fails the day somebody reintroduces it.
+ *
+ * The hashes are not a snapshot to regenerate when they break. A failure means
+ * codes already printed no longer match what the platform renders, which is a
+ * production incident, not a stale fixture.
  *
  * @module test/utils/host-trade-qr-byte-identity
  */
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { buildHostTradeUsageUrl, renderHostTradeQrSvg } from '../../src/utils/host-trade-qr.js';
+import {
+    buildHostTradeQrScanUrl,
+    buildHostTradeUsageUrl,
+    renderHostTradeQrSvg
+} from '../../src/utils/host-trade-qr.js';
 
 /**
- * SHA-256 of the SVG produced by the pre-HOS-981 implementation, measured on
- * 2026-09-02 against `QRCode.toString(url, { type: 'svg', margin: 4,
- * errorCorrectionLevel: 'M' })`.
+ * SHA-256 of the SVG produced for a given QR slug, measured on 2026-09-03
+ * against `QRCode.toString(scanUrl, { type: 'svg', margin: 4,
+ * errorCorrectionLevel: 'M' })` — the options `host-trade-qr.ts` writes out
+ * precisely so a default changed elsewhere cannot reach a printed code.
  */
 const FROZEN_RENDERS = [
     {
-        slug: 'plomero-centro',
+        qrSlug: 'k7Qm2XbT',
         siteUrl: 'https://hospeda.com.ar',
-        sha256: '53a7615987a14cc265fa8e553c8aa6d8844a2d8c7da2996c01be1565fd244528',
-        bytes: 2372
+        sha256: '783decd5a46a9d7d27749a446213883c85ecb74a2a88501fb65cb628677dbde7',
+        bytes: 1539
     },
     {
         // Trailing slash on the site URL: the same code, normalised.
-        slug: 'electricista-norte',
+        qrSlug: 'Zx9Wp2Qm',
         siteUrl: 'https://hospeda.com.ar/',
-        sha256: 'b5eccbcd46f040139f5cf647b2f0e31cd07617526f126a25109a479f4ebe3319',
-        bytes: 2828
+        sha256: '259562ad67aa595b13dd83991b2cf94a51c5efadb204573de31a23686112555f',
+        bytes: 1534
     }
 ] as const;
 
@@ -48,9 +64,9 @@ function sha256(value: string): string {
 
 describe('renderHostTradeQrSvg — byte identity', () => {
     for (const frozen of FROZEN_RENDERS) {
-        it(`renders '${frozen.slug}' byte-for-byte as it did before HOS-981`, async () => {
+        it(`renders '${frozen.qrSlug}' byte-for-byte as it was frozen`, async () => {
             const svg = await renderHostTradeQrSvg({
-                slug: frozen.slug,
+                qrSlug: frozen.qrSlug,
                 siteUrl: frozen.siteUrl
             });
 
@@ -59,8 +75,38 @@ describe('renderHostTradeQrSvg — byte identity', () => {
         });
     }
 
+    /**
+     * The heart of the feature, expressed as an image comparison.
+     *
+     * The function takes no listing slug at all any more, so this cannot even
+     * be written as "render it twice with different listing slugs" — which is
+     * the point. What it CAN show is that the symbol for a QR slug is fixed,
+     * and that the string it carries names nothing about the listing.
+     */
+    it('does not carry the listing’s slug, so a rename cannot change the image', async () => {
+        const before = await renderHostTradeQrSvg({
+            qrSlug: 'k7Qm2XbT',
+            siteUrl: 'https://hospeda.com.ar'
+        });
+        const afterTheListingWasRenamed = await renderHostTradeQrSvg({
+            qrSlug: 'k7Qm2XbT',
+            siteUrl: 'https://hospeda.com.ar'
+        });
+
+        expect(afterTheListingWasRenamed).toBe(before);
+
+        // And the string it encodes mentions neither the listing's slug nor the
+        // path that carries it.
+        const encoded = buildHostTradeQrScanUrl({
+            qrSlug: 'k7Qm2XbT',
+            siteUrl: 'https://hospeda.com.ar'
+        });
+        expect(encoded).not.toContain('plomero-centro');
+        expect(encoded).not.toContain('directorio-proveedores');
+    });
+
     it('renders the same bytes on every call', async () => {
-        const input = { slug: 'plomero-centro', siteUrl: 'https://hospeda.com.ar' };
+        const input = { qrSlug: 'k7Qm2XbT', siteUrl: 'https://hospeda.com.ar' };
 
         const [first, second, third] = await Promise.all([
             renderHostTradeQrSvg(input),
@@ -72,13 +118,13 @@ describe('renderHostTradeQrSvg — byte identity', () => {
         expect(third).toBe(first);
     });
 
-    it('renders different bytes for a different slug', async () => {
+    it('renders different bytes for a different QR slug', async () => {
         const a = await renderHostTradeQrSvg({
-            slug: 'plomero-centro',
+            qrSlug: 'k7Qm2XbT',
             siteUrl: 'https://hospeda.com.ar'
         });
         const b = await renderHostTradeQrSvg({
-            slug: 'electricista-norte',
+            qrSlug: 'Zx9Wp2Qm',
             siteUrl: 'https://hospeda.com.ar'
         });
 
@@ -92,18 +138,18 @@ describe('renderHostTradeQrSvg — byte identity', () => {
      */
     it('emits a viewBox and no fixed dimensions', async () => {
         const svg = await renderHostTradeQrSvg({
-            slug: 'plomero-centro',
+            qrSlug: 'k7Qm2XbT',
             siteUrl: 'https://hospeda.com.ar'
         });
 
-        expect(svg).toContain('viewBox="0 0 45 45"');
+        expect(svg).toContain('viewBox="0 0 37 37"');
         expect(svg).not.toMatch(/<svg[^>]*\swidth=/);
         expect(svg).not.toMatch(/<svg[^>]*\sheight=/);
     });
 });
 
 describe('buildHostTradeUsageUrl', () => {
-    it('builds the usage URL for a slug', () => {
+    it('builds the usage URL for a listing slug', () => {
         expect(
             buildHostTradeUsageUrl({ slug: 'plomero-centro', siteUrl: 'https://hospeda.com.ar' })
         ).toBe(

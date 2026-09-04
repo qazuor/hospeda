@@ -109,7 +109,16 @@ let pendingUsages: readonly BenefitUsage[] = [];
 let linkedHosts: readonly LinkedHost[] = [];
 let reviews: readonly OwnerReviewRow[] = [];
 let reviewsTotal = 0;
-let qr: { svg: string; url: string; slug: string } | null = null;
+// `url` is what the QR encodes (`/qr/{qrSlug}/`); `targetUrl` is where that
+// redirect lands. The panel shows the latter, because its copy says "leads to"
+// (HOS-981 PR 4).
+let qr: {
+    svg: string;
+    url: string;
+    targetUrl: string;
+    slug: string;
+    qrSlug: string;
+} | null = null;
 let panelFailed = false;
 
 if (canShowTabs && activeTab === 'usos') {
@@ -273,7 +282,7 @@ const panelError = t(
                             locale={locale}
                             svg={qr.svg}
                             slug={qr.slug}
-                            targetUrl={qr.url}
+                            targetUrl={qr.targetUrl}
                         />
                     ) : (
                         <HostTradeEditForm locale={locale} trade={trade} client:load />

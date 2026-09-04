@@ -1,0 +1,54 @@
+-- ============================================================================
+-- 040 — HOS-981 PR 4: one live QR per (entity, purpose)
+--
+-- Carril 2 (extras): Drizzle cannot express a PARTIAL index, and the `WHERE`
+-- clause is the whole point of this one. Idempotent — re-applied on every
+-- `pnpm db:apply-extras`.
+--
+-- ## What it closes
+--
+-- `getOrCreateForEntity` runs inside a GET, so two concurrent requests for the
+-- same subject can reach the INSERT together. Each draws its own random slug,
+-- so the UNIQUE index on `slug` does not fire, and the provider walks away with
+-- two live codes for one sticker — both valid, both counting scans, free to be
+-- repointed apart later. A read-then-write check in application code cannot fix
+-- that; only the database can refuse the second row.
+--
+-- ## Why `purpose` is IN the key
+--
+-- The obvious constraint — UNIQUE (entity_type, entity_id) — would close the
+-- race and take the rest of the epic with it. A gastronomy listing is meant to
+-- carry TWO physical codes at once: one on the door that opens its listing
+-- (HOS-982) and one on the table that opens the menu (HOS-1044). An experience
+-- likewise carries its listing code and the one printed on its certificate —
+-- and those two resolve to the SAME url today (`certificate-render.ts` draws
+-- `content.publicUrl`, built by `buildExperiencePublicUrl`), so neither the
+-- target nor the entity distinguishes them. Only where they are printed does,
+-- and knowing which one brings people in is the product. Two codes with
+-- different purposes are not duplicates.
+--
+-- ## Why `WHERE deleted_at IS NULL`
+--
+-- Soft delete is on by default in this repo, and a retired code must not block
+-- its replacement. Note this is the OPPOSITE choice from `qrCodes_slug_unique`,
+-- which deliberately spans deleted rows too: a slug that was printed once may
+-- never be reissued, whereas an entity whose code was retired should be able to
+-- get a new one.
+--
+-- ## Why NULL `purpose` rows are exempt, for free
+--
+-- A MANUAL code has no system purpose and stores NULL. Postgres never treats
+-- one NULL as equal to another inside a unique index, so those rows fall
+-- outside this constraint without any extra clause: several hand-made codes may
+-- point at one subject, which is exactly right. This is the standard SQL rule,
+-- not a quirk of this index — it will look like an omission to whoever reads it
+-- next, and it is not.
+--
+-- Existing rows: `qr_codes` ships in this same release and `purpose` is added
+-- by the structural migration in it, so every existing row has NULL purpose and
+-- no duplicate can block the CREATE. No CONCURRENTLY needed.
+-- ============================================================================
+
+CREATE UNIQUE INDEX IF NOT EXISTS "qr_codes_entity_purpose_unique"
+    ON "qr_codes" ("entity_type", "entity_id", "purpose")
+    WHERE "deleted_at" IS NULL;

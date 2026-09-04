@@ -1,6 +1,6 @@
 {
-  "id": "24e6270a-93ba-4b27-8883-9df3edc311e4",
-  "prevId": "cfcc9c66-2ca2-4399-9871-97d9ad3c818e",
+  "id": "52a481b7-84e0-4cb1-963d-974cccd0325f",
+  "prevId": "24e6270a-93ba-4b27-8883-9df3edc311e4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -12301,6 +12301,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "is_visible_on_listing": {
+          "name": "is_visible_on_listing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_usable_by_ai": {
+          "name": "is_usable_by_ai",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
         "lifecycle_state": {
           "name": "lifecycle_state",
           "type": "lifecycle_status_enum",
@@ -14785,6 +14799,20 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": false
+        },
+        "is_visible_on_listing": {
+          "name": "is_visible_on_listing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_usable_by_ai": {
+          "name": "is_usable_by_ai",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         },
         "lifecycle_state": {
           "name": "lifecycle_state",

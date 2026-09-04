@@ -129,6 +129,8 @@ export * from './qr-code-error-correction-level.enum.js';
 export * from './qr-code-error-correction-level.schema.js';
 export * from './qr-code-format.enum.js';
 export * from './qr-code-format.schema.js';
+export * from './qr-code-purpose.enum.js';
+export * from './qr-code-purpose.schema.js';
 export * from './qr-code-source.enum.js';
 export * from './qr-code-source.schema.js';
 export * from './recurrence.enum.js';
