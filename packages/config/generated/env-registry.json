@@ -860,6 +860,22 @@
       "howToObtainEs": "Dejalo sin setear o en \"false\" para mantener el checkout con share link compartido (default seguro, sin cambio de comportamiento). Poné \"true\" SOLO después de que un smoke en staging del checkout de accommodation mensual contra el sandbox real de MP haya pasado. Zod usa `(v) => v === \"true\"` internamente — solo el string literal \"true\" lo activa. Alcanza sólo a accommodation mensual (HOS-937 paso 1) — anual, commerce y partner no se ven afectados por este flag."
     },
     {
+      "name": "HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED",
+      "description": "Feature flag for recurring add-on charging via a dedicated MercadoPago preapproval per add-on (HOS-847). Ships dark (default false) across the whole PR chain: while unset/false, add-on checkout keeps using the one-time Preference path (mode: \"payment\") byte-for-byte, regardless of billingType: \"recurring\" on the add-on. Set to \"true\" ONLY once the full chain is merged (checkout, webhook activation/renewal, hard-cancel on cancellation, and the reconciler cron) — turning this on before the webhook handler exists leaves a customer who authorized a charge with a purchase stuck pending forever.",
+      "descriptionEs": "Feature flag del cobro recurrente de add-ons vía un preapproval de MercadoPago dedicado por add-on (HOS-847). Se entrega apagado (default false) durante toda la cadena de PRs: mientras esté sin setear o en false, el checkout de add-ons sigue usando el camino de pago único vía Preference (mode: \"payment\") sin cambios, sin importar el billingType: \"recurring\" del add-on. Poné \"true\" SOLO una vez que toda la cadena esté mergeada (checkout, activación/renovación por webhook, hard-cancel en la cancelación, y el cron reconciliador) — activarlo antes de que exista el handler de webhook deja a un cliente que autorizó un cobro con una compra trabada en pending para siempre.",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "false",
+      "apps": [
+        "api"
+      ],
+      "category": "billing",
+      "howToObtain": "Leave unset or \"false\" to keep the one-time add-on checkout (safe default, unchanged behavior). Set \"true\" ONLY after the entire HOS-847 PR chain (checkout, webhook, cancellation hard-cancel, reconciler) is merged AND both the staging and prod smoke checklists (SPEC-143) have signed off — this is billing CORE. Internally Zod transforms via `(v) => v === \"true\"` — only the literal string \"true\" enables it.",
+      "howToObtainEs": "Dejalo sin setear o en \"false\" para mantener el checkout de add-ons de pago único (default seguro, sin cambio de comportamiento). Poné \"true\" SOLO después de que toda la cadena de PRs de HOS-847 (checkout, webhook, hard-cancel en cancelación, reconciliador) esté mergeada Y de que los smokes de staging y prod (SPEC-143) hayan firmado — esto es billing CORE. Zod usa `(v) => v === \"true\"` internamente — solo el string literal \"true\" lo activa."
+    },
+    {
       "name": "HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS",
       "description": "Max failed login attempts before temporary lockout",
       "descriptionEs": "Intentos fallidos máximos de login antes del lockout temporal",
