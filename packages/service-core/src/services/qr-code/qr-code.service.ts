@@ -6,12 +6,24 @@ import {
     QrCodeScanModel as RealQrCodeScanModel,
     safeIlike
 } from '@repo/db';
-import type { QrCode, QrCodeCreateInput, QrCodeScan, QrCodeSearchInput } from '@repo/schemas';
+import type {
+    EntityTypeEnum,
+    QrCode,
+    QrCodeCreateInput,
+    QrCodePurposeEnum,
+    QrCodeScan,
+    QrCodeSearchInput
+} from '@repo/schemas';
 import {
+    EntityTypeEnumSchema,
+    QR_CODE_LABEL_MAX_LENGTH,
+    QR_CODE_TARGET_URL_MAX_LENGTH,
     QrCodeAdminSearchSchema,
     QrCodeCreateInputSchema,
+    QrCodePurposeEnumSchema,
     QrCodeRenderOptionsSchema,
     QrCodeSearchInputSchema,
+    QrCodeSourceEnum,
     QrCodeUpdateInputSchema,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -27,6 +39,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
 import { normalizeCreateInput, normalizeUpdateInput } from './qr-code.normalizers';
 import {
     checkCanCreateQrCode,
@@ -44,6 +57,51 @@ const ResolveBySlugInputSchema = z.object({
 
 const RegisterScanInputSchema = z.object({
     qrCodeId: z.string().uuid()
+});
+
+/**
+ * Postgres SQLSTATE for `unique_violation`.
+ *
+ * Matched against {@link extractPostgresErrorCause}, never against the error's
+ * own `code`: Drizzle wraps every query failure and does NOT copy the SQLSTATE
+ * onto the wrapper, so `error.code` is `undefined` on the very error this is
+ * meant to recognise.
+ */
+const POSTGRES_UNIQUE_VIOLATION = '23505';
+
+/**
+ * How many rows the entity lookup reads before picking the oldest live one.
+ *
+ * More than one even though `qr_codes_entity_purpose_unique` now makes a second
+ * live row for one `(entity, purpose)` impossible: the index is partial on
+ * `deleted_at IS NULL`, so retired codes for the same key are still returned by
+ * this query and filtered in code, and rows written before the index existed
+ * were never checked by it at all. Small because anything past a handful means
+ * a provisioning bug worth noticing, not a page to scroll through.
+ */
+const ENTITY_CODE_LOOKUP_PAGE_SIZE = 10;
+
+/**
+ * Shared entity-reference shape for the provisioning methods.
+ *
+ * `purpose` is REQUIRED here even though the column is nullable. The nullable
+ * column exists for MANUAL codes an operator typed in; a code reached through
+ * provisioning is by definition a system code, and a lookup that omitted the
+ * purpose would match whichever of the subject's codes came back first.
+ */
+const EntityRefInputSchema = z.object({
+    entityType: EntityTypeEnumSchema,
+    entityId: z.string().uuid(),
+    purpose: QrCodePurposeEnumSchema
+});
+
+const GetOrCreateForEntityInputSchema = EntityRefInputSchema.extend({
+    targetUrl: z.string().url().max(QR_CODE_TARGET_URL_MAX_LENGTH),
+    label: z.string().min(1).max(QR_CODE_LABEL_MAX_LENGTH)
+});
+
+const SetEntityTargetUrlInputSchema = EntityRefInputSchema.extend({
+    targetUrl: z.string().url().max(QR_CODE_TARGET_URL_MAX_LENGTH)
 });
 
 /**
@@ -177,11 +235,30 @@ export class QrCodeService extends BaseCrudService<
             return { ...data, slug: data.slug, renderOptions } as Partial<QrCode>;
         }
 
+        return { ...data, slug: await this._mintSlug(), renderOptions } as Partial<QrCode>;
+    }
+
+    /**
+     * Draws a slug that is not already taken.
+     *
+     * Extracted from {@link _beforeCreate} so the entity-provisioning path
+     * ({@link getOrCreateForEntity}) mints slugs the SAME way the admin panel
+     * does. There is deliberately no semantic prefix: `QrCodeSlugSchema` admits
+     * only the unambiguous alphabet and no separators, so a prefixed slug would
+     * either be rejected outright (`ht-K7Qm2XbT`) or be indistinguishable from
+     * a random one (`htK7Qm2XbT`) while quietly shrinking the space and leaking
+     * what a code is for to anyone reading a sticker. One convention, minted in
+     * one function.
+     *
+     * @returns A free slug.
+     * @throws {ServiceError} `INTERNAL_ERROR` when every attempt collided.
+     */
+    private async _mintSlug(): Promise<string> {
         for (let attempt = 0; attempt < SLUG_MINT_ATTEMPTS; attempt++) {
             const slug = generateShortId();
             const taken = await this.model.findOne({ slug });
             if (!taken) {
-                return { ...data, slug, renderOptions } as Partial<QrCode>;
+                return slug;
             }
         }
 
@@ -228,6 +305,7 @@ export class QrCodeService extends BaseCrudService<
         if (params.source) where.source = params.source;
         if (params.entityType) where.entityType = params.entityType;
         if (params.entityId) where.entityId = params.entityId;
+        if (params.purpose) where.purpose = params.purpose;
         if (params.isActive !== undefined) where.isActive = params.isActive;
 
         return where;
@@ -326,5 +404,263 @@ export class QrCodeService extends BaseCrudService<
                 return this.scanModel.create({ qrCodeId });
             }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Entity provisioning (HOS-981 PR 4)
+    // ------------------------------------------------------------------
+
+    /**
+     * Reads the live `GENERATED` code a subject holds FOR ONE PURPOSE.
+     *
+     * The key is all three of `(entityType, entityId, purpose)`, never the
+     * first two. A gastronomy listing carries a door code and a table code; an
+     * experience carries a listing code and a certificate code that resolve to
+     * the same URL. Looking up by entity alone would answer with whichever of
+     * them the database happened to return, and the provisioner would then
+     * treat the menu's code as the listing's.
+     *
+     * Soft-deleted rows are filtered HERE rather than in the `where` object:
+     * `BaseModelImpl` builds its filter from column equality and a
+     * `deletedAt: null` key is not equality, so a mistyped attempt at it would
+     * be dropped silently and this would start returning retired codes. The
+     * oldest live row wins, deterministically — belt-and-braces now that the
+     * partial UNIQUE index makes a second live row for one purpose impossible,
+     * and still meaningful for the rows written before that index existed.
+     *
+     * No permission check: this is a system read on behalf of a caller the
+     * ROUTE has already authorised by row ownership, exactly like
+     * {@link resolveBySlug}.
+     *
+     * @param input - Input parameters.
+     * @param input.actor - Actor performing the action.
+     * @param input.entityType - The entity's type.
+     * @param input.entityId - The entity's id.
+     * @param input.purpose - WHICH of the subject's codes is wanted.
+     * @returns Service output carrying the code, or `null`.
+     */
+    public async findLiveCodeForEntity(input: {
+        actor: Actor;
+        entityType: EntityTypeEnum;
+        entityId: string;
+        purpose: QrCodePurposeEnum;
+        ctx?: ServiceContext;
+    }): Promise<ServiceOutput<QrCode | null>> {
+        const { actor, entityType, entityId, purpose, ctx } = input;
+
+        return this.runWithLoggingAndValidation({
+            methodName: 'findLiveCodeForEntity',
+            input: { actor, entityType, entityId, purpose },
+            schema: EntityRefInputSchema.extend({ actor: z.any() }),
+            ctx,
+            execute: async () => this._findLiveCodeForEntity({ entityType, entityId, purpose, ctx })
+        });
+    }
+
+    /**
+     * Returns the entity's QR code, creating it on first request.
+     *
+     * ## Why creation happens on READ
+     *
+     * A code is minted the first time somebody asks to see it, not when the
+     * entity is created. That covers the rows that already exist in production
+     * with no backfill, and it means an entity nobody ever prints a code for
+     * never occupies a slug.
+     *
+     * ## The race, and how the two halves divide the work
+     *
+     * This runs inside a `GET`, so two concurrent requests reach the insert
+     * together. The DATABASE is what makes that safe: the partial unique index
+     * `(entity_type, entity_id, purpose) WHERE deleted_at IS NULL`
+     * (`extras/040`) refuses the second insert outright, so the entity cannot
+     * end up holding two live codes for one purpose no matter how the requests
+     * interleave.
+     *
+     * The catch below is the RECOVERY, not the guarantee, and it is still
+     * needed for exactly that reason: without it the loser of the race receives
+     * a raw constraint violation as a 500 while a perfectly good code sits in
+     * the table. It re-reads by the same three-part key and answers with the
+     * winner's row. Two distinct constraints can fire here — the entity/purpose
+     * one just described, and the far rarer `slug` collision — and only the
+     * first leaves a row to recover, which is why the re-read result decides
+     * whether to return or rethrow rather than the constraint name.
+     *
+     * Note the index is over `purpose`, NOT over `(entity_type, entity_id)`
+     * alone: a restaurant's door code and its table code are two live rows for
+     * one subject on purpose, and a two-column index would reject the second
+     * and take that feature with it.
+     *
+     * ## No permission check
+     *
+     * Deliberate, and the same reasoning as {@link registerScan}: the caller is
+     * a provider fetching their OWN code through a route authorised by row
+     * ownership, and they hold no `QR_CODE_CREATE`. Routing this through
+     * `create()` would demand that permission and lock every provider out of
+     * their own sticker.
+     *
+     * @param input - Input parameters.
+     * @param input.actor - Actor performing the action.
+     * @param input.entityType - The entity's type.
+     * @param input.entityId - The entity's id.
+     * @param input.purpose - WHICH of the subject's codes this is. Part of the
+     *   identity, not a label: a different purpose is a different code, not a
+     *   duplicate.
+     * @param input.targetUrl - Where a scan should land. Used only on creation;
+     *   an existing code keeps whatever target it already has, because that
+     *   value is operator-editable and must not be silently reverted on a read.
+     * @param input.label - Operator-facing name. Creation only, same reason.
+     * @returns Service output carrying the existing or freshly created code.
+     */
+    public async getOrCreateForEntity(input: {
+        actor: Actor;
+        entityType: EntityTypeEnum;
+        entityId: string;
+        purpose: QrCodePurposeEnum;
+        targetUrl: string;
+        label: string;
+        ctx?: ServiceContext;
+    }): Promise<ServiceOutput<QrCode>> {
+        const { actor, entityType, entityId, purpose, targetUrl, label, ctx } = input;
+
+        return this.runWithLoggingAndValidation({
+            methodName: 'getOrCreateForEntity',
+            input: { actor, entityType, entityId, purpose, targetUrl, label },
+            schema: GetOrCreateForEntityInputSchema.extend({ actor: z.any() }),
+            ctx,
+            execute: async (validated, validActor) => {
+                const existing = await this._findLiveCodeForEntity({
+                    entityType: validated.entityType,
+                    entityId: validated.entityId,
+                    purpose: validated.purpose,
+                    ctx
+                });
+                if (existing) return existing;
+
+                try {
+                    return await this.model.create(
+                        {
+                            slug: await this._mintSlug(),
+                            targetUrl: validated.targetUrl,
+                            label: validated.label,
+                            source: QrCodeSourceEnum.GENERATED,
+                            entityType: validated.entityType,
+                            entityId: validated.entityId,
+                            purpose: validated.purpose,
+                            renderOptions: QrCodeRenderOptionsSchema.parse({}),
+                            isActive: true,
+                            createdById: validActor.id,
+                            updatedById: validActor.id
+                        } as Partial<QrCode>,
+                        ctx?.tx
+                    );
+                } catch (error) {
+                    const cause = extractPostgresErrorCause(error);
+                    if (cause?.code !== POSTGRES_UNIQUE_VIOLATION) throw error;
+
+                    const winner = await this._findLiveCodeForEntity({
+                        entityType: validated.entityType,
+                        entityId: validated.entityId,
+                        purpose: validated.purpose,
+                        ctx
+                    });
+                    // Only the entity/purpose constraint leaves a row behind. A
+                    // violation with nothing to show for it was the `slug`
+                    // index firing against a DIFFERENT subject, and swallowing
+                    // that would hand the caller a success with no code in it.
+                    if (winner) return winner;
+                    throw error;
+                }
+            }
+        });
+    }
+
+    /**
+     * Repoints an entity's existing code at a new target.
+     *
+     * A no-op when the entity has no code, and that is the specified behaviour
+     * rather than a shortcut: a code is minted when somebody first asks to see
+     * it ({@link getOrCreateForEntity}), so provisioning one here — during an
+     * unrelated edit — would burn a permanent slug for an entity that may never
+     * print anything.
+     *
+     * No permission check, for the same reason as {@link getOrCreateForEntity}:
+     * the caller is the owning service reconciling its own derived data, not a
+     * human editing a QR code in the admin panel.
+     *
+     * @param input - Input parameters.
+     * @param input.actor - Actor performing the action.
+     * @param input.entityType - The entity's type.
+     * @param input.entityId - The entity's id.
+     * @param input.purpose - WHICH of the subject's codes to repoint. Required,
+     *   and it must be: repointing "the entity's code" is not a well-formed
+     *   request once a restaurant holds a door code and a table code that go to
+     *   different places.
+     * @param input.targetUrl - The new absolute target URL.
+     * @returns Service output saying whether a row was actually written.
+     */
+    public async setEntityTargetUrl(input: {
+        actor: Actor;
+        entityType: EntityTypeEnum;
+        entityId: string;
+        purpose: QrCodePurposeEnum;
+        targetUrl: string;
+        ctx?: ServiceContext;
+    }): Promise<ServiceOutput<{ updated: boolean }>> {
+        const { actor, entityType, entityId, purpose, targetUrl, ctx } = input;
+
+        return this.runWithLoggingAndValidation({
+            methodName: 'setEntityTargetUrl',
+            input: { actor, entityType, entityId, purpose, targetUrl },
+            schema: SetEntityTargetUrlInputSchema.extend({ actor: z.any() }),
+            ctx,
+            execute: async (validated, validActor) => {
+                const existing = await this._findLiveCodeForEntity({
+                    entityType: validated.entityType,
+                    entityId: validated.entityId,
+                    purpose: validated.purpose,
+                    ctx
+                });
+
+                if (!existing) return { updated: false };
+                if (existing.targetUrl === validated.targetUrl) return { updated: false };
+
+                await this.model.update(
+                    { id: existing.id },
+                    {
+                        targetUrl: validated.targetUrl,
+                        updatedById: validActor.id
+                    } as Partial<QrCode>,
+                    ctx?.tx
+                );
+
+                return { updated: true };
+            }
+        });
+    }
+
+    /** Shared body of the entity lookup. See {@link findLiveCodeForEntity}. */
+    private async _findLiveCodeForEntity(input: {
+        entityType: EntityTypeEnum;
+        entityId: string;
+        purpose: QrCodePurposeEnum;
+        ctx?: ServiceContext;
+    }): Promise<QrCode | null> {
+        const { items } = await this.model.findAll(
+            {
+                entityType: input.entityType,
+                entityId: input.entityId,
+                purpose: input.purpose
+            },
+            { page: 1, pageSize: ENTITY_CODE_LOOKUP_PAGE_SIZE, sortBy: 'createdAt' },
+            undefined,
+            input.ctx?.tx
+        );
+
+        const live = items.filter((item) => !item.deletedAt);
+        if (live.length === 0) return null;
+
+        return live.reduce((oldest, candidate) =>
+            candidate.createdAt < oldest.createdAt ? candidate : oldest
+        );
     }
 }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodeFormatEnumSchema } from '../../enums/qr-code-format.schema.js';
+import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import {
@@ -48,6 +49,15 @@ export const QrCodeCreateHttpSchema = z
         source: QrCodeSourceEnumSchema,
         entityType: EntityTypeEnumSchema.nullable().optional(),
         entityId: z.string().uuid().nullable().optional(),
+        /**
+         * Settable on creation, immutable afterwards — the same treatment
+         * `slug` gets, for a related reason: it is part of the
+         * `(entityType, entityId, purpose)` uniqueness key. Accepting it here
+         * is what lets an operator re-create a code that is ALREADY printed (a
+         * certificate, a brochure) carrying the purpose it really has, rather
+         * than a null that would sit outside the constraint.
+         */
+        purpose: QrCodePurposeEnumSchema.nullable().optional(),
         renderOptions: QrCodeRenderOptionsSchema.optional(),
         /**
          * A real boolean, NOT `z.coerce.boolean()`: coercion reads the string
@@ -70,6 +80,19 @@ export type QrCodeCreateHttp = z.infer<typeof QrCodeCreateHttpSchema>;
 /**
  * `slug` is absent by construction: a printed code cannot be renamed.
  *
+ * `purpose`, `entityType` and `entityId` are absent TOGETHER, because they are
+ * one uniqueness key and freezing a third of it protects nothing (HOS-981
+ * PR 4). `PATCH {entityId: <provider B>}` on provider A's code would re-point
+ * the row at B while A's sticker is already on a van: A's panel mints a fresh
+ * code, and the printed one starts sending A's customers to B's page with B
+ * collecting the scans. See `QrCodeUpdateInputSchema` for the full argument.
+ *
+ * `source` is absent too. It records how the row came into existence rather
+ * than how it is configured, and with the entity reference frozen every flip of
+ * it now contradicts `extras/039` — so accepting it could only ever turn a
+ * nonsense request into a 500 carrying a constraint name. Converting a code
+ * between MANUAL and GENERATED is retire-and-reissue, not an edit.
+ *
  * `renderOptions` is re-declared for the same reason the domain update schema
  * does it — see the long note on `QrCodeUpdateInputSchema`. In short:
  * `stripShapeDefaults` strips TOP-LEVEL defaults only, so without this line a
@@ -78,7 +101,15 @@ export type QrCodeCreateHttp = z.infer<typeof QrCodeCreateHttpSchema>;
  */
 export const QrCodeUpdateHttpSchema = z
     .object({
-        ...stripShapeDefaults(QrCodeCreateHttpSchema.omit({ slug: true }).shape),
+        ...stripShapeDefaults(
+            QrCodeCreateHttpSchema.omit({
+                slug: true,
+                purpose: true,
+                entityType: true,
+                entityId: true,
+                source: true
+            }).shape
+        ),
         renderOptions: QrCodeRenderOptionsPatchSchema
     })
     .partial()

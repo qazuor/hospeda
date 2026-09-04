@@ -227,6 +227,7 @@ const qrCodesTableStub = {
     source: 'source',
     entityType: 'entity_type',
     entityId: 'entity_id',
+    purpose: 'purpose',
     renderOptions: 'render_options',
     isActive: 'is_active',
     createdAt: 'created_at',
@@ -697,8 +698,24 @@ export function createDbMock() {
             async count(_filters: unknown) {
                 return 0;
             }
-            async create(_data: unknown) {
-                return { id: 'qr_code_mock_id', createdAt: new Date() };
+            /**
+             * Echoes the written row back (HOS-981 PR 4).
+             *
+             * The bare `{id, createdAt}` this used to answer was enough while
+             * nothing read the result, but `getOrCreateForEntity` returns the
+             * created row straight to the caller — and a stub that drops `slug`
+             * makes the provider QR route render a code for `undefined` while
+             * every assertion about it still passes. Spreading the input keeps
+             * the stub honest about what a real insert returns without teaching
+             * it any schema.
+             */
+            async create(data: unknown) {
+                return {
+                    id: 'qr_code_mock_id',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    ...(data as Record<string, unknown>)
+                };
             }
             async update(_id: string, _data: unknown) {
                 return { id: _id, updatedAt: new Date() };

@@ -10,7 +10,7 @@ import {
     uuid,
     varchar
 } from 'drizzle-orm/pg-core';
-import { EntityTypePgEnum, QrCodeSourcePgEnum } from '../enums.dbschema.ts';
+import { EntityTypePgEnum, QrCodePurposePgEnum, QrCodeSourcePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 /**
@@ -63,6 +63,35 @@ export const qrCodes = pgTable(
          */
         entityType: EntityTypePgEnum('entity_type'),
         entityId: uuid('entity_id'),
+
+        /**
+         * WHICH code this is, for a subject that carries more than one.
+         *
+         * `(entity_type, entity_id)` names the SUBJECT, and that was assumed to
+         * identify a code until it did not. A restaurant has two physical codes
+         * that coexist — one on the door for its listing, one on the table for
+         * its menu — and an experience has its listing code plus the one on its
+         * certificate, which today resolve to the SAME URL. Nothing about the
+         * target tells those apart; what distinguishes them is where they are
+         * printed, and knowing which one brings people in is the product.
+         *
+         * So this is the third part of the identity, not a label: uniqueness is
+         * `(entity_type, entity_id, purpose)`, enforced by the partial index in
+         * `extras/040-hos981-qr-code-entity-purpose.index.sql` — a partial index
+         * is not expressible in Drizzle, hence the extras carril.
+         *
+         * ## NULLABLE, and why that is the design and not a convenience
+         *
+         * A `MANUAL` code is one an operator typed into the admin panel: it has
+         * no system purpose, and inventing one for it would be a claim the
+         * lookup could later trip over. Postgres never treats one `NULL` as
+         * equal to another inside a UNIQUE index, so those rows fall OUTSIDE
+         * the constraint for free — several may exist for one subject, which is
+         * exactly right — with no separate `WHERE purpose IS NOT NULL` clause
+         * needed to arrange it. Somebody will doubt this in six months: it is
+         * the standard SQL rule, not a quirk of this index.
+         */
+        purpose: QrCodePurposePgEnum('purpose'),
 
         /**
          * Render configuration, as one document.

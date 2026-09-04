@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
+import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 
 /**
@@ -18,6 +19,12 @@ export const QrCodeAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filtering by a value the column cannot hold is a typo, not a search. */
     entityType: EntityTypeEnumSchema.optional(),
     entityId: z.string().uuid().optional(),
+    /**
+     * A subject can hold several codes since HOS-981 PR 4 — a door code and a
+     * table code, a listing code and a certificate code — so filtering by
+     * entity alone no longer picks one out.
+     */
+    purpose: QrCodePurposeEnumSchema.optional(),
     /**
      * NOT `z.coerce.boolean()`. A query param arrives as a string and
      * `Boolean('false') === true`, so coercion would hand the filter the exact
