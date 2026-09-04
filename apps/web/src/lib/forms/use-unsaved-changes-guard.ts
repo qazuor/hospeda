@@ -58,6 +58,22 @@ export interface UseUnsavedChangesGuardOptions {
     readonly confirmLabel: string;
     /** Cancel CTA label for internal-navigation confirms. */
     readonly cancelLabel: string;
+    /**
+     * Whether to also warn on hard exits (tab close / reload) via
+     * `beforeunload`. Defaults to `true`, matching every existing consumer's
+     * expectation of a truly unsaved form. Set to `false` for a "dirty"
+     * condition that is not about lost data (e.g. a soft nudge with no
+     * customizable-text equivalent on the native dialog) — a `beforeunload`
+     * prompt renders the browser's own non-customizable string, which is
+     * exactly what such a nudge cannot use to explain itself.
+     */
+    readonly includeBeforeUnload?: boolean;
+    /**
+     * Called synchronously right after the user confirms leaving, before the
+     * navigation itself runs. Lets a caller persist a "handled" flag (e.g. in
+     * `sessionStorage`) without reaching into the navigation flow.
+     */
+    readonly onConfirm?: () => void;
 }
 
 /**
@@ -127,7 +143,9 @@ export function useUnsavedChangesGuard({
     message,
     title,
     confirmLabel,
-    cancelLabel
+    cancelLabel,
+    includeBeforeUnload = true,
+    onConfirm
 }: UseUnsavedChangesGuardOptions): void {
     // Resolved up front, mirroring `dialog-history.ts`'s `warmRouter()`: the
     // click handler must decide synchronously, so awaiting the import there
@@ -185,6 +203,8 @@ export function useUnsavedChangesGuard({
                         return;
                     }
 
+                    onConfirm?.();
+
                     const routerNavigate = navigateRef.current;
                     if (routerNavigate) {
                         routerNavigate(href);
@@ -197,14 +217,18 @@ export function useUnsavedChangesGuard({
                 });
         };
 
-        window.addEventListener('beforeunload', handleBeforeUnload);
+        if (includeBeforeUnload) {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        }
         // Capture phase is load-bearing: the router listens in the bubble
         // phase, so this must run first for `defaultPrevented` to reach it.
         document.addEventListener('click', handleClickCapture, true);
 
         return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
+            if (includeBeforeUnload) {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            }
             document.removeEventListener('click', handleClickCapture, true);
         };
-    }, [isDirty, message, title, confirmLabel, cancelLabel]);
+    }, [isDirty, message, title, confirmLabel, cancelLabel, includeBeforeUnload, onConfirm]);
 }
