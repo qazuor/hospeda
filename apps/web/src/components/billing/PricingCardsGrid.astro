@@ -28,6 +28,7 @@ import { buildPricingCardViews } from '@/components/billing/pricing-card-view';
 import { resolvePlanWatermarkIcon } from '@/components/billing/plan-watermark-icon';
 import type { PricingPlan } from '@/components/billing/pricing-card-view';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -58,6 +59,49 @@ interface Props {
 	readonly emptyActionLabel: string;
 	/** CTA button text on each card. */
 	readonly ctaText: string;
+	/**
+	 * What each card's CTA does (HOS-1032).
+	 *
+	 * `'checkout'` (the default, and what the two accommodation audiences have
+	 * always done) mounts `<PlanPurchaseButton>`, the island that starts a
+	 * MercadoPago subscription for that tier.
+	 *
+	 * `'link'` renders a plain link to {@link ctaHref} instead. The three
+	 * audiences HOS-1032 added both need it, for different reasons that happen
+	 * to want the same markup: a commerce tier is bought through the listing
+	 * create flow (`buildCommerceStartUrl` → signup → the vertical's form → the
+	 * tier picker), not by charging a card from a marketing page; and a
+	 * partnership is agreed in a conversation, so aliados links to the lead form
+	 * (HOS-941 D-13). Rendering `<PlanPurchaseButton>` for either would put a
+	 * "pay now" button on a plan whose checkout does not start here.
+	 */
+	readonly ctaMode?: 'checkout' | 'link';
+	/**
+	 * Destination of every card's CTA when `ctaMode` is `'link'`. One href for
+	 * the whole grid, not one per card: neither linking audience routes by tier
+	 * (commerce picks the tier further down its own flow; partner has no tier to
+	 * pick before talking to someone). Ignored under `'checkout'`.
+	 */
+	readonly ctaHref?: string;
+	/**
+	 * Whether the cards show an amount (HOS-1032).
+	 *
+	 * `'consult'` replaces the price — and, with it, the annual toggle and the
+	 * annual hint — with a single "Consultar" line. Only aliados uses it, and
+	 * the reason is the owner's (HOS-941 D-13, revised): the Municipality of
+	 * Concepción del Uruguay and the corner shop are not charged the same for
+	 * the same tier, so "desde $15.000" would be a figure half the book is never
+	 * quoted. It is the same shape the free tourist tier already uses when it
+	 * prints "Gratis" instead of a number — the card keeps its structure, only
+	 * the amount is replaced.
+	 *
+	 * The trial line is NOT suppressed by this mode. It reads
+	 * `plan.hasTrial && plan.trialDays > 0` off the catalogue like every other
+	 * surface (HOS-941 R-2 / AC-47), and every partner tier sits at
+	 * `trialDays: 0`, so it renders nothing on its own — by data, not by a
+	 * second rule that could disagree with the database later.
+	 */
+	readonly priceMode?: 'amount' | 'consult';
 }
 
 const {
@@ -70,7 +114,23 @@ const {
 	emptyActionUrl,
 	emptyActionLabel,
 	ctaText,
+	ctaMode = 'checkout',
+	ctaHref,
+	priceMode = 'amount',
 } = Astro.props;
+
+/**
+ * A `'link'` grid with no destination would render five dead buttons, and the
+ * page that forgot the prop would look finished. Astro cannot express "required
+ * only when another prop has a given value" in the Props interface, so the
+ * pairing is asserted here, at render time, where it fails loudly on the first
+ * request instead of silently on every one.
+ */
+if (ctaMode === 'link' && !ctaHref) {
+	throw new Error(
+		`PricingCardsGrid: ctaMode="link" requires ctaHref (audience: ${audience})`
+	);
+}
 
 const { t, tPlural } = createTranslations(locale);
 const hasPlans = plans.length > 0;
@@ -109,6 +169,17 @@ const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
  * per-card count: once the lines are on screen there is nothing left to count.
  */
 const seeLessLabel = t('pricing.seeLess', 'Ver menos');
+/**
+ * What stands in for the amount under `priceMode: 'consult'`. Read here rather
+ * than inline so the two surfaces that state it — the card and its
+ * screen-reader label — cannot say different things.
+ *
+ * No fallback argument: `resolve()` serves a hardcoded one verbatim under /en
+ * and /pt, so it would render Spanish on an English page. The frozen inventory
+ * in `scripts/i18n-fallback-inventory.json` may only SHRINK, and a new key has
+ * no business being added to it.
+ */
+const consultPriceLabel = t('pricing.consultPrice');
 
 /** Every card's copy, prices and item split — see `pricing-card-view.ts`. */
 const { cards, maxAnnualSavingPercent } = buildPricingCardViews({
@@ -148,7 +219,13 @@ const selectGroupName = `pricing-select-${audience}`;
 		to, instead of a percentage floating beside a control it does not
 		belong to.
 	*/}
-	{hasPlans && hasAnyAnnualPrice && (
+	{/*
+		`priceMode === 'consult'` suppresses the toggle: it switches between two
+		amounts, and under that mode neither is on screen. Partner tiers DO carry
+		an `annualPriceArs`, so `hasAnyAnnualPrice` is true for them — the guard
+		has to be the display mode, not the data.
+	*/}
+	{hasPlans && hasAnyAnnualPrice && priceMode === 'amount' && (
 		<div class="pricing-toggle-block">
 			<p class="pricing-toggle__question">{toggleQuestionLabel}</p>
 			<div class="pricing-toggle" role="radiogroup" aria-label={toggleAriaLabel}>
@@ -259,6 +336,21 @@ const selectGroupName = `pricing-select-${audience}`;
 					</p>
 					<div class="pricing-card__price">
 						{/*
+							`consult` is the whole price block for aliados (HOS-941 D-13):
+							one line where the amount goes, and none of the monthly/annual
+							machinery below it, which has nothing to toggle between. It is
+							rendered with the SAME `pricing-card__amount` class the real
+							amount uses, so the card's vertical rhythm and its shared
+							subgrid rows are unchanged — this replaces the number, it does
+							not remove the row.
+						*/}
+						{priceMode === 'consult' ? (
+							<span class="pricing-card__amount pricing-card__amount--consult">
+								{consultPriceLabel}
+							</span>
+						) : (
+						<Fragment>
+						{/*
 							Render both prices in the markup and let CSS toggle visibility
 							based on the ancestor's data-billing attribute. Avoids shipping
 							an island for the price display; the React PlanPurchaseButton
@@ -318,6 +410,16 @@ const selectGroupName = `pricing-select-${audience}`;
 						{card.annualHintLabel && (
 							<p class="pricing-card__annual-hint">{card.annualHintLabel}</p>
 						)}
+						</Fragment>
+						)}
+						{/*
+							OUTSIDE the mode branch on purpose: the trial line is a fact
+							about the plan, not about how its price is displayed, and it is
+							read from the catalogue (HOS-941 R-2 / AC-47). Under `consult`
+							it renders nothing today because every partner tier carries
+							`trialDays: 0` — which is the database saying so, not a second
+							rule here that could outlive it.
+						*/}
 						{card.plan.hasTrial && card.plan.trialDays > 0 && (
 							<p class="pricing-card__trial">
 								{tPlural('pricing.trial', card.plan.trialDays)}
@@ -406,17 +508,35 @@ const selectGroupName = `pricing-select-${audience}`;
 						)}
 					</div>
 					<div class="pricing-card__btn-wrapper">
-						<PlanPurchaseButton
-							client:load
-							planSlug={card.plan.slug}
-							monthlyPrice={card.plan.monthlyPriceArs}
-							annualPrice={card.plan.annualPriceArs ?? null}
-							currency="ARS"
-							ctaText={ctaText}
-							locale={locale}
-							plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
-							ownPreapprovalEnabled={ownPreapprovalEnabled}
-						/>
+						{ctaMode === 'link' ? (
+							/*
+								A plain link, and deliberately NOT the purchase island:
+								nothing on this card can start a charge, so shipping the
+								island would load React, the promo-code form and the
+								payer-email dialog to render a button that only navigates.
+								`GradientButton` is the same control the sales pages use for
+								their CTA, so the two levels of one audience look alike.
+							*/
+							<GradientButton
+								href={ctaHref}
+								label={ctaText}
+								variant="accent"
+								shape="rounded"
+								icon="true"
+							/>
+						) : (
+							<PlanPurchaseButton
+								client:load
+								planSlug={card.plan.slug}
+								monthlyPrice={card.plan.monthlyPriceArs}
+								annualPrice={card.plan.annualPriceArs ?? null}
+								currency="ARS"
+								ctaText={ctaText}
+								locale={locale}
+								plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
+								ownPreapprovalEnabled={ownPreapprovalEnabled}
+							/>
+						)}
 					</div>
 				</div>
 				);
