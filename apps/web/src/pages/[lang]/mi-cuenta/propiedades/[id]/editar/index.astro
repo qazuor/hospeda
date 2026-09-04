@@ -14,7 +14,6 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
-import { FeaturedToggleSection } from '@/components/host/editor/FeaturedToggleSection.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import {
 	ACCOMMODATION_EDITOR_REGISTRY,
@@ -84,34 +83,4 @@ const statuses = resolveEditorSectionStatuses({
 		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
 	/>
-
-	{/*
-	 * HOS-318 D-10: the featured toggle gets no nav item and no hub row.
-	 * Rendered here at the foot, where it costs the hub nothing.
-	 *
-	 * HOS-728 changed what it renders, not where: an owner WITHOUT the
-	 * entitlement now sees the two visibility add-ons offered here instead of
-	 * nothing — this is the only surface in the product that names what
-	 * featuring a listing is. It still renders nothing while the entitlement
-	 * check is in flight, so the foot of the page never jumps.
-	 *
-	 * HOS-1031: mounted with `client:idle`, not `client:visible`. The
-	 * component's first render is `return null` while `isLoading` (see
-	 * `FeaturedToggleSection.client.tsx`), and `<astro-island>` carries a
-	 * fixed `display: contents` — with no SSR children the wrapper has zero
-	 * observed area, so the `IntersectionObserver` behind `client:visible`
-	 * never fires and the island never hydrates. Same root cause and fix as
-	 * `CompareCardSelect.client.tsx` (see its file header). `client:idle` does
-	 * not depend on layout size, so it hydrates regardless.
-	 */}
-	<div class="editor-hub-page__extra">
-		<FeaturedToggleSection locale={locale} accommodationId={accommodationId} client:idle />
-	</div>
 </EditorSectionLayout>
-
-<style>
-	.editor-hub-page__extra {
-		max-width: 720px;
-		margin-top: var(--space-5, 1.5rem);
-	}
-</style>

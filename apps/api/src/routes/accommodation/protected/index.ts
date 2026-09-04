@@ -22,10 +22,6 @@ import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
 import { protectedCreateAccommodationDraftRoute } from './createDraft';
-import {
-    protectedFeaturedToggleRoute,
-    protectedGetFeaturedEntitlementRoute
-} from './featured-toggle';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
@@ -103,16 +99,6 @@ app.route('/', protectedGetContactRoute);
 // Auth required, NO ownership: any authenticated tourist on the right plan may
 // read it. Separate from the shared-cached public payload for cache safety.
 app.route('/', protectedGetWhatsAppRoute);
-
-// PATCH /:id/featured-toggle - Owner self-service featured toggle (SPEC-309 T-019)
-// Ownership + entitlement gate enforced inside setAccommodationFeaturedToggle,
-// no declarative ownership middleware — safe to mount directly.
-app.route('/', protectedFeaturedToggleRoute);
-
-// GET /:id/featured-toggle - Read isFeatured + entitlement gate status (SPEC-309 T-020)
-// Read-side counterpart used by the web editor to decide whether to render
-// the toggle at all. Same ownership handling as the PATCH above.
-app.route('/', protectedGetFeaturedEntitlementRoute);
 
 // Occupancy calendar (auth required; ownership + MANAGE enforced inline in the service,
 // CAN_USE_CALENDAR enforced at the route via requireEntitlement middleware on the write
