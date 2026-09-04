@@ -1,0 +1,24 @@
+{
+    "signedOut": {
+        "tagline": "Primer paso",
+        "title": "Creá tu cuenta y publicá",
+        "body": "Para cargar tu ficha necesitás una cuenta. La creás en menos de dos minutos y volvés a esta misma página para completarla.",
+        "signupCta": "Crear mi cuenta",
+        "signinPrompt": "¿Ya tenés cuenta?",
+        "signinCta": "Iniciar sesión"
+    },
+    "benefits": {
+        "tagline": "¿Por qué Hospeda?"
+    },
+    "steps": {
+        "tagline": "Es así de fácil",
+        "title": "¿Cómo funciona?"
+    },
+    "plans": {
+        "tagline": "Antes de decidir",
+        "title": "¿Querés ver los planes primero?",
+        "body": "Mirá qué incluye cada plan y cuánto cuesta. Podés volver a esta página cuando quieras.",
+        "plansCta": "Ver planes",
+        "pricingCta": "Ver precios"
+    }
+}

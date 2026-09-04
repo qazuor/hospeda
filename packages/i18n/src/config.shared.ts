@@ -45,6 +45,7 @@ export const webNamespaces = [
     'error',
     'pricing',
     'privacy',
+    'publish',
     'search',
     'terms',
     'ui',
@@ -153,6 +154,7 @@ import ownersEn from './locales/en/owners.json';
 import partnersEn from './locales/en/partners.json';
 import pricingEn from './locales/en/pricing.json';
 import privacyEn from './locales/en/privacy.json';
+import publishEn from './locales/en/publish.json';
 import revalidationEn from './locales/en/revalidation.json';
 import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
@@ -209,6 +211,7 @@ import ownersEs from './locales/es/owners.json';
 import partnersEs from './locales/es/partners.json';
 import pricingEs from './locales/es/pricing.json';
 import privacyEs from './locales/es/privacy.json';
+import publishEs from './locales/es/publish.json';
 import revalidationEs from './locales/es/revalidation.json';
 import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
@@ -266,6 +269,7 @@ import ownersPt from './locales/pt/owners.json';
 import partnersPt from './locales/pt/partners.json';
 import pricingPt from './locales/pt/pricing.json';
 import privacyPt from './locales/pt/privacy.json';
+import publishPt from './locales/pt/publish.json';
 import revalidationPt from './locales/pt/revalidation.json';
 import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
@@ -317,6 +321,7 @@ export const rawWebTranslations = {
         owners: ownersEs,
         pricing: pricingEs,
         privacy: privacyEs,
+        publish: publishEs,
         review: reviewEs,
         search: searchEs,
         terms: termsEs,
@@ -372,6 +377,7 @@ export const rawWebTranslations = {
         owners: ownersEn,
         pricing: pricingEn,
         privacy: privacyEn,
+        publish: publishEn,
         review: reviewEn,
         search: searchEn,
         terms: termsEn,
@@ -427,6 +433,7 @@ export const rawWebTranslations = {
         owners: ownersPt,
         pricing: pricingPt,
         privacy: privacyPt,
+        publish: publishPt,
         review: reviewPt,
         search: searchPt,
         terms: termsPt,

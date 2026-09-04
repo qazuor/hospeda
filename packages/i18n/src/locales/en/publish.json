@@ -1,0 +1,24 @@
+{
+    "signedOut": {
+        "tagline": "First step",
+        "title": "Create your account and publish",
+        "body": "You need an account to fill in your listing. It takes less than two minutes, and you land back on this same page to finish it.",
+        "signupCta": "Create my account",
+        "signinPrompt": "Already have an account?",
+        "signinCta": "Sign in"
+    },
+    "benefits": {
+        "tagline": "Why Hospeda?"
+    },
+    "steps": {
+        "tagline": "It's this simple",
+        "title": "How does it work?"
+    },
+    "plans": {
+        "tagline": "Before you decide",
+        "title": "Want to see the plans first?",
+        "body": "Check what each plan includes and what it costs. You can come back to this page whenever you want.",
+        "plansCta": "See plans",
+        "pricingCta": "See pricing"
+    }
+}
