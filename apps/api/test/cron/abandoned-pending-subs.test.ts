@@ -62,6 +62,20 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
+        // HOS-1084: the lifecycle sites now reconcile through
+        // `subscription-linked-entities.service`, which reaches the shared
+        // `entity_subscriptions` status cache at module scope. Named
+        // explicitly because this file replaces the @repo/db mock wholesale.
+        ENTITY_SUBSCRIPTION_STATUS_NONE: 'none',
+        entitySubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            entityType: 'entity_type',
+            entityId: 'entity_id',
+            status: 'status',
+            planId: 'plan_id'
+        },
         billingSubscriptions: {
             id: 'ID',
             status: 'STATUS',

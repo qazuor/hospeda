@@ -113,7 +113,7 @@ const StartSubscriptionParamsSchema = {
 };
 
 /**
- * Subscription statuses (`commerce_listing_subscriptions.status`, mirroring
+ * Subscription statuses (`entity_subscriptions.status`, mirroring
  * `billing_subscriptions.status` — see `SubscriptionStatusEnum`) that
  * indicate the listing already has a LIVE-ish subscription and must block a
  * new checkout (AC-16 / HOS-166 judgment-day W1).

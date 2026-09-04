@@ -65,7 +65,7 @@ export const CommerceOwnerListingSummarySchema = z.object({
      * signal to derive it from (see `apps/web/src/lib/commerce/
      * listing-card-state.ts`'s `resolveCommerceListingCardState` doc). This
      * field is the minimal fix: it exposes the SAME status string stored on
-     * `commerce_listing_subscriptions.status` (mirroring
+     * `entity_subscriptions.status` (mirroring
      * `billing_subscriptions.status` — see `SubscriptionStatusEnum`), scoped
      * to this one commerce listing. Resolved via `getCommerceListingSubscriptionStatuses`
      * (`@repo/service-core`), which reads ONLY the commerce link table — that

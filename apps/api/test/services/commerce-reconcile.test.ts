@@ -4,7 +4,7 @@
  * double-click orphan (residual of the HOS-191 Path C migration, PR #2832).
  *
  * Path C creates one `pending_provider` subscription per CHECKOUT CLICK, not
- * per payment, and the domain link row (`commerce_listing_subscriptions`,
+ * per payment, and the domain link row (`entity_subscriptions`,
  * UNIQUE on `(entity_type, entity_id)`) is UPSERTED, so it always points at the
  * LAST click. A buyer who double-clicks "Publicar y pagar" and then completes
  * the FIRST share link leaves the reconciler looking for a link row that points
@@ -51,7 +51,7 @@ const reconcileVisibilityMock = vi.hoisted(() =>
 );
 
 vi.mock('@repo/db', () => {
-    const commerceListingSubscriptions = {
+    const entitySubscriptions = {
         subscriptionId: 'commerce.subscription_id',
         entityType: 'commerce.entity_type',
         entityId: 'commerce.entity_id',
@@ -110,7 +110,7 @@ vi.mock('@repo/db', () => {
                 }
             })
         }),
-        commerceListingSubscriptions,
+        entitySubscriptions,
         billingSubscriptions,
         gastronomyModel: { findById: vi.fn(async () => null), update: vi.fn() },
         experienceModel: { findById: vi.fn(async () => null), update: vi.fn() },

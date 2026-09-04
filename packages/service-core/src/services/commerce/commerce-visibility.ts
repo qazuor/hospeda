@@ -4,7 +4,7 @@
  * Visibility reconciler for commerce listing entities (SPEC-239 T-032,
  * predicate widened HOS-166 §6.5).
  *
- * `reconcileCommerceListingVisibility` reads the `commerce_listing_subscriptions`
+ * `reconcileCommerceListingVisibility` reads the `entity_subscriptions`
  * link table to find the associated entity, then flips its `visibility` and
  * `lifecycleState` based on the subscription status **and** (HOS-166 G-3) the
  * listing's publish-readiness ("complete") and moderation state:
@@ -28,7 +28,7 @@
 
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { and, commerceListingSubscriptions, eq, getDb, inArray } from '@repo/db';
+import { and, entitySubscriptions, eq, getDb, inArray } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { createLogger } from '@repo/logger';
 import {
@@ -55,7 +55,7 @@ export interface ReconcileCommerceListingVisibilityInput {
     /** UUID of the commerce entity row (gastronomies.id, etc.). */
     readonly entityId: string;
     /**
-     * Current subscription status from `commerce_listing_subscriptions.status`
+     * Current subscription status from `entity_subscriptions.status`
      * (mirroring `billing_subscriptions.status`).
      *
      * An entitlement-granting status (see `isEntitlementGrantingStatus`) →
@@ -281,7 +281,7 @@ export async function reconcileCommerceListingVisibility(
 
 /**
  * Resolves a commerce entity's current subscription status from the
- * `commerce_listing_subscriptions` link table.
+ * `entity_subscriptions` link table.
  *
  * Returns `null` when no link row exists for the given entity.  This is a
  * pure read with no side effects and is suitable for use in scheduled jobs
@@ -297,16 +297,16 @@ export async function getCommerceListingSubscriptionStatus(
 ): Promise<string | null> {
     const db = tx ?? getDb();
     const rows = await db
-        .select({ status: commerceListingSubscriptions.status })
-        .from(commerceListingSubscriptions)
+        .select({ status: entitySubscriptions.status })
+        .from(entitySubscriptions)
         // The link table's unique index is (entity_type, entity_id) — filtering
         // on entityId alone would match a different entityType's row that
         // happens to reuse the same UUID (a real risk since gastronomy and
         // experience ids are drawn from independent primary key spaces).
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, input.entityType),
-                eq(commerceListingSubscriptions.entityId, input.entityId)
+                eq(entitySubscriptions.entityType, input.entityType),
+                eq(entitySubscriptions.entityId, input.entityId)
             )
         )
         .limit(1);
@@ -322,7 +322,7 @@ export async function getCommerceListingSubscriptionStatus(
  * dunning/suspended state on the owner's listing index without an N+1 query
  * per listing).
  *
- * The `commerce_listing_subscriptions` link table only ever links commerce
+ * The `entity_subscriptions` link table only ever links commerce
  * entities (its rows are always `product_domain = 'commerce'` by
  * construction — see the table's own doc comment), so this naturally never
  * leaks accommodation or partner billing state.
@@ -349,14 +349,14 @@ export async function getCommerceListingSubscriptionStatuses(
     const db = tx ?? getDb();
     const rows = await db
         .select({
-            entityId: commerceListingSubscriptions.entityId,
-            status: commerceListingSubscriptions.status
+            entityId: entitySubscriptions.entityId,
+            status: entitySubscriptions.status
         })
-        .from(commerceListingSubscriptions)
+        .from(entitySubscriptions)
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, entityType),
-                inArray(commerceListingSubscriptions.entityId, [...entityIds])
+                eq(entitySubscriptions.entityType, entityType),
+                inArray(entitySubscriptions.entityId, [...entityIds])
             )
         );
 

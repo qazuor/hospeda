@@ -192,7 +192,7 @@ function findMediaByIds(ids: readonly string[]): Promise<Map<string, FakeMediaRo
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({ select: dbSelect, update: dbUpdate })),
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
-    commerceListingSubscriptions: {
+    entitySubscriptions: {
         subscriptionId: 'subscription_id',
         entityType: 'entity_type',
         entityId: 'entity_id',

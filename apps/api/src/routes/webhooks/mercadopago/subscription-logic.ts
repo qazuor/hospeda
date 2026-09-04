@@ -56,8 +56,8 @@ import type {
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { supersedeLocalTrialsOnActivation } from '../../../services/billing/trial-supersede-on-activation.js';
-import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../../services/subscription-linked-entities.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
 import {
@@ -1307,9 +1307,9 @@ export async function processSubscriptionUpdated({
     }
 
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
-    // No-op for accommodation subs (no commerce_listing_subscriptions row).
+    // No-op for accommodation subs (no entity_subscriptions row).
     // Non-blocking: never breaks webhook processing.
-    await reconcileCommerceListingForSubscription({
+    await reconcileSubscriptionLinkedEntities({
         subscriptionId: localSubscription.id,
         subscriptionStatus: mappedStatus,
         source: 'mp-webhook'

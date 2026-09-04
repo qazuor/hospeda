@@ -5,7 +5,7 @@
  *
  * Both domain link tables encode only the ENTITY → SUBSCRIPTION direction and
  * are UPSERTED on a per-entity unique key
- * (`commerce_listing_subscriptions` UNIQUE `(entity_type, entity_id)`,
+ * (`entity_subscriptions` UNIQUE `(entity_type, entity_id)`,
  * `partner_subscriptions` UNIQUE `partner_id`). Path C creates one
  * `pending_provider` subscription per checkout CLICK rather than per payment,
  * so a second click silently overwrites the only pointer to the first

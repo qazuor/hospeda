@@ -5,7 +5,7 @@ import {
     billingCustomers,
     billingPlans,
     billingSubscriptions,
-    commerceListingSubscriptions,
+    entitySubscriptions,
     eq,
     GastronomyMediaModel,
     gastronomies,
@@ -326,12 +326,12 @@ async function ensureCommerceSubscription(
 }
 
 /**
- * Ensures a `commerce_listing_subscriptions` link row exists for the given
+ * Ensures a `entity_subscriptions` link row exists for the given
  * entity + subscription.  Idempotent via onConflictDoNothing on the
  * UNIQUE(entityType, entityId) index.
  *
  * This link is what makes a listing publicly visible: the public-read layer
- * checks `commerce_listing_subscriptions` status for each listing returned.
+ * checks `entity_subscriptions` status for each listing returned.
  */
 /**
  * Inserts a listing's fixture photos as `gastronomy_media` rows (HOS-372).
@@ -382,7 +382,7 @@ async function ensureListingSubscriptionLink(
     db: DrizzleClient
 ): Promise<void> {
     await db
-        .insert(commerceListingSubscriptions)
+        .insert(entitySubscriptions)
         .values({
             subscriptionId,
             // HOS-692: matches entityType below — this fixture is always a
@@ -398,7 +398,7 @@ async function ensureListingSubscriptionLink(
 /**
  * Seeds the three COMMERCE_OWNER users, their billing subscriptions, the
  * gastronomy listings (via Drizzle insert), gastronomy FAQs, gastronomy
- * reviews, and the `commerce_listing_subscriptions` link rows.
+ * reviews, and the `entity_subscriptions` link rows.
  *
  * ### Ordering constraint
  * MUST run after destinations, example users, and the required `commercePlan`
@@ -408,7 +408,7 @@ async function ensureListingSubscriptionLink(
  *
  * ### Visibility model
  * - Listings 001–005: `visibility=PUBLIC` + `lifecycleState=ACTIVE` +
- *   active `commerce_listing_subscriptions` link → publicly visible on /gastronomia.
+ *   active `entity_subscriptions` link → publicly visible on /gastronomia.
  * - Listing 006: `visibility=PRIVATE` + `lifecycleState=DRAFT` + NO link →
  *   intentionally NOT visible; demonstrates the gating.
  *
@@ -793,7 +793,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 });
 
                 // ── Step 4: Subscription link (PUBLIC/ACTIVE only) ─────────────
-                // Listings 001–005 (PUBLIC + ACTIVE) get a `commerce_listing_subscriptions`
+                // Listings 001–005 (PUBLIC + ACTIVE) get a `entity_subscriptions`
                 // link so the public read layer considers them visible.
                 // Listing 006 (PRIVATE + DRAFT) is intentionally skipped.
                 if (item.visibility === 'PUBLIC' && item.lifecycleState === 'ACTIVE') {

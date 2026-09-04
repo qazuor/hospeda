@@ -87,7 +87,7 @@ What gets wiped (per linked customer):
   - billing_subscription_polling_jobs
   - billing_subscription_addons
   - billing_subscription_events
-  - commerce_listing_subscriptions (link table, by subscription)
+  - entity_subscriptions (link table, by subscription)
   - billing_subscriptions
   - featured_listing_addon_grants (link table, by addon purchase)
   - billing_addon_purchases

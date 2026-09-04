@@ -21,7 +21,7 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
     and: vi.fn((...conditions: unknown[]) => ({ type: 'and', conditions })),
     inArray: vi.fn((col: unknown, vals: unknown[]) => ({ type: 'inArray', col, vals })),
-    commerceListingSubscriptions: {
+    entitySubscriptions: {
         entityType: 'entity_type',
         entityId: 'entity_id',
         status: 'status'

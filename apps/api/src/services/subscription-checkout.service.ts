@@ -54,12 +54,7 @@ import {
     commerceVerticalToProductDomain,
     TEST_DAILY_PLAN
 } from '@repo/billing';
-import {
-    commerceListingSubscriptions,
-    type DrizzleClient,
-    getDb,
-    partnerSubscriptions
-} from '@repo/db';
+import { type DrizzleClient, entitySubscriptions, getDb, partnerSubscriptions } from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 // HOS-1012: `resolveCheckoutFreeTrialDays` / `resolvePlanTrialConfig` are NOT
 // imported here any more. Checkout is the PAID path and nothing else — the trial
@@ -709,7 +704,7 @@ export async function initiatePaidMonthlySubscription(
  *
  * Mirrors {@link InitiatePaidMonthlySubscriptionInput} but adds the commerce
  * entity coordinates so the function can stamp the new subscription as a
- * commerce-domain sub (D3) and upsert the `commerce_listing_subscriptions`
+ * commerce-domain sub (D3) and upsert the `entity_subscriptions`
  * link row (D4). No promo support — commerce listings have no trial promos.
  */
 export interface InitiateCommerceMonthlySubscriptionInput {
@@ -780,7 +775,7 @@ export interface InitiateCommerceMonthlySubscriptionResult {
  *      with the listing's OWN vertical (`product_domain = 'gastronomy'` /
  *      `'experience'`, HOS-695 — the transitional `'commerce'` umbrella is
  *      retired) (D3) plus its `billing_pending_checkouts` correlation row,
- *      and — in the SAME transaction — upsert the `commerce_listing_subscriptions`
+ *      and — in the SAME transaction — upsert the `entity_subscriptions`
  *      link row (D4);
  *   3. redirect the browser to MercadoPago's hosted share link, where MP itself
  *      collects the card. The real preapproval id is linked back later by the
@@ -966,7 +961,7 @@ export async function initiateCommerceMonthlySubscription(
             // transaction as the status/domain UPDATE this helper issues.
             writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
                 await tx
-                    .insert(commerceListingSubscriptions)
+                    .insert(entitySubscriptions)
                     .values({
                         subscriptionId,
                         productDomain,
@@ -975,10 +970,7 @@ export async function initiateCommerceMonthlySubscription(
                         status: SubscriptionStatusEnum.PENDING_PROVIDER
                     })
                     .onConflictDoUpdate({
-                        target: [
-                            commerceListingSubscriptions.entityType,
-                            commerceListingSubscriptions.entityId
-                        ],
+                        target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
                         set: {
                             subscriptionId,
                             status: SubscriptionStatusEnum.PENDING_PROVIDER,
@@ -1027,7 +1019,7 @@ export async function initiateCommerceMonthlySubscription(
         // so re-subscribing an entity reuses the same link row.
         writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
             await tx
-                .insert(commerceListingSubscriptions)
+                .insert(entitySubscriptions)
                 .values({
                     subscriptionId,
                     productDomain,
@@ -1036,10 +1028,7 @@ export async function initiateCommerceMonthlySubscription(
                     status: SubscriptionStatusEnum.PENDING_PROVIDER
                 })
                 .onConflictDoUpdate({
-                    target: [
-                        commerceListingSubscriptions.entityType,
-                        commerceListingSubscriptions.entityId
-                    ],
+                    target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
                     set: {
                         subscriptionId,
                         status: SubscriptionStatusEnum.PENDING_PROVIDER,

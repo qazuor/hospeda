@@ -225,6 +225,26 @@ vi.mock('@repo/db', async (importOriginal) => {
             mpSubscriptionId: 'MP_SUBSCRIPTION_ID'
         },
         billingSubscriptionEvents: { _table: 'billing_subscription_events' },
+        // HOS-1084: finalize now reconciles through
+        // `subscription-linked-entities.service`, which reaches the shared
+        // `entity_subscriptions` status cache at module scope. Named explicitly
+        // because this file replaces the @repo/db mock wholesale.
+        ENTITY_SUBSCRIPTION_STATUS_NONE: 'none',
+        entitySubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            entityType: 'entity_type',
+            entityId: 'entity_id',
+            status: 'status',
+            planId: 'plan_id'
+        },
+        accommodations: { id: 'ACC_ID', ownerId: 'ACC_OWNER_ID', deletedAt: 'ACC_DELETED_AT' },
+        billingCustomers: {
+            id: 'CUST_ID',
+            externalId: 'CUST_EXTERNAL_ID',
+            deletedAt: 'CUST_DELETED_AT'
+        },
         eq: vi.fn((col, val) => ({ _eq: [col, val] })),
         and: vi.fn((...args) => ({ _and: args })),
         gte: vi.fn((col, val) => ({ _gte: [col, val] })),

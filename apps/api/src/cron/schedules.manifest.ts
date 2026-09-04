@@ -354,6 +354,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Nudge unpaid provisioned partners at 30 days and archive them at 90 (HOS-278 R-3). Never deletes: archiving flips lifecycleState and an admin can reverse it.'
     },
     {
+        name: 'entity-subscription-cache-reconcile',
+        displayName: 'Reconciliación de la caché de estado de suscripción',
+        category: 'billing',
+        schedule: '30 */6 * * *',
+        description:
+            'Re-derive the accommodation rows of entity_subscriptions from live billing (HOS-1084 backstop): corrects stale status/plan, fills missing rows and prunes orphans.'
+    },
+    {
         name: 'featured-by-entitlement-reconcile',
         displayName: 'Reconciliación de destacados por plan y addon',
         category: 'billing',
