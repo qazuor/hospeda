@@ -613,6 +613,7 @@
                 "trialStatus": "Período de prueba",
                 "freeStatus": "Plan Gratuito",
                 "compStatus": "Bonificado",
+                "multipleSubscriptions": "{count} suscripciones activas",
                 "properties": "Mis propiedades",
                 "propertiesDesc": "Alojamientos publicados",
                 "messages": "Mensajes sin leer",
