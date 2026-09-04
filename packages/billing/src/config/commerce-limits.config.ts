@@ -46,7 +46,7 @@ import { LimitKey } from '../types/plan.types.js';
 
 /**
  * The two commerce verticals, spelled the way both
- * `commerce_listing_subscriptions.entity_type` and
+ * `entity_subscriptions.entity_type` and
  * `billing_subscriptions.product_domain` spell them.
  *
  * The collision is deliberate (see `ProductDomainEnum`'s doc): it makes a link
@@ -66,6 +66,36 @@ export const LIMIT_KEY_BY_COMMERCE_VERTICAL: Readonly<Record<CommerceVertical, L
 } as const;
 
 /**
+ * The monthly AI-chat cap of each commerce vertical (HOS-400).
+ *
+ * ## Why a SIBLING map instead of widening {@link LIMIT_KEY_BY_COMMERCE_VERTICAL}
+ *
+ * The obvious move — turning that map's value into `readonly LimitKey[]` — was
+ * rejected. Its consumers do not treat it as a list, they treat it as *the*
+ * cap: `commerceVerticalEntitlementMiddleware` publishes exactly one entry
+ * (`c.set('userLimits', new Map([[limitKey, cap]]))`) and states the
+ * one-key-per-vertical property as an invariant in its own docblock, and
+ * `commerceVerticalToProductDomain` composes the map on the assumption that
+ * indexing it yields a single key. Widening the value type would have turned
+ * one honest lookup into a list every caller then has to pick from — and the
+ * picking is where "which of these is the LISTING cap?" gets answered wrong.
+ *
+ * So the LISTING cap keeps its map and its invariant, and the AI-chat cap gets
+ * its own. Two questions, two total functions, neither able to answer the
+ * other's.
+ *
+ * Exhaustive over {@link CommerceVertical} by type, for the same reason its
+ * sibling is: a third vertical must be a compile error here rather than an
+ * uncapped chat in production, because an unresolved limit key is read as
+ * UNLIMITED by every layer beneath.
+ */
+export const AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL: Readonly<Record<CommerceVertical, LimitKey>> =
+    {
+        gastronomy: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH,
+        experience: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH
+    } as const;
+
+/**
  * The billing product domain that owns each cap — EXHAUSTIVELY (HOS-1078).
  *
  * `Record<LimitKey, …>` rather than `Partial<…>` on purpose: a twentieth
@@ -81,9 +111,15 @@ export const LIMIT_KEY_BY_COMMERCE_VERTICAL: Readonly<Record<CommerceVertical, L
  * decision somebody made, not a value that fell out of a default.
  */
 const PRODUCT_DOMAIN_BY_LIMIT_KEY: Readonly<Record<LimitKey, ProductDomainValue>> = {
-    // Commerce verticals — the two keys that are NOT accommodation.
+    // Commerce verticals — the keys that are NOT accommodation.
     [LimitKey.MAX_GASTRONOMIES]: ProductDomainEnum.GASTRONOMY,
     [LimitKey.MAX_EXPERIENCES]: ProductDomainEnum.EXPERIENCE,
+    // HOS-400: each vertical's AI-chat quota is owned by that vertical's
+    // subscription, not by the accommodation one. Mapping either of these to
+    // ACCOMMODATION would send the resolver to read a plan that does not
+    // declare the key, which comes back `-1` — an uncapped chat.
+    [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: ProductDomainEnum.GASTRONOMY,
+    [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: ProductDomainEnum.EXPERIENCE,
 
     // Accommodation domain — host caps.
     [LimitKey.MAX_ACCOMMODATIONS]: ProductDomainEnum.ACCOMMODATION,

@@ -347,7 +347,18 @@
                 "photoAltPlaceholder": "Descreva a foto (opcional)",
                 "photoAttached": "Foto adicionada. Lembre de salvar o cardápio.",
                 "photoUploadError": "Não foi possível enviar a foto do prato.",
-                "photoLocked": "As fotos por prato estão disponíveis no plano Premium. Você pode remover as fotos e salvar o cardápio mesmo assim."
+                "photoLocked": "As fotos por prato estão disponíveis no plano Premium. Você pode remover as fotos e salvar o cardápio mesmo assim.",
+                "translations": "Traduções (EN/PT)",
+                "nameEn": "Nome em inglês",
+                "nameEnPlaceholder": "Nome em inglês",
+                "namePt": "Nome em português",
+                "namePtPlaceholder": "Nome em português",
+                "descriptionEn": "Descrição em inglês",
+                "descriptionEnPlaceholder": "Descrição em inglês",
+                "descriptionPt": "Descrição em português",
+                "descriptionPtPlaceholder": "Descrição em português",
+                "translationLocked": "Traduzir o cardápio está disponível no plano Premium. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
+                "translationLockedHint": "Disponível no plano Premium. Apague o inglês e o português para salvar o cardápio apenas em espanhol."
             },
             "dailySpecials": {
                 "title": "Menu do dia",
@@ -449,7 +460,8 @@
             "manageExperienceDirections": "Mapa e como chegar",
             "issueExperienceCertificate": "Certificados de experiência",
             "manageGastronomyDailySpecial": "Menu do dia",
-            "manageGastronomyEvents": "Agenda de eventos"
+            "manageGastronomyEvents": "Agenda de eventos",
+            "multilingualGastronomyMenu": "Cardápio em vários idiomas"
         },
         "create": {
             "pickVertical": {

@@ -10,9 +10,10 @@
  * just as happily with the middleware unwired.
  *
  * Note the two things asserted by ABSENCE, both deliberate:
- * - a tier declares exactly ONE limit key, not the others at `-1`. Both read
- *   as unlimited downstream, but an absent key reads as "this plan does not
- *   meter that", which is what is true.
+ * - a tier declares exactly its OWN listing cap and its OWN vertical's AI-chat
+ *   cap (HOS-400) — never the other vertical's, and never `-1` for either.
+ *   Both read as unlimited downstream, but an absent key reads as "this plan
+ *   does not meter that", which is what is true.
  * - the vertical plans are absent from `ALL_PLANS`, which is what keeps the
  *   accommodation seed loop, the public plan list and the grant-matrix
  *   snapshot accommodation-only.
@@ -25,7 +26,6 @@ import {
     ALL_EXPERIENCE_PLANS,
     ALL_GASTRONOMY_PLANS,
     ALL_PLANS,
-    COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
     DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
     EXPERIENCE_BASICO_PLAN,
     EXPERIENCE_PREMIUM_PLAN,
@@ -56,29 +56,45 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience).toBe(EXPERIENCE_BASICO_PLAN.slug);
     });
 
-    it('activated gastronomy-pro (HOS-895 PR2) without touching experience', () => {
-        // Owner decision (2026-09-03): gastronomy now has TWO `isActive` tiers —
-        // básico stays the checkout DEFAULT (see the test above), and `-pro` is a
-        // second valid subscription target that grants `manage_gastronomy_menu`
-        // (the structured carta). Experience is asserted unchanged by the SAME
-        // activation, since a commerce-vertical edit touching the sibling
-        // vertical is exactly the class of drift HOS-1074 warns about.
+    it('has ALL SIX tiers on sale since HOS-975', () => {
+        // Owner decision (2026-09-03): the whole ladder is sellable. HOS-818 had
+        // left one tier active per vertical and HOS-895 PR2 added a second on the
+        // gastronomy side; HOS-975 priced the six together and activated the
+        // three that were still dark (`gastronomy-premium`, `experience-pro`,
+        // `experience-premium`).
+        //
+        // Asserted as the full ORDERED identity rather than a count, so a tier
+        // silently dropping out fails here and not in production, and so a
+        // seventh tier added later has to be considered rather than absorbed.
         expect(ALL_GASTRONOMY_PLANS.filter((p) => p.isActive)).toEqual([
             GASTRONOMY_BASICO_PLAN,
-            GASTRONOMY_PRO_PLAN
+            GASTRONOMY_PRO_PLAN,
+            GASTRONOMY_PREMIUM_PLAN
         ]);
-        expect(ALL_EXPERIENCE_PLANS.filter((p) => p.isActive)).toEqual([EXPERIENCE_BASICO_PLAN]);
-        expect(GASTRONOMY_PRO_PLAN.monthlyPriceArs).toBe(4_500_000);
-        expect(GASTRONOMY_PRO_PLAN.hasTrial).toBe(true);
-        expect(GASTRONOMY_PRO_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+        expect(ALL_EXPERIENCE_PLANS.filter((p) => p.isActive)).toEqual([
+            EXPERIENCE_BASICO_PLAN,
+            EXPERIENCE_PRO_PLAN,
+            EXPERIENCE_PREMIUM_PLAN
+        ]);
     });
 
-    it('declares exactly one limit key per tier, and it is that vertical own cap', () => {
+    it('declares exactly two limit keys per tier: the listing cap and the vertical AI-chat cap (HOS-400)', () => {
+        // HOS-400 added a second limit to every tier of both catalogues: the
+        // vertical's own AI-chat quota, declared even by tiers that grant zero
+        // of it (see `commerceVerticalTier`'s doc — an omitted key would read
+        // as UNLIMITED downstream, not zero). "Exactly one" was true until then;
+        // it is "exactly two, in this order" now.
         for (const plan of ALL_GASTRONOMY_PLANS) {
-            expect(plan.limits.map((l) => l.key)).toEqual([LimitKey.MAX_GASTRONOMIES]);
+            expect(plan.limits.map((l) => l.key)).toEqual([
+                LimitKey.MAX_GASTRONOMIES,
+                LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH
+            ]);
         }
         for (const plan of ALL_EXPERIENCE_PLANS) {
-            expect(plan.limits.map((l) => l.key)).toEqual([LimitKey.MAX_EXPERIENCES]);
+            expect(plan.limits.map((l) => l.key)).toEqual([
+                LimitKey.MAX_EXPERIENCES,
+                LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH
+            ]);
         }
     });
 
@@ -99,28 +115,62 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(EXPERIENCE_BASICO_PLAN.limits[0]?.value).toBe(1);
     });
 
-    it('keeps the sellable tier at the price commerce charges today', () => {
-        expect(GASTRONOMY_BASICO_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
-        expect(EXPERIENCE_BASICO_PLAN.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS);
+    it('charges the six prices the owner set on 2026-09-03 (HOS-975)', () => {
+        // Literals on BOTH sides on purpose. This used to read
+        // `expect(basico.monthlyPriceArs).toBe(COMMERCE_VERTICAL_MONTHLY_PRICE_ARS)`,
+        // which asserted that two references to one constant were equal — it
+        // would have stayed green through any repricing at all, which is the
+        // one thing a price test exists to catch. The constant is gone (the two
+        // verticals no longer share a price); these numbers are the owner's.
+        expect(GASTRONOMY_BASICO_PLAN.monthlyPriceArs).toBe(3_000_000); // ARS $30.000
+        expect(GASTRONOMY_PRO_PLAN.monthlyPriceArs).toBe(6_500_000); // ARS $65.000
+        expect(GASTRONOMY_PREMIUM_PLAN.monthlyPriceArs).toBe(8_000_000); // ARS $80.000
+        expect(EXPERIENCE_BASICO_PLAN.monthlyPriceArs).toBe(1_500_000); // ARS $15.000
+        expect(EXPERIENCE_PRO_PLAN.monthlyPriceArs).toBe(3_500_000); // ARS $35.000
+        expect(EXPERIENCE_PREMIUM_PLAN.monthlyPriceArs).toBe(5_000_000); // ARS $50.000
     });
 
-    it('hands the retired premium tier over losing nothing (HOS-818, amended by HOS-1058)', () => {
-        // HOS-818's swap of the sellable role from premium to básico is only
-        // safe if nobody already paying LOSES anything by it. That was
-        // originally asserted as "the two tiers are identical", and HOS-1058
-        // is the change that makes them differ for the first time: premium now
-        // grants the printable ficha and básico does not.
+    it('prices each vertical as a strictly ascending ladder (HOS-975)', () => {
+        // The property that makes the three tiers a LADDER rather than three
+        // unrelated products, and the one an accidental digit slip breaks
+        // without breaking anything else: a `-pro` cheaper than `-basico` would
+        // still seed, still check out, and still be charged.
+        for (const catalogue of [ALL_GASTRONOMY_PLANS, ALL_EXPERIENCE_PLANS]) {
+            const prices = catalogue.map((p) => p.monthlyPriceArs);
+            expect(prices).toEqual([...prices].sort((a, b) => a - b));
+            expect(new Set(prices).size).toBe(prices.length);
+        }
+    });
+
+    it('keeps premium a superset of básico that costs more (HOS-818 → HOS-1058 → HOS-975)', () => {
+        // HOS-818's swap of the sellable role from premium to básico was only
+        // safe because nobody already paying LOST anything by it, originally
+        // asserted as "the two tiers are identical". HOS-1058 made them differ
+        // for the first time (premium grants the printable ficha, básico does
+        // not), so the invariant became the direction that protects a payer:
+        // premium ⊇ básico.
         //
-        // So the invariant is restated as the direction that actually protects
-        // a payer — premium ⊇ básico — and everything commercial (price, cap,
-        // trial) stays byte-identical.
+        // HOS-975 is what makes the price side of that meaningful. Premium is
+        // on sale again and is no longer priced identically to básico, so
+        // "same price" is replaced by the assertion that actually has to hold
+        // for a dearer tier to be honest: it costs MORE and gives at least as
+        // much. The LISTING cap and the trial stay byte-identical — the cap
+        // because one listing per owner is still the whole commercial substance
+        // of §6.8, the trial because no tier of either vertical sells a
+        // different one. The AI-chat limit is deliberately EXCLUDED from that
+        // byte-identity (HOS-400): only premium grants `AI_CHAT`, so its quota
+        // is the one place premium and básico are meant to differ, and a
+        // superset check must not demand equality on the one limit that proves
+        // the entitlement gate actually means something.
         for (const [basico, premium] of [
             [GASTRONOMY_BASICO_PLAN, GASTRONOMY_PREMIUM_PLAN],
             [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PREMIUM_PLAN]
         ] as const) {
-            expect(premium.isActive).toBe(false);
-            expect(basico.monthlyPriceArs).toBe(premium.monthlyPriceArs);
-            expect(basico.limits).toEqual(premium.limits);
+            expect(premium.isActive).toBe(true);
+            expect(premium.monthlyPriceArs).toBeGreaterThan(basico.monthlyPriceArs);
+            expect(basico.limits[0]).toEqual(premium.limits[0]);
+            expect(basico.limits[1]?.value).toBe(0);
+            expect(premium.limits[1]?.value).toBeGreaterThan(basico.limits[1]?.value ?? 0);
             expect(basico.hasTrial).toBe(premium.hasTrial);
             expect(basico.trialDays).toBe(premium.trialDays);
             for (const key of basico.entitlements) {
@@ -289,37 +339,38 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         }
     });
 
-    it('grants the sellable tier the same 30-day trial every accommodation plan gets (HOS-590)', () => {
-        expect(GASTRONOMY_BASICO_PLAN.hasTrial).toBe(true);
-        expect(GASTRONOMY_BASICO_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
-        expect(EXPERIENCE_BASICO_PLAN.hasTrial).toBe(true);
-        expect(EXPERIENCE_BASICO_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+    it('grants EVERY tier the same 30-day trial every accommodation plan gets (HOS-590, HOS-975)', () => {
+        // Asserted across all six since HOS-975, not just the two entry tiers:
+        // `experience-pro` was the last tier carrying the `hasTrial: false`
+        // default, which only ever meant "not sellable yet". Making it sellable
+        // without the trial its five siblings carry would have been an asymmetry
+        // nobody decided.
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            expect(plan.hasTrial).toBe(true);
+            expect(plan.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+        }
         expect(COMMERCE_TRIAL_DAYS).toBe(30);
     });
 
-    it('leaves the NEVER-SOLD disabled tiers without a trial or a price (nothing to precede)', () => {
-        // The retired premium tier is deliberately excluded: it keeps its price
-        // and trial because its row, its price row and its MercadoPago
-        // preapproval_plan all still exist in every seeded environment, and live
-        // subscriptions hang off them (HOS-818). Zeroing the baseline would
-        // describe a state no real database is in — and would make rolling the
-        // rename back a second migration instead of an env-var edit.
+    it('leaves NO tier unpriced or dark (HOS-975)', () => {
+        // The inverse of the assertion this replaces. Until HOS-975 a tier that
+        // had not been priced carried `monthlyPriceArs: 0` and shipped inactive,
+        // and the test named those tiers and locked their zeroes; the owner
+        // priced and activated the last three, so the honest assertion is that
+        // the set is now empty AND that every tier is genuinely priced.
         //
-        // HOS-895 PR2 activated `gastronomy-pro`, so it moved OUT of this set —
-        // experience-pro is now the only tier left that has never been sold.
-        const retired = new Set([GASTRONOMY_PREMIUM_PLAN.slug, EXPERIENCE_PREMIUM_PLAN.slug]);
-        const neverSold = [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS].filter(
-            (plan) => !plan.isActive && !retired.has(plan.slug)
+        // The two halves matter separately. `seedCommercePlan` skips the
+        // `billing_prices` row for a tier priced at zero, and the commerce
+        // checkout hard-throws `NO_MONTHLY_PRICE` when that row is missing — so
+        // an `isActive: true` tier at price 0 is not a cheap plan, it is a plan
+        // that 502s the first buyer who picks it.
+        const dark = [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS].filter(
+            (plan) => !plan.isActive
         );
+        expect(dark.map((p) => p.slug)).toEqual([]);
 
-        // Guards the filter itself: an empty list would make every assertion
-        // below vacuously true, which is exactly how this test would rot into
-        // green after a future retier.
-        expect(neverSold.map((p) => p.slug)).toEqual([EXPERIENCE_PRO_PLAN.slug]);
-        for (const plan of neverSold) {
-            expect(plan.hasTrial).toBe(false);
-            expect(plan.trialDays).toBe(0);
-            expect(plan.monthlyPriceArs).toBe(0);
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            expect(plan.monthlyPriceArs).toBeGreaterThan(0);
         }
     });
 });

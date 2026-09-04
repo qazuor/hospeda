@@ -12,7 +12,7 @@
  * `requireEntitlement(PUBLISH_ACCOMMODATIONS)` and *then* the limit check, in
  * that order and for a stated reason (SPEC-145 T-004). §6.8 records that
  * **neither commerce vertical grants any entitlement today** — visibility is
- * driven by the subscription status through `commerce_listing_subscriptions`
+ * driven by the subscription status through `entity_subscriptions`
  * and the reconciler, not by the entitlement engine — so there is nothing to
  * put in the first half of that pattern. Copying the shape anyway would leave a
  * hole where its first gate was.

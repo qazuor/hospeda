@@ -22,6 +22,7 @@
 import { ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
     LIMIT_KEY_BY_COMMERCE_VERTICAL,
     productDomainForLimitKey
 } from '../../src/config/commerce-limits.config.js';
@@ -74,7 +75,12 @@ describe('productDomainForLimitKey', () => {
         expect(result).not.toBe(ProductDomainEnum.ACCOMMODATION);
     });
 
-    it('assigns a commerce domain to the two commerce keys and to nothing else', () => {
+    it('assigns a commerce domain to the four commerce keys and to nothing else (HOS-400)', () => {
+        // Two listing caps (LIMIT_KEY_BY_COMMERCE_VERTICAL) plus two AI-chat
+        // caps (AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL) — HOS-400 gave each
+        // vertical a SECOND commerce-domain key, deliberately in a sibling map
+        // rather than widening the listing one (see that map's own doc). The
+        // union of both is the full set of keys this test must expect.
         const commerceDomains = new Set<string>([
             ProductDomainEnum.GASTRONOMY,
             ProductDomainEnum.EXPERIENCE
@@ -85,7 +91,10 @@ describe('productDomainForLimitKey', () => {
         });
 
         expect(new Set(keysInACommerceDomain)).toEqual(
-            new Set(Object.values(LIMIT_KEY_BY_COMMERCE_VERTICAL))
+            new Set([
+                ...Object.values(LIMIT_KEY_BY_COMMERCE_VERTICAL),
+                ...Object.values(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL)
+            ])
         );
     });
 });

@@ -271,6 +271,17 @@ export async function replaceGastronomyMenu(
                         // `''` and `undefined` both mean "no blurb"; stored as
                         // NULL so the read has one absent value, not two.
                         description: section.description || null,
+                        // HOS-1043 — the translated heading/blurb, or `null`
+                        // when untranslated. Whether the caller's PLAN allows
+                        // submitting one at all is decided BEFORE this, at the
+                        // route (`menuPayloadCarriesTranslations`), the same
+                        // permission/entitlement split the photo comment below
+                        // describes. `?? null` and not `|| null`: the payload
+                        // schema requires all three locale legs whenever the
+                        // object is present at all, so there is no falsy
+                        // partial value to normalize away.
+                        nameI18n: section.nameI18n ?? null,
+                        descriptionI18n: section.descriptionI18n ?? null,
                         displayOrder: sectionIndex,
                         createdById: actor.id,
                         updatedById: actor.id
@@ -289,6 +300,11 @@ export async function replaceGastronomyMenu(
                             // (a free item on a tasting menu), and `||` would
                             // turn it into "a consultar".
                             priceCents: item.priceCents ?? null,
+                            // HOS-1043 — same translation columns as the
+                            // section above, same gate (checked at the route,
+                            // before this function is reached).
+                            nameI18n: item.nameI18n ?? null,
+                            descriptionI18n: item.descriptionI18n ?? null,
                             isAvailable: item.isAvailable,
                             // HOS-1045 — the dish's photo. It rides INSIDE the
                             // document rather than in a table keyed on the item

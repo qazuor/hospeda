@@ -18,7 +18,12 @@
  *    `requireEntitlement`, because a `-pro` owner IS entitled to write a carta
  *    — just not to put a picture on a dish of it. See
  *    `menu-item-photo-gate.ts` for why this refuses instead of stripping.
- * 4. **Ownership** — inside `replaceGastronomyMenu`, via the same
+ * 4. **The translations, if any** — `menuPayloadCarriesTranslations` inspects
+ *    the same BODY and, when a section or dish names `nameI18n`/
+ *    `descriptionI18n`, requires `MULTILINGUAL_GASTRONOMY_MENU` too
+ *    (HOS-1043). Same shape and same reasoning as the photo gate above: a
+ *    `-pro` owner keeps writing an untranslated carta undisturbed.
+ * 5. **Ownership** — inside `replaceGastronomyMenu`, via the same
  *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the FAQ and media writes use.
  *
  * ## The gate is on THIS route and not on the read
@@ -57,6 +62,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 import { menuPayloadCarriesItemPhoto } from './menu-item-photo-gate';
+import { menuPayloadCarriesTranslations } from './menu-translations-gate';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -80,6 +86,20 @@ export async function handlePutGastronomyMenu(
         throw new ServiceError(
             ServiceErrorCode.ENTITLEMENT_REQUIRED,
             `Access denied. This feature requires the '${EntitlementKey.MENU_ITEM_PHOTOS}' entitlement.`
+        );
+    }
+
+    // HOS-1043 — the payload-conditional half of the translations gate. Same
+    // shape and same reasoning as the photo check above: a `-pro` owner keeps
+    // writing an untranslated carta undisturbed, and only a document that
+    // NAMES a translation is refused when the plan does not grant it.
+    if (
+        menuPayloadCarriesTranslations(body) &&
+        !hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            `Access denied. This feature requires the '${EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU}' entitlement.`
         );
     }
 
@@ -111,7 +131,7 @@ export const protectedPutGastronomyMenuRoute = createCRUDRoute({
     path: '/{id}/menu',
     summary: 'Replace the structured menu of a gastronomy listing',
     description:
-        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium).',
+        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

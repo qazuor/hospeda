@@ -1089,6 +1089,23 @@ export function createDbMock() {
             name: 'name',
             deletedAt: 'deleted_at'
         },
+
+        // HOS-1084: the shared subscription-status cache. Imported at module
+        // scope by `entity-subscription-cache.service.ts`, which the public
+        // accommodation routes reach through `owner-entitlement.ts` — so every
+        // test that boots the route tree resolves it through this mock.
+        entitySubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            entityType: 'entity_type',
+            entityId: 'entity_id',
+            status: 'status',
+            planId: 'plan_id',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        },
+        ENTITY_SUBSCRIPTION_STATUS_NONE: 'none',
         billingPlans: {
             id: 'id',
             name: 'name',

@@ -364,6 +364,12 @@
         "max_ai_chat_consumer_per_month": {
             "title": "Llegaste al límite de consultas al asistente de IA"
         },
+        "max_ai_chat_gastronomy_per_month": {
+            "title": "Llegaste al límite de consultas al chat de IA de tu gastronomía"
+        },
+        "max_ai_chat_experience_per_month": {
+            "title": "Llegaste al límite de consultas al chat de IA de tu experiencia"
+        },
         "max_ai_search_per_month": {
             "title": "Llegaste al límite de búsquedas con IA"
         },
@@ -528,7 +534,8 @@
         "ai_support": "Asistente de soporte con IA",
         "ai_translate": "Traducción de contenido con IA",
         "ai_accommodation_import": "Importación de alojamientos con IA",
-        "manage_gastronomy_events": "Eventos del local, con fecha o semanales"
+        "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
+        "multilingual_gastronomy_menu": "Carta en varios idiomas"
     },
     "comparison": {
         "unlimited": "Ilimitado",
@@ -636,6 +643,8 @@
             "max_ai_text_improve_per_month": "Mejoras de texto con IA por mes",
             "max_ai_chat_per_month": "Consultas con IA por mes",
             "max_ai_chat_consumer_per_month": "Consultas al asistente de IA por mes",
+            "max_ai_chat_gastronomy_per_month": "Consultas al chat de IA (gastronomía) por mes",
+            "max_ai_chat_experience_per_month": "Consultas al chat de IA (experiencias) por mes",
             "max_ai_search_per_month": "Búsquedas con IA por mes",
             "max_ai_support_per_month": "Consultas al soporte con IA por mes",
             "max_ai_translate_per_month": "Traducciones con IA por mes",
@@ -656,6 +665,8 @@
         "max_ai_text_improve_per_month": "Cuántas veces por mes podés pedirle a la IA que mejore tus textos. La cuota se renueva al empezar cada mes.",
         "max_ai_chat_per_month": "Cuántas consultas por mes puede responder la IA sobre tus alojamientos. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_consumer_per_month": "Cuántas consultas podés hacerle por mes al asistente de IA. Al agotarla, la cuota se renueva el mes siguiente.",
+        "max_ai_chat_gastronomy_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local gastronómico. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_experience_per_month": "Cuántas consultas por mes puede responder la IA sobre tu experiencia. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_search_per_month": "Cuántas búsquedas con IA podés hacer por mes. Al agotarla, seguís usando la búsqueda tradicional hasta el mes siguiente.",
         "max_ai_support_per_month": "Cuántas consultas por mes podés hacerle al asistente de soporte con IA. La cuota se renueva al empezar cada mes.",
         "max_ai_translate_per_month": "Cuántas traducciones automáticas de tu contenido podés pedir por mes. La cuota se renueva al empezar cada mes.",

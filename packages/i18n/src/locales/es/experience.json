@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Preguntarle a la IA sobre esta experiencia",
+        "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el prestador.",
+        "panelLabel": "Chat con IA — Preguntas sobre la experiencia",
+        "priceDisclaimer": "Los horarios, cupos y precios pueden haber cambiado. Contactá al prestador para confirmar.",
+        "unavailable": "El chat de IA no está disponible para esta experiencia"
+    },
     "meta": {
         "title": "Experiencias y Servicios",
         "description": "Descubrí las mejores experiencias y servicios turísticos de la región: alquileres, excursiones, guías y más"

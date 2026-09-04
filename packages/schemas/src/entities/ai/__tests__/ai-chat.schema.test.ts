@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     AiChatMessageSchema,
     AiChatRequestSchema,
-    AiChatStreamFinalMetaSchema
+    AiChatStreamFinalMetaSchema,
+    resolveAiChatTarget
 } from '../ai-chat.schema.js';
 
 // ============================================================================
@@ -370,6 +371,131 @@ describe('AiChatStreamFinalMetaSchema', () => {
             const result = AiChatStreamFinalMetaSchema.safeParse({
                 ...VALID_BASE_META,
                 conversationId: INVALID_UUID
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+});
+
+// ============================================================================
+// HOS-400 — polymorphic target (entityType / entityId, accommodationId alias)
+// ============================================================================
+
+describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
+    describe('when the request uses the legacy accommodationId shape', () => {
+        it('should accept a body with accommodationId and no entityType', () => {
+            const result = AiChatRequestSchema.safeParse({
+                accommodationId: VALID_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should resolve it to the accommodation entity type', () => {
+            const parsed = AiChatRequestSchema.parse({
+                accommodationId: VALID_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(resolveAiChatTarget(parsed)).toEqual({
+                entityType: 'accommodation',
+                entityId: VALID_UUID
+            });
+        });
+    });
+
+    describe('when the request targets a commerce vertical', () => {
+        it.each([
+            'gastronomy',
+            'experience'
+        ] as const)('should accept entityType %s with an entityId', (entityType) => {
+            const result = AiChatRequestSchema.safeParse({
+                entityType,
+                entityId: VALID_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it.each([
+            'gastronomy',
+            'experience'
+        ] as const)('should resolve entityType %s to that vertical and its id', (entityType) => {
+            const parsed = AiChatRequestSchema.parse({
+                entityType,
+                entityId: VALID_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(resolveAiChatTarget(parsed)).toEqual({ entityType, entityId: VALID_UUID });
+        });
+
+        it('should reject a commerce request that also carries accommodationId', () => {
+            // A body naming a restaurant in entityId and an accommodation in
+            // accommodationId is a client bug; answering about either is worse
+            // than refusing.
+            const result = AiChatRequestSchema.safeParse({
+                entityType: 'gastronomy',
+                entityId: VALID_UUID,
+                accommodationId: OTHER_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject a commerce request with no entityId at all', () => {
+            const result = AiChatRequestSchema.safeParse({
+                entityType: 'gastronomy',
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('when the request names no target', () => {
+        it('should reject a body with neither entityId nor accommodationId', () => {
+            const result = AiChatRequestSchema.safeParse({ messages: [USER_MESSAGE] });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('when both spellings of the accommodation target are present', () => {
+        it('should accept them when they agree', () => {
+            const result = AiChatRequestSchema.safeParse({
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                accommodationId: VALID_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject them when they disagree', () => {
+            const result = AiChatRequestSchema.safeParse({
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                accommodationId: OTHER_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('when an id is not a UUID', () => {
+        it('should reject a non-UUID entityId', () => {
+            const result = AiChatRequestSchema.safeParse({
+                entityType: 'gastronomy',
+                entityId: INVALID_UUID,
+                messages: [USER_MESSAGE]
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('when entityType is not a known vertical', () => {
+        it('should reject an unknown entityType', () => {
+            const result = AiChatRequestSchema.safeParse({
+                entityType: 'partner',
+                entityId: VALID_UUID,
+                messages: [USER_MESSAGE]
             });
             expect(result.success).toBe(false);
         });

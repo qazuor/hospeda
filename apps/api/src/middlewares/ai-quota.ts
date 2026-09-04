@@ -80,6 +80,12 @@ export type QuotaGatedAiFeature = Exclude<AiFeature, 'post_generate'>;
 export const AI_ENTITLEMENT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, EntitlementKey>> = {
     text_improve: EntitlementKey.AI_TEXT_IMPROVE,
     chat: EntitlementKey.AI_CHAT,
+    // HOS-400: all three chat features answer to the SAME entitlement key. The
+    // per-vertical split lives on the METERING axis (`AiFeature`), never on the
+    // catalogue axis — what differs between them is the subscription the key is
+    // read from, which is `resolveCommerceVerticalGrants`'s job, not this map's.
+    chat_gastronomy: EntitlementKey.AI_CHAT,
+    chat_experience: EntitlementKey.AI_CHAT,
     search: EntitlementKey.AI_SEARCH,
     support: EntitlementKey.AI_SUPPORT,
     translate: EntitlementKey.AI_TRANSLATE,
@@ -100,6 +106,11 @@ export const AI_ENTITLEMENT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, Ent
 export const AI_LIMIT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, LimitKey>> = {
     text_improve: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
     chat: LimitKey.MAX_AI_CHAT_PER_MONTH,
+    // HOS-400: unlike the entitlement map above, the LIMIT map DOES differ per
+    // vertical — that is the whole point of the split. Each vertical's cap is
+    // read from its own subscription's plan row.
+    chat_gastronomy: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH,
+    chat_experience: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH,
     search: LimitKey.MAX_AI_SEARCH_PER_MONTH,
     support: LimitKey.MAX_AI_SUPPORT_PER_MONTH,
     translate: LimitKey.MAX_AI_TRANSLATE_PER_MONTH,

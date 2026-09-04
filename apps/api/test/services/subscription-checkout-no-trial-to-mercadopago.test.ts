@@ -136,7 +136,7 @@ vi.mock('@repo/db', async () => {
         ...actual,
         getDb: vi.fn(() => DB_STUB),
         billingSubscriptions: { id: '__billing_subscriptions_id' },
-        commerceListingSubscriptions: {
+        entitySubscriptions: {
             entityType: '__entity_type',
             entityId: '__entity_id'
         },

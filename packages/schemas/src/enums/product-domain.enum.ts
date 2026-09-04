@@ -28,7 +28,7 @@
  *
  * The `gastronomy` / `experience` values collide by name with
  * `CommerceEntityTypeEnum`, which uses the same two strings for
- * `commerce_listing_subscriptions.entity_type`. That is deliberate: it makes a
+ * `entity_subscriptions.entity_type`. That is deliberate: it makes a
  * link row's `product_domain` a pure function of its own `entity_type`. The
  * hazard is querying the wrong column and getting plausible results, so any
  * hand-written SQL touching either column names it explicitly.

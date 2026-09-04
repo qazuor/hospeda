@@ -17,6 +17,7 @@
 import {
     DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
     EXPERIENCE_BASICO_PLAN,
+    EXPERIENCE_PREMIUM_PLAN,
     EXPERIENCE_PRO_PLAN,
     GASTRONOMY_BASICO_PLAN,
     GASTRONOMY_PRO_PLAN
@@ -207,21 +208,34 @@ describe('resolveCommercePlanSlug — requested tier (HOS-1119)', () => {
         ).toThrow(CommercePlanNotForVerticalError);
     });
 
-    it('accepts a tier that is currently INACTIVE — activeness is the database’s call', () => {
-        // `experience-pro` ships `isActive: false`. This resolver answers
-        // membership only; whether the tier is sellable is decided by
-        // `billing_plans.active` at checkout, so that an operator activating a
-        // tier does not need a deploy. A membership check that also read
-        // `isActive` would freeze that decision into the binary.
+    it('accepts EVERY tier of the vertical — sellability is the database’s call', () => {
+        // This resolver answers membership only; whether the tier is sellable is
+        // decided by `billing_plans.active` at checkout, so that an operator
+        // activating or retiring a tier does not need a deploy. A membership
+        // check that also read `isActive` would freeze that decision into the
+        // binary.
+        //
+        // Until HOS-975 this test demonstrated that with `experience-pro`,
+        // which shipped `isActive: false`, and asserted the flag as its
+        // precondition. HOS-975 put all six commerce tiers on sale, so there is
+        // no inactive tier left to demonstrate it WITH — the assertion is
+        // restated as the property the resolver actually has: every tier of the
+        // vertical resolves, none of them consulted for activeness.
+        //
+        // Whether membership SHOULD read `isActive` — so a tier an operator
+        // deactivates stops being requestable through `requestedPlanSlug`
+        // instead of only failing later at checkout — is an open question raised
+        // by HOS-975 and deliberately NOT settled here.
         mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
-        expect(EXPERIENCE_PRO_PLAN.isActive).toBe(false);
 
-        expect(
-            resolveCommercePlanSlug({
-                entityType: CommerceEntityTypeEnum.EXPERIENCE,
-                requestedPlanSlug: EXPERIENCE_PRO_PLAN.slug
-            })
-        ).toBe(EXPERIENCE_PRO_PLAN.slug);
+        for (const plan of [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PRO_PLAN, EXPERIENCE_PREMIUM_PLAN]) {
+            expect(
+                resolveCommercePlanSlug({
+                    entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                    requestedPlanSlug: plan.slug
+                })
+            ).toBe(plan.slug);
+        }
     });
 
     it('ignores the requested tier when it is absent or blank', () => {

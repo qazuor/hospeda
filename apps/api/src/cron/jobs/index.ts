@@ -31,6 +31,7 @@ export { courtesyExpiryJob } from './courtesy-expiry.job.js';
 export { cronRunPurgeJob } from './cron-run-purge.job.js';
 export { destinationWeatherFetchJob } from './destination-weather-fetch.job.js';
 export { dunningJob } from './dunning.job.js';
+export { entitySubscriptionCacheReconcileJob } from './entity-subscription-cache-reconcile.job.js';
 export { entityViewsPurgeJob } from './entity-views-purge.job.js';
 export { exchangeRateFetchJob } from './exchange-rate-fetch.job.js';
 export { featuredByEntitlementReconcileJob } from './featured-by-entitlement-reconcile.job.js';

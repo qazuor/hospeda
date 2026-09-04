@@ -86,8 +86,8 @@ const H = vi.hoisted(() => {
      * Mocked table objects. Every column marker is its own property name, so the
      * fake query engine maps an `eq(col, value)` leaf straight onto a row field.
      */
-    const commerceListingSubscriptions = {
-        __table: 'commerce_listing_subscriptions',
+    const entitySubscriptions = {
+        __table: 'entity_subscriptions',
         entityType: 'entityType',
         entityId: 'entityId',
         subscriptionId: 'subscriptionId',
@@ -124,7 +124,7 @@ const H = vi.hoisted(() => {
     };
 
     const rowsFor = (table: unknown): Array<Record<string, unknown>> => {
-        if (table === commerceListingSubscriptions)
+        if (table === entitySubscriptions)
             return store.commerceBridge as unknown as Array<Record<string, unknown>>;
         if (table === partnerSubscriptions)
             return store.partnerBridge as unknown as Array<Record<string, unknown>>;
@@ -178,7 +178,7 @@ const H = vi.hoisted(() => {
                     target: unknown;
                     set: Record<string, unknown>;
                 }) => {
-                    if (table === commerceListingSubscriptions) {
+                    if (table === entitySubscriptions) {
                         const existing = store.commerceBridge.find(
                             (r) =>
                                 r.entityType === values.entityType && r.entityId === values.entityId
@@ -242,7 +242,7 @@ const H = vi.hoisted(() => {
         knobs,
         fakeDb,
         txStub,
-        commerceListingSubscriptions,
+        entitySubscriptions,
         partnerSubscriptions,
         billingPendingCheckouts,
         createPendingProviderSubscription
@@ -297,7 +297,7 @@ vi.mock('@repo/db', () => ({
     gt: (col: unknown, val: unknown) => ({ op: 'gt', col, val }),
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     billingPendingCheckouts: H.billingPendingCheckouts,
-    commerceListingSubscriptions: H.commerceListingSubscriptions,
+    entitySubscriptions: H.entitySubscriptions,
     partnerSubscriptions: H.partnerSubscriptions
 }));
 

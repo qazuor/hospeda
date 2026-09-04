@@ -108,7 +108,8 @@ const idleChatState = {
 
 describe('AiChatWidget', () => {
     const defaultProps = {
-        accommodationId: '550e8400-e29b-41d4-a716-446655440000',
+        entityType: 'accommodation' as const,
+        entityId: '550e8400-e29b-41d4-a716-446655440000',
         locale: 'es' as const,
         apiUrl: 'http://localhost:3001'
     };

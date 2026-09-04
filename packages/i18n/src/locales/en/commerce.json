@@ -347,7 +347,18 @@
                 "photoAltPlaceholder": "Describe the photo (optional)",
                 "photoAttached": "Photo added. Remember to save the menu.",
                 "photoUploadError": "The dish photo could not be uploaded.",
-                "photoLocked": "Photos per dish are available on the Premium plan. You can remove the photos and save the menu anyway."
+                "photoLocked": "Photos per dish are available on the Premium plan. You can remove the photos and save the menu anyway.",
+                "translations": "Translations (EN/PT)",
+                "nameEn": "English name",
+                "nameEnPlaceholder": "English name",
+                "namePt": "Portuguese name",
+                "namePtPlaceholder": "Portuguese name",
+                "descriptionEn": "English description",
+                "descriptionEnPlaceholder": "English description",
+                "descriptionPt": "Portuguese description",
+                "descriptionPtPlaceholder": "Portuguese description",
+                "translationLocked": "Translating the menu is available on the Premium plan. You can clear the translations and save the menu in Spanish only.",
+                "translationLockedHint": "Available on the Premium plan. Clear the English and Portuguese fields to save the menu in Spanish only."
             },
             "dailySpecials": {
                 "title": "Today's menu",
@@ -449,7 +460,8 @@
             "manageExperienceDirections": "Map and how to get there",
             "issueExperienceCertificate": "Experience certificates",
             "manageGastronomyDailySpecial": "Today's menu",
-            "manageGastronomyEvents": "Venue schedule"
+            "manageGastronomyEvents": "Venue schedule",
+            "multilingualGastronomyMenu": "Multi-language menu"
         },
         "create": {
             "pickVertical": {

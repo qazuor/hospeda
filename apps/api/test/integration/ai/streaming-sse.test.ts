@@ -106,6 +106,8 @@ async function seedAiSettings(actorId: string): Promise<void> {
         providers: { stub: { enabled: true } },
         features: {
             chat: stubFeatureConfig,
+            chat_gastronomy: stubFeatureConfig,
+            chat_experience: stubFeatureConfig,
             text_improve: stubFeatureConfig,
             search: stubFeatureConfig,
             support: stubFeatureConfig,

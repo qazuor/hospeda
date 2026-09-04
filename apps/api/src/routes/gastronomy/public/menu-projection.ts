@@ -23,9 +23,30 @@ export interface GastronomyMenuGateResult {
 }
 
 /**
- * Strips every dish of its photo, and of the photo's Cloudinary id.
+ * Strips a section or dish of its translations.
  *
- * TWO removals, and only one of them is the entitlement gate:
+ * `nameI18n`/`descriptionI18n` are set to `null` rather than deleted: the
+ * public schema declares them as nullable fields (they flow through
+ * `.omit()` from the stored schema untouched — see the schema module's
+ * "what `.omit()` does NOT hide" note), so a consumer must see an absent
+ * translation the same way it sees a dish that was never translated at all.
+ *
+ * @param entity - A section or a dish, as read from the database.
+ * @param keepTranslations - Whether to keep `nameI18n`/`descriptionI18n`.
+ * @returns The entity with its translations projected.
+ */
+function projectTranslations<T extends { nameI18n?: unknown; descriptionI18n?: unknown }>(
+    entity: T,
+    keepTranslations: boolean
+): T {
+    return keepTranslations ? entity : { ...entity, nameI18n: null, descriptionI18n: null };
+}
+
+/**
+ * Strips every dish of its photo, and of the photo's Cloudinary id — and, on
+ * the same pass, every section and dish of its translations.
+ *
+ * THREE removals, and only two of them are entitlement gates:
  *
  *  - `photoPublicId` goes ALWAYS, entitled or not. It is an internal handle
  *    for destroying the asset; `GastronomyMenuItemPublicSchema` omits it, and
@@ -33,17 +54,22 @@ export interface GastronomyMenuGateResult {
  *    type. The sections arriving here are raw DB rows, which carry it.
  *  - `photoUrl`/`photoAlt` go only when the owner's plan does not grant
  *    `menu_item_photos`.
+ *  - `nameI18n`/`descriptionI18n` (HOS-1043) go, on BOTH the section and its
+ *    dishes, only when the owner's plan does not grant
+ *    `multilingual_gastronomy_menu`.
  *
  * @param sections - The carta as read from the database.
  * @param keepPhoto - Whether to keep `photoUrl`/`photoAlt`.
+ * @param keepTranslations - Whether to keep `nameI18n`/`descriptionI18n`.
  * @returns The sections with each dish projected.
  */
-function projectSectionPhotos(
+function projectSections(
     sections: readonly GastronomyMenuSectionPublic[],
-    keepPhoto: boolean
+    keepPhoto: boolean,
+    keepTranslations: boolean
 ): readonly GastronomyMenuSectionPublic[] {
     return sections.map((section) => ({
-        ...section,
+        ...projectTranslations(section, keepTranslations),
         items: section.items.map((item) => {
             // Destructured out rather than deleted: `photoPublicId` is present
             // on the row this came from even though the PUBLIC type does not
@@ -52,7 +78,8 @@ function projectSectionPhotos(
                 photoPublicId?: string | null;
             };
 
-            return keepPhoto ? rest : { ...rest, photoUrl: null, photoAlt: null };
+            const withPhoto = keepPhoto ? rest : { ...rest, photoUrl: null, photoAlt: null };
+            return projectTranslations(withPhoto, keepTranslations);
         })
     }));
 }
@@ -83,6 +110,8 @@ function projectSectionPhotos(
  *   check result.
  * @param input.ownerGrantsMenuItemPhotos - The live `menu_item_photos` check
  *   result (HOS-1045).
+ * @param input.ownerGrantsMenuTranslations - The live
+ *   `multilingual_gastronomy_menu` check result (HOS-1043).
  * @returns The fields to spread into the public response. `menuSections` is
  *   `undefined` (not `[]`) when empty, matching the "not loaded" vs "empty"
  *   convention `amenities`/`features` already use on this schema.
@@ -92,9 +121,15 @@ export function applyGastronomyMenuManagementGate(input: {
     readonly menuSections: readonly GastronomyMenuSectionPublic[];
     readonly ownerGrantsMenuManagement: boolean;
     readonly ownerGrantsMenuItemPhotos: boolean;
+    readonly ownerGrantsMenuTranslations: boolean;
 }): GastronomyMenuGateResult {
-    const { gastronomy, menuSections, ownerGrantsMenuManagement, ownerGrantsMenuItemPhotos } =
-        input;
+    const {
+        gastronomy,
+        menuSections,
+        ownerGrantsMenuManagement,
+        ownerGrantsMenuItemPhotos,
+        ownerGrantsMenuTranslations
+    } = input;
 
     if (!ownerGrantsMenuManagement) {
         return { menuFileUrl: null, menuFileKind: null, menuSections: undefined };
@@ -105,7 +140,11 @@ export function applyGastronomyMenuManagementGate(input: {
         menuFileKind: gastronomy.menuFileKind ?? null,
         menuSections:
             menuSections.length > 0
-                ? projectSectionPhotos(menuSections, ownerGrantsMenuItemPhotos)
+                ? projectSections(
+                      menuSections,
+                      ownerGrantsMenuItemPhotos,
+                      ownerGrantsMenuTranslations
+                  )
                 : undefined
     };
 }

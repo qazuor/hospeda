@@ -8,7 +8,7 @@
  * object identity: `@repo/db` can resolve to two distinct module instances
  * for this test file vs. the migration file under Vitest's module graph
  * (a dual-package hazard, not specific to this migration), so `table ===
- * commerceListingSubscriptions` silently never matches even though both
+ * entitySubscriptions` silently never matches even though both
  * sides import the "same" table. Checking for a column unique to each table
  * (`entityType` for the link table, `billingInterval` for subscriptions,
  * `monthlyPriceArs` for plans) is resolution-independent.

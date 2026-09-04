@@ -15,6 +15,7 @@
  * @module AiChatWidget
  */
 
+import type { AiChatEntityType } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
@@ -40,9 +41,51 @@ import styles from './AiChatWidget.module.css';
 const KEYBOARD_INSET_THRESHOLD_PX = 120;
 
 export interface AiChatWidgetProps {
-    readonly accommodationId: string;
+    /** Which kind of listing the chat is about (HOS-400). */
+    readonly entityType: AiChatEntityType;
+    /** The listing's id. */
+    readonly entityId: string;
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
+}
+
+/**
+ * The i18n namespace each vertical's chat copy lives in (HOS-400).
+ *
+ * Only the FIVE strings that NAME the thing being asked about are duplicated per
+ * vertical — the label, the panel title, the two disclaimers and the unavailable
+ * message. Everything else ("Enviar", "Pensando…", "Nueva conversación") is
+ * vertical-agnostic and stays in the accommodations bundle, where it is already
+ * translated: copying eighteen keys three times to vary five of them would have
+ * created two more places for the other thirteen to drift.
+ */
+const AI_CHAT_NS_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
+    accommodation: 'accommodations',
+    gastronomy: 'gastronomy',
+    experience: 'experience'
+};
+
+/** The copy keys that differ per vertical; every other key is shared. */
+const VERTICAL_SPECIFIC_KEYS = new Set([
+    'fabLabel',
+    'panelLabel',
+    'headerDisclaimer',
+    'priceDisclaimer',
+    'unavailable'
+]);
+
+/**
+ * Builds the i18n key for one chat copy string.
+ *
+ * @param entityType - The listing's vertical.
+ * @param suffix - The key under `<ns>.aiChat.`.
+ * @returns The fully-qualified key.
+ */
+export function aiChatCopyKey(entityType: AiChatEntityType, suffix: string): string {
+    const ns = VERTICAL_SPECIFIC_KEYS.has(suffix)
+        ? AI_CHAT_NS_BY_ENTITY_TYPE[entityType]
+        : 'accommodations';
+    return `${ns}.aiChat.${suffix}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -123,14 +166,14 @@ function resolveChatError({
  *
  * @param props - Accommodation ID, locale, and API URL.
  */
-export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetProps) {
+export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWidgetProps) {
     // Simple mode (no `initialUser`): `user` starts null, so the server and the
     // first paint render nothing — the anonymous variant (HOS-369 D-11).
     const { user } = useAccountPermissions();
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [draft, setDraft] = useState('');
-    const chat = useAccommodationChat({ accommodationId, locale, apiUrl });
+    const chat = useAccommodationChat({ entityType, entityId, locale, apiUrl });
     const { t } = createTranslations(locale);
 
     const panelRef = useRef<HTMLDivElement>(null);
@@ -226,6 +269,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                 isOpen={isOpen}
                 onClick={() => setIsOpen(true)}
                 locale={locale}
+                entityType={entityType}
             />
             {isOpen && (
                 <div
@@ -233,7 +277,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     ref={panelRef}
                     role="dialog"
                     aria-modal="true"
-                    aria-label={t('accommodations.aiChat.panelLabel')}
+                    aria-label={t(aiChatCopyKey(entityType, 'panelLabel'))}
                     className={`${styles.panel} ${isExpanded ? styles.panelExpanded : ''}`}
                     data-keyboard-open={isKeyboardOpen ? 'true' : undefined}
                     style={
@@ -246,7 +290,9 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     }
                 >
                     <div className={styles.header}>
-                        <h2 className={styles.title}>{t('accommodations.aiChat.panelLabel')}</h2>
+                        <h2 className={styles.title}>
+                            {t(aiChatCopyKey(entityType, 'panelLabel'))}
+                        </h2>
                         <div className={styles.headerActions}>
                             {/* HOS-552 / H-139: hidden below the mobile breakpoint via
                                  `.expandButton`'s media query — see AiChatWidget.module.css.
@@ -259,8 +305,8 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 aria-label={
                                     isExpanded
-                                        ? t('accommodations.aiChat.collapse')
-                                        : t('accommodations.aiChat.expand')
+                                        ? t(aiChatCopyKey(entityType, 'collapse'))
+                                        : t(aiChatCopyKey(entityType, 'expand'))
                                 }
                             >
                                 {isExpanded ? '↘' : '↗'}
@@ -269,7 +315,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 type="button"
                                 className={styles.iconButton}
                                 onClick={() => setIsOpen(false)}
-                                aria-label={t('accommodations.aiChat.close')}
+                                aria-label={t(aiChatCopyKey(entityType, 'close'))}
                             >
                                 ✕
                             </button>
@@ -277,7 +323,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     </div>
 
                     <div className={styles.disclaimer}>
-                        {t('accommodations.aiChat.headerDisclaimer')}
+                        {t(aiChatCopyKey(entityType, 'headerDisclaimer'))}
                     </div>
 
                     <div
@@ -322,9 +368,9 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         {showThinking && (
                             <output
                                 className={styles.thinking}
-                                aria-label={t('accommodations.aiChat.thinking', 'Pensando…')}
+                                aria-label={t(aiChatCopyKey(entityType, 'thinking'), 'Pensando…')}
                             >
-                                <span>{t('accommodations.aiChat.thinking', 'Pensando…')}</span>
+                                <span>{t(aiChatCopyKey(entityType, 'thinking'), 'Pensando…')}</span>
                                 <span
                                     className={styles.thinkingDots}
                                     aria-hidden="true"
@@ -337,7 +383,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         )}
                         {chat.state.showPriceDisclaimer && (
                             <div className={styles.priceNotice}>
-                                {t('accommodations.aiChat.priceDisclaimer')}
+                                {t(aiChatCopyKey(entityType, 'priceDisclaimer'))}
                             </div>
                         )}
                         {chat.state.status === 'error' && (
@@ -351,13 +397,13 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         )}
                         {chat.state.status === 'at_cap' && (
                             <div className={styles.capBanner}>
-                                {t('accommodations.aiChat.atCapMessage')}
+                                {t(aiChatCopyKey(entityType, 'atCapMessage'))}
                                 <button
                                     type="button"
                                     className={styles.resetButton}
                                     onClick={chat.reset}
                                 >
-                                    {t('accommodations.aiChat.newConversation')}
+                                    {t(aiChatCopyKey(entityType, 'newConversation'))}
                                 </button>
                             </div>
                         )}
@@ -373,7 +419,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         <textarea
                             ref={composerTextareaRef}
                             className={styles.textarea}
-                            placeholder={t('accommodations.aiChat.placeholder')}
+                            placeholder={t(aiChatCopyKey(entityType, 'placeholder'))}
                             value={draft}
                             onChange={(e) => setDraft(e.target.value)}
                             onKeyDown={(e) => {
@@ -397,8 +443,8 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                             }
                             aria-label={
                                 chat.state.status === 'streaming'
-                                    ? t('accommodations.aiChat.sending')
-                                    : t('accommodations.aiChat.send')
+                                    ? t(aiChatCopyKey(entityType, 'sending'))
+                                    : t(aiChatCopyKey(entityType, 'send'))
                             }
                         >
                             {chat.state.status === 'streaming' ? <Spinner size="sm" /> : '↑'}

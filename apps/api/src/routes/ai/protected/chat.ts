@@ -61,10 +61,11 @@ import {
     resolveFeatureConfig,
     resolveSystemPrompt
 } from '@repo/ai-core';
-import { EntitlementKey, LimitKey } from '@repo/billing';
+import { AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL, EntitlementKey, LimitKey } from '@repo/billing';
 import { accommodations, getDb } from '@repo/db';
 import {
     AI_CHAT_MAX_MESSAGES,
+    type AiChatEntityType,
     type AiChatMessage,
     type AiChatRequest,
     AiChatRequestSchema,
@@ -72,6 +73,7 @@ import {
     type AiMessage,
     type LanguageEnum,
     PermissionEnum,
+    resolveAiChatTarget,
     ServiceErrorCode
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -79,12 +81,12 @@ import { eq } from 'drizzle-orm';
 import { getPostHogClient } from '../../../lib/posthog.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
 import { entitlementMiddleware, getRemainingLimit } from '../../../middlewares/entitlement';
-import {
-    resolveOwnerEntitlementsForOwnerId,
-    resolveOwnerLimitsForOwnerId
-} from '../../../middlewares/owner-entitlement.js';
-import { assembleAccommodationContext } from '../../../services/accommodation-ai-context.js';
 import { persistChatTurn } from '../../../services/ai-chat-persistence.js';
+import { resolveChatOwnerGrants } from '../../../services/ai-context/chat-owner-grants.js';
+import {
+    CHAT_CONTEXT_ASSEMBLERS,
+    CHAT_FEATURE_BY_ENTITY_TYPE
+} from '../../../services/ai-context/index.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
@@ -94,8 +96,47 @@ import {
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
 
-const FEATURE: AiFeature = 'chat';
 const DEFAULT_LOCALE: LanguageEnum = 'es';
+
+/**
+ * The feature used for the BURST rate limiter and for admin feature-config
+ * resolution at mount time.
+ *
+ * Deliberately the accommodation value for all three verticals: the rate limiter
+ * is a per-tourist/per-IP burst guard, not a quota, and a visitor bouncing
+ * between a restaurant page and a hotel page is one visitor whose burst budget
+ * should be shared. The QUOTA — which must not be shared — is resolved per
+ * request from `CHAT_FEATURE_BY_ENTITY_TYPE`.
+ */
+const RATE_LIMIT_FEATURE: AiFeature = 'chat';
+
+/**
+ * The `ENTITLEMENT_REQUIRED` copy shown when the listing OWNER's plan does not
+ * grant the chat (HOS-400).
+ *
+ * One key per vertical rather than the single accommodation string this route
+ * used to throw: "el chat no está disponible para este alojamiento" shown on a
+ * restaurant's page is wrong in a way a visitor can see, and the web app resolves
+ * these as i18n keys.
+ */
+const UNAVAILABLE_COPY_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
+    accommodation: 'accommodations.aiChat.unavailable',
+    gastronomy: 'gastronomy.aiChat.unavailable',
+    experience: 'experience.aiChat.unavailable'
+};
+
+/**
+ * The `LimitKey` each vertical's owner quota is expressed in (HOS-400).
+ *
+ * Reported in the `LIMIT_REACHED` error detail so a client — and an operator
+ * reading logs — can tell WHICH cap was hit. An owner who is both a host and a
+ * restaurateur can exhaust one while the others still have headroom.
+ */
+const AI_CHAT_LIMIT_KEY_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, LimitKey>> = {
+    accommodation: LimitKey.MAX_AI_CHAT_PER_MONTH,
+    gastronomy: AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL.gastronomy,
+    experience: AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL.experience
+};
 const PERSISTENCE_TIMEOUT_MS = 1500;
 
 /**
@@ -117,13 +158,13 @@ const DEFAULT_CHAT_MAX_OUTPUT_TOKENS = 1024;
  * transient settings read cannot take the chat feature down — the cap is a
  * cost guard, not a correctness gate.
  */
-async function resolveChatMaxOutputTokens(): Promise<number> {
+async function resolveChatMaxOutputTokens(feature: AiFeature): Promise<number> {
     try {
-        const featureConfig = await resolveFeatureConfig({ feature: FEATURE });
+        const featureConfig = await resolveFeatureConfig({ feature });
         return featureConfig.params.maxTokens ?? DEFAULT_CHAT_MAX_OUTPUT_TOKENS;
     } catch (error) {
         apiLogger.warn(
-            { feature: FEATURE, error: error instanceof Error ? error.message : String(error) },
+            { feature, error: error instanceof Error ? error.message : String(error) },
             'ai-chat: failed to resolve feature config for maxTokens cap; using default'
         );
         return DEFAULT_CHAT_MAX_OUTPUT_TOKENS;
@@ -131,7 +172,7 @@ async function resolveChatMaxOutputTokens(): Promise<number> {
 }
 
 interface ChatPostHogProperties {
-    readonly accommodationId: string;
+    readonly entityId: string;
     readonly locale: LanguageEnum;
     readonly messageCount?: number;
     readonly conversationId?: string;
@@ -197,7 +238,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
     options: {
         middlewares: [
             entitlementMiddleware(),
-            ...createAiRateLimitMiddlewares(FEATURE)
+            ...createAiRateLimitMiddlewares(RATE_LIMIT_FEATURE)
             // NOTE (SPEC-211 Phase 1): `createAiQuotaMiddleware('chat')` is intentionally
             // removed from here. It was tourist-keyed and cannot be reused for
             // owner-governed metering. The AI_CHAT gate + quota are enforced inline below
@@ -212,6 +253,27 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const handlerStartMs = Date.now();
 
         // -----------------------------------------------------------------------
+        // Step 0 (HOS-400): resolve the target through the shared helper.
+        //
+        // `entityId` is now an OPTIONAL legacy alias, so reading it
+        // directly would resolve to `undefined` for any caller that sends the new
+        // `entityId` spelling. `resolveAiChatTarget` is the single place that
+        // knows about the alias.
+        //
+        // The request schema already accepts `entityType: 'gastronomy' |
+        // 'experience'`, but this route's per-vertical context assemblers and
+        // commerce owner-quota lookup are NOT wired yet. A commerce target is
+        // therefore refused explicitly rather than falling through into the
+        // accommodation lookup below, which would 404 while talking about an
+        // accommodation nobody asked about. This branch is the seam the
+        // assemblers replace; it must not survive the feature.
+        // -----------------------------------------------------------------------
+        const target = resolveAiChatTarget(body);
+        const entityType = target.entityType;
+        const entityId = target.entityId;
+        const FEATURE = CHAT_FEATURE_BY_ENTITY_TYPE[entityType];
+
+        // -----------------------------------------------------------------------
         // Step 1: Resolve ownerId from the accommodation row (pre-stream 404 guard).
         //
         // This is the seam described in SPEC-211 §7.3 step 1. The accommodation
@@ -219,20 +281,23 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // accommodation throws ServiceError(NOT_FOUND) which the factory maps to
         // HTTP 404 before any SSE bytes are written.
         // -----------------------------------------------------------------------
-        const db = getDb();
-        const rows = await db
-            .select({ ownerId: accommodations.ownerId })
-            .from(accommodations)
-            .where(eq(accommodations.id, body.accommodationId))
-            .limit(1);
+        let accommodationOwnerId: string | undefined;
+        if (entityType === 'accommodation') {
+            const db = getDb();
+            const rows = await db
+                .select({ ownerId: accommodations.ownerId })
+                .from(accommodations)
+                .where(eq(accommodations.id, entityId))
+                .limit(1);
 
-        const ownerRow = rows[0] as { ownerId: string } | undefined;
-        if (!ownerRow) {
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found.', {
-                accommodationId: body.accommodationId
-            });
+            const ownerRow = rows[0] as { ownerId: string } | undefined;
+            if (!ownerRow) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found.', {
+                    entityId
+                });
+            }
+            accommodationOwnerId = ownerRow.ownerId;
         }
-        const ownerId = ownerRow.ownerId;
 
         // -----------------------------------------------------------------------
         // Step 2: Resolve owner entitlements + limits in parallel (SPEC-211 §7.3).
@@ -240,10 +305,12 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // Both functions are cached 5 min per QZPay customerId — no per-request
         // billing round-trip overhead on warm traffic.
         // -----------------------------------------------------------------------
-        const [ownerEntitlements, ownerLimits] = await Promise.all([
-            resolveOwnerEntitlementsForOwnerId(ownerId),
-            resolveOwnerLimitsForOwnerId(ownerId)
-        ]);
+        const ownerGrants = await resolveChatOwnerGrants({
+            entityType,
+            entityId,
+            accommodationOwnerId
+        });
+        const ownerId = ownerGrants.ownerId;
 
         // -----------------------------------------------------------------------
         // Step 3: Entitlement gate (pre-stream) — SPEC-211 §7.3 step 3.
@@ -253,14 +320,14 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // We throw ServiceError so the global error handler maps it to HTTP 403
         // with code ENTITLEMENT_REQUIRED — consistent with the rest of the API.
         // -----------------------------------------------------------------------
-        if (!ownerEntitlements.includes(EntitlementKey.AI_CHAT)) {
+        if (!ownerGrants.grantsAiChat) {
             apiLogger.warn(
-                { ownerId, accommodationId: body.accommodationId },
+                { ownerId, entityType, entityId },
                 'ai-chat: blocked — owner lacks AI_CHAT entitlement'
             );
             throw new ServiceError(
                 ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                'accommodations.aiChat.unavailable',
+                UNAVAILABLE_COPY_BY_ENTITY_TYPE[entityType],
                 { requiredEntitlement: EntitlementKey.AI_CHAT }
             );
         }
@@ -275,19 +342,19 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // After Phase 0, no real plan should carry -1 for AI features, but the
         // check is kept for correctness (staff bypass still produces -1).
         // -----------------------------------------------------------------------
-        const ownerLimit = ownerLimits.get(LimitKey.MAX_AI_CHAT_PER_MONTH) ?? 0;
+        const ownerLimit = ownerGrants.monthlyQuota;
 
         if (ownerLimit !== -1) {
             if (ownerLimit === 0) {
                 apiLogger.warn(
-                    { ownerId, accommodationId: body.accommodationId },
+                    { ownerId, entityId },
                     'ai-chat: blocked — owner chat limit is 0 (feature disabled in plan)'
                 );
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
                     'El chat de IA no está disponible en el plan del alojamiento.',
                     {
-                        limitKey: LimitKey.MAX_AI_CHAT_PER_MONTH,
+                        limitKey: AI_CHAT_LIMIT_KEY_BY_ENTITY_TYPE[entityType],
                         currentCount: 0,
                         maxAllowed: 0
                     }
@@ -304,7 +371,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         ownerId,
-                        accommodationId: body.accommodationId,
+                        entityId,
                         currentCount: ownerUsed,
                         maxAllowed: ownerLimit
                     },
@@ -314,7 +381,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                     ServiceErrorCode.LIMIT_REACHED,
                     'El propietario de este alojamiento ha alcanzado el límite mensual de chats de IA.',
                     {
-                        limitKey: LimitKey.MAX_AI_CHAT_PER_MONTH,
+                        limitKey: AI_CHAT_LIMIT_KEY_BY_ENTITY_TYPE[entityType],
                         currentCount: ownerUsed,
                         maxAllowed: ownerLimit
                     }
@@ -356,7 +423,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         if (consumerLimit !== -1) {
             if (consumerLimit === 0) {
                 apiLogger.warn(
-                    { userId: actor.id, accommodationId: body.accommodationId },
+                    { userId: actor.id, entityId },
                     'ai-chat: blocked — consumer chat limit is 0 (disabled in consumer plan)'
                 );
                 throw new ServiceError(
@@ -381,7 +448,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         userId: actor.id,
-                        accommodationId: body.accommodationId,
+                        entityId,
                         currentCount: consumerUsed,
                         maxAllowed: consumerLimit
                     },
@@ -406,25 +473,32 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
-                accommodationId: body.accommodationId,
+                entityId,
                 locale
             });
         }
 
         if (body.messages.length === AI_CHAT_MAX_MESSAGES) {
             captureChatEvent(actor.id, 'ai_chat_cap_reached', {
-                accommodationId: body.accommodationId,
+                entityId,
                 locale
             });
         }
 
         const { content, rules } = await resolveSystemPrompt({ feature: FEATURE });
         const resolvedPrompt = composeSystemPrompt({ content, rules });
-        const { contextBlock, systemMessage } = await assembleAccommodationContext({
+        // Dispatch by vertical through the registry rather than an `if` here:
+        // `CHAT_CONTEXT_ASSEMBLERS` is exhaustive over `AiChatEntityType`, so a
+        // fourth vertical is a compile error rather than a branch somebody forgets.
+        // The owner's grant set is passed IN so the assembler performs no billing
+        // lookup of its own — the gate above and the prompt's content gates below
+        // must answer from the SAME instant (see `resolveChatOwnerGrants`).
+        const { contextBlock, systemMessage } = await CHAT_CONTEXT_ASSEMBLERS[entityType]({
             actor,
-            accommodationId: body.accommodationId,
+            entityId,
             resolvedPrompt,
-            locale
+            locale,
+            ownerEntitlements: ownerGrants.entitlements
         });
 
         const aiService = await createConfiguredAiService();
@@ -432,10 +506,10 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             systemMessage,
             body.messages
         );
-        const maxTokens = await resolveChatMaxOutputTokens();
+        const maxTokens = await resolveChatMaxOutputTokens(FEATURE);
 
         captureChatEvent(actor.id, 'ai_chat_message_sent', {
-            accommodationId: body.accommodationId,
+            entityId,
             messageCount: body.messages.length,
             locale,
             ...(body.conversationId ? { conversationId: body.conversationId } : {})
@@ -461,7 +535,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 const aiMapping = mapAiEngineErrorToHttpStatus(error);
                 if (aiMapping?.code === 'MODERATION_BLOCKED') {
                     captureChatEvent(actor.id, 'ai_chat_moderation_blocked', {
-                        accommodationId: body.accommodationId,
+                        entityId,
                         locale
                     });
                 }
@@ -495,7 +569,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         ownerId,
-                        accommodationId: body.accommodationId,
+                        entityId,
                         error:
                             meteringError instanceof Error
                                 ? meteringError.message
@@ -530,7 +604,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 apiLogger.warn(
                     {
                         userId: actor.id,
-                        accommodationId: body.accommodationId,
+                        entityId,
                         error:
                             meteringError instanceof Error
                                 ? meteringError.message
@@ -543,7 +617,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             try {
                 const persistPromise = persistChatTurn({
                     userId: actor.id,
-                    accommodationId: body.accommodationId,
+                    entityType,
+                    entityId,
                     conversationId: body.conversationId ?? null,
                     userMessage: getLastUserTurn(body.messages),
                     assistantMessage: accumulatedAssistantText,
@@ -559,7 +634,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 if (resolvedConversationId === null) {
                     apiLogger.warn(
                         {
-                            accommodationId: body.accommodationId,
+                            entityId,
                             timeoutMs: PERSISTENCE_TIMEOUT_MS
                         },
                         'ai-chat: persistence timed out after 1500 ms (non-fatal)'
@@ -568,7 +643,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             } catch (error) {
                 apiLogger.error(
                     {
-                        accommodationId: body.accommodationId,
+                        entityId,
                         error: error instanceof Error ? error.message : String(error)
                     },
                     'ai-chat: persistence failed (non-fatal)'
@@ -576,7 +651,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             }
 
             captureChatEvent(actor.id, 'ai_chat_response_completed', {
-                accommodationId: body.accommodationId,
+                entityId,
                 locale,
                 provider: resolvedMeta.provider,
                 model: resolvedMeta.model,
@@ -606,7 +681,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                           resolvedPrompt,
                           systemMessage,
                           feature: FEATURE,
-                          accommodationId: body.accommodationId
+                          entityId
                       }
                   }
                 : {})

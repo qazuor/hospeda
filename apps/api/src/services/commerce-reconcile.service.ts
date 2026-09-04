@@ -21,14 +21,7 @@
 
 import { commerceVerticalToProductDomain, parseCommerceVertical } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import {
-    and,
-    commerceListingSubscriptions,
-    eq,
-    experienceModel,
-    gastronomyModel,
-    getDb
-} from '@repo/db';
+import { and, entitySubscriptions, eq, experienceModel, gastronomyModel, getDb } from '@repo/db';
 import type { CommerceEntityType } from '@repo/schemas';
 import { resolveListingCompleteness } from '@repo/schemas';
 import {
@@ -161,7 +154,7 @@ interface CommerceLink {
  * coordinates the checkout stamped on the subscription itself.
  *
  * Path C creates one subscription per checkout CLICK while
- * `commerce_listing_subscriptions` is UPSERTED per ENTITY, so a second click
+ * `entity_subscriptions` is UPSERTED per ENTITY, so a second click
  * re-points the row and orphans the first subscription — whose share link stays
  * valid on MercadoPago. Completing that first link used to end the reconcile in
  * an early return: an unpublished listing with a live charge.
@@ -204,14 +197,14 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
     const db = getDb();
     const [incumbent] = await db
         .select({
-            subscriptionId: commerceListingSubscriptions.subscriptionId,
-            status: commerceListingSubscriptions.status
+            subscriptionId: entitySubscriptions.subscriptionId,
+            status: entitySubscriptions.status
         })
-        .from(commerceListingSubscriptions)
+        .from(entitySubscriptions)
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, entityType),
-                eq(commerceListingSubscriptions.entityId, entityId)
+                eq(entitySubscriptions.entityType, entityType),
+                eq(entitySubscriptions.entityId, entityId)
             )
         )
         .limit(1);
@@ -251,7 +244,7 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
     const productDomain = commerceVerticalToProductDomain(vertical);
 
     await db
-        .insert(commerceListingSubscriptions)
+        .insert(entitySubscriptions)
         .values({
             subscriptionId,
             productDomain,
@@ -260,10 +253,7 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
             status: subscriptionStatus
         })
         .onConflictDoUpdate({
-            target: [
-                commerceListingSubscriptions.entityType,
-                commerceListingSubscriptions.entityId
-            ],
+            target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
             set: { subscriptionId, status: subscriptionStatus, updatedAt: new Date() }
         });
 
@@ -306,11 +296,11 @@ export async function reconcileCommerceListingForSubscription(input: {
         const db = getDb();
         const linkedRows = await db
             .select({
-                entityType: commerceListingSubscriptions.entityType,
-                entityId: commerceListingSubscriptions.entityId
+                entityType: entitySubscriptions.entityType,
+                entityId: entitySubscriptions.entityId
             })
-            .from(commerceListingSubscriptions)
-            .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
+            .from(entitySubscriptions)
+            .where(eq(entitySubscriptions.subscriptionId, subscriptionId));
 
         // No link row can mean two very different things: an accommodation
         // subscription (the overwhelmingly common path, nothing to do) or a
@@ -334,9 +324,9 @@ export async function reconcileCommerceListingForSubscription(input: {
             // and the reconciler agree on the current status. Skipped on the
             // recovery path, whose upsert already wrote the same status.
             await db
-                .update(commerceListingSubscriptions)
+                .update(entitySubscriptions)
                 .set({ status: subscriptionStatus, updatedAt: new Date() })
-                .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
+                .where(eq(entitySubscriptions.subscriptionId, subscriptionId));
         }
 
         for (const link of links) {

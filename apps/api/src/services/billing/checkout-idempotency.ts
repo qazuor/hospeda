@@ -2,7 +2,7 @@
  * Per-entity checkout idempotency for the commerce and partner Path C flows.
  *
  * Reads the two rows that describe an entity's in-flight checkout — the domain
- * bridge row (`commerce_listing_subscriptions` / `partner_subscriptions`) and
+ * bridge row (`entity_subscriptions` / `partner_subscriptions`) and
  * the `billing_pending_checkouts` correlation row it points at — hands them to
  * the pure {@link decideCheckoutReuse}, and, when reuse is allowed, rebuilds the
  * ORIGINAL MercadoPago share link instead of minting a second one.
@@ -28,7 +28,7 @@ import {
     and,
     billingPendingCheckouts,
     billingSubscriptions,
-    commerceListingSubscriptions,
+    entitySubscriptions,
     eq,
     getDb,
     partnerSubscriptions
@@ -98,19 +98,28 @@ async function loadCommerceBridge(input: {
     const db = input.db ?? getDb();
     const rows = await db
         .select({
-            subscriptionId: commerceListingSubscriptions.subscriptionId,
-            status: commerceListingSubscriptions.status
+            subscriptionId: entitySubscriptions.subscriptionId,
+            status: entitySubscriptions.status
         })
-        .from(commerceListingSubscriptions)
+        .from(entitySubscriptions)
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, input.entityType),
-                eq(commerceListingSubscriptions.entityId, input.entityId)
+                eq(entitySubscriptions.entityType, input.entityType),
+                eq(entitySubscriptions.entityId, input.entityId)
             )
         )
         .limit(1);
 
-    return rows[0] ?? null;
+    const row = rows[0];
+    // HOS-1084 made `subscription_id` nullable so accommodation can CACHE
+    // "this owner holds no subscription" instead of re-discovering it against
+    // QZPay on every public read. Such a row is not a checkout bridge — there
+    // is no in-flight subscription to hand back — and commerce never writes
+    // one, so this is a narrowing guard, not a reachable commerce branch.
+    if (!row || row.subscriptionId === null) {
+        return null;
+    }
+    return { subscriptionId: row.subscriptionId, status: row.status };
 }
 
 /** Loads the partner bridge row (`UNIQUE(partner_id)`). */

@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Preguntarle a la IA sobre este local",
+        "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el local.",
+        "panelLabel": "Chat con IA — Preguntas sobre el local",
+        "priceDisclaimer": "La carta, los precios y los horarios pueden haber cambiado. Contactá al local para confirmar.",
+        "unavailable": "El chat de IA no está disponible para este local"
+    },
     "listing": {
         "title": "Gastronomía",
         "subtitle": "Descubrí los mejores restaurantes, bares y sabores de la región",
@@ -54,7 +61,8 @@
             "attachmentPdf": "Carta en PDF",
             "viewPdf": "Ver carta en PDF",
             "consultPrice": "A consultar",
-            "unavailable": "No disponible"
+            "unavailable": "No disponible",
+            "switchLanguage": "Ver la carta en:"
         },
         "dailySpecials": {
             "title": "Menú del día",
