@@ -41,7 +41,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { ACTOR_OPTIONAL_PATH_PATTERNS } from '../../src/middlewares/actor';
+import { ACTOR_OPTIONAL_PATH_PATTERNS, actorIsOptionalFor } from '../../src/middlewares/actor';
 
 /**
  * The allowlist, frozen literally.
@@ -112,5 +112,66 @@ describe('ACTOR_OPTIONAL_PATH_PATTERNS is frozen', () => {
                 pattern.test('/api/v1/public/qr/Live2345')
             )
         ).toBe(true);
+    });
+});
+
+/**
+ * The PREDICATE, asserted in the same file as the data it reads.
+ *
+ * Everything above pins `ACTOR_OPTIONAL_PATH_PATTERNS` — the DATA. None of it
+ * can see `actorIsOptionalFor` being rewritten to `=> true`, which opens the
+ * fail-open on every route in the API while leaving the array untouched: the
+ * length matches, the literal patterns match, and the semantic block passes
+ * because it asks the ARRAY, not the function the middleware actually calls.
+ *
+ * Behaviourally that mutation IS caught today — by the two negative controls in
+ * `resolve-actor-degradation.test.ts`. That is the problem, not the answer: the
+ * guarantee lives BETWEEN two files and inside neither, so whoever edits, moves
+ * or rewrites that other file has no way to know it was carrying half of this
+ * one's promise. This block makes the halves whole.
+ *
+ * Same failure shape as HOS-1139, where a guard covered the instance and not
+ * the class — here it covered the data and not the code that reads it.
+ */
+describe('actorIsOptionalFor honours the frozen allowlist', () => {
+    it('answers true for the QR resolution path', () => {
+        expect(actorIsOptionalFor({ path: '/api/v1/public/qr/Live2345' })).toBe(true);
+    });
+
+    it.each([
+        ['an admin collection', '/api/v1/admin/qr-codes'],
+        ['an admin resource', '/api/v1/admin/qr-codes/11111111-1111-4111-8111-111111111111'],
+        ['an unrelated admin route', '/api/v1/admin/users'],
+        ['a protected collection', '/api/v1/protected/accommodations'],
+        ['a protected resource', '/api/v1/protected/host-trades/mine'],
+        ['the auth identity endpoint', '/api/v1/public/auth/me'],
+        ['a sibling under the QR prefix', '/api/v1/public/qr/admin/purge'],
+        ['a prefix lookalike', '/api/v1/public/qrx/Live2345'],
+        ['the root', '/']
+    ])('answers false for %s', (_label, path) => {
+        // THE assertion. `=> true` fails every row here and nothing else in the
+        // file, which is precisely the coverage that was missing.
+        expect(actorIsOptionalFor({ path }), `${path} must NOT be actor-optional`).toBe(false);
+    });
+
+    it('agrees with the frozen array on every path it is asked about', () => {
+        // Ties the two halves together: the predicate must be a pure function OF
+        // the array, not an independent opinion that happens to coincide today.
+        // A predicate hardcoding the QR path would pass both blocks above and
+        // fail here the moment the array changed.
+        const paths = [
+            '/api/v1/public/qr/Live2345',
+            '/api/v1/public/qr/abc/def',
+            '/api/v1/admin/users',
+            '/api/v1/protected/accommodations',
+            '/api/v1/public/auth/me',
+            '/'
+        ];
+
+        for (const path of paths) {
+            expect(actorIsOptionalFor({ path }), path).toBe(
+                ACTOR_OPTIONAL_PATH_PATTERNS.some((pattern) => pattern.test(path))
+            );
+        }
     });
 });
