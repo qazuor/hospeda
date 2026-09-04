@@ -2,11 +2,14 @@ import {
     QR_CODE_DEFAULT_BACKGROUND_COLOR,
     QR_CODE_DEFAULT_FOREGROUND_COLOR,
     QR_CODE_DEFAULT_MARGIN,
+    QrCodeCenterLogoEnum,
     QrCodeErrorCorrectionLevelEnum,
     QrCodeFormatEnum,
     type QrCodeRenderOptions
 } from '@repo/schemas';
+import { PNG } from 'pngjs';
 import QRCode from 'qrcode';
+import { paintCenterLogoOnPng, renderCenterLogoSvgFragment } from './qr-center-logo';
 
 /**
  * The configurable QR render engine (HOS-981).
@@ -22,10 +25,16 @@ import QRCode from 'qrcode';
  * delivery notes — a code that re-renders differently is a code that stops
  * matching the one in the field.
  *
- * The centre logo is deliberately NOT here yet: it needs SVG composition plus a
- * check that the composed result still scans, and it is built alongside the
- * panel that configures it (PR 3). `render_options` is `jsonb`, so adding it
- * later costs no migration.
+ * The centre logo (PR 5) is drawn here, and it is the one option that DAMAGES
+ * the symbol rather than restyling it: the plate blanks the modules under it
+ * and the code survives on Reed-Solomon recovery alone. Two things follow.
+ * First, the geometry lives in `./qr-center-logo` so the SVG and the PNG cover
+ * the same modules — a mark drawn a module apart in the two formats is two
+ * different amounts of damage wearing one configuration. Second, whether a mark
+ * is affordable AT ALL is decided in `@repo/schemas`
+ * (`qrCodeCenterLogoFits`), before anything reaches this file; this engine
+ * draws what it is told, which is why a route must never hand it options that
+ * did not come through the schema.
  *
  * @module utils/qr-render
  */
@@ -91,7 +100,8 @@ export function resolveQrRenderOptions(input: {
         margin: options.margin ?? QR_CODE_DEFAULT_MARGIN,
         size: options.size ?? null,
         foregroundColor: options.foregroundColor ?? QR_CODE_DEFAULT_FOREGROUND_COLOR,
-        backgroundColor: options.backgroundColor ?? QR_CODE_DEFAULT_BACKGROUND_COLOR
+        backgroundColor: options.backgroundColor ?? QR_CODE_DEFAULT_BACKGROUND_COLOR,
+        centerLogo: options.centerLogo ?? QrCodeCenterLogoEnum.NONE
     };
 }
 
@@ -170,10 +180,28 @@ export async function renderQrSvg(input: {
 }): Promise<string> {
     const options = resolveQrRenderOptions({ options: input.options });
 
-    return QRCode.toString(input.data, {
+    const svg = await QRCode.toString(input.data, {
         type: 'svg',
         ...toLibraryOptions(options)
     });
+
+    if (options.centerLogo === QrCodeCenterLogoEnum.NONE) return svg;
+
+    const fragment = renderCenterLogoSvgFragment({
+        moduleCount: renderQrMatrix({
+            data: input.data,
+            errorCorrectionLevel: options.errorCorrectionLevel
+        }).size,
+        margin: options.margin,
+        foregroundColor: options.foregroundColor,
+        backgroundColor: options.backgroundColor
+    });
+
+    // Appended rather than woven in: SVG paints in document order, so the mark
+    // has to come after the modules it covers. The closing tag is the only
+    // anchor in the library's output that is guaranteed to be there and to be
+    // last, which is why the splice is on `</svg>` and not on the module path.
+    return svg.replace('</svg>', `${fragment}</svg>`);
 }
 
 /**
@@ -190,10 +218,31 @@ export async function renderQrPng(input: {
 }): Promise<Buffer> {
     const options = resolveQrRenderOptions({ options: input.options });
 
-    return QRCode.toBuffer(input.data, {
+    const buffer = await QRCode.toBuffer(input.data, {
         type: 'png',
         ...toLibraryOptions(options)
     });
+
+    // The no-logo path returns the library's own bytes UNTOUCHED. Decoding and
+    // re-encoding a PNG that needs no change would alter the bytes of every
+    // code already printed — `host-trade-qr-byte-identity.test.ts` exists
+    // because that is a production incident, not a diff.
+    if (options.centerLogo === QrCodeCenterLogoEnum.NONE) return buffer;
+
+    const png = PNG.sync.read(buffer);
+
+    paintCenterLogoOnPng({
+        png,
+        moduleCount: renderQrMatrix({
+            data: input.data,
+            errorCorrectionLevel: options.errorCorrectionLevel
+        }).size,
+        margin: options.margin,
+        foregroundColor: options.foregroundColor,
+        backgroundColor: options.backgroundColor
+    });
+
+    return PNG.sync.write(png);
 }
 
 /**
