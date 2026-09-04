@@ -3811,6 +3811,56 @@ export const hostOnboardingApi = {
 };
 
 /**
+ * The three verticals reachable from the header's "Publicar" menu (HOS-1156).
+ *
+ * A local literal union, same precedent as `HostOnboardingPrecheckDecision`
+ * above: the web app does not import `@repo/billing`'s `PublishVertical` here,
+ * so a change to the API contract surfaces as a typecheck failure at the call
+ * sites rather than silently reshaping a rendered page.
+ */
+export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+
+/**
+ * Publish precheck API (HOS-1156 D-7).
+ *
+ * The vertical-parameterised generalisation of {@link hostOnboardingApi}: one
+ * read-only endpoint each `/publicar/*` page calls BEFORE rendering its create
+ * form, to decide whether to create directly, resume/pick among existing
+ * DRAFTs, or send the owner to upgrade.
+ *
+ * The response shape is identical to the accommodation-only ancestor's, so
+ * {@link HostOnboardingPrecheckResponse} is reused rather than copied.
+ */
+export const publishApi = {
+    /**
+     * Precheck publishing in one vertical for the current actor.
+     *
+     * @param params.vertical - Which vertical to precheck.
+     * @param params.cookieHeader - Optional SSR cookie header (browser callers
+     *   omit it; `credentials: 'include'` covers them).
+     * @returns The listing/draft counts, the quota verdict and the decision.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * if (result.ok) console.log(result.data.decision);
+     * ```
+     */
+    precheck({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/precheck/${vertical}`,
+            cookieHeader
+        });
+    }
+};
+
+/**
  * Protected accommodation edit API endpoints.
  * Wraps the protected accommodation GET/PATCH and public amenities/destinations
  * endpoints used by the web editor form.
