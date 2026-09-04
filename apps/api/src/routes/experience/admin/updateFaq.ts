@@ -5,8 +5,8 @@
 import {
     ExperienceFaqSingleOutputSchema,
     type ExperienceFaqUpdateInput,
-    FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType,
+    FaqWithChannelVisibilityUpdatePayloadSchema,
+    type FaqWithChannelVisibilityUpdatePayloadType,
     PermissionEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceFaq } from '@repo/service-core';
@@ -37,7 +37,7 @@ export const adminUpdateExperienceFaqRoute = createAdminRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqUpdatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: ExperienceFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -49,7 +49,7 @@ export const adminUpdateExperienceFaqRoute = createAdminRoute({
         const input: ExperienceFaqUpdateInput = {
             experienceId: params.id as string,
             faqId: params.faqId as string,
-            faq: body as FaqUpdatePayloadType
+            faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

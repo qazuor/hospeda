@@ -3,9 +3,10 @@ import { SuccessSchema } from '../../../api/result.schema.js';
 import {
     BaseFaqPublicSchema,
     BaseFaqSchema,
-    FaqCreatePayloadSchema,
+    FaqChannelVisibilityFields,
     FaqReorderPayloadSchema,
-    FaqUpdatePayloadSchema
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    FaqWithChannelVisibilityUpdatePayloadSchema
 } from '../../../common/faq.schema.js';
 
 /**
@@ -20,7 +21,11 @@ export const ExperienceFaqSchema = BaseFaqSchema.extend({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     /** The experience listing this FAQ belongs to. */
-    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    // HOS-400: channel visibility, adopting the HOS-393 fragment. Required-with-default
+    // on read — the DB columns are NOT NULL DEFAULT true, so a row always has a value.
+    ...FaqChannelVisibilityFields
 });
 
 /** TypeScript type for {@link ExperienceFaqSchema}. */
@@ -67,7 +72,7 @@ export type ExperienceFaqPublicListOutput = z.infer<typeof ExperienceFaqPublicLi
  */
 export const ExperienceFaqAddInputSchema = z.object({
     experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    faq: FaqCreatePayloadSchema
+    faq: FaqWithChannelVisibilityCreatePayloadSchema
 });
 export type ExperienceFaqAddInput = z.infer<typeof ExperienceFaqAddInputSchema>;
 
@@ -77,7 +82,7 @@ export type ExperienceFaqAddInput = z.infer<typeof ExperienceFaqAddInputSchema>;
 export const ExperienceFaqUpdateInputSchema = z.object({
     experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    faq: FaqUpdatePayloadSchema
+    faq: FaqWithChannelVisibilityUpdatePayloadSchema
 });
 export type ExperienceFaqUpdateInput = z.infer<typeof ExperienceFaqUpdateInputSchema>;
 

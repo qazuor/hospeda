@@ -70,7 +70,9 @@ const FAQ_1: CommerceFaq = {
     question: '¿Cuándo abren?',
     answer: 'De lunes a viernes de 9 a 18.',
     category: null,
-    displayOrder: 0
+    displayOrder: 0,
+    isVisibleOnListing: true,
+    isUsableByAi: true
 };
 
 const FAQ_2: CommerceFaq = {
@@ -78,7 +80,9 @@ const FAQ_2: CommerceFaq = {
     question: '¿Tienen estacionamiento?',
     answer: 'Sí, gratuito.',
     category: null,
-    displayOrder: 1
+    displayOrder: 1,
+    isVisibleOnListing: true,
+    isUsableByAi: true
 };
 
 function renderManager(initialFaqs: readonly CommerceFaq[] = []) {
@@ -128,13 +132,67 @@ describe('CommerceFaqManager', () => {
         expect(screen.getByLabelText('Respuesta')).toBeInTheDocument();
     });
 
+    it('defaults both channel-visibility checkboxes to checked on a new FAQ (HOS-400)', () => {
+        renderManager([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+
+        const visibleCheckbox = screen.getByLabelText(
+            'Visible en la ficha pública'
+        ) as HTMLInputElement;
+        const aiCheckbox = screen.getByLabelText('Usable por la IA') as HTMLInputElement;
+
+        expect(visibleCheckbox.checked).toBe(true);
+        expect(aiCheckbox.checked).toBe(true);
+    });
+
+    it('sends unchecked channel-visibility flags in the add payload (HOS-400)', async () => {
+        const newFaq: CommerceFaq = {
+            id: 'faq-new',
+            question: '¿Tienen wifi gratis?',
+            answer: 'Sí, en todo el salón.',
+            category: null,
+            displayOrder: 2,
+            isVisibleOnListing: false,
+            isUsableByAi: false
+        };
+        mockPostProtected.mockResolvedValueOnce({ ok: true, data: { faq: newFaq } });
+
+        renderManager([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+
+        fireEvent.change(screen.getByLabelText('Pregunta'), {
+            target: { value: '¿Tienen wifi gratis?' }
+        });
+        fireEvent.change(screen.getByLabelText('Respuesta'), {
+            target: { value: 'Sí, en todo el salón.' }
+        });
+        fireEvent.click(screen.getByLabelText('Visible en la ficha pública'));
+        fireEvent.click(screen.getByLabelText('Usable por la IA'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => {
+            expect(mockPostProtected).toHaveBeenCalledWith({
+                path: '/api/v1/protected/gastronomies/listing-1/faqs',
+                body: {
+                    question: '¿Tienen wifi gratis?',
+                    answer: 'Sí, en todo el salón.',
+                    category: undefined,
+                    isVisibleOnListing: false,
+                    isUsableByAi: false
+                }
+            });
+        });
+    });
+
     it('calls postProtected (credentialed) and appends the FAQ on successful add', async () => {
         const newFaq: CommerceFaq = {
             id: 'faq-new',
             question: '¿Tienen delivery?',
             answer: 'Sí, con Rappi.',
             category: null,
-            displayOrder: 2
+            displayOrder: 2,
+            isVisibleOnListing: true,
+            isUsableByAi: true
         };
         // HOS-841: the add/update endpoints answer `{ faq: … }`. This fixture
         // returned the FAQ bare, matching the component's wrong assumption
@@ -170,6 +228,24 @@ describe('CommerceFaqManager', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
         const questionField = screen.getByLabelText('Pregunta') as HTMLTextAreaElement;
         expect(questionField.value).toBe('¿Cuándo abren?');
+    });
+
+    it('seeds the edit form checkboxes from the FAQ current channel-visibility flags (HOS-400)', () => {
+        const hiddenFaq: CommerceFaq = {
+            ...FAQ_1,
+            isVisibleOnListing: false,
+            isUsableByAi: false
+        };
+        renderManager([hiddenFaq]);
+        fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+
+        const visibleCheckbox = screen.getByLabelText(
+            'Visible en la ficha pública'
+        ) as HTMLInputElement;
+        const aiCheckbox = screen.getByLabelText('Usable por la IA') as HTMLInputElement;
+
+        expect(visibleCheckbox.checked).toBe(false);
+        expect(aiCheckbox.checked).toBe(false);
     });
 
     it('calls PUT (the verb the API registers) and updates the FAQ on successful edit', async () => {
@@ -257,5 +333,37 @@ describe('CommerceFaqManager', () => {
         expect(subirButtons[0]).toBeDisabled();
         // Last FAQ: "Bajar" disabled
         expect(bajarButtons[bajarButtons.length - 1]).toBeDisabled();
+    });
+
+    describe('channel-visibility badges (HOS-400)', () => {
+        it('shows no badge for a FAQ at the all-true default', () => {
+            renderManager([FAQ_1]);
+            expect(screen.queryByText('No visible en la ficha')).not.toBeInTheDocument();
+            expect(screen.queryByText('No usable por IA')).not.toBeInTheDocument();
+        });
+
+        it('shows the "not visible" badge, as real text, when isVisibleOnListing is false', () => {
+            renderManager([{ ...FAQ_1, isVisibleOnListing: false }]);
+
+            const badge = screen.getByText('No visible en la ficha');
+            expect(badge).toBeInTheDocument();
+            // The badge must carry real visible text (not rely on colour alone).
+            expect(badge.textContent).toBe('No visible en la ficha');
+            expect(screen.queryByText('No usable por IA')).not.toBeInTheDocument();
+        });
+
+        it('shows the "not AI-usable" badge when isUsableByAi is false', () => {
+            renderManager([{ ...FAQ_1, isUsableByAi: false }]);
+
+            expect(screen.getByText('No usable por IA')).toBeInTheDocument();
+            expect(screen.queryByText('No visible en la ficha')).not.toBeInTheDocument();
+        });
+
+        it('shows BOTH badges for a FAQ with both flags off (the "draft" combination)', () => {
+            renderManager([{ ...FAQ_1, isVisibleOnListing: false, isUsableByAi: false }]);
+
+            expect(screen.getByText('No visible en la ficha')).toBeInTheDocument();
+            expect(screen.getByText('No usable por IA')).toBeInTheDocument();
+        });
     });
 });

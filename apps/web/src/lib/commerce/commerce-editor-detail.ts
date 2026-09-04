@@ -51,7 +51,13 @@ export function readCommerceListingFaqs({
         question: typeof faq.question === 'string' ? faq.question : '',
         answer: typeof faq.answer === 'string' ? faq.answer : '',
         category: typeof faq.category === 'string' ? faq.category : null,
-        displayOrder: typeof faq.displayOrder === 'number' ? faq.displayOrder : null
+        displayOrder: typeof faq.displayOrder === 'number' ? faq.displayOrder : null,
+        // HOS-400: both flags default to `true` when absent, matching the
+        // DB columns' `NOT NULL DEFAULT true` — a listing saved before the
+        // columns existed reads as published/AI-usable, today's behaviour.
+        isVisibleOnListing:
+            typeof faq.isVisibleOnListing === 'boolean' ? faq.isVisibleOnListing : true,
+        isUsableByAi: typeof faq.isUsableByAi === 'boolean' ? faq.isUsableByAi : true
     }));
 }
 

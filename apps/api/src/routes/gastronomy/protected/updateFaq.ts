@@ -6,8 +6,8 @@
  * The FAQ must belong to the specified gastronomy (enforced inside updateGastronomyFaq).
  */
 import {
-    FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType,
+    FaqWithChannelVisibilityUpdatePayloadSchema,
+    type FaqWithChannelVisibilityUpdatePayloadType,
     GastronomyFaqSingleOutputSchema,
     type GastronomyFaqUpdateInput
 } from '@repo/schemas';
@@ -36,7 +36,7 @@ export const protectedUpdateGastronomyFaqRoute = createCRUDRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqUpdatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: GastronomyFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -48,7 +48,7 @@ export const protectedUpdateGastronomyFaqRoute = createCRUDRoute({
         const input: GastronomyFaqUpdateInput = {
             gastronomyId: params.id as string,
             faqId: params.faqId as string,
-            faq: body as FaqUpdatePayloadType
+            faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

@@ -53,6 +53,36 @@ describe('GastronomyFaqAddInputSchema', () => {
         expect(() => GastronomyFaqAddInputSchema.parse(data)).not.toThrow();
     });
 
+    it('should default isVisibleOnListing and isUsableByAi to true (HOS-400)', () => {
+        // Same fragment HOS-393 gave accommodation_faqs: a client that omits
+        // the flags gets exactly the behaviour FAQs had before they existed.
+        const data = {
+            gastronomyId,
+            faq: {
+                question: 'Do you have parking available nearby?',
+                answer: 'Yes, free parking is available on the street.'
+            }
+        };
+        const parsed = GastronomyFaqAddInputSchema.parse(data);
+        expect(parsed.faq.isVisibleOnListing).toBe(true);
+        expect(parsed.faq.isUsableByAi).toBe(true);
+    });
+
+    it('should preserve an explicit false for both flags (HOS-400)', () => {
+        const data = {
+            gastronomyId,
+            faq: {
+                question: 'Do you have parking available nearby?',
+                answer: 'Yes, free parking is available on the street.',
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            }
+        };
+        const parsed = GastronomyFaqAddInputSchema.parse(data);
+        expect(parsed.faq.isVisibleOnListing).toBe(false);
+        expect(parsed.faq.isUsableByAi).toBe(false);
+    });
+
     it('should reject missing gastronomyId', () => {
         const data = {
             faq: {
@@ -88,6 +118,16 @@ describe('GastronomyFaqUpdateInputSchema', () => {
     it('should reject missing faqId', () => {
         const data = { gastronomyId, faq: { question: 'Q?' } };
         expect(() => GastronomyFaqUpdateInputSchema.parse(data)).toThrow(ZodError);
+    });
+
+    it('should leave both flags absent on a partial edit that omits them (HOS-400)', () => {
+        // A `.default()` here would fire on every partial edit and silently
+        // reset a hidden FAQ back to public — the exact trap the HOS-393
+        // JSDoc documents for FaqWithChannelVisibilityUpdatePayloadSchema.
+        const data = { gastronomyId, faqId, faq: { question: 'Updated question about hours?' } };
+        const parsed = GastronomyFaqUpdateInputSchema.parse(data);
+        expect(Object.hasOwn(parsed.faq, 'isVisibleOnListing')).toBe(false);
+        expect(Object.hasOwn(parsed.faq, 'isUsableByAi')).toBe(false);
     });
 });
 
