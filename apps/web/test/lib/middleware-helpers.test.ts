@@ -628,15 +628,21 @@ describe('buildCspHeader', () => {
         expect(header).not.toContain("'nonce-");
     });
 
-    // SPEC-046 GAP-046-12 + SPEC-301: lock the embed surface. The ONLY origin we
-    // embed is Cloudflare Turnstile's challenge iframe (feedback form), which must
-    // be allowlisted here because 'strict-dynamic' does not govern frames. Every
-    // other embed origin stays blocked, and frame-ancestors 'none' still stops
-    // others from embedding us — the frame story stays explicit in both directions.
-    it('must restrict frame-src to the Cloudflare Turnstile host only (GAP-046-12, SPEC-301)', () => {
+    // SPEC-046 GAP-046-12 + SPEC-301 + HOS-1022: lock the embed surface. The ONLY
+    // origins we embed are Cloudflare Turnstile's challenge iframe (feedback form)
+    // and the three video-embed hosts the accommodation video section's
+    // `resolveVideoEmbed()` can emit (YouTube, Vimeo, Dailymotion — see
+    // `apps/web/src/lib/video-embed.ts`), which must be allowlisted here because
+    // 'strict-dynamic' does not govern frames. Every other embed origin stays
+    // blocked (an extra host added here must fail this exact-equality check), and
+    // frame-ancestors 'none' still stops others from embedding us — the frame
+    // story stays explicit in both directions.
+    it('must restrict frame-src to Turnstile + the three video-embed hosts only (GAP-046-12, SPEC-301, HOS-1022)', () => {
         const header = buildCspHeader({ ...NO_HASHES });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
-        expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
+        expect(frameSrc).toBe(
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+        );
     });
 
     // SPEC-301 regression: the feedback form's Turnstile widget injects its
