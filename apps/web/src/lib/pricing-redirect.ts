@@ -1,7 +1,10 @@
 /**
  * @file pricing-redirect.ts
- * @description Target of the seven 301s HOS-1032 leaves behind, query string
- * included.
+ * @description Target of a moved URL's 301, query string included.
+ *
+ * Named for the seven redirects HOS-1032 left behind, which is where it came
+ * from; HOS-1156's five use it too. The file name has stayed put rather than
+ * being renamed across a dozen call sites for a word.
  *
  * ## Why this exists at all
  *

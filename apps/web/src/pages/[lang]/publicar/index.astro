@@ -1,96 +1,90 @@
 ---
 /**
  * @file publicar/index.astro
- * @description Host onboarding landing page. Introduces the property publishing
- * flow to potential hosts with a hero, benefits, how-it-works steps, FAQ, and CTA.
+ * @description The accommodation publish page (HOS-1156 T-019) — the funnel and
+ * the create form on one URL.
  *
- * The primary CTA is auth-aware: authenticated users are linked directly to the
- * new-property form (/publicar/nueva/), unauthenticated users go to sign-in first.
- * This is implemented via a small React island (HostLandingCta) with
- * client:only="react", so the swap happens client-side once Better Auth's
- * session resolves, without any server-side session check.
+ * ## What changed, and why each removal was deliberate
  *
- * Marketing prose (benefits, steps, FAQ) is deliberately kept in sync with
- * /planes/anfitriones/ via shared i18n keys (owners.*) — no copy duplication.
+ * **The existing-host redirect is gone (D-3).** This page used to fetch the
+ * caller's owned-accommodation count and bounce anyone with ≥1 listing to
+ * `/mi-cuenta/propiedades/`. That was right while this was a marketing landing
+ * and the form lived one click away; with the form HERE it would block a host
+ * from creating a second property straight off the navbar. BETA-197's precheck
+ * covers the same ground better: it knows whether they have ROOM, not merely
+ * whether they have listings, and it offers to resume a draft instead of
+ * dropping them on a list. The fetch went with the redirect (R-3): the precheck
+ * already returns `currentCount`, so keeping it would have been a third SSR
+ * round trip answering a question nobody asks any more.
  *
- * @route /{lang}/publicar/
- * @rendering SSR — the page fetches the visitor's owned-accommodation count
- * and trial status server-side (to decide the existing-host redirect and the
- * trial callout), both of which require the request's session cookie and are
- * therefore unavailable at build time. HOS-609 removed the `?from=admin`
- * eyebrow this page used to render for tourists bounced from the admin panel
- * (they now land on the web's own `/acceso-denegado/` page instead), but SSR
- * stays required for the reasons above.
+ * **`HostLandingCta` is gone.** Its whole job was to decide whether to send you
+ * to `/publicar/nueva/` or to sign-in. Both destinations are now this page.
+ *
+ * **The FAQ and the closing CTA banner are gone.** §6 fixes the shape at four
+ * sections — hero, form, cómo funciona, links to `/planes/` — and a closing
+ * "publicá tu propiedad" banner under a form that is already on screen is a CTA
+ * pointing at itself. The FAQ still renders on `/planes/anfitriones/`, which
+ * owns those `owners.faq.*` keys.
+ *
+ * Marketing prose stays shared with `/planes/anfitriones/` through the
+ * `owners.*` keys — deliberate reuse, not duplication (AC-15). Only the first
+ * three of its four steps render here; the fourth ("Crecé") is about life after
+ * publishing, which is not what this page is asking for.
+ *
+ * @route     /{lang}/publicar/
+ * @rendering SSR (prerender = false — reads the session to resolve the form
+ *            slot and the trial callout; consequently absent from every
+ *            cacheable-route list, AC-8).
  */
 
+import {
+    AlertCircleIcon,
+    BuildingsIcon,
+    ChatIcon,
+    EyeIcon,
+    ReceiptIcon,
+    SettingsIcon,
+    StarIcon,
+    TrendingUpIcon
+} from '@repo/icons';
+import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
+import PublishFormSlot from '@/components/publish/PublishFormSlot.astro';
+import PublishHero from '@/components/publish/PublishHero.astro';
+import PublishHowItWorks from '@/components/publish/PublishHowItWorks.astro';
+import PublishPlanLinks from '@/components/publish/PublishPlanLinks.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { HostLandingCta } from '@/components/sections/HostLandingCta.client';
-import JsonLd from '@/components/seo/JsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
-import { OWNER_FAQ_ITEMS, buildOwnerFaqParams, resolveOwnerFaqAnswer } from '@/lib/owner-faq';
 import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
 import {
-	BuildingsIcon,
-	TrendingUpIcon,
-	ChatIcon,
-	StarIcon,
-	EyeIcon,
-	SettingsIcon,
-	ReceiptIcon,
-	AlertCircleIcon
-} from '@repo/icons';
+    PLANS_PAGE_PATH_BY_VERTICAL,
+    PRICING_PAGE_PATH_BY_VERTICAL
+} from '@/lib/publish/publish-page-paths';
+import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const VERTICAL = 'accommodation' as const;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
 
-// F3: determine if the user is authenticated server-side so auth-aware
-// CTAs can be rendered statically without shipping JavaScript for the
-// simple "logged in → /publicar/nueva/" swap on the final CTA banner.
 const isAuthenticated = Boolean(Astro.locals.user);
+const cookieHeader = Astro.request.headers.get('cookie');
 
-// Redirect existing hosts straight to their account: this is the MARKETING
-// landing, which is pointless for someone who already publishes. The criterion
-// is ">=1 owned accommodation" (NOT role) — a host who deleted all their
-// listings (owned count 0) should still see the funnel. We mirror nueva.astro:
-// GET /accommodations?pageSize=1 and read pagination.total. The fetch is
-// non-fatal: on any error we fall through and render the landing normally.
-// (The actual creation FORM at /publicar/nueva/ must NOT redirect, or the
-// "Publicar otra" button from /mi-cuenta/propiedades/ would loop.)
-if (isAuthenticated) {
-	try {
-		const cookieHeader = Astro.request.headers.get('cookie');
-		if (cookieHeader) {
-			const ownedResponse = await fetch(
-				`${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`,
-				{ headers: { cookie: cookieHeader } }
-			);
-			if (ownedResponse.ok) {
-				const ownedJson = (await ownedResponse.json()) as {
-					data?: { pagination?: { total?: number } };
-				};
-				const total = ownedJson.data?.pagination?.total;
-				if (typeof total === 'number' && total > 0) {
-					return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/propiedades' }));
-				}
-			} else {
-				logger.warn('publicar/index: owned-accommodations fetch returned non-ok', {
-					status: ownedResponse.status
-				});
-			}
-		}
-	} catch (error) {
-		logger.warn('publicar/index: failed to fetch owned count for host redirect', { error });
-		// Non-fatal: render the landing normally on error.
-	}
-}
+const slot = await resolvePublishPageSlot({
+    locale,
+    vertical: VERTICAL,
+    isAuthenticated,
+    cookieHeader,
+    pathname: Astro.url.pathname,
+    wantsCreate: Astro.url.searchParams.get('create') === '1'
+});
 
-// F1-UI: For authenticated HOST users, check trial status.
-// If isExpired is true, the trial callout is replaced with the expired banner.
+/** The trial fields the hero callout reads. */
 type TrialStatusData = {
     readonly isOnTrial: boolean;
     readonly isExpired: boolean;
@@ -100,720 +94,226 @@ type TrialStatusData = {
     readonly planSlug: string | null;
 };
 
+// The one SSR fetch that survived the D-3 removal. It answers a question the
+// precheck does not: an expired trial is not a full plan, so it produces
+// `create_direct` and a form that will refuse on submit. Telling the host up
+// front is the whole point of the banner.
 let trialStatus: TrialStatusData | null = null;
-if (isAuthenticated) {
+if (isAuthenticated && cookieHeader) {
     try {
-        const cookieHeader = Astro.request.headers.get('cookie');
-        if (cookieHeader) {
-            const trialResponse = await fetch(
-                `${getApiUrl()}/api/v1/protected/billing/trial/status`,
-                { headers: { cookie: cookieHeader } }
-            );
-            if (trialResponse.ok) {
-                const trialJson = (await trialResponse.json()) as {
-                    data?: TrialStatusData;
-                };
-                trialStatus = trialJson.data ?? null;
-            }
+        const trialResponse = await fetch(`${getApiUrl()}/api/v1/protected/billing/trial/status`, {
+            headers: { cookie: cookieHeader }
+        });
+        if (trialResponse.ok) {
+            const trialJson = (await trialResponse.json()) as { data?: TrialStatusData };
+            trialStatus = trialJson.data ?? null;
         }
     } catch (error) {
         logger.warn('publicar/index: failed to fetch trial status', { error });
-        // Non-fatal: keep the default trial callout on error.
+        // Non-fatal: the default trial callout renders.
     }
 }
 
 const isTrialExpired = trialStatus?.isExpired === true;
-
-// Format expiresAt as a readable date string (YYYY-MM-DD substring is sufficient).
-const expiredAtDisplay = trialStatus?.expiresAt
-    ? trialStatus.expiresAt.substring(0, 10)
-    : '';
+const expiredAtDisplay = trialStatus?.expiresAt ? trialStatus.expiresAt.substring(0, 10) : '';
 const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
-// ---------------------------------------------------------------------------
-// Reuse marketing content from /planes/anfitriones/ via shared keys
-// ---------------------------------------------------------------------------
-
-const benefits = [
-	{ Icon: EyeIcon, titleKey: 'owners.benefits.1.title', descKey: 'owners.benefits.1.desc' },
-	{ Icon: SettingsIcon, titleKey: 'owners.benefits.2.title', descKey: 'owners.benefits.2.desc' },
-	{ Icon: ReceiptIcon, titleKey: 'owners.benefits.3.title', descKey: 'owners.benefits.3.desc' },
-] as const;
-
-const steps = [
-	{ num: '01', titleKey: 'owners.steps.1.title', descKey: 'owners.steps.1.desc' },
-	{ num: '02', titleKey: 'owners.steps.2.title', descKey: 'owners.steps.2.desc' },
-	{ num: '03', titleKey: 'owners.steps.3.title', descKey: 'owners.steps.3.desc' },
-	{ num: '04', titleKey: 'owners.steps.4.title', descKey: 'owners.steps.4.desc' },
-] as const;
-
-// H-98: resolve the generic owner trial length ONCE from the live billing
-// plans (minimum `trialDays` among active owner plans with `hasTrial`), and
-// reuse it for both the hero callout below and the FAQ params — avoids
-// fetching the plan catalog twice on the same request.
+// H-98: read the trial length from the live billing plans, never from a
+// constant, so the number in the callout cannot drift from what checkout grants.
+// Resolved ONCE and used twice — the hero callout and the form island — because
+// the two used to live on separate pages and fetched it separately.
 const genericTrialDays = await resolveGenericOwnerTrialDays();
 
-// Shared with /planes/anfitriones/, which renders the same keys. This page
-// used to keep its own copy, so it still promised a free basic plan long after
-// the other page was corrected, and it rendered `{{trialDays}}` verbatim once
-// the answer stopped hardcoding the number (HOS-331).
-const faqs = OWNER_FAQ_ITEMS;
-const faqParams = await buildOwnerFaqParams({ trialDays: genericTrialDays });
+// Public env var; safe to hand to a client island.
+const apiUrl = import.meta.env.PUBLIC_API_URL as string;
 
-const faqJsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'FAQPage',
-	mainEntity: faqs.map((faq) => ({
-		'@type': 'Question',
-		name: t(faq.qKey, faq.qFb),
-		acceptedAnswer: {
-			'@type': 'Answer',
-			text: resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams }),
-		},
-	})),
-};
+const steps = [
+    {
+        title: t('owners.steps.1.title'),
+        desc: t('owners.steps.1.desc')
+    },
+    {
+        title: t('owners.steps.2.title'),
+        desc: t('owners.steps.2.desc')
+    },
+    {
+        title: t('owners.steps.3.title'),
+        desc: t('owners.steps.3.desc')
+    }
+] as const;
+
+const benefits = [
+    { Icon: EyeIcon, title: t('owners.benefits.1.title'), desc: t('owners.benefits.1.desc') },
+    {
+        Icon: SettingsIcon,
+        title: t('owners.benefits.2.title'),
+        desc: t('owners.benefits.2.desc')
+    },
+    { Icon: ReceiptIcon, title: t('owners.benefits.3.title'), desc: t('owners.benefits.3.desc') }
+] as const;
 ---
 
 <MarketingLayout
-	locale={locale}
-	title={t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}
-	description={t('owners.description')}
+    locale={locale}
+    title={t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}
+    description={t('owners.description')}
 >
-	<JsonLd slot="head-extra" data={faqJsonLd} />
+    <PublishHero
+        tagline={t('owners.hero.tagline')}
+        title={t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}
+        body={t(
+            'host.landing.heroSubheadline',
+            'Publicá en minutos y empezá a recibir huéspedes'
+        )}
+        Icon={BuildingsIcon}
+        floatingIcons={[TrendingUpIcon, ChatIcon, StarIcon]}
+    >
+        {isTrialExpired ? (
+            <div class="publicar-hero__trial-expired" role="alert" aria-live="polite">
+                <span class="publicar-hero__trial-expired-icon" aria-hidden="true">
+                    <AlertCircleIcon size={20} weight="duotone" />
+                </span>
+                <div class="publicar-hero__trial-expired-body">
+                    <p class="publicar-hero__trial-expired-title">
+                        {t('billing.subscription.trial.expiredBanner.title', 'Tu prueba gratuita terminó')}
+                    </p>
+                    <p class="publicar-hero__trial-expired-text">
+                        {t(
+                            'billing.subscription.trial.expiredBanner.body',
+                            'Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.',
+                            { planSlug: expiredPlanSlug, expiresAt: expiredAtDisplay }
+                        )}
+                    </p>
+                    <a
+                        href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
+                        class="publicar-hero__trial-expired-cta"
+                    >
+                        {t('billing.subscription.trial.expiredBanner.cta', 'Ver planes')}
+                    </a>
+                </div>
+            </div>
+        ) : (
+            <div class="publicar-hero__trial-callout" role="note">
+                <span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
+                <p class="publicar-hero__trial-callout-text">
+                    {tPlural('host.landing.trialCallout', genericTrialDays, { trialDays: genericTrialDays })}
+                </p>
+            </div>
+        )}
+    </PublishHero>
 
-	<!-- Hero -->
-	<section class="publicar-hero section section--warm">
-		<div class="publicar-hero__decoratives" aria-hidden="true">
-			<img
-				src="/assets/images/shapes/deco-arrow-1.svg"
-				alt=""
-				class="publicar-hero__deco publicar-hero__deco--arrow"
-				loading="eager"
-			/>
-		</div>
+    <PublishFormSlot locale={locale} vertical={VERTICAL} resolution={slot}>
+        <CreatePropertyMiniForm
+            client:load
+            locale={locale}
+            apiUrl={apiUrl}
+            trialDays={genericTrialDays}
+        />
+    </PublishFormSlot>
 
-		<div class="publicar-hero__container">
-			<div class="publicar-hero__text" data-reveal="up">
-				<p class="publicar-hero__tagline">{t('owners.hero.tagline')}</p>
-				<h1 class="publicar-hero__title">{t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}</h1>
-				<p class="publicar-hero__desc">
-					{t('host.landing.heroSubheadline', 'Publicá en minutos y empezá a recibir huéspedes')}
-				</p>
+    <PublishHowItWorks
+        stepsTagline={t('owners.steps.tagline')}
+        stepsTitle={t('owners.steps.title')}
+        steps={steps}
+        benefitsTagline={t('owners.benefits.tagline')}
+        benefitsTitle={t('owners.benefits.title')}
+        benefits={benefits}
+    />
 
-				<!-- F1-UI: Trial callout — shows expired banner for users whose trial ended,
-				     normal trial promo for guests + active-trial users. -->
-				{isTrialExpired ? (
-					<div class="publicar-hero__trial-expired" role="alert" aria-live="polite">
-						<span class="publicar-hero__trial-expired-icon" aria-hidden="true">
-							<AlertCircleIcon size={20} weight="duotone" />
-						</span>
-						<div class="publicar-hero__trial-expired-body">
-							<p class="publicar-hero__trial-expired-title">
-								{t('billing.subscription.trial.expiredBanner.title', 'Tu prueba gratuita terminó')}
-							</p>
-							<p class="publicar-hero__trial-expired-text">
-								{t(
-									'billing.subscription.trial.expiredBanner.body',
-									'Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.',
-									{ planSlug: expiredPlanSlug, expiresAt: expiredAtDisplay }
-								)}
-							</p>
-							<a
-								href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
-								class="publicar-hero__trial-expired-cta"
-							>
-								{t('billing.subscription.trial.expiredBanner.cta', 'Ver planes')}
-							</a>
-						</div>
-					</div>
-				) : (
-					<div class="publicar-hero__trial-callout" role="note">
-						<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
-						<p class="publicar-hero__trial-callout-text">
-							{tPlural('host.landing.trialCallout', genericTrialDays, { trialDays: genericTrialDays })}
-						</p>
-					</div>
-				)}
-
-				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
-				<!--
-					client:only (not client:load): the island has no meaningful SSR
-					output — its destination depends on the client-resolved /auth/me
-					snapshot (`useAccountPermissions`), which only settles in the
-					browser. Skipping SSR is the right model for an auth-aware CTA:
-					the unauthenticated href is the safe first-paint default.
-				-->
-				<HostLandingCta client:only="react" locale={locale} />
-			</div>
-			<aside class="publicar-hero__visual" aria-hidden="true" data-reveal="right">
-				<div class="publicar-hero__blob"></div>
-				<div class="publicar-hero__icon-wrap">
-					<BuildingsIcon size={96} weight="duotone" />
-				</div>
-				<div class="publicar-hero__floating publicar-hero__floating--trend">
-					<TrendingUpIcon size="md" weight="duotone" />
-				</div>
-				<div class="publicar-hero__floating publicar-hero__floating--chat">
-					<ChatIcon size="md" weight="duotone" />
-				</div>
-				<div class="publicar-hero__floating publicar-hero__floating--star">
-					<StarIcon size="md" weight="duotone" />
-				</div>
-			</aside>
-		</div>
-	</section>
-
-	<!-- Benefits — reuses owners.benefits.* keys from /planes/anfitriones/ -->
-	<section class="publicar-benefits section">
-		<div class="publicar-benefits__container">
-			<p class="publicar-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline')}</p>
-			<h2 class="publicar-benefits__title" data-reveal="up">{t('owners.benefits.title')}</h2>
-			<div class="publicar-benefits__grid">
-				{benefits.map((b, i) => {
-					const Icon = b.Icon;
-					return (
-						<div class="publicar-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<span class="publicar-benefit-card__icon" aria-hidden="true">
-								<Icon size="lg" weight="duotone" />
-							</span>
-							<h3 class="publicar-benefit-card__title">{t(b.titleKey)}</h3>
-							<p class="publicar-benefit-card__desc">{t(b.descKey)}</p>
-						</div>
-					);
-				})}
-			</div>
-		</div>
-	</section>
-
-	<!-- How it works — reuses owners.steps.* keys -->
-	<section class="publicar-steps section section--warm">
-		<div class="publicar-steps__decoratives" aria-hidden="true">
-			<img
-				src="/assets/images/shapes/deco-arrow-2.svg"
-				alt=""
-				class="publicar-steps__deco publicar-steps__deco--arrow"
-				loading="lazy"
-			/>
-		</div>
-		<div class="publicar-steps__container">
-			<p class="publicar-steps__tagline" data-reveal="up">{t('owners.steps.tagline')}</p>
-			<h2 class="publicar-steps__title" data-reveal="up">{t('owners.steps.title')}</h2>
-			<div class="publicar-steps__grid">
-				{steps.map((s, i) => (
-					<div class="publicar-step" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<span class="publicar-step__num">{s.num}</span>
-						<h3 class="publicar-step__title">{t(s.titleKey)}</h3>
-						<p class="publicar-step__desc">{t(s.descKey)}</p>
-					</div>
-				))}
-			</div>
-		</div>
-	</section>
-
-	<!-- FAQ — reuses owners.faq.* keys -->
-	<section class="publicar-faq section">
-		<div class="publicar-faq__container">
-			<p class="publicar-faq__tagline" data-reveal="up">{t('owners.faq.tagline')}</p>
-			<h2 class="publicar-faq__title" data-reveal="up">{t('owners.faq.title')}</h2>
-			<div class="publicar-faq__list" data-reveal="up">
-				{faqs.map((faq) => (
-					<details class="publicar-faq__item">
-						<summary class="publicar-faq__question">{t(faq.qKey, faq.qFb)}</summary>
-						<p class="publicar-faq__answer">{resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams })}</p>
-					</details>
-				))}
-			</div>
-		</div>
-	</section>
-
-	<!-- Final CTA banner -->
-	<!-- F3: CTA is auth-aware. Authenticated users go to /publicar/nueva/,
-	     unauthenticated users go to /auth/signup. -->
-	<section class="publicar-cta">
-		<div class="publicar-cta__container" data-reveal="up">
-			<p class="publicar-cta__tagline">{t('owners.cta.tagline')}</p>
-			<h2 class="publicar-cta__title">{t('owners.cta.title')}</h2>
-			<p class="publicar-cta__desc">
-				{t('owners.cta.desc')}
-			</p>
-			<GradientButton
-				href={isAuthenticated
-					? buildUrl({ locale, path: 'publicar/nueva' })
-					: buildUrl({ locale, path: 'auth/signup' })}
-				label={isAuthenticated
-					? t('host.landing.primaryCta', 'Publicar tu propiedad')
-					: t('owners.cta.button')}
-				variant="accent"
-				icon="true"
-			/>
-		</div>
-	</section>
+    <PublishPlanLinks
+        locale={locale}
+        plansUrl={buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
+        pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
+    />
 </MarketingLayout>
 
 <style>
-	/* ── Hero ──────────────────────────────────────────────────────────── */
-	.publicar-hero {
-		position: relative;
-		overflow: hidden;
-		/*
-		 * Override .section's `var(--space-section)` (clamp 48px-120px) with a
-		 * smaller window so the hero feels close in height to the
-		 * `/publicar/nueva/` hero — without that, navigating between the two
-		 * showed a ~190px jump in vertical rhythm.
-		 */
-		padding-block: clamp(2.5rem, 6.5vw, 5rem);
-	}
+    /* ── Trial callout / expired banner (F1-UI) ────────────────────────────
+       Rendered into the hero's slot, so these two blocks are the only styles
+       this page still owns; everything else lives in the shared sections. */
+    .publicar-hero__trial-callout {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        font-family: var(--font-sans);
+        line-height: 1.5;
+        margin: var(--space-5) 0 0;
+        padding: var(--space-4) var(--space-5);
+        background-color: var(--brand-accent-a15);
+        border: 1px solid var(--brand-accent-a35);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-button);
+        max-width: 56ch;
+    }
 
-	.publicar-hero__decoratives {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		z-index: 0;
-	}
+    .publicar-hero__trial-callout-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+        flex-shrink: 0;
+    }
 
-	.publicar-hero__deco--arrow {
-		position: absolute;
-		top: clamp(18%, 22%, 28%);
-		right: clamp(2%, 4vw, 6%);
-		width: clamp(60px, 8vw, 110px);
-		height: auto;
-		opacity: 0.5;
-		transform: rotate(15deg);
-	}
+    .publicar-hero__trial-callout-text {
+        margin: 0;
+        font-size: var(--text-body-md);
+        color: var(--brand-accent);
+        font-weight: 500;
+    }
 
-	@media (max-width: 900px) {
-		.publicar-hero__deco--arrow { display: none; }
-	}
+    .publicar-hero__trial-expired {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        font-family: var(--font-sans);
+        line-height: 1.5;
+        margin: var(--space-5) 0 0;
+        padding: var(--space-4) var(--space-5);
+        background-color: var(--core-foreground-a05);
+        border: 1px solid var(--core-foreground-a20);
+        border-left: 4px solid var(--core-muted-foreground);
+        border-radius: var(--radius-button);
+        max-width: 56ch;
+    }
 
-	.publicar-hero__container {
-		position: relative;
-		z-index: 1;
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--space-8);
-		align-items: center;
-	}
+    .publicar-hero__trial-expired-icon {
+        flex-shrink: 0;
+        color: var(--core-muted-foreground);
+        opacity: 0.8;
+        line-height: 1;
+        padding-top: 2px;
+    }
 
-	.publicar-hero__tagline {
-		font-family: var(--font-decorative);
-		font-weight: 700;
-		font-size: var(--text-tagline);
-		color: var(--brand-accent);
-		margin: 0 0 var(--space-2);
-	}
+    .publicar-hero__trial-expired-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
 
-	.publicar-hero__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-h2);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-4);
-		line-height: 1.15;
-		text-wrap: balance;
-	}
+    .publicar-hero__trial-expired-title {
+        margin: 0;
+        font-size: var(--text-body-md);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
 
-	.publicar-hero__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
-		line-height: 1.6;
-		margin: 0 0 var(--space-3);
-	}
+    .publicar-hero__trial-expired-text {
+        margin: 0;
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
 
-	.publicar-hero__trial-callout {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-3);
-		font-family: var(--font-sans);
-		line-height: 1.5;
-		margin: 0 0 var(--space-6);
-		padding: var(--space-4) var(--space-5);
-		background-color: var(--brand-accent-a15);
-		border: 1px solid var(--brand-accent-a35);
-		border-left: 4px solid var(--brand-accent);
-		border-radius: var(--radius-button);
-		max-width: 56ch;
-	}
+    .publicar-hero__trial-expired-cta {
+        display: inline-flex;
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: none;
+        text-underline-offset: 2px;
+        margin-top: var(--space-1);
+        transition: color var(--duration-fast) ease;
+    }
 
-	.publicar-hero__trial-callout-icon {
-		font-size: 1.5rem;
-		line-height: 1;
-		flex-shrink: 0;
-	}
-
-	.publicar-hero__trial-callout-text {
-		margin: 0;
-		font-size: var(--text-body-md);
-		color: var(--brand-accent);
-		font-weight: 500;
-	}
-
-	/* ── Trial-expired banner (F1-UI) ──────────────────────────────────── */
-	.publicar-hero__trial-expired {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-3);
-		font-family: var(--font-sans);
-		line-height: 1.5;
-		margin: 0 0 var(--space-6);
-		padding: var(--space-4) var(--space-5);
-		background-color: var(--core-foreground-a05);
-		border: 1px solid var(--core-foreground-a20);
-		border-left: 4px solid var(--core-muted-foreground);
-		border-radius: var(--radius-button);
-		max-width: 56ch;
-	}
-
-	.publicar-hero__trial-expired-icon {
-		flex-shrink: 0;
-		color: var(--core-muted-foreground);
-		opacity: 0.8;
-		line-height: 1;
-		padding-top: 2px;
-	}
-
-	.publicar-hero__trial-expired-body {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.publicar-hero__trial-expired-title {
-		margin: 0;
-		font-size: var(--text-body-md);
-		font-weight: 600;
-		color: var(--core-foreground);
-	}
-
-	.publicar-hero__trial-expired-text {
-		margin: 0;
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-	}
-
-	.publicar-hero__trial-expired-cta {
-		display: inline-flex;
-		font-size: var(--text-body-sm);
-		font-weight: 600;
-		color: var(--brand-primary);
-		text-decoration: none;
-		text-underline-offset: 2px;
-		margin-top: var(--space-1);
-		transition: color var(--duration-fast) ease;
-	}
-
-	.publicar-hero__trial-expired-cta:hover {
-		color: var(--brand-accent);
-		text-decoration: underline;
-	}
-
-	/* ── Hero visual aside (blob + central icon + floating icons) ───────── */
-	.publicar-hero__visual {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 320px;
-	}
-
-	.publicar-hero__blob {
-		position: absolute;
-		inset: 0;
-		margin: auto;
-		width: clamp(260px, 28vw, 400px);
-		height: clamp(260px, 28vw, 400px);
-		border-radius: 50%;
-		background: radial-gradient(
-			circle at 30% 30%,
-			var(--brand-primary-a20),
-			var(--brand-accent-a08) 60%,
-			transparent 75%
-		);
-		filter: blur(2px);
-	}
-
-	.publicar-hero__icon-wrap {
-		position: relative;
-		z-index: 2;
-		width: clamp(140px, 16vw, 200px);
-		height: clamp(140px, 16vw, 200px);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background-color: var(--core-card);
-		border-radius: 50%;
-		box-shadow: var(--shadow-card);
-		color: var(--brand-primary);
-	}
-
-	.publicar-hero__floating {
-		position: absolute;
-		z-index: 3;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 56px;
-		height: 56px;
-		border-radius: 50%;
-		background-color: var(--core-card);
-		box-shadow: var(--shadow-card);
-		color: var(--brand-accent);
-		animation: publicar-float 6s ease-in-out infinite;
-	}
-
-	.publicar-hero__floating--trend {
-		top: 10%;
-		left: 6%;
-		color: oklch(0.65 0.18 145);
-		animation-delay: 0s;
-	}
-
-	.publicar-hero__floating--chat {
-		bottom: 16%;
-		left: 2%;
-		color: var(--brand-primary);
-		animation-delay: 1.5s;
-	}
-
-	.publicar-hero__floating--star {
-		top: 18%;
-		right: 4%;
-		color: var(--brand-accent);
-		animation-delay: 3s;
-	}
-
-	@keyframes publicar-float {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-10px); }
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.publicar-hero__floating { animation: none; }
-	}
-
-	/* ── Benefits ──────────────────────────────────────────────────────── */
-	.publicar-benefits__container,
-	.publicar-steps__container,
-	.publicar-faq__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-		text-align: center;
-	}
-
-	.publicar-benefits__tagline,
-	.publicar-steps__tagline,
-	.publicar-faq__tagline,
-	.publicar-cta__tagline {
-		font-family: var(--font-decorative);
-		font-weight: 700;
-		font-size: var(--text-tagline);
-		color: var(--brand-accent);
-		margin: 0 0 var(--space-2);
-	}
-
-	.publicar-benefits__title,
-	.publicar-steps__title,
-	.publicar-faq__title,
-	.publicar-cta__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-h2);
-		color: var(--core-foreground);
-		text-wrap: balance;
-		line-height: 1.1;
-		margin: 0 0 var(--space-8);
-	}
-
-	.publicar-benefits__grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--space-card-gap);
-		text-align: left;
-	}
-
-	.publicar-benefit-card {
-		background-color: var(--core-card);
-		border-radius: var(--radius-card);
-		padding: var(--space-6);
-		box-shadow: var(--shadow-card);
-	}
-
-	.publicar-benefit-card__icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 56px;
-		height: 56px;
-		border-radius: var(--radius-md);
-		background-color: var(--brand-primary-a10);
-		color: var(--brand-primary);
-		margin-bottom: var(--space-4);
-	}
-
-	.publicar-benefit-card:nth-child(2) .publicar-benefit-card__icon {
-		background-color: var(--brand-accent-a12);
-		color: var(--brand-accent);
-	}
-
-	.publicar-benefit-card:nth-child(3) .publicar-benefit-card__icon {
-		background-color: oklch(0.65 0.18 145 / 0.12);
-		color: oklch(0.55 0.18 145);
-	}
-
-	.publicar-benefit-card__title {
-		font-family: var(--font-heading);
-		font-weight: 600;
-		font-size: var(--text-lg);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-2);
-	}
-
-	.publicar-benefit-card__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--core-muted-foreground);
-		line-height: 1.6;
-		margin: 0;
-	}
-
-	/* ── Steps ─────────────────────────────────────────────────────────── */
-	.publicar-steps {
-		position: relative;
-		overflow: hidden;
-	}
-
-	.publicar-steps__decoratives {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.publicar-steps__deco--arrow {
-		position: absolute;
-		bottom: clamp(10%, 14%, 18%);
-		left: clamp(2%, 4vw, 6%);
-		width: clamp(50px, 7vw, 90px);
-		height: auto;
-		opacity: 0.35;
-		transform: rotate(-25deg) scaleX(-1);
-	}
-
-	@media (max-width: 900px) {
-		.publicar-steps__deco--arrow { display: none; }
-	}
-
-	.publicar-steps__container {
-		position: relative;
-		z-index: 1;
-	}
-
-	.publicar-steps__grid {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: var(--space-card-gap);
-	}
-
-	.publicar-step__num {
-		font-family: var(--font-heading);
-		font-size: clamp(2rem, 4vw, 3rem);
-		font-weight: 700;
-		color: var(--brand-primary-a20);
-		display: block;
-		margin-bottom: var(--space-3);
-	}
-
-	.publicar-step__title {
-		font-family: var(--font-heading);
-		font-weight: 600;
-		font-size: var(--text-lg);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-2);
-	}
-
-	.publicar-step__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		line-height: 1.6;
-		margin: 0;
-	}
-
-	/* ── FAQ ───────────────────────────────────────────────────────────── */
-	.publicar-faq__list {
-		max-width: 700px;
-		margin: 0 auto;
-		text-align: left;
-	}
-
-	.publicar-faq__item {
-		border-bottom: 1px solid var(--border);
-		padding: var(--space-4) 0;
-	}
-
-	.publicar-faq__question {
-		font-family: var(--font-heading);
-		font-weight: 600;
-		font-size: var(--text-body-lg);
-		color: var(--core-foreground);
-		cursor: pointer;
-		list-style: none;
-		padding: var(--space-2) 0;
-	}
-
-	.publicar-faq__question::-webkit-details-marker { display: none; }
-
-	.publicar-faq__answer {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--core-muted-foreground);
-		line-height: 1.6;
-		padding: var(--space-2) 0 var(--space-4);
-		margin: 0;
-	}
-
-	/* ── Final CTA ─────────────────────────────────────────────────────── */
-	.publicar-cta {
-		background-color: var(--surface-dark);
-		padding: var(--space-section) 0;
-		text-align: center;
-	}
-
-	.publicar-cta__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-	}
-
-	.publicar-cta__tagline { color: var(--brand-accent-a80); }
-
-	.publicar-cta__title {
-		color: #fff;
-		margin: 0 0 var(--space-4);
-	}
-
-	.publicar-cta__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: oklch(1 0 0 / 0.7);
-		max-width: 55ch;
-		margin: 0 auto var(--space-6);
-		line-height: 1.6;
-	}
-
-	/* ── Responsive ────────────────────────────────────────────────────── */
-	@media (max-width: 768px) {
-		.publicar-hero__container { grid-template-columns: 1fr; }
-		.publicar-hero__visual { order: -1; min-height: 280px; }
-		.publicar-benefits__grid { grid-template-columns: 1fr; }
-		.publicar-steps__grid { grid-template-columns: repeat(2, 1fr); }
-	}
-
-	@media (max-width: 480px) {
-		.publicar-steps__grid { grid-template-columns: 1fr; }
-	}
+    .publicar-hero__trial-expired-cta:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
 </style>

@@ -1,0 +1,126 @@
+---
+/**
+ * @file PublishPlanLinks.astro
+ * @description The last band of every publish page: the two links a visitor who
+ * has not decided yet needs (HOS-1156 §6 point 4, AC-4).
+ *
+ * ## Why links and not a price
+ *
+ * This spec deliberately does not touch `/planes/*` (§4), and a page that
+ * repeated a price would be a second place for it to go stale — the exact class
+ * of bug HOS-1032 left behind. So the publish page carries the argument and the
+ * form, and defers every number to the pages that own it.
+ *
+ * Both destinations must exist for the vertical this renders on: a link to a
+ * page nobody built is a 404 that typechecks. The paths come from
+ * `publish-page-paths.ts`, and the live `curl` sweep (AC-2/AC-17) is what
+ * actually proves they serve.
+ */
+
+import { ArrowRightIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** This vertical's sales page. */
+    readonly plansUrl: string;
+    /** This vertical's price grid. */
+    readonly pricingUrl: string;
+}
+
+const { locale, plansUrl, pricingUrl } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="publish-plan-links section section--warm">
+    <div class="publish-plan-links__container" data-reveal="up">
+        <p class="publish-plan-links__tagline">
+            {t('publish.plans.tagline', 'Antes de decidir')}
+        </p>
+        <h2 class="publish-plan-links__title">
+            {t('publish.plans.title', '¿Querés ver los planes primero?')}
+        </h2>
+        <p class="publish-plan-links__body">
+            {t(
+                'publish.plans.body',
+                'Mirá qué incluye cada plan y cuánto cuesta. Podés volver a esta página cuando quieras.'
+            )}
+        </p>
+
+        <div class="publish-plan-links__actions">
+            <a href={plansUrl} class="publish-plan-links__link">
+                {t('publish.plans.plansCta', 'Ver planes')}
+                <span aria-hidden="true">
+                    <ArrowRightIcon size={16} weight="bold" />
+                </span>
+            </a>
+            <a href={pricingUrl} class="publish-plan-links__link">
+                {t('publish.plans.pricingCta', 'Ver precios')}
+                <span aria-hidden="true">
+                    <ArrowRightIcon size={16} weight="bold" />
+                </span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    .publish-plan-links__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+        text-align: center;
+    }
+
+    .publish-plan-links__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: var(--text-tagline);
+        color: var(--brand-accent);
+        margin: 0 0 var(--space-2);
+    }
+
+    .publish-plan-links__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h2);
+        color: var(--core-foreground);
+        text-wrap: balance;
+        line-height: 1.1;
+        margin: 0 0 var(--space-3);
+    }
+
+    .publish-plan-links__body {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        max-width: 55ch;
+        margin: 0 auto var(--space-6);
+    }
+
+    .publish-plan-links__actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-6);
+    }
+
+    .publish-plan-links__link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .publish-plan-links__link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+</style>

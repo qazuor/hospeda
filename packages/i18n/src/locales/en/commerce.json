@@ -475,17 +475,6 @@
             "multilingualGastronomyMenu": "Multi-language menu"
         },
         "create": {
-            "pickVertical": {
-                "title": "Create new business",
-                "subtitle": "Choose which type of business you want to publish.",
-                "gastronomyDescription": "Restaurants, bars, cafés, and other dining venues.",
-                "experienceDescription": "Tours, excursions, rentals, and other experiences."
-            },
-            "title": {
-                "gastronomy": "Create dining listing",
-                "experience": "Create experience listing"
-            },
-            "subtitle": "Fill in the basics now — you'll be able to add photos, hours, and more details afterward.",
             "fields": {
                 "name": {
                     "gastronomy": "Business name",
