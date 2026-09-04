@@ -328,7 +328,13 @@ export function usePhotoSection({
                     onProgress: setUploadProgress
                 });
 
-                const addResult = await accommodationMediaApi.addMedia({
+                // HOS-803: ONE request, not two. The old pair — register a
+                // gallery row, then promote it — was refused at the first step
+                // whenever the gallery sat at the plan cap, so an owner at the
+                // cap could never change their cover. This endpoint creates the
+                // row already featured and disposes of the previous cover in
+                // the same transaction.
+                const addResult = await accommodationMediaApi.addFeaturedMedia({
                     id: accommodationId,
                     body: {
                         url: uploaded.url,
@@ -342,30 +348,17 @@ export function usePhotoSection({
                     return;
                 }
 
-                const newRow = addResult.data.media;
-                const featuredResult = await accommodationMediaApi.setFeaturedMedia({
-                    id: accommodationId,
-                    mediaId: newRow.id
-                });
+                const { media: newRow, previousFeatured } = addResult.data;
 
-                if (!featuredResult.ok) {
-                    reportUploadError(
-                        featuredResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.featuredFailed',
-                                'No se pudo marcar la imagen como portada'
-                            )
-                    );
-                    return;
+                // The old cover joins the gallery only when the server actually
+                // demoted it. With the gallery full it is archived instead, and
+                // appending it here would leave a photo on screen that is no
+                // longer part of the visible set.
+                if (featuredItem && previousFeatured?.disposition === 'demoted') {
+                    const demoted = { ...featuredItem, isFeatured: false };
+                    setGalleryItems((prev) => [...prev, demoted]);
                 }
-
-                setGalleryItems((prev) => {
-                    const base = featuredItem
-                        ? [...prev, { ...featuredItem, isFeatured: false }]
-                        : [...prev];
-                    return base;
-                });
-                setFeaturedItem(mediaRowToItem(featuredResult.data.media));
+                setFeaturedItem(mediaRowToItem(newRow));
             } catch (err) {
                 reportUploadError(
                     err instanceof Error

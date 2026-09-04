@@ -140,6 +140,61 @@ export function useAccommodationMediaAdd(accommodationId: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Add-featured mutation (HOS-803)
+// ---------------------------------------------------------------------------
+
+/**
+ * Mutation to register an uploaded photo as the accommodation's COVER, in one
+ * request.
+ *
+ * Replaces the `add` + `setFeatured` pair the portada uploader used to run. That
+ * pair was refused at its first step whenever the gallery sat at the plan cap —
+ * the photo limit counts the gallery alone, because a cover is not a gallery
+ * item — so an owner at the cap could never change their cover. This endpoint
+ * creates the row already featured and disposes of the previous cover in the
+ * same transaction, so there is no intermediate gallery row left to be capped.
+ *
+ * The response also reports what became of the previous cover: `demoted` (it
+ * joined the gallery) or `archived` (the gallery was full, so it left the
+ * visible set and can be restored later). This hook invalidates and refetches
+ * rather than branching on it, but it is returned so an optimistic caller can.
+ *
+ * @param accommodationId - UUID of the accommodation.
+ */
+export function useAccommodationMediaAddFeatured(accommodationId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: AccommodationMediaAddPayload) => {
+            const response = await fetchApi<unknown>({
+                path: `${mediaEndpoint(accommodationId)}/featured`,
+                method: 'POST',
+                body: payload
+            });
+            const body = response.data as {
+                data?: {
+                    media?: AccommodationMedia;
+                    previousFeatured?: {
+                        readonly id: string;
+                        readonly disposition: 'demoted' | 'archived';
+                    } | null;
+                };
+            };
+            const media = body.data?.media;
+            if (!media) {
+                throw new Error(
+                    'addFeaturedMedia response did not include the expected data.media payload'
+                );
+            }
+            return { media, previousFeatured: body.data?.previousFeatured ?? null };
+        },
+        onSuccess: () => {
+            invalidateAfterMediaMutation(queryClient, accommodationId);
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Remove mutation
 // ---------------------------------------------------------------------------
 
