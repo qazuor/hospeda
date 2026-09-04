@@ -107,6 +107,15 @@ describe.each(Object.entries(LOCALES))('pricing.json (%s)', (_locale, pricing) =
         for (const key of REQUIRED_BILLING_FAQ_KEYS) {
             const value = faq?.[key];
             expect(typeof value, `pricing.billingFaq.${key} is not a string`).toBe('string');
+            // Non-empty, same as the audience loop above. An empty string is the
+            // one shape a missing key does NOT take: `t()` returns the KEY when
+            // a key is absent, which is visibly wrong, but returns `''` when the
+            // key exists and is empty — so a half-finished translation renders a
+            // blank FAQ answer that nothing downstream notices.
+            expect(
+                (value as string).trim().length,
+                `pricing.billingFaq.${key} is empty`
+            ).toBeGreaterThan(0);
         }
     });
 

@@ -115,7 +115,18 @@ describe.each(AUDIENCE_PAGES)('$path', (page: AudiencePage) => {
         });
 
         it('hands that same audience to the grid and the content resolver', () => {
-            expect(src).toContain(`audience: '${page.pricingAudience}'`);
+            // Anchored to the CALL, not to the bare `audience: '…'` fragment.
+            // On four of the five pages `audienceId === pricingAudience`, so the
+            // loose form was already satisfied by the `fetchAudiencePlans({
+            // audience: 'tourist' })` line above it — and a page that resolved
+            // its content as `'owner'` while fetching `'tourist'` plans would
+            // have passed. That page would then take its <title>, <h1>,
+            // subtitle, cards heading, empty message and CTA label from the
+            // wrong namespace, and read the wrong branch of
+            // AUDIENCES_WITH_COMPARISON.
+            expect(src).toMatch(
+                new RegExp(`resolvePricingPageContent\\(\\{\\s*audience: '${page.pricingAudience}'`)
+            );
             expect(src).toContain(`audience="${page.pricingAudience}"`);
         });
 

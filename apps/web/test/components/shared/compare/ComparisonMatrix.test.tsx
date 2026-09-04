@@ -24,6 +24,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { ComparisonMatrix } from '../../../../src/components/shared/compare/ComparisonMatrix.client';
 
 // ---------------------------------------------------------------------------
@@ -174,7 +175,7 @@ describe('ComparisonMatrix', () => {
         render(<ComparisonMatrix locale="es" />);
 
         const cta = await screen.findByRole('link', { name: 'Ver planes' });
-        expect(cta).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
+        expect(cta).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
     });
 });
 

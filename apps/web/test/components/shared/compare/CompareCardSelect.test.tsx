@@ -27,6 +27,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import type { CompareCardSelectProps } from '../../../../src/components/shared/compare/CompareCardSelect.client';
 import { CompareCardSelect } from '../../../../src/components/shared/compare/CompareCardSelect.client';
 import { setCompareMode } from '../../../../src/store/compare-store';
@@ -315,7 +316,7 @@ describe('CompareCardSelect — toggle outcomes', () => {
 
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('info');
-        expect(arg.action?.href).toBe('/es/suscriptores/planes/turistas/');
+        expect(arg.action?.href).toBe(`/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
     });
 
     it('shows a warning toast when blocked by the per-plan limit', () => {
