@@ -482,31 +482,31 @@
             "id": "T-015",
             "title": "Make the delete-draft action vertical-aware",
             "description": "AC-14. Today the panel's delete action soft-deletes an accommodation (F-2 point 4). It must delete a draft of the vertical being published, and after deletion the reloaded page must derive create_direct. Files: apps/web/src/components/host/** and the delete island it uses. Tests: per vertical, the correct endpoint is called; the post-delete decision flips.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Per-vertical delete endpoint",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Post-delete decision flips to create_direct",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
@@ -544,381 +544,381 @@
             "id": "T-017",
             "title": "Build the shared form-slot component (three states)",
             "description": "Spec §6: the slot at position 2 resolves to the signup CTA (no session), the vertical's create form (create_direct), or the precheck panel (any other decision). One component, three pages. It owns the D-5 fail-open: any precheck failure falls back to create_direct. Files: apps/web/src/components/**. Tests: the three states on rendered output.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-014", "T-016", "T-018"],
             "blocks": ["T-019", "T-020", "T-021", "T-029"],
             "subtasks": [
                 {
                     "title": "Three-state resolution",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fail-open to create_direct (D-5)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mount the right island per vertical",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-018",
             "title": "Build the signed-out signup CTA with a returnUrl",
             "description": "D-1, AC-5. Renders in the form's place for a visitor with no session, linking to signup with a returnUrl back to THIS page. Never a redirect to login — both current form pages call buildLoginRedirect in their frontmatter, which is exactly what this replaces. The returnUrl must survive resolveSafeReturnPath. Files: apps/web/src/components/**. Tests: the page returns 200 signed out (never 302), and the returnUrl round-trips.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "CTA + returnUrl construction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "resolveSafeReturnPath round-trip test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "auth"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-019",
             "title": "Rewrite /publicar/index.astro as the accommodation publish page",
             "description": "Absorbs /publicar/nueva/. Removes the ≥1-accommodation redirect to /mi-cuenta/propiedades/ (D-3, AC-7) and, with it, the owned-count fetch that fed it — the precheck already returns currentCount, so leaving it would be a third SSR round trip for an answer already in hand (R-3, F-5). Keeps prerender=false (AC-8). Files: apps/web/src/pages/[lang]/publicar/index.astro.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-022", "T-023", "T-024", "T-027"],
             "subtasks": [
                 {
                     "title": "Four sections of §6",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove the D-3 redirect",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Drop the now-redundant owned-count fetch",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-020",
             "title": "Build /publicar/gastronomia/",
             "description": "The four sections of §6 with T-002's copy, the shared form slot, and links to /planes/gastronomia/ + /planes/gastronomia/precios/. MarketingLayout, not AccountLayout (D-2, AC-6). prerender=false. Files: apps/web/src/pages/[lang]/publicar/gastronomia.astro.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-017"],
             "blocks": ["T-022", "T-023", "T-024", "T-027"],
             "subtasks": [
                 {
                     "title": "Four sections",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "MarketingLayout + no account sidebar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Plan links",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-021",
             "title": "Build /publicar/experiencias/",
             "description": "Same shape as T-020 with T-003's copy and the experience links. MarketingLayout (D-2, AC-6). prerender=false. Files: apps/web/src/pages/[lang]/publicar/experiencias.astro.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-017"],
             "blocks": ["T-022", "T-023", "T-024", "T-027"],
             "subtasks": [
                 {
                     "title": "Four sections",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "MarketingLayout + no account sidebar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Plan links",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-022",
             "title": "Repoint PUBLISH_CTA_OPTIONS at the three pages",
             "description": "AC-1, AC-3. Changing an option's href moves THREE surfaces (F-3): the header dropdown, the mobile menu, and the authenticated /mi-cuenta/publica hub — all three read the same listing door. Verify all three; leave manageHref and acquiredPermission untouched. Files: apps/web/src/config/discovery-doors.ts. Tests: update PublishMenu.test.tsx, MobileMenu.cta.test.tsx, navigation.test.ts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020", "T-021"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Three hrefs updated",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Header, mobile and hub all verified",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "manageHref/acquiredPermission unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "navigation"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-023",
             "title": "Wire the five 301 redirects",
             "description": "D-6, AC-17. publicar-restaurante → publicar/gastronomia; publicar-experiencia → publicar/experiencias; mi-cuenta/comercio/nuevo/ → publicar/; mi-cuenta/comercio/nuevo/{vertical}/ → publicar/{vertical}/; publicar/nueva/ → publicar/. The first two OVERRIDE HOS-941 D-8 — rewrite those two files' JSDoc to record the override and why, rather than leaving a rationale that now contradicts the code. Files: apps/web/src/pages/[lang]/**.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-020", "T-021"],
             "blocks": ["T-025", "T-028"],
             "subtasks": [
                 {
                     "title": "Two publicar-* redirects repointed",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Three internal redirects",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "JSDoc records the D-8 override",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-024",
             "title": "Repoint every internal link off the superseded URLs",
             "description": "AC-18. No source file may link to a superseded URL — a link to a redirect is a link whose destination someone else can move, which is precisely how 4d7e448ea produced this issue. Known call sites: buildCommerceStartUrl (apps/web/src/lib/commerce/start-url.ts, which also feeds resolveSafeReturnPath through sign-in — AC-19), mi-cuenta/comercio/index.astro's createUrl, the /publicar/nueva/ breadcrumb, HostLandingCta, and 'Publicar otra' on /mi-cuenta/propiedades/. Search for more rather than trusting this list.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-020", "T-021"],
             "blocks": ["T-025", "T-026"],
             "subtasks": [
                 {
                     "title": "start-url.ts + its tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "The four other known call sites",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sweep for unlisted ones",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-025",
             "title": "Retire the superseded page bodies",
             "description": "Reduce publicar/nueva.astro, mi-cuenta/comercio/nuevo/index.astro and mi-cuenta/comercio/nuevo/[vertical].astro to their redirects, and delete the tests that assert their retired content. Retiring a page also touches the CSP verifier and the route inventories (R-4) — run those guards here, not at CI time.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023", "T-024"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Three page bodies retired",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Retire their obsolete tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CSP verifier + route inventories green",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "cleanup"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-026",
             "title": "Add the static guard against links to superseded URLs",
             "description": "AC-18's second half: a sixth call site added later must fail CI instead of silently riding a 301. Anchor the guard on the retired PATHS, and anchor the regexes — an unanchored pattern lets a near-miss through, and a guard keyed on a symbol name dies on a rename. Files: apps/web/test/static-guards/**. Mutation-verify: reintroduce one old link and confirm the guard fails.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Guard over the five retired paths",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Anchored regexes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation-verify the guard fails",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "testing", "guards"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
             "id": "T-027",
             "title": "Assert the three pages stay out of every cacheable-route list",
             "description": "AC-8, R-1. The pages read session, so they must be absent from the cacheable lists and declare prerender=false; cacheable-routes-parse-no-session.guard.test.ts must still pass. Files: apps/web/test/lib/**. Mutation-verify: add one of the pages to a cacheable list and confirm the guard fails.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020", "T-021"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "prerender=false asserted per page",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Absence from cacheable lists asserted",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation-verify",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "testing", "guards"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
@@ -960,35 +960,35 @@
             "id": "T-029",
             "title": "Test the form slot's three states",
             "description": "AC-4, AC-5, AC-12. Signed out → the signup CTA and a 200, never a 302. create_direct → the vertical's form island. Any other decision → the panel. Plus the fail-open: with the precheck route erroring, the form renders and the create endpoint still answers 403 LIMIT_REACHED for an owner at cap. Assert on rendered output — mounting a component is not rendering it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Three states per vertical",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fail-open path (D-5/AC-12)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Signed-out returns 200, not 302",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:09:18.456304Z",
+                "completed": "2026-09-04T23:09:18.456304Z"
             }
         },
         {
