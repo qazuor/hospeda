@@ -24,6 +24,13 @@
  * PROVED: the PNG that `renderQrPng` returns, with the mark painted on it,
  * decodes to the encoded URL — at three sizes and every correction level.
  *
+ * NOT PROVED, and worth saying because a green suite invites the opposite
+ * reading: that a marked code decodes for EVERY string. The failure point moves
+ * with the content, because the string chooses the QR version and therefore how
+ * much a given area costs in codewords. This file samples one URL; the corpus
+ * that set the ceilings is seven, and even there the transition is a band
+ * rather than a line (see `QR_CODE_ERROR_CORRECTION_DECODE_CEILING`).
+ *
  * NOT PROVED: the same for the SVG. Rasterising an SVG needs a renderer this
  * repo does not have (`@resvg/resvg-wasm` exists only as a deep transitive of
  * `@vercel/og`, and pulling in `sharp` for a test is not a trade worth making).
@@ -147,7 +154,7 @@ describe('a code carrying the mark still scans', () => {
  * code and the reason the seam exists.
  */
 describe('the negative control: an oversized mark must STOP decoding', () => {
-    it('fails to decode once the plate covers a fifth of the symbol', async () => {
+    it('fails to decode once the plate covers a third of the symbol', async () => {
         const errorCorrectionLevel = QrCodeErrorCorrectionLevelEnum.H;
         const moduleCount = renderQrMatrix({ data: DATA, errorCorrectionLevel }).size;
 
@@ -162,7 +169,14 @@ describe('the negative control: an oversized mark must STOP decoding', () => {
         // the damage doing its job.
         expect(decode(PNG.sync.write(png))).toBe(DATA);
 
-        const sizeRatio = 0.5;
+        // 0.6, not 0.5. The 2026-09-04 re-sweep showed the failure is GRADUAL
+        // (see `QR_CODE_ERROR_CORRECTION_DECODE_CEILING`), and at H a 15-module
+        // plate — which is what 0.5 snaps to on this symbol — sits at 19.5%
+        // coverage, inside the partial band where 10 of 35 sampled renders
+        // still decoded. A negative control parked on a band edge is a flake
+        // waiting for a different URL. 0.6 lands at ~33%, past the step where
+        // nothing survived at all.
+        const sizeRatio = 0.6;
         paintCenterLogoOnPng({
             png,
             moduleCount,
@@ -173,7 +187,7 @@ describe('the negative control: an oversized mark must STOP decoding', () => {
         });
 
         const coverage = centerLogoCoverage({ moduleCount, sizeRatio });
-        expect(coverage).toBeGreaterThan(0.2);
+        expect(coverage).toBeGreaterThan(0.3);
 
         expect(
             decode(PNG.sync.write(png)),
@@ -188,7 +202,12 @@ describe('the negative control: an oversized mark must STOP decoding', () => {
      * The shipped mark sits well below the point where damage starts to bite —
      * measured, at the level the gate approves. A number, not a feeling: the
      * plate would have to be more than five times its area before this symbol
-     * stopped decoding.
+     * stopped decoding outright.
+     *
+     * "Outright" is doing work in that sentence. The failure is gradual, so the
+     * honest statement is a ratio against the coverage where NOTHING survived,
+     * not against a threshold — see `QR_CODE_ERROR_CORRECTION_DECODE_CEILING`
+     * for the band this glosses over.
      */
     it('leaves a wide gap between the shipped coverage and the failure point', () => {
         const moduleCount = renderQrMatrix({
@@ -197,7 +216,7 @@ describe('the negative control: an oversized mark must STOP decoding', () => {
         }).size;
 
         const shipped = centerLogoCoverage({ moduleCount });
-        const breaking = centerLogoCoverage({ moduleCount, sizeRatio: 0.5 });
+        const breaking = centerLogoCoverage({ moduleCount, sizeRatio: 0.6 });
 
         expect(shipped).toBeGreaterThan(0);
         expect(breaking / shipped).toBeGreaterThan(5);
