@@ -1318,7 +1318,8 @@
                 "uploadTimeout": "La subida tardó demasiado. Probá de nuevo.",
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "featuredFailed": "No se pudo marcar la imagen como principal",
-                "removeFailed": "No se pudo eliminar la imagen"
+                "removeFailed": "No se pudo eliminar la imagen",
+                "metadataSaveFailed": "No se pudieron guardar los datos de la foto"
             }
         },
         "events": {
