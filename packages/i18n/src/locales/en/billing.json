@@ -482,6 +482,38 @@
         "tourist-vip": {
             "name": "VIP",
             "description": "VIP support, exclusive promotions, and direct WhatsApp contact with hosts."
+        },
+        "gastronomy-basico": {
+            "name": "Basic",
+            "description": "List your venue with its photos, opening hours and contact details. What it takes to be found."
+        },
+        "gastronomy-pro": {
+            "name": "Professional",
+            "description": "Add the menu loaded into Hospeda, the dish of the day and your venue's events."
+        },
+        "gastronomy-premium": {
+            "name": "Premium",
+            "description": "All of the above plus photos per dish, a menu in several languages, a PDF listing and AI chat."
+        },
+        "experience-basico": {
+            "name": "Basic",
+            "description": "List your outing with its photos, times and contact details. What it takes to be found."
+        },
+        "experience-pro": {
+            "name": "Professional",
+            "description": "Add directions to the meeting point and a certificate for whoever took the outing."
+        },
+        "experience-premium": {
+            "name": "Premium",
+            "description": "All of the above plus the downloadable PDF listing and AI chat."
+        },
+        "partner-silver": {
+            "name": "Silver",
+            "description": "Your logo in the partner carousel, and a presence in our social and newsletter campaigns."
+        },
+        "partner-gold": {
+            "name": "Gold",
+            "description": "Everything in the previous level plus your own page inside Hospeda, with campaign priority."
         }
     },
     "entitlement": {

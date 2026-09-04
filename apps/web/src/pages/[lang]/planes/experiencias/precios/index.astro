@@ -26,6 +26,7 @@ import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import {
     buildBillingFaqJsonLd,
@@ -63,9 +64,18 @@ const intlLocale = getIntlLocale(locale);
 const pagePath = buildUrl({ locale, path: 'planes/experiencias/precios' });
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 
+/**
+ * The Offer entries, built from the SAME resolvers the cards render
+ * (`getPlanName` / `getPlanDescription`) and not from the raw config values.
+ *
+ * `plan.name` / `plan.description` off the API are the billing package's
+ * internal strings — for the commerce verticals, English engineering prose
+ * carrying issue IDs. Publishing those as structured data would put them in the
+ * field a search result quotes, while the visible card said something else.
+ */
 const jsonLdPlans = plans.map((plan) => ({
-    name: plan.name,
-    description: plan.description,
+    name: getPlanName({ plan, t }),
+    description: getPlanDescription({ plan, t }),
     priceCurrency: 'ARS',
     price: plan.monthlyPriceArs / 100,
     url: `${siteOrigin}${pagePath}`

@@ -482,6 +482,38 @@
         "tourist-vip": {
             "name": "VIP",
             "description": "Soporte VIP, promociones exclusivas y contacto directo por WhatsApp con los alojamientos."
+        },
+        "gastronomy-basico": {
+            "name": "Básico",
+            "description": "Publicá tu local con sus fotos, horarios y contacto. Lo necesario para que te encuentren."
+        },
+        "gastronomy-pro": {
+            "name": "Profesional",
+            "description": "Sumá la carta cargada en Hospeda, el menú del día y los eventos del local."
+        },
+        "gastronomy-premium": {
+            "name": "Premium",
+            "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y chat con IA."
+        },
+        "experience-basico": {
+            "name": "Básico",
+            "description": "Publicá tu salida con sus fotos, horarios y contacto. Lo necesario para que te encuentren."
+        },
+        "experience-pro": {
+            "name": "Profesional",
+            "description": "Sumá las instrucciones de cómo llegar al punto de encuentro y el certificado para quien la hizo."
+        },
+        "experience-premium": {
+            "name": "Premium",
+            "description": "Todo lo anterior con la ficha descargable en PDF y el chat con IA."
+        },
+        "partner-silver": {
+            "name": "Silver",
+            "description": "Tu logo en el carrusel de aliados y presencia en las campañas de redes y newsletter."
+        },
+        "partner-gold": {
+            "name": "Gold",
+            "description": "Todo lo del nivel anterior más tu propia página dentro de Hospeda, con prioridad en las campañas."
         }
     },
     "entitlement": {
