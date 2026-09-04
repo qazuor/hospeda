@@ -36,10 +36,10 @@ const qrDb = vi.hoisted(() => {
         rows,
         /** Every read of `qr_codes` this route can cause passes through here. */
         findOne: vi.fn(async (where: { slug: string }) => rows.get(where.slug) ?? null),
-        createScan: vi.fn(async (data: { qrCodeId: string }) => ({
+        createScan: vi.fn(async (data: Record<string, unknown>) => ({
             id: '99999999-9999-4999-8999-999999999999',
-            qrCodeId: data.qrCodeId,
-            scannedAt: new Date()
+            scannedAt: new Date(),
+            ...data
         }))
     };
 });
@@ -69,7 +69,7 @@ vi.mock('@repo/db', async () => {
             }
         },
         QrCodeScanModel: class {
-            async create(data: { qrCodeId: string }) {
+            async create(data: Record<string, unknown>) {
                 return qrDb.createScan(data);
             }
         }
@@ -99,10 +99,21 @@ const DELETED_ID = '33333333-3333-4333-8333-333333333333';
 
 const TARGET_URL = 'https://hospeda.com.ar/es/destinos/colon/';
 
-/** A guest actor, which is what every real caller of this endpoint is. */
+/** A guest actor, which is what most real callers of this endpoint are. */
 const guestActor = {
     id: '00000000-0000-4000-8000-000000000000',
     roles: [RoleEnum.GUEST] as readonly RoleEnum[],
+    permissions: []
+};
+
+/**
+ * A signed-in scanner: someone who happened to be logged in on their phone when
+ * they pointed the camera at a sticker. HOS-1141 records their id.
+ */
+const SIGNED_IN_USER_ID = '55555555-5555-4555-8555-555555555555';
+const signedInActor = {
+    id: SIGNED_IN_USER_ID,
+    roles: [RoleEnum.USER] as readonly RoleEnum[],
     permissions: []
 };
 
@@ -148,13 +159,13 @@ type Probe = { readonly status: number; readonly body: unknown };
  * factory catches internally and formats through the REAL `handleRouteError`,
  * so what these probes compare is the body production actually sends.
  */
-async function buildApp(): Promise<Hono<AppBindings>> {
+async function buildApp(actor: typeof guestActor = guestActor): Promise<Hono<AppBindings>> {
     const { publicResolveQrCodeRoute } = await import(
         '../../../src/routes/qr-code/public/resolve.js'
     );
     const app = new Hono<AppBindings>();
     app.use((c, next) => {
-        c.set('actor', guestActor);
+        c.set('actor', actor);
         return next();
     });
     app.route('/', publicResolveQrCodeRoute);
@@ -167,9 +178,17 @@ async function buildApp(): Promise<Hono<AppBindings>> {
  * request by design and disclose nothing, but a probe that grew or lost a
  * metadata field would still be caught.
  */
-async function probe(app: Hono<AppBindings>, slug: string): Promise<Probe> {
+async function probe(
+    app: Hono<AppBindings>,
+    slug: string,
+    headers: Record<string, string> = {}
+): Promise<Probe> {
     const res = await app.request(`/${encodeURIComponent(slug)}`, {
-        headers: { 'user-agent': 'vitest' }
+        // `user-agent` is not decoration: without it the route factory's
+        // middleware chain never reaches the handler in this app. Overridable,
+        // because from HOS-1141 onwards the user agent is the SUBJECT of half
+        // the probes below.
+        headers: { 'user-agent': 'vitest', ...headers }
     });
     const text = await res.text();
     let body: unknown;
@@ -318,7 +337,7 @@ describe('GET /public/qr/{slug} — a live code', () => {
         expect(data?.id).toBe(LIVE_ID);
 
         expect(qrDb.createScan).toHaveBeenCalledTimes(1);
-        expect(qrDb.createScan).toHaveBeenCalledWith({ qrCodeId: LIVE_ID });
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({ qrCodeId: LIVE_ID });
     });
 
     it('discloses the three resolution fields and NOTHING else', async () => {
@@ -334,13 +353,154 @@ describe('GET /public/qr/{slug} — a live code', () => {
         expect(Object.keys(data).sort()).toEqual(['id', 'slug', 'targetUrl']);
     });
 
-    it('records the scan with the code id and nothing else (no IP, no user-agent)', async () => {
+    it('records EXACTLY the seven HOS-1141 columns — no IP, no referrer', async () => {
+        // Key equality, not `objectContaining`: the risk being guarded is a
+        // field that should NOT be there, which `objectContaining` cannot see.
+        // The table's own comment rejects an IP column and a referrer column by
+        // name; this is what makes that rejection enforceable rather than
+        // aspirational.
         const app = await buildApp();
 
         await probe(app, LIVE_SLUG);
 
         const [payload] = qrDb.createScan.mock.calls[0] ?? [];
-        expect(Object.keys(payload ?? {})).toEqual(['qrCodeId']);
+        expect(Object.keys(payload ?? {}).sort()).toEqual([
+            'browserLanguage',
+            'deviceType',
+            'os',
+            'qrCodeId',
+            'targetUrlAtScan',
+            'userAgent',
+            'userId'
+        ]);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1141 — the scan context
+// ---------------------------------------------------------------------------
+
+const UA_IPHONE =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+
+describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () => {
+    it('derives device, OS and language from the scanner headers', async () => {
+        const app = await buildApp();
+
+        await probe(app, LIVE_SLUG, {
+            'user-agent': UA_IPHONE,
+            'accept-language': 'pt-BR,pt;q=0.9,en;q=0.8'
+        });
+
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toEqual({
+            qrCodeId: LIVE_ID,
+            userAgent: UA_IPHONE,
+            deviceType: 'MOBILE',
+            os: 'IOS',
+            browserLanguage: 'pt',
+            targetUrlAtScan: TARGET_URL,
+            userId: null
+        });
+    });
+
+    it('records the target the code held AT THE SCAN, not a re-read', async () => {
+        // The reason the column exists. A code that is repointed keeps counting
+        // against the same id, so without this the history is one number
+        // covering several destinations. Asserted as equal to the URL the
+        // RESPONSE sends the scanner to, which is the invariant that matters:
+        // the row cannot disagree with where the person actually went.
+        const app = await buildApp();
+
+        const res = await probe(app, LIVE_SLUG);
+
+        const responseTarget = (res.body as { data?: { targetUrl?: string } }).data?.targetUrl;
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({
+            targetUrlAtScan: responseTarget
+        });
+    });
+
+    it('attributes the scan to a signed-in user, and to NOBODY when anonymous', async () => {
+        // The paired assertion. A guest actor carries a REAL UUID
+        // (`00000000-...-000000000000`), so a `!actor?.id` check would write
+        // that sentinel into a foreign key pointing at `users` — a row that
+        // does not exist, so every anonymous scan would be refused by the
+        // database and lost. Only `isGuestActor` tells the two apart.
+        const signedIn = await buildApp(signedInActor);
+        await probe(signedIn, LIVE_SLUG);
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({ userId: SIGNED_IN_USER_ID });
+
+        qrDb.createScan.mockClear();
+
+        const anonymous = await buildApp(guestActor);
+        await probe(anonymous, LIVE_SLUG);
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({ userId: null });
+    });
+
+    /**
+     * Only HTTP-LEGAL header values here. Control bytes and lone surrogates
+     * cannot travel in a real header — `Headers` refuses to construct with them
+     * and so does every HTTP parser in front of this route — so probing them
+     * here would fail on the FIXTURE rather than on the code. They are covered
+     * where they can actually occur, one layer down, in
+     * `test/utils/qr-scan-context.test.ts`.
+     */
+    it.each([
+        ['absent', undefined],
+        ['empty', ''],
+        ['10 KB of junk', 'A'.repeat(10_240)],
+        ['whitespace only', '   '],
+        ['pure punctuation', '!!!!'],
+        ['a path traversal', '../../../../etc/passwd'],
+        ['an SQL statement', "Mozilla/5.0'; DROP TABLE qr_code_scans; -- "],
+        // Concatenated rather than written as one literal, so biome's
+        // `noTemplateCurlyInString` does not fire on a fixture whose whole
+        // point is the value, not the spelling.
+        ['a template-injection attempt', `$${'{'}7*7}`],
+        ['a handlebars-injection attempt', '{{constructor.constructor}}']
+    ])('still answers 200 with the target, and still records a scan, for a %s user agent', async (_label, hostile) => {
+        // THE owner requirement. A hostile agent may cost the three derived
+        // columns; it may not cost the visit. Both halves are asserted:
+        // the answer is still the target (so the web page will still 302),
+        // and the row was still written (so the counter is still honest).
+        const app = await buildApp();
+
+        const res = await probe(
+            app,
+            LIVE_SLUG,
+            hostile === undefined
+                ? { 'user-agent': '' }
+                : { 'user-agent': hostile, 'accept-language': ';;;q=banana' }
+        );
+
+        expect(res.status).toBe(200);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
+        expect(qrDb.createScan).toHaveBeenCalledTimes(1);
+
+        const payload = qrDb.createScan.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(payload.qrCodeId).toBe(LIVE_ID);
+        expect(payload.targetUrlAtScan).toBe(TARGET_URL);
+        // Whatever the derivations made of it, the value that reached the
+        // insert is inside the documented bound — so the `varchar(1024)`
+        // column cannot reject it and turn a hostile header into the lost
+        // scan this whole path is written to avoid.
+        expect(payload.userAgent === null || (payload.userAgent as string).length <= 1024).toBe(
+            true
+        );
+    });
+
+    it('leaves the derived columns null rather than guessing, on an unreadable agent', async () => {
+        const app = await buildApp();
+
+        await probe(app, LIVE_SLUG, { 'user-agent': '!!!!', 'accept-language': 'fr-FR' });
+
+        // `deviceType` null and NOT 'DESKTOP'; `browserLanguage` null and NOT
+        // 'es'. Both fallbacks would be invented facts, and both would look
+        // entirely plausible in the metrics panel that reads this table.
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({
+            deviceType: null,
+            browserLanguage: null,
+            os: 'OTHER'
+        });
     });
 });
 
