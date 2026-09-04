@@ -49,10 +49,15 @@ export function BasicsForm({
         schema: AccommodationBasicsSchema,
         extendPayload: ({ payload, values, baseline }) => ({
             ...payload,
+            // HOS-879: the slug is generated from `type` + `name`, so a
+            // type-only change (e.g. COUNTRY_HOUSE -> CABIN) needs the same
+            // opt-in as a rename does.
             ...buildSlugRefreshPayload({
                 currentLifecycleState: initialData.lifecycleState,
                 initialName: baseline.name,
                 currentName: values.name,
+                initialType: baseline.type,
+                currentType: values.type,
                 refreshSlugFromName
             })
         })
@@ -61,7 +66,9 @@ export function BasicsForm({
     const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
         currentLifecycleState: initialData.lifecycleState,
         initialName: form.baselineValues.name,
-        currentName: form.values.name
+        currentName: form.values.name,
+        initialType: form.baselineValues.type,
+        currentType: form.values.type
     });
 
     useEffect(() => {

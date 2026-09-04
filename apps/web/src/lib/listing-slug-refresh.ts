@@ -25,19 +25,37 @@ export function shouldOfferPublishedSlugRefresh(input: {
     readonly currentLifecycleState?: string | null;
     readonly initialName?: string | null;
     readonly currentName?: string | null;
+    /**
+     * HOS-879: the slug is generated from `type` + `name`, so a type change
+     * is just as capable of invalidating a published slug as a rename is.
+     * Both `initialType`/`currentType` are optional and only participate in
+     * the check when BOTH are provided — a caller whose listing kind never
+     * feeds `type` into its slug (e.g. commerce listings, whose slug is
+     * name-only) can simply omit them and keep today's name-only behavior.
+     */
+    readonly initialType?: string | null;
+    readonly currentType?: string | null;
 }): boolean {
     if (!isListingPublished({ lifecycleState: input.currentLifecycleState })) return false;
 
     const initialName = normalizeName(input.initialName);
     const currentName = normalizeName(input.currentName);
+    const nameChanged = currentName.length > 0 && currentName !== initialName;
 
-    return currentName.length > 0 && currentName !== initialName;
+    const typeChanged =
+        input.initialType !== undefined &&
+        input.currentType !== undefined &&
+        normalizeName(input.initialType) !== normalizeName(input.currentType);
+
+    return nameChanged || typeChanged;
 }
 
 export function buildSlugRefreshPayload(input: {
     readonly currentLifecycleState?: string | null;
     readonly initialName?: string | null;
     readonly currentName?: string | null;
+    readonly initialType?: string | null;
+    readonly currentType?: string | null;
     readonly refreshSlugFromName: boolean;
 }): Record<string, true> {
     if (
@@ -45,7 +63,9 @@ export function buildSlugRefreshPayload(input: {
         !shouldOfferPublishedSlugRefresh({
             currentLifecycleState: input.currentLifecycleState,
             initialName: input.initialName,
-            currentName: input.currentName
+            currentName: input.currentName,
+            initialType: input.initialType,
+            currentType: input.currentType
         })
     ) {
         return {};

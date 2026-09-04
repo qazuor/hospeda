@@ -237,6 +237,89 @@ describe('save feedback', () => {
 });
 
 // ---------------------------------------------------------------------------
+// HOS-879: a type-only change is just as capable of invalidating a published
+// slug as a rename is (the slug is generated from `type` + `name`), so it
+// must offer — and honor — the exact same opt-in.
+// ---------------------------------------------------------------------------
+
+describe('HOS-879: a type-only change offers the same published-slug opt-in as a rename', () => {
+    it('offers the opt-in checkbox once the type changes, not before', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('sends refreshSlugFromName for a type-only change only when the opt-in is checked', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        const checkbox = screen.getByLabelText(/cambiar igual la dirección web/i);
+        await user.click(checkbox);
+        submitFrom(typeSelect);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ type: 'CABIN', refreshSlugFromName: true });
+    });
+
+    it('does NOT send refreshSlugFromName for a type-only change when the opt-in is left unchecked', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+        submitFrom(typeSelect);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ type: 'CABIN' });
+    });
+
+    it('does not offer the opt-in for a type change on a DRAFT listing — it regenerates automatically server-side', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'DRAFT', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
 

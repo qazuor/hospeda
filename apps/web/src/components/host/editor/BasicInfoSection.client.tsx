@@ -117,7 +117,7 @@ export function BasicInfoSection({
                         <p className={styles.fieldHint}>
                             {t(
                                 'host.properties.editor.slugRefresh.notice',
-                                'Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
+                                'Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre o el tipo.'
                             )}
                         </p>
                         <p className={styles.fieldHint}>
@@ -137,7 +137,7 @@ export function BasicInfoSection({
                             <span>
                                 {t(
                                     'host.properties.editor.slugRefresh.checkbox',
-                                    'Cambiar igual la dirección web para que siga este nuevo nombre'
+                                    'Cambiar igual la dirección web para que siga estos cambios'
                                 )}
                             </span>
                         </label>

@@ -34,6 +34,59 @@ describe('listing-slug-refresh', () => {
         ).toBe(false);
     });
 
+    // HOS-879: the slug is generated from `type` + `name`, so a type-only
+    // change needs the same opt-in as a rename does — but ONLY for callers
+    // that actually pass `initialType`/`currentType`. A caller that omits
+    // them (e.g. commerce, whose slug is name-only) must keep its exact
+    // pre-HOS-879 behavior.
+    it('offers the opt-in for a published listing whose type changed, name untouched', () => {
+        expect(
+            shouldOfferPublishedSlugRefresh({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: 'CABIN'
+            })
+        ).toBe(true);
+    });
+
+    it('does not offer the opt-in for a DRAFT listing whose type changed — no address to protect', () => {
+        expect(
+            shouldOfferPublishedSlugRefresh({
+                currentLifecycleState: 'DRAFT',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: 'CABIN'
+            })
+        ).toBe(false);
+    });
+
+    it('does not offer the opt-in when neither name nor type actually changed', () => {
+        expect(
+            shouldOfferPublishedSlugRefresh({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río',
+                initialType: 'CABIN',
+                currentType: 'CABIN'
+            })
+        ).toBe(false);
+    });
+
+    it('ignores type entirely when the caller omits initialType/currentType (commerce parity)', () => {
+        // Simulates the commerce call site, which never passes these two
+        // fields because its slug does not depend on `type` at all.
+        expect(
+            shouldOfferPublishedSlugRefresh({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río'
+            })
+        ).toBe(false);
+    });
+
     it('builds the opt-in payload only when the published rename was explicitly requested', () => {
         expect(
             buildSlugRefreshPayload({
@@ -52,6 +105,19 @@ describe('listing-slug-refresh', () => {
                 refreshSlugFromName: false
             })
         ).toEqual({});
+    });
+
+    it('builds the opt-in payload for a type-only change when explicitly requested (HOS-879)', () => {
+        expect(
+            buildSlugRefreshPayload({
+                currentLifecycleState: 'ACTIVE',
+                initialName: 'Casa del Río',
+                currentName: 'Casa del Río',
+                initialType: 'COUNTRY_HOUSE',
+                currentType: 'CABIN',
+                refreshSlugFromName: true
+            })
+        ).toEqual({ refreshSlugFromName: true });
     });
 });
 
