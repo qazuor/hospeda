@@ -162,6 +162,50 @@ describe('the mark itself', () => {
     });
 });
 
+/** One `<rect>` read back out of the emitted markup, in module units. */
+type SvgRect = {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+    readonly fill: string;
+};
+
+/**
+ * EVERY `<rect>` in the fragment, in document order.
+ *
+ * The plural is the whole point. This file used to reach for the first rect
+ * with `regex.exec(svg)`, which reads the PLATE and stops — so the three bars
+ * drawn inside it were watched by nothing. Measured (HOS-981 PR 5 review):
+ * multiplying only the bars' `width`/`height` by six in
+ * `renderCenterLogoSvgFragment`, leaving the PNG painter untouched, emitted
+ * `<rect y="18.6" height="22.8">` — a bar reaching y=41.4 in a viewBox of 41,
+ * roughly a quarter of the symbol in solid black plus a hole punched through
+ * the quiet zone — and 48 tests stayed green. The same mutation in the PNG
+ * painter died immediately, because the pixel diff sees everything that was
+ * painted rather than the first thing.
+ *
+ * So: parse them all. It costs one character of regex and it is the difference
+ * between watching the container and watching the contents.
+ */
+function parseSvgRects(svg: string): readonly SvgRect[] {
+    return [...(svg.match(/<rect [^>]*\/>/g) ?? [])].map((markup) => {
+        const attribute = (name: string): string => {
+            const found = new RegExp(`${name}="([^"]+)"`).exec(markup);
+            if (!found) throw new Error(`<rect> without a ${name}: ${markup}`);
+            return found[1] as string;
+        };
+
+        return {
+            x: Number(attribute('x')),
+            y: Number(attribute('y')),
+            width: Number(attribute('width')),
+            height: Number(attribute('height')),
+            fill: attribute('fill')
+        };
+    });
+}
+
 describe('renderQrSvg — the mark in the markup', () => {
     it('draws nothing at all when the mark is NONE', async () => {
         const plain = await renderQrSvg({ data: DATA });
@@ -190,17 +234,106 @@ describe('renderQrSvg — the mark in the markup', () => {
 
         // The plate is the FIRST rect: it has to be painted before the bars
         // that sit on top of it, and SVG paints in document order.
-        const first = /<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/.exec(
-            svg
+        const rects = parseSvgRects(svg);
+        const plate = rects[0];
+
+        expect(plate, 'no plate rect in the SVG at all').toBeDefined();
+        expect((plate as SvgRect).x).toBe(offset + MARGIN);
+        expect((plate as SvgRect).y).toBe(offset + MARGIN);
+        expect((plate as SvgRect).width).toBe(side);
+        expect((plate as SvgRect).height).toBe(side);
+    });
+
+    /**
+     * The BARS are bounded by the plate — the assertion the single-rect read
+     * was missing.
+     *
+     * `HOSPEDA_MARK` staying inside its unit box is checked separately, and it
+     * is not the same claim: that pins the CONSTANT, this pins the EMITTER. A
+     * scale factor, a swapped multiplicand or a forgotten `plate.side` produces
+     * markup that overflows while the constant is still perfectly in range.
+     *
+     * Every level is checked, and the per-level rect count is asserted, because
+     * a containment loop over an empty list passes as loudly as a correct one.
+     */
+    it.each(FROZEN_PLATES)('keeps every bar inside the plate square at $level', async ({
+        level,
+        offset,
+        side
+    }) => {
+        const svg = await renderQrSvg({
+            data: DATA,
+            options: {
+                errorCorrectionLevel: level,
+                centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
+                margin: MARGIN
+            }
+        });
+
+        const rects = parseSvgRects(svg);
+        const left = offset + MARGIN;
+        const right = left + side;
+
+        expect(rects.length, 'the fragment must be exactly one plate plus one rect per bar').toBe(
+            1 + HOSPEDA_MARK.length
         );
 
-        expect(first, 'no plate rect in the SVG at all').not.toBeNull();
-        const [, x, y, width, height] = first as RegExpExecArray;
+        let checked = 0;
+        for (const rect of rects) {
+            expect(
+                rect.x,
+                `a rect starts left of the plate: ${JSON.stringify(rect)}`
+            ).toBeGreaterThanOrEqual(left);
+            expect(
+                rect.y,
+                `a rect starts above the plate: ${JSON.stringify(rect)}`
+            ).toBeGreaterThanOrEqual(left);
+            expect(
+                rect.x + rect.width,
+                `a rect runs past the plate's right edge (${right}) and is painting over ` +
+                    `modules the gate never budgeted for: ${JSON.stringify(rect)}`
+            ).toBeLessThanOrEqual(right);
+            expect(
+                rect.y + rect.height,
+                `a rect runs past the plate's bottom edge (${right}) and is painting over ` +
+                    `modules the gate never budgeted for: ${JSON.stringify(rect)}`
+            ).toBeLessThanOrEqual(right);
+            checked += 1;
+        }
 
-        expect(Number(x)).toBe(offset + MARGIN);
-        expect(Number(y)).toBe(offset + MARGIN);
-        expect(Number(width)).toBe(side);
-        expect(Number(height)).toBe(side);
+        expect(checked).toBe(1 + HOSPEDA_MARK.length);
+    });
+
+    /**
+     * And nothing at all escapes the symbol.
+     *
+     * The bound above is relative to the plate, so it would still hold if the
+     * plate itself were computed off the end of the grid. This one is absolute:
+     * every rect lives inside the `viewBox` the library emitted, quiet zone
+     * included. A mark that spills into the quiet zone breaks the white border
+     * a scanner uses to find the symbol at all.
+     */
+    it('never emits a rect outside the viewBox', async () => {
+        const svg = await renderQrSvg({
+            data: DATA,
+            options: {
+                errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.H,
+                centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
+                margin: MARGIN
+            }
+        });
+
+        const viewBox = /viewBox="0 0 (\d+) (\d+)"/.exec(svg);
+        expect(viewBox, 'no viewBox to bound anything against').not.toBeNull();
+        const extent = Number((viewBox as RegExpExecArray)[1]);
+
+        const rects = parseSvgRects(svg);
+        expect(rects.length).toBeGreaterThan(0);
+
+        for (const rect of rects) {
+            expect(rect.x + rect.width, JSON.stringify(rect)).toBeLessThanOrEqual(extent);
+            expect(rect.y + rect.height, JSON.stringify(rect)).toBeLessThanOrEqual(extent);
+        }
     });
 
     it('paints the plate in the background colour and the bars in the foreground', async () => {
@@ -214,10 +347,10 @@ describe('renderQrSvg — the mark in the markup', () => {
             }
         });
 
-        const rects = [...svg.matchAll(/<rect [^>]*fill="(#[0-9a-f]{6})"/g)].map((m) => m[1]);
+        const fills = parseSvgRects(svg).map((rect) => rect.fill);
 
-        expect(rects[0]).toBe('#abcdef');
-        expect(rects.slice(1)).toStrictEqual(HOSPEDA_MARK.map(() => '#123456'));
+        expect(fills[0]).toBe('#abcdef');
+        expect(fills.slice(1)).toStrictEqual(HOSPEDA_MARK.map(() => '#123456'));
     });
 
     it('is still deterministic with the mark on', async () => {
@@ -345,9 +478,26 @@ describe('renderQrPng — the mark in the pixels, and its agreement with the SVG
         };
 
         const svg = await renderQrSvg({ data: DATA, options });
-        const svgRect = /<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)"/.exec(svg);
-        expect(svgRect).not.toBeNull();
-        const [, svgX, svgY, svgWidth] = svgRect as RegExpExecArray;
+
+        // The union of EVERY rect, not the first one. Reading only the plate
+        // here would compare the PNG's paint against the SVG's CONTAINER and
+        // call it agreement — which is exactly what let a six-times-oversized
+        // bar through. The union grows the moment a bar does.
+        const rects = parseSvgRects(svg);
+        expect(rects.length).toBeGreaterThan(1);
+        const svgX = Math.min(...rects.map((rect) => rect.x));
+        const svgY = Math.min(...rects.map((rect) => rect.y));
+        const svgRight = Math.max(...rects.map((rect) => rect.x + rect.width));
+        const svgBottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+        const svgWidth = svgRight - svgX;
+
+        // The union IS the plate: the bars live inside it. Stated here as well
+        // as in the containment test above, because the two comparisons below
+        // are only meaningful about the mark if this holds.
+        expect(svgX).toBe(frozen.offset + MARGIN);
+        expect(svgY).toBe(frozen.offset + MARGIN);
+        expect(svgWidth).toBe(frozen.side);
+        expect(svgBottom - svgY).toBe(frozen.side);
 
         const plain = PNG.sync.read(
             await renderQrPng({
@@ -363,14 +513,10 @@ describe('renderQrPng — the mark in the pixels, and its agreement with the SVG
         const scale = marked.width / (frozen.moduleCount + 2 * MARGIN);
 
         // The painted pixels sit inside the module square the SVG declares.
-        expect(Math.floor(diff.left / scale)).toBeGreaterThanOrEqual(Number(svgX));
-        expect(Math.floor(diff.top / scale)).toBeGreaterThanOrEqual(Number(svgY));
-        expect(Math.ceil((diff.right + 1) / scale)).toBeLessThanOrEqual(
-            Number(svgX) + Number(svgWidth)
-        );
-        expect(Math.ceil((diff.bottom + 1) / scale)).toBeLessThanOrEqual(
-            Number(svgY) + Number(svgWidth)
-        );
+        expect(Math.floor(diff.left / scale)).toBeGreaterThanOrEqual(svgX);
+        expect(Math.floor(diff.top / scale)).toBeGreaterThanOrEqual(svgY);
+        expect(Math.ceil((diff.right + 1) / scale)).toBeLessThanOrEqual(svgRight);
+        expect(Math.ceil((diff.bottom + 1) / scale)).toBeLessThanOrEqual(svgBottom);
     });
 
     it('is still deterministic with the mark on', async () => {

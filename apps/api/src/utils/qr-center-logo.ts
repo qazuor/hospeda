@@ -29,9 +29,20 @@ import type { PNG } from 'pngjs';
  * vector brand asset — `apps/web/src/assets/images/logo.webp` is a raster and
  * `apps/admin/src/logo.svg` is the React atom left over from a template — so
  * there was nothing to embed. Replacing this constant with the real mark, once
- * one exists as rectangles or as a path pair, is the whole of that change:
- * every consumer reads it from here, and the coverage the gate depends on is a
- * property of the PLATE, not of what is drawn inside it.
+ * one exists as rectangles, is the whole of that change: every consumer reads
+ * it from here.
+ *
+ * ## The plate bounds the damage only because both painters are held to it
+ *
+ * An earlier version of this note said the coverage the gate depends on is "a
+ * property of the PLATE, not of what is drawn inside it", flatly, and nothing
+ * made it true. The emitters multiply the mark's unit rectangles by
+ * `plate.side` themselves, so a wrong factor draws outside the plate while
+ * `HOSPEDA_MARK` is still perfectly in range — measured in review: scaling only
+ * the SVG bars by six produced a bar 22.8 modules tall inside a 5-module plate,
+ * overflowing the viewBox and punching through the quiet zone, with 48 tests
+ * green. It is an ENFORCED invariant now: `qr-center-logo.test.ts` parses every
+ * emitted rect and bounds it against both the plate square and the viewBox.
  *
  * @module utils/qr-center-logo
  */
