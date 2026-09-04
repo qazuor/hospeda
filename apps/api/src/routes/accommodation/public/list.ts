@@ -38,6 +38,7 @@ import type { Context } from 'hono';
 import { hasEntitlement } from '../../../middlewares/entitlement';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import type { AppBindings } from '../../../types';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
@@ -274,6 +275,13 @@ export const publicListAccommodationsRoute = createPublicListRoute({
             const ownerEntitlements = ownerId ? ownerEntitlementsMap.get(ownerId) : undefined;
             return {
                 ...stripRichDescriptionFields(item),
+                // HOS-929: public read treats holding either the admin-curated
+                // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
+                // flag as featured. `featuredByEntitlement` itself is stripped by
+                // `AccommodationPublicSchema` (never in its pick).
+                isFeatured: resolvePublicIsFeatured(
+                    item as { isFeatured: boolean; featuredByEntitlement?: boolean }
+                ),
                 hasAiChat: ownerEntitlements?.includes(EntitlementKey.AI_CHAT) ?? false
             };
         });

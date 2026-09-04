@@ -9,6 +9,7 @@ import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
     filterAccommodationListByOwnerEntitlements,
@@ -148,6 +149,12 @@ export const publicGetSimilarRoute = createPublicRoute({
                 description: true,
                 type: true,
                 isFeatured: true,
+                // HOS-929: the billing-derived sibling of `isFeatured` (SPEC-292,
+                // renamed SPEC-309 OQ-3). This raw query bypasses the service/model
+                // layer entirely, so nothing else selects it for this route — it
+                // must be explicit here or the public OR silently degrades to
+                // `isFeatured` alone.
+                featuredByEntitlement: true,
                 // SPEC-291 Phase 3b: select isVerified so the badge gate can read the
                 // real DB value. Previously omitted → defaulted to false by stripWithSchema
                 // regardless of the actual DB value. Now selected so the gate can surface
@@ -245,7 +252,10 @@ export const publicGetSimilarRoute = createPublicRoute({
                 rows: mediaByAccommodationId.get(row.id) ?? [],
                 videos: row.videos
             });
-            const withMedia = { ...rest, media };
+            // HOS-929: public read treats holding either source flag as
+            // featured. `featuredByEntitlement` itself is stripped by
+            // `AccommodationPublicSchema` (never in its pick).
+            const withMedia = { ...rest, media, isFeatured: resolvePublicIsFeatured(row) };
             return destination ? { ...withMedia, cityDestination: destination } : withMedia;
         });
 
@@ -262,7 +272,13 @@ export const publicGetSimilarRoute = createPublicRoute({
         ];
         const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
         return filterAccommodationListByOwnerEntitlements(
-            mappedRows as AccommodationData[],
+            // HOS-929: the explicit `isFeatured` override above narrows this
+            // object literal enough that TS no longer sees "sufficient
+            // overlap" with `AccommodationData` for a direct `as` cast — go
+            // through `unknown` first, same as other raw-query mappings in
+            // this codebase (e.g. `accommodation.model.ts`'s DRIZZLE-LIMITATION
+            // casts).
+            mappedRows as unknown as AccommodationData[],
             ownerEntitlementsMap
         );
     },
