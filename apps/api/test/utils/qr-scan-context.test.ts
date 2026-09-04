@@ -42,6 +42,24 @@ const UA_WINDOWS_DESKTOP =
 const UA_MAC_DESKTOP =
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15';
 
+// --- The `linux` fixtures (HOS-1141 review) ---------------------------------
+// `linux` was removed from DESKTOP_PATTERN because it is a kernel, not a
+// desktop signal. These four pin what that removal actually did: `x11` still
+// carries desktop Linux, and the three agents that merely RUN Linux now derive
+// null instead of a fabricated DESKTOP row.
+
+/** Desktop Linux announcing X11 — still a desktop, matched by `x11`. */
+const UA_LINUX_X11_DESKTOP =
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+/** Firefox on Wayland: desktop Linux WITHOUT X11. The accepted cost. */
+const UA_LINUX_WAYLAND_DESKTOP =
+    'Mozilla/5.0 (Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0';
+/** A Tizen television. Runs Linux; is not a person at a desk. */
+const UA_SMART_TV =
+    'Mozilla/5.0 (Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.146 TV Safari/537.36';
+/** A crawler that names Linux. Is not anybody at all. */
+const UA_LINUX_BOT = 'Mozilla/5.0 (compatible; SomeBot/2.1; +http://example.com/bot; Linux)';
+
 describe('deriveQrScanDeviceType', () => {
     it.each([
         ['an iPhone', UA_IPHONE, QrScanDeviceTypeEnum.MOBILE],
@@ -49,9 +67,39 @@ describe('deriveQrScanDeviceType', () => {
         ['an iPad', UA_IPAD, QrScanDeviceTypeEnum.TABLET],
         ['an Android tablet', UA_ANDROID_TABLET, QrScanDeviceTypeEnum.TABLET],
         ['Windows desktop Chrome', UA_WINDOWS_DESKTOP, QrScanDeviceTypeEnum.DESKTOP],
-        ['macOS desktop Safari', UA_MAC_DESKTOP, QrScanDeviceTypeEnum.DESKTOP]
+        ['macOS desktop Safari', UA_MAC_DESKTOP, QrScanDeviceTypeEnum.DESKTOP],
+        ['desktop Linux announcing X11', UA_LINUX_X11_DESKTOP, QrScanDeviceTypeEnum.DESKTOP]
     ])('classifies %s', (_label, userAgent, expected) => {
         expect(deriveQrScanDeviceType({ userAgent })).toBe(expected);
+    });
+
+    it.each([
+        ['a Tizen smart TV', UA_SMART_TV],
+        ['a crawler that names Linux', UA_LINUX_BOT],
+        ['Firefox on Wayland (desktop Linux without X11)', UA_LINUX_WAYLAND_DESKTOP]
+    ])('answers null, not DESKTOP, for %s', (_label, userAgent) => {
+        // `linux` was removed from DESKTOP_PATTERN (HOS-1141 review) because it
+        // is a kernel, not a desktop signal — it also runs televisions,
+        // set-top boxes and crawlers, and counting those as "somebody at a
+        // desk" is precisely the fabricated row this deriver refuses to invent.
+        //
+        // The third case is the ACCEPTED COST, asserted deliberately rather
+        // than tolerated: a Wayland Firefox is genuinely a desktop and now
+        // derives null. That is the intended answer. `null` says "we could not
+        // tell", which is true, and it stays distinguishable from the buckets
+        // we did read. Restoring `linux` to fix this one row would re-break the
+        // two above it — read DESKTOP_PATTERN's doc before trying.
+        expect(userAgent.toLowerCase()).toContain('linux');
+        expect(deriveQrScanDeviceType({ userAgent })).toBeNull();
+    });
+
+    it('still classifies desktop Linux when it announces X11', () => {
+        // Non-vacuity for the block above: `x11` is what carries desktop Linux
+        // now, so removing `linux` must not have taken real desktops with it.
+        // Without this, deleting `x11` too would leave that block green.
+        expect(deriveQrScanDeviceType({ userAgent: UA_LINUX_X11_DESKTOP })).toBe(
+            QrScanDeviceTypeEnum.DESKTOP
+        );
     });
 
     it('reads an iPad as a TABLET even though its agent also says "Mobile"', () => {
