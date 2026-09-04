@@ -1,0 +1,161 @@
+---
+/**
+ * @file planes/gastronomia/precios/index.astro
+ * @description Pricing page for the gastronomy vertical — level 3 of the three
+ * HOS-941 D-7 defines: "which one do I pick and what does it cost", for a
+ * visitor who has already decided to publish.
+ *
+ * @route     /[lang]/planes/gastronomia/precios/
+ * @rendering SSR (prerender=false) — reads the catalogue at request time so an
+ *   operator's price edit in admin lands without a redeploy. Edge-cacheable via
+ *   the `pricing` cache class, tagged `CACHE_TAG_PRICING`; the middleware is
+ *   fail-closed and rejects a public `Cache-Control` without a declared class
+ *   and tag (HOS-941 R-5). A plan write purges it through
+ *   `PlanService.triggerPricingRevalidation`.
+ *
+ * ## Where this content came from
+ *
+ * The price block that used to live INSIDE `/publicar-restaurante/` (HOS-690).
+ * That URL now 301s to `/planes/gastronomia/`, the sales page — the retirement
+ * and this page are one move, which is why HOS-985 deliberately left both
+ * undone: taking the old URL down before this page existed would have left the
+ * vertical with no price anywhere.
+ *
+ * There is no redirect POINTING here, and that is not a missing row in the
+ * table. No pricing URL for this audience ever existed to redirect from; the
+ * price moved down a level from a page that keeps serving, rather than moving
+ * across from a page that stopped.
+ *
+ * ## Three tiers, and the grid does not know how many
+ *
+ * `gastronomy-basico`, `-pro` and `-premium` are all `isActive` since HOS-975,
+ * so this renders three cards today. It reads them off
+ * `GET /api/v1/public/plans?domain=gastronomy` rather than a list in this file
+ * (AC-45): the day the owner deactivates one — or activates a fourth — the page
+ * follows with no edit here. The card layout centres whatever count it gets,
+ * which is HOS-891 fixed for this audience by construction rather than by a
+ * second implementation.
+ *
+ * ## Why the CTA is a link and not a checkout button
+ *
+ * A commerce subscription is not started from a marketing page: the buyer
+ * creates the listing first and picks the tier inside that flow, where
+ * `CommercePlanPicker` lives. `buildCommerceStartUrl` is the same constant href
+ * `/publicar-restaurante/` used — constant because this page is edge-cached and
+ * parses no session, so it cannot know who is reading it; the signed-in vs
+ * signed-out branch happens one hop later on `/auth/signup/`.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { BarChartIcon, ForkKnifeIcon, StarIcon } from '@repo/icons';
+import AudiencePricingSections from '@/components/billing/AudiencePricingSections.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import {
+    buildBillingFaqJsonLd,
+    buildPricingBreadcrumbs,
+    resolvePricingPageContent
+} from '@/lib/billing/pricing-page-content';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { getIntlLocale } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+const plans = await fetchAudiencePlans({ audience: 'gastronomy' });
+const { copyRoot, faqs, hasComparison } = resolvePricingPageContent({
+    audience: 'gastronomy',
+    plans,
+    translators: { t, tPlural }
+});
+
+const intlLocale = getIntlLocale(locale);
+const pagePath = buildUrl({ locale, path: 'planes/gastronomia/precios' });
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+
+const jsonLdPlans = plans.map((plan) => ({
+    name: plan.name,
+    description: plan.description,
+    priceCurrency: 'ARS',
+    // schema.org `price` expects major currency units (pesos), not cents.
+    price: plan.monthlyPriceArs / 100,
+    url: `${siteOrigin}${pagePath}`
+}));
+
+const ctaHref = buildCommerceStartUrl({ locale, vertical: 'gastronomy' });
+
+const title = t(`${copyRoot}.pageTitle`);
+const description = t(`${copyRoot}.pageDescription`);
+
+/**
+ * One trail, rendered twice — visibly and as `BreadcrumbList` structured data.
+ * Derived from a single source so the crumb a reader sees and the one a search
+ * result quotes cannot describe different paths.
+ */
+const breadcrumbs = buildPricingBreadcrumbs({
+    homeLabel: t('nav.home', 'Inicio'),
+    homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
+    salesLabel: t('commerce.lead.title'),
+    salesPath: 'planes/gastronomia',
+    salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/gastronomia' })}`,
+    pageLabel: title,
+    pageUrl: `${siteOrigin}${pagePath}`
+});
+
+// Split the heading to underline its last word with a handwritten accent, the
+// same treatment every marketing hero on the site gets.
+const headingFull = t(`${copyRoot}.heading`);
+const headingWords = headingFull.trim().split(/\s+/);
+const headingAccent = headingWords.pop() ?? headingFull;
+const headingMain = headingWords.join(' ');
+---
+
+<MarketingLayout locale={locale} title={title} description={description}>
+    {plans.length > 0 && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
+    <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
+
+    <Breadcrumbs locale={locale} items={breadcrumbs.visible} />
+
+    <MarketingHero
+        tagline={t(`${copyRoot}.tagline`)}
+        titleMain={headingMain}
+        titleAccent={headingAccent}
+        subtitle={t(`${copyRoot}.subtitle`)}
+    >
+        <Fragment slot="icon-1"><ForkKnifeIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
+    </MarketingHero>
+
+    <AudiencePricingSections
+        locale={locale}
+        audience="gastronomy"
+        plans={plans}
+        intlLocale={intlLocale}
+        copyRoot={copyRoot}
+        faqs={faqs}
+        hasComparison={hasComparison}
+        ctaMode="link"
+        ctaHref={ctaHref}
+    />
+</MarketingLayout>

@@ -1,0 +1,138 @@
+---
+/**
+ * @file planes/anfitriones/precios/index.astro
+ * @description Host pricing page — level 3 of the three HOS-941 D-7 defines.
+ *
+ * @route     /[lang]/planes/anfitriones/precios/
+ * @rendering SSR (prerender=false) — reads the catalogue at request time so an
+ *   operator's price edit in admin lands without a redeploy (SPEC-168 D3).
+ *   Edge-cacheable via the `pricing` cache class, tagged `CACHE_TAG_PRICING`;
+ *   the middleware is fail-closed and rejects a public `Cache-Control` without
+ *   a declared class and tag (HOS-941 R-5). A plan write purges it through
+ *   `PlanService.triggerPricingRevalidation`.
+ *
+ * ## What moved
+ *
+ * `/suscriptores/planes/anfitriones/`, which now 301s here. That URL had itself
+ * been moved by HOS-942 (down one level, from `/suscriptores/planes/`, when the
+ * parent became the five-audience index), so this is the second move in the
+ * same reorganisation and the last one: `/planes/` is the namespace D-8 settled
+ * on, and it is where the whole family lives.
+ *
+ * Unlike the three verticals, this audience arrives with its comparison table
+ * already written — the OWNER rows this page now renders inline are the ones
+ * `/suscriptores/planes/comparar/` used to serve behind a click. D-11 is why:
+ * the table's job is "which of these three suits me", which is this page's
+ * question, and nobody searches for a comparison table, so a URL of its own
+ * captured no intent while hiding the densest content on the page.
+ *
+ * The complex tier stays out, as it always has: `PlanComparisonTable` filters
+ * it and renders its "próximamente" teaser instead.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
+import AudiencePricingSections from '@/components/billing/AudiencePricingSections.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import {
+    buildBillingFaqJsonLd,
+    buildPricingBreadcrumbs,
+    resolvePricingPageContent
+} from '@/lib/billing/pricing-page-content';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { getIntlLocale } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+const plans = await fetchAudiencePlans({ audience: 'host' });
+const { copyRoot, faqs, hasComparison } = resolvePricingPageContent({
+    audience: 'owner',
+    plans,
+    translators: { t, tPlural }
+});
+
+const intlLocale = getIntlLocale(locale);
+const pagePath = buildUrl({ locale, path: 'planes/anfitriones/precios' });
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+
+const jsonLdPlans = plans.map((plan) => ({
+    name: plan.name,
+    description: plan.description,
+    priceCurrency: 'ARS',
+    // schema.org `price` expects major currency units (pesos), not cents.
+    price: plan.monthlyPriceArs / 100,
+    url: `${siteOrigin}${pagePath}`
+}));
+
+const title = t(`${copyRoot}.pageTitle`);
+const description = t(`${copyRoot}.pageDescription`);
+
+/**
+ * One trail, rendered twice — visibly and as `BreadcrumbList` structured data.
+ * Derived from a single source so the crumb a reader sees and the one a search
+ * result quotes cannot describe different paths.
+ */
+const breadcrumbs = buildPricingBreadcrumbs({
+    homeLabel: t('nav.home', 'Inicio'),
+    homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
+    salesLabel: t('owners.hero.title'),
+    salesPath: 'planes/anfitriones',
+    salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/anfitriones' })}`,
+    pageLabel: title,
+    pageUrl: `${siteOrigin}${pagePath}`
+});
+
+const headingFull = t(`${copyRoot}.heading`);
+const headingWords = headingFull.trim().split(/\s+/);
+const headingAccent = headingWords.pop() ?? headingFull;
+const headingMain = headingWords.join(' ');
+---
+
+<MarketingLayout locale={locale} title={title} description={description}>
+    {plans.length > 0 && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
+    <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
+
+    <Breadcrumbs locale={locale} items={breadcrumbs.visible} />
+
+    <MarketingHero
+        tagline={t(`${copyRoot}.tagline`)}
+        titleMain={headingMain}
+        titleAccent={headingAccent}
+        subtitle={t(`${copyRoot}.subtitle`)}
+    >
+        <Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
+    </MarketingHero>
+
+    <AudiencePricingSections
+        locale={locale}
+        audience="owner"
+        plans={plans}
+        intlLocale={intlLocale}
+        copyRoot={copyRoot}
+        faqs={faqs}
+        hasComparison={hasComparison}
+    />
+</MarketingLayout>
