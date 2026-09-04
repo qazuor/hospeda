@@ -206,10 +206,10 @@
         }
     },
     "modal": {
-        "close": "Cerrar"
+        "close": "Fechar"
     },
-    "back": "Volver",
-    "close": "Cerrar",
-    "deleting": "Eliminando...",
-    "anonymous": "Usuario"
+    "back": "Voltar",
+    "close": "Fechar",
+    "deleting": "Excluindo...",
+    "anonymous": "Usuário"
 }

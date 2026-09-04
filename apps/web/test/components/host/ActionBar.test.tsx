@@ -1,6 +1,9 @@
 /**
  * @file ActionBar.test.tsx
- * @description Tests for ActionBar component — save/cancel buttons, loading state.
+ * @description Tests for ActionBar component — save/back buttons, loading
+ * state. HOS-1014 renamed the secondary button from "Cancelar" to "Volver"
+ * (it always navigates to the editor hub, never discards anything) — the
+ * `onCancel` prop name is unchanged, only the rendered label and its i18n key.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -20,7 +23,7 @@ vi.mock('@/components/host/editor/ActionBar.module.css', () => ({
 }));
 
 describe('ActionBar', () => {
-    it('should render save and cancel buttons', () => {
+    it('should render save and back buttons', () => {
         render(
             <ActionBar
                 locale="es"
@@ -30,10 +33,10 @@ describe('ActionBar', () => {
         );
 
         expect(screen.getByRole('button', { name: /guardar/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /cancelar/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /volver/i })).toBeInTheDocument();
     });
 
-    it('should call onCancel when cancel button is clicked', async () => {
+    it('should call onCancel when the back button is clicked', async () => {
         const onCancel = vi.fn();
         const user = userEvent.setup();
 
@@ -45,7 +48,7 @@ describe('ActionBar', () => {
             />
         );
 
-        await user.click(screen.getByRole('button', { name: /cancelar/i }));
+        await user.click(screen.getByRole('button', { name: /volver/i }));
         expect(onCancel).toHaveBeenCalledOnce();
     });
 
@@ -62,7 +65,7 @@ describe('ActionBar', () => {
         expect(saveButton).toBeDisabled();
     });
 
-    it('should disable cancel button while saving', () => {
+    it('should disable the back button while saving', () => {
         render(
             <ActionBar
                 locale="es"
@@ -71,7 +74,7 @@ describe('ActionBar', () => {
             />
         );
 
-        const cancelButton = screen.getByRole('button', { name: /cancelar/i });
-        expect(cancelButton).toBeDisabled();
+        const backButton = screen.getByRole('button', { name: /volver/i });
+        expect(backButton).toBeDisabled();
     });
 });
