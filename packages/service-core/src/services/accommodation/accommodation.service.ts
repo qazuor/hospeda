@@ -139,9 +139,9 @@ import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
-import { buildAccommodationFeaturedMediaPort } from './accommodation.featured-media';
 import {
     flattenAccommodationJoinRelations,
     flattenAccommodationJoinRelationsList,
@@ -4016,10 +4016,16 @@ export class AccommodationService extends BaseCrudService<
                 const mediaModel = new AccommodationMediaModel();
 
                 const { media, previousFeatured } = await addFeaturedMediaRow({
-                    port: buildAccommodationFeaturedMediaPort({
+                    port: buildOwnedMediaFeaturedPort({
                         mediaModel,
-                        accommodationId: validated.accommodationId,
-                        media: validated.media
+                        ownerKey: 'accommodationId',
+                        ownerId: validated.accommodationId,
+                        media: validated.media,
+                        findFeatured: (tx) =>
+                            mediaModel.findFeatured({
+                                accommodationId: validated.accommodationId,
+                                tx
+                            })
                     }),
                     entityGalleryCap: getGalleryCap('accommodation'),
                     planGalleryCap: validated.planGalleryCap,

@@ -23,3 +23,8 @@ export type {
     StockImageResult
 } from './image-search.service';
 export { ImageSearchService } from './image-search.service';
+export type {
+    BuildOwnedMediaFeaturedPortInput,
+    FeaturedCapableMediaModel
+} from './owned-media-featured-port';
+export { buildOwnedMediaFeaturedPort } from './owned-media-featured-port';

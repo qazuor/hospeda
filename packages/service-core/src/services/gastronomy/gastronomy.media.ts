@@ -33,6 +33,9 @@ import {
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import {
+    type GastronomyFeaturedMediaAddInput,
+    GastronomyFeaturedMediaAddInputSchema,
+    type GastronomyFeaturedMediaAddOutput,
     type GastronomyMediaAddInput,
     GastronomyMediaAddInputSchema,
     type GastronomyMediaListInput,
@@ -52,7 +55,9 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { scheduleCommerceMediaRevalidation } from '../commerce/commerce-revalidation.js';
+import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { checkGastronomyCanEditMedia } from './gastronomy.permissions';
 
 // ---------------------------------------------------------------------------
@@ -594,6 +599,97 @@ export async function setFeaturedGastronomyMedia(
         await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: updated } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Registers a photo that is the gastronomy listing's cover from the moment it exists,
+ * replacing the previous cover in the same transaction (HOS-803).
+ *
+ * ## Why this is not `addGastronomyMedia` plus `setFeaturedGastronomyMedia`
+ *
+ * That is what the admin gallery used to do, and it could not run when it was
+ * most needed. `addGastronomyMedia` enforces the gallery cap, and that cap counts the
+ * gallery ALONE because a cover is not a gallery item (HOS-791) — so an owner
+ * whose gallery sat exactly at the cap was refused at the first step and never
+ * reached the promotion in the second. The one action exempt from the quota was
+ * the only one they could not perform.
+ *
+ * ## Why waiving the cap is safe here
+ *
+ * Because the outcome is guaranteed rather than promised. A client-supplied
+ * "treat this upload as the cover" flag on the gallery endpoint would be
+ * unverifiable — nothing obliges the caller to send the follow-up promotion —
+ * so a caller setting it on every upload would have no cap at all. Here the row
+ * is created featured inside a transaction and
+ * `uq_gastronomy_media_single_featured` permits exactly one, so quota-exempt
+ * rows cannot accumulate. The previous cover is demoted into the gallery only
+ * while the gallery has room and archived otherwise, so the visible gallery
+ * never grows past the cap however often a cover is swapped.
+ *
+ * Unlike accommodations there is no plan allowance to consider: commerce
+ * listings are governed by the fixed per-entity cap alone.
+ *
+ * @param model - GastronomyModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated featured-media input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns The created cover plus what became of the one it replaced.
+ */
+export async function addGastronomyFeaturedMedia(
+    model: GastronomyModel,
+    actor: Actor,
+    data: GastronomyFeaturedMediaAddInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<GastronomyFeaturedMediaAddOutput>> {
+    try {
+        const parseResult = GastronomyFeaturedMediaAddInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
+        checkGastronomyCanEditMedia(actor, gastronomy);
+
+        const mediaModel = new GastronomyMediaModel();
+
+        const { media, previousFeatured } = await addFeaturedMediaRow({
+            port: buildOwnedMediaFeaturedPort({
+                mediaModel,
+                ownerKey: 'gastronomyId',
+                ownerId: validated.gastronomyId,
+                media: validated.media,
+                findFeatured: (tx) =>
+                    mediaModel.findFeatured({ gastronomyId: validated.gastronomyId, tx })
+            }),
+            entityGalleryCap: getGalleryCap('gastronomy'),
+            tx: ctx?.tx
+        });
+
+        // HOS-389 §4 — see `addGastronomyMedia` for the rationale. Loudest case: the
+        // cover is what every listing card and social preview renders.
+        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+
+        return { data: { media, previousFeatured } };
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
