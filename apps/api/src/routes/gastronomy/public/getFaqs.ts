@@ -5,6 +5,12 @@
  * Uses listGastronomyFaqs() which loads the listing with its `faqs` relation
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
  * that can view the listing can read its FAQs (open public).
+ *
+ * HOS-400: `listGastronomyFaqs` is shared with the admin/owner reads, which must
+ * stay unfiltered — a hidden FAQ must remain visible in the screen meant to
+ * manage it. So the `isVisibleOnListing` filter is applied HERE, server-side,
+ * before the row ever leaves this route — filtering only on the client would
+ * still ship the private FAQ in the page's payload.
  */
 import { GastronomyFaqPublicListOutputSchema } from '@repo/schemas';
 import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
@@ -53,7 +59,11 @@ export const publicGetGastronomyFaqsRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return result.data ?? { faqs: [] };
+        const faqs = result.data?.faqs ?? [];
+        // HOS-400 G-4/AC-8: `isVisibleOnListing = false` FAQs never leave this
+        // route. A FAQ missing the field (pre-migration data) reads as visible,
+        // matching the column's `DEFAULT true`.
+        return { faqs: faqs.filter((faq) => faq.isVisibleOnListing !== false) };
     },
     options: {
         cacheTTL: 300,
