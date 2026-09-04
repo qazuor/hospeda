@@ -353,14 +353,22 @@ export const PHOTO_PHOTOGRAPHER_MAX_LENGTH = 200;
  * `null` is accepted alongside `undefined` on every text field because the API
  * rows are nullable and the callers map them differently — one normalizes to
  * `undefined`, another passes the row through.
+ *
+ * The four text keys are REQUIRED and nullable (`string | null | undefined`),
+ * not optional (`?: string | null`). The distinction is the whole safety of
+ * this interface: the panel always sends all four fields back, and a field it
+ * never received is sent as `null`, which CLEARS the column. With `?:`, a
+ * caller that forgets to map `description` compiles clean and erases that
+ * column on the first save; required-and-nullable makes the same omission a
+ * `tsc` error, while still accepting every value the callers actually produce.
  */
 export interface PhotoMetadataEditableItem {
     /** DB UUID. Empty string for an SSR placeholder that cannot be edited yet. */
     readonly id: string;
-    readonly alt?: string | null;
-    readonly caption?: string | null;
-    readonly description?: string | null;
-    readonly attribution?: MediaAttribution | null;
+    readonly alt: string | null | undefined;
+    readonly caption: string | null | undefined;
+    readonly description: string | null | undefined;
+    readonly attribution: MediaAttribution | null | undefined;
 }
 
 /** Raw form field values for the photo metadata editor, always plain strings. */

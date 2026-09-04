@@ -82,16 +82,16 @@ interface ContentMediaItem {
     readonly id: string;
     readonly url: string;
     readonly publicId?: string;
-    readonly caption?: string;
+    readonly caption: string | undefined;
     /**
      * Longer photo description. Added by HOS-1036 alongside `attribution`:
      * both columns existed on `post_media`/`event_media` from HOS-390 and were
      * simply never read here, because nothing in this section could write them.
      */
-    readonly description?: string;
-    readonly alt?: string;
+    readonly description: string | undefined;
+    readonly alt: string | undefined;
     /** Photo credit, when the author declared one. */
-    readonly attribution?: MediaAttribution;
+    readonly attribution: MediaAttribution | undefined;
     readonly isFeatured: boolean;
 }
 
