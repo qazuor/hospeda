@@ -1073,6 +1073,53 @@ shape). Consequently `partner` has an entity cache tag but no collection tag; a
 partner write purges its own tag plus `home`, because the home carousel is the
 only surface that lists partners.
 
+### Publishing: one page per vertical (HOS-1156)
+
+`/{lang}/publicar/`, `/{lang}/publicar/gastronomia/` and
+`/{lang}/publicar/experiencias/` are the three pages the header's "Publicar"
+menu opens. Each one carries the funnel AND the create form — there is no
+funnel/form pair any more, and no vertical picker. Four rules a future reader
+would otherwise re-derive wrongly:
+
+- **The form slot has three states, and ONE place resolves them.**
+  `resolvePublishPageSlot` (`src/lib/publish/publish-page-slot.ts`) returns
+  `signup_cta` / `form` / `precheck_panel` plus every URL that state needs;
+  `PublishFormSlot.astro` renders it. A page passes its own create island as the
+  slot's children and branches on nothing. The two rules that live in the
+  resolver are the ones three pages must not disagree about: the precheck
+  **fails OPEN** (any error → the form, because the real cap is enforced by the
+  create endpoint's 403 and failing closed would tell somebody with quota they
+  are at their limit), and a signed-out visitor is **never redirected to login**
+  (these are reached from a PUBLIC navbar button; both pages this replaced
+  called `buildLoginRedirect` in their frontmatter).
+- **Every publish path lives exactly once**, in
+  `src/lib/publish/publish-page-paths.ts`, read by the pages, the header's
+  `PUBLISH_CTA_OPTIONS`, the footer, the five 301s and `buildCommerceStartUrl`.
+  This exists because the issue was CAUSED by a stale link: HOS-1032 repointed
+  eighteen call sites at a 301 whose target had changed meaning, and one of them
+  was the "Publicar" button. **A link to a redirect is a link whose destination
+  somebody else can move** — `test/static-guards/no-links-to-superseded-publish-urls.guard.test.ts`
+  fails CI on a new one.
+- **The pages read the session, so they can never be edge-cached.** They live
+  under the `publicar` segment, which is in `SESSION_OPTIONAL_SEGMENTS` and must
+  stay off every cacheable list; a personalised response in a shared cache would
+  serve one owner's draft names and quota to the next visitor
+  (`test/pages/publish-pages-are-not-cacheable.guard.test.ts`).
+- **`PUBLIC_REDIRECT_PATHS` is a hole in the `/mi-cuenta` login gate, and it is
+  only safe while the pages behind it hold nothing.** The two retired
+  `/mi-cuenta/comercio/nuevo/` URLs are 301s to public pages, so gating them
+  would make an old bookmark demand an account in order to learn its destination
+  no longer needs one. The danger is a page that is a redirect today and grows a
+  body later, under a path whose prefix makes every reader assume it is
+  protected — `test/lib/public-redirect-paths.guard.test.ts` is what fails then.
+
+The per-vertical cap, the six-cell decision matrix and the delete-draft action
+are shared with the API: see `LIMIT_KEY_BY_PUBLISH_VERTICAL` (`@repo/billing`),
+`GET /api/v1/protected/publish/precheck/{vertical}` and
+`DELETE /api/v1/protected/commerce/listings/{vertical}/{id}`. Accommodation keeps
+its own delete (`DELETE /protected/accommodations/{id}`), which already accepted
+its owner; `publishApi.deleteDraft` owns that branch so the island does not.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`
