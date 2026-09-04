@@ -9,8 +9,10 @@
  * red (verified by mutation, not assumed):
  *
  *  - the handler dropping a field on the floor (e.g. never forwarding `alt`) —
- *    every patch assertion is `toEqual` on the WHOLE object, never
- *    `expect.objectContaining`, which is blind to a missing key;
+ *    every patch assertion is `toStrictEqual` on the WHOLE object, never
+ *    `expect.objectContaining` (blind to a missing key) and never `toEqual`
+ *    (blind to a key whose value is `undefined`, which is precisely the shape
+ *    the spread mutation below produces);
  *  - the handler spreading the payload wholesale instead of using
  *    `buildMediaTextPatch`, which would write `undefined` over every omitted
  *    column and turn "fix the alt" into "erase the caption";
@@ -155,10 +157,10 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
 
             expect(result.error).toBeUndefined();
             expect(mockMediaModel.update).toHaveBeenCalledTimes(1);
-            expect(mockMediaModel.update.mock.calls[0]?.[0]).toEqual({ id: MEDIA_ID });
-            // toEqual on the WHOLE patch: objectContaining would stay green with
-            // `alt` silently dropped, which is exactly the bug worth catching.
-            expect(mockMediaModel.update.mock.calls[0]?.[1]).toEqual({
+            expect(mockMediaModel.update.mock.calls[0]?.[0]).toStrictEqual({ id: MEDIA_ID });
+            // toStrictEqual on the WHOLE patch: objectContaining would stay green
+            // with `alt` silently dropped, which is exactly the bug worth catching.
+            expect(mockMediaModel.update.mock.calls[0]?.[1]).toStrictEqual({
                 caption: 'Atardecer en el muelle',
                 description: 'El muelle viejo visto desde la costanera',
                 alt: 'Muelle de madera sobre el río al atardecer',
@@ -185,10 +187,12 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
             });
 
             expect(result.error).toBeUndefined();
-            // An exact match is the assertion: spreading the payload instead of
-            // building the patch would add `caption: undefined` here, and that
+            // A STRICT exact match is the assertion: spreading the payload instead
+            // of building the patch would add `caption: undefined` here, and that
             // would be written as NULL over a caption the author never touched.
-            expect(mockMediaModel.update.mock.calls[0]?.[1]).toEqual({ alt: 'Sólo el alt' });
+            // `toStrictEqual` is load-bearing here: `toEqual` IGNORES properties
+            // whose value is `undefined`, so it stays green on that exact mutation.
+            expect(mockMediaModel.update.mock.calls[0]?.[1]).toStrictEqual({ alt: 'Sólo el alt' });
         });
 
         it('CLEARS a field sent as null (null is an edit, not an omission)', async () => {
@@ -199,7 +203,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
             });
 
             expect(result.error).toBeUndefined();
-            expect(mockMediaModel.update.mock.calls[0]?.[1]).toEqual({ caption: null });
+            expect(mockMediaModel.update.mock.calls[0]?.[1]).toStrictEqual({ caption: null });
         });
     });
 
