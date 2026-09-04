@@ -45,10 +45,14 @@ describe('qrApi.resolve', () => {
     it('calls the public resolution endpoint for the slug', async () => {
         const { qrApi } = await import('../../src/lib/api/endpoints');
 
-        await qrApi.resolve('Live2345');
+        await qrApi.resolve({ slug: 'Live2345' });
 
         expect(getMock).toHaveBeenCalledTimes(1);
-        expect(getMock.mock.calls[0]?.[0]).toEqual({ path: '/api/v1/public/qr/Live2345' });
+        expect(getMock.mock.calls[0]?.[0]).toEqual({
+            path: '/api/v1/public/qr/Live2345',
+            headers: {},
+            cookieHeader: undefined
+        });
     });
 
     it('never opts the call into the SSR cache', async () => {
@@ -58,17 +62,58 @@ describe('qrApi.resolve', () => {
         // target that cannot be changed until the TTL expires.
         const { qrApi } = await import('../../src/lib/api/endpoints');
 
-        await qrApi.resolve('Live2345');
+        await qrApi.resolve({ slug: 'Live2345' });
 
         const args = getMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(Object.keys(args)).toEqual(['path']);
+        expect(Object.keys(args).sort()).toEqual(['cookieHeader', 'headers', 'path']);
         expect(args.cacheTtlMs).toBeUndefined();
+    });
+
+    it('forwards the scanner headers so the scan row is not about the web server', async () => {
+        // HOS-1141. This call is server-to-server: without forwarding, the only
+        // user agent the API can ever see is this process's own `fetch`, and
+        // every row in `qr_code_scans` would describe the same machine — a
+        // column that is present, populated and wrong, which is worse than an
+        // absent one.
+        const { qrApi } = await import('../../src/lib/api/endpoints');
+
+        await qrApi.resolve({
+            slug: 'Live2345',
+            userAgent: 'Mozilla/5.0 (iPhone)',
+            acceptLanguage: 'pt-BR,pt;q=0.9',
+            cookieHeader: 'session=abc'
+        });
+
+        const args = getMock.mock.calls[0]?.[0] as {
+            headers: Record<string, string>;
+            cookieHeader?: string;
+        };
+        expect(args.headers).toEqual({
+            'user-agent': 'Mozilla/5.0 (iPhone)',
+            'accept-language': 'pt-BR,pt;q=0.9'
+        });
+        // The cookie is what lets the API resolve `user_id` itself, rather than
+        // this page asserting an identity it never validated.
+        expect(args.cookieHeader).toBe('session=abc');
+    });
+
+    it('omits a header it does not have rather than sending an empty one', async () => {
+        // An absent `User-Agent` and an empty one are the same fact, and the
+        // API's deriver already treats them alike — but sending `''` would put
+        // a header on the wire that the original request never carried, which
+        // is a small lie this layer has no reason to tell.
+        const { qrApi } = await import('../../src/lib/api/endpoints');
+
+        await qrApi.resolve({ slug: 'Live2345', userAgent: null, acceptLanguage: '' });
+
+        const args = getMock.mock.calls[0]?.[0] as { headers: Record<string, string> };
+        expect(args.headers).toEqual({});
     });
 
     it('percent-encodes a slug so it cannot escape its path segment', async () => {
         const { qrApi } = await import('../../src/lib/api/endpoints');
 
-        await qrApi.resolve('../../etc/passwd');
+        await qrApi.resolve({ slug: '../../etc/passwd' });
 
         const args = getMock.mock.calls[0]?.[0] as { path: string };
         expect(args.path).toBe('/api/v1/public/qr/..%2F..%2Fetc%2Fpasswd');
@@ -159,6 +204,20 @@ describe('/qr/{slug}/ page — cacheability and failure mode', () => {
         const redirectTargets = [...source.matchAll(/status:\s*30[12]/g)];
         expect(redirectTargets.length).toBe(1);
         expect(source).not.toMatch(/redirect\(\s*['"]\//);
+    });
+
+    it.each([
+        ['user-agent', 'user-agent'],
+        ['accept-language', 'accept-language'],
+        ['cookie', 'cookie']
+    ])('forwards the scanner %s header to the API (HOS-1141)', (_label, header) => {
+        // Anchored on the `qrApi.resolve(` call's own argument text, not run
+        // against the whole file: the page's prose mentions all three header
+        // names, and a whole-file `toContain` would stay green with the
+        // forwarding deleted and only the comment left behind.
+        const args = callArgsOf(source, 'qrApi.resolve');
+
+        expect(args).toContain(`Astro.request.headers.get('${header}')`);
     });
 
     it('carries the cache headers onto the redirect instead of using Astro.redirect', () => {

@@ -296,13 +296,34 @@ export const apiClient = {
     get<T>({
         path,
         params,
-        cacheTtlMs
+        cacheTtlMs,
+        headers,
+        cookieHeader
     }: {
         path: string;
         params?: Record<string, unknown>;
         cacheTtlMs?: number;
+        /**
+         * Extra request headers to forward (HOS-1141). Added for the QR
+         * resolution call, which is a server-to-server request whose whole
+         * purpose is to tell the API about the ORIGINAL client — without
+         * forwarding, every scan the API records describes the web server.
+         */
+        headers?: Record<string, string>;
+        /**
+         * Raw `Cookie` header to forward (HOS-1141).
+         *
+         * Distinct in intent from `getProtected`: this stays an
+         * anonymous-capable public GET that merely lets the API RECOGNISE a
+         * signed-in caller when there is one, not a call that fails without a
+         * session. Note that passing it also disqualifies the request from the
+         * SSR cache (see the `cacheable` guard in `request`), which is the
+         * correct behaviour for a per-visitor response and is relied on by the
+         * QR route.
+         */
+        cookieHeader?: string;
     }): Promise<ApiResult<T>> {
-        return request<T>({ method: 'GET', path, params, cacheTtlMs });
+        return request<T>({ method: 'GET', path, params, cacheTtlMs, headers, cookieHeader });
     },
 
     /**
