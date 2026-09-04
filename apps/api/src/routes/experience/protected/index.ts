@@ -38,6 +38,7 @@ import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateExperienceFaqRoute } from './updateFaq';
+import { protectedUpdateExperienceMediaRoute } from './updateMedia';
 import { protectedExperienceViewStatsRoute } from './viewStats';
 import { protectedExperienceViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
@@ -105,5 +106,9 @@ app.route('/', protectedSetFeaturedExperienceMediaRoute);
 
 // DELETE /{id}/media/{mediaId} — Remove photo from gallery.
 app.route('/', protectedRemoveExperienceMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdateExperienceMediaRoute);
 
 export { app as protectedExperienceRoutes };
