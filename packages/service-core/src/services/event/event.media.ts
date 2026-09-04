@@ -41,12 +41,15 @@ import {
     type EventMediaSetFeaturedInput,
     EventMediaSetFeaturedInputSchema,
     type EventMediaSingleOutput,
+    type EventMediaUpdateInput,
+    EventMediaUpdateInputSchema,
     ModerationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildMediaTextPatch } from '../media/media-text-patch';
 import { checkEventCanEditMedia } from './event.permissions';
 
 /** Max rows loaded when resequencing or validating a gallery. */
@@ -471,6 +474,66 @@ export async function setFeaturedEventMedia(
                 'Failed to retrieve updated media row after set-featured'
             );
         }
+        return { data: { media: updated } };
+    } catch (err) {
+        return toErrorOutput(err);
+    }
+}
+
+/**
+ * Corrects the TEXT metadata of a single photo in an event's gallery (HOS-1036).
+ *
+ * The event twin of {@link updatePostMedia} — see that function (and
+ * `AccommodationService.updateMedia`, HOS-388) for the full rationale. Text
+ * only: `caption`, `description`, `alt`, `attribution`; `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `eventId` are not
+ * reachable from {@link EventMediaUpdateInputSchema} even if the client sends
+ * them.
+ *
+ * Each field is three-state — omit to leave unchanged, `null` to clear, a value
+ * to replace — hence `buildMediaTextPatch` rather than a wholesale spread.
+ *
+ * A media row belonging to another event, a non-existent id, or a soft-deleted
+ * row all answer NOT_FOUND — never FORBIDDEN.
+ *
+ * @param model - EventModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Update input (`eventId` + `mediaId` + the text fields).
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<EventMediaSingleOutput>` containing the updated row.
+ */
+export async function updateEventMedia(
+    model: EventModel,
+    actor: Actor,
+    data: EventMediaUpdateInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<EventMediaSingleOutput>> {
+    try {
+        const parseResult = EventMediaUpdateInputSchema.safeParse(data);
+        if (!parseResult.success) return validationError(parseResult.error.issues);
+        const validated = parseResult.data;
+
+        const event = await requireEvent(model, validated.eventId, ctx?.tx);
+        checkEventCanEditMedia(actor, event);
+
+        const mediaModel = new EventMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!mediaRow || mediaRow.eventId !== validated.eventId) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this event');
+        }
+
+        const updated = await mediaModel.update(
+            { id: validated.mediaId },
+            buildMediaTextPatch(validated),
+            ctx?.tx
+        );
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to retrieve updated media row after text update'
+            );
+        }
+
         return { data: { media: updated } };
     } catch (err) {
         return toErrorOutput(err);

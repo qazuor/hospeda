@@ -42,11 +42,14 @@ import {
     type PostMediaSetFeaturedInput,
     PostMediaSetFeaturedInputSchema,
     type PostMediaSingleOutput,
+    type PostMediaUpdateInput,
+    PostMediaUpdateInputSchema,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildMediaTextPatch } from '../media/media-text-patch';
 import { checkPostCanEditMedia } from './post.permissions';
 
 /** Max rows loaded when resequencing or validating a gallery. */
@@ -471,6 +474,72 @@ export async function setFeaturedPostMedia(
                 'Failed to retrieve updated media row after set-featured'
             );
         }
+        return { data: { media: updated } };
+    } catch (err) {
+        return toErrorOutput(err);
+    }
+}
+
+/**
+ * Corrects the TEXT metadata of a single photo in a post's gallery (HOS-1036).
+ *
+ * The editorial twin of `AccommodationService.updateMedia` (HOS-388). Before
+ * this existed the only way to fix — or write for the first time — a photo's
+ * `alt` was to delete it and re-upload, burning a second Cloudinary asset and
+ * losing the row's gallery position. The web editor never offered the fields at
+ * all, so every post photo shipped with no accessible text.
+ *
+ * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `postId` are not
+ * reachable from {@link PostMediaUpdateInputSchema} even if the client sends
+ * them.
+ *
+ * Each field is three-state — omit to leave unchanged, `null` to clear, a value
+ * to replace — which is why the patch is built by `buildMediaTextPatch` rather
+ * than spread wholesale (see that module for what spreading would erase).
+ *
+ * A media row belonging to another post, a non-existent id, or a soft-deleted
+ * row all answer NOT_FOUND — never FORBIDDEN, so a foreign id cannot be
+ * confirmed to exist.
+ *
+ * @param model - PostModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Update input (`postId` + `mediaId` + the text fields).
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<PostMediaSingleOutput>` containing the updated row.
+ */
+export async function updatePostMedia(
+    model: PostModel,
+    actor: Actor,
+    data: PostMediaUpdateInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<PostMediaSingleOutput>> {
+    try {
+        const parseResult = PostMediaUpdateInputSchema.safeParse(data);
+        if (!parseResult.success) return validationError(parseResult.error.issues);
+        const validated = parseResult.data;
+
+        const post = await requirePost(model, validated.postId, ctx?.tx);
+        checkPostCanEditMedia(actor, post);
+
+        const mediaModel = new PostMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!mediaRow || mediaRow.postId !== validated.postId) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Media not found for this post');
+        }
+
+        const updated = await mediaModel.update(
+            { id: validated.mediaId },
+            buildMediaTextPatch(validated),
+            ctx?.tx
+        );
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to retrieve updated media row after text update'
+            );
+        }
+
         return { data: { media: updated } };
     } catch (err) {
         return toErrorOutput(err);
