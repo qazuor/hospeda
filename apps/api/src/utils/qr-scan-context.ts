@@ -107,8 +107,40 @@ const TABLET_PATTERN = /ipad|tablet|kindle|playbook|silk/;
  * bot, a broken client, or a scanner app with its own string — and counting it
  * as desktop invents the single most misleading row a QR metrics panel could
  * show, since a printed code is almost never scanned from a desktop.
+ *
+ * ## `linux` is DELIBERATELY absent — do not add it back
+ *
+ * It was here, and it was removed (HOS-1141 review) because it violated the
+ * very rule stated just above. `linux` is not a desktop signal; it is a kernel
+ * that also runs televisions, set-top boxes and crawlers. Measured over the
+ * same corpus, with and without the token:
+ *
+ * ```
+ * case                    with linux  without linux
+ * Android phone               MOBILE         MOBILE
+ * Android tablet              TABLET         TABLET
+ * Desktop Linux X11          DESKTOP        DESKTOP
+ * Desktop Linux no X11       DESKTOP           null   <- the cost
+ * Smart TV (Tizen/Linux)     DESKTOP           null   <- the reason
+ * Bot on Linux               DESKTOP           null   <- the reason
+ * ```
+ *
+ * It bought exactly ONE honest case — desktop Linux that does not announce
+ * `X11`, e.g. Firefox on Wayland (`Mozilla/5.0 (Linux x86_64; rv:128.0)`) —
+ * and paid for it with two dishonest ones. A Tizen TV is not somebody at a
+ * desk, and a crawler is not anybody at all.
+ *
+ * So a Wayland Firefox now derives `null`, and that is the INTENDED answer, not
+ * a gap to close by restoring the token. `null` means "we could not tell",
+ * which is true, and it stays distinguishable from the buckets we did read —
+ * the same rule that keeps `QrScanOsEnum.OTHER` separate from `NULL`. Trading a
+ * fabricated `DESKTOP` row for an honest empty one is the entire point.
+ *
+ * Note this token was never what protected Android: EVERY Android user agent
+ * contains `Linux`, and what keeps Android off this branch is the ORDER of the
+ * checks in {@link deriveQrScanDeviceType}, pinned by its own test.
  */
-const DESKTOP_PATTERN = /windows nt|macintosh|mac os x|x11|linux|cros/;
+const DESKTOP_PATTERN = /windows nt|macintosh|mac os x|x11|cros/;
 
 /** Android WITHOUT the phone marker, i.e. the documented tablet convention. */
 const ANDROID_PATTERN = /android/;
