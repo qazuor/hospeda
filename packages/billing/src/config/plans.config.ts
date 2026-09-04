@@ -567,12 +567,14 @@ export const COMMERCE_AI_CHAT_PER_MONTH = 1250;
 /**
  * Builds one tier of a per-vertical commerce catalogue (HOS-688 §6.8).
  *
- * Every tier declares EXACTLY TWO limits, both scoped to its own vertical: the
- * listing cap, and — since HOS-400 — the monthly AI-chat quota. Everything else
+ * Every tier declares TWO limits of its OWN, both scoped to its own vertical:
+ * the listing cap, and — since HOS-400 — the monthly AI-chat quota. On top of
+ * those it inherits {@link TOURIST_VIP_LIMITS} (HOS-975 D-A, see below), the
+ * same seven the six accommodation plans inherit. Everything beyond those nine
  * is deliberately absent, and that absence is not the same as `-1`: both resolve
  * to unlimited downstream, but an absent key reads as "this plan does not meter
  * that", which is what is true here. A gastronomy plan still has no opinion
- * about photos, promotions, or any AI quota other than its own chat.
+ * about photos, promotions, or any owner-side AI quota other than its own chat.
  *
  * The chat quota was NOT left absent for exactly that reason. "This plan does
  * not meter the chat" and "this plan grants an uncapped chat" are the same
@@ -599,13 +601,39 @@ export const COMMERCE_AI_CHAT_PER_MONTH = 1250;
  * now wants ONE mechanism rather than two, so commerce gets real keys and the
  * commerce routes get real gates.
  *
+ * ## The tourist-VIP inheritance (HOS-975 D-A)
+ *
+ * On top of that pair, every commerce tier now spreads
+ * {@link TOURIST_VIP_ENTITLEMENTS} and {@link TOURIST_VIP_LIMITS} whole — the
+ * same two constants all six accommodation plans spread, reused rather than
+ * re-derived so a third list can never drift from them. A commerce owner is a
+ * tourist on this platform too; before this, commerce was the only owner
+ * catalogue whose floor excluded the tourist block, which made those 15 keys an
+ * accidental privilege of accommodation rather than anybody's decision.
+ *
+ * **The limits half is load-bearing, not symmetry.** Grant the entitlements
+ * without the limits and `MAX_AI_SEARCH_PER_MONTH` is simply not on the row —
+ * which the engine reads as UNLIMITED, through five layers, without raising. A
+ * commerce owner would then hold an uncapped AI-search quota that a paying
+ * tourist-VIP holds at 200. The two constants travel together for that reason.
+ *
+ * Two consequences worth carrying forward, both recorded when the audit chose
+ * this: `VIP_SUPPORT` is the one inherited key that costs real money (human
+ * support), and `CAN_ATTACH_REVIEW_PHOTOS` is enforced by no route anywhere, so
+ * commerce inherits one key that currently does nothing and resolves itself when
+ * that entitlement is eventually built.
+ *
  * @param input.slug - Plan slug (`gastronomy-basico`, …).
  * @param input.name - Buyer-visible display name; becomes MercadoPago's `reason`.
  * @param input.description - Admin-facing description.
  * @param input.vertical - The commerce vertical this tier belongs to. Supplies
  *   BOTH the cap key and the entitlement pair, so the two can never name
  *   different verticals.
- * @param input.maxListings - Value of that cap for this tier.
+ * @param input.maxListings - Value of that cap for this tier. Per TIER since
+ *   HOS-975, and per VERTICAL: gastronomy runs 1 / 3 / 5 and experiences
+ *   1 / 5 / 10 (owner decision, 2026-09-04). Until then all six tiers passed
+ *   `1`, which left the cap — the one axis this factory's own doc calls the
+ *   differentiator — identical across a ladder whose prices were not.
  * @param input.sortOrder - Display order within the vertical.
  * @param input.isActive - Whether the tier is sellable AT ALL — a seeded,
  *   priced, subscribable row. Does not by itself decide whether checkout ever
@@ -682,11 +710,37 @@ function commerceVerticalTier(input: {
         // live in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the
         // floor the gate reads from CODE for every tier at once, so putting a
         // premium-only key there would hand it to básico as well.
-        entitlements: [
+        entitlements: dedupe([
+            // HOS-975 D-A — the tourist-VIP block, whole, on all three tiers of
+            // both verticals. A commerce owner is also a tourist on this
+            // platform, exactly like an accommodation owner, and the six host
+            // plans already spread this same constant. Until this, commerce was
+            // the only owner catalogue whose floor excluded it — an accidental
+            // privilege of accommodation rather than a decision anyone made.
+            //
+            // `dedupe` collapses nothing TODAY — measured 2026-09-04, the three
+            // sources are disjoint and every commerce tier comes out at exactly
+            // 15 + its own keys. It is here because the overlap is one edit
+            // away and already real next door: `owner-basico` spreads the same
+            // constant and `dedupe` drops one duplicate
+            // (`CAN_CONTACT_WHATSAPP_DISPLAY`), which is why its 15 + 11 is 25
+            // and not 26. Both WhatsApp keys live inside these 15 and the H1
+            // matrix independently placed both at `TIER: basic`, so the day
+            // somebody spells one out per vertical, this is what keeps the row
+            // from carrying it twice.
+            ...TOURIST_VIP_ENTITLEMENTS,
             ...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[input.vertical],
             ...(input.extraEntitlements ?? [])
-        ],
-        limits: [
+        ]),
+        // HOS-975 D-A — the limits half of the same inheritance, and it is NOT
+        // optional once the entitlements above ship. The limit engine resolves
+        // an ABSENT key as UNLIMITED through five layers without raising, so
+        // granting `SAVE_FAVORITES` and the AI-consumer keys while omitting
+        // `TOURIST_VIP_LIMITS` would hand every commerce owner an uncapped
+        // `max_ai_search_per_month` — a quota a paying tourist-VIP holds at 200.
+        // The six host plans pair the two constants for this reason; commerce
+        // pairs them for the same one.
+        limits: mergeLimits(TOURIST_VIP_LIMITS, [
             limit(LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.maxListings),
             // HOS-400 — the vertical's AI-chat quota. Declared by EVERY tier,
             // including the ones that do not grant AI_CHAT at all, and that is
@@ -699,7 +753,7 @@ function commerceVerticalTier(input: {
             // somebody made, and a future seventh tier cannot inherit an
             // uncapped chat by forgetting an argument.
             limit(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.aiChatPerMonth)
-        ]
+        ])
     };
 }
 
@@ -824,7 +878,10 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     name: 'Gastronomía Profesional',
     description: 'Gastronomy listing plan — professional tier (HOS-688, activated HOS-895 PR2).',
     vertical: 'gastronomy',
-    maxListings: 1,
+    // HOS-975 (owner decision, 2026-09-04): the gastronomy ladder is 1 / 3 / 5.
+    // The cap is the one axis every tier of this vertical used to share, which
+    // is what made three differently-priced rows the same product.
+    maxListings: 3,
     sortOrder: 2,
     isActive: true,
     // HOS-975: ARS $65.000/mo. Was 4_500_000 (HOS-895 PR2's activation price).
@@ -882,7 +939,11 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     description:
         'Gastronomy listing plan — one listing per owner (HOS-688, reactivated by HOS-975).',
     vertical: 'gastronomy',
-    maxListings: 1,
+    // HOS-975 (owner decision, 2026-09-04): top of the gastronomy ladder, 1/3/5.
+    // Deliberately SHORTER than the experience ladder's 10 — the two verticals
+    // are priced and capped as separate products (the same reason básico's
+    // $30.000 no longer shares a constant with experiences' $15.000).
+    maxListings: 5,
     sortOrder: 3,
     // HOS-975: back on sale. Was `false` since HOS-818 retired it.
     isActive: true,
@@ -1003,7 +1064,12 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     name: 'Experiencias Profesional',
     description: 'Experience listing plan — professional tier (HOS-688, activated by HOS-975).',
     vertical: 'experience',
-    maxListings: 1,
+    // HOS-975 (owner decision, 2026-09-04): the experience ladder is 1 / 5 / 10,
+    // wider than gastronomy's 1/3/5. An operator running several excursions is
+    // ordinary; an owner of five restaurants is not. The caps are set per
+    // vertical for that reason and HOS-976 inherits these values rather than
+    // re-deciding them.
+    maxListings: 5,
     sortOrder: 2,
     // HOS-975: on sale. Was `false`/unpriced since HOS-688 created the row.
     isActive: true,
@@ -1039,7 +1105,8 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     description:
         'Experience listing plan — one listing per owner (HOS-688, reactivated by HOS-975).',
     vertical: 'experience',
-    maxListings: 1,
+    // HOS-975 (owner decision, 2026-09-04): top of the experience ladder, 1/5/10.
+    maxListings: 10,
     sortOrder: 3,
     // HOS-975: back on sale. Was `false` since HOS-818 retired it.
     isActive: true,
