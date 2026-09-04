@@ -358,13 +358,33 @@ enforced by `apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`.
 | `apps/admin/src/features/billing-plans/components/plan-entitlement-groups.ts:93-130` | hardcoded `commerce` group | add the key after `MULTILINGUAL_GASTRONOMY_MENU` |
 | `apps/admin/test/billing-plans/plan-entitlement-groups.test.ts:28-31` | exhaustiveness (HOS-331): ungrouped must be `[]` | covered by the line above |
 | `apps/web/src/lib/__tests__/entitlement-label-coverage.test.ts:58-73` | `billing.entitlement.<key>` in es/en/pt (H-49) | add three strings |
-| `apps/web/test/components/billing/plan-comparison-rows.test.ts:439-462` | `billing.comparison.row.<id>` + `rowDesc.<id>` in three locales, plus an icon | applies once the comparison row is added |
+| `packages/billing/test/entitlements.test.ts` | its own frozen `commerceCount` category total, **separate** from the CLAUDE.md guard | 12 → 13 |
+| `apps/web/test/components/billing/plan-comparison-rows.test.ts` | i18n coverage for comparison rows | **does NOT cover this row.** See the correction below |
 
-Verified **not** frozen, so no time is spent on them:
-`packages/billing/test/entitlements.test.ts:218-241` operates on
-`ALL_COMMERCE_ENTITLEMENT_KEYS` (the uniform floor, which this key is not part
-of); `config-drift-check.test.ts:53` operates on `ALL_PLANS`, which is
-accommodation-only; and `entitlements.test.ts:118-123` is self-referential.
+**Correction (verified during implementation, 2026-09-04).** The i18n coverage
+guard builds `ALL_RENDERED_ROWS` from `[...OWNER_GROUPS, ...TOURIST_GROUPS]`
+only (`plan-comparison-rows.test.ts:425`). `GASTRONOMY_GROUPS` and
+`EXPERIENCE_GROUPS` are never walked, so **every commerce comparison row is
+unguarded**: today `gastronomyMenu`, `multilingualMenu` and `menuItemPhotos`
+have `row.<id>` and no `rowDesc.<id>` in any locale, and CI is green. A missing
+translation on a commerce row reaches production silently.
+
+This spec still adds `row.menuQrAnalytics` **and** `rowDesc.menuQrAnalytics` in
+es/en/pt — matching the guarded rows rather than the unguarded neighbours — but
+widening the guard to the commerce groups is a separate concern and is **not**
+done here.
+
+Verified **not** frozen, so no time is spent on them: the
+`ALL_COMMERCE_ENTITLEMENT_KEYS` assertion at
+`packages/billing/test/entitlements.test.ts:218-241` reads the uniform floor,
+which this key is deliberately not part of; `config-drift-check.test.ts:53`
+operates on `ALL_PLANS`, which is accommodation-only; and
+`entitlements.test.ts:118-123` is self-referential.
+
+Note that `entitlements.test.ts` is on **both** lists: one assertion in it is
+blind to this key and another one breaks on it. Clearing a file by reading one
+of its assertions is how the `commerceCount` red above got missed when this
+section was first written.
 
 ### Plan-facing surfaces
 
