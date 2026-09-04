@@ -106,6 +106,16 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/planes/gastronomia/precios/', name: 'Pricing Gastronomy' },
     { url: '/es/planes/experiencias/precios/', name: 'Pricing Experience' },
     { url: '/es/planes/aliados/precios/', name: 'Pricing Partner' },
+    // HOS-1156: the three publish pages. Swept SIGNED OUT, which is the state
+    // this sweep runs in and also the one worth auditing hardest — it is what a
+    // visitor arriving from the public "Publicar" button sees, and the signup
+    // CTA that stands in for the form is markup nothing had audited before.
+    // The two commerce pages are listed separately from accommodation's because
+    // each mounts a DIFFERENT create island behind that CTA, so a fix on one
+    // page's form proves nothing about the other two.
+    { url: '/es/publicar/', name: 'Publish Accommodation' },
+    { url: '/es/publicar/gastronomia/', name: 'Publish Gastronomy' },
+    { url: '/es/publicar/experiencias/', name: 'Publish Experience' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];
