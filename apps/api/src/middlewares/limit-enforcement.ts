@@ -104,6 +104,59 @@ export function buildLimitReachedDetails(input: {
 }
 
 /**
+ * Throws the same `LIMIT_REACHED` `ServiceError` a real cap-reached check
+ * throws, for a limit whose current usage could not be determined (HOS-1087).
+ *
+ * Fails CLOSED: an unresolved count is a limit that was never verified, so it
+ * must be treated as "at the cap" rather than defaulted to 0 and silently
+ * granted. That default — `currentCount = 0` on a count failure — used to
+ * wave every request through on any DB hiccup, and shipped with a fully
+ * green suite because nothing exercised it end-to-end (HOS-973 R-2): a
+ * hand-built `checkLimit` context always answers allowed.
+ *
+ * Deliberately delegates to {@link checkLimit} with a sentinel "at cap"
+ * `currentCount` instead of hand-rolling the decision, so a plan whose
+ * `maxAllowed` is `-1` (unlimited) still short-circuits to allowed BEFORE
+ * `currentCount` is ever read — `checkLimit` ignores `currentCount` entirely
+ * on that branch. Only a plan with a real, finite cap is refused.
+ *
+ * No-ops (returns normally) when the plan is unlimited; throws otherwise.
+ *
+ * @param params.context - Hono request context carrying the loaded plan limits.
+ * @param params.limitKey - The limit whose count failed to resolve.
+ * @param params.fallbackMessage - Message used only if `checkLimit` did not supply one.
+ */
+function denyOnUnresolvedCount(params: {
+    readonly context: Context<AppBindings>;
+    readonly limitKey: LimitKey;
+    readonly fallbackMessage: string;
+}): void {
+    const { context, limitKey, fallbackMessage } = params;
+
+    // Sentinel currentCount: guaranteed >= any real finite maxAllowed, so
+    // checkLimit denies for every plan except the -1 (unlimited) case, which
+    // never inspects currentCount at all.
+    const limitCheck = checkLimit({
+        context,
+        limitKey,
+        currentCount: Number.MAX_SAFE_INTEGER
+    });
+
+    if (!limitCheck.allowed) {
+        throw new ServiceError(
+            ServiceErrorCode.LIMIT_REACHED,
+            limitCheck.upgradeMessage ?? fallbackMessage,
+            buildLimitReachedDetails({
+                limitKey,
+                currentCount: limitCheck.currentCount,
+                maxAllowed: limitCheck.maxAllowed,
+                usagePercent: calculateUsagePercent(limitCheck.currentCount, limitCheck.maxAllowed)
+            })
+        );
+    }
+}
+
+/**
  * Enforces accommodation limit before creation
  *
  * Checks if user has reached their max_accommodations limit.
@@ -391,9 +444,18 @@ export function enforcePromotionLimit(): AppMiddleware {
 
             if (countResult.error) {
                 apiLogger.error(
-                    `Failed to count promotions for limit check: ${countResult.error.message}`
+                    `Failed to count promotions for limit check: ${countResult.error.message}`,
+                    undefined,
+                    { capture: true }
                 );
-                // Continue - don't block on count failure
+                // HOS-1087: fail CLOSED instead of continuing with an
+                // assumed 0 count — see denyOnUnresolvedCount. No-ops (falls
+                // through to next()) for an unlimited plan.
+                denyOnUnresolvedCount({
+                    context: c,
+                    limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
+                    fallbackMessage: 'Promotion limit reached'
+                });
                 await next();
                 return;
             }
@@ -444,10 +506,20 @@ export function enforcePromotionLimit(): AppMiddleware {
                 throw error;
             }
 
-            // Log unexpected errors but don't block
             apiLogger.error(
-                `Error in promotion limit enforcement: ${error instanceof Error ? error.message : String(error)}`
+                `Error in promotion limit enforcement: ${error instanceof Error ? error.message : String(error)}`,
+                undefined,
+                { capture: true }
             );
+
+            // HOS-1087: fail CLOSED — an unexpected error here means the cap
+            // was never evaluated, the same state as a failed count. No-ops
+            // (falls through to next()) for an unlimited plan.
+            denyOnUnresolvedCount({
+                context: c,
+                limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
+                fallbackMessage: 'Promotion limit reached'
+            });
             await next();
         }
     };
@@ -499,6 +571,7 @@ export async function assertFavoritesLimitOrThrow(params: {
 
     // Get current favorites (bookmarks) count from UserBookmarkService
     let currentCount = 0;
+    let countFailed = false;
     try {
         const bookmarkService = new UserBookmarkService({ logger: apiLogger });
         const countResult = await bookmarkService.countBookmarksForUser(actor, {
@@ -508,15 +581,37 @@ export async function assertFavoritesLimitOrThrow(params: {
         if (countResult.data) {
             currentCount = countResult.data.count;
         } else if (countResult.error) {
-            apiLogger.warn(
-                `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`
+            countFailed = true;
+            // HOS-1087: bumped from `warn` to `error` + `capture: true` — a
+            // count failure used to be logged where Sentry never sees it
+            // (the capture hook only fires on ERROR with `capture: true`),
+            // which is exactly how this fail-open ran silently for as long
+            // as it did.
+            apiLogger.error(
+                `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`,
+                undefined,
+                { capture: true }
             );
         }
     } catch (countError) {
-        apiLogger.warn(
-            `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`
+        countFailed = true;
+        apiLogger.error(
+            `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`,
+            undefined,
+            { capture: true }
         );
-        // Continue with 0 count - don't block user on service failure
+    }
+
+    // HOS-1087: fail CLOSED on an unresolved count instead of assuming 0 and
+    // silently granting the favorite — see denyOnUnresolvedCount. No-ops
+    // (returns) for an unlimited plan (maxAllowed === -1).
+    if (countFailed) {
+        denyOnUnresolvedCount({
+            context: c,
+            limitKey: LimitKey.MAX_FAVORITES,
+            fallbackMessage: 'Favorites limit reached'
+        });
+        return;
     }
 
     // Check limit
