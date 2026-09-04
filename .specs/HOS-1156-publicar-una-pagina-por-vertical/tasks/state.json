@@ -925,35 +925,35 @@
             "id": "T-028",
             "title": "Verify all eight URLs live against a running server",
             "description": "AC-2 and AC-17, and they cannot be satisfied by typecheck: astro check is blind to frontmatter behind an early return, so a page can typecheck and still answer 500. curl the three new pages (200) and the five redirects (301 to the D-6 targets), in es, en and pt — twenty-four checks. Run against a local server from hops servers-up.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022", "T-023", "T-025"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "Three pages × three locales = 200",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Five redirects × three locales = 301 to target",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Record the measured output",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:17:57.923406Z",
+                "completed": "2026-09-04T23:17:57.923406Z"
             }
         },
         {
@@ -995,31 +995,31 @@
             "id": "T-030",
             "title": "Document the publish-page model in apps/web/CLAUDE.md",
             "description": "Record what a future reader would otherwise re-derive wrongly: the three pages read session and are therefore never cacheable; the precheck is one parameterised route, not three; the panel's add-on is selected by VERTICAL and still not by the caller; and the five URLs that 301, including that this overrides HOS-941 D-8. Files: apps/web/CLAUDE.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "The four non-obvious rules",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "The redirect table + the D-8 override",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-09-04T21:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-09-04T23:17:57.923406Z",
+                "completed": "2026-09-04T23:17:57.923406Z"
             }
         }
     ],
