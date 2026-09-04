@@ -15,12 +15,74 @@
  * is unit-testable in isolation; `PublishPrecheckPanel.astro` is the only
  * consumer and is responsible for resolving `labelKey`/`titleKey`/etc.
  * through `t()` and rendering the actual markup.
+ *
+ * ---
+ * HOS-1156 T-013 — WHY THE ADD-ON CONTRACT CHANGED, DELIBERATELY
+ *
+ * This module used to resolve its add-on offer from a hardcoded
+ * `LimitKey.MAX_ACCOMMODATIONS`, and said so in a rule: the caller "must not get
+ * to decide WHICH add-on this panel points at". That rule was right and is KEPT.
+ * What changed is who answers the question: the VERTICAL does, through the
+ * exhaustive `LIMIT_KEY_BY_PUBLISH_VERTICAL` map, not the caller.
+ *
+ * The distinction is the whole point. A caller passing a free-form `limitKey`
+ * could aim this panel at any add-on in the catalogue — which is what the
+ * original rule forbade. A caller passing a vertical can only ever reach the cap
+ * that vertical is actually blocked by, because the map is total and closed. The
+ * panel still refuses to be pointed anywhere; it just serves three verticals now
+ * instead of one.
+ *
+ * The `never hardcoded` guard in this module's test file was updated in the same
+ * change, for the same reason — it froze the previous answer to that question,
+ * and freezing it is exactly what made this an explicit decision rather than a
+ * silent drift.
+ * ---
  */
 
-import { LimitKey } from '@repo/billing';
+import { LIMIT_KEY_BY_PUBLISH_VERTICAL, type PublishVertical } from '@repo/billing';
 import type { HostOnboardingPrecheckDecision } from '@/lib/api/endpoints-protected';
 import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import type { SupportedLocale } from '@/lib/i18n';
+
+/**
+ * Per-vertical copy: which i18n namespace holds this vertical's draft-panel
+ * strings, and what it calls the thing being published.
+ *
+ * Accommodation keeps `host.pages.nueva.precheck.*` — the keys that shipped with
+ * BETA-197 and are live in three locales. Renaming them would have been a pure
+ * i18n migration with no user-visible gain, and the guards that check i18n see
+ * structure rather than content, so a half-finished rename would have gone
+ * unnoticed.
+ *
+ * `noun` exists because the FALLBACK text has to read correctly for a vertical
+ * whose key is not translated yet. "Tenés una propiedad sin publicar" is simply
+ * wrong on the gastronomy page, and a fallback that is wrong is worse than one
+ * that is generic.
+ *
+ * **All three nouns are feminine, and the fallbacks below depend on it**
+ * ("Tenés UNA {noun} sin publicar", "crear una {noun} NUEVA"). A masculine noun
+ * added here would produce "una comercio nueva" — grammatically wrong in the one
+ * place a reader is already blocked. Adding one means writing its fallbacks with
+ * agreement, not just extending this map.
+ */
+const PRECHECK_COPY: Readonly<
+    Record<
+        PublishVertical,
+        { readonly ns: string; readonly noun: string; readonly nounPlural: string }
+    >
+> = {
+    accommodation: {
+        ns: 'host.pages.nueva.precheck',
+        noun: 'propiedad',
+        nounPlural: 'propiedades'
+    },
+    gastronomy: { ns: 'publish.precheck.gastronomy', noun: 'ficha', nounPlural: 'fichas' },
+    experience: {
+        ns: 'publish.precheck.experience',
+        noun: 'experiencia',
+        nounPlural: 'experiencias'
+    }
+};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,11 +148,20 @@ export interface ResolvePrecheckPanelContentParams {
      * Active locale — used ONLY to build the add-on offer's URL (HOS-727).
      *
      * The add-on link is not passed in as a URL on purpose: the caller must not
-     * get to decide WHICH add-on this panel points at. The cap being hit here is
-     * always `max_accommodations`, so the panel resolves the offer from that
-     * limit and shows nothing at all if the limit stops being sellable.
+     * get to decide WHICH add-on this panel points at. The cap being hit is
+     * whichever one {@link vertical} names, so the panel resolves the offer from
+     * that limit and shows nothing at all if the limit stops being sellable.
      */
     readonly locale: SupportedLocale;
+    /**
+     * Which vertical is being published (HOS-1156 T-013).
+     *
+     * Decides the cap the at-limit branches speak about, and therefore which
+     * add-on — if any — is offered. Defaults to `'accommodation'` so the callers
+     * that predate this parameter keep their exact previous behaviour rather
+     * than silently resolving a different cap.
+     */
+    readonly vertical?: PublishVertical;
     /**
      * Edit URL for the actor's single DRAFT (`drafts[0]`). Required for
      * `resume_or_create` / `resume_delete_or_upgrade` (draftCount === 1);
@@ -134,21 +205,32 @@ export interface ResolvePrecheckPanelContentParams {
 export function resolvePrecheckPanelContent(
     params: ResolvePrecheckPanelContentParams
 ): PrecheckPanelContent {
-    const { decision, locale, editUrl, createUrl, accountPropertiesUrl, subscriptionUrl } = params;
+    const {
+        decision,
+        locale,
+        editUrl,
+        createUrl,
+        accountPropertiesUrl,
+        subscriptionUrl,
+        vertical = 'accommodation'
+    } = params;
 
-    // HOS-727. Every "you are at your cap" branch below is the same cap
-    // (`max_accommodations`), and it is the highest purchase-intent moment in
-    // the product: the host is stopped mid-publish. Offering only the plan
+    const limitKey = LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical];
+    const { ns, noun, nounPlural } = PRECHECK_COPY[vertical];
+
+    // HOS-727. Every "you are at your cap" branch below is the SAME cap — the one
+    // this vertical is capped by — and it is the highest purchase-intent moment
+    // in the product: the owner is stopped mid-publish. Offering only the plan
     // upgrade there sends them down the slowest, most expensive route when a
     // one-off add-on unblocks them immediately.
     //
-    // Resolved FROM THE LIMIT, never hardcoded: if `extra-accommodations-5`
-    // ever stops being purchasable, `addonOffer` becomes `null` and the CTA
+    // Resolved FROM THE LIMIT, never hardcoded: if the vertical's add-on ever
+    // stops being purchasable, `addonOffer` becomes `null` and the CTA
     // disappears instead of linking to a card that is not on the page.
-    const addonOffer = resolveLimitAddonOffer({
-        locale,
-        limitKey: LimitKey.MAX_ACCOMMODATIONS
-    });
+    //
+    // HOS-1156: the limit now comes from the vertical rather than from a literal.
+    // The caller still cannot choose the add-on — see the module docblock.
+    const addonOffer = resolveLimitAddonOffer({ locale, limitKey });
 
     const addonAction: PrecheckPanelLinkAction | null =
         addonOffer === null
@@ -172,11 +254,10 @@ export function resolvePrecheckPanelContent(
     switch (decision) {
         case 'upgrade_only':
             return {
-                titleKey: 'billing.limit.max_accommodations.atLimitPanel.title',
+                titleKey: `billing.limit.${limitKey}.atLimitPanel.title`,
                 titleFallback: 'Llegaste al límite de tu plan',
-                bodyKey: 'billing.limit.max_accommodations.atLimitPanel.body',
-                bodyFallback:
-                    'Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.',
+                bodyKey: `billing.limit.${limitKey}.atLimitPanel.body`,
+                bodyFallback: `Estás usando {{currentCount}} de {{maxAllowed}} ${nounPlural}. Para publicar otra, actualizá tu plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'maxAllowed',
                 actions: [
@@ -190,40 +271,39 @@ export function resolvePrecheckPanelContent(
                         kind: 'link',
                         variant: addonAction === null ? 'primary' : 'secondary',
                         href: subscriptionUrl,
-                        labelKey: 'billing.limit.max_accommodations.atLimitPanel.primaryCta',
+                        labelKey: `billing.limit.${limitKey}.atLimitPanel.primaryCta`,
                         labelFallback: 'Ver mi suscripción'
                     },
                     {
                         kind: 'link',
                         variant: 'secondary',
                         href: accountPropertiesUrl,
-                        labelKey: 'billing.limit.max_accommodations.atLimitPanel.secondaryCta',
-                        labelFallback: 'Ver mis propiedades'
+                        labelKey: `billing.limit.${limitKey}.atLimitPanel.secondaryCta`,
+                        labelFallback: `Ver mis ${nounPlural}`
                     }
                 ]
             };
 
         case 'resume_or_create':
             return {
-                titleKey: 'host.pages.nueva.precheck.resumeOrCreate.title',
+                titleKey: `${ns}.resumeOrCreate.title`,
                 titleFallback: 'Ya tenés un borrador en curso',
-                bodyKey: 'host.pages.nueva.precheck.resumeOrCreate.body',
-                bodyFallback:
-                    'Tenés una propiedad sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.',
+                bodyKey: `${ns}.resumeOrCreate.body`,
+                bodyFallback: `Tenés una ${noun} sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.`,
                 showQuota: false,
                 actions: [
                     {
                         kind: 'link',
                         variant: 'primary',
                         href: editUrl ?? accountPropertiesUrl,
-                        labelKey: 'host.pages.nueva.precheck.resumeOrCreate.resumeCta',
+                        labelKey: `${ns}.resumeOrCreate.resumeCta`,
                         labelFallback: 'Retomar borrador'
                     },
                     {
                         kind: 'link',
                         variant: 'secondary',
                         href: createUrl,
-                        labelKey: 'host.pages.nueva.precheck.resumeOrCreate.createCta',
+                        labelKey: `${ns}.resumeOrCreate.createCta`,
                         labelFallback: 'Crear uno nuevo'
                     }
                 ]
@@ -231,11 +311,10 @@ export function resolvePrecheckPanelContent(
 
         case 'resume_delete_or_upgrade':
             return {
-                titleKey: 'host.pages.nueva.precheck.resumeDeleteOrUpgrade.title',
+                titleKey: `${ns}.resumeDeleteOrUpgrade.title`,
                 titleFallback: 'Tenés un borrador, pero llegaste al límite de tu plan',
-                bodyKey: 'host.pages.nueva.precheck.resumeDeleteOrUpgrade.body',
-                bodyFallback:
-                    'Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.',
+                bodyKey: `${ns}.resumeDeleteOrUpgrade.body`,
+                bodyFallback: `Estás usando {{currentCount}} ${nounPlural} y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'currentCount',
                 actions: [
@@ -243,17 +322,15 @@ export function resolvePrecheckPanelContent(
                         kind: 'link',
                         variant: 'primary',
                         href: editUrl ?? accountPropertiesUrl,
-                        labelKey: 'host.pages.nueva.precheck.resumeDeleteOrUpgrade.resumeCta',
+                        labelKey: `${ns}.resumeDeleteOrUpgrade.resumeCta`,
                         labelFallback: 'Retomar borrador'
                     },
                     {
                         kind: 'delete-draft',
-                        labelKey: 'host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteCta',
+                        labelKey: `${ns}.resumeDeleteOrUpgrade.deleteCta`,
                         labelFallback: 'Borrar borrador',
-                        confirmTextKey:
-                            'host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteConfirm',
-                        confirmTextFallback:
-                            '¿Borrar este borrador? Vas a poder crear una propiedad nueva.'
+                        confirmTextKey: `${ns}.resumeDeleteOrUpgrade.deleteConfirm`,
+                        confirmTextFallback: `¿Borrar este borrador? Vas a poder crear una ${noun} nueva.`
                     },
                     // HOS-727: same cap, same offer — but behind the free
                     // unblock, which is why it is the secondary variant here.
@@ -262,7 +339,7 @@ export function resolvePrecheckPanelContent(
                         kind: 'link',
                         variant: 'secondary',
                         href: subscriptionUrl,
-                        labelKey: 'host.pages.nueva.precheck.resumeDeleteOrUpgrade.upgradeCta',
+                        labelKey: `${ns}.resumeDeleteOrUpgrade.upgradeCta`,
                         labelFallback: 'Subir de plan'
                     }
                 ]
@@ -270,25 +347,24 @@ export function resolvePrecheckPanelContent(
 
         case 'pick_draft_or_create':
             return {
-                titleKey: 'host.pages.nueva.precheck.pickDraftOrCreate.title',
+                titleKey: `${ns}.pickDraftOrCreate.title`,
                 titleFallback: 'Tenés varios borradores sin publicar',
-                bodyKey: 'host.pages.nueva.precheck.pickDraftOrCreate.body',
-                bodyFallback:
-                    'Elegí uno de tus borradores existentes para continuar, o empezá una propiedad nueva desde cero.',
+                bodyKey: `${ns}.pickDraftOrCreate.body`,
+                bodyFallback: `Elegí uno de tus borradores existentes para continuar, o empezá una ${noun} nueva desde cero.`,
                 showQuota: false,
                 actions: [
                     {
                         kind: 'link',
                         variant: 'primary',
                         href: createUrl,
-                        labelKey: 'host.pages.nueva.precheck.pickDraftOrCreate.createCta',
+                        labelKey: `${ns}.pickDraftOrCreate.createCta`,
                         labelFallback: 'Crear uno nuevo'
                     },
                     {
                         kind: 'link',
                         variant: 'secondary',
                         href: accountPropertiesUrl,
-                        labelKey: 'host.pages.nueva.precheck.pickDraftOrCreate.pickCta',
+                        labelKey: `${ns}.pickDraftOrCreate.pickCta`,
                         labelFallback: 'Editar un borrador existente'
                     }
                 ]
@@ -296,11 +372,10 @@ export function resolvePrecheckPanelContent(
 
         case 'pick_draft_delete_or_upgrade':
             return {
-                titleKey: 'host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.title',
+                titleKey: `${ns}.pickDraftDeleteOrUpgrade.title`,
                 titleFallback: 'Tenés varios borradores, pero llegaste al límite de tu plan',
-                bodyKey: 'host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.body',
-                bodyFallback:
-                    'Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.',
+                bodyKey: `${ns}.pickDraftDeleteOrUpgrade.body`,
+                bodyFallback: `Estás usando {{currentCount}} ${nounPlural} y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.`,
                 showQuota: true,
                 bodyPluralBasis: 'currentCount',
                 actions: [
@@ -308,7 +383,7 @@ export function resolvePrecheckPanelContent(
                         kind: 'link',
                         variant: 'primary',
                         href: accountPropertiesUrl,
-                        labelKey: 'host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.pickCta',
+                        labelKey: `${ns}.pickDraftDeleteOrUpgrade.pickCta`,
                         labelFallback: 'Editar un borrador existente'
                     },
                     // HOS-727: same cap, same offer — behind the free unblock.
@@ -317,7 +392,7 @@ export function resolvePrecheckPanelContent(
                         kind: 'link',
                         variant: 'secondary',
                         href: subscriptionUrl,
-                        labelKey: 'host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.upgradeCta',
+                        labelKey: `${ns}.pickDraftDeleteOrUpgrade.upgradeCta`,
                         labelFallback: 'Subir de plan'
                     }
                 ]

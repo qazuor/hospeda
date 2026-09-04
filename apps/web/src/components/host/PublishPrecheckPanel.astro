@@ -16,6 +16,7 @@
  * secondary) so `upgrade_only` looks identical to before.
  */
 
+import type { PublishVertical } from '@repo/billing';
 import { AlertCircleIcon, ArrowRightIcon } from '@repo/icons';
 import { DeleteButton } from '@/components/host/DeleteButton.client';
 import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
@@ -27,14 +28,21 @@ interface Props {
     readonly locale: SupportedLocale;
     /** Any decision except `create_direct` — the caller renders the form directly for that one. */
     readonly decision: Exclude<HostOnboardingPrecheckDecision, 'create_direct'>;
+    /**
+     * Which vertical is being published (HOS-1156 T-014). Decides the cap this
+     * panel speaks about, its add-on offer, and its copy namespace. Optional and
+     * defaulting to accommodation, so the pre-existing caller is unchanged.
+     */
+    readonly vertical?: PublishVertical;
     readonly currentCount: number;
     readonly maxAllowed: number;
-    /** All of the actor's DRAFT accommodations (used for the "several drafts" context list). */
+    /** All of the actor's DRAFT listings (used for the "several drafts" context list). */
     readonly drafts: ReadonlyArray<HostOnboardingPrecheckDraft>;
     /** Edit URL for `drafts[0]`, present when `draftCount === 1`. */
     readonly editUrl?: string;
     /** Current page URL with `?create=1` appended. */
     readonly createUrl: string;
+    /** This vertical's "my listings" page — where the user picks among several DRAFTs. */
     readonly accountPropertiesUrl: string;
     readonly subscriptionUrl: string;
 }
@@ -42,6 +50,7 @@ interface Props {
 const {
     locale,
     decision,
+    vertical = 'accommodation',
     currentCount,
     maxAllowed,
     drafts,
@@ -56,6 +65,7 @@ const { t, tPlural } = createTranslations(locale);
 const content = resolvePrecheckPanelContent({
     decision,
     locale,
+    vertical,
     editUrl,
     createUrl,
     accountPropertiesUrl,
@@ -77,12 +87,20 @@ const showDraftList = drafts.length > 1;
 // The delete action targets `drafts[0]` (only reachable when draftCount === 1).
 const draftIdForDelete = drafts[0]?.id;
 
-const deleteLabel = t(
-    'host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteCta'
-);
-const deleteConfirmText = t(
-    'host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteConfirm'
-);
+// HOS-1156 T-014: read the delete copy off the action the resolver already
+// produced, instead of re-deriving its i18n keys here.
+//
+// These two used to be hardcoded to `host.pages.nueva.precheck.*` — the
+// accommodation namespace — which was harmless while accommodation was the only
+// vertical and a live bug the moment it stopped being: a gastronomy owner would
+// have seen the panel's title and body in their own words and the delete button
+// in someone else's. The resolver is the single place that knows a vertical's
+// namespace; this component's job is to render what it returns.
+const deleteAction = content.actions.find((action) => action.kind === 'delete-draft');
+const deleteLabel = deleteAction ? t(deleteAction.labelKey, deleteAction.labelFallback) : '';
+const deleteConfirmText = deleteAction
+    ? t(deleteAction.confirmTextKey, deleteAction.confirmTextFallback)
+    : '';
 const deleteConfirmYes = t('host.properties.card.actions.deleteYes', 'Sí, eliminar');
 const deleteConfirmNo = t('host.properties.card.actions.confirmNo', 'Cancelar');
 const deleteErrorText = t(
