@@ -10,6 +10,7 @@ import {
     QR_CODE_DEFAULT_BACKGROUND_COLOR,
     QR_CODE_DEFAULT_FOREGROUND_COLOR,
     QR_CODE_DEFAULT_MARGIN,
+    QR_SCAN_USER_AGENT_MAX_LENGTH,
     QrCodeAdminSearchSchema,
     QrCodeCenterLogoEnum,
     QrCodeCreateHttpSchema,
@@ -22,7 +23,9 @@ import {
     QrCodeSlugSchema,
     QrCodeSourceEnum,
     QrCodeUpdateHttpSchema,
-    QrCodeUpdateInputSchema
+    QrCodeUpdateInputSchema,
+    QrScanDeviceTypeEnum,
+    QrScanOsEnum
 } from '../../../src/index.js';
 
 const VALID_UUID = '11111111-1111-4111-8111-111111111111';
@@ -351,15 +354,83 @@ describe('QrCodeScanSchema', () => {
     });
 
     /**
-     * Pins the privacy decision: the scan row carries exactly three fields.
-     * If someone adds `ipAddress` or `userAgent` to the entity, this fails.
+     * Pins what the row is allowed to carry. HOS-1141 replaced HOS-981's
+     * three-field version, so the list grew — but it is still asserted WHOLE,
+     * which is what makes adding `ipAddress` or `referrer` (the two the table's
+     * own comment rejects by name) fail here rather than ship.
      */
-    it('carries no field beyond qrCodeId and scannedAt', () => {
+    it('carries exactly the nine HOS-1141 fields and nothing else', () => {
         expect(Object.keys(QrCodeScanSchema.shape).sort()).toStrictEqual([
+            'browserLanguage',
+            'deviceType',
             'id',
+            'os',
             'qrCodeId',
-            'scannedAt'
+            'scannedAt',
+            'targetUrlAtScan',
+            'userAgent',
+            'userId'
         ]);
+    });
+
+    it('accepts a fully annotated scan', () => {
+        const parsed = QrCodeScanSchema.parse({
+            id: VALID_UUID,
+            qrCodeId: VALID_UUID,
+            scannedAt: '2026-09-02T12:00:00.000Z',
+            userAgent: 'Mozilla/5.0 (iPhone)',
+            deviceType: QrScanDeviceTypeEnum.MOBILE,
+            os: QrScanOsEnum.IOS,
+            browserLanguage: 'pt',
+            targetUrlAtScan: 'https://hospeda.com.ar/es/gastronomia/foo/',
+            userId: VALID_UUID
+        });
+
+        expect(parsed.deviceType).toBe(QrScanDeviceTypeEnum.MOBILE);
+        expect(parsed.browserLanguage).toBe('pt');
+    });
+
+    it('accepts every context field as null', () => {
+        // The safety property the whole write path rests on: a scan with
+        // nothing known about it is still a valid scan. If any of these became
+        // required, a client could make the insert fail by omitting a header.
+        expect(
+            QrCodeScanSchema.safeParse({
+                id: VALID_UUID,
+                qrCodeId: VALID_UUID,
+                scannedAt: '2026-09-02T12:00:00.000Z',
+                userAgent: null,
+                deviceType: null,
+                os: null,
+                browserLanguage: null,
+                targetUrlAtScan: null,
+                userId: null
+            }).success
+        ).toBe(true);
+    });
+
+    it('refuses a locale it does not serve, and a user agent past the bound', () => {
+        // Non-vacuity for the two bounded fields. Without this the block above
+        // would stay green on a schema that accepted absolutely anything.
+        const base = {
+            id: VALID_UUID,
+            qrCodeId: VALID_UUID,
+            scannedAt: '2026-09-02T12:00:00.000Z'
+        };
+
+        expect(QrCodeScanSchema.safeParse({ ...base, browserLanguage: 'fr' }).success).toBe(false);
+        expect(
+            QrCodeScanSchema.safeParse({
+                ...base,
+                userAgent: 'A'.repeat(QR_SCAN_USER_AGENT_MAX_LENGTH + 1)
+            }).success
+        ).toBe(false);
+        expect(
+            QrCodeScanSchema.safeParse({
+                ...base,
+                userAgent: 'A'.repeat(QR_SCAN_USER_AGENT_MAX_LENGTH)
+            }).success
+        ).toBe(true);
     });
 });
 
