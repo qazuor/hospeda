@@ -30,6 +30,7 @@ import { protectedGetGastronomyEventsRoute } from './getEvents';
 import { protectedGetGastronomyMediaRoute } from './getMedia';
 import { protectedGetGastronomyMenuRoute } from './getMenu';
 import { protectedListMyGastronomyRoute } from './listMine';
+import { protectedGetGastronomyMenuQrRoute } from './menuQr';
 import { protectedPatchGastronomyRoute } from './patch';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
@@ -94,6 +95,12 @@ app.route('/', protectedDeleteGastronomyMenuFileRoute);
 // tier above. Returns the asset; the association is written by PUT /{id}/menu,
 // because a dish's id does not survive that write.
 app.route('/', protectedUploadGastronomyMenuItemPhotoRoute);
+
+// GET /{id}/menu-qr — the venue's printable menu QR (HOS-1044), minted (or
+// reused) on this call only — never on the public /carta/ page. Gated on
+// MENU_QR_ANALYTICS (gastronomy-premium). Registered before /{id} for the
+// same DEFENSIVE reason as the entries above.
+app.route('/', protectedGetGastronomyMenuQrRoute);
 
 // Menú del día (HOS-1041) — a dish with its own validity window. Registered
 // before /{id} for the same DEFENSIVE reason as the entries above.
