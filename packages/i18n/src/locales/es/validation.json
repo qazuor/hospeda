@@ -2491,6 +2491,12 @@
         "qrCodeSource": {
             "invalid": "El origen del código QR no es válido"
         },
+        "qrScanDeviceType": {
+            "invalid": "El tipo de dispositivo del escaneo no es válido"
+        },
+        "qrScanOs": {
+            "invalid": "El sistema operativo del escaneo no es válido"
+        },
         "recurrenceType": {
             "invalid": "El recurrence type no es válido"
         },
