@@ -109,4 +109,24 @@ describe('EditorRouteNav.astro — styling rules', () => {
 
         expect(hardcoded).toEqual([]);
     });
+
+    it('should give inactive items a color distinct from the muted group label (HOS-1015)', () => {
+        // Before HOS-1015, .editor-route-nav__link and .editor-route-nav__group-label
+        // both used --core-muted-foreground, so a group heading and its own items
+        // were visually identical apart from size/case/weight — the sidebar read as
+        // one flat 14-entry list instead of three groups. The fix restores the color
+        // differential the account sidebar this component says it mirrors actually
+        // has (its group label stays muted, its items get full foreground contrast).
+        //
+        // These block-scoped regexes only match the exact base-state selectors
+        // (`.editor-route-nav__link {`), not `:hover`, `:focus-visible`, or
+        // `--active`, since those have text between the class name and `{`.
+        const groupLabelBlock =
+            SOURCE.match(/\.editor-route-nav__group-label\s*\{[^}]*\}/)?.[0] ?? '';
+        const linkBlock = SOURCE.match(/\.editor-route-nav__link\s*\{[^}]*\}/)?.[0] ?? '';
+
+        expect(groupLabelBlock).toContain('color: var(--core-muted-foreground)');
+        expect(linkBlock).toContain('color: var(--core-foreground)');
+        expect(linkBlock).not.toContain('color: var(--core-muted-foreground)');
+    });
 });
