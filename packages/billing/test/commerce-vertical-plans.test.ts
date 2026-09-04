@@ -1,19 +1,23 @@
 /**
  * Per-vertical commerce catalogue tests (HOS-688 §6.8).
  *
- * The commercial substance of §6.8 is a single number — one listing per owner
- * per vertical — and every layer beneath it resolves an unknown limit key to
- * *unlimited* without raising anything. These tests lock the SHAPE of the
- * catalogue (which key each tier declares, which tier is sellable, what is
- * deliberately absent); the end-to-end assertion that the cap is actually
- * enforced lives in `apps/api` (AC-30), because a shape test here would pass
- * just as happily with the middleware unwired.
+ * The commercial substance of §6.8 used to be a single number — one listing per
+ * owner per vertical, the same `1` on all six rows. Since HOS-975 it is a
+ * LADDER, different per vertical (gastronomy 1/3/5, experiences 1/5/10), and
+ * every layer beneath it still resolves an unknown limit key to *unlimited*
+ * without raising anything. These tests lock the SHAPE of the catalogue (which
+ * keys each tier declares, which tier is sellable, what is deliberately
+ * absent); the end-to-end assertion that the cap is actually enforced lives in
+ * `apps/api` (AC-30), because a shape test here would pass just as happily with
+ * the middleware unwired.
  *
  * Note the two things asserted by ABSENCE, both deliberate:
- * - a tier declares exactly its OWN listing cap and its OWN vertical's AI-chat
- *   cap (HOS-400) — never the other vertical's, and never `-1` for either.
- *   Both read as unlimited downstream, but an absent key reads as "this plan
- *   does not meter that", which is what is true.
+ * - a tier declares its OWN listing cap and its OWN vertical's AI-chat cap
+ *   (HOS-400) — never the other vertical's, and never `-1` for either. Both
+ *   read as unlimited downstream, but an absent key reads as "this plan does
+ *   not meter that", which is what is true. Since HOS-975 it also carries the
+ *   seven inherited `TOURIST_VIP_LIMITS`, which is a different claim: those are
+ *   metered, at the tourist tier's own values.
  * - the vertical plans are absent from `ALL_PLANS`, which is what keeps the
  *   accommodation seed loop, the public plan list and the grant-matrix
  *   snapshot accommodation-only.
@@ -32,11 +36,44 @@ import {
     EXPERIENCE_PRO_PLAN,
     GASTRONOMY_BASICO_PLAN,
     GASTRONOMY_PREMIUM_PLAN,
-    GASTRONOMY_PRO_PLAN
+    GASTRONOMY_PRO_PLAN,
+    TOURIST_VIP_ENTITLEMENTS
 } from '../src/config/plans.config.js';
 import { COMMERCE_TRIAL_DAYS } from '../src/constants/billing.constants.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
+import type { PlanDefinition } from '../src/types/plan.types.js';
 import { LimitKey } from '../src/types/plan.types.js';
+
+/**
+ * The seven limit keys every commerce tier inherits from `TOURIST_VIP_LIMITS`
+ * since HOS-975 D-A, spelled out so this file states the shape it is locking
+ * rather than importing the constant it is checking against.
+ */
+const INHERITED_TOURIST_VIP_LIMIT_KEYS = [
+    LimitKey.MAX_FAVORITES,
+    LimitKey.MAX_ACTIVE_ALERTS,
+    LimitKey.MAX_COMPARE_ITEMS,
+    LimitKey.MAX_AI_SEARCH_PER_MONTH,
+    LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
+    LimitKey.MAX_SEARCH_HISTORY_ENTRIES,
+    LimitKey.MAX_COLLECTIONS
+] as const;
+
+/**
+ * Reads one limit's value BY KEY.
+ *
+ * Every assertion in this file used to index `limits[0]` / `limits[1]`, which
+ * was true only while a tier declared exactly its own two keys in that order.
+ * HOS-975's tourist-VIP inheritance prepends seven, so `limits[0]` silently
+ * became `max_favorites: -1` and three tests started asserting against the
+ * wrong number. Reading by key is what makes the order an implementation
+ * detail — the same lesson HOS-329 cost on the plan comparison table, where
+ * position-mapped cells made `owner-premium` inherit `owner-pro`'s values the
+ * moment a plan was deactivated.
+ */
+function limitValue(plan: PlanDefinition, key: LimitKey): number | undefined {
+    return plan.limits.find((l) => l.key === key)?.value;
+}
 
 describe('per-vertical commerce catalogues (HOS-688)', () => {
     it('ships a three-tier shape for each vertical', () => {
@@ -78,23 +115,55 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         ]);
     });
 
-    it('declares exactly two limit keys per tier: the listing cap and the vertical AI-chat cap (HOS-400)', () => {
-        // HOS-400 added a second limit to every tier of both catalogues: the
-        // vertical's own AI-chat quota, declared even by tiers that grant zero
-        // of it (see `commerceVerticalTier`'s doc — an omitted key would read
-        // as UNLIMITED downstream, not zero). "Exactly one" was true until then;
-        // it is "exactly two, in this order" now.
-        for (const plan of ALL_GASTRONOMY_PLANS) {
-            expect(plan.limits.map((l) => l.key)).toEqual([
+    it('declares its own two limit keys plus the seven inherited tourist-VIP ones (HOS-400, HOS-975)', () => {
+        // HOS-400 added a second limit of the tier's OWN to every catalogue: the
+        // vertical's AI-chat quota, declared even by tiers that grant zero of it
+        // (see `commerceVerticalTier`'s doc — an omitted key would read as
+        // UNLIMITED downstream, not zero). HOS-975 D-A then prepended the seven
+        // `TOURIST_VIP_LIMITS`, so "exactly two" became "exactly nine".
+        //
+        // Asserted as a SET rather than an ordered list. The order is what three
+        // assertions in this file were accidentally relying on, and pinning it
+        // here would re-create that coupling one merge later. What has to hold
+        // is membership and the absence of anything else — a key that appears
+        // from nowhere is a plan metering something nobody decided it should.
+        for (const [catalogue, ownCap, ownChat] of [
+            [
+                ALL_GASTRONOMY_PLANS,
                 LimitKey.MAX_GASTRONOMIES,
                 LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH
-            ]);
-        }
-        for (const plan of ALL_EXPERIENCE_PLANS) {
-            expect(plan.limits.map((l) => l.key)).toEqual([
+            ],
+            [
+                ALL_EXPERIENCE_PLANS,
                 LimitKey.MAX_EXPERIENCES,
                 LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH
-            ]);
+            ]
+        ] as const) {
+            for (const plan of catalogue) {
+                const keys = plan.limits.map((l) => l.key);
+                expect(new Set(keys)).toEqual(
+                    new Set([ownCap, ownChat, ...INHERITED_TOURIST_VIP_LIMIT_KEYS])
+                );
+                // No key is declared twice — `mergeLimits` collapses by key, and
+                // a duplicate would make "which value wins" depend on order.
+                expect(keys).toHaveLength(new Set(keys).size);
+            }
+        }
+    });
+
+    it('inherits the tourist-VIP limit VALUES, not just the keys (HOS-975 D-A)', () => {
+        // The half that is easy to ship broken and impossible to notice. The
+        // engine reads an ABSENT key as UNLIMITED, so granting the 15 tourist
+        // entitlements while omitting these seven would hand every commerce
+        // owner an uncapped `max_ai_search_per_month` — a quota a paying
+        // tourist-VIP holds at 200. Values, not merely presence, is what makes
+        // the inheritance real.
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            expect(limitValue(plan, LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(200);
+            expect(limitValue(plan, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH)).toBe(200);
+            expect(limitValue(plan, LimitKey.MAX_SEARCH_HISTORY_ENTRIES)).toBe(200);
+            expect(limitValue(plan, LimitKey.MAX_COLLECTIONS)).toBe(25);
+            expect(limitValue(plan, LimitKey.MAX_COMPARE_ITEMS)).toBe(5);
         }
     });
 
@@ -110,9 +179,42 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(experienceKeys).not.toContain(LimitKey.MAX_ACCOMMODATIONS);
     });
 
-    it('caps the sellable tier at one listing', () => {
-        expect(GASTRONOMY_BASICO_PLAN.limits[0]?.value).toBe(1);
-        expect(EXPERIENCE_BASICO_PLAN.limits[0]?.value).toBe(1);
+    it('caps the entry tier at one listing, and steps each ladder above it (HOS-975)', () => {
+        // The entry tier's `1` is unchanged and is the number every commerce
+        // row carried until HOS-975. What changed is everything above it: the
+        // cap is now the axis that separates the three tiers of a vertical,
+        // which is what this factory's own doc always said it was for.
+        //
+        // The two ladders are deliberately DIFFERENT lengths (owner decision,
+        // 2026-09-04). Asserting them as literals per vertical rather than
+        // deriving one from the other is the point — a shared shape would make
+        // "gastronomy accidentally got experiences' cap" invisible.
+        expect(limitValue(GASTRONOMY_BASICO_PLAN, LimitKey.MAX_GASTRONOMIES)).toBe(1);
+        expect(limitValue(GASTRONOMY_PRO_PLAN, LimitKey.MAX_GASTRONOMIES)).toBe(3);
+        expect(limitValue(GASTRONOMY_PREMIUM_PLAN, LimitKey.MAX_GASTRONOMIES)).toBe(5);
+
+        expect(limitValue(EXPERIENCE_BASICO_PLAN, LimitKey.MAX_EXPERIENCES)).toBe(1);
+        expect(limitValue(EXPERIENCE_PRO_PLAN, LimitKey.MAX_EXPERIENCES)).toBe(5);
+        expect(limitValue(EXPERIENCE_PREMIUM_PLAN, LimitKey.MAX_EXPERIENCES)).toBe(10);
+    });
+
+    it('steps each vertical cap as a strictly ascending ladder (HOS-975)', () => {
+        // The same property the price test asserts, on the other axis, and it
+        // breaks the same silent way: a `-pro` capped BELOW `-basico` would
+        // seed, check out and charge more for less. `-1` is excluded on
+        // purpose — an unlimited tier would satisfy "ascending" only by
+        // accident of sorting, and no commerce tier is meant to be uncapped.
+        for (const [catalogue, capKey] of [
+            [ALL_GASTRONOMY_PLANS, LimitKey.MAX_GASTRONOMIES],
+            [ALL_EXPERIENCE_PLANS, LimitKey.MAX_EXPERIENCES]
+        ] as const) {
+            const caps = catalogue.map((p) => limitValue(p, capKey));
+            for (const cap of caps) {
+                expect(cap).toBeGreaterThan(0);
+            }
+            expect(caps).toEqual([...caps].sort((a, b) => (a ?? 0) - (b ?? 0)));
+            expect(new Set(caps).size).toBe(caps.length);
+        }
     });
 
     it('charges the six prices the owner set on 2026-09-03 (HOS-975)', () => {
@@ -154,28 +256,73 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // on sale again and is no longer priced identically to básico, so
         // "same price" is replaced by the assertion that actually has to hold
         // for a dearer tier to be honest: it costs MORE and gives at least as
-        // much. The LISTING cap and the trial stay byte-identical — the cap
-        // because one listing per owner is still the whole commercial substance
-        // of §6.8, the trial because no tier of either vertical sells a
-        // different one. The AI-chat limit is deliberately EXCLUDED from that
-        // byte-identity (HOS-400): only premium grants `AI_CHAT`, so its quota
-        // is the one place premium and básico are meant to differ, and a
-        // superset check must not demand equality on the one limit that proves
-        // the entitlement gate actually means something.
-        for (const [basico, premium] of [
-            [GASTRONOMY_BASICO_PLAN, GASTRONOMY_PREMIUM_PLAN],
-            [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PREMIUM_PLAN]
+        // much.
+        //
+        // Until HOS-975 the LISTING cap was asserted here as byte-identical
+        // between the two tiers, because one listing per owner was the whole
+        // commercial substance of §6.8 and every row carried `1`. That is now
+        // the opposite of what has to hold: the cap is the axis the ladder
+        // steps on, so premium must allow strictly MORE, not the same. The
+        // trial stays identical — no tier of either vertical sells a different
+        // one. The AI-chat quota is likewise a place they are MEANT to differ
+        // (HOS-400): only premium grants `AI_CHAT`, so demanding equality there
+        // would blunt the one limit that proves the entitlement gate means
+        // something.
+        for (const [basico, premium, capKey, chatKey] of [
+            [
+                GASTRONOMY_BASICO_PLAN,
+                GASTRONOMY_PREMIUM_PLAN,
+                LimitKey.MAX_GASTRONOMIES,
+                LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH
+            ],
+            [
+                EXPERIENCE_BASICO_PLAN,
+                EXPERIENCE_PREMIUM_PLAN,
+                LimitKey.MAX_EXPERIENCES,
+                LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH
+            ]
         ] as const) {
             expect(premium.isActive).toBe(true);
             expect(premium.monthlyPriceArs).toBeGreaterThan(basico.monthlyPriceArs);
-            expect(basico.limits[0]).toEqual(premium.limits[0]);
-            expect(basico.limits[1]?.value).toBe(0);
-            expect(premium.limits[1]?.value).toBeGreaterThan(basico.limits[1]?.value ?? 0);
+            expect(limitValue(premium, capKey) ?? 0).toBeGreaterThan(
+                limitValue(basico, capKey) ?? 0
+            );
+            expect(limitValue(basico, chatKey)).toBe(0);
+            expect(limitValue(premium, chatKey) ?? 0).toBeGreaterThan(
+                limitValue(basico, chatKey) ?? 0
+            );
             expect(basico.hasTrial).toBe(premium.hasTrial);
             expect(basico.trialDays).toBe(premium.trialDays);
             for (const key of basico.entitlements) {
                 expect(premium.entitlements).toContain(key);
             }
+            // Every limit básico declares, premium declares too — the same
+            // superset direction, on the axis the entitlement loop above does
+            // not cover. A dearer tier silently missing a cap its cheaper
+            // neighbour has would read as UNLIMITED, not as "inherited".
+            for (const l of basico.limits) {
+                expect(limitValue(premium, l.key)).toBeDefined();
+            }
+        }
+    });
+
+    it('grants the whole tourist-VIP block on ALL SIX tiers (HOS-975 D-A)', () => {
+        // A commerce owner is a tourist on this platform too, exactly like an
+        // accommodation owner. Before this, commerce was the only owner
+        // catalogue whose floor excluded these 15 keys, which made them an
+        // accidental privilege of accommodation rather than anyone's decision.
+        //
+        // Asserted per TIER, not per catalogue: the block is the FLOOR, so a
+        // single tier missing it is the failure this exists to catch, and a
+        // catalogue-level flatMap would hide it behind its siblings.
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            for (const key of TOURIST_VIP_ENTITLEMENTS) {
+                expect(plan.entitlements).toContain(key);
+            }
+            // No key twice. `dedupe` collapses nothing today (the three sources
+            // are disjoint), which is exactly why a duplicate appearing later
+            // would go unnoticed without this line.
+            expect(plan.entitlements).toHaveLength(new Set(plan.entitlements).size);
         }
     });
 
