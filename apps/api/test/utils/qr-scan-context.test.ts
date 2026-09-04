@@ -73,6 +73,23 @@ describe('deriveQrScanDeviceType', () => {
     });
 
     it.each([
+        ['an Android phone', UA_ANDROID_PHONE, QrScanDeviceTypeEnum.MOBILE],
+        ['an Android tablet', UA_ANDROID_TABLET, QrScanDeviceTypeEnum.TABLET]
+    ])('never lets %s fall through to the desktop branch, though its agent says "Linux"', (_label, userAgent, expected) => {
+        // `DESKTOP_PATTERN` contains `linux`, and EVERY Android user agent
+        // contains `Linux` — so the only thing keeping Android off the
+        // desktop branch is that the mobile and Android checks both run
+        // BEFORE it. That is an ordering guarantee, invisible in the
+        // patterns themselves, and this is what pins it.
+        //
+        // Measured with and without the `linux` token: both Android rows
+        // are identical either way, because neither ever reaches the
+        // desktop branch. Reorder the checks and this file goes red.
+        expect(userAgent.toLowerCase()).toContain('linux');
+        expect(deriveQrScanDeviceType({ userAgent })).toBe(expected);
+    });
+
+    it.each([
         ['an absent agent', null],
         ['an empty agent', ''],
         ['pure punctuation', '!!!!'],
