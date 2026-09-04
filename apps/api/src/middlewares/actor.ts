@@ -160,8 +160,17 @@ const resolveHeldRoles = async (params: { userId: string }): Promise<readonly Ro
  *
  * DO NOT "tidy" this away by propagating the error: the whole point is that the
  * scan is annotated with less rather than the visit being lost.
+ *
+ * ## Exported ONLY so it can be frozen
+ *
+ * Nothing in `src/` imports this; the middleware below is its only consumer.
+ * It is exported so `test/middlewares/actor-optional-allowlist.guard.test.ts`
+ * can freeze its LENGTH and its literal pattern, because a second entry here is
+ * otherwise completely silent — a planted `/^\/api\/v1\/admin\/.*$/`, which
+ * hands the fail-open to every admin route in the product, was measured passing
+ * 2679 tests across 56 files.
  */
-const ACTOR_OPTIONAL_PATH_PATTERNS: readonly RegExp[] = [
+export const ACTOR_OPTIONAL_PATH_PATTERNS: readonly RegExp[] = [
     /** `GET /api/v1/public/qr/{slug}` — the printed-code redirect (HOS-1141). */
     /^\/api\/v1\/public\/qr\/[^/]+\/?$/
 ];
