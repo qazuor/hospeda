@@ -21,6 +21,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
+import { buildEditorHubUrl } from '@/lib/editor/accommodation-editor-sections';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -197,9 +198,30 @@ export function useAccommodationSectionForm<TValues extends object>({
         [accommodationId, handleApiError, isDirty, payload, setFormError, t, validate, values]
     );
 
+    /**
+     * Leaves the section for the editor hub.
+     *
+     * HOS-1014: was `window.history.back()`, which lands wherever the user
+     * happened to arrive from (a bookmark, a direct link, another section) —
+     * not necessarily this accommodation's hub. The hub is the page every
+     * section is reached from, so it's always the right destination, matching
+     * the pattern the commerce editor already uses
+     * (`CommerceListingEditor.client.tsx`'s `handleCancel`).
+     */
+    /**
+     * Leaves the section for the editor hub.
+     *
+     * HOS-1014: was `window.history.back()`, which lands wherever the user
+     * happened to arrive from (a bookmark, a direct link, another section) —
+     * not necessarily this accommodation's hub. The hub is the page every
+     * section is reached from, so it's always the right destination, matching
+     * the pattern the commerce editor already uses
+     * (`CommerceListingEditor.client.tsx`'s `handleCancel`).
+     */
     const handleCancel = useCallback(() => {
-        if (typeof window !== 'undefined') window.history.back();
-    }, []);
+        if (typeof window === 'undefined') return;
+        window.location.href = buildEditorHubUrl({ locale, accommodationId });
+    }, [locale, accommodationId]);
 
     return {
         values,
