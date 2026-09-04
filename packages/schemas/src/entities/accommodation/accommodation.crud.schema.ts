@@ -59,7 +59,12 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     // Server-managed (SPEC-291): only the verify admin action flips these.
     isVerified: true,
     verifiedAt: true,
-    verifiedById: true
+    verifiedById: true,
+    // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written ONLY
+    // by the featured-by-entitlement sync primitives, never through the
+    // general create/update path — unlike `isFeatured`, which admin still
+    // controls manually via `AccommodationPatchInputSchema`.
+    featuredByEntitlement: true
 }).extend({
     slug: z
         .string()
@@ -155,6 +160,11 @@ export const AccommodationUpdateInputSchema = z
                 isVerified: true,
                 verifiedAt: true,
                 verifiedById: true,
+                // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written
+                // ONLY by the featured-by-entitlement sync primitives, never through
+                // the general create/update path — unlike `isFeatured`, which admin
+                // still controls manually via `AccommodationPatchInputSchema`.
+                featuredByEntitlement: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `accommodation_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which
