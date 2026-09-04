@@ -55,6 +55,8 @@ import {
     ProductTypeEnum,
     QrCodePurposeEnum,
     QrCodeSourceEnum,
+    QrScanDeviceTypeEnum,
+    QrScanOsEnum,
     RecurrenceTypeEnum,
     RefundStatusEnum,
     RoleEnum,
@@ -488,3 +490,24 @@ export const QrCodeSourcePgEnum = pgEnum('qr_code_source_enum', enumToTuple(QrCo
  * `QrCodePurposeEnum`.
  */
 export const QrCodePurposePgEnum = pgEnum('qr_code_purpose_enum', enumToTuple(QrCodePurposeEnum));
+
+/**
+ * PostgreSQL enum for what kind of device scanned a code (HOS-1141).
+ *
+ * Values: MOBILE, TABLET, DESKTOP. Deliberately no `UNKNOWN` — the column is
+ * nullable, and `NULL` is what "we could not tell" means. See
+ * `QrScanDeviceTypeEnum` for why keeping those two apart is load-bearing.
+ */
+export const QrScanDeviceTypePgEnum = pgEnum(
+    'qr_scan_device_type_enum',
+    enumToTuple(QrScanDeviceTypeEnum)
+);
+
+/**
+ * PostgreSQL enum for the operating system that scanned a code (HOS-1141).
+ *
+ * Values: IOS, ANDROID, OTHER. `OTHER` means a User-Agent was presented and
+ * named neither platform; a missing or unreadable User-Agent is `NULL` on the
+ * column. See `QrScanOsEnum`.
+ */
+export const QrScanOsPgEnum = pgEnum('qr_scan_os_enum', enumToTuple(QrScanOsEnum));
