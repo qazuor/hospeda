@@ -18,6 +18,8 @@ import {
     EntityTypeEnumSchema,
     QR_CODE_LABEL_MAX_LENGTH,
     QR_CODE_TARGET_URL_MAX_LENGTH,
+    QR_SCAN_BROWSER_LANGUAGE_MAX_LENGTH,
+    QR_SCAN_USER_AGENT_MAX_LENGTH,
     QrCodeAdminSearchSchema,
     QrCodeCreateInputSchema,
     QrCodePurposeEnumSchema,
@@ -25,6 +27,8 @@ import {
     QrCodeSearchInputSchema,
     QrCodeSourceEnum,
     QrCodeUpdateInputSchema,
+    QrScanDeviceTypeEnumSchema,
+    QrScanOsEnumSchema,
     ServiceErrorCode
 } from '@repo/schemas';
 import { generateShortId } from '@repo/utils';
@@ -55,9 +59,34 @@ const ResolveBySlugInputSchema = z.object({
     slug: z.string().min(1)
 });
 
+/**
+ * What {@link QrCodeService.registerScan} accepts (HOS-1141).
+ *
+ * Only `qrCodeId` is required. Every other field is optional AND nullable, and
+ * that shape is the contract rather than an accident of typing: the caller
+ * reads these values off headers a stranger controls, and the rule the whole
+ * redirect path is built on is that a scan is lost before a redirect is. If any
+ * field here were REQUIRED, a hostile client could make the insert fail simply
+ * by withholding a header.
+ *
+ * `browserLanguage` is length-bounded rather than pinned to the closed locale
+ * set on purpose. This is the WRITE boundary; pinning it here would mean that
+ * the day a locale is retired, rows already derived from it start failing
+ * validation on a path whose entire job is not to fail. `QrCodeScanSchema`, the
+ * read shape, is where the closed set is named.
+ */
 const RegisterScanInputSchema = z.object({
-    qrCodeId: z.string().uuid()
+    qrCodeId: z.string().uuid(),
+    userAgent: z.string().max(QR_SCAN_USER_AGENT_MAX_LENGTH).nullable().optional(),
+    deviceType: QrScanDeviceTypeEnumSchema.nullable().optional(),
+    os: QrScanOsEnumSchema.nullable().optional(),
+    browserLanguage: z.string().max(QR_SCAN_BROWSER_LANGUAGE_MAX_LENGTH).nullable().optional(),
+    targetUrlAtScan: z.string().max(QR_CODE_TARGET_URL_MAX_LENGTH).nullable().optional(),
+    userId: z.string().uuid().nullable().optional()
 });
+
+/** The derived half of a scan — everything past the code id. */
+export type QrCodeScanContextInput = Omit<z.infer<typeof RegisterScanInputSchema>, 'qrCodeId'>;
 
 /**
  * Postgres SQLSTATE for `unique_violation`.
@@ -376,32 +405,63 @@ export class QrCodeService extends BaseCrudService<
     /**
      * Records one scan of one code.
      *
-     * The row carries the code id and the instant, and nothing else — see the
-     * comment on the `qr_code_scans` table for why that is a decision rather
-     * than an unfinished implementation.
+     * Beyond the code id and the instant, the row carries what the caller could
+     * learn about the client (HOS-1141) — the raw user agent, the device and OS
+     * read out of it, the browser's language, where the code pointed at that
+     * moment, and the signed-in scanner if there was one. Read the comment on
+     * the `qr_code_scans` table before adding anything else: it rejects an IP
+     * column and a referrer column BY NAME, with the reasons, so that neither
+     * gets added later as an obvious completion.
+     *
+     * ## The context is optional, and that is load-bearing
+     *
+     * Every field but `qrCodeId` may be omitted or `null`, because all of them
+     * come from headers a stranger chooses. This method must record the scan
+     * with three nulls in it rather than refuse the row — the redirect it sits
+     * on the critical path of is the function that may not fail, and a scan
+     * annotated with nothing still answers "this sticker was used".
      *
      * No permission check, for the same reason as {@link resolveBySlug}: the
-     * caller is whoever pointed a camera at a sticker.
+     * caller is whoever pointed a camera at a sticker. In particular `userId`
+     * is taken from the ROUTE's resolved actor, never from a client-supplied
+     * field, so passing it here cannot be used to attribute a scan to somebody
+     * else.
      *
      * @param input - Input parameters.
      * @param input.actor - Actor performing the action (may be the guest actor).
      * @param input.qrCodeId - Id of the code that was scanned.
+     * @param input.context - What the caller could read off the request, if
+     *   anything. Omit it entirely for a scan recorded with no client context.
      * @returns Service output carrying the recorded scan.
      */
     public async registerScan(input: {
         actor: Actor;
         qrCodeId: string;
+        context?: QrCodeScanContextInput;
         ctx?: ServiceContext;
     }): Promise<ServiceOutput<QrCodeScan>> {
-        const { actor, qrCodeId, ctx } = input;
+        const { actor, qrCodeId, context, ctx } = input;
 
         return this.runWithLoggingAndValidation({
             methodName: 'registerScan',
-            input: { actor, qrCodeId },
+            input: { actor, qrCodeId, ...(context ?? {}) },
             schema: RegisterScanInputSchema.extend({ actor: z.any() }),
             ctx,
-            execute: async () => {
-                return this.scanModel.create({ qrCodeId });
+            execute: async (validated) => {
+                // Spread from the VALIDATED object, never from `context`. The
+                // difference matters: `runWithLoggingAndValidation` is what
+                // enforces the bounds, and writing the raw input here would let
+                // an over-long user agent reach a `varchar(1024)` column and
+                // turn a hostile header into a lost scan.
+                return this.scanModel.create({
+                    qrCodeId: validated.qrCodeId,
+                    userAgent: validated.userAgent ?? null,
+                    deviceType: validated.deviceType ?? null,
+                    os: validated.os ?? null,
+                    browserLanguage: validated.browserLanguage ?? null,
+                    targetUrlAtScan: validated.targetUrlAtScan ?? null,
+                    userId: validated.userId ?? null
+                } as Partial<QrCodeScan>);
             }
         });
     }

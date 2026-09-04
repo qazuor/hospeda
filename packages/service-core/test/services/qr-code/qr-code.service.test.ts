@@ -8,7 +8,13 @@
  */
 
 import type { QrCodeModel, QrCodeScanModel } from '@repo/db';
-import { PermissionEnum, QrCodeSourceEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    PermissionEnum,
+    QrCodeSourceEnum,
+    QrScanDeviceTypeEnum,
+    QrScanOsEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
 import { createActor } from '../../factories/actorFactory';
@@ -16,6 +22,8 @@ import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory'
 
 const QR_ID = '11111111-1111-4111-8111-111111111111';
 const SCAN_ID = '22222222-2222-4222-8222-222222222222';
+/** A signed-in scanner, for the HOS-1141 context assertions. */
+const SCANNER_USER_ID = '33333333-3333-4333-8333-333333333333';
 
 /** A live code: not deleted, active. */
 const liveQrCode = {
@@ -175,11 +183,16 @@ describe('QrCodeService', () => {
         });
 
         /**
-         * The insert must carry the code id and NOTHING else — no IP, no
-         * user-agent. `toStrictEqual` rather than `objectContaining`, which
-         * would be blind to an extra field being added later.
+         * The insert must carry EXACTLY the seven HOS-1141 columns — still no
+         * IP and still no referrer, the two the table's own comment rejects by
+         * name. `toStrictEqual` rather than `objectContaining`, which would be
+         * blind to an eighth field appearing later.
+         *
+         * The nulls are asserted rather than left absent on purpose: a key that
+         * silently disappeared would reach Drizzle as `undefined`, which is not
+         * the same insert as an explicit `NULL`.
          */
-        it('writes exactly one field: the code id', async () => {
+        it('writes exactly the seven scan columns, defaulting the context to null', async () => {
             scanModelMock.create.mockResolvedValue({
                 id: SCAN_ID,
                 qrCodeId: QR_ID,
@@ -189,7 +202,46 @@ describe('QrCodeService', () => {
             await service.registerScan({ actor, qrCodeId: QR_ID });
 
             expect(scanModelMock.create).toHaveBeenCalledTimes(1);
-            expect(scanModelMock.create.mock.calls[0]?.[0]).toStrictEqual({ qrCodeId: QR_ID });
+            expect(scanModelMock.create.mock.calls[0]?.[0]).toStrictEqual({
+                qrCodeId: QR_ID,
+                userAgent: null,
+                deviceType: null,
+                os: null,
+                browserLanguage: null,
+                targetUrlAtScan: null,
+                userId: null
+            });
+        });
+
+        it('persists the whole scan context when the caller supplies one', async () => {
+            scanModelMock.create.mockResolvedValue({
+                id: SCAN_ID,
+                qrCodeId: QR_ID,
+                scannedAt: new Date()
+            });
+
+            await service.registerScan({
+                actor,
+                qrCodeId: QR_ID,
+                context: {
+                    userAgent: 'Mozilla/5.0 (iPhone)',
+                    deviceType: QrScanDeviceTypeEnum.MOBILE,
+                    os: QrScanOsEnum.IOS,
+                    browserLanguage: 'pt',
+                    targetUrlAtScan: 'https://hospeda.com.ar/es/gastronomia/foo/',
+                    userId: SCANNER_USER_ID
+                }
+            });
+
+            expect(scanModelMock.create.mock.calls[0]?.[0]).toStrictEqual({
+                qrCodeId: QR_ID,
+                userAgent: 'Mozilla/5.0 (iPhone)',
+                deviceType: QrScanDeviceTypeEnum.MOBILE,
+                os: QrScanOsEnum.IOS,
+                browserLanguage: 'pt',
+                targetUrlAtScan: 'https://hospeda.com.ar/es/gastronomia/foo/',
+                userId: SCANNER_USER_ID
+            });
         });
 
         it('rejects a qrCodeId that is not a UUID', async () => {
@@ -197,6 +249,41 @@ describe('QrCodeService', () => {
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(scanModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('refuses a user agent past the documented bound rather than truncating twice', async () => {
+            // The DERIVER is what truncates. A longer string reaching this
+            // schema means the deriver was bypassed — a bug worth failing on,
+            // not a value to silently repair a second time behind the caller's
+            // back. Failing here is safe: `recordScanBestEffort` in the route
+            // swallows it and the redirect continues.
+            const result = await service.registerScan({
+                actor,
+                qrCodeId: QR_ID,
+                context: { userAgent: 'A'.repeat(1025) }
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(scanModelMock.create).not.toHaveBeenCalled();
+        });
+
+        it('accepts a user agent exactly at the bound', async () => {
+            // The other side of the boundary, so the check above cannot be
+            // green merely because everything is rejected.
+            scanModelMock.create.mockResolvedValue({
+                id: SCAN_ID,
+                qrCodeId: QR_ID,
+                scannedAt: new Date()
+            });
+
+            const result = await service.registerScan({
+                actor,
+                qrCodeId: QR_ID,
+                context: { userAgent: 'A'.repeat(1024) }
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(scanModelMock.create).toHaveBeenCalledTimes(1);
         });
 
         it('surfaces an INTERNAL_ERROR when the insert throws', async () => {
