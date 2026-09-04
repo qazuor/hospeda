@@ -16,6 +16,14 @@
  *  - opening it shows what is PERSISTED, so it corrects rather than overwrites;
  *  - saving PATCHes THAT row — `mediaId` is asserted per photo, which is what
  *    catches an editor wired to the wrong item in a `.map()`;
+ *  - an edit to ONE field resends the other three unchanged. The body always
+ *    carries all four (`buildPhotoMetadataUpdateBody` never omits; a field
+ *    absent from the form travels as `null`, which CLEARS the column), so the
+ *    server's three-state protection is never exercised from here and the only
+ *    thing keeping an untouched caption alive is `rowToItem` seeding the form
+ *    from the row;
+ *  - a stock import keeps its `license` and `provider` — the two credit
+ *    subfields the panel never shows — across an alt-only correction;
  *  - a successful save refreshes local state, so the thumbnail's own `alt`
  *    attribute and a re-opened panel show the new value rather than the stale
  *    one the component mounted with;
@@ -126,6 +134,31 @@ const GALLERY_ROW = {
 };
 
 /**
+ * A photo that came from a stock import, so its credit carries `license` and
+ * `provider` — the two subfields the panel never shows and never collects.
+ * Every other fixture here has `attribution: null`, which leaves the branch of
+ * `buildAttribution` that carries those two over completely unexercised.
+ */
+const STOCK_ROW = {
+    id: 'media-uuid-g2',
+    url: 'https://cdn.example.com/gallery2.jpg',
+    publicId: 'hospeda/posts/abc/img-g2',
+    caption: null,
+    description: null,
+    alt: 'Alt de stock',
+    attribution: {
+        photographer: 'Ana Fotógrafa',
+        sourceUrl: 'https://unsplash.com/photos/xyz',
+        license: 'Unsplash License',
+        provider: 'unsplash' as const
+    },
+    isFeatured: false,
+    sortOrder: 1,
+    state: 'visible' as const,
+    moderationState: 'APPROVED'
+};
+
+/**
  * The accessible names the panel's toggle renders under, straight from
  * `PhotoMetadataEditor`. Written out rather than derived so a silent copy
  * change on either side shows up here as a failure instead of a tautology.
@@ -136,6 +169,8 @@ const GALLERY_TOGGLE_1 = 'Editar textos de la foto 1';
 /** The panel's own field labels (fallback copy — the translator mock echoes it). */
 const ALT_LABEL = '¿Qué muestra la foto?';
 const CAPTION_LABEL = 'Epígrafe (opcional)';
+const DESCRIPTION_LABEL = 'Descripción (opcional)';
+const PHOTOGRAPHER_LABEL = '¿Quién sacó la foto?';
 const SAVE_LABEL = 'Guardar';
 
 async function renderHydrated(props: Partial<ContentMediaSectionProps> = {}) {
@@ -210,6 +245,85 @@ describe('ContentMediaSection — photo text metadata (HOS-1036)', () => {
                 caption: null,
                 description: null,
                 attribution: null
+            }
+        });
+    });
+
+    it('RESENDS the fields it did not touch, unchanged', async () => {
+        // The premise of the whole feature. `buildPhotoMetadataUpdateBody` always
+        // sends all four fields — a field that is not in the form travels as
+        // `null`, which CLEARS the column — so the only thing standing between
+        // "fix the alt" and "erase the caption" is `rowToItem` seeding the form
+        // from the row. Drop `description: row.description ?? undefined` there
+        // and this is the assertion that notices; the other tests in this file
+        // open a row whose caption and description are already `null`.
+        mockUpdateMedia.mockResolvedValue({
+            ok: true as const,
+            data: { media: { ...FEATURED_ROW, alt: 'Alt nuevo de portada' } }
+        });
+        await renderHydrated();
+
+        fireEvent.click(screen.getByRole('button', { name: FEATURED_TOGGLE }));
+        // The description is the field with no other test looking at it, and
+        // the one the author is least likely to notice missing.
+        expect((screen.getByLabelText(DESCRIPTION_LABEL) as HTMLTextAreaElement).value).toBe(
+            FEATURED_ROW.description
+        );
+        fireEvent.change(screen.getByLabelText(ALT_LABEL), {
+            target: { value: 'Alt nuevo de portada' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: SAVE_LABEL }));
+
+        await waitFor(() => expect(mockUpdateMedia).toHaveBeenCalledTimes(1));
+        // toStrictEqual, not toEqual: the latter ignores keys whose value is
+        // `undefined`, which is exactly what a dropped mapping produces.
+        expect(mockUpdateMedia.mock.calls[0]?.[0]).toStrictEqual({
+            entity: 'post',
+            id: POST_ID,
+            mediaId: FEATURED_ROW.id,
+            body: {
+                alt: 'Alt nuevo de portada',
+                caption: FEATURED_ROW.caption,
+                description: FEATURED_ROW.description,
+                attribution: null
+            }
+        });
+    });
+
+    it("preserves a stock import's licence and provider through an alt-only edit", async () => {
+        // The panel shows the photographer and the link, and never the licence
+        // or the provider — so those two survive only because
+        // `buildAttribution` carries them over from the row. Losing them
+        // rewrites an Unsplash photo as a `user-upload`, which is the credit
+        // their API terms require us to keep displaying.
+        mockListMedia.mockResolvedValue({
+            ok: true as const,
+            data: { media: [FEATURED_ROW, STOCK_ROW] }
+        });
+        mockUpdateMedia.mockResolvedValue({
+            ok: true as const,
+            data: { media: { ...STOCK_ROW, alt: 'Alt corregido' } }
+        });
+        await renderHydrated();
+
+        fireEvent.click(screen.getByRole('button', { name: GALLERY_TOGGLE_1 }));
+        // The credit the row already carries is what the panel opens with.
+        expect((screen.getByLabelText(PHOTOGRAPHER_LABEL) as HTMLInputElement).value).toBe(
+            STOCK_ROW.attribution.photographer
+        );
+        fireEvent.change(screen.getByLabelText(ALT_LABEL), { target: { value: 'Alt corregido' } });
+        fireEvent.click(screen.getByRole('button', { name: SAVE_LABEL }));
+
+        await waitFor(() => expect(mockUpdateMedia).toHaveBeenCalledTimes(1));
+        expect(mockUpdateMedia.mock.calls[0]?.[0]?.body).toStrictEqual({
+            alt: 'Alt corregido',
+            caption: null,
+            description: null,
+            attribution: {
+                photographer: 'Ana Fotógrafa',
+                sourceUrl: 'https://unsplash.com/photos/xyz',
+                license: 'Unsplash License',
+                provider: 'unsplash'
             }
         });
     });
