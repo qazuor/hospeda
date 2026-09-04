@@ -230,9 +230,7 @@ describe('QR resolution — a failing actor path degrades instead of 503ing', ()
     });
 
     it('does not treat a path that merely STARTS like the QR route as actor-optional', async () => {
-        // `/api/v1/public/qrx/...` is a different route. Anchoring matters: an
-        // unanchored pattern would hand the tolerance to anything sharing the
-        // prefix, which is how an allowlist quietly stops being a list.
+        // `/api/v1/public/qrx/...` is a different route sharing a prefix.
         roleReader.getUserRoles.mockRejectedValue(new Error('user_role is unreachable'));
         const app = await buildApp('/api/v1/public/qrx');
 
@@ -241,5 +239,35 @@ describe('QR resolution — a failing actor path degrades instead of 503ing', ()
         });
 
         expect(res.status).toBe(503);
+    });
+
+    it('does not extend the tolerance to a DEEPER path under the QR prefix', async () => {
+        // The probe that actually pins the anchors, added because its absence
+        // let a mutation live: replacing the pattern with an unanchored
+        // `/\/api\/v1\/public\/qr\//` passed all five of the other tests here.
+        //
+        // The `qrx` case above cannot catch it — `qrx/` does not contain `qr/`,
+        // so both the anchored and the unanchored form reject it. The two
+        // spellings only diverge on a path with a SECOND segment after `qr/`:
+        //
+        //   path                              anchored  unanchored
+        //   /api/v1/public/qr/Live2345           True       True
+        //   /api/v1/public/qrx/Live2345         False      False   <- no signal
+        //   /api/v1/public/qr/sub/Live2345      False       True   <- the gap
+        //
+        // And that is the realistic regression, not a contrived one: the day
+        // somebody mounts a sibling under the same prefix (`/qr/admin/purge`,
+        // `/qr/{slug}/preview`), an unanchored pattern hands it the fail-open
+        // silently. The allowlist names ONE route, and it has to keep meaning
+        // one route.
+        roleReader.getUserRoles.mockRejectedValue(new Error('user_role is unreachable'));
+        const app = await buildApp(`${REAL_MOUNT}/sub`);
+
+        const res = await app.request(`${REAL_MOUNT}/sub/${SLUG}`, {
+            headers: { 'user-agent': 'Mozilla/5.0 (iPhone) Mobile' }
+        });
+
+        expect(res.status).toBe(503);
+        expect(qrDb.createScan).not.toHaveBeenCalled();
     });
 });
