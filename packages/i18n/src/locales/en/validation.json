@@ -2466,6 +2466,9 @@
         "qrCodeFormat": {
             "invalid": "Invalid QR code format"
         },
+        "qrCodePurpose": {
+            "invalid": "Invalid QR code purpose"
+        },
         "qrCodeSource": {
             "invalid": "Invalid QR code source"
         },
