@@ -181,14 +181,24 @@ async function buildApp(actor: typeof guestActor = guestActor): Promise<Hono<App
 async function probe(
     app: Hono<AppBindings>,
     slug: string,
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
+    omitUserAgent = false
 ): Promise<Probe> {
     const res = await app.request(`/${encodeURIComponent(slug)}`, {
-        // `user-agent` is not decoration: without it the route factory's
-        // middleware chain never reaches the handler in this app. Overridable,
-        // because from HOS-1141 onwards the user agent is the SUBJECT of half
-        // the probes below.
-        headers: { 'user-agent': 'vitest', ...headers }
+        // A DEFAULT `user-agent`, overridable — from HOS-1141 onwards the user
+        // agent is the subject of half the probes below.
+        //
+        // A default, not a requirement. An earlier version of this comment
+        // claimed the middleware chain could not reach the handler without one.
+        // That was measured and is false for this app:
+        //
+        //   no headers at all ... HTTP 200 · findOne=1 · createScan=1 · ua=null
+        //
+        // which is what makes `omitUserAgent` possible. Anything that needs the
+        // header genuinely ABSENT must use that flag: passing `''` through
+        // `headers` sends an EMPTY header, and a request carrying an empty
+        // header is not the same request as one carrying no header.
+        headers: omitUserAgent ? headers : { 'user-agent': 'vitest', ...headers }
     });
     const text = await res.text();
     let body: unknown;
@@ -445,7 +455,6 @@ describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () =>
      * `test/utils/qr-scan-context.test.ts`.
      */
     it.each([
-        ['absent', undefined],
         ['empty', ''],
         ['10 KB of junk', 'A'.repeat(10_240)],
         ['whitespace only', '   '],
@@ -464,13 +473,10 @@ describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () =>
         // and the row was still written (so the counter is still honest).
         const app = await buildApp();
 
-        const res = await probe(
-            app,
-            LIVE_SLUG,
-            hostile === undefined
-                ? { 'user-agent': '' }
-                : { 'user-agent': hostile, 'accept-language': ';;;q=banana' }
-        );
+        const res = await probe(app, LIVE_SLUG, {
+            'user-agent': hostile,
+            'accept-language': ';;;q=banana'
+        });
 
         expect(res.status).toBe(200);
         expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
@@ -486,6 +492,35 @@ describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () =>
         expect(payload.userAgent === null || (payload.userAgent as string).length <= 1024).toBe(
             true
         );
+    });
+
+    it('records the scan when the request carries NO user-agent header at all', async () => {
+        // The case the list above used to CLAIM to cover and did not. `probe`
+        // spreads a default `user-agent`, so `['absent', undefined]` was sent
+        // as `{'user-agent': ''}` — byte-identical to the `'empty'` row next to
+        // it. Two labels, one request, and the more interesting of the two
+        // never actually happened.
+        //
+        // It is a distinct request and worth its own probe: an absent header
+        // and an empty one arrive as `undefined` and `''` at
+        // `ctx.req.header('user-agent')`, and only one of those is what a
+        // scanner behind a stripping proxy actually sends.
+        const app = await buildApp();
+
+        const res = await probe(app, LIVE_SLUG, {}, /* omitUserAgent */ true);
+
+        expect(res.status).toBe(200);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
+        expect(qrDb.createScan).toHaveBeenCalledTimes(1);
+        // Stored as null, exactly like the empty case — the two facts are the
+        // same fact once they reach the column, which is the property the
+        // deriver is written to guarantee and is worth pinning from HERE too,
+        // since this is the layer where they arrive as different values.
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({
+            userAgent: null,
+            deviceType: null,
+            os: null
+        });
     });
 
     it('leaves the derived columns null rather than guessing, on an unreadable agent', async () => {
