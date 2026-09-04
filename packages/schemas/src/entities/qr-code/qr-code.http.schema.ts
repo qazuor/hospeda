@@ -150,8 +150,19 @@ export type QrCodeResolution = z.infer<typeof QrCodeResolutionSchema>;
  * Query parameters accepted by a render endpoint, overriding the code's stored
  * `renderOptions` for one request. All optional: omitting everything renders the
  * code exactly as it is configured.
+ *
+ * It IS {@link QrCodeRenderOptionsPatchSchema}, and was rewritten to say so in
+ * HOS-981 PR 5. It used to read `QrCodeRenderOptionsSchema.partial()`, which
+ * Zod 4 now refuses outright — `.partial() cannot be used on object schemas
+ * containing refinements`, thrown at module load, the moment the centre-logo
+ * gate was attached. Reaching for the patch schema is not just the repair: a
+ * one-request override and a stored partial patch are the same object, both
+ * need the defaults stripped for the same reason (a `?margin=8` that silently
+ * carried five more "overrides" would repaint the code), and both need the
+ * centre-logo pairing rule for the same reason (an override that turned the
+ * mark on without raising the level would render an unscannable download).
  */
-export const QrCodeRenderQuerySchema = QrCodeRenderOptionsSchema.partial();
+export const QrCodeRenderQuerySchema = QrCodeRenderOptionsPatchSchema;
 
 export type QrCodeRenderQuery = z.infer<typeof QrCodeRenderQuerySchema>;
 

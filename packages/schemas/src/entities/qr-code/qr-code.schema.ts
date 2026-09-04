@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
+import { QrCodeCenterLogoEnum } from '../../enums/qr-code-center-logo.enum.js';
+import { QrCodeCenterLogoEnumSchema } from '../../enums/qr-code-center-logo.schema.js';
 import { QrCodeErrorCorrectionLevelEnum } from '../../enums/qr-code-error-correction-level.enum.js';
 import { QrCodeErrorCorrectionLevelEnumSchema } from '../../enums/qr-code-error-correction-level.schema.js';
 import { QrCodeFormatEnum } from '../../enums/qr-code-format.enum.js';
@@ -30,6 +32,103 @@ export const QR_CODE_MAX_SIZE = 4096;
 export const QR_CODE_DEFAULT_FOREGROUND_COLOR = '#000000';
 /** Default background (quiet zone) colour. */
 export const QR_CODE_DEFAULT_BACKGROUND_COLOR = '#ffffff';
+
+// ============================================================================
+// CENTRE LOGO — the geometry that decides whether one is affordable
+// ============================================================================
+
+/**
+ * Side of the centre mark, as a fraction of the symbol's side (quiet zone
+ * excluded).
+ *
+ * The renderer snaps this DOWN to the largest odd whole number of modules that
+ * fits — odd so the plate centres exactly on an odd-sided symbol, down so that
+ * the covered area is never larger than `ratio²` at any QR version. That bound
+ * is the whole reason the gate below can be evaluated without knowing which
+ * version a given URL will produce.
+ */
+export const QR_CODE_CENTER_LOGO_SIZE_RATIO = 0.2;
+
+/**
+ * Upper bound on the fraction of the symbol the mark can cover, at any version.
+ *
+ * Equal to {@link QR_CODE_CENTER_LOGO_SIZE_RATIO} squared, and that equality is
+ * a consequence of the floor-to-odd snapping described above, not a coincidence
+ * — `qr-center-logo.test.ts` re-derives it over all forty QR versions
+ * so a change to the snapping rule cannot silently invalidate the gate.
+ */
+export const QR_CODE_CENTER_LOGO_MAX_COVERAGE =
+    QR_CODE_CENTER_LOGO_SIZE_RATIO * QR_CODE_CENTER_LOGO_SIZE_RATIO;
+
+/**
+ * The largest covered-area fraction that STILL DECODED, per correction level.
+ *
+ * MEASURED, not quoted. Every number here came out of a sweep run on
+ * 2026-09-04: for each level, the platform's own `/qr/{slug}/` URL was rendered
+ * as a real PNG at 256, 512 and 1024 px, a centre plate of increasing size was
+ * painted onto it, and the result was fed to a real decoder (`jsqr`). The value
+ * below is the largest coverage at which all nine renders still returned the
+ * original URL; the next step up returned nothing at all. The sweep is
+ * reproduced as a test — see `qr-center-logo.decode.test.ts`.
+ *
+ * ## These are roughly HALF the level's nominal percentage, and that is the point
+ *
+ * The QR standard's familiar "L≈7%, M≈15%, Q≈25%, H≈30%" describes CODEWORDS a
+ * decoder can repair, and repairing a codeword whose position is unknown costs
+ * two error-correction codewords, not one. A contiguous blob also destroys
+ * whole codewords at its edges that it only partly covers. So reading those
+ * percentages as an area budget overstates what a logo can spend by about a
+ * factor of two — measured: M's nominal 15% broke at 9.6% of area, H's nominal
+ * 30% broke at 21.1%. Sizing a logo against the nominal numbers is exactly how
+ * a code that passes on a screen fails on a wall.
+ */
+export const QR_CODE_ERROR_CORRECTION_DECODE_CEILING: Readonly<
+    Record<QrCodeErrorCorrectionLevelEnum, number>
+> = {
+    [QrCodeErrorCorrectionLevelEnum.L]: 0.03,
+    [QrCodeErrorCorrectionLevelEnum.M]: 0.058,
+    [QrCodeErrorCorrectionLevelEnum.Q]: 0.111,
+    [QrCodeErrorCorrectionLevelEnum.H]: 0.164
+} as const;
+
+/**
+ * How much of a level's measured tolerance the mark is allowed to consume.
+ *
+ * A judgment call, stated as one: half. The ceilings above were measured on a
+ * PRISTINE render, and error correction does not exist to pay for decoration —
+ * it exists to survive a scuffed sticker, a folded brochure, a bad camera and
+ * poor light. Spending everything the ceiling allows would leave a symbol that
+ * decodes perfectly on the day it is printed and nowhere afterwards, which is
+ * the failure this whole entity exists to avoid: a printed code cannot be
+ * corrected. Half to the mark, half to the world.
+ */
+export const QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE = 0.5;
+
+/**
+ * Whether a centre mark is affordable at a given correction level.
+ *
+ * The gate. At the shipped ratio of 0.2 it answers `true` for `Q` and `H` and
+ * `false` for `L` and `M`, but it is written as the comparison rather than as
+ * that list on purpose — enlarging the mark must move the line by itself, not
+ * leave a hardcoded set of levels asserting a safety that no longer holds.
+ *
+ * @param input - Options object (RO-RO).
+ * @param input.centerLogo - Which mark, if any, is requested.
+ * @param input.errorCorrectionLevel - The level the symbol will be drawn at.
+ * @returns `true` when the pair is safe to draw.
+ */
+export function qrCodeCenterLogoFits(input: {
+    centerLogo: QrCodeCenterLogoEnum;
+    errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum;
+}): boolean {
+    if (input.centerLogo === QrCodeCenterLogoEnum.NONE) return true;
+
+    const affordable =
+        QR_CODE_ERROR_CORRECTION_DECODE_CEILING[input.errorCorrectionLevel] *
+        QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE;
+
+    return QR_CODE_CENTER_LOGO_MAX_COVERAGE <= affordable;
+}
 
 /**
  * `#rgb`, `#rrggbb` or `#rrggbbaa`. The alpha form is accepted because the
@@ -110,9 +209,42 @@ export const QrCodeRenderOptionsSchema = z
         backgroundColor: z
             .string()
             .regex(HEX_COLOR_PATTERN, { message: 'zodError.qrCode.renderOptions.color.invalid' })
-            .default(QR_CODE_DEFAULT_BACKGROUND_COLOR)
+            .default(QR_CODE_DEFAULT_BACKGROUND_COLOR),
+
+        /**
+         * The mark painted over the middle of the symbol.
+         *
+         * This is DAMAGE, not decoration: the plate blanks whatever modules sit
+         * under it, and the code survives only because Reed-Solomon can rebuild
+         * them. Which is why it is gated below rather than merely offered.
+         */
+        centerLogo: QrCodeCenterLogoEnumSchema.default(QrCodeCenterLogoEnum.NONE)
     })
-    .strict();
+    .strict()
+    /**
+     * The geometric gate: refuse a mark the correction level cannot pay for.
+     *
+     * `.strict()` runs BEFORE this — measured on Zod 4.3.6: parsing
+     * `{centerLogo: 'HOSPEDA', errorCorrectionLevel: 'L', zzz: 1}` yields only
+     * `unrecognized_keys`, never the custom issue. That is fine here (an
+     * unknown key is refused either way) and is noted because it is exactly
+     * what makes a cross-field refine unreachable when the fields it reads have
+     * been omitted from the shape — the trap `QrCodeUpdateInputSchema` fell
+     * into with `source`.
+     *
+     * The issue is attached to `centerLogo` rather than to
+     * `errorCorrectionLevel` because turning the mark on is what an operator
+     * just did; the level is the thing they now have to raise.
+     */
+    .superRefine((data, ctx) => {
+        if (qrCodeCenterLogoFits(data)) return;
+
+        ctx.addIssue({
+            code: 'custom',
+            message: 'zodError.qrCode.renderOptions.centerLogo.requiresErrorCorrection',
+            path: ['centerLogo']
+        });
+    });
 
 export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsSchema>;
 
@@ -122,8 +254,8 @@ export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsSchema>;
  * This exists because `.partial()` alone is not enough, and the difference is
  * invisible until it costs somebody a colour. In Zod 4 a `ZodDefault` still
  * fires through an enclosing `ZodOptional`, so
- * `QrCodeRenderOptionsSchema.partial().parse({margin: 8})` returns all SIX
- * fields — the five the caller never mentioned arrive carrying the schema's
+ * `QrCodeRenderOptionsSchema.partial().parse({margin: 8})` returns all SEVEN
+ * fields — the six the caller never mentioned arrive carrying the schema's
  * defaults, indistinguishable from values an operator actually chose. Since
  * `render_options` is one `jsonb` column, that completed object is what gets
  * written: a code stored with `foregroundColor: '#ff0000'` comes back black
@@ -137,11 +269,98 @@ export type QrCodeRenderOptions = z.infer<typeof QrCodeRenderOptionsSchema>;
  * Used by BOTH update schemas (domain and HTTP). Declared once here rather than
  * spelled out in each so the two cannot drift into disagreeing about what a
  * partial render patch is.
+ *
+ * ## Why the centre-logo gate is re-stated here, and re-stated DIFFERENTLY
+ *
+ * The refine on {@link QrCodeRenderOptionsSchema} does not survive: this schema
+ * is rebuilt from that one's `.shape`, and a shape carries fields, not checks.
+ * Re-attaching the same refine would not work either, and that is the part
+ * worth reading twice — the gate is a comparison between `centerLogo` and
+ * `errorCorrectionLevel`, and a PATCH is free to carry one without the other.
+ * `{centerLogo: 'HOSPEDA'}` alone reaches a row whose stored level this schema
+ * cannot see; so does `{errorCorrectionLevel: 'L'}` alone, on a row that
+ * already carries a mark. Either one, merged into the stored `jsonb` by
+ * `QrCodeModel.mergeableJsonbColumns`, produces exactly the configuration the
+ * gate exists to refuse — through the gate, with a 200.
+ *
+ * Nothing in this schema can rescue that, because the payload does not carry
+ * the stored document. The service cannot either without a re-read it does not
+ * do. So the rule enforced here is the one that IS decidable from the payload
+ * alone: **the two fields travel together whenever the answer depends on both**.
+ *
+ * Concretely, a patch is refused unless one of these holds:
+ *
+ * - it mentions neither field;
+ * - it states BOTH, and the pair fits;
+ * - it only turns the mark OFF (`centerLogo: 'NONE'`) — which cannot make any
+ *   symbol harder to read, whatever level is stored;
+ * - it only raises the level to one that affords a mark — safe whatever mark is
+ *   stored, because the worst case is the mark being present.
+ *
+ * The cost is that turning a mark on, or lowering the correction level, means
+ * sending both keys. That is not a UI inconvenience so much as an honest
+ * statement of what the server can and cannot check, and the admin form sends
+ * the pair for exactly this reason (`diffRenderOptions`).
  */
 export const QrCodeRenderOptionsPatchSchema = z
     .object(stripShapeDefaults(QrCodeRenderOptionsSchema.shape))
     .partial()
-    .strict();
+    .strict()
+    .superRefine((data, ctx) => {
+        const statesLogo = data.centerLogo !== undefined;
+        const statesLevel = data.errorCorrectionLevel !== undefined;
+
+        if (!statesLogo && !statesLevel) return;
+
+        if (statesLogo && statesLevel) {
+            if (
+                qrCodeCenterLogoFits({
+                    centerLogo: data.centerLogo as QrCodeCenterLogoEnum,
+                    errorCorrectionLevel:
+                        data.errorCorrectionLevel as QrCodeErrorCorrectionLevelEnum
+                })
+            ) {
+                return;
+            }
+
+            ctx.addIssue({
+                code: 'custom',
+                message: 'zodError.qrCode.renderOptions.centerLogo.requiresErrorCorrection',
+                path: ['centerLogo']
+            });
+            return;
+        }
+
+        // Only the mark moved. Removing it is always safe; adding one needs the
+        // level stated, because the stored one is invisible from here.
+        if (statesLogo) {
+            if (data.centerLogo === QrCodeCenterLogoEnum.NONE) return;
+
+            ctx.addIssue({
+                code: 'custom',
+                message: 'zodError.qrCode.renderOptions.centerLogo.levelRequiredWithLogo',
+                path: ['errorCorrectionLevel']
+            });
+            return;
+        }
+
+        // Only the level moved. Safe iff the new level would afford a mark —
+        // that is the worst case for whatever the row currently stores.
+        if (
+            qrCodeCenterLogoFits({
+                centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
+                errorCorrectionLevel: data.errorCorrectionLevel as QrCodeErrorCorrectionLevelEnum
+            })
+        ) {
+            return;
+        }
+
+        ctx.addIssue({
+            code: 'custom',
+            message: 'zodError.qrCode.renderOptions.centerLogo.logoRequiredWithLevel',
+            path: ['centerLogo']
+        });
+    });
 
 export type QrCodeRenderOptionsPatch = z.infer<typeof QrCodeRenderOptionsPatchSchema>;
 
