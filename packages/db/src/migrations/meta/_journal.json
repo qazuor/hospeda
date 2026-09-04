@@ -806,6 +806,13 @@
       "when": 1788477812458,
       "tag": "0114_entity_subscriptions_rename",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1788483129900,
+      "tag": "0115_legal_slapstick",
+      "breakpoints": true
     }
   ]
 }
