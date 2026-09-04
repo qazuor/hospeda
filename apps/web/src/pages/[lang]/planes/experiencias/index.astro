@@ -44,6 +44,7 @@ import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -136,14 +137,12 @@ const faqJsonLd = {
 const title = t('commerce.lead.experience.title');
 const subtitle = t('commerce.lead.experience.subtitle');
 /**
- * Points at the page that HAS the price today — see the same block in
- * `/planes/gastronomia/index.astro` for the full reasoning. In short:
- * `/planes/experiencias/precios/` is H7's and does not exist yet, the price
- * block still lives inside `/publicar-experiencia/` (HOS-690), and pointing
- * both CTAs at a 404 until H7 lands would break every conversion path on the
- * page.
+ * This vertical's own pricing page — see the same block in
+ * `/planes/gastronomia/index.astro`. HOS-1032 built it and retired
+ * `/publicar-experiencia/` in the same change, ending the interim in which this
+ * CTA had to point at the landing that still carried the price inline.
  */
-const pricingHref = buildUrl({ locale, path: 'publicar-experiencia' });
+const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.experience });
 ---
 
 <MarketingLayout

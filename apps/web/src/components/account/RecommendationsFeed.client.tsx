@@ -45,6 +45,7 @@ import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './RecommendationsFeed.module.css';
 
@@ -242,7 +243,7 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
     // This is a tourist-only Área Turista feature — the CTA must point at the
     // tourist pricing page, not the owner one (BETA-174; previously all four
     // pointed at `suscriptores/planes`, the owner page, per the stale BETA-168 note).
-    const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
+    const upgradeHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
     const fetchFeed = useCallback(async () => {
         if (!isMountedRef.current) return;

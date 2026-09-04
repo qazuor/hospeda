@@ -19,12 +19,17 @@
  * level and the same deliverables. "Desde $15.000" would not be a
  * simplification, it would be a price half the book will never be quoted.
  *
- * The CTA therefore points at the lead form, not at a checkout — a partnership
- * is agreed in a conversation, not bought. `/sumate/partner/` is that form
- * today; it is slated for a 301 here (HOS-941), which cannot land until H7
- * gives the lead form a home inside this family. Pointing at what exists beats
- * pointing at what is planned: the host page does the same thing with the
- * pricing grid it links to.
+ * The CTA never leads to a checkout — a partnership is agreed in a conversation,
+ * not bought. Since HOS-1032 it points at `/planes/aliados/precios/` (the
+ * level-2 → level-3 hop every audience makes) rather than jumping straight to
+ * the lead form, which is still one click further on from every card there.
+ *
+ * `/sumate/partner/` is that form, and it deliberately KEEPS SERVING. HOS-941
+ * lists it for a 301 into this family, but nothing in this family houses a lead
+ * form yet, and retiring the URL before something does would break the only
+ * conversion path both partner pages have. That move needs a decision about
+ * where the form lives, which no criterion in H7 makes — so it is left open on
+ * purpose, not overlooked.
  *
  * ## Every promise on this page was checked against the code
  *
@@ -69,6 +74,7 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -152,7 +158,18 @@ const faqJsonLd = {
 
 const title = t('partners.landing.meta.title');
 const description = t('partners.landing.meta.description');
-const leadHref = buildUrl({ locale, path: 'sumate/partner' });
+/**
+ * The CTA now goes one level DOWN, to `/planes/aliados/precios/`, and not
+ * straight to the lead form.
+ *
+ * This page had to point at the form while H7 was pending — pointing at a
+ * `/precios/` page that did not exist would have made every conversion path
+ * here a 404. Now that the levels exist, the level-2 → level-3 hop is the
+ * structure D-7 describes: the tier cards, and what each level actually gives,
+ * are what a reader wants between "this sounds interesting" and "write to
+ * them". The lead form is still one click away, from every card on that page.
+ */
+const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.partner });
 const ctaLabel = t('partners.landing.cta.label');
 ---
 
@@ -168,7 +185,7 @@ const ctaLabel = t('partners.landing.cta.label');
     >
         <GradientButton
             slot="cta"
-            href={leadHref}
+            href={pricingHref}
             label={ctaLabel}
             variant="primary"
             icon="true"
@@ -201,7 +218,7 @@ const ctaLabel = t('partners.landing.cta.label');
     <section class="sales-cta section section--warm">
         <div class="sales-cta__container section__container">
             <h2 class="sales-cta__title">{t('partners.landing.cta.title')}</h2>
-            <GradientButton href={leadHref} label={ctaLabel} variant="primary" icon="true" />
+            <GradientButton href={pricingHref} label={ctaLabel} variant="primary" icon="true" />
         </div>
     </section>
 </MarketingLayout>

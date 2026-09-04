@@ -14,6 +14,7 @@
  */
 
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 /**
  * Set of roles that grant access to property-management navigation
@@ -45,17 +46,22 @@ export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>(['HOST', 'ADMIN', '
 /**
  * Owner (host) pricing page, locale-agnostic.
  *
- * HOS-942: both constants point one level deeper than they used to.
- * `suscriptores/planes` is now the five-audience INDEX, not owner pricing, and
- * `suscriptores/turistas` is a 301. Every caller of
+ * HOS-942 pointed both constants one level deeper than they used to be:
+ * `suscriptores/planes` became the five-audience INDEX rather than owner
+ * pricing, and `suscriptores/turistas` became a 301. Every caller of
  * {@link resolveSubscriptionPlansPath} is answering "which catalogue can this
  * person actually buy from" — a chooser, or a redirect through one, is the wrong
  * answer to that question.
+ *
+ * HOS-1032 moved the two pages again, into the `/planes/` namespace, and this
+ * is now READ from `PRICING_PAGE_PATH_BY_AUDIENCE` instead of spelled here. Two
+ * literals were two things to update on a move, and the previous move had
+ * already proved they get updated at different times: the URLs are one fact.
  */
-const OWNER_PLANS_PATH = 'suscriptores/planes/anfitriones';
+const OWNER_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.owner;
 
 /** Tourist pricing page, locale-agnostic. Also the anonymous default. */
-const TOURIST_PLANS_PATH = 'suscriptores/planes/turistas';
+const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
 
 /**
  * Set of roles that grant access to commerce-owner navigation

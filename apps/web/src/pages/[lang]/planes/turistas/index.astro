@@ -52,6 +52,7 @@ import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-pla
 import { computeMinimumTrialDays } from '@/lib/billing/generic-trial-days';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -117,7 +118,9 @@ const faqJsonLd = {
 
 const title = t('pricing.tourist.title');
 const description = t('pricing.tourist.description');
-const pricingHref = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
+// HOS-1032 built this audience's `precios/` page, so the CTA points at the
+// level-3 URL D-7 describes instead of at the old `/suscriptores/` one.
+const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 ---
 
 <MarketingLayout locale={locale} title={title} description={description}>

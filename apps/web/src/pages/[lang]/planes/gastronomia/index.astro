@@ -12,10 +12,11 @@
  *
  * ## What moved, and what stayed behind
  *
- * Supersedes `/publicar-restaurante/`, which 301s here once H7 lands — not
- * before, because that page still carries the price block inline and the price
- * only moves DOWN to `/planes/gastronomia/precios/` when H7 builds it.
- * Retiring the old URL first would leave the vertical with no price at all.
+ * Supersedes `/publicar-restaurante/`, which 301s here since HOS-1032. That
+ * could not happen earlier: the old page still carried the price block inline,
+ * and the price only moved DOWN to `/planes/gastronomia/precios/` when H7 built
+ * it, so retiring the URL first would have left the vertical with no price at
+ * all. Both halves landed together.
  * The split is not tidiness: a visitor who has already decided to publish
  * should not scroll a brochure to reach the grid, and "publicar mi restaurante"
  * and "cuánto cuesta publicar mi restaurante" are two search intents that a
@@ -45,6 +46,7 @@ import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -143,20 +145,15 @@ const faqJsonLd = {
 const title = t('commerce.lead.title');
 const subtitle = t('commerce.lead.subtitle');
 /**
- * The CTA points at the page that HAS the price today, not at the one that
- * will have it.
+ * The CTA points at this vertical's own pricing page.
  *
- * `/planes/gastronomia/precios/` is H7's, and it does not exist yet — sending
- * both CTAs there would make every conversion path on this page a 404 for as
- * long as H7 takes. The price block still lives inside `/publicar-restaurante/`
- * (HOS-690), which is exactly why that URL cannot 301 here yet either: the
- * retirement and the `/precios/` page are one move, and they belong to H7.
- *
- * The host page does the same thing for the same reason, pointing at the live
- * `/suscriptores/planes/anfitriones/` grid. Both lines change to
- * `planes/<audiencia>/precios` the day H7 builds it.
+ * It used to point at `/publicar-restaurante/`, which carried the price block
+ * inline — the interim H6 documented, because sending both CTAs at a
+ * `/precios/` page that did not exist yet would have made every conversion path
+ * on this page a 404. HOS-1032 built it and retired the old URL in the same
+ * change, which is why that interim is over.
  */
-const pricingHref = buildUrl({ locale, path: 'publicar-restaurante' });
+const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.gastronomy });
 ---
 
 <MarketingLayout
