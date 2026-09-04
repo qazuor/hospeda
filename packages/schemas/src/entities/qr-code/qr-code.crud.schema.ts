@@ -156,9 +156,33 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  * and the recovery in `QrCodeService.getOrCreateForEntity` only wraps the
  * INSERT — so that path surfaces a raw constraint name as a 500.
  *
- * Reassigning a code to a different entity is therefore not an edit. If it ever
- * becomes a real requirement it needs its own operation, with the retire-and
- * -reissue semantics a printed sticker demands.
+ * ## `source` is frozen too, and could not be anything else
+ *
+ * `source` records how the row came into existence — a historical fact, not a
+ * setting. A MANUAL code an operator typed in did not later become GENERATED.
+ *
+ * It is also unchangeable in practice now that the entity reference is frozen,
+ * which is what settles it. `extras/039` requires GENERATED to name an entity
+ * and MANUAL not to; since a PATCH can no longer move `entityType`/`entityId`,
+ * EVERY `source` flip lands on a row whose entity columns contradict the new
+ * value. `PATCH {source:'MANUAL'}` on a generated code, and `{source:
+ * 'GENERATED'}` on a manual one, both reach Postgres and come back as a 500
+ * carrying a constraint name. Accepting the field converts a nonsense request
+ * into a server error and buys nothing.
+ *
+ * A schema-level refine cannot rescue it either: the payload does not carry the
+ * stored entity columns, so nothing in a `superRefine` can see what the new
+ * `source` would contradict. (`.strict()` also runs BEFORE any refine, so once
+ * `entityType`/`entityId` left the shape, a refine over the three fields
+ * together became unreachable code.)
+ *
+ * ## Reassigning and converting are not edits
+ *
+ * Neither pointing a code at another entity nor converting it between MANUAL
+ * and GENERATED is an edit, and for the same underlying reason: the old sticker
+ * goes on existing whatever the row says. If either becomes a real requirement
+ * it needs its own operation, with the retire-and-reissue semantics a printed
+ * code demands.
  *
  * ## Why `renderOptions` is re-declared (HOS-981 PR 3)
  *
@@ -189,7 +213,8 @@ export const QrCodeUpdateInputSchema = z
                 slug: true,
                 purpose: true,
                 entityType: true,
-                entityId: true
+                entityId: true,
+                source: true
             }).shape
         ),
         renderOptions: QrCodeRenderOptionsPatchSchema

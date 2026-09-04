@@ -87,6 +87,12 @@ export type QrCodeCreateHttp = z.infer<typeof QrCodeCreateHttpSchema>;
  * code, and the printed one starts sending A's customers to B's page with B
  * collecting the scans. See `QrCodeUpdateInputSchema` for the full argument.
  *
+ * `source` is absent too. It records how the row came into existence rather
+ * than how it is configured, and with the entity reference frozen every flip of
+ * it now contradicts `extras/039` — so accepting it could only ever turn a
+ * nonsense request into a 500 carrying a constraint name. Converting a code
+ * between MANUAL and GENERATED is retire-and-reissue, not an edit.
+ *
  * `renderOptions` is re-declared for the same reason the domain update schema
  * does it — see the long note on `QrCodeUpdateInputSchema`. In short:
  * `stripShapeDefaults` strips TOP-LEVEL defaults only, so without this line a
@@ -100,7 +106,8 @@ export const QrCodeUpdateHttpSchema = z
                 slug: true,
                 purpose: true,
                 entityType: true,
-                entityId: true
+                entityId: true,
+                source: true
             }).shape
         ),
         renderOptions: QrCodeRenderOptionsPatchSchema
