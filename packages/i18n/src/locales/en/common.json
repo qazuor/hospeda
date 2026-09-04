@@ -203,6 +203,14 @@
             "title": "Unsaved changes",
             "confirm": "Yes, discard",
             "cancel": "Keep editing"
+        },
+        "unsavedChangesAndPhotoAlt": {
+            "title": "Unsaved changes and photos without alt text",
+            "message": "You have unsaved changes on this page: leaving now discards them. On top of that, {{count}} photo still has no alt text, the text screen readers read out loud and search engines use to understand your images. Leave anyway?",
+            "message_one": "You have unsaved changes on this page: leaving now discards them. On top of that, {{count}} photo still has no alt text, the text screen readers read out loud and search engines use to understand your images. Leave anyway?",
+            "message_other": "You have unsaved changes on this page: leaving now discards them. On top of that, {{count}} photos still have no alt text, the text screen readers read out loud and search engines use to understand your images. Leave anyway?",
+            "confirm": "Leave and discard the changes",
+            "cancel": "Keep editing"
         }
     },
     "modal": {
