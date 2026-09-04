@@ -554,7 +554,12 @@
             "experience": "Your experience",
             "asTourist": "As a traveler (included)",
             "asOwner": "As an owner",
-            "aiBusiness": "AI for your business"
+            "aiBusiness": "AI for your business",
+            "gastronomyListing": "Your venue on Hospeda",
+            "gastronomyMenu": "The menu",
+            "experienceListing": "Your experience on Hospeda",
+            "experienceService": "Before and after the outing",
+            "commerceExtras": "Extra tools"
         },
         "row": {
             "favorites": "Favorites",
@@ -587,7 +592,22 @@
             "aiTranslate": "AI translations per month",
             "aiImport": "AI imports per month",
             "aiChatOwner": "AI chat queries per month",
-            "aiSupport": "AI support assistant"
+            "aiSupport": "AI support assistant",
+            "maxGastronomies": "Venues you can list",
+            "publishGastronomy": "Publish your venue",
+            "editGastronomyInfo": "Edit the venue's information",
+            "gastronomyMenu": "Menu loaded into Hospeda",
+            "gastronomyDailySpecial": "Dish of the day",
+            "gastronomyEvents": "Venue events",
+            "menuItemPhotos": "Photos per dish",
+            "multilingualMenu": "Menu in several languages",
+            "maxExperiences": "Experiences you can list",
+            "publishExperience": "Publish your experience",
+            "editExperienceInfo": "Edit the experience's information",
+            "experienceDirections": "How to reach the meeting point",
+            "experienceCertificate": "Certificate for whoever took it",
+            "listingPdf": "Downloadable PDF listing",
+            "aiChatCommerce": "AI chat queries per month"
         },
         "rowDesc": {
             "favorites": "Save accommodations you like to revisit anytime.",

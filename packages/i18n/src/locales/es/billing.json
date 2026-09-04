@@ -554,7 +554,12 @@
             "experience": "Tu experiencia",
             "asTourist": "Como turista (incluido)",
             "asOwner": "Como propietario",
-            "aiBusiness": "IA para tu negocio"
+            "aiBusiness": "IA para tu negocio",
+            "gastronomyListing": "Tu local en Hospeda",
+            "gastronomyMenu": "La carta",
+            "experienceListing": "Tu experiencia en Hospeda",
+            "experienceService": "Antes y después de la salida",
+            "commerceExtras": "Herramientas extra"
         },
         "row": {
             "favorites": "Favoritos",
@@ -587,7 +592,22 @@
             "aiTranslate": "Traducciones con IA por mes",
             "aiImport": "Importaciones con IA por mes",
             "aiChatOwner": "Consultas con IA por mes",
-            "aiSupport": "Asistente IA de soporte"
+            "aiSupport": "Asistente IA de soporte",
+            "maxGastronomies": "Locales que podés publicar",
+            "publishGastronomy": "Publicar tu local",
+            "editGastronomyInfo": "Editar la información del local",
+            "gastronomyMenu": "Carta cargada en Hospeda",
+            "gastronomyDailySpecial": "Menú del día",
+            "gastronomyEvents": "Eventos del local",
+            "menuItemPhotos": "Fotos por plato",
+            "multilingualMenu": "Carta en varios idiomas",
+            "maxExperiences": "Experiencias que podés publicar",
+            "publishExperience": "Publicar tu experiencia",
+            "editExperienceInfo": "Editar la información de la experiencia",
+            "experienceDirections": "Cómo llegar al punto de encuentro",
+            "experienceCertificate": "Certificado para quien la hizo",
+            "listingPdf": "Ficha descargable en PDF",
+            "aiChatCommerce": "Consultas por chat con IA al mes"
         },
         "rowDesc": {
             "favorites": "Guardá los alojamientos que te interesan para consultarlos después.",

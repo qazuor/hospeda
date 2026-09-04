@@ -13,7 +13,10 @@
         "label": "Recommended for",
         "default": {
             "owner": "anyone listing their place on Hospeda",
-            "tourist": "anyone travelling around the Litoral who wants more out of the platform"
+            "tourist": "anyone travelling around the Litoral who wants more out of the platform",
+            "gastronomy": "owners of a food business who want to be found",
+            "experience": "people who run outings and activities for visitors",
+            "partner": "institutions and businesses looking to partner with Hospeda"
         },
         "plan": {
             "owner-basico": "someone renting out a single property who is just getting started",
@@ -21,7 +24,15 @@
             "owner-premium": "someone who makes a living from renting and needs every tool and the widest reach",
             "tourist-free": "someone starting to browse places to stay who wants to save a few favourites",
             "tourist-plus": "someone who travels often and compares several options before deciding",
-            "tourist-vip": "someone who travels often and wants every benefit plus direct contact with the host"
+            "tourist-vip": "someone who travels often and wants every benefit plus direct contact with the host",
+            "gastronomy-basico": "someone listing their venue for the first time, to get on the map",
+            "gastronomy-pro": "someone with regulars who wants the menu always up to date",
+            "gastronomy-premium": "someone running a venue with a multilingual menu and constant service",
+            "experience-basico": "someone starting to offer outings and looking to get known",
+            "experience-pro": "someone with frequent visitors who needs to explain how to get there",
+            "experience-premium": "someone who lives off outings and wants certificates and full support",
+            "partner-silver": "those who want a presence in campaigns and the partner carousel",
+            "partner-gold": "those who also want their own page inside Hospeda"
         }
     },
     "inheritedSummary_one": "+{{count}} feature from the {{plan}} plan",
@@ -128,7 +139,10 @@
             "title": "¿Listo para hacer crecer tu negocio?",
             "description_one": "Si es tu primera suscripción, empezás con {{count}} día de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.",
             "description_other": "Si es tu primera suscripción, empezás con {{count}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas."
-        }
+        },
+        "pageTitle": "Pricing for the plans to list your property",
+        "pageDescription": "See what each plan to list your property on Hospeda costs, and pick yours.",
+        "ctaLabel": "Get started"
     },
     "tourist": {
         "title": "Plans for travelers",
@@ -188,7 +202,10 @@
                 "q": "Can I cancel whenever I want?",
                 "a": "Yes, from your account and with no paperwork. You keep access until the period you already paid for ends."
             }
-        }
+        },
+        "pageTitle": "Pricing for traveller subscriptions",
+        "pageDescription": "See what each traveller subscription on Hospeda costs, and pick yours.",
+        "ctaLabel": "Get started"
     },
     "comparison": {
         "link": "See detailed comparison",
@@ -204,7 +221,8 @@
             "heading": "Detailed traveler plan comparison",
             "title": "Traveler plan comparison",
             "description": "Compare all features, benefits and limits of each traveler plan."
-        }
+        },
+        "sectionTitle": "Plan comparison"
     },
     "annualHint": "Paying yearly saves you {percent}%",
     "seeAll": "See everything included ({count} more)",
@@ -216,5 +234,54 @@
         "backToIndex": "Back to all plans",
         "ariaLabel": "Plan catalogue navigation",
         "seePlans": "See plans and pricing"
+    },
+    "consultPrice": "Ask us",
+    "gastronomy": {
+        "tagline": "Plans and pricing",
+        "heading": "Gastronomy pricing",
+        "subtitle": "Every plan lists your venue. What changes is how much of it you can show.",
+        "empty": "Plans unavailable right now.",
+        "cardsHeading": "Gastronomy plan comparison",
+        "pageTitle": "Pricing to list your food business",
+        "pageDescription": "See what it costs to list your restaurant, grill, deli or food truck on Hospeda.",
+        "ctaLabel": "Get started"
+    },
+    "experience": {
+        "tagline": "Plans and pricing",
+        "heading": "Experience pricing",
+        "subtitle": "Every plan lists your experience. What changes is how much of it you can tell.",
+        "empty": "Plans unavailable right now.",
+        "cardsHeading": "Experience plan comparison",
+        "pageTitle": "Pricing to list your experiences",
+        "pageDescription": "See what it costs to list your outings and activities on Hospeda.",
+        "ctaLabel": "Get started"
+    },
+    "partner": {
+        "tagline": "Partnership levels",
+        "heading": "Partnership levels",
+        "subtitle": "Pick the level you picture yourself in, and we settle it together.",
+        "empty": "Levels unavailable right now.",
+        "cardsHeading": "Partnership level comparison",
+        "pageTitle": "Partnership levels with Hospeda",
+        "pageDescription": "Two partnership levels. We agree the figures in a conversation, because we do not charge everyone the same.",
+        "ctaLabel": "Get in touch"
+    },
+    "billingFaq": {
+        "tagline": "Billing",
+        "title": "Questions about payment",
+        "trialQ": "Can I try it before paying?",
+        "trialA_one": "Yes. You start with {{count}} free trial day, and the first month is only charged afterwards.",
+        "trialA_other": "Yes. You start with {{count}} free trial days, and the first month is only charged afterwards.",
+        "trialANone": "These plans include no trial period: the first month is charged when you subscribe.",
+        "cancelQ": "Can I cancel whenever I want?",
+        "cancelA": "Yes, from your account and without calling anyone. You keep the plan until the period you already paid for ends.",
+        "changeQ": "Can I change plan later?",
+        "changeA": "Yes. You can move up or down whenever you like, and the change is settled on the next invoice.",
+        "methodQ": "How do I pay?",
+        "methodA": "By card, through MercadoPago. It renews on its own every month until you cancel.",
+        "invoiceQ": "Do you issue invoices?",
+        "invoiceA": "Yes. Every charge generates its receipt and you have it available in your account.",
+        "partnerPriceQ": "Why is there no price?",
+        "partnerPriceA": "Because we do not charge an institution what we charge a corner shop, even at the same level. We share the current figures in the conversation."
     }
 }

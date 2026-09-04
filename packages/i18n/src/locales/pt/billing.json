@@ -554,7 +554,12 @@
             "experience": "Sua experiência",
             "asTourist": "Como viajante (incluído)",
             "asOwner": "Como anfitrião",
-            "aiBusiness": "IA para o seu negócio"
+            "aiBusiness": "IA para o seu negócio",
+            "gastronomyListing": "Seu estabelecimento na Hospeda",
+            "gastronomyMenu": "O cardápio",
+            "experienceListing": "Sua experiência na Hospeda",
+            "experienceService": "Antes e depois do passeio",
+            "commerceExtras": "Ferramentas extras"
         },
         "row": {
             "favorites": "Favoritos",
@@ -587,7 +592,22 @@
             "aiTranslate": "Traduções com IA por mês",
             "aiImport": "Importações com IA por mês",
             "aiChatOwner": "Consultas com IA por mês",
-            "aiSupport": "Assistente IA de suporte"
+            "aiSupport": "Assistente IA de suporte",
+            "maxGastronomies": "Estabelecimentos que você pode publicar",
+            "publishGastronomy": "Publicar seu estabelecimento",
+            "editGastronomyInfo": "Editar as informações do estabelecimento",
+            "gastronomyMenu": "Cardápio carregado na Hospeda",
+            "gastronomyDailySpecial": "Prato do dia",
+            "gastronomyEvents": "Eventos do estabelecimento",
+            "menuItemPhotos": "Fotos por prato",
+            "multilingualMenu": "Cardápio em vários idiomas",
+            "maxExperiences": "Experiências que você pode publicar",
+            "publishExperience": "Publicar sua experiência",
+            "editExperienceInfo": "Editar as informações da experiência",
+            "experienceDirections": "Como chegar ao ponto de encontro",
+            "experienceCertificate": "Certificado para quem participou",
+            "listingPdf": "Ficha para baixar em PDF",
+            "aiChatCommerce": "Consultas por chat com IA por mês"
         },
         "rowDesc": {
             "favorites": "Salve as acomodações de interesse para consultar mais tarde.",
