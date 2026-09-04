@@ -47,72 +47,29 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
-import { type Actor, ExperienceService, GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
+import { countOwnListings } from '../services/publish-listing-reads';
 import type { AppMiddleware } from '../types';
 import { getActorFromContext } from '../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
 import { buildLimitReachedDetails, LIMIT_COUNT_UNAVAILABLE_MESSAGE } from './limit-enforcement';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
-const experienceService = new ExperienceService({ logger: apiLogger });
-
 /**
- * Counts the listings one owner holds in one vertical.
+ * `countOwnListings` used to live here, private to this module. HOS-1156 moved it
+ * to `services/publish-listing-reads` because the publish precheck needs the SAME
+ * number to decide whether to show a form or an upgrade panel.
  *
- * `ownerId` is a declared filter on both `GastronomySearchSchema` and
- * `ExperienceSearchSchema` — checked rather than assumed, because a search
- * schema that silently drops an undeclared filter would count every listing on
- * the platform and cap the first owner who tried to create one.
+ * Two counts would have been two answers: the precheck telling an owner "you have
+ * room" and this middleware answering 403 one screen later — a divergence neither
+ * side's tests could catch, since each would be self-consistent.
  *
- * @param input.vertical - Which vertical to count.
- * @param input.actor - The authenticated actor (also the owner).
- * @returns The count, or `null` when the count could not be resolved.
+ * What did NOT move is the failure policy. This middleware still fails CLOSED
+ * (503 below) because it is the only gate on the create path; the precheck fails
+ * OPEN, because this gate is still behind it. The shared function returns `null`
+ * precisely so each caller keeps its own answer to that question.
  */
-async function countOwnListings(input: {
-    vertical: CommerceVertical;
-    actor: Actor;
-}): Promise<number | null> {
-    const { vertical, actor } = input;
-
-    // HOS-1079: an exhaustive switch, not a binary ternary — `vertical` is
-    // typed `CommerceVertical` (exactly 'gastronomy' | 'experience'), so the
-    // `default` throw is defense-in-depth against a future widening of that
-    // type, not a reachable path today.
-    let service: GastronomyService | ExperienceService;
-    switch (vertical) {
-        case 'gastronomy':
-            service = gastronomyService;
-            break;
-        case 'experience':
-            service = experienceService;
-            break;
-        default: {
-            const exhaustiveCheck: never = vertical;
-            apiLogger.error(
-                { vertical: exhaustiveCheck },
-                'countOwnListings: unsupported commerce vertical'
-            );
-            return null;
-        }
-    }
-
-    // Type assertion mirrors `enforceAccommodationLimit`: BaseCrudService.count()
-    // takes z.infer<TSearchSchema> and TypeScript cannot narrow the generic at
-    // the call site without importing the concrete schema type.
-    const result = await service.count(actor, { ownerId: actor.id } as never);
-
-    if (result.error) {
-        apiLogger.error(
-            { vertical, ownerId: actor.id, error: result.error.message },
-            'failed to count commerce listings for the limit check'
-        );
-        return null;
-    }
-
-    return result.data?.count ?? 0;
-}
 
 /**
  * Builds the limit-enforcement middleware for one commerce vertical.
