@@ -225,10 +225,10 @@ describe('the brochure file (HOS-1058)', () => {
  * the encoded string — and everything else on this page is held constant. That
  * gives two assertions no `toContain` could make:
  *
- * - moving `content.url` must NOT move the rectangle count (the symbol does not
- *   depend on it any more), and
- * - moving `qrUrl` MUST move it, by exactly the number of runs the engine says
- *   that string produces.
+ * - moving `content.url` must leave the FILE byte-identical (the sheet stopped
+ *   drawing it entirely — see the readable-line test below), and
+ * - moving `qrUrl` MUST move the rectangle count, by exactly the number of runs
+ *   the engine says that string produces.
  *
  * Asserting only the first would pass for a renderer that draws a constant; only
  * the second would pass for one that draws both. Together they pin the source.
@@ -275,7 +275,7 @@ describe('what the QR encodes (HOS-1129)', () => {
     /** A much longer redirect — a different QR version, so a different count. */
     const OTHER_QR_URL = `https://hospeda.com.ar/qr/${'K7Qm2XbT'.repeat(8)}/`;
 
-    it('ignores content.url, which is now only the text printed beside it', async () => {
+    it('ignores content.url, which the sheet no longer draws anywhere', async () => {
         const short = await renderBrochurePdf({
             content: content({ url: 'https://hospeda.com.ar/es/gastronomia/a/' }),
             cover: null,
@@ -292,10 +292,45 @@ describe('what the QR encodes (HOS-1129)', () => {
         // A count of zero would make the comparison below vacuous, so say out
         // loud that rectangles were actually found.
         expect(filledPaths(short)).toBeGreaterThan(100);
-        // The two files differ — the printed text did change — but the symbol
-        // did not, so the rectangle count is untouched.
-        expect(Buffer.from(short).equals(Buffer.from(long))).toBe(false);
-        expect(filledPaths(long)).toBe(filledPaths(short));
+        // Nothing on the sheet depends on the ficha's address any more — not
+        // the symbol and not the readable line beside it — so a different one
+        // must change nothing whatsoever in the file.
+        expect(Buffer.from(short).equals(Buffer.from(long))).toBe(true);
+    });
+
+    /**
+     * The readable line beside the code is the BARE DOMAIN (owner decision).
+     *
+     * The symbol is correctable and the ink is not, so printing the ficha's
+     * real address makes the two age differently: the day the listing moves,
+     * the QR keeps working and the line under it is dead on the same sheet.
+     * Printing `/qr/{slug}/` instead would fix that and lose the reader who
+     * cannot scan. The domain does both — it cannot die, and it is something a
+     * person can actually act on.
+     *
+     * The footer is overridden here because the default one CONTAINS the
+     * domain, and a positive assertion satisfied by a different line on the
+     * page would pass with this feature deleted.
+     */
+    it('prints the bare domain beside the code, not the listing address', async () => {
+        const bytes = await renderBrochurePdf({
+            content: content({
+                url: 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/',
+                footer: 'Hospeda'
+            }),
+            cover: null,
+            qrUrl: QR_URL
+        });
+
+        expect(drawsText(bytes, 'hospeda.com.ar')).toBe(true);
+        // The deep path is the half that would rot. Assert the whole address
+        // and the path alone: a renderer that printed either is caught.
+        expect(
+            drawsText(bytes, 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/')
+        ).toBe(false);
+        expect(drawsText(bytes, '/es/gastronomia/')).toBe(false);
+        // Nor the opaque redirect, which was the other option on the table.
+        expect(drawsText(bytes, 'K7Qm2XbT')).toBe(false);
     });
 
     it('follows qrUrl, module for module', async () => {
