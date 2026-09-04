@@ -8,8 +8,8 @@
 import {
     type ExperienceFaqAddInput,
     ExperienceFaqSingleOutputSchema,
-    FaqCreatePayloadSchema,
-    type FaqCreatePayloadType
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    type FaqWithChannelVisibilityCreatePayloadType
 } from '@repo/schemas';
 import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -35,7 +35,7 @@ export const protectedAddExperienceFaqRoute = createCRUDRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqCreatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
     responseSchema: ExperienceFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -46,7 +46,7 @@ export const protectedAddExperienceFaqRoute = createCRUDRoute({
 
         const input: ExperienceFaqAddInput = {
             experienceId: params.id as string,
-            faq: body as FaqCreatePayloadType
+            faq: body as FaqWithChannelVisibilityCreatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

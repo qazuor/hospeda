@@ -15,25 +15,32 @@
  *
  * ## The invariant, and why it cuts both ways
  *
- * Only `accommodation_faqs` carries `is_visible_on_listing` / `is_usable_by_ai`
- * (verified against the production schema, 2026-08-15). So:
+ * `accommodation_faqs`, `gastronomy_faqs` and `experience_faqs` carry
+ * `is_visible_on_listing` / `is_usable_by_ai` (the last two added by HOS-400,
+ * adopting the HOS-393 fragment). `destination_faqs` does not — destinations
+ * have no AI chat, so `isUsableByAi` would be inert there. So:
  *
- * - **accommodation** FAQ routes MUST declare the flag-carrying schemas, or the
- *   flags are stripped at the HTTP boundary and the owner's choice is lost while
- *   the API reports success. That was H-119 / H-59.
- * - **destination / gastronomy / experience** FAQ routes MUST NOT declare them.
- *   There is no column to write, so accepting the key would move the silent
- *   discard one layer deeper instead of removing it. The plain schemas are
- *   `.strict()`, so those routes answer `400` and name the key — which is the
- *   whole point: the API stops acknowledging what it cannot process.
+ * - **accommodation / gastronomy / experience** FAQ routes MUST declare the
+ *   flag-carrying schemas, or the flags are stripped at the HTTP boundary and
+ *   the owner's choice is lost while the API reports success. That was
+ *   H-119 / H-59, and it is exactly what HOS-400 would have repeated for the
+ *   two new verticals had this guard not caught it.
+ * - **destination** FAQ routes MUST NOT declare them. There is no column to
+ *   write, so accepting the key would move the silent discard one layer
+ *   deeper instead of removing it. The plain schemas are `.strict()`, so that
+ *   route answers `400` and names the key — which is the whole point: the API
+ *   stops acknowledging what it cannot process.
  *
- * When HOS-400 adds the columns to the other three entities, THIS guard is what
- * fails and tells the implementer which routes still need switching.
+ * If destinations ever get an AI chat and the columns land on
+ * `destination_faqs`, THIS guard is what fails and tells the implementer
+ * which routes still need switching.
  *
  * ## What this guard does NOT verify
  *
  * - That the service and model actually persist the flags. That is behaviour,
- *   covered by `accommodation-faq-channel-visibility.test.ts`.
+ *   covered by `accommodation-faq-channel-visibility.test.ts`,
+ *   `gastronomy-faq-channel-visibility.test.ts` and
+ *   `experience-faq-channel-visibility.test.ts`.
  * - Reorder / remove / list FAQ routes: they carry no FAQ text payload.
  */
 
@@ -45,10 +52,15 @@ import { describe, expect, it } from 'vitest';
 const ROUTES_DIR = join(__dirname, '../../src/routes');
 
 /**
- * The only entity whose FAQ table carries the channel-visibility columns.
+ * Entities whose FAQ table carries the channel-visibility columns.
  * Adding one here without adding the columns re-creates the original bug.
+ *
+ * `gastronomy` and `experience` joined `accommodation` in HOS-400, which gave
+ * `gastronomy_faqs` / `experience_faqs` the same two columns so their AI chat
+ * (HOS-400 PR 1) can honour `isUsableByAi`. `destination` deliberately has no
+ * AI chat and stays out.
  */
-const ENTITIES_WITH_FLAGS = new Set(['accommodation']);
+const ENTITIES_WITH_FLAGS = new Set(['accommodation', 'gastronomy', 'experience']);
 
 /**
  * Every FAQ mutating route file present today, as `<entity>/<tier>/<file>`.
