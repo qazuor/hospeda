@@ -188,6 +188,9 @@ describe('publicGetSimilarRoute — HOS-929 featured entitlement OR', () => {
         // Note: `featuredByEntitlement` stripping from the public payload is the
         // job of `AccommodationPublicSchema` via `stripWithSchema` (the route
         // factory's real response pipeline), which this test's route-factory
-        // mock deliberately bypasses to exercise the handler directly.
+        // mock deliberately bypasses to exercise the handler directly. That
+        // stripping guarantee has its own dedicated test:
+        // `packages/schemas/test/entities/accommodation/accommodation.access.schema.test.ts`
+        // — "AccommodationPublicSchema — featuredByEntitlement strip (HOS-929)".
     });
 });
