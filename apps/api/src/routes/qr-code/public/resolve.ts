@@ -31,15 +31,31 @@
  * The check runs BEFORE the service call, so no unvalidated value ever reaches
  * the database — the ordering rule the error contract states as "no step may
  * touch the database with a value an earlier step did not validate".
+ *
+ * ## The scan now carries context, and it still cannot break the redirect
+ *
+ * HOS-1141 widened `qr_code_scans` with the client's user agent, the device and
+ * OS derived from it, the browser's language, the target the code held at that
+ * instant, and the signed-in scanner when there is one. Everything that reads a
+ * header goes through `deriveQrScanContext`, which is TOTAL — every input,
+ * including an absent, empty, kilobyte-long or control-byte-laden agent, yields
+ * an object of nulls rather than an exception. The ordering below matters as
+ * much as the totality: the derivation runs only AFTER a code has resolved, so
+ * a 404 pays nothing for it and an unresolvable slug still records nothing.
+ *
+ * No additional query is issued per scan. The target is read off the row that
+ * was just resolved, and the user id off the actor the middleware already
+ * built, so the write remains the one INSERT it always was.
  */
 
 import { QrCodeResolutionSchema, QrCodeSlugSchema, ServiceErrorCode } from '@repo/schemas';
-import type { Actor } from '@repo/service-core';
+import type { Actor, QrCodeScanContextInput } from '@repo/service-core';
 import { QrCodeService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { deriveQrScanContext } from '../../../utils/qr-scan-context';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 const qrCodeService = new QrCodeService({ logger: apiLogger });
@@ -87,13 +103,15 @@ const qrNotFound = (): ServiceError =>
  */
 async function recordScanBestEffort({
     actor,
-    qrCodeId
+    qrCodeId,
+    context
 }: {
     readonly actor: Actor;
     readonly qrCodeId: string;
+    readonly context: QrCodeScanContextInput;
 }): Promise<void> {
     try {
-        const result = await qrCodeService.registerScan({ actor, qrCodeId });
+        const result = await qrCodeService.registerScan({ actor, qrCodeId, context });
         if (result.error) {
             apiLogger.error(
                 { qrCodeId, code: result.error.code },
@@ -152,7 +170,39 @@ export const publicResolveQrCodeRoute = createPublicRoute({
 
         const qrCode = result.data;
 
-        await recordScanBestEffort({ actor, qrCodeId: qrCode.id });
+        // Derived AFTER the code resolved, so a request that answers 404 never
+        // pays for it — and so an unresolvable slug still records nothing at
+        // all, which the paired 404 probes depend on.
+        //
+        // `deriveQrScanContext` is total: no header value makes it throw, and a
+        // header it cannot read yields `null` rather than an exception. That is
+        // what keeps a hostile `User-Agent` off the redirect's failure modes;
+        // the `try`/`catch` inside `recordScanBestEffort` is the second line,
+        // not the first.
+        const scanContext = deriveQrScanContext({
+            userAgent: ctx.req.header('user-agent') ?? null,
+            acceptLanguage: ctx.req.header('accept-language') ?? null
+        });
+
+        await recordScanBestEffort({
+            actor,
+            qrCodeId: qrCode.id,
+            context: {
+                ...scanContext,
+                // The target AS IT IS RIGHT NOW. Read off the row that was just
+                // resolved rather than re-fetched: it is the same value this
+                // response is about to send the scanner to, so the stored
+                // history cannot disagree with where the person actually went.
+                targetUrlAtScan: qrCode.targetUrl,
+                // From the RESOLVED actor, never from anything the client sent.
+                // `isGuestActor` and not `!actor?.id`: the guest actor carries a
+                // real UUID (`apps/api/docs/error-contract.md`), so an id check
+                // would attribute every anonymous scan to the guest sentinel —
+                // a user row that does not exist, which the foreign key would
+                // then refuse, turning every anonymous scan into a lost one.
+                userId: isGuestActor(actor) ? null : actor.id
+            }
+        });
 
         // Projected explicitly rather than handed the whole row: this response
         // needs no authentication, so `label`, `description` and every audit

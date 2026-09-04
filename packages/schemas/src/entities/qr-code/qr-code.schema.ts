@@ -8,7 +8,10 @@ import { QrCodeFormatEnum } from '../../enums/qr-code-format.enum.js';
 import { QrCodeFormatEnumSchema } from '../../enums/qr-code-format.schema.js';
 import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
+import { QrScanDeviceTypeEnumSchema } from '../../enums/qr-scan-device-type.schema.js';
+import { QrScanOsEnumSchema } from '../../enums/qr-scan-os.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { LanguageEnumSchema } from '../user/user.settings.schema.js';
 
 export const QR_CODE_SLUG_MIN_LENGTH = 4;
 export const QR_CODE_SLUG_MAX_LENGTH = 64;
@@ -577,18 +580,81 @@ export const QrCodeSchema = z.object({
 
 export type QrCode = z.infer<typeof QrCodeSchema>;
 
+// ============================================================================
+// SCANS (HOS-981, widened by HOS-1141)
+// ============================================================================
+
 /**
- * One scan of one code.
+ * Longest `User-Agent` a scan row will store, in characters.
  *
- * There is no IP column and no user-agent column, and that is a decision rather
- * than an omission — see the note on the `qr_code_scans` table in
- * `@repo/db`. The question this row answers is *when was this code scanned*,
- * and `qrCodeId + scannedAt` answers it in full.
+ * Real user agents run to roughly 200 characters and the longest seen in the
+ * wild are under 500. The bound exists for the OTHER kind of caller: the header
+ * can legally carry kilobytes, the resolution endpoint is public and
+ * unauthenticated, and a client sending 8 KB of junk 240 times a minute (that
+ * route's rate limit) must not be able to turn a counter into a storage
+ * amplifier.
+ *
+ * Enforced in three places, outermost first: `deriveQrScanContext` TRUNCATES,
+ * this schema bounds, and the `user_agent` column bounds. Truncation comes
+ * first deliberately — a schema or a column that REJECTED an over-long value
+ * would convert a hostile header into a lost scan, and a lost scan is the one
+ * outcome that whole path is written to avoid.
+ */
+export const QR_SCAN_USER_AGENT_MAX_LENGTH = 1024;
+
+/** Longest `browserLanguage` value. It holds a locale code, not a header. */
+export const QR_SCAN_BROWSER_LANGUAGE_MAX_LENGTH = 8;
+
+/**
+ * One scan of one code (HOS-981, widened by HOS-1141).
+ *
+ * Every field past `scannedAt` is nullable, uniformly. That is not laxity: the
+ * row is written on the critical path of a redirect, out of headers a stranger
+ * controls, and the rule the whole path is built on is that a scan is lost
+ * before a redirect is. A REQUIRED field here would be a header a hostile
+ * client could omit in order to make the insert fail.
+ *
+ * There is still no IP column and no referrer column — the note on the
+ * `qr_code_scans` table in `@repo/db` rejects those two by name, so that
+ * neither gets added later as an obvious completion.
  */
 export const QrCodeScanSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     qrCodeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    scannedAt: z.coerce.date()
+    scannedAt: z.coerce.date(),
+
+    /**
+     * The raw `User-Agent`, already truncated by the deriver.
+     *
+     * `.max()` rather than a `.transform()` that truncates again: by the time a
+     * value reaches this schema the truncation has happened, so a longer string
+     * means the deriver was bypassed — a bug worth failing on, not a value to
+     * silently repair a second time.
+     */
+    userAgent: z.string().max(QR_SCAN_USER_AGENT_MAX_LENGTH).nullable().optional(),
+
+    /** Derived. `null` when the user agent named no device positively. */
+    deviceType: QrScanDeviceTypeEnumSchema.nullable().optional(),
+
+    /** Derived. `null` when there was no user agent to read at all. */
+    os: QrScanOsEnumSchema.nullable().optional(),
+
+    /**
+     * Derived from `Accept-Language`, restricted to the locales this platform
+     * actually serves. `LanguageEnumSchema` is the platform-wide source of
+     * truth for that set and is reused here rather than re-listed.
+     */
+    browserLanguage: LanguageEnumSchema.nullable().optional(),
+
+    /** Where the code pointed at the instant of this scan. */
+    targetUrlAtScan: z
+        .string()
+        .max(QR_CODE_TARGET_URL_MAX_LENGTH, { message: 'zodError.qrCode.targetUrl.max' })
+        .nullable()
+        .optional(),
+
+    /** The signed-in scanner, when there was one. `null` for an anonymous scan. */
+    userId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).nullable().optional()
 });
 
 export type QrCodeScan = z.infer<typeof QrCodeScanSchema>;

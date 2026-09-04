@@ -110,6 +110,27 @@ const SESSION_AWARE_PREFIXES: ReadonlyArray<{
             'parseSessionUser({ cookieHeader }) rather than Astro.locals, which is precisely ' +
             'the indirect read documented as a blind spot above — the cookieHeader detector is ' +
             'what catches it, so this exemption is deliberate rather than an oversight.'
+    },
+    {
+        prefix: 'qr/',
+        reason:
+            'HOS-1141. The printed-QR redirect forwards the visitor Cookie to the API, which ' +
+            'trips the cookieHeader detector. Three facts make it safe, each MEASURED rather ' +
+            'than argued. (1) NEVER CACHED, and the guarantee is on the SHIPPED RESPONSE, not ' +
+            'on the applyCacheHeaders call: cacheable:false writes Cache-Control ' +
+            '"private, no-cache" onto Astro.response.headers, and the page builds its 302 by ' +
+            'hand as new Headers(Astro.response.headers) precisely so the demotion survives. ' +
+            'Measured on the real 302: Cache-Control "private, no-cache" and ' +
+            'isEdgeCacheableControl() false — while an Astro.redirect-style response carries a ' +
+            'null Cache-Control, which is exactly why that helper is not used. (2) THE COOKIE ' +
+            'DOES NOT ALTER THE RESPONSE: a guest and a signed-in scanner receive ' +
+            'byte-identical status and body for the same slug (measured), because the Location ' +
+            'comes from the qr_codes row and never from the session; and a failing actor path ' +
+            'degrades to a guest actor instead of 503ing (ACTOR_OPTIONAL_PATH_PATTERNS), so ' +
+            'the session cannot change the outcome even when it breaks. (3) WHAT IT IS FOR: ' +
+            'populating the nullable qr_code_scans.user_id metric column. The cookie affects ' +
+            'the METRIC ROW, not the response body — there is no visitor state to bake into ' +
+            'anything shared.'
     }
 ];
 

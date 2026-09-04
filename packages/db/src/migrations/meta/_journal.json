@@ -820,6 +820,13 @@
       "when": 1788487645470,
       "tag": "0116_messy_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1788506802495,
+      "tag": "0117_hos-1141-qr-scan-columns",
+      "breakpoints": true
     }
   ]
 }

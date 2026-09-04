@@ -938,6 +938,8 @@
         "zodError.enums.qrCodeFormat.invalid",
         "zodError.enums.qrCodePurpose.invalid",
         "zodError.enums.qrCodeSource.invalid",
+        "zodError.enums.qrScanDeviceType.invalid",
+        "zodError.enums.qrScanOs.invalid",
         "zodError.enums.recurrenceType.invalid",
         "zodError.enums.refundStatus.invalid",
         "zodError.enums.role.invalid",
@@ -1917,7 +1919,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1916,
+    "total": 1918,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1946,7 +1948,7 @@
         "entityTag": 1,
         "entityTags": 1,
         "entityView": 20,
-        "enums": 80,
+        "enums": 82,
         "event": 53,
         "eventLocation": 22,
         "eventOrganizer": 13,

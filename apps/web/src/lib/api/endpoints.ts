@@ -1920,8 +1920,47 @@ export const qrApi = {
      * Every reason a slug does not resolve — unknown, retired, soft-deleted or
      * malformed — comes back as the same 404. The caller has nothing to
      * distinguish and must not try to.
+     *
+     * ## Why this one forwards headers (HOS-1141)
+     *
+     * The scan row records what the SCANNER's client is, and this call is made
+     * server-to-server: without forwarding, the only user agent the API would
+     * ever see is the web server's own `fetch`, and every scan in the table
+     * would describe the same machine. The three headers below are the whole
+     * "where from" the row can honestly carry:
+     *
+     * - `user-agent` and `accept-language` become the device, OS and language.
+     * - `cookie` is what lets the API resolve a signed-in scanner into
+     *   `user_id`. It is forwarded rather than the caller passing a user id,
+     *   because an id supplied over the wire is a claim; a cookie the API
+     *   validates itself is a fact.
+     *
+     * Passing a cookie also keeps the call out of the SSR cache by a SECOND,
+     * independent mechanism (`request()`'s `cacheable` guard excludes any
+     * request carrying one) — belt and braces over the missing `cacheTtlMs`,
+     * because a cached resolution is a scan that was never counted.
+     *
+     * @param input - Options object (RO-RO).
+     * @param input.slug - The slug read off the printed code.
+     * @param input.userAgent - The scanner's `User-Agent`, when the caller has
+     *   one. Omitted rather than faked when it does not.
+     * @param input.acceptLanguage - The scanner's `Accept-Language`.
+     * @param input.cookieHeader - The scanner's raw `Cookie` header.
      */
-    resolve(slug: string): Promise<ApiResult<QrCodeResolution>> {
-        return apiClient.get({ path: `${BASE}/qr/${encodeURIComponent(slug)}` });
+    resolve(input: {
+        slug: string;
+        userAgent?: string | null;
+        acceptLanguage?: string | null;
+        cookieHeader?: string | null;
+    }): Promise<ApiResult<QrCodeResolution>> {
+        const headers: Record<string, string> = {};
+        if (input.userAgent) headers['user-agent'] = input.userAgent;
+        if (input.acceptLanguage) headers['accept-language'] = input.acceptLanguage;
+
+        return apiClient.get({
+            path: `${BASE}/qr/${encodeURIComponent(input.slug)}`,
+            headers,
+            cookieHeader: input.cookieHeader ?? undefined
+        });
     }
 };

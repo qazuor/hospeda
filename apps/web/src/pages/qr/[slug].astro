@@ -61,7 +61,48 @@ applyCacheHeaders({
     tags: [CACHE_TAG_ALL]
 });
 
-const result = await qrApi.resolve(slug);
+// HOS-1141: the scan row records what the SCANNER's client is, and this page
+// calls the API server-to-server. Without forwarding these headers the API
+// would only ever see this web server's own `fetch`, and every row in
+// `qr_code_scans` would describe the same machine — a column that is present,
+// populated and wrong, which is worse than an absent one.
+//
+// `cookie` is forwarded so the API can fill `user_id`, and it is the COOKIE
+// rather than a user id computed here for a reason worth keeping: this page
+// never resolves a session of its own (`/qr/` is language-neutral and is not in
+// `SESSION_OPTIONAL_SEGMENTS`, so the middleware sets `locals.user = null`
+// without any auth round-trip). Forwarding moves the identification to the side
+// that can VALIDATE it and costs this page nothing; computing an id here would
+// first require adding the auth call this route deliberately does not make.
+//
+// KNOWN COST, stated rather than buried, and corrected after review — the first
+// version of this note was optimistic on two counts.
+//
+// 1. "An anonymous scan sends no cookie" is FALSE. The site sets non-auth
+//    cookies at `path=/`: the announcements dismissal
+//    (`GlobalAnnouncements.astro:154`) and the consent banner
+//    (`cookie-consent.ts:124`, `Path=/`). Anyone who has accepted the banner
+//    forwards a `Cookie` header on this request while signed out. So the
+//    forwarding is NOT limited to logged-in scanners.
+// 2. The added cost is smaller than it first looked. `auth.api.getSession()`
+//    already ran unconditionally on every API request before this PR, so a
+//    cookie that carries no session changes nothing. What is genuinely NEW is
+//    the uncached `user_role` query, and only for a cookie that resolves to a
+//    real session.
+//
+// No third-party exposure: `request()` builds its URL as
+// `${getBaseUrl()}${path}`, so the header only ever reaches our own API.
+//
+// And the failure mode this used to create is closed: `actorMiddleware` now
+// degrades to a guest actor on this path instead of answering 503
+// (`ACTOR_OPTIONAL_PATH_PATTERNS`), so a broken role read costs the `user_id`
+// column and nothing else.
+const result = await qrApi.resolve({
+    slug,
+    userAgent: Astro.request.headers.get('user-agent'),
+    acceptLanguage: Astro.request.headers.get('accept-language'),
+    cookieHeader: Astro.request.headers.get('cookie')
+});
 
 // `targetUrl` is checked, not just `data`. `apiClient.get` unwraps the API
 // envelope WITHOUT validating it against a schema, so a 200 carrying a body
