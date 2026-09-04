@@ -136,12 +136,29 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
  * feature: the slug is the part that is already printed on a sticker somewhere.
  * `targetUrl` is exactly what an update is for.
  *
- * `purpose` is NOT updatable either, for a different reason (HOS-981 PR 4): it
- * is part of the `(entityType, entityId, purpose)` uniqueness key, so moving it
- * makes the row invisible to the provisioner that owns it. The very next
- * get-or-create then finds nothing, mints a SECOND permanent slug for the same
- * subject, and leaves two live codes whose targets are free to diverge — the
- * failure the key exists to prevent, reintroduced through the update path.
+ * ## The whole uniqueness key is frozen, not a third of it (HOS-981 PR 4)
+ *
+ * `purpose`, `entityType` and `entityId` are ALL absent, and they have to move
+ * together because they are one key: `(entityType, entityId, purpose)`. Moving
+ * any single column makes the row invisible to the provisioner that owns it,
+ * the next get-or-create finds nothing, mints a SECOND permanent slug for the
+ * same subject, and leaves two live codes whose targets are free to diverge —
+ * the failure the key exists to prevent, reintroduced through PATCH.
+ *
+ * Freezing only `purpose` (as this first did) left the worst version of that
+ * reachable. `PATCH {entityId: <provider B>}` on provider A's GENERATED code
+ * re-points the row at B while A's sticker is already on a van: A's panel mints
+ * a fresh code, and the printed one now sends A's customers to B's page and
+ * credits B with the scans. Nothing in the response says so.
+ *
+ * A second reason applies to `entityId` alone: moving it onto a subject that
+ * already holds a live code for the same purpose raises a 23505 on an UPDATE,
+ * and the recovery in `QrCodeService.getOrCreateForEntity` only wraps the
+ * INSERT — so that path surfaces a raw constraint name as a 500.
+ *
+ * Reassigning a code to a different entity is therefore not an edit. If it ever
+ * becomes a real requirement it needs its own operation, with the retire-and
+ * -reissue semantics a printed sticker demands.
  *
  * ## Why `renderOptions` is re-declared (HOS-981 PR 3)
  *
@@ -168,7 +185,12 @@ export type QrCodeCreateOutput = z.infer<typeof QrCodeCreateOutputSchema>;
 export const QrCodeUpdateInputSchema = z
     .object({
         ...stripShapeDefaults(
-            QrCodeCreateInputBaseSchema.omit({ slug: true, purpose: true }).shape
+            QrCodeCreateInputBaseSchema.omit({
+                slug: true,
+                purpose: true,
+                entityType: true,
+                entityId: true
+            }).shape
         ),
         renderOptions: QrCodeRenderOptionsPatchSchema
     })

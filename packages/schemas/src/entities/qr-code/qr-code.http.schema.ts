@@ -79,9 +79,13 @@ export type QrCodeCreateHttp = z.infer<typeof QrCodeCreateHttpSchema>;
 
 /**
  * `slug` is absent by construction: a printed code cannot be renamed.
- * `purpose` is absent for the sibling reason — it is half of the lookup key, so
- * moving it hides the row from its own provisioner and a second permanent slug
- * gets minted for the same subject (HOS-981 PR 4).
+ *
+ * `purpose`, `entityType` and `entityId` are absent TOGETHER, because they are
+ * one uniqueness key and freezing a third of it protects nothing (HOS-981
+ * PR 4). `PATCH {entityId: <provider B>}` on provider A's code would re-point
+ * the row at B while A's sticker is already on a van: A's panel mints a fresh
+ * code, and the printed one starts sending A's customers to B's page with B
+ * collecting the scans. See `QrCodeUpdateInputSchema` for the full argument.
  *
  * `renderOptions` is re-declared for the same reason the domain update schema
  * does it — see the long note on `QrCodeUpdateInputSchema`. In short:
@@ -91,7 +95,14 @@ export type QrCodeCreateHttp = z.infer<typeof QrCodeCreateHttpSchema>;
  */
 export const QrCodeUpdateHttpSchema = z
     .object({
-        ...stripShapeDefaults(QrCodeCreateHttpSchema.omit({ slug: true, purpose: true }).shape),
+        ...stripShapeDefaults(
+            QrCodeCreateHttpSchema.omit({
+                slug: true,
+                purpose: true,
+                entityType: true,
+                entityId: true
+            }).shape
+        ),
         renderOptions: QrCodeRenderOptionsPatchSchema
     })
     .partial()
