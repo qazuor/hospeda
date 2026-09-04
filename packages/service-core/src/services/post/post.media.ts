@@ -498,9 +498,16 @@ export async function setFeaturedPostMedia(
  * to replace — which is why the patch is built by `buildMediaTextPatch` rather
  * than spread wholesale (see that module for what spreading would erase).
  *
- * A media row belonging to another post, a non-existent id, or a soft-deleted
- * row all answer NOT_FOUND — never FORBIDDEN, so a foreign id cannot be
- * confirmed to exist.
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another post, a non-existent id, or a soft-deleted row all answer NOT_FOUND — never
+ * FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT post is NOT: `checkPostCanEditMedia` throws FORBIDDEN on a post the actor
+ * may not edit and NOT_FOUND on one that does not exist, so an ownership-scoped actor
+ * (`POST_UPDATE_OWN` without `POST_UPDATE`) can tell a stranger's post from an invented
+ * one. Every sibling media helper shares that same gate, so closing the gap in `update`
+ * alone would leave it at 404 while `remove` stays at 403 on the same parent — a
+ * follow-up covers all of them at once.
  *
  * @param model - PostModel instance.
  * @param actor - The actor performing the action.

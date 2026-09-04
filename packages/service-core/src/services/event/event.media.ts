@@ -493,8 +493,16 @@ export async function setFeaturedEventMedia(
  * Each field is three-state — omit to leave unchanged, `null` to clear, a value
  * to replace — hence `buildMediaTextPatch` rather than a wholesale spread.
  *
- * A media row belonging to another event, a non-existent id, or a soft-deleted
- * row all answer NOT_FOUND — never FORBIDDEN.
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another event, a non-existent id, or a soft-deleted row all answer NOT_FOUND — never
+ * FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT event is NOT: `checkEventCanEditMedia` throws FORBIDDEN on an event the
+ * actor may not edit and NOT_FOUND on one that does not exist, so an ownership-scoped
+ * actor (`EVENT_UPDATE_OWN` without `EVENT_UPDATE`) can tell a stranger's event from an
+ * invented one. Every sibling media helper shares that same gate, so closing the gap in
+ * `update` alone would leave it at 404 while `remove` stays at 403 on the same parent —
+ * a follow-up covers all of them at once.
  *
  * @param model - EventModel instance.
  * @param actor - The actor performing the action.

@@ -608,7 +608,7 @@ export async function setFeaturedExperienceMedia(
 }
 
 /**
- * Corrects the TEXT metadata of a single photo in a experience listing gallery (HOS-1036).
+ * Corrects the TEXT metadata of a single photo in an experience listing gallery (HOS-1036).
  *
  * The commerce twin of `AccommodationService.updateMedia` (HOS-388) and of
  * `updatePostMedia`. Before this existed the only way to fix — or write for the
@@ -624,9 +624,17 @@ export async function setFeaturedExperienceMedia(
  * to replace — hence `buildMediaTextPatch` rather than a wholesale spread (see
  * that module for what spreading would erase).
  *
- * A media row belonging to another listing, a non-existent id, or a
- * soft-deleted row all answer NOT_FOUND — never FORBIDDEN, so a foreign id
- * cannot be confirmed to exist.
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another experience listing, a non-existent id, or a soft-deleted row all answer
+ * NOT_FOUND — never FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT experience listing is NOT: `checkExperienceCanEditMedia` throws FORBIDDEN
+ * on an experience listing the actor may not edit and NOT_FOUND on one that does not
+ * exist, so an ownership-scoped actor (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`)
+ * can tell a stranger's experience listing from an invented one. Every sibling media
+ * helper shares that same gate, so closing the gap in `update` alone would leave it at
+ * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
+ * at once.
  *
  * Schedules the same public-page revalidation the add/remove/reorder paths do:
  * a caption or credit IS rendered content, so a correction that never reaches

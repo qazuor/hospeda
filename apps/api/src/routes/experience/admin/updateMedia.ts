@@ -1,10 +1,10 @@
 /**
  * PATCH /api/v1/admin/experiences/:id/media/:mediaId
- * Correct the text metadata of a experience gallery photo (HOS-1036).
+ * Correct the text metadata of an experience gallery photo (HOS-1036).
  *
  * The experience twin of `accommodation/admin/updateMedia.ts` (HOS-388). Until this
  * route existed there was no way at all to write a photo's `alt` or `caption`
- * for a experience: the editor never offered the fields, and the only "fix" was to
+ * for an experience: the editor never offered the fields, and the only "fix" was to
  * delete the photo and re-upload it — burning a second Cloudinary asset and
  * losing the photo's gallery position. A photo with no alt text is a photo a
  * screen reader cannot describe and a search engine cannot read.
@@ -19,9 +19,20 @@
  * to clear it, send a value to replace it. At least one field must be present —
  * an empty body is rejected as `VALIDATION_ERROR`, not a silent 200.
  *
- * A media row belonging to another experience, a non-existent id, or a soft-deleted
- * row all answer `NOT_FOUND` (404) — never `FORBIDDEN` (403), so a foreign id
- * cannot be confirmed to exist (see `apps/api/docs/error-contract.md`).
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another experience, a non-existent id, or a soft-deleted row all answer `NOT_FOUND`
+ * (404) — never `FORBIDDEN` (403), so a foreign media id cannot be confirmed to exist
+ * (see `apps/api/docs/error-contract.md`).
+ *
+ * The PARENT experience is NOT protected that way, and that is deliberate. The gate
+ * (`checkExperienceCanEditMedia`) answers `FORBIDDEN` (403) on an experience the actor
+ * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
+ * grant is ownership-scoped (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`) can tell
+ * a stranger's experience id from an invented one. The sibling media helpers — add,
+ * remove, reorder, setFeatured and the media read — all share that same gate, so
+ * closing the gap in `update` alone would leave `update` at 404 while `remove` stays at
+ * 403 on the very same parent. It belongs to a follow-up covering all six helpers
+ * across the four entities at once.
  */
 import {
     ExperienceMediaSingleOutputSchema,
@@ -39,7 +50,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const experienceService = new ExperienceService({ logger: apiLogger });
 
 /**
- * Route handler — corrects a photo's text metadata on a experience.
+ * Route handler — corrects a photo's text metadata on an experience.
  *
  * Permission model: gated on `EXPERIENCE_EDIT_ALL` (or the legacy `COMMERCE_EDIT_ALL`), the same pair the sibling admin media routes declare.
  */

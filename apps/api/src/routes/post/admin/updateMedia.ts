@@ -19,9 +19,20 @@
  * to clear it, send a value to replace it. At least one field must be present —
  * an empty body is rejected as `VALIDATION_ERROR`, not a silent 200.
  *
- * A media row belonging to another post, a non-existent id, or a soft-deleted
- * row all answer `NOT_FOUND` (404) — never `FORBIDDEN` (403), so a foreign id
- * cannot be confirmed to exist (see `apps/api/docs/error-contract.md`).
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another post, a non-existent id, or a soft-deleted row all answer `NOT_FOUND` (404) —
+ * never `FORBIDDEN` (403), so a foreign media id cannot be confirmed to exist (see
+ * `apps/api/docs/error-contract.md`).
+ *
+ * The PARENT post is NOT protected that way, and that is deliberate. The gate
+ * (`checkPostCanEditMedia`) answers `FORBIDDEN` (403) on a post the actor may not edit
+ * and `NOT_FOUND` (404) on one that does not exist, so an actor whose grant is
+ * ownership-scoped (`POST_UPDATE_OWN` without `POST_UPDATE`) can tell a stranger's post
+ * id from an invented one. The sibling media helpers — add, remove, reorder,
+ * setFeatured and the media read — all share that same gate, so closing the gap in
+ * `update` alone would leave `update` at 404 while `remove` stays at 403 on the very
+ * same parent. It belongs to a follow-up covering all six helpers across the four
+ * entities at once.
  */
 import {
     PermissionEnum,
