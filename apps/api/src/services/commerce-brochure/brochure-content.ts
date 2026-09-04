@@ -61,7 +61,16 @@ export interface BrochureContent {
     readonly price: string | null;
     /** Titled blocks, in print order. */
     readonly sections: readonly BrochureSection[];
-    /** Absolute URL of the public ficha. Printed AND encoded in the QR. */
+    /**
+     * Absolute URL of the public ficha.
+     *
+     * Printed as readable text beside the code, and — since HOS-1129 — the
+     * value the QR REDIRECTS TO rather than the one it encodes. The symbol
+     * carries `{site}/qr/{qrSlug}/`, so a listing whose address moves does not
+     * strand every sheet already printed. The text stays the real address on
+     * purpose: it is there for a reader who cannot scan, and an opaque
+     * `/qr/K7Qm2XbT/` would tell that reader nothing.
+     */
     readonly url: string;
     /** Cover photo URL, already filtered for moderation state. */
     readonly coverImageUrl: string | null;

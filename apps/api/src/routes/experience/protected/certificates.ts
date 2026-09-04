@@ -39,11 +39,13 @@
 
 import { EntitlementKey } from '@repo/billing';
 import {
+    EntityTypeEnum,
     ExperienceCertificateCreateInputSchema,
     ExperienceCertificateListOutputSchema,
     type ExperienceCertificateOutput,
     ExperienceCertificateOutputSchema,
     PermissionEnum,
+    QrCodePurposeEnum,
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
@@ -65,6 +67,7 @@ import { requireEntitlement } from '../../../middlewares/entitlement';
 import { buildCertificateContent } from '../../../services/experience-certificate/certificate-content';
 import { buildCertificateResponse } from '../../../services/experience-certificate/certificate-response';
 import { getActorFromContext } from '../../../utils/actor';
+import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -299,9 +302,32 @@ export const protectedGetExperienceCertificatePdfRoute = createProtectedRoute({
             siteUrl: env.HOSPEDA_SITE_URL
         });
 
+        // The sheet's QR encodes the platform's own redirect, never
+        // `content.publicUrl` (HOS-1129). `CERTIFICATE`, not `BROCHURE`: an
+        // experience carries both codes, and `purpose` is the third part of the
+        // lookup key precisely so neither document draws the other's.
+        //
+        // One code per EXPERIENCE, not per certificate: every sheet this
+        // listing issues points at the same ficha, so a per-certificate slug
+        // would burn one permanent identifier per recipient and buy nothing.
+        const qrUrl = await resolveEntityQrScanUrl({
+            actor,
+            entityType: EntityTypeEnum.EXPERIENCE,
+            entityId: params.id as string,
+            purpose: QrCodePurposeEnum.CERTIFICATE,
+            targetUrl: content.publicUrl,
+            label: buildEntityQrLabel({
+                description: 'Experience certificate QR',
+                name: experience.name,
+                slug: experience.slug
+            }),
+            siteUrl: env.HOSPEDA_SITE_URL
+        });
+
         return buildCertificateResponse({
             content,
-            recipientName: certificate.recipientName
+            recipientName: certificate.recipientName,
+            qrUrl
         });
     },
     options: {

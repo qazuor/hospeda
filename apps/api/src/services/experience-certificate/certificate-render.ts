@@ -28,6 +28,7 @@
  * @module services/experience-certificate/certificate-render
  */
 
+import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
 import {
     type Color,
     PageSizes,
@@ -37,7 +38,7 @@ import {
     rgb,
     StandardFonts
 } from 'pdf-lib';
-import QRCode from 'qrcode';
+import { renderQrMatrix } from '../../utils/qr-render.js';
 import { toDrawableText, wrapText } from '../commerce-brochure/brochure-render.js';
 import type { CertificateContent } from './certificate-content.js';
 
@@ -92,7 +93,7 @@ const LEADING = 1.35;
 const QR_SIZE = 72;
 
 /** Error correction of the printed QR: paper gets folded, scuffed and copied. */
-const QR_ERROR_CORRECTION = 'M';
+const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.M;
 
 /** The two faces the sheet uses. */
 interface CertificateFonts {
@@ -214,12 +215,19 @@ function drawCentredParagraph(input: {
  * Vector rather than a raster image, for the reason the brochure's own QR is:
  * a QR is the one graphic where resampling costs scans. Horizontal runs of dark
  * modules are merged into a single rectangle.
+ *
+ * The grid comes from `utils/qr-render.ts`, the one module in this repo allowed
+ * to import `qrcode` (HOS-1129), and what it encodes is the platform's own
+ * `/qr/{slug}/` redirect rather than the experience's public URL. A framed
+ * certificate is the least correctable printed surface there is.
  */
 function drawQr(input: { page: PDFPage; url: string; x: number; y: number; size: number }): void {
     const { page, x, y, size } = input;
-    const qr = QRCode.create(input.url, { errorCorrectionLevel: QR_ERROR_CORRECTION });
-    const count = qr.modules.size;
-    const data = qr.modules.data;
+    const qr = renderQrMatrix({
+        data: input.url,
+        errorCorrectionLevel: QR_ERROR_CORRECTION
+    });
+    const count = qr.size;
     const module = size / count;
 
     drawRectTopDown({ page, x, y, width: size, height: size, color: QR_LIGHT });
@@ -227,7 +235,7 @@ function drawQr(input: { page: PDFPage; url: string; x: number; y: number; size:
     for (let row = 0; row < count; row += 1) {
         let runStart = -1;
         for (let col = 0; col <= count; col += 1) {
-            const dark = col < count && data[row * count + col] === 1;
+            const dark = qr.isDark(row, col);
             if (dark && runStart === -1) {
                 runStart = col;
             } else if (!dark && runStart !== -1) {
@@ -270,12 +278,17 @@ function drawFrame(page: PDFPage): void {
  * Renders a certificate.
  *
  * @param input.content - What to print.
+ * @param input.qrUrl - What the QR encodes: `{site}/qr/{qrSlug}/`, the
+ *   platform's own redirect (HOS-1129). Distinct from `content.publicUrl`,
+ *   which is where that redirect LANDS. Resolving it needs the database, so it
+ *   is passed in and this function stays a pure function of its inputs.
  * @returns The complete PDF file.
  */
 export async function renderCertificatePdf(input: {
     content: CertificateContent;
+    qrUrl: string;
 }): Promise<Uint8Array<ArrayBuffer>> {
-    const { content } = input;
+    const { content, qrUrl } = input;
 
     const doc = await PDFDocument.create();
     doc.setTitle(`${content.title} — ${content.recipientName}`);
@@ -371,7 +384,7 @@ export async function renderCertificatePdf(input: {
     // looks like two different documents.
     const qrTop = PAGE_HEIGHT - MARGIN - QR_SIZE;
     const qrLeft = PAGE_WIDTH - MARGIN - QR_SIZE;
-    drawQr({ page, url: content.publicUrl, x: qrLeft, y: qrTop, size: QR_SIZE });
+    drawQr({ page, url: qrUrl, x: qrLeft, y: qrTop, size: QR_SIZE });
 
     drawTextTopDown({
         page,

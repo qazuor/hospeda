@@ -35,7 +35,13 @@
  */
 
 import { EntitlementKey } from '@repo/billing';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    PermissionEnum,
+    QrCodePurposeEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { entityNotFoundError, GastronomyService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
@@ -49,6 +55,7 @@ import { buildGastronomyBrochureContent } from '../../../services/commerce-broch
 import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
 import { GastronomyBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
 import { getActorFromContext } from '../../../utils/actor';
+import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -104,7 +111,24 @@ export async function handleGetGastronomyBrochure(
         siteUrl: env.HOSPEDA_SITE_URL
     });
 
-    return buildBrochureResponse({ content, slug: parsed.data.slug });
+    // The sheet's QR encodes the platform's own redirect, never `content.url`
+    // (HOS-1129). The code is minted on the first download and reused for every
+    // later one, so a reprint matches the sheet already on the wall.
+    const qrUrl = await resolveEntityQrScanUrl({
+        actor,
+        entityType: EntityTypeEnum.GASTRONOMY,
+        entityId: entity.id,
+        purpose: QrCodePurposeEnum.BROCHURE,
+        targetUrl: content.url,
+        label: buildEntityQrLabel({
+            description: 'Gastronomy brochure QR',
+            name: entity.name,
+            slug: parsed.data.slug
+        }),
+        siteUrl: env.HOSPEDA_SITE_URL
+    });
+
+    return buildBrochureResponse({ content, slug: parsed.data.slug, qrUrl });
 }
 
 /**
