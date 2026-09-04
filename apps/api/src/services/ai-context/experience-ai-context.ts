@@ -330,11 +330,12 @@ export async function assembleExperienceContext(
 /**
  * Loads the experience's FAQs, ordered as the provider arranged them.
  *
- * Returns `[]` on any error, with a logged warning. Reads ALL active FAQs: the
- * per-channel `isUsableByAi` flag is HOS-400's SECOND half and does not exist on
- * `experience_faqs` yet — when it lands, the filter goes HERE and must be applied
- * BEFORE {@link EXPERIENCE_CONTEXT_FAQ_MAX}, or AI-disabled FAQs will starve out
- * the ones that should reach the prompt.
+ * Returns `[]` on any error, with a logged warning. Filters by `isUsableByAi`
+ * in the WHERE clause — BEFORE {@link EXPERIENCE_CONTEXT_FAQ_MAX}, which is
+ * applied by the `.limit()` below it. Filtering after the cap instead would
+ * let AI-disabled FAQs starve out FAQs that should reach the prompt (HOS-400,
+ * adopting HOS-393 AC-11). A FAQ missing the field (pre-migration data) reads
+ * as usable, matching the column's `DEFAULT true`.
  */
 async function safeLoadFaqs(experienceId: string): Promise<ExperienceContextFaq[]> {
     try {
@@ -346,7 +347,8 @@ async function safeLoadFaqs(experienceId: string): Promise<ExperienceContextFaq[
                 and(
                     eq(experienceFaqs.experienceId, experienceId),
                     isNull(experienceFaqs.deletedAt),
-                    eq(experienceFaqs.lifecycleState, 'ACTIVE')
+                    eq(experienceFaqs.lifecycleState, 'ACTIVE'),
+                    eq(experienceFaqs.isUsableByAi, true)
                 )
             )
             .orderBy(asc(experienceFaqs.displayOrder))

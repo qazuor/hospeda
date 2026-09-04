@@ -26,8 +26,16 @@
  * reported ("se aprieta Guardar, y no pasa nada. Ni cartel, ni campo marcado,
  * ni error"). Refusing to submit an empty FAQ is still correct; refusing
  * SILENTLY never is — it leaves the owner with no next move.
+ *
+ * HOS-400 — the two channel-visibility checkboxes (`isVisibleOnListing` /
+ * `isUsableByAi`), adopting the pattern HOS-393 shipped for the accommodation
+ * editor (`FaqSection.client.tsx`). Both default to checked, so an owner who
+ * ignores them gets exactly the behaviour FAQs had before: published on the
+ * listing and fed to the AI chat this PR's companion (HOS-400 PR 1) mounted
+ * on gastronomy and experience listings.
  */
 
+import { EyeOffIcon, SparkleIcon } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
 import { apiClient } from '@/lib/api/client';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
@@ -46,6 +54,19 @@ export interface CommerceFaq {
     readonly answer: string;
     readonly category: string | null;
     readonly displayOrder: number | null;
+    /**
+     * Whether the FAQ appears on the listing's public page. Enforced
+     * server-side (HOS-400, adopting the HOS-393 pattern) — this flag is
+     * display-only here, the manager never filters by it.
+     */
+    readonly isVisibleOnListing: boolean;
+    /**
+     * Whether the AI chat assistant may use this FAQ to answer questions.
+     * Enforced where the prompt is assembled (HOS-400). A FAQ that is
+     * AI-usable but not `isVisibleOnListing` is NOT private — the assistant
+     * will still say it to anyone who asks in chat.
+     */
+    readonly isUsableByAi: boolean;
 }
 
 /**
@@ -74,14 +95,26 @@ export interface CommerceFaqManagerProps {
     readonly initialFaqs: readonly CommerceFaq[];
 }
 
-/** Editor state for a single FAQ row. */
+/**
+ * Editor state for a single FAQ row: question + answer + category plus the
+ * two channel-visibility flags (HOS-400). Both flags default to `true` so a
+ * new FAQ behaves exactly as every FAQ did before the flags existed.
+ */
 interface FaqEditor {
     readonly question: string;
     readonly answer: string;
     readonly category: string;
+    readonly isVisibleOnListing: boolean;
+    readonly isUsableByAi: boolean;
 }
 
-const EMPTY_EDITOR: FaqEditor = { question: '', answer: '', category: '' };
+const EMPTY_EDITOR: FaqEditor = {
+    question: '',
+    answer: '',
+    category: '',
+    isVisibleOnListing: true,
+    isUsableByAi: true
+};
 
 /** Per-field validation messages for one FAQ form. */
 interface FaqFieldErrors {
@@ -146,6 +179,17 @@ function faqBasePath({
 }): string {
     const entity = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
     return `/api/v1/protected/${entity}/${listingId}/faqs`;
+}
+
+/**
+ * Whether a FAQ's channel-visibility flags differ from the default (both
+ * `true`). Drives the per-row badge (HOS-400, mirroring HOS-393 AC-14) — the
+ * manager lists every FAQ regardless of its flags, so a non-default state
+ * must stay visible at a glance, or a hidden FAQ becomes invisible in the
+ * very screen meant to manage it.
+ */
+function hasNonDefaultChannelState(faq: CommerceFaq): boolean {
+    return !faq.isVisibleOnListing || !faq.isUsableByAi;
 }
 
 /** Sort FAQs by displayOrder ascending (nulls last). */
@@ -215,7 +259,9 @@ export function CommerceFaqManager({
             body: {
                 question: addValues.question.trim(),
                 answer: addValues.answer.trim(),
-                category: addValues.category.trim() || undefined
+                category: addValues.category.trim() || undefined,
+                isVisibleOnListing: addValues.isVisibleOnListing,
+                isUsableByAi: addValues.isUsableByAi
             }
         });
 
@@ -241,7 +287,9 @@ export function CommerceFaqManager({
         setEditValues({
             question: faq.question,
             answer: faq.answer,
-            category: faq.category ?? ''
+            category: faq.category ?? '',
+            isVisibleOnListing: faq.isVisibleOnListing,
+            isUsableByAi: faq.isUsableByAi
         });
         setActionError(null);
         setEditErrors(NO_FIELD_ERRORS);
@@ -271,7 +319,9 @@ export function CommerceFaqManager({
                 body: {
                     question: editValues.question.trim(),
                     answer: editValues.answer.trim(),
-                    category: editValues.category.trim() || undefined
+                    category: editValues.category.trim() || undefined,
+                    isVisibleOnListing: editValues.isVisibleOnListing,
+                    isUsableByAi: editValues.isUsableByAi
                 }
             });
 
@@ -380,6 +430,39 @@ export function CommerceFaqManager({
             <h3 className={styles.sectionTitle}>
                 {t('commerce.owner.editor.faqManager.sectionTitle', 'Preguntas frecuentes')}
             </h3>
+
+            <div className={styles.channelIntro}>
+                <p className={styles.channelIntroTitle}>
+                    {t(
+                        'commerce.owner.editor.faqManager.channelIntro.title',
+                        '¿Por qué ocultar o restringir una pregunta?'
+                    )}
+                </p>
+                <p className={styles.channelIntroBody}>
+                    {t(
+                        'commerce.owner.editor.faqManager.channelIntro.body1',
+                        '"Visible en la ficha pública" muestra la pregunta en la página del local y en los datos estructurados (JSON-LD) que leen los buscadores. "Usable por la IA" permite que el asistente de chat use esta pregunta para responder consultas.'
+                    )}
+                </p>
+                <p className={styles.channelIntroBody}>
+                    {t(
+                        'commerce.owner.editor.faqManager.channelIntro.body2',
+                        'Destildá "Visible en la ficha pública" para información útil pero que no querés publicar: algo temporal, un margen que preferís no prometer por escrito, o una recomendación que suena mejor en una conversación que en la vidriera.'
+                    )}
+                </p>
+                <p className={styles.channelIntroBody}>
+                    {t(
+                        'commerce.owner.editor.faqManager.channelIntro.body3',
+                        'Destildá "Usable por la IA" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee.'
+                    )}
+                </p>
+                <p className={styles.channelIntroNote}>
+                    {t(
+                        'commerce.owner.editor.faqManager.channelIntro.body4',
+                        'Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página.'
+                    )}
+                </p>
+            </div>
 
             {actionError && (
                 <p
@@ -490,6 +573,40 @@ export function CommerceFaqManager({
                                             {editErrors.answer}
                                         </p>
                                     )}
+                                    <div className={styles.channelCheckboxes}>
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={editValues.isVisibleOnListing}
+                                                onChange={(e) =>
+                                                    setEditValues((v) => ({
+                                                        ...v,
+                                                        isVisibleOnListing: e.target.checked
+                                                    }))
+                                                }
+                                            />
+                                            {t(
+                                                'commerce.owner.editor.faqManager.visibleOnListingLabel',
+                                                'Visible en la ficha pública'
+                                            )}
+                                        </label>
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={editValues.isUsableByAi}
+                                                onChange={(e) =>
+                                                    setEditValues((v) => ({
+                                                        ...v,
+                                                        isUsableByAi: e.target.checked
+                                                    }))
+                                                }
+                                            />
+                                            {t(
+                                                'commerce.owner.editor.faqManager.usableByAiLabel',
+                                                'Usable por la IA'
+                                            )}
+                                        </label>
+                                    </div>
                                     <div className={styles.editActions}>
                                         <button
                                             type="button"
@@ -519,6 +636,36 @@ export function CommerceFaqManager({
                                 <div className={styles.displayRow}>
                                     <div className={styles.itemContent}>
                                         <p className={styles.question}>{faq.question}</p>
+                                        {hasNonDefaultChannelState(faq) && (
+                                            <div className={styles.badgeRow}>
+                                                {!faq.isVisibleOnListing && (
+                                                    <span className={styles.badge}>
+                                                        <EyeOffIcon
+                                                            size="xs"
+                                                            weight="regular"
+                                                            aria-hidden="true"
+                                                        />
+                                                        {t(
+                                                            'commerce.owner.editor.faqManager.notVisibleBadge',
+                                                            'No visible en la ficha'
+                                                        )}
+                                                    </span>
+                                                )}
+                                                {!faq.isUsableByAi && (
+                                                    <span className={styles.badge}>
+                                                        <SparkleIcon
+                                                            size="xs"
+                                                            weight="regular"
+                                                            aria-hidden="true"
+                                                        />
+                                                        {t(
+                                                            'commerce.owner.editor.faqManager.notAiUsableBadge',
+                                                            'No usable por IA'
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                         <p className={styles.answer}>{faq.answer}</p>
                                     </div>
                                     <div className={styles.itemActions}>
@@ -635,6 +782,40 @@ export function CommerceFaqManager({
                             {addErrors.answer}
                         </p>
                     )}
+                    <div className={styles.channelCheckboxes}>
+                        <label className={styles.checkboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={addValues.isVisibleOnListing}
+                                onChange={(e) =>
+                                    setAddValues((v) => ({
+                                        ...v,
+                                        isVisibleOnListing: e.target.checked
+                                    }))
+                                }
+                            />
+                            {t(
+                                'commerce.owner.editor.faqManager.visibleOnListingLabel',
+                                'Visible en la ficha pública'
+                            )}
+                        </label>
+                        <label className={styles.checkboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={addValues.isUsableByAi}
+                                onChange={(e) =>
+                                    setAddValues((v) => ({
+                                        ...v,
+                                        isUsableByAi: e.target.checked
+                                    }))
+                                }
+                            />
+                            {t(
+                                'commerce.owner.editor.faqManager.usableByAiLabel',
+                                'Usable por la IA'
+                            )}
+                        </label>
+                    </div>
                     <div className={styles.editActions}>
                         <button
                             type="button"

@@ -3,8 +3,8 @@
  * Add a new FAQ to a gastronomy listing — Admin endpoint.
  */
 import {
-    FaqCreatePayloadSchema,
-    type FaqCreatePayloadType,
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    type FaqWithChannelVisibilityCreatePayloadType,
     type GastronomyFaqAddInput,
     GastronomyFaqSingleOutputSchema,
     PermissionEnum
@@ -36,7 +36,7 @@ export const adminAddGastronomyFaqRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqCreatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
     responseSchema: GastronomyFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -47,7 +47,7 @@ export const adminAddGastronomyFaqRoute = createAdminRoute({
 
         const input: GastronomyFaqAddInput = {
             gastronomyId: params.id as string,
-            faq: body as FaqCreatePayloadType
+            faq: body as FaqWithChannelVisibilityCreatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

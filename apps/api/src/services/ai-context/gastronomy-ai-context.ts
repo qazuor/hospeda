@@ -313,11 +313,12 @@ export async function assembleGastronomyContext(
 /**
  * Loads the venue's FAQs, ordered as the owner arranged them.
  *
- * Returns `[]` on any error, with a logged warning. Note this reads ALL active
- * FAQs: the per-channel `isUsableByAi` flag is HOS-400's SECOND half and does not
- * exist on `gastronomy_faqs` yet — when it lands, the filter goes HERE and must
- * be applied BEFORE {@link GASTRONOMY_CONTEXT_FAQ_MAX}, or AI-disabled FAQs will
- * starve out the ones that should reach the prompt.
+ * Returns `[]` on any error, with a logged warning. Filters by `isUsableByAi`
+ * in the WHERE clause — BEFORE {@link GASTRONOMY_CONTEXT_FAQ_MAX}, which is
+ * applied by the `.limit()` below it. Filtering after the cap instead would
+ * let AI-disabled FAQs starve out FAQs that should reach the prompt (HOS-400,
+ * adopting HOS-393 AC-11). A FAQ missing the field (pre-migration data) reads
+ * as usable, matching the column's `DEFAULT true`.
  */
 async function safeLoadFaqs(gastronomyId: string): Promise<GastronomyContextFaq[]> {
     try {
@@ -329,7 +330,8 @@ async function safeLoadFaqs(gastronomyId: string): Promise<GastronomyContextFaq[
                 and(
                     eq(gastronomyFaqs.gastronomyId, gastronomyId),
                     isNull(gastronomyFaqs.deletedAt),
-                    eq(gastronomyFaqs.lifecycleState, 'ACTIVE')
+                    eq(gastronomyFaqs.lifecycleState, 'ACTIVE'),
+                    eq(gastronomyFaqs.isUsableByAi, true)
                 )
             )
             .orderBy(asc(gastronomyFaqs.displayOrder))

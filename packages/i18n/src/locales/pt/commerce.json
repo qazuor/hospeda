@@ -247,7 +247,18 @@
                 "deleteConfirm": "Excluir esta pergunta?",
                 "saveError": "Não foi possível salvar a pergunta.",
                 "deleteError": "Não foi possível excluir a pergunta.",
-                "reorderError": "Não foi possível reordenar."
+                "reorderError": "Não foi possível reordenar.",
+                "channelIntro": {
+                    "title": "Por que ocultar ou restringir uma pergunta?",
+                    "body1": "\"Visível na página do local\" exibe a pergunta na página do estabelecimento e nos dados estruturados (JSON-LD) que os buscadores leem. \"Utilizável pela IA\" permite que o assistente de chat use esta pergunta para responder consultas.",
+                    "body2": "Desmarque \"Visível na página do local\" para informações úteis, mas que você não quer publicar: algo temporário, uma margem que prefere não prometer por escrito, ou uma dica que soa melhor numa conversa do que na vitrine.",
+                    "body3": "Desmarque \"Utilizável pela IA\" para conteúdo que você prefere mostrar exatamente como escrito, sem que o assistente o reformule.",
+                    "body4": "Importante: uma pergunta não visível na página, mas utilizável pela IA, não é privada. O assistente pode dizê-la a qualquer pessoa que perguntar pelo chat; ela só não aparece publicada na página."
+                },
+                "visibleOnListingLabel": "Visível na página do local",
+                "usableByAiLabel": "Utilizável pela IA",
+                "notVisibleBadge": "Não visível na página",
+                "notAiUsableBadge": "Não utilizável pela IA"
             },
             "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",

@@ -6,8 +6,8 @@
  * displayOrder is auto-assigned by addGastronomyFaq() as max(existing)+1.
  */
 import {
-    FaqCreatePayloadSchema,
-    type FaqCreatePayloadType,
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    type FaqWithChannelVisibilityCreatePayloadType,
     type GastronomyFaqAddInput,
     GastronomyFaqSingleOutputSchema
 } from '@repo/schemas';
@@ -35,7 +35,7 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqCreatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
     responseSchema: GastronomyFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -46,7 +46,7 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
 
         const input: GastronomyFaqAddInput = {
             gastronomyId: params.id as string,
-            faq: body as FaqCreatePayloadType
+            faq: body as FaqWithChannelVisibilityCreatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
