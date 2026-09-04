@@ -19,6 +19,7 @@ import { formatPhotoCredit } from '@/lib/photo-credit';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
+import VideoSection from '@/components/accommodation/VideoSection.astro';
 import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
@@ -569,6 +570,12 @@ const faqSections = accommodation.faqs.map((faq) => ({
         ) : (
             <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
         )}
+
+        <!-- Videos (HOS-1022): its own section, deliberately separate from the
+             photo mosaic above — mixing videos into ImageGallery/`/fotos` is
+             exactly where they went unnoticed before this ticket. Renders
+             nothing when there are no APPROVED, provider-recognized videos. -->
+        <VideoSection videos={accommodation.media.videos} locale={locale} />
 
         <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
              the host filled in via the editor's contact form, previously captured

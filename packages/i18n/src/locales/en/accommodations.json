@@ -479,6 +479,11 @@
             "backToAccommodation": "← Back to accommodation",
             "photosSubpage": "Photos"
         },
+        "videos": {
+            "title": "Videos",
+            "play": "Play video",
+            "playNamed": "Play video: {{caption}}"
+        },
         "pricing": {
             "from": "From",
             "perNightLabel": "/night",
