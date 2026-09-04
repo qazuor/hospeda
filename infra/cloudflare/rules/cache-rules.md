@@ -10,6 +10,11 @@ Current state: **4 active rules** — the two staging rules below, plus a
 production twin of each, activated on 2026-08-12 once production started
 emitting `Cache-Tag` (see [Production twins](#production-twins) at the end).
 
+**Pending edit (HOS-519, drafted 2026-09-04, not yet applied):** rule 1
+(staging) and its twin rule 4 (production) are each missing the `/partners`
+prefix — see [W2-5 (HOS-519)](#w2-5-hos-519--partner-gold-pages) for the
+three lines to paste in and why.
+
 ---
 
 ## What needs a rule, and what does not
@@ -100,13 +105,21 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/gastronomia")
    or starts_with(http.request.uri.path, "/es/experiencias")
    or starts_with(http.request.uri.path, "/en/experiencias")
-   or starts_with(http.request.uri.path, "/pt/experiencias")))
+   or starts_with(http.request.uri.path, "/pt/experiencias")
+   or starts_with(http.request.uri.path, "/es/partners")
+   or starts_with(http.request.uri.path, "/en/partners")
+   or starts_with(http.request.uri.path, "/pt/partners")))
 ```
 
-The live rule stores this on a single line (2419 characters since W2-4; it was
-2074 after W2-3, 1576 after W2-2, and 796 before that). The twenty-four
-`starts_with` terms are written out rather than expressed as a regex because the
-`matches` operator requires a Business plan.
+**Pending application (HOS-519, drafted 2026-09-04, not yet live).** The three
+`partners` clauses above are not yet in the dashboard rule — see
+[W2-5 (HOS-519)](#w2-5-hos-519--partner-gold-pages) below for why they were
+added and what to verify once they are pasted in.
+
+The live rule stores this on a single line (2419 characters through W2-4, 2581
+once W2-5 is applied; it was 2074 after W2-3, 1576 after W2-2, and 796 before
+that). The twenty-seven `starts_with` terms are written out rather than
+expressed as a regex because the `matches` operator requires a Business plan.
 
 The home is matched with `in { … }` — an **exact** path set, not a prefix.
 `starts_with(path, "/es/")` would match every Spanish page in the app, including
@@ -145,6 +158,86 @@ vocabulary, no `entity-tag-mapper` case, and their services never called the
 revalidation service at all. **W2-4 built that chain and all six now cache**,
 which is why this wave added the `gastronomia`/`experiencias` prefixes: the
 other two already sat under `/destinos`.
+
+### W2-5 (HOS-519) — partner gold pages
+
+`/{lang}/partners/<slug>/` (a gold partner's own page, HOS-294) called
+`applyCacheHeaders({ cacheClass: 'detail', ... })` from the day it shipped —
+see `apps/web/src/pages/[lang]/partners/[slug].astro` — but no rule on this
+page ever matched `/partners`, so every response answered `cf-cache-status:
+DYNAMIC` regardless of what the origin sent. Measured in production on
+2026-08-15 against `cache-control: public, s-maxage=3600,
+stale-while-revalidate=3600` — byte-identical to `/es/alojamientos/`, which
+cached correctly over the same window — which is what places the cause here
+and not in the origin.
+
+Added as a **prefix**, like `destinos`/`eventos`/`publicaciones`, not as an
+exact path set like the W2-2 copy-only pages: `<slug>` is open-ended, so there
+is no finite set to enumerate. Unlike those three families, though, partners
+have no listing page (see the comment in `[slug].astro`: "partners have no
+listing page, so there is no `list-partner` to purge"), so this wave adds
+exactly one path family, not two — there is no `/{lang}/partners/` collection
+route to also decide on.
+
+The safety property is unchanged: `edge_ttl.mode = "bypass_by_default"` means
+matching the prefix does nothing by itself. A silver partner's URL (which
+never renders — HOS-294 restricts the page to gold), a partner mid-DRAFT, or
+one whose subscription lapsed all return non-cacheable responses today, and
+will keep doing so after this rule ships: `applyCacheHeaders` in
+`[slug].astro` only sets `cacheable: true` when the API call actually resolved
+a partner (see `apps/web/src/pages/[lang]/partners/[slug].astro`,
+`cacheable: Astro.url.search === '' && primaryCacheTag !== undefined`). A 404
+or 410 response never reaches that call, so it is never cached — matching the
+prefix only makes a *cacheable* response eligible; it does not make an
+uncacheable one cache.
+
+**Investigated as part of HOS-519 and worth recording here**: as of
+2026-09-04, `GET /api/v1/public/partners` returns zero rows in production —
+both partners named in the original HOS-519 report
+(`autoservice-litoral`, `fundacion-entre-rios-sustentable`) were HARD-DELETED
+by the seed data-migration `0059-purge-test-and-commerce-example.ts`
+(`PARTNER_SLUGS`, `packages/seed/src/data-migrations/0059-purge-test-and-commerce-example.ts:260-262`),
+an intentional 2026-08-23 owner decision to clear commerce example data before
+launch. So this rule currently has **nothing to verify against in production**
+— `curl` against either slug answers 404, not 200, and will keep doing so
+until a real gold partner is onboarded. Verify against **staging** instead
+(seed data there is unaffected), or re-run the `curl` checks below once a real
+partner exists in production.
+
+#### Expression (partners clauses only, for diffing against the dashboard)
+
+```
+   or starts_with(http.request.uri.path, "/es/partners")
+   or starts_with(http.request.uri.path, "/en/partners")
+   or starts_with(http.request.uri.path, "/pt/partners")
+```
+
+Paste these three lines into the existing big `or (...)` group inside rule 1's
+expression (staging) — right after the `experiencias` clauses, before the
+final `))` — and, separately, into rule 4's expression (its production twin,
+same three lines, `http.host` unchanged at `"hospeda.com.ar"`). Do NOT create
+a fifth rule: this is an edit to the two existing rules, matching how W2-2,
+W2-3 and W2-4 each extended the same expression rather than adding a new one.
+
+#### Verifying (once applied, on staging — see the production note above)
+
+```bash
+# eligibility + hit — use a real staging gold-partner slug
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/es/partners/<slug>/ \
+  | grep -iE '^(cf-cache-status|age|cf-ray|cache-control):'
+```
+
+Expected on the second request: `cf-cache-status: HIT`, non-zero `age`, and
+`Cache-Control` **without** the injected `max-age=14400` (see the Browser TTL
+note under Settings below — its absence is what proves *this* rule, not the
+zone default, produced the hit).
+
+Purge scoping follows the same two-direction pattern used for attractions/POIs
+above: purge `preview:partner-<slug>` (or `prod:partner-<slug>`) and confirm
+that partner's page goes `MISS` while a second, unrelated partner's page
+survives as `HIT`. No such two-partner pair exists on staging as of
+2026-09-04, so this check is not yet run — do it once a second gold partner is
+seeded there.
 
 ### Settings
 
@@ -248,6 +341,7 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/destinos/{atraccion,lugar}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `attr-<slug>` / `poi-<slug>` (no collection tag exists) |
 | `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-gastro` / `list-exp` |
 | `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `gastro-<slug>` / `exp-<slug>` + id |
+| `/{lang}/partners/<slug>/` (detail, HOS-294) | origin has cached since launch, but the rule matches **only once W2-5 (HOS-519) is applied** — pending as of 2026-09-04. Tagged by `buildEntityCacheTags({ entity: 'partner', slug, id })`; no collection tag exists, same as attractions/POIs |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |
