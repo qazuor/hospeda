@@ -16,15 +16,19 @@
  * that is never executed is a promise, and this carril has already shipped one
  * that ran in 18ms, reported `ok` and moved zero rows (HOS-433).
  *
- * The four cases below are the four decisions the migration makes, one test
- * each — not four variations of the happy path:
+ * The five cases below are the five decisions the migration makes, one test
+ * each — not five variations of the happy path:
  *
  * 1. it applies the delta to a row in the state every environment is in today;
  * 2. it is idempotent, because the runner may re-run it;
  * 3. it does NOT overwrite a cap an operator moved (limit values are a
  *    `'commercial'` field: the database wins), while still applying the rest;
- * 4. it REFUSES rather than creating a dangling grant when a lookup row is
- *    missing.
+ * 4. it is a clean NO-OP on a database with no commerce plans at all;
+ * 5. it CREATES a missing lookup row rather than leaving a dangling grant.
+ *
+ * Case 4 was added after CI caught it: this was the only one of the 94
+ * migrations that threw against the schema-but-no-seed database
+ * `cli-data-migrate.integration.test.ts` runs the whole ledger against.
  *
  * Case 3 is the one worth writing carefully. The migration deliberately
  * breaks `0093`'s "write only when the key is absent" rule — it has to, because
@@ -35,7 +39,15 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { DrizzleClient } from '@repo/db';
-import { billingEntitlements, billingPlans, eq, getDb, initializeDb, resetDb } from '@repo/db';
+import {
+    billingEntitlements,
+    billingPlans,
+    eq,
+    getDb,
+    inArray,
+    initializeDb,
+    resetDb
+} from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
@@ -125,11 +137,13 @@ async function withRollback(fn: (tx: DrizzleClient) => Promise<void>): Promise<v
 /**
  * Ensures every tourist-VIP lookup row the migration checks for exists.
  *
- * The migration REFUSES when one is missing (by design — a grant naming an
- * absent key is a dangling grant), so a database whose `billing_entitlements`
- * table was seeded from a narrower baseline would make every test here fail
- * for a reason that has nothing to do with what they assert. Inserted inside
- * the transaction, so the rollback removes whatever this added.
+ * The migration CREATES a missing row itself, so this helper is not what makes
+ * it work — it is what keeps the other assertions honest. Without it, a
+ * database seeded from a narrower baseline would have the migration report
+ * `entitlementsCreated: 14` in tests that are about caps and grants, and the
+ * one test that IS about creating a row would prove nothing, since it could no
+ * longer isolate the single row it deletes. Inserted inside the transaction, so
+ * the rollback removes whatever this added.
  *
  * @param tx - Transaction-scoped client.
  */
@@ -349,20 +363,69 @@ describe('0094-hos-975-commerce-tourist-vip-and-tier-caps', () => {
         });
     });
 
-    it('refuses, rather than creating a dangling grant, when a lookup row is missing', async () => {
+    it('is a clean no-op on a database with no commerce plan rows', async () => {
+        // The case CI found and this suite did not have. `cli-data-migrate`
+        // runs the entire ledger against a database carrying the schema and no
+        // seed, where there are neither commerce plans NOR
+        // `billing_entitlements` rows. With the lookup check running first,
+        // this was the only one of the 94 migrations that threw there.
+        //
+        // Deliberately does NOT call `ensureVipLookupRows`: the point is that a
+        // database missing BOTH still gets a clean pass, because a dangling
+        // grant cannot exist when there is nothing to grant to.
+        await withRollback(async (tx) => {
+            await tx
+                .delete(billingPlans)
+                .where(
+                    inArray(billingPlans.name, [
+                        'gastronomy-basico',
+                        'gastronomy-pro',
+                        'gastronomy-premium',
+                        'experience-basico',
+                        'experience-pro',
+                        'experience-premium'
+                    ])
+                );
+
+            const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
+            const result = await touristVipAndCaps.up(ctx);
+
+            expect(result.summary).toContain('no commerce plan rows');
+        });
+    });
+
+    it('creates a missing lookup row rather than leaving a dangling grant', async () => {
         await withRollback(async (tx) => {
             await ensureVipLookupRows(tx);
-            await resetPlanToPreMigrationState(tx, PRO_PLAN_NAME, SEEDED_CAP);
+            const planId = await resetPlanToPreMigrationState(tx, PRO_PLAN_NAME, SEEDED_CAP);
 
             // Remove one lookup row. A grant naming a key with no
             // `billing_entitlements` row resolves to nothing, and the failure
             // would surface as "the feature does not work" long after the
             // deploy that caused it.
+            //
+            // This is not a hypothetical: `cli-data-migrate.integration.test.ts`
+            // builds a database with the commerce PLAN rows present and 14 of
+            // these 15 lookup rows absent, because the documented run order
+            // (db:migrate → db:apply-extras → db:seed:migrate) does not include
+            // the required seed that fills `billing_entitlements`.
             await tx.delete(billingEntitlements).where(eq(billingEntitlements.key, 'vip_support'));
 
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
+            const result = await touristVipAndCaps.up(ctx);
 
-            await expect(touristVipAndCaps.up(ctx)).rejects.toThrow(/vip_support/);
+            const recreated = await tx
+                .select({ key: billingEntitlements.key })
+                .from(billingEntitlements)
+                .where(eq(billingEntitlements.key, 'vip_support'));
+
+            expect(recreated).toHaveLength(1);
+            expect(result.counts?.entitlementsCreated).toBe(1);
+
+            // And the grant landed on the plan, which is the point of creating
+            // the row at all.
+            const after = await readPlan(tx, planId);
+            expect(after.entitlements).toContain('vip_support');
         });
     });
 });
