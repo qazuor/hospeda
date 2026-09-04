@@ -427,103 +427,140 @@ describe('the trial copy names no length and promises no card-free signup', () =
 // AC-7 — all three pages are publicly cacheable and tagged
 // ---------------------------------------------------------------------------
 
-describe('the three plan pages declare a purgeable public cache (AC-7)', () => {
-    const pages: ReadonlyArray<{ readonly name: string; readonly source: string }> = [
-        { name: 'planes/index.astro', source: indexSrc },
-        { name: 'planes/anfitriones/index.astro', source: hostSrc },
-        { name: 'planes/turistas/index.astro', source: touristSrc }
-    ];
-
-    it.each(pages)('$name routes its headers through applyCacheHeaders', ({ source }) => {
-        expect(source).toContain('applyCacheHeaders({');
-        expect(source).toContain('cacheable: true');
-        expect(source).toContain("cacheClass: 'pricing'");
-        expect(source).toContain('tags: [CACHE_TAG_PRICING]');
+describe('the plan index page declares a purgeable public cache (AC-7)', () => {
+    // HOS-1032: `planes/anfitriones/index.astro` and `planes/turistas/index.astro`
+    // stopped being content pages — see "the host and tourist pricing pages
+    // moved" below — so only the index itself still serves a cacheable body at
+    // this level. Its two former siblings are asserted separately, for the
+    // opposite property: that they declare NO cache headers of their own.
+    it('planes/index.astro routes its headers through applyCacheHeaders', () => {
+        expect(indexSrc).toContain('applyCacheHeaders({');
+        expect(indexSrc).toContain('cacheable: true');
+        expect(indexSrc).toContain("cacheClass: 'pricing'");
+        expect(indexSrc).toContain('tags: [CACHE_TAG_PRICING]');
     });
 
-    it.each(pages)('$name never writes Cache-Control by hand', ({ source }) => {
+    it('planes/index.astro never writes Cache-Control by hand', () => {
         // Setting the header directly is what produced cacheable-but-untaggable
         // responses (HOS-426); `applyCacheHeaders` is fail-closed and must stay
         // the only writer.
-        expect(source).not.toMatch(/['"]Cache-Control['"]\s*[,:]/i);
+        expect(indexSrc).not.toMatch(/['"]Cache-Control['"]\s*[,:]/i);
+    });
+
+    it.each([
+        ['planes/anfitriones/index.astro', hostSrc],
+        ['planes/turistas/index.astro', touristSrc]
+    ])('%s is a redirect now, and declares no cache headers of its own', (_name, source) => {
+        // A 301 has nothing for `applyCacheHeaders` to tag — reintroducing a
+        // call here would be dead code left over from when this file served
+        // the plan grid.
+        expect(source).not.toContain('applyCacheHeaders');
     });
 });
 
 // ---------------------------------------------------------------------------
-// AC-3 — the host page is the old owner pricing page
+// AC-3 / AC-4 / AC-51 — HOS-1032: BOTH the host and tourist pricing pages
+// moved into the `/planes/` namespace, so both `suscriptores/planes/
+// anfitriones/` and `suscriptores/planes/turistas/` are now 301s. Only the
+// tourist audience had a THIRD legacy URL (`suscriptores/turistas/`,
+// pre-dating HOS-942), which also now redirects straight to the final
+// destination.
 // ---------------------------------------------------------------------------
 
-describe('host pricing page kept its content at the new URL (AC-3)', () => {
-    it('still renders the owner plan grid', () => {
-        expect(hostSrc).toContain(
-            "import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro'"
-        );
-        expect(hostSrc).toContain('plans={ownerPlans}');
-        expect(hostSrc).toContain('audience="owner"');
-        expect(hostSrc).toContain("filterPlansByCategory(fetchResult.plans, 'owner')");
+describe('the host and tourist pricing pages moved to /planes/<audiencia>/precios/ (AC-3 / AC-4 / AC-51)', () => {
+    // Content coverage for what used to live at these two URLs — the owner
+    // plan grid, price JSON-LD, hero, canonical URL — moved WITH the content
+    // to `planes/anfitriones/precios/index.astro` and
+    // `planes/turistas/precios/index.astro`.
+    // `test/pages/pricing-ssr-runtime.test.ts` covers those two pages (and
+    // their three siblings) generically. What is left as a genuine property of
+    // these two OLD URLs is that each now answers 301, and where to.
+
+    it('host: renders on demand, so the redirect is actually executed', () => {
+        expect(hostSrc).toContain('export const prerender = false;');
     });
 
-    it('still emits its price JSON-LD', () => {
-        expect(hostSrc).toContain('<PriceSpecificationJsonLd slot="head-extra"');
+    it('host: redirects rather than serving a 200 body', () => {
+        expect(hostSrc).toContain('return Astro.redirect(');
+        expect(hostSrc).not.toContain('PricingCardsGrid');
+        expect(hostSrc).not.toContain('<PriceSpecificationJsonLd');
+        expect(hostSrc).not.toContain('<MarketingHero');
     });
 
-    it('still renders its hero', () => {
-        expect(hostSrc).toContain('<MarketingHero');
-        expect(hostSrc).toContain("t('pricing.owner.tagline'");
+    it('host: answers 301 at the new pricing page', () => {
+        expect(hostSrc).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
+        expect(hostSrc).toContain('PRICING_PAGE_PATH_BY_AUDIENCE.owner');
     });
 
-    it('points its own canonical JSON-LD URL at the new path', () => {
-        expect(hostSrc).toContain("path: 'suscriptores/planes/anfitriones'");
-    });
-});
-
-// ---------------------------------------------------------------------------
-// AC-4 — the tourist page's old URL is a 301
-// ---------------------------------------------------------------------------
-
-describe('the tourist pricing page moved (AC-4)', () => {
-    it('answers 301 at the old URL', () => {
-        expect(redirectSrc).toContain(
-            "return Astro.redirect(buildUrl({ locale, path: 'suscriptores/planes/turistas' }), 301);"
-        );
+    it('tourist (level-2 URL): renders on demand, so the redirect is actually executed', () => {
+        expect(touristSrc).toContain('export const prerender = false;');
     });
 
-    it('is a redirect and nothing else — no 200 body left behind', () => {
+    it('tourist (level-2 URL): redirects rather than serving a 200 body', () => {
+        expect(touristSrc).toContain('return Astro.redirect(');
+        expect(touristSrc).not.toContain('PricingCardsGrid');
+        expect(touristSrc).not.toContain('<MarketingHero');
+    });
+
+    it('tourist (level-2 URL): answers 301 at the new pricing page', () => {
+        expect(touristSrc).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
+        expect(touristSrc).toContain('PRICING_PAGE_PATH_BY_AUDIENCE.tourist');
+    });
+
+    it('tourist (oldest legacy URL, suscriptores/turistas/): answers 301 at the SAME new pricing page', () => {
+        // Rewritten to the FINAL destination rather than left pointing at the
+        // now-redirecting `suscriptores/planes/turistas/` — two 301s in a row
+        // would still work in a browser but spend an extra round trip and a
+        // slice of the ranking signal the first hop is meant to transfer.
+        expect(redirectSrc).toContain('export const prerender = false;');
         expect(redirectSrc).not.toContain('<MarketingLayout');
         expect(redirectSrc).not.toContain('PricingCardsGrid');
         expect(redirectSrc).not.toContain('fetchPublicPlans');
-    });
-
-    it('renders on demand, so the redirect is actually executed', () => {
-        expect(redirectSrc).toContain('export const prerender = false;');
-    });
-
-    it('serves the tourist catalogue at the new URL', () => {
-        expect(touristSrc).toContain("filterPlansByCategory(fetchResult.plans, 'tourist')");
-        expect(touristSrc).toContain('audience="tourist"');
+        expect(redirectSrc).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
+        expect(redirectSrc).toContain('PRICING_PAGE_PATH_BY_AUDIENCE.tourist');
     });
 });
 
 // ---------------------------------------------------------------------------
-// AC-6 — every route classified, and the redirect out of the sitemap
+// AC-6 — every route classified, and the redirects out of the sitemap
 // ---------------------------------------------------------------------------
 
 describe('sitemap classification of the moved routes (AC-6)', () => {
     const emitted = new Set(STATIC_SITEMAP_PAGES.map((page) => page.path));
 
-    it('advertises the index and both pricing pages', () => {
+    it('advertises the index and both new pricing pages', () => {
+        // HOS-1032: the two level-2 URLs the index used to point readers at
+        // (`/suscriptores/planes/anfitriones/`, `/suscriptores/planes/turistas/`)
+        // are gone from the sitemap along with everything else the "stops
+        // advertising" test below lists — only the index and the two pages'
+        // final destination remain indexable at this URL family.
         expect(emitted).toContain('/suscriptores/planes/');
-        expect(emitted).toContain('/suscriptores/planes/anfitriones/');
-        expect(emitted).toContain('/suscriptores/planes/turistas/');
+        expect(emitted).toContain('/planes/anfitriones/precios/');
+        expect(emitted).toContain('/planes/turistas/precios/');
     });
 
-    it('stops advertising the URL that is now a 301', () => {
+    it('stops advertising every URL that is now a 301', () => {
         expect(emitted).not.toContain('/suscriptores/turistas/');
         expect(NON_SITEMAP_STATIC_PAGES['/suscriptores/turistas/']).toBe('transactional');
+        // HOS-1032: the host and tourist pricing pages, and both comparison
+        // tables, joined the retired list the same way.
+        expect(emitted).not.toContain('/suscriptores/planes/anfitriones/');
+        expect(emitted).not.toContain('/suscriptores/planes/turistas/');
+        expect(emitted).not.toContain('/suscriptores/planes/comparar/');
+        expect(emitted).not.toContain('/suscriptores/turistas/comparar/');
+        expect(NON_SITEMAP_STATIC_PAGES['/suscriptores/planes/anfitriones/']).toBe('transactional');
+        expect(NON_SITEMAP_STATIC_PAGES['/suscriptores/planes/turistas/']).toBe('transactional');
+        expect(NON_SITEMAP_STATIC_PAGES['/suscriptores/planes/comparar/']).toBe('transactional');
+        expect(NON_SITEMAP_STATIC_PAGES['/suscriptores/turistas/comparar/']).toBe('transactional');
     });
 
-    it('keeps the tourist comparison table indexable — only the index moved', () => {
-        expect(emitted).toContain('/suscriptores/turistas/comparar/');
+    it("keeps the tourist comparison table's CONTENT indexable — it moved inline, not away", () => {
+        // The table itself did not stop being crawlable content: it moved
+        // onto `/planes/turistas/precios/`, which the first test in this
+        // block already asserts is in the sitemap. What is retired here is
+        // only the URL `/suscriptores/turistas/comparar/` used to have.
+        expect(emitted).toContain('/planes/turistas/precios/');
+        expect(NON_SITEMAP_STATIC_PAGES['/suscriptores/turistas/comparar/']).toBe('transactional');
     });
 });
 
@@ -726,18 +763,28 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         expect(audience).toMatch(/local gastron[oóô]mico|food business/i);
     });
 
-    it('leaves the indexed URL alone — Google reads the path, a person reads the copy', () => {
-        // `/publicar-restaurante/` is indexed and "publicar restaurante" has
-        // real search volume. Renaming the route trades that for nothing: the
-        // URL and the copy address two different audiences and do not have to
-        // share a word.
+    it('retires the old URL instead of leaving it indexed — D-9 reversed by HOS-1032', () => {
+        // This test used to assert the opposite: that `/publicar-restaurante/`
+        // stayed the indexed URL while only the copy widened, on the theory
+        // that "publicar restaurante" had real search volume worth keeping.
+        // HOS-1032 revisited that call — `publicar-restaurante/index.astro`'s
+        // own docblock records why: the page shipped 2026-08-21 (PR #2920) and
+        // had accumulated almost no ranking to move, so retiring the URL in
+        // favour of `/planes/gastronomia/` (which does not carry "restaurante"
+        // either, for the same widened-audience reason as the card copy) was
+        // judged the cheapest this rename would ever be. The old URL now 301s
+        // there instead of staying a page of its own.
         const audiencePlans = readFileSync(
             resolve(__dirname, '../../../src/lib/billing/audience-plans.ts'),
             'utf8'
         );
 
-        expect(audiencePlans).toContain("gastronomy: 'publicar-restaurante'");
-        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/publicar-restaurante/');
+        expect(audiencePlans).toContain("gastronomy: 'planes/gastronomia'");
+        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).not.toContain(
+            '/publicar-restaurante/'
+        );
+        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/gastronomia/');
+        expect(NON_SITEMAP_STATIC_PAGES['/publicar-restaurante/']).toBe('transactional');
     });
 });
 

@@ -26,6 +26,7 @@ import {
     resolveSubscriptionPlansPathForAudience
 } from '../account-roles';
 import { hasAccommodationsNavAccess, hasCommerceNavAccess } from '../nav-gating';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
 
 describe('hasCommerceNavAccess', () => {
     it('returns true for COMMERCE_OWNER', () => {
@@ -95,17 +96,26 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
     // surfaces (BETA-165 dashboard/addons, BETA-201 checkout return pages). The
     // .astro pages only wire this helper (asserted source-side in
     // test/pages/checkout-pages.test.ts); the logic lives here.
+    //
+    // These assert against `PRICING_PAGE_PATH_BY_AUDIENCE` rather than against a
+    // URL literal (HOS-1032). What this helper decides is WHICH AUDIENCE'S
+    // catalogue a role can buy from — sending a host to the tourist page is the
+    // bug BETA-201 fixed — and that decision is what these cases must keep
+    // failing on. The URLs themselves have now moved twice, and each move
+    // rewrote every literal here without any of them ever catching a defect.
+    // The literals are frozen once, deliberately, in
+    // `test/lib/pricing-page-paths.test.ts`.
     it('routes every host-level role to the owner plans page', () => {
         for (const role of ROLES_WITH_ACCOMMODATIONS_NAV) {
             expect(resolveSubscriptionPlansPath({ roles: [role] })).toBe(
-                'suscriptores/planes/anfitriones'
+                PRICING_PAGE_PATH_BY_AUDIENCE.owner
             );
         }
     });
 
     it('routes a plain USER (tourist) to the tourist plans page', () => {
         expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.USER] })).toBe(
-            'suscriptores/planes/turistas'
+            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
         );
     });
 
@@ -114,7 +124,7 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
         // accommodation host, so the accommodation-plans upsell treats them as a
         // tourist (consistent with the host-tier predicate).
         expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.COMMERCE_OWNER] })).toBe(
-            'suscriptores/planes/turistas'
+            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
         );
     });
 
@@ -123,17 +133,21 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
         // user can actually buy from (HOS-296).
         expect(
             resolveSubscriptionPlansPath({ roles: [RoleEnum.COMMERCE_OWNER, RoleEnum.HOST] })
-        ).toBe('suscriptores/planes/anfitriones');
+        ).toBe(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
     });
 
     it('routes a null / empty role set (anonymous / MP return with no session cookie) to the tourist page', () => {
-        expect(resolveSubscriptionPlansPath({ roles: null })).toBe('suscriptores/planes/turistas');
-        expect(resolveSubscriptionPlansPath({ roles: [] })).toBe('suscriptores/planes/turistas');
+        expect(resolveSubscriptionPlansPath({ roles: null })).toBe(
+            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
+        );
+        expect(resolveSubscriptionPlansPath({ roles: [] })).toBe(
+            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
+        );
     });
 
     it('routes an unknown role to the tourist page (safe default)', () => {
         expect(resolveSubscriptionPlansPath({ roles: ['NOT_A_ROLE'] })).toBe(
-            'suscriptores/planes/turistas'
+            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
         );
     });
 });
@@ -144,13 +158,13 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
     // role set. Both must land on the same two pages.
     it('routes a host audience to the owner plans page', () => {
         expect(resolveSubscriptionPlansPathForAudience({ audience: 'host' })).toBe(
-            'suscriptores/planes/anfitriones'
+            PRICING_PAGE_PATH_BY_AUDIENCE.owner
         );
     });
 
     it('routes a tourist audience to the tourist plans page', () => {
         expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
-            'suscriptores/planes/turistas'
+            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
         );
     });
 

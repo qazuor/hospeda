@@ -87,6 +87,7 @@ import {
 import { type JSX, useState } from 'react';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
 
@@ -261,7 +262,7 @@ export function PublishButton({
     if (!hasActivePlan) {
         return (
             <a
-                href={buildUrl({ locale, path: 'suscriptores/planes/anfitriones' })}
+                href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
                 className={`${styles.action} ${styles.primary}`}
             >
                 {choosePlanLabel}
@@ -301,7 +302,7 @@ export function PublishButton({
     // Publish failed because the owner has no active plan. Show a banner
     // pointing to the plans page instead of a retryable error.
     if (state === 'subscriptionRequired') {
-        const plansUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
+        const plansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
         return (
             <span
                 role="alert"

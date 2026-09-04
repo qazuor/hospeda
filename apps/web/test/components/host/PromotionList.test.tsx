@@ -27,6 +27,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     }
 }));
 
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 // Import AFTER mock setup
 import { PromotionList } from '../../../src/components/host/PromotionList.client';
 
@@ -322,7 +323,7 @@ describe('PromotionList', () => {
         // Upgrade banner with a link to the plans page
         const upgradeLinks = screen
             .getAllByRole('link')
-            .filter((el) => el.getAttribute('href')?.includes('suscriptores/planes/anfitriones'));
+            .filter((el) => el.getAttribute('href')?.includes(PRICING_PAGE_PATH_BY_AUDIENCE.owner));
         expect(upgradeLinks.length).toBeGreaterThanOrEqual(1);
     });
 

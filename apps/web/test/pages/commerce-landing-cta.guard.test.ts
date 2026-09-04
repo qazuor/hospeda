@@ -1,6 +1,6 @@
 /**
  * @file commerce-landing-cta.guard.test.ts
- * @description HOS-810 static guard — the three `.astro` files that make the
+ * @description HOS-810 static guard — the `.astro` files that make the
  * commerce navigation loop close, and the wiring between them.
  *
  * ## Why a guard, and what it can and cannot say
@@ -12,7 +12,7 @@
  * the `href` the landing ships is only visible in the source.
  *
  * This guard is therefore deliberately narrow. It asserts the wiring — the
- * import, the call, the vertical each landing passes, and the absence of the
+ * import, the call, the vertical each page passes, and the absence of the
  * bare `auth/signup` href the fix replaced. It does NOT and cannot claim the
  * rendered page contains any particular link; a test that read the whole file
  * and matched `/<a[\s\S]*?signup/` would "pass" on a file where the anchor and
@@ -21,6 +21,19 @@
  * The predicates anchor on the *token that cannot survive a revert* — the
  * `vertical: '<v>'` argument — rather than on a function name alone, so a
  * rename that drops the behaviour fails here instead of quietly passing.
+ *
+ * ## HOS-1032 moved the CTA from the landing to the pricing page
+ *
+ * `/publicar-restaurante/` and `/publicar-experiencia/` are now permanent
+ * redirects to their level-2 sales page (`test/pages/publicar-restaurante-
+ * index.test.ts` / `test/pages/publicar-experiencia-index.test.ts` cover
+ * that). The checkout CTA `buildCommerceStartUrl` builds moved one level
+ * further, to the level-3 pricing page — `/planes/<vertical>/precios/` — so
+ * this guard now reads THOSE files. The wiring shape changed too: the pricing
+ * pages hand the built href to `<AudiencePricingSections ctaHref={ctaHref}
+ * ctaMode="link" />` rather than binding it to a hero button's `href`
+ * directly, since the CTA now appears on every plan card and the closing
+ * section, not once.
  *
  * @module test/pages/commerce-landing-cta.guard
  */
@@ -35,8 +48,8 @@ const LIB = resolve(__dirname, '../../src/lib');
 const read = (relative: string): string => readFileSync(resolve(PAGES, relative), 'utf8');
 const readLib = (relative: string): string => readFileSync(resolve(LIB, relative), 'utf8');
 
-const experienceLanding = read('publicar-experiencia/index.astro');
-const gastronomyLanding = read('publicar-restaurante/index.astro');
+const experiencePricing = read('planes/experiencias/precios/index.astro');
+const gastronomyPricing = read('planes/gastronomia/precios/index.astro');
 const signup = read('auth/signup.astro');
 const signin = read('auth/signin.astro');
 
@@ -45,12 +58,12 @@ const LANDINGS: ReadonlyArray<{
     readonly src: string;
     readonly vertical: string;
 }> = [
-    { label: 'publicar-experiencia', src: experienceLanding, vertical: 'experience' },
-    { label: 'publicar-restaurante', src: gastronomyLanding, vertical: 'gastronomy' }
+    { label: 'planes/experiencias/precios', src: experiencePricing, vertical: 'experience' },
+    { label: 'planes/gastronomia/precios', src: gastronomyPricing, vertical: 'gastronomy' }
 ];
 
 describe('HOS-810 — commerce landing CTA wiring', () => {
-    it('guards both landings, not one', () => {
+    it('guards both pricing pages, not one', () => {
         // Non-vacuity: a one-element list would let the sibling regress unseen,
         // which is exactly how the gastronomy landing kept the old copy while
         // the experience one was being looked at.
@@ -75,11 +88,14 @@ describe('HOS-810 — commerce landing CTA wiring', () => {
                 expect(src).not.toContain("buildUrl({ locale, path: 'auth/signup' })");
             });
 
-            it('feeds that value to the hero CTA button', () => {
-                // Narrow on purpose: the assignment and the single `href={signupUrl}`
-                // binding, not a span across the file.
-                expect(src).toContain('const signupUrl = buildCommerceStartUrl(');
-                expect(src).toContain('href={signupUrl}');
+            it('feeds that value to the shared pricing sections component', () => {
+                // Narrow on purpose: the assignment and the `ctaHref={ctaHref}`
+                // binding into `AudiencePricingSections`, which fans it out to
+                // every card's CTA and the closing section — not a span across
+                // the file, and not the old landing's single hero button.
+                expect(src).toContain('const ctaHref = buildCommerceStartUrl(');
+                expect(src).toContain('ctaHref={ctaHref}');
+                expect(src).toContain('ctaMode="link"');
             });
 
             it('still parses no session — it stays edge-cacheable (HOS-690 AC-37)', () => {

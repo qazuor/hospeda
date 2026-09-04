@@ -18,6 +18,7 @@ import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGat
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 export const prerender = false;
 
@@ -45,7 +46,7 @@ const { t } = createTranslations(locale);
 	<PlanEntitlementGate
 		entitlementKey="can_use_calendar"
 		locale={locale}
-		upgradeUrl="/suscriptores/planes/anfitriones/"
+		upgradeUrl={`/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`}
 		client:load
 	>
 		<CalendarSection locale={locale} accommodationId={accommodationId} client:load />

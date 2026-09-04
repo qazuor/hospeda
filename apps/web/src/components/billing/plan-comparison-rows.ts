@@ -306,6 +306,177 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
     }
 ];
 
+// ---------------------------------------------------------------------------
+// Commerce-vertical rows (HOS-1032)
+// ---------------------------------------------------------------------------
+//
+// The two verticals get their own rows rather than reusing the owner ones,
+// because they grant entirely different keys: `EDIT_GASTRONOMY_INFO` is not
+// `EDIT_ACCOMMODATION_INFO`, and a row asking for the accommodation key would
+// render every commerce tier as "not included". They are also kept apart from
+// EACH OTHER — `gastronomy` and `experience` are separate product domains and
+// no surface may group them under a shared "Comercio" (HOS-941 R-3).
+//
+// Every cell names a real key off `plans.config.ts`, so a tier the owner
+// activates later (or a key added to `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`)
+// is reflected with no edit here — the same property that keeps the owner and
+// tourist tables honest.
+
+/** What a gastronomy tier lets its owner publish and maintain. */
+export const GASTRONOMY_LISTING_ROWS: readonly RowConfig[] = [
+    {
+        id: 'maxGastronomies',
+        labelKey: 'billing.comparison.row.maxGastronomies',
+        cell: { kind: 'limit', key: LimitKey.MAX_GASTRONOMIES },
+        status: 'available'
+    },
+    {
+        id: 'publishGastronomy',
+        labelKey: 'billing.comparison.row.publishGastronomy',
+        cell: { kind: 'entitlement', key: EntitlementKey.PUBLISH_GASTRONOMY },
+        status: 'available'
+    },
+    {
+        id: 'editGastronomyInfo',
+        labelKey: 'billing.comparison.row.editGastronomyInfo',
+        cell: { kind: 'entitlement', key: EntitlementKey.EDIT_GASTRONOMY_INFO },
+        status: 'available'
+    },
+    {
+        id: 'basicStats',
+        labelKey: 'billing.comparison.row.basicStats',
+        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_BASIC_STATS },
+        status: 'available'
+    }
+];
+
+/** The carta, and everything that hangs off it. The gastronomy differentiator. */
+export const GASTRONOMY_MENU_ROWS: readonly RowConfig[] = [
+    {
+        id: 'gastronomyMenu',
+        labelKey: 'billing.comparison.row.gastronomyMenu',
+        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_GASTRONOMY_MENU },
+        status: 'available'
+    },
+    {
+        id: 'gastronomyDailySpecial',
+        labelKey: 'billing.comparison.row.gastronomyDailySpecial',
+        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL },
+        status: 'available'
+    },
+    {
+        id: 'gastronomyEvents',
+        labelKey: 'billing.comparison.row.gastronomyEvents',
+        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_GASTRONOMY_EVENTS },
+        status: 'available'
+    },
+    {
+        id: 'menuItemPhotos',
+        labelKey: 'billing.comparison.row.menuItemPhotos',
+        cell: { kind: 'entitlement', key: EntitlementKey.MENU_ITEM_PHOTOS },
+        status: 'available'
+    },
+    {
+        id: 'multilingualMenu',
+        labelKey: 'billing.comparison.row.multilingualMenu',
+        cell: { kind: 'entitlement', key: EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU },
+        status: 'available'
+    }
+];
+
+/** What an experience tier lets its provider publish and maintain. */
+export const EXPERIENCE_LISTING_ROWS: readonly RowConfig[] = [
+    {
+        id: 'maxExperiences',
+        labelKey: 'billing.comparison.row.maxExperiences',
+        cell: { kind: 'limit', key: LimitKey.MAX_EXPERIENCES },
+        status: 'available'
+    },
+    {
+        id: 'publishExperience',
+        labelKey: 'billing.comparison.row.publishExperience',
+        cell: { kind: 'entitlement', key: EntitlementKey.PUBLISH_EXPERIENCE },
+        status: 'available'
+    },
+    {
+        id: 'editExperienceInfo',
+        labelKey: 'billing.comparison.row.editExperienceInfo',
+        cell: { kind: 'entitlement', key: EntitlementKey.EDIT_EXPERIENCE_INFO },
+        status: 'available'
+    },
+    {
+        id: 'basicStats',
+        labelKey: 'billing.comparison.row.basicStats',
+        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_BASIC_STATS },
+        status: 'available'
+    }
+];
+
+/** What the dearer experience tiers add for the visitor who books the outing. */
+export const EXPERIENCE_SERVICE_ROWS: readonly RowConfig[] = [
+    {
+        id: 'experienceDirections',
+        labelKey: 'billing.comparison.row.experienceDirections',
+        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS },
+        status: 'available'
+    },
+    {
+        id: 'experienceCertificate',
+        labelKey: 'billing.comparison.row.experienceCertificate',
+        cell: { kind: 'entitlement', key: EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE },
+        status: 'available'
+    }
+];
+
+/**
+ * The rows both verticals share, differing only in which AI-chat cap they read.
+ *
+ * A function rather than two hand-written copies: the PDF row is identical and
+ * the chat row differs by exactly one key, so writing them out twice is two
+ * things to keep in step for one line of real difference.
+ *
+ * @param params.aiChatLimitKey - The vertical's own monthly AI-chat cap key.
+ * @returns The shared rows, bound to that vertical's cap.
+ */
+function commerceExtrasRows({
+    aiChatLimitKey
+}: {
+    readonly aiChatLimitKey: LimitKey;
+}): readonly RowConfig[] {
+    return [
+        {
+            id: 'listingPdf',
+            labelKey: 'billing.comparison.row.listingPdf',
+            cell: { kind: 'entitlement', key: EntitlementKey.DOWNLOAD_LISTING_PDF },
+            status: 'available'
+        },
+        {
+            id: 'aiChatCommerce',
+            labelKey: 'billing.comparison.row.aiChatCommerce',
+            cell: { kind: 'limit', key: aiChatLimitKey },
+            status: 'available'
+        }
+    ];
+}
+
+export const GASTRONOMY_GROUPS: readonly GroupConfig[] = [
+    { id: 'gastronomyListing', rows: GASTRONOMY_LISTING_ROWS },
+    { id: 'gastronomyMenu', rows: GASTRONOMY_MENU_ROWS },
+    {
+        id: 'commerceExtras',
+        rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })
+    }
+];
+
+export const EXPERIENCE_GROUPS: readonly GroupConfig[] = [
+    { id: 'experienceListing', rows: EXPERIENCE_LISTING_ROWS },
+    { id: 'experienceService', rows: EXPERIENCE_SERVICE_ROWS },
+    {
+        id: 'commerceExtras',
+        rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH })
+    }
+];
+
 /**
  * Minimum plan shape needed to resolve a cell. `PublicPlanData` satisfies it
  * structurally, so tests can build fixtures without the full API payload.

@@ -482,6 +482,38 @@
         "tourist-vip": {
             "name": "VIP",
             "description": "Suporte VIP, promoções exclusivas e contato direto por WhatsApp com as hospedagens."
+        },
+        "gastronomy-basico": {
+            "name": "Básico",
+            "description": "Publique seu estabelecimento com fotos, horários e contato. O necessário para ser encontrado."
+        },
+        "gastronomy-pro": {
+            "name": "Profissional",
+            "description": "Inclua o cardápio carregado na Hospeda, o prato do dia e os eventos do estabelecimento."
+        },
+        "gastronomy-premium": {
+            "name": "Premium",
+            "description": "Tudo o anterior com fotos por prato, cardápio em vários idiomas, ficha em PDF e chat com IA."
+        },
+        "experience-basico": {
+            "name": "Básico",
+            "description": "Publique seu passeio com fotos, horários e contato. O necessário para ser encontrado."
+        },
+        "experience-pro": {
+            "name": "Profissional",
+            "description": "Inclua as instruções de como chegar ao ponto de encontro e o certificado para quem participou."
+        },
+        "experience-premium": {
+            "name": "Premium",
+            "description": "Tudo o anterior com a ficha para baixar em PDF e o chat com IA."
+        },
+        "partner-silver": {
+            "name": "Silver",
+            "description": "Sua logo no carrossel de aliados e presença nas campanhas de redes e newsletter."
+        },
+        "partner-gold": {
+            "name": "Gold",
+            "description": "Tudo do nível anterior mais sua própria página dentro da Hospeda, com prioridade nas campanhas."
         }
     },
     "entitlement": {
@@ -554,7 +586,12 @@
             "experience": "Sua experiência",
             "asTourist": "Como viajante (incluído)",
             "asOwner": "Como anfitrião",
-            "aiBusiness": "IA para o seu negócio"
+            "aiBusiness": "IA para o seu negócio",
+            "gastronomyListing": "Seu estabelecimento na Hospeda",
+            "gastronomyMenu": "O cardápio",
+            "experienceListing": "Sua experiência na Hospeda",
+            "experienceService": "Antes e depois do passeio",
+            "commerceExtras": "Ferramentas extras"
         },
         "row": {
             "favorites": "Favoritos",
@@ -587,7 +624,22 @@
             "aiTranslate": "Traduções com IA por mês",
             "aiImport": "Importações com IA por mês",
             "aiChatOwner": "Consultas com IA por mês",
-            "aiSupport": "Assistente IA de suporte"
+            "aiSupport": "Assistente IA de suporte",
+            "maxGastronomies": "Estabelecimentos que você pode publicar",
+            "publishGastronomy": "Publicar seu estabelecimento",
+            "editGastronomyInfo": "Editar as informações do estabelecimento",
+            "gastronomyMenu": "Cardápio carregado na Hospeda",
+            "gastronomyDailySpecial": "Prato do dia",
+            "gastronomyEvents": "Eventos do estabelecimento",
+            "menuItemPhotos": "Fotos por prato",
+            "multilingualMenu": "Cardápio em vários idiomas",
+            "maxExperiences": "Experiências que você pode publicar",
+            "publishExperience": "Publicar sua experiência",
+            "editExperienceInfo": "Editar as informações da experiência",
+            "experienceDirections": "Como chegar ao ponto de encontro",
+            "experienceCertificate": "Certificado para quem participou",
+            "listingPdf": "Ficha para baixar em PDF",
+            "aiChatCommerce": "Consultas por chat com IA por mês"
         },
         "rowDesc": {
             "favorites": "Salve as acomodações de interesse para consultar mais tarde.",

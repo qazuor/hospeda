@@ -17,6 +17,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { SearchHistoryList } from '../../src/components/account/SearchHistoryList.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -295,7 +296,10 @@ describe('SearchHistoryList', () => {
             renderComponent();
             await waitFor(() => {
                 const link = screen.getByRole('link', { name: /ver planes/i });
-                expect(link).toHaveAttribute('href', '/es/suscriptores/planes/turistas/');
+                expect(link).toHaveAttribute(
+                    'href',
+                    `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`
+                );
             });
         });
     });

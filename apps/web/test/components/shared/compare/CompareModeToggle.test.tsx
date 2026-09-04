@@ -25,6 +25,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import type { CompareModeToggleProps } from '../../../../src/components/shared/compare/CompareModeToggle.client';
 import { CompareModeToggle } from '../../../../src/components/shared/compare/CompareModeToggle.client';
 import { buildAuthSnapshot } from '../../../helpers/auth-session';
@@ -113,7 +114,7 @@ vi.mock('../../../../src/components/shared/compare/CompareUpsellPopover.client',
             data-testid="compare-upsell-popover"
         >
             <p>{message}</p>
-            <a href="/es/suscriptores/planes/turistas/">{ctaLabel}</a>
+            <a href={`/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`}>{ctaLabel}</a>
             <button
                 type="button"
                 onClick={onClose}

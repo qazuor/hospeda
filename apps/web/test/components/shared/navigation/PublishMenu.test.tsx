@@ -49,11 +49,11 @@ describe('PublishMenu', () => {
         );
         expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
             'href',
-            '/es/publicar-restaurante/'
+            '/es/planes/gastronomia/'
         );
         expect(screen.getByRole('menuitem', { name: /experiencias/i })).toHaveAttribute(
             'href',
-            '/es/publicar-experiencia/'
+            '/es/planes/experiencias/'
         );
     });
 

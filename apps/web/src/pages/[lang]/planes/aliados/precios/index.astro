@@ -1,0 +1,187 @@
+---
+/**
+ * @file planes/aliados/precios/index.astro
+ * @description Partnership levels — level 3 of the three HOS-941 D-7 defines,
+ * and the one audience whose level 3 publishes no number.
+ *
+ * @route     /[lang]/planes/aliados/precios/
+ * @rendering SSR (prerender=false); edge-cacheable via the `pricing` cache
+ *   class, tagged `CACHE_TAG_PRICING` (HOS-941 R-5).
+ *
+ * ## Built from nothing, on purpose
+ *
+ * `/sumate/partner/` never showed a price, so unlike the two commerce verticals
+ * there was no block to move down here: this page is new (HOS-941 D-13). It
+ * keeps the family's structure — the same cards, the same order of sections —
+ * and replaces exactly one thing, the amount.
+ *
+ * ## Why "Consultar" and not "desde $15.000"
+ *
+ * The owner's reason, verbatim: the Municipality of Concepción del Uruguay and
+ * the corner shop are not charged the same, even taking the same level and
+ * receiving the same deliverables. Publishing a figure would not be
+ * simplifying — it would be publishing a price half the book is never quoted.
+ * The approved commercial presentation says the same thing in its own words
+ * ("los valores vigentes te los pasamos en la charla", "no es autoservicio y es
+ * a propósito").
+ *
+ * This is the same shape the free tourist tier already uses when it prints
+ * "Gratis" where a number goes: `priceMode="consult"` replaces the amount and
+ * the annual toggle, and leaves every other part of the card alone.
+ *
+ * ## Three things this page must not do
+ *
+ * - **Never name the tier.** Silver and gold decide what a partner gets; they
+ *   are not public vocabulary and `partners.tier` is rendered on no surface.
+ *   The cards carry the plan NAMES from the catalogue, which is what the
+ *   catalogue already calls them.
+ * - **No `PriceSpecificationJsonLd`.** Structured data announcing ARS 15.000
+ *   would publish, machine-readably, the figure the visible page deliberately
+ *   withholds — and it is the copy a search result would quote.
+ * - **No comparison table.** Every partner tier carries `entitlements: []` and
+ *   `limits: []`, because what separates them is the `/partners/<slug>/` page,
+ *   which the entitlement engine knows nothing about. A table built from those
+ *   rows would be a wall of "no incluido" under-selling both.
+ *   `PlanComparisonTable` refuses `'partner'` by type so this cannot be added
+ *   back by analogy.
+ *
+ * ## What DOES differentiate the two levels here
+ *
+ * The plan DESCRIPTION, and nothing else — silver's names the carousel and the
+ * campaigns, gold's names the own page on top of them. That is deliberate and
+ * it is also the whole reason those descriptions had to be translated: the same
+ * empty `entitlements` that makes a comparison table useless makes the card's
+ * bullet list empty, so the description is the only surface left that can tell
+ * a reader what they get.
+ *
+ * Two facts, one cause. An earlier draft of this file justified omitting the
+ * table by saying "the cards already list what each level gives" — they did
+ * not, for exactly the reason the table was being omitted. The delta heading
+ * that used to sit above that empty list ("Este plan incluye:") is now gated on
+ * there being a list, so the card no longer announces one that never follows.
+ *
+ * The CTA goes to the lead form, not a checkout: a partnership is agreed in a
+ * conversation. The systems behind that conversation — per-partner pricing and
+ * charges outside MercadoPago (HOS-1062), and the statistics the presentation
+ * promises (HOS-1063) — are open and neither blocks this page.
+ */
+
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { MegaphoneIcon, StarIcon, UsersIcon } from '@repo/icons';
+import AudiencePricingSections from '@/components/billing/AudiencePricingSections.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import {
+    buildBillingFaqJsonLd,
+    buildPricingBreadcrumbs,
+    resolvePricingPageContent
+} from '@/lib/billing/pricing-page-content';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE, getIntlLocale } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+/**
+ * Silver and gold, and NOT `partner-listing`.
+ *
+ * The exclusion is `fetchAudiencePlans`'s, read off `PARTNER_TIER_PLAN_SLUG` —
+ * the one place that maps a partner tier to a plan. `partner-listing` predates
+ * the tiers and is kept ACTIVE on purpose because live partner rows still point
+ * at it, so a naive fetch of the partner domain would put a third card on this
+ * page for an offer nobody can take.
+ */
+const plans = await fetchAudiencePlans({ audience: 'partner' });
+const { copyRoot, faqs, hasComparison } = resolvePricingPageContent({
+    audience: 'partner',
+    plans,
+    translators: { t, tPlural }
+});
+
+const intlLocale = getIntlLocale(locale);
+const pagePath = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.partner });
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+
+/**
+ * The lead form, which is where a partnership actually starts. `/sumate/partner/`
+ * is that form's URL today; it is slated for a 301 into this family, and when
+ * that lands this line is what moves.
+ */
+const ctaHref = buildUrl({ locale, path: 'sumate/partner' });
+
+const title = t(`${copyRoot}.pageTitle`);
+const description = t(`${copyRoot}.pageDescription`);
+
+/**
+ * One trail, rendered twice — visibly and as `BreadcrumbList` structured data.
+ * Derived from a single source so the crumb a reader sees and the one a search
+ * result quotes cannot describe different paths.
+ */
+const breadcrumbs = buildPricingBreadcrumbs({
+    homeLabel: t('nav.home', 'Inicio'),
+    homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
+    salesLabel: t('partners.landing.meta.title'),
+    salesPath: 'planes/aliados',
+    salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/aliados' })}`,
+    pageLabel: title,
+    pageUrl: `${siteOrigin}${pagePath}`
+});
+
+const headingFull = t(`${copyRoot}.heading`);
+const headingWords = headingFull.trim().split(/\s+/);
+const headingAccent = headingWords.pop() ?? headingFull;
+const headingMain = headingWords.join(' ');
+---
+
+<MarketingLayout locale={locale} title={title} description={description}>
+    {/*
+        The billing FAQ is the ONLY structured data here. See the docblock: a
+        `PriceSpecification` would publish the amount this page withholds by
+        decision, in the field a search result quotes.
+    */}
+    <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
+
+    <Breadcrumbs locale={locale} items={breadcrumbs.visible} />
+
+    <MarketingHero
+        tagline={t(`${copyRoot}.tagline`)}
+        titleMain={headingMain}
+        titleAccent={headingAccent}
+        subtitle={t(`${copyRoot}.subtitle`)}
+    >
+        <Fragment slot="icon-1"><UsersIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-2"><MegaphoneIcon size="md" weight="duotone" /></Fragment>
+        <Fragment slot="icon-3"><StarIcon size="md" weight="duotone" /></Fragment>
+    </MarketingHero>
+
+    <AudiencePricingSections
+        locale={locale}
+        audience="partner"
+        plans={plans}
+        intlLocale={intlLocale}
+        copyRoot={copyRoot}
+        faqs={faqs}
+        hasComparison={hasComparison}
+        ctaMode="link"
+        ctaHref={ctaHref}
+        priceMode="consult"
+    />
+</MarketingLayout>

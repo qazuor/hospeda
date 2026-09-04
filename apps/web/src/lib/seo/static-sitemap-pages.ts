@@ -48,49 +48,60 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // Conversion funnel: plans and publishing.
     //
     // HOS-942 turned `/suscriptores/planes/` into the five-audience INDEX and
-    // moved the two pricing pages under it. The index keeps the highest priority
-    // of the three because it is the entry point that reaches every vertical;
-    // the two audience pages carry the priority their old URLs had.
+    // moved the two pricing pages under it. HOS-1032 then moved every pricing
+    // page again, into the `/planes/` namespace HOS-941 D-8 settled on, so the
+    // family is now three levels deep and each level is listed here once:
+    //
+    //   /suscriptores/planes/       index      (H8 moves it to `/planes/`)
+    //   /planes/<audiencia>/        sales      (level 2, HOS-985)
+    //   /planes/<audiencia>/precios/  pricing  (level 3, HOS-1032)
+    //
+    // The URLs that used to serve pricing — `/suscriptores/planes/anfitriones/`,
+    // `/suscriptores/planes/turistas/`, both `/comparar/` pages, and the two
+    // `/publicar-*` landings — are 301s now and LEFT this list, because a
+    // sitemap advertising a redirect asks a crawler to spend a request learning
+    // the URL moved. They are classified below in the exclusion map instead,
+    // which is what keeps the guard from flagging them as unclassified pages.
     { path: '/suscriptores/planes/', changefreq: 'weekly', priority: 0.8 },
-    { path: '/suscriptores/planes/anfitriones/', changefreq: 'weekly', priority: 0.8 },
-    { path: '/suscriptores/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/suscriptores/planes/comparar/', changefreq: 'monthly', priority: 0.7 },
-    { path: '/suscriptores/turistas/comparar/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/publicar-restaurante/', changefreq: 'monthly', priority: 0.7 },
     // HOS-985: level 2 of the three-level structure (HOS-941 D-7) — the sales
     // page for a vertical, with its prices one level below at
     // `/planes/<audiencia>/precios/`. `gastronomia`, not `restaurantes`: D-9,
     // because HOS-986 is open over "restaurante" reading as excluding food
     // trucks, rotiserías and parrillas, and a URL is the most expensive place
-    // to carry that word. `/publicar-restaurante/` above 301s here once the
-    // retirement lands, and leaves this list at that point — both are listed
-    // meanwhile because both still answer 200.
+    // to carry that word.
     { path: '/planes/gastronomia/', changefreq: 'monthly', priority: 0.7 },
-    { path: '/publicar-experiencia/', changefreq: 'monthly', priority: 0.7 },
     // HOS-985: the experience vertical's own level-2 sales page, alongside
-    // gastronomy's above. Same split, same reason: `/publicar-experiencia/`
-    // 301s here once its retirement lands; both are listed meanwhile.
+    // gastronomy's above.
     { path: '/planes/experiencias/', changefreq: 'monthly', priority: 0.7 },
-    // HOS-985: the host-audience level-2 sales page. Unlike the two commerce
-    // verticals it does not sit above a not-yet-built `/precios/` page — its
-    // CTAs point at the existing `/suscriptores/planes/anfitriones/` pricing
-    // grid — but it is still a NEW indexable URL. It inherits the priority the
-    // retired `/suscriptores/propietarios/` landing carried, since it is the
-    // page that URL now 301s to.
+    // HOS-985: the host-audience level-2 sales page. It inherits the priority
+    // the retired `/suscriptores/propietarios/` landing carried, since it is
+    // the page that URL now 301s to.
     { path: '/planes/anfitriones/', changefreq: 'monthly', priority: 0.8 },
     // HOS-985: the traveller audience's level-2 sales page. It is the only one
-    // of the five that had NO landing before — `/suscriptores/turistas/` 301s
-    // straight to the price grid — so this is a genuinely new indexable URL
-    // rather than a relocation, and nothing here replaces an entry above.
+    // of the five that had NO landing before, so it is a genuinely new
+    // indexable URL rather than a relocation.
     { path: '/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
-    // HOS-985: the partner audience's level-2 sales page. It is the fifth and
-    // last of the family, and the only one whose CTA opens a lead form instead
-    // of a price grid — a partnership is agreed in a conversation, so there is
-    // no figure to publish (D-13). `/sumate/partner/` below still answers 200
-    // and keeps its entry: it holds the form this page sends people to, and
-    // cannot 301 here until H7 gives that form a home inside the family.
+    // HOS-985: the partner audience's level-2 sales page. `/sumate/partner/`
+    // below still answers 200 and keeps its entry: it holds the lead form both
+    // partner pages send people to, and cannot 301 into this family until that
+    // form has a home inside it.
     { path: '/planes/aliados/', changefreq: 'monthly', priority: 0.8 },
+
+    // HOS-1032: level 3 — the five pricing pages. They carry the priority the
+    // URLs they replace had, because they are the same content at a new
+    // address, and each is the page that answers "cuánto cuesta …" for its
+    // audience, which is a search intent distinct from its sales page's.
+    //
+    // The three verticals' entries are NEW rather than relocated: no pricing URL
+    // ever existed for gastronomy, experiences or aliados. Their price moved
+    // DOWN out of a landing that keeps serving, rather than ACROSS from a page
+    // that stopped — which is also why no redirect points at them.
+    { path: '/planes/anfitriones/precios/', changefreq: 'weekly', priority: 0.8 },
+    { path: '/planes/turistas/precios/', changefreq: 'monthly', priority: 0.8 },
+    { path: '/planes/gastronomia/precios/', changefreq: 'monthly', priority: 0.7 },
+    { path: '/planes/experiencias/precios/', changefreq: 'monthly', priority: 0.7 },
+    { path: '/planes/aliados/precios/', changefreq: 'monthly', priority: 0.7 },
 
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },
@@ -175,12 +186,29 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     // Host-only draft creation form; redirects anonymous visitors to login.
     '/publicar/nueva/': 'auth-guarded',
 
-    // Redirect-only since HOS-942: the tourist pricing page moved to
-    // `/suscriptores/planes/turistas/` and this URL 301s there. It must leave
-    // the sitemap in the SAME change that turns it into a redirect — a sitemap
-    // that keeps advertising it would be handing crawlers a URL that never
-    // serves content again.
+    // Redirect-only since HOS-942, retargeted by HOS-1032: the tourist pricing
+    // page went to `/suscriptores/planes/turistas/` and then on to
+    // `/planes/turistas/precios/`, and this URL now 301s straight to the latter
+    // rather than chaining through the former. It must stay out of the sitemap
+    // — one that keeps advertising it would be handing crawlers a URL that
+    // never serves content again.
     '/suscriptores/turistas/': 'transactional',
+
+    // Redirect-only since HOS-1032. The five pricing URLs the `/planes/`
+    // namespace replaced (HOS-941 D-8), plus the two comparison pages whose
+    // table moved onto the pricing page itself (D-11) and the two commerce
+    // landings whose price block moved down a level (D-9 for the slug).
+    //
+    // All seven leave the sitemap in the SAME change that turns them into
+    // redirects. Their successors are listed above; a sitemap naming both would
+    // be advertising two URLs for one page and spending a crawl request to
+    // learn that one of them moved.
+    '/suscriptores/planes/anfitriones/': 'transactional',
+    '/suscriptores/planes/turistas/': 'transactional',
+    '/suscriptores/planes/comparar/': 'transactional',
+    '/suscriptores/turistas/comparar/': 'transactional',
+    '/publicar-restaurante/': 'transactional',
+    '/publicar-experiencia/': 'transactional',
 
     // Redirect-only since HOS-985: the owner landing was retired (HOS-941
     // D-12 — it was `/publicar/` minus the auth-aware parts, reading the same

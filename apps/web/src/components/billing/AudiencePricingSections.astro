@@ -1,0 +1,215 @@
+---
+/**
+ * @file AudiencePricingSections.astro
+ * @description The body every `/planes/<audiencia>/precios/` page shares:
+ * grid → comparison → billing FAQ → closing CTA, in that order (HOS-1032
+ * AC-44). The five pages supply their own layout, hero, breadcrumbs and SEO;
+ * everything below the hero is this component.
+ *
+ * ## Why the shared piece is the SECTIONS and not the whole page
+ *
+ * The hero differs per audience in ways that are the point rather than an
+ * accident — its icons, and above all its `<title>` and `<h1>`, which HOS-941
+ * D-8 requires to speak by INTENT and not by taxonomy ("Precios para publicar
+ * tu local gastronómico", never "Planes de gastronomía"). Absorbing the hero
+ * here would push those five headings into a lookup table, which is how they
+ * end up sounding like five rows of one table. The sections below it have no
+ * such tension: they are the same page five times, so they are one file.
+ *
+ * ## The order is the deliverable
+ *
+ * D-7 splits level 2 from level 3 precisely so a visitor who has already
+ * decided does not scroll a brochure to reach the grid. That only pays off if
+ * the grid is FIRST here — which is why the annual toggle and the cards lead,
+ * the comparison sits directly under them (D-11: its job is "which of these
+ * three", the level-3 question, and it has no URL of its own because nobody
+ * searches for a comparison table), and the billing FAQ answers what is left
+ * after the tier is chosen.
+ */
+
+import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
+import PlanComparisonTable from '@/components/billing/PlanComparisonTable.astro';
+import FaqSection from '@/components/marketing/FaqSection.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import type { PricingAudience } from '@/lib/billing-i18n';
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import type { BillingFaqItem } from '@/lib/billing/pricing-page-content';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** This page's audience — decides card grouping, copy and CTA wiring. */
+    readonly audience: PricingAudience;
+    /** The audience's active plans, cheapest-first (`fetchAudiencePlans`). */
+    readonly plans: readonly PublicPlanData[];
+    /** BCP-47 tag for `Intl.NumberFormat`, from `getIntlLocale`. */
+    readonly intlLocale: string;
+    /** i18n root for this page's copy, e.g. `pricing.gastronomy`. */
+    readonly copyRoot: string;
+    /** Billing FAQ, already resolved (`resolvePricingPageContent`). */
+    readonly faqs: readonly BillingFaqItem[];
+    /** Whether to render the comparison table (see the content module). */
+    readonly hasComparison: boolean;
+    /**
+     * How each card's CTA behaves. Forwarded verbatim to `PricingCardsGrid` —
+     * see its `ctaMode` prop for why the three audiences HOS-1032 added need a
+     * link rather than the purchase island.
+     */
+    readonly ctaMode?: 'checkout' | 'link';
+    /** Required when `ctaMode` is `'link'`: where every CTA points. */
+    readonly ctaHref?: string;
+    /** `'consult'` replaces the amount with "Consultar" (aliados, D-13). */
+    readonly priceMode?: 'amount' | 'consult';
+}
+
+const {
+    locale,
+    audience,
+    plans,
+    intlLocale,
+    copyRoot,
+    faqs,
+    hasComparison,
+    ctaMode = 'checkout',
+    ctaHref,
+    priceMode = 'amount'
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+
+const hasPlans = plans.length > 0;
+/**
+ * `ctaLabel` and not `cta`: `pricing.owner.cta` and `pricing.tourist.cta` are
+ * OBJECTS (the closing section's title plus its pluralised description) and
+ * predate this component. `ctaLabel` is a plain string in all five audiences,
+ * which is what lets one `copyRoot` resolve it for every page.
+ */
+const ctaLabel = t(`${copyRoot}.ctaLabel`);
+
+/**
+ * Where the closing CTA sends a reader who scrolled past everything.
+ *
+ * Under `'link'` it is the same destination the cards carry. Under
+ * `'checkout'` there is no single destination — the purchase starts from a
+ * specific card — so the closing section sends them back to the grid rather
+ * than inventing a tier for them.
+ */
+const closingCtaHref = ctaMode === 'link' ? ctaHref : '#pricing-cards';
+
+/**
+ * The audience the comparison table is rendered FOR, or `null` when there is
+ * none to render.
+ *
+ * Narrowed here rather than in the template because `PlanComparisonTable`
+ * refuses `'partner'` by type, and the alternative — substituting `'owner'`
+ * inline to satisfy the compiler — would silently render the ACCOMMODATION rows
+ * against partner columns if `hasComparison` ever became true for aliados. A
+ * `null` renders nothing, which is the honest failure.
+ */
+const comparisonAudience = audience === 'partner' ? null : audience;
+---
+
+{/*
+    `aria-label` and not `aria-labelledby`: the heading that names this section
+    lives inside `PricingCardsGrid` as an `.sr-only` `<h2>` and carries no `id`,
+    so the two pricing pages this family replaces had been pointing
+    `aria-labelledby` at an element that does not exist — a dangling reference
+    leaves the section with NO accessible name at all. Naming it directly is
+    both correct and one less thing to keep in step across two files.
+*/}
+<section class="pricing-cards section" id="pricing-cards" aria-label={t(`${copyRoot}.cardsHeading`)}>
+    <PricingCardsGrid
+        locale={locale}
+        plans={plans}
+        intlLocale={intlLocale}
+        audience={audience}
+        sectionHeading={t(`${copyRoot}.cardsHeading`)}
+        emptyMessage={t(`${copyRoot}.empty`)}
+        emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
+        emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
+        ctaText={ctaLabel}
+        ctaMode={ctaMode}
+        ctaHref={ctaHref}
+        priceMode={priceMode}
+    />
+</section>
+
+{/*
+    The comparison lives HERE and has no URL of its own (HOS-941 D-11 refining
+    D-4). Both `/planes/comparar/` and `/turistas/comparar/` are retired: a
+    click almost nobody takes was hiding the densest content on the page from
+    both readers and crawlers, and "tabla comparativa de planes" is not a search
+    anybody performs, so the separate URL captured no intent it could lose.
+
+    Gated on `hasComparison` rather than on the audience: aliados has no curated
+    rows to compare (see `pricing-page-content.ts`), and an audience whose
+    catalogue failed to load has no columns, which would render a table of one
+    empty header row.
+*/}
+{hasComparison && comparisonAudience && (
+    <section class="pricing-comparison section section--warm" aria-labelledby="pricing-comparison-heading">
+        <div class="section__container">
+            <h2 class="pricing-comparison__title" id="pricing-comparison-heading">
+                {/*
+                    `sectionTitle`, not `comparison.<audiencia>.title`: those
+                    name a PAGE and only two of the five audiences ever had one.
+                    No fallback argument — a hardcoded one is served verbatim
+                    under /en and /pt (`resolve()` uses it directly, with no
+                    per-locale chain), so it would render Spanish on an English
+                    page. `check:i18n-key-coverage` fails on exactly that.
+                */}
+                {t('pricing.comparison.sectionTitle')}
+            </h2>
+            <PlanComparisonTable
+                locale={locale}
+                plans={plans}
+                audience={comparisonAudience}
+                intlLocale={intlLocale}
+                ctaHref={ctaHref}
+            />
+        </div>
+    </section>
+)}
+
+<FaqSection
+    tagline={t('pricing.billingFaq.tagline')}
+    title={t('pricing.billingFaq.title')}
+    items={faqs}
+/>
+
+{hasPlans && closingCtaHref && (
+    <section class="pricing-closing section section--warm">
+        <div class="pricing-closing__container section__container">
+            <h2 class="pricing-closing__title">{t(`${copyRoot}.subtitle`)}</h2>
+            <GradientButton href={closingCtaHref} label={ctaLabel} variant="primary" icon="true" />
+        </div>
+    </section>
+)}
+
+<style>
+    .pricing-comparison__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        text-align: center;
+        margin: 0 0 var(--space-6);
+    }
+
+    .pricing-closing__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+        text-align: center;
+    }
+
+    .pricing-closing__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-6);
+    }
+</style>

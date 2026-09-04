@@ -1,31 +1,51 @@
 ---
 /**
  * @file suscriptores/turistas/index.astro
- * @description Permanent redirect to the tourist pricing page's new home,
- * `/suscriptores/planes/turistas/` (HOS-942 AC-4).
+ * @description Permanent redirect to the traveller pricing page,
+ * `/planes/turistas/precios/`.
  *
- * The page itself moved under `/suscriptores/planes/` when that path became the
- * five-audience index. This URL has been the tourist pricing page since
- * SPEC-096 and is linked from a dozen in-product upsells plus whatever is
- * bookmarked or indexed, so it changes LOCATION — hence 301, the status that
- * transfers the ranking signal, rather than a 302 or a 404.
+ * ## Retargeted, not chained (HOS-1032 AC-51)
  *
- * Contrast `/suscriptores/planes/` itself, which deliberately carries NO
- * redirect (AC-5): that URL changed CONTENT, not location — it still serves a
- * page, just the audience index instead of owner pricing.
+ * This URL has been the traveller pricing page since SPEC-096 and is linked
+ * from a dozen in-product upsells plus whatever is bookmarked or indexed. HOS-942
+ * pointed it at `/suscriptores/planes/turistas/`; HOS-1032 moved THAT page into
+ * the `/planes/` namespace, which would have left this URL redirecting to a URL
+ * that redirects.
  *
- * `/suscriptores/turistas/comparar/` is untouched and still serves the tourist
- * comparison table; only this index moved.
+ * Two 301s in a row is not a broken link, which is exactly what makes it easy to
+ * ship: it works in a browser. What it costs is a second round trip on every
+ * follow and a slice of the ranking signal the first hop was supposed to
+ * transfer — the first thing an SEO audit flags. So the target was rewritten to
+ * the FINAL destination rather than left pointing at the intermediate one. This
+ * is the same one-hop guarantee `legacy-redirects.ts` composes for the `/blog`
+ * aliases, applied by hand because these redirects are pages rather than string
+ * transforms.
  *
- * @route /{lang}/suscriptores/turistas/
+ * `/suscriptores/turistas/comparar/` no longer serves the comparison table
+ * either — it moved onto the pricing page itself (HOS-941 D-11) and that URL
+ * redirects to the same destination as this one.
+ *
+ * @route     /{lang}/suscriptores/turistas/
  * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
-import { buildUrl } from '@/lib/urls';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale;
 
-return Astro.redirect(buildUrl({ locale, path: 'suscriptores/planes/turistas' }), 301);
+// The query string is FORWARDED, not rebuilt away. `?interval=` on the
+// trial-ending nudge is the live case: dropping it shows monthly prices to a
+// customer who chose annual, and nothing about the redirect looks wrong when it
+// happens. See `lib/pricing-redirect.ts`.
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
+        search: Astro.url.search
+    }),
+    301
+);
 ---

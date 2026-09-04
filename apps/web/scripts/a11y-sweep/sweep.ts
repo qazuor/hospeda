@@ -79,21 +79,33 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // markup as before at new URLs, so dropping either would silently retire
     // coverage this baseline already had.
     { url: '/es/suscriptores/planes/', name: 'Plans Index' },
-    { url: '/es/suscriptores/planes/anfitriones/', name: 'Pricing Host' },
-    { url: '/es/suscriptores/planes/turistas/', name: 'Pricing Tourist' },
-    // HOS-690: the two commerce vertical landings now carry benefits/price/FAQ
-    // content (rebuilt from hero+lead-form), and the new dropdown they sit
-    // behind in the header is exactly the kind of widget this baseline exists
-    // to police.
-    { url: '/es/publicar-restaurante/', name: 'Publish Restaurant Landing' },
+    // HOS-985: the five level-2 sales pages, built from the same
+    // SalesSection-based components. `/publicar-restaurante/` and
+    // `/publicar-experiencia/` used to be audited here and were dropped by
+    // HOS-1032, which turned them into 301s — a redirect has no markup to audit
+    // and axe would run against whatever it lands on, double-counting the page
+    // that IS listed.
     { url: '/es/planes/gastronomia/', name: 'Sales Gastronomy' },
-    { url: '/es/publicar-experiencia/', name: 'Publish Experience Landing' },
-    // HOS-985: the two new level-2 sales pages built from the same
-    // SalesSection-based components as Sales Gastronomy above.
     { url: '/es/planes/experiencias/', name: 'Sales Experience' },
     { url: '/es/planes/anfitriones/', name: 'Sales Host' },
     { url: '/es/planes/turistas/', name: 'Sales Tourist' },
     { url: '/es/planes/aliados/', name: 'Sales Partner' },
+    // HOS-1032: the five level-3 pricing pages, replacing the two
+    // `/suscriptores/planes/<audiencia>/` entries this list used to carry.
+    //
+    // All five are audited and not just the two that moved, because each one
+    // renders a DIFFERENT combination of the grid's branches: the annual toggle
+    // (a radiogroup) appears only where a plan has an annual price, the
+    // comparison table (a scrollable region with a sticky header) only where
+    // the audience has curated rows, and aliados renders neither — it is the
+    // only page where the card CTA is a plain link and the price is replaced by
+    // "Consultar". Auditing one and assuming the rest would leave the branches
+    // this change actually added uncovered.
+    { url: '/es/planes/anfitriones/precios/', name: 'Pricing Host' },
+    { url: '/es/planes/turistas/precios/', name: 'Pricing Tourist' },
+    { url: '/es/planes/gastronomia/precios/', name: 'Pricing Gastronomy' },
+    { url: '/es/planes/experiencias/precios/', name: 'Pricing Experience' },
+    { url: '/es/planes/aliados/precios/', name: 'Pricing Partner' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];

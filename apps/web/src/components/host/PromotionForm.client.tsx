@@ -37,6 +37,7 @@ import type { OwnerPromotionData } from '@/lib/api/types';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PromotionForm.module.css';
 
@@ -255,7 +256,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     }, []);
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
-    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes/anfitriones' });
+    const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
     function handleChange(
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

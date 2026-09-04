@@ -1402,9 +1402,7 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'annual'
             });
-            expect(url).toBe(
-                'https://example.test/es/suscriptores/planes/anfitriones/?interval=annual'
-            );
+            expect(url).toBe('https://example.test/es/planes/anfitriones/precios/?interval=annual');
         });
 
         it('appends ?interval=monthly for a valid monthly intent', () => {
@@ -1413,13 +1411,13 @@ describe('TrialService', () => {
                 intendedInterval: 'monthly'
             });
             expect(url).toBe(
-                'https://example.test/es/suscriptores/planes/anfitriones/?interval=monthly'
+                'https://example.test/es/planes/anfitriones/precios/?interval=monthly'
             );
         });
 
         it('omits the query param when intendedInterval is undefined', () => {
             const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/anfitriones/');
+            expect(url).toBe('https://example.test/es/planes/anfitriones/precios/');
         });
 
         it('omits the query param for an unrecognized value (defensive against malformed metadata)', () => {
@@ -1427,13 +1425,27 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'weekly'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/anfitriones/');
+            expect(url).toBe('https://example.test/es/planes/anfitriones/precios/');
         });
 
         it('points at the owner pricing page, not /mi-cuenta/suscripcion (which has no toggle)', () => {
             const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
             expect(url).not.toContain('/mi-cuenta/suscripcion');
-            expect(url).toContain('/suscriptores/planes/');
+            expect(url).toContain('/planes/anfitriones/precios/');
+        });
+
+        it('does NOT point at a URL that redirects (HOS-1032)', () => {
+            // The nudge is the ONE live consumer of `?interval=`, and every
+            // retired pricing URL drops the query string on its 301 — so a stale
+            // path here would not 404, it would silently show monthly prices to
+            // a customer who chose annual. That is the whole reason this URL had
+            // to move rather than be left to redirect.
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'annual'
+            });
+            expect(url).not.toContain('/suscriptores/');
+            expect(url).toContain('?interval=annual');
         });
     });
 

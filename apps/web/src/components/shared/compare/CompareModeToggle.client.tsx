@@ -45,6 +45,7 @@ import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import {
     loadCompareModeFromStorage,
     toggleCompareMode,
@@ -125,7 +126,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', c
         : t('accommodations.comparison.mode.off', 'Modo comparación desactivado');
 
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
+    const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     /**
      * Safely resolves the current page URL for the auth return-redirect.

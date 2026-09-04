@@ -23,7 +23,14 @@
 import { CheckIcon, MinusIcon } from '@repo/icons';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
-import { OWNER_GROUPS, TOURIST_GROUPS, resolveCell } from '@/components/billing/plan-comparison-rows';
+import {
+	EXPERIENCE_GROUPS,
+	GASTRONOMY_GROUPS,
+	OWNER_GROUPS,
+	TOURIST_GROUPS,
+	resolveCell
+} from '@/components/billing/plan-comparison-rows';
+import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
@@ -35,11 +42,29 @@ import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 interface Props {
 	readonly locale: SupportedLocale;
 	readonly plans: readonly PublicPlanData[];
-	readonly audience: 'owner' | 'tourist';
+	/**
+	 * Which audience's curated rows to render.
+	 *
+	 * `'partner'` is deliberately NOT accepted (HOS-1032). Every partner tier
+	 * carries `entitlements: []` and `limits: []` — what separates silver from
+	 * gold is the `/partners/<slug>/` page, which the entitlement engine knows
+	 * nothing about — so a comparison table for aliados would be a wall of "no"
+	 * that under-sells both tiers. The plan cards already list what each level
+	 * gives (HOS-941 D-13), which is the job this table would be doing. The type
+	 * is what stops that table from being added by analogy later.
+	 */
+	readonly audience: Exclude<PricingAudience, 'partner'>;
 	readonly intlLocale: string;
+	/**
+	 * Where each column's CTA points for a NON-accommodation audience, where
+	 * there is no in-page checkout to start. Ignored (and unnecessary) for
+	 * `owner` / `tourist`, which mount `<PlanPurchaseButton>` instead. Omitted
+	 * renders no CTA at all rather than a dead link.
+	 */
+	readonly ctaHref?: string;
 }
 
-const { locale, plans, audience, intlLocale } = Astro.props;
+const { locale, plans, audience, intlLocale, ctaHref } = Astro.props;
 const { t } = createTranslations(locale);
 
 // HOS-937 review fix: same SSR gate as PricingCardsGrid.astro — resolves
@@ -52,14 +77,36 @@ const notIncludedLabel = t('billing.comparison.notIncluded', 'No incluido');
 const includedLabel = t('billing.comparison.included', 'Incluido');
 const upcomingLabel = t('billing.comparison.upcoming', 'Próximamente');
 
+const isAccommodationAudience = audience === 'owner' || audience === 'tourist';
+
 // Complex plans are included by the /planes/comparar/ page but must NOT appear
 // as columns in this table. Re-filter through the shared helper so the columns
 // are always active-only and sortOrder-sorted regardless of what the caller
 // passed; we render a teaser for the complex plans below instead.
-// `audience` is already 'owner' | 'tourist', which are both PlanCategory values.
-const activePlans = filterPlansByCategory(plans, audience);
+//
+// That helper filters on `category`, which only discriminates the two
+// accommodation audiences — every commerce and partner plan carries
+// `category: 'owner'` to satisfy `PlanCategory`'s type, and their real
+// discriminator is `product_domain`, applied server-side by `?domain=` before
+// the rows ever reach this component (HOS-1032). Running them through
+// `filterPlansByCategory(plans, 'gastronomy')` would match nothing and render
+// an empty table, so the vertical audiences keep the same active-only,
+// sortOrder-sorted guarantee applied directly instead.
+const activePlans = isAccommodationAudience
+	? filterPlansByCategory(plans, audience)
+	: plans
+			.filter((plan) => plan.isActive)
+			.slice()
+			.sort((a, b) => a.sortOrder - b.sortOrder);
 
-const groups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
+const GROUPS_BY_AUDIENCE = {
+	owner: OWNER_GROUPS,
+	tourist: TOURIST_GROUPS,
+	gastronomy: GASTRONOMY_GROUPS,
+	experience: EXPERIENCE_GROUPS
+} as const;
+
+const groups = GROUPS_BY_AUDIENCE[audience];
 
 function formatPriceArs(cents: number): string {
 	if (cents === 0) return t('pricing.free', 'Gratis');
@@ -92,18 +139,48 @@ function formatPriceArs(cents: number): string {
 							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
 						)}
 						<span class="comparison-table__plan-cta">
-							<PlanPurchaseButton
-								client:load
-								planSlug={plan.slug}
-								monthlyPrice={plan.monthlyPriceArs}
-								annualPrice={plan.annualPriceArs ?? null}
-								currency="ARS"
-								ctaText={t('pricing.comparison.cta', 'Elegir plan')}
-								locale={locale}
-								plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
-								showPromo={false}
-								ownPreapprovalEnabled={ownPreapprovalEnabled}
-							/>
+							{/*
+								Same rule as `PricingCardsGrid`'s `ctaMode` (HOS-1032): a
+								commerce tier is not bought from a marketing page — the
+								checkout runs through the listing create flow, and its tier
+								picker lives there. Mounting the purchase island here would
+								put a "pay now" control on a plan whose payment does not
+								start at this URL, and ship React to render it.
+							*/}
+							{isAccommodationAudience ? (
+								/*
+									`client:visible`, not `client:load` (HOS-1032). This
+									table used to be the whole of its own page, where
+									eager hydration was the right call. It now renders
+									BELOW the card grid on the pricing page, which mounts
+									one purchase island per card already — so `client:load`
+									here doubled the eager React on the most
+									conversion-critical page on the site to hydrate three
+									buttons nobody has scrolled to yet.
+
+									Nothing is lost: the island is interactive by the time
+									it is on screen, and the column's price and label are
+									server-rendered either way.
+								*/
+								<PlanPurchaseButton
+									client:visible
+									planSlug={plan.slug}
+									monthlyPrice={plan.monthlyPriceArs}
+									annualPrice={plan.annualPriceArs ?? null}
+									currency="ARS"
+									ctaText={t('pricing.comparison.cta', 'Elegir plan')}
+									locale={locale}
+									plansPath={PRICING_PAGE_PATH_BY_AUDIENCE[audience]}
+									showPromo={false}
+									ownPreapprovalEnabled={ownPreapprovalEnabled}
+								/>
+							) : (
+								ctaHref && (
+									<a class="comparison-table__plan-link" href={ctaHref}>
+										{t('pricing.comparison.cta', 'Elegir plan')}
+									</a>
+								)
+							)}
 						</span>
 					</th>
 				))}
@@ -271,6 +348,27 @@ function formatPriceArs(cents: number): string {
 	.comparison-table__plan-cta {
 		display: block;
 		margin-top: var(--space-3);
+	}
+
+	/* The commerce-audience CTA (HOS-1032): a plain link where the
+	   accommodation audiences mount the purchase island. Styled to read as the
+	   same control so a column does not look unfinished next to one that has a
+	   button — the difference is where it goes, not how important it is. */
+	.comparison-table__plan-link {
+		display: inline-block;
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-button);
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease-in-out;
+	}
+
+	.comparison-table__plan-link:hover {
+		opacity: 0.85;
 	}
 
 	/* OQ-5: mobile-only hint that the table scrolls horizontally. Hidden on

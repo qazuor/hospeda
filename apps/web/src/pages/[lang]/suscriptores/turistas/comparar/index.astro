@@ -1,164 +1,33 @@
 ---
 /**
  * @file suscriptores/turistas/comparar/index.astro
- * @description Tourist plan comparison page. Renders a detailed table with all
- * entitlements and limits for each tourist plan, so users can compare features
- * side by side before choosing a plan.
+ * @description Permanent redirect to `/planes/turistas/precios/`, where the
+ * traveller comparison table now lives (HOS-941 D-4 + D-11).
  *
- * @route /{lang}/suscriptores/turistas/comparar/
- * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
- *   time; edge-cacheable, TTL from the `pricing` cache class.
+ * See `/suscriptores/planes/comparar/index.astro` for the rationale — same
+ * decision, other audience.
+ *
+ * @route     /{lang}/suscriptores/turistas/comparar/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import PlanComparisonTable from '@/components/billing/PlanComparisonTable.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { getIntlLocale } from '@/lib/pricing-plans';
-import { buildUrl } from '@/lib/urls';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
-import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { BeachUmbrellaIcon, CompassIcon, CheckCircleIcon } from '@repo/icons';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
 
 export const prerender = false;
 
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
+const locale = Astro.locals.locale;
 
-// Cache at the edge, tagged so a plan write purges exactly these pages instead
-// of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
-// is the writer that purges `pricing`.
-//
-// This goes through `applyCacheHeaders` rather than setting the header directly
-// (HOS-426): setting `Cache-Control` and declaring the tags as two independent
-// statements meant a namespace that failed to resolve produced a cacheable
-// response with NO purge tag — cached content nothing could evict, and nothing
-// would report it. `applyCacheHeaders` demotes to private in that case.
-applyCacheHeaders({
-	locals: Astro.locals,
-	headers: Astro.response.headers,
-	cacheable: true,
-	cacheClass: 'pricing',
-	tags: [CACHE_TAG_PRICING]
-});
-
-const fetchResult = await fetchPublicPlans();
-const touristPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'tourist')
-	: [];
-
-const intlLocale = getIntlLocale(locale);
-const hasPlans = touristPlans.length > 0;
-
-const headingFull = t('pricing.comparison.tourist.heading', 'Comparativa detallada de planes para turistas');
-const headingWords = headingFull.trim().split(/\s+/);
-const headingAccent = headingWords.pop() ?? headingFull;
-const headingMain = headingWords.join(' ');
+// The query string is FORWARDED, not rebuilt away. `?interval=` on the
+// trial-ending nudge is the live case: dropping it shows monthly prices to a
+// customer who chose annual, and nothing about the redirect looks wrong when it
+// happens. See `lib/pricing-redirect.ts`.
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
+        search: Astro.url.search
+    }),
+    301
+);
 ---
-
-<MarketingLayout
-	locale={locale}
-	title={t('pricing.comparison.tourist.title', 'Comparativa de planes para turistas')}
-	description={t(
-		'pricing.comparison.tourist.description',
-		'Compará todas las funciones, beneficios y límites de cada plan para turistas.'
-	)}
->
-	<MarketingHero
-		tagline={t('pricing.tourist.tagline', 'Planes y precios')}
-		titleMain={headingMain}
-		titleAccent={headingAccent}
-		subtitle={t(
-			'pricing.comparison.tourist.description',
-			'Compará todas las funciones, beneficios y límites de cada plan para turistas.'
-		)}
-	>
-		<Fragment slot="icon-1"><BeachUmbrellaIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-2"><CompassIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-3"><CheckCircleIcon size="md" weight="duotone" /></Fragment>
-	</MarketingHero>
-
-	<section class="comparison section" aria-labelledby="comparison-heading">
-		<h2 id="comparison-heading" class="sr-only">
-			{t('pricing.comparison.tourist.heading', 'Comparativa detallada de planes para turistas')}
-		</h2>
-
-		{hasPlans ? (
-			<PlanComparisonTable
-				locale={locale}
-				plans={touristPlans}
-				audience="tourist"
-				intlLocale={intlLocale}
-			/>
-		) : (
-			<div class="comparison__empty">
-				<EmptyState
-					locale={locale}
-					variant="empty"
-					message={t('pricing.tourist.empty', 'Planes no disponibles en este momento.')}
-					actionUrl={buildUrl({ locale, path: 'contacto' })}
-					actionLabel={t('pricing.empty.contact', 'Contactanos')}
-				/>
-			</div>
-		)}
-	</section>
-
-	{hasPlans && (
-		<section class="comparison-cta section section--warm">
-			<div class="comparison-cta__container">
-				<h2 class="comparison-cta__title">
-					{t('pricing.tourist.cta.title')}
-				</h2>
-				<p class="comparison-cta__desc">
-					{t('pricing.tourist.cta.description')}
-				</p>
-				<GradientButton
-					href={buildUrl({ locale, path: 'suscriptores/planes/turistas' })}
-					label={t('pricing.comparison.cta', 'Elegir plan')}
-					variant="accent"
-					icon="true"
-				/>
-			</div>
-		</section>
-	)}
-</MarketingLayout>
-
-<style>
-	.comparison {
-		padding-top: var(--space-8);
-		padding-bottom: var(--space-section);
-	}
-
-	.comparison__empty {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-	}
-
-	.comparison-cta__container {
-		max-width: 700px;
-		margin: 0 auto;
-		text-align: center;
-		padding: 0 var(--space-container-x);
-	}
-
-	.comparison-cta__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-4);
-	}
-
-	.comparison-cta__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
-		line-height: 1.6;
-		margin: 0 0 var(--space-6);
-	}
-</style>

@@ -18,6 +18,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarSyncLauncher } from '@/components/host/editor/CalendarSyncLauncher.client';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -114,7 +115,7 @@ describe('CalendarSyncLauncher', () => {
         expect(screen.queryByTestId('sync-panel-stub')).not.toBeInTheDocument();
         // Shows the upgrade CTA linking to the plans page.
         const cta = screen.getByRole('link', { name: /Mejorar plan/i });
-        expect(cta).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
+        expect(cta).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`);
     });
 
     it('closes the dialog on Escape', async () => {

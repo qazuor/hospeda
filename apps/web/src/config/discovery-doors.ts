@@ -163,7 +163,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // publish + pay), not admin-provisioned end to end. Do not
                 // "restore" the old "these are lead forms, not publish flows"
                 // framing — that is the exact premise HOS-166 removed.
-                href: 'publicar-restaurante',
+                href: 'planes/gastronomia',
                 ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
@@ -175,7 +175,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 icon: CompassIcon,
                 // See the `gastronomy` option above (HOS-166) — same lead-door,
                 // real-self-service-once-acquired shape.
-                href: 'publicar-experiencia',
+                href: 'planes/experiencias',
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'

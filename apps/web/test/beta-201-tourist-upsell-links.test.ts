@@ -28,15 +28,32 @@ const slugSrc = readFileSync(
 );
 
 describe('BETA-201 — tourist-only upsell links point at the tourist plans page', () => {
-    it('PriceAlertButton locked state links to suscriptores/turistas, not the owner page', () => {
+    // Both cases now match `PRICING_PAGE_PATH_BY_AUDIENCE.tourist` instead of a
+    // URL literal (HOS-1032). What BETA-201 fixed — and what these must keep
+    // failing on — is the AUDIENCE: a free-tier tourist sent to the owner
+    // catalogue cannot buy anything on the page they land on. The URL itself has
+    // moved twice since, and both times every literal here was rewritten without
+    // either assertion ever catching a defect. The paths are frozen once, in
+    // `test/lib/pricing-page-paths.test.ts`.
+    it('PriceAlertButton locked state links to the TOURIST plans page, not the owner one', () => {
         // PRICE_ALERTS is a tourist entitlement; the locked state is only shown
         // to free-tier tourists, so the upgrade CTA must target the tourist page.
-        expect(priceAlertSrc).toMatch(/upgradeHref[^\n]*'suscriptores\/planes\/turistas'/);
-        expect(priceAlertSrc).not.toContain("path: 'suscriptores/planes/anfitriones'");
+        expect(priceAlertSrc).toMatch(/upgradeHref[^\n]*PRICING_PAGE_PATH_BY_AUDIENCE\.tourist/);
+        expect(priceAlertSrc).not.toMatch(/upgradeHref[^\n]*PRICING_PAGE_PATH_BY_AUDIENCE\.owner/);
     });
 
-    it('accommodation detail WhatsApp upsell links to suscriptores/turistas, not the owner page', () => {
-        expect(slugSrc).toMatch(/whatsappPlansHref[^\n]*'suscriptores\/planes\/turistas'/);
-        expect(slugSrc).not.toMatch(/whatsappPlansHref[^\n]*'suscriptores\/planes\/anfitriones'/);
+    it('accommodation detail WhatsApp upsell links to the TOURIST plans page, not the owner one', () => {
+        expect(slugSrc).toMatch(/whatsappPlansHref[^\n]*PRICING_PAGE_PATH_BY_AUDIENCE\.tourist/);
+        expect(slugSrc).not.toMatch(/whatsappPlansHref[^\n]*PRICING_PAGE_PATH_BY_AUDIENCE\.owner/);
+    });
+
+    it('neither upsell spells a retired URL by hand', () => {
+        // The other half: reading the map is only a guarantee while nothing goes
+        // back to writing the path out. Both of these URLs are 301s now, so a
+        // literal here would send an upsell through a redirect.
+        for (const src of [priceAlertSrc, slugSrc]) {
+            expect(src).not.toContain('suscriptores/planes/turistas');
+            expect(src).not.toContain('suscriptores/planes/anfitriones');
+        }
     });
 });

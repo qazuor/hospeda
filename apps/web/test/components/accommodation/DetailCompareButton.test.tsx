@@ -22,6 +22,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import type { DetailCompareButtonProps } from '../../../src/components/accommodation/DetailCompareButton.client';
 import { DetailCompareButton } from '../../../src/components/accommodation/DetailCompareButton.client';
 import { COMPARE_ENTITLEMENT_KEY, COMPARE_LIMIT_KEY } from '../../../src/hooks/useCompareGuard';
@@ -254,7 +255,7 @@ describe('DetailCompareButton — guard outcomes', () => {
         expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('info');
-        expect(arg.action?.href).toBe('/es/suscriptores/planes/turistas/');
+        expect(arg.action?.href).toBe(`/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
     });
 
     it('shows a warning toast when the plan is at its per-plan cap', () => {

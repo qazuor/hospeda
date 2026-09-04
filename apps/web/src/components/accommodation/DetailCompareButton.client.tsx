@@ -28,6 +28,7 @@ import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { addToast } from '@/store/toast-store';
 import styles from './DetailCompareButton.module.css';
 
@@ -83,7 +84,10 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
 
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/planes/turistas/`;
+    // The path comes from the shared map (HOS-1032) rather than being spelled in
+    // this template literal: it had gone stale twice already through two moves
+    // of the same page, and a hand-written copy is what makes that possible.
+    const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     const label = selected
         ? t('accommodations.comparison.detail.added', 'En comparación')

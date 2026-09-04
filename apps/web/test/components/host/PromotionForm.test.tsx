@@ -13,6 +13,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { PromotionForm } from '../../../src/components/host/PromotionForm.client';
 import type { OwnerPromotionData } from '../../../src/lib/api/types';
 
@@ -367,7 +368,7 @@ describe('PromotionForm — create mode', () => {
         });
         expect(screen.getByText(/Mejorá tu plan para crear promociones/i)).toBeInTheDocument();
         const plansLink = screen.getByRole('link', { name: /ver planes/i });
-        expect(plansLink).toHaveAttribute('href', '/es/suscriptores/planes/anfitriones/');
+        expect(plansLink).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`);
         expect(
             screen.queryByText(/requires the 'create_promotions' entitlement/i)
         ).not.toBeInTheDocument();

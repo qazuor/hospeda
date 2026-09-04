@@ -1,150 +1,47 @@
 ---
 /**
  * @file suscriptores/planes/anfitriones/index.astro
- * @description Owner pricing page. Thin wrapper around <PricingCardsGrid>;
- * page-specific copy, metadata, and JSON-LD live here, the card UI itself
- * is shared with /suscriptores/planes/turistas/.
+ * @description Permanent redirect to the host pricing page's new home,
+ * `/planes/anfitriones/precios/` (HOS-1032 AC-51).
  *
- * HOS-942 moved this page down one level, from /suscriptores/planes/ to
- * /suscriptores/planes/anfitriones/. The parent path is now the five-audience
- * INDEX, not owner pricing — it changed content, not location, so it carries
- * no redirect (AC-5). This page's content is byte-for-byte what the parent
- * used to serve (AC-3).
+ * This page's content moved into the `/planes/` namespace HOS-941 D-8 settled
+ * on. It changes LOCATION, so 301 — the status that transfers the ranking
+ * signal — rather than a 302 or a 404.
  *
- * Fetches pricing from the public API at runtime (SSR) so that operator
- * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
- * The edge caches the rendered HTML; how long for comes from the `pricing`
- * cache class (`lib/cache/cache-classes.ts`), and a plan write purges it via
- * `PlanService.triggerPricingRevalidation`.
+ * ONE hop, and the count matters. This URL is itself where HOS-942 moved the
+ * page from `/suscriptores/planes/`, so the alternative — pointing it at some
+ * intermediate URL that redirects again — would have made a link from before
+ * that move spend three requests to land. Every legacy pricing URL in this
+ * family targets its FINAL destination directly.
  *
- * @route /{lang}/suscriptores/planes/anfitriones/
- * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
- *   time; edge-cacheable, TTL from the `pricing` cache class.
+ * Contrast `/suscriptores/planes/` itself, which still deliberately carries no
+ * redirect: that URL changed CONTENT, not location — it serves the audience
+ * index, and H8 (HOS-1033) is what moves it.
+ *
+ * @route     /{lang}/suscriptores/planes/anfitriones/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
-import MarketingLayout from '@/layouts/MarketingLayout.astro';
-import MarketingHero from '@/components/marketing/MarketingHero.astro';
-import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
-import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
-import ComparisonLinkTeaser from '@/components/billing/ComparisonLinkTeaser.astro';
-import PlanCatalogueNav from '@/components/billing/PlanCatalogueNav.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-import { getIntlLocale } from '@/lib/pricing-plans';
-import { buildUrl } from '@/lib/urls';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
-import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
 
 export const prerender = false;
 
-const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
+const locale = Astro.locals.locale;
 
-// Cache at the edge, tagged so a plan write purges exactly these pages instead
-// of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
-// is the writer that purges `pricing`.
-//
-// This goes through `applyCacheHeaders` rather than setting the header directly
-// (HOS-426): setting `Cache-Control` and declaring the tags as two independent
-// statements meant a namespace that failed to resolve produced a cacheable
-// response with NO purge tag — cached content nothing could evict, and nothing
-// would report it. `applyCacheHeaders` demotes to private in that case.
-applyCacheHeaders({
-	locals: Astro.locals,
-	headers: Astro.response.headers,
-	cacheable: true,
-	cacheClass: 'pricing',
-	tags: [CACHE_TAG_PRICING]
-});
-
-// Fetch active plans from the public API endpoint at runtime.
-const fetchResult = await fetchPublicPlans();
-const ownerPlans = fetchResult.ok
-	? filterPlansByCategory(fetchResult.plans, 'owner')
-	: [];
-
-const intlLocale = getIntlLocale(locale);
-const hasPlans = ownerPlans.length > 0;
-
-// Build absolute URL for each plan (used by JSON-LD Offer entries).
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const planPageUrl = `${siteOrigin}${buildUrl({ locale, path: 'suscriptores/planes/anfitriones' })}`;
-
-// One resolution of the comparison URL, read by the nav above the cards and by
-// the teaser below them. Two literals would be two things to keep in step.
-const comparisonHref = buildUrl({ locale, path: 'suscriptores/planes/comparar' });
-
-const jsonLdPlans = ownerPlans.map((plan) => ({
-	name: plan.name,
-	description: plan.description,
-	priceCurrency: 'ARS',
-	// schema.org `price` expects major currency units (pesos), not cents.
-	price: plan.monthlyPriceArs / 100,
-	url: planPageUrl,
-}));
-
-// Split heading to underline the last word with a handwritten accent.
-const headingFull = t('pricing.owner.heading', 'Planes para propietarios');
-const headingWords = headingFull.trim().split(/\s+/);
-const headingAccent = headingWords.pop() ?? headingFull;
-const headingMain = headingWords.join(' ');
+// Read from the map rather than spelled here: it is the one place that knows
+// where each audience's catalogue lives, and a literal would be a second one
+// that could disagree with the page it points at.
+// The query string is FORWARDED, not rebuilt away. `?interval=` on the
+// trial-ending nudge is the live case: dropping it shows monthly prices to a
+// customer who chose annual, and nothing about the redirect looks wrong when it
+// happens. See `lib/pricing-redirect.ts`.
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
+        search: Astro.url.search
+    }),
+    301
+);
 ---
-
-<MarketingLayout
-	locale={locale}
-	title={t('pricing.owner.title', 'Planes para propietarios')}
-	description={t(
-		'pricing.owner.description',
-		'Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.'
-	)}
->
-	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
-
-	<MarketingHero
-		tagline={t('pricing.owner.tagline', 'Planes y precios')}
-		titleMain={headingMain}
-		titleAccent={headingAccent}
-		subtitle={t(
-			'pricing.owner.subtitle',
-			'Elegí el plan que mejor se adapte a tu propiedad y objetivos.'
-		)}
-	>
-		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
-		<Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
-	</MarketingHero>
-
-	{/*
-		Above the cards: back to the audience index, and across to the comparison
-		table. The comparison link is deliberately in BOTH places — the teaser at
-		the foot of the page is unchanged, but a reader still choosing between
-		tiers should not have to scroll past every card to reach the surface that
-		compares them.
-	*/}
-	<PlanCatalogueNav locale={locale} comparisonHref={comparisonHref} />
-
-	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
-		<PricingCardsGrid
-			locale={locale}
-			plans={ownerPlans}
-			intlLocale={intlLocale}
-			audience="owner"
-			sectionHeading={t(
-				'pricing.owner.cardsHeading',
-				'Comparativa de planes para propietarios'
-			)}
-			emptyMessage={t('pricing.owner.empty', 'Planes no disponibles en este momento.')}
-			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
-			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
-			ctaText={t('pricing.cta', 'Empezar')}
-		/>
-	</section>
-
-	{hasPlans && (
-		<section class="comparison-link section">
-			<ComparisonLinkTeaser locale={locale} href={comparisonHref} />
-		</section>
-	)}
-</MarketingLayout>

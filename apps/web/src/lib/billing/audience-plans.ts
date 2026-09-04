@@ -52,6 +52,8 @@
  */
 
 import { PARTNER_TIER_PLAN_SLUG } from '@repo/billing';
+import type { ProductDomainValue } from '@repo/schemas';
+import type { PricingAudience } from '../billing-i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
 import type { FetchPlansResult, PublicPlanData } from './fetch-plans';
 import { fetchPublicPlans, filterPlansByCategory } from './fetch-plans';
@@ -80,17 +82,122 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
  * Host and tourist read from `PRICING_PAGE_PATH_BY_AUDIENCE` rather than
  * repeating the two URLs HOS-942 moved — the pricing pages, the comparison
  * tables and this index must not be able to disagree about where they are. The
- * other three point at the vertical's existing marketing landing: those pages
- * already carry the vertical's price and CTA, so the index links to them rather
- * than duplicating a pricing page per vertical.
+ * other three point at the vertical's SALES page (level 2 of HOS-941 D-7).
+ *
+ * HOS-1032 changed those three from `publicar-restaurante` /
+ * `publicar-experiencia` / `sumate/partner`, which this same change turned into
+ * 301s. A link to a URL that redirects is not broken, but it is a hop the index
+ * has no reason to spend, and it is the shape AC-51 exists to keep out.
+ *
+ * The asymmetry — two audiences to their PRICING page, three to their SALES page
+ * — is inherited, not introduced: it is what H1 shipped, and deciding where the
+ * index should dispatch to belongs to H8 (HOS-1033), which rebuilds this surface
+ * as the merged `/planes/` index. Changing it here would be re-deciding H8's
+ * question in a file H8 is about to rewrite.
  */
 export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
     host: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     tourist: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
-    gastronomy: 'publicar-restaurante',
-    experience: 'publicar-experiencia',
-    partner: 'sumate/partner'
+    gastronomy: 'planes/gastronomia',
+    experience: 'planes/experiencias',
+    partner: 'planes/aliados'
 } as const;
+
+/**
+ * The plan-vocabulary audience for each index card id.
+ *
+ * The ONE translation between this module's `AudienceCardId` (spelled `host`,
+ * the index's vocabulary) and `PricingAudience` (spelled `owner`, the plan
+ * `category`/`product_domain` vocabulary — see `lib/billing-i18n.ts`). Every
+ * other spelling of the same mapping would be a second place for the two to
+ * drift; the five pricing pages read this one.
+ */
+export const PRICING_AUDIENCE_BY_CARD_ID: Readonly<Record<AudienceCardId, PricingAudience>> = {
+    host: 'owner',
+    tourist: 'tourist',
+    gastronomy: 'gastronomy',
+    experience: 'experience',
+    partner: 'partner'
+} as const;
+
+/** Inverse of {@link PRICING_AUDIENCE_BY_CARD_ID}. */
+export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<Record<PricingAudience, AudienceCardId>> = {
+    owner: 'host',
+    tourist: 'tourist',
+    gastronomy: 'gastronomy',
+    experience: 'experience',
+    partner: 'partner'
+} as const;
+
+/**
+ * The `?domain=` each audience's catalogue is fetched with, or `undefined` for
+ * the two accommodation audiences, which share the default domain and are
+ * separated by `category` instead.
+ *
+ * `'commerce'` is a RETIRED `ProductDomainEnum` value (HOS-941 R-3) and appears
+ * nowhere here: gastronomy and experience are separate domains and no surface
+ * may group them.
+ */
+const PLAN_DOMAIN_BY_CARD_ID: Readonly<Record<AudienceCardId, ProductDomainValue | undefined>> = {
+    host: undefined,
+    tourist: undefined,
+    gastronomy: 'gastronomy',
+    experience: 'experience',
+    partner: 'partner'
+} as const;
+
+/**
+ * Fetch and select the plans of ONE audience, for that audience's pricing page.
+ *
+ * One request, not the four {@link fetchAudienceOffers} issues: a pricing page
+ * renders a single audience and has no use for the other four catalogues.
+ *
+ * The SELECTION, though, goes through {@link selectAudiencePlans} rather than
+ * being re-derived — which is the whole point of this function existing instead
+ * of each page calling `fetchPublicPlans` and filtering. Two of that function's
+ * rules are load-bearing and neither is obvious at a call site: `complex` plans
+ * are never selected for the host audience, and partner is narrowed to the
+ * sellable tiers, dropping the still-active pre-tier `partner-listing`. A page
+ * that filtered by hand would advertise a legacy plan nobody can subscribe to.
+ *
+ * The result is sorted cheapest-first (`sortOrder` ascending), which
+ * `PricingCardsGrid` REQUIRES: it diffs each card against the one before it.
+ * `filterPlansByCategory` already sorts the two accommodation audiences; the
+ * other three are sorted here, since they come straight off a domain fetch.
+ *
+ * SSR-only — it reaches `@repo/billing` transitively, so no client island may
+ * import it (see `test/static-guards/billing-barrel-client-isolation.test.ts`).
+ *
+ * @param params.audience - Which audience's catalogue to fetch.
+ * @returns That audience's active plans, cheapest-first. EMPTY when the fetch
+ *   failed or the audience currently has no sellable plan — the two are
+ *   deliberately indistinguishable, because both must render the same empty
+ *   state rather than an invented price.
+ */
+export async function fetchAudiencePlans({
+    audience
+}: {
+    readonly audience: AudienceCardId;
+}): Promise<readonly PublicPlanData[]> {
+    const domain = PLAN_DOMAIN_BY_CARD_ID[audience];
+    const result = await fetchPublicPlans(domain ? { domain } : {});
+
+    // `selectAudiencePlans` needs all four slots; the three this audience does
+    // not use are stubbed with the same empty-list shape a failed fetch takes,
+    // so nothing is selected out of them.
+    const empty: FetchPlansResult = { ok: true, plans: [] };
+    const selected = selectAudiencePlans({
+        accommodation: domain === undefined ? result : empty,
+        gastronomy: domain === 'gastronomy' ? result : empty,
+        experience: domain === 'experience' ? result : empty,
+        partner: domain === 'partner' ? result : empty
+    })[audience];
+
+    return selected
+        .filter((plan) => plan.isActive)
+        .slice()
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+}
 
 /**
  * The entry price an audience card advertises.

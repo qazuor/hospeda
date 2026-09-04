@@ -121,8 +121,12 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
-        expect(gastronomy?.href).toBe('publicar-restaurante');
-        expect(experience?.href).toBe('publicar-experiencia');
+        // HOS-1032 retired `publicar-restaurante` / `publicar-experiencia` into
+        // 301s; the doors point at their successors. What the case still cares
+        // about is unchanged and is the reason it exists: each vertical goes to
+        // ITS OWN page, and neither goes to a self-service publish flow.
+        expect(gastronomy?.href).toBe('planes/gastronomia');
+        expect(experience?.href).toBe('planes/experiencias');
     });
 
     it('gives the partner door four options: sponsor, partner, serviceProvider, editor (HOS-134)', () => {

@@ -82,10 +82,25 @@ const ABOUT_PAGES: ReadonlyArray<{ name: string; file: string }> = [
     { name: 'benefits', file: 'beneficios/index.astro' }
 ];
 
-/** Pages that emit Offer / PriceSpecification JSON-LD. */
+/**
+ * Pages that emit Offer / PriceSpecification JSON-LD.
+ *
+ * FOUR of the five pricing pages since HOS-1032 — the two that moved out of
+ * `/suscriptores/` plus the two commerce verticals, which never had a pricing
+ * URL before and so were never covered here.
+ *
+ * `/planes/aliados/precios/` is deliberately absent and must stay absent: it
+ * publishes no amount (HOS-941 D-13, the owner's decision that an institution
+ * and a corner shop are not quoted the same), and a `PriceSpecification` would
+ * put the figure the visible page withholds into the field a search result
+ * quotes. `pricing-ssr-runtime.test.ts` asserts that absence directly, so it is
+ * held by a test rather than only by this omission.
+ */
 const PRICING_PAGES: ReadonlyArray<{ name: string; file: string }> = [
-    { name: 'tourist pricing', file: 'suscriptores/planes/turistas/index.astro' },
-    { name: 'owner pricing', file: 'suscriptores/planes/anfitriones/index.astro' }
+    { name: 'tourist pricing', file: 'planes/turistas/precios/index.astro' },
+    { name: 'owner pricing', file: 'planes/anfitriones/precios/index.astro' },
+    { name: 'gastronomy pricing', file: 'planes/gastronomia/precios/index.astro' },
+    { name: 'experience pricing', file: 'planes/experiencias/precios/index.astro' }
 ];
 
 describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {

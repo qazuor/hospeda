@@ -30,6 +30,7 @@ import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './ExclusiveDealsList.module.css';
 
@@ -180,7 +181,7 @@ export function ExclusiveDealsList({ locale, apiUrl, userId: _userId }: Exclusiv
 
     // Tourist-only Área Turista feature — the CTA must point at the tourist
     // pricing page, not the owner one (BETA-174).
-    const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes/turistas' });
+    const upgradeHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
     // ── Loading state ─────────────────────────────────────────────────────────
 
