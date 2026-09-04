@@ -14,7 +14,12 @@
  */
 
 import type { MediaPreset } from '@repo/media';
-import { getMediaUrl } from '@repo/media';
+import {
+    getMediaUrl,
+    isLocalMediaPlaceholderMode,
+    isRemoteMediaUrl,
+    resolveLocalMediaPlaceholder
+} from '@repo/media';
 import { resolveSafeExternalUrl } from './safe-external-url';
 
 const DEFAULT_PLACEHOLDER = '/assets/images/placeholder.svg';
@@ -131,6 +136,16 @@ export function buildImageEndpointUrl({
     height,
     format
 }: BuildImageEndpointUrlOptions): string {
+    // CI cost guard (HOS-1144). `/_image?href=<remote>` is the single most
+    // expensive path in the incident: Astro's endpoint runs server-side and
+    // downloads the untransformed original before it optimises anything, so
+    // gating the image service would already be too late. Short-circuit to the
+    // local placeholder and skip the endpoint entirely — a local SVG has
+    // nothing to gain from `/_image` anyway.
+    if (isLocalMediaPlaceholderMode() && isRemoteMediaUrl(src)) {
+        return resolveLocalMediaPlaceholder();
+    }
+
     const params = new URLSearchParams({ href: src });
     if (width !== undefined) params.set('w', String(width));
     if (height !== undefined) params.set('h', String(height));
@@ -202,11 +217,25 @@ export function isRenderableImageUrl(value: unknown): boolean {
  * "render it or render nothing" call site. Returns the TRIMMED value so
  * callers never emit a `src` with stray whitespace.
  *
+ * While `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` is enabled (HOS-1144) a
+ * renderable REMOTE URL is replaced by a locally-served placeholder. Five
+ * components — the two author-avatar surfaces, the post detail page, the
+ * author page and the API transform layer — take the raw URL through this
+ * function instead of `getMediaUrl`, so without this branch they would remain
+ * the one path still billing Cloudinary on every CI run.
+ *
  * @param value - Candidate image URL, from API/database content
  * @returns The trimmed URL when renderable, otherwise `undefined`
  */
 export function toRenderableImageUrl(value: unknown): string | undefined {
-    return typeof value === 'string' && isRenderableImageUrl(value) ? value.trim() : undefined;
+    if (typeof value !== 'string' || !isRenderableImageUrl(value)) {
+        return undefined;
+    }
+    const trimmed = value.trim();
+    if (isLocalMediaPlaceholderMode() && isRemoteMediaUrl(trimmed)) {
+        return resolveLocalMediaPlaceholder();
+    }
+    return trimmed;
 }
 
 interface MediaImage {
