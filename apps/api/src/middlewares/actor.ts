@@ -112,6 +112,72 @@ const resolveHeldRoles = async (params: { userId: string }): Promise<readonly Ro
 };
 
 /**
+ * Routes on which a FAILED actor resolution degrades to the guest actor
+ * instead of answering 503 (HOS-1141).
+ *
+ * ## The rule, and why this list is not a loophole
+ *
+ * {@link resolveHeldRoles} fails LOUD by default, and that default is right for
+ * almost every route: degrading a role read changes WHO the actor is, and a
+ * `SUPER_ADMIN` silently becoming a plain `USER` is a different response body
+ * for the same URL. Every route on which identity changes the ANSWER keeps that
+ * behaviour.
+ *
+ * These paths are the exception because identity does not change the answer on
+ * them — it only decorates a record. Adding a path here is a claim that a
+ * signed-out and a signed-in caller receive the SAME response, and it must not
+ * be made for any route where that is false.
+ *
+ * ## Why the QR resolution route qualifies
+ *
+ * `GET /api/v1/public/qr/{slug}` answers where a printed code points and records
+ * the scan. Its response body is byte-identical for a guest and for a signed-in
+ * scanner — the actor is read for exactly ONE thing, the nullable
+ * `qr_code_scans.user_id` column. Meanwhile the route is the critical function
+ * of the entire QR system: a printed code that leads nowhere CANNOT be
+ * corrected, which is the premise the whole epic rests on.
+ *
+ * So without this entry, forwarding the scanner's cookie in order to populate
+ * one metrics column would have ADDED a way for the redirect to fail that it did
+ * not previously have — inverting the priority. Measured before the fix, with
+ * `getUserRoles` throwing:
+ *
+ * ```
+ * HTTP status ............ 503
+ * handler reached? ....... findOne calls = 0
+ * scan row written? ...... createScan calls = 0
+ * ```
+ *
+ * A signed-in visitor got a dead sticker because a role table was briefly
+ * unreadable. The performance cost of resolving a session for a signed-in
+ * scanner is ACCEPTED — that is slow, not broken, and it is bounded. What is not
+ * accepted is it becoming a way to break the 302.
+ *
+ * This is the narrow version of the fix HOS-296 explicitly deferred: see the
+ * "KNOWN TRADE-OFF" note on {@link resolveHeldRoles}, which names public routes
+ * resolving a guest actor as the change it was leaving out of scope. One path,
+ * not `/public/*` wholesale.
+ *
+ * DO NOT "tidy" this away by propagating the error: the whole point is that the
+ * scan is annotated with less rather than the visit being lost.
+ */
+const ACTOR_OPTIONAL_PATH_PATTERNS: readonly RegExp[] = [
+    /** `GET /api/v1/public/qr/{slug}` — the printed-code redirect (HOS-1141). */
+    /^\/api\/v1\/public\/qr\/[^/]+\/?$/
+];
+
+/**
+ * Whether a failed actor resolution on this request may degrade to a guest
+ * actor rather than answering 503.
+ *
+ * @param params - Options object (RO-RO).
+ * @param params.path - The request path, as `c.req.path` reports it.
+ * @returns `true` when the route tolerates an anonymous fallback.
+ */
+const actorIsOptionalFor = (params: { path: string }): boolean =>
+    ACTOR_OPTIONAL_PATH_PATTERNS.some((pattern) => pattern.test(params.path));
+
+/**
  * Universal actor middleware that runs on all routes.
  * Reads the authenticated user from context (set by auth middleware)
  * and builds the appropriate Actor with permissions.
@@ -324,13 +390,36 @@ export const actorMiddleware = (): MiddlewareHandler => {
                     );
                 }
             } catch (error) {
-                apiLogger.error(
-                    'Error building user actor:',
-                    error instanceof Error ? error.message : String(error)
-                );
-                throw new HTTPException(503, {
-                    message: 'Service temporarily unavailable'
-                });
+                const detail = error instanceof Error ? error.message : String(error);
+
+                // HOS-1141: on a route where identity only DECORATES the answer,
+                // losing the identity must not cost the answer.
+                //
+                // The scanner still reaches their destination and the scan is
+                // still counted — with `user_id` null, because a guest actor is
+                // all that could honestly be resolved. Anyone tempted to "fix"
+                // this by rethrowing should read `ACTOR_OPTIONAL_PATH_PATTERNS`
+                // first: a printed QR that leads nowhere cannot be corrected, so
+                // a metrics column may never be a reason for the redirect to
+                // fail. Logged at `error` level, not `warn`, so a systematic
+                // outage stays as visible here as it is on the 503 path.
+                //
+                // It falls THROUGH to the shared `c.set('actor', ...)` below
+                // rather than calling `next()` itself, so the guest path taken on
+                // failure is the exact same path an ordinary anonymous request
+                // takes — including the request-context enrichment, which already
+                // no-ops for a guest-only actor.
+                if (actorIsOptionalFor({ path: c.req.path })) {
+                    apiLogger.error(
+                        `Error building user actor on an actor-optional route (${c.req.path}); continuing as guest: ${detail}`
+                    );
+                    actor = createGuestActor();
+                } else {
+                    apiLogger.error('Error building user actor:', detail);
+                    throw new HTTPException(503, {
+                        message: 'Service temporarily unavailable'
+                    });
+                }
             }
         } else {
             // Unauthenticated request .. use GUEST actor
