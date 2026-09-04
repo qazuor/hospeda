@@ -345,7 +345,20 @@ enforced by `apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`.
   generators of HOS-1129 appeared.
 - **OQ-4** — Does the panel belong to gastronomy only, or should the read be
   built generically for any `purpose`? Proposal: build the service method
-  generic by `qrCodeId`, expose it gastronomy-only for now.
+  generic by `qrCodeId`, expose it gastronomy-only for now. **Resolved in
+  implementation**: generic by `qrCodeId`, exposed for gastronomy.
+- **OQ-5** — Which language does a printed table QR land on? As built, the code
+  is minted with the default locale, so its target is `/es/gastronomia/{slug}/carta/`
+  and a Brazilian diner scanning at the table gets the menu in Spanish — the
+  multilingual menu HOS-1043 just shipped is not reached by the QR that leads to
+  it. Not urgent and not irreversible: the printed code encodes `/qr/{slug}`, so
+  changing the language later is an edit to one row, not a reprint. Two
+  candidate answers: leave it on the default locale, or have the public redirect
+  resolve the language from `Accept-Language`. The second is a change to the
+  shared QR engine (HOS-981's), not to this vertical, so it does not belong in
+  this spec — but the data to justify it will exist, because HOS-1141 already
+  records `browser_language` on every scan. **Revisit once the panel shows a
+  real language breakdown.**
 
 ## 12. Implementation notes
 
