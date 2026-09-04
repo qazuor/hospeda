@@ -75,11 +75,28 @@ applyCacheHeaders({
 // that can VALIDATE it and costs this page nothing; computing an id here would
 // first require adding the auth call this route deliberately does not make.
 //
-// KNOWN COST, stated rather than buried: for a scanner who IS signed in, the
-// API's global `actorMiddleware` now resolves a real actor on this request — a
-// session read plus a `user_role` read it did not previously perform. An
-// anonymous scan (no cookie — the common case for a printed code) is unchanged
-// and pays nothing.
+// KNOWN COST, stated rather than buried, and corrected after review — the first
+// version of this note was optimistic on two counts.
+//
+// 1. "An anonymous scan sends no cookie" is FALSE. The site sets non-auth
+//    cookies at `path=/`: the announcements dismissal
+//    (`GlobalAnnouncements.astro:154`) and the consent banner
+//    (`cookie-consent.ts:124`, `Path=/`). Anyone who has accepted the banner
+//    forwards a `Cookie` header on this request while signed out. So the
+//    forwarding is NOT limited to logged-in scanners.
+// 2. The added cost is smaller than it first looked. `auth.api.getSession()`
+//    already ran unconditionally on every API request before this PR, so a
+//    cookie that carries no session changes nothing. What is genuinely NEW is
+//    the uncached `user_role` query, and only for a cookie that resolves to a
+//    real session.
+//
+// No third-party exposure: `request()` builds its URL as
+// `${getBaseUrl()}${path}`, so the header only ever reaches our own API.
+//
+// And the failure mode this used to create is closed: `actorMiddleware` now
+// degrades to a guest actor on this path instead of answering 503
+// (`ACTOR_OPTIONAL_PATH_PATTERNS`), so a broken role read costs the `user_id`
+// column and nothing else.
 const result = await qrApi.resolve({
     slug,
     userAgent: Astro.request.headers.get('user-agent'),
