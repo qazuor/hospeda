@@ -446,7 +446,10 @@
             "checkoutError": "We couldn't start the payment. Please try again.",
             "invalidPlanError": "The selected plan is no longer available. Reload the page and try again.",
             "publishCtaFree": "Publish",
-            "publishingFree": "Publishing..."
+            "publishingFree": "Publishing...",
+            "publishCtaTrial_one": "Publish free for {{count}} day",
+            "publishCtaTrial_other": "Publish free for {{count}} days",
+            "publishCtaTrialNoCount": "Publish for free"
         },
         "planPicker": {
             "title": "Choose your plan",
