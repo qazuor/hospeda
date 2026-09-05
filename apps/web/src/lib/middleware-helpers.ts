@@ -813,6 +813,17 @@ export function buildCspHeader({
     const oauthAvatarHosts =
         'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
 
+    // HOS-1022: YouTube's static poster-thumbnail host. Used by the
+    // accommodation `/fotos` sub-page (`img.youtube.com/vi/<id>/maxresdefault.jpg`
+    // + `hqdefault.jpg` fallback — see `getYoutubePosterUrl()` in
+    // `@/lib/video-embed`) as a plain `<img src>`, never through Astro's
+    // `getImage()`, so — like the OAuth avatar hosts above — it does NOT belong
+    // in `ALLOWED_REMOTE_HOSTS` (that list doubles as the SSRF guard for
+    // server-side image fetches, which this isn't). Vimeo and Dailymotion have
+    // no equivalent free, predictable static-thumbnail URL (only an oEmbed API
+    // round-trip would give one), so only YouTube's poster host is added here.
+    const videoPosterImgHosts = 'https://img.youtube.com';
+
     // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
     // Cloudflare Worker forwards to PostHog Cloud US — see
     // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
@@ -890,7 +901,7 @@ export function buildCspHeader({
         //     used for tokenized inline colors and per-card transition delays)
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} ${videoPosterImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
@@ -900,9 +911,22 @@ export function buildCspHeader({
         // Cloudflare Turnstile renders its challenge in an iframe served from
         // https://challenges.cloudflare.com. 'strict-dynamic' does NOT govern
         // frames, so this host MUST be allowlisted here or the widget can never
-        // mount and no token is produced (SPEC-301 feedback form). Every other
-        // embed origin stays blocked; frame-ancestors 'none' still stops others
-        // from embedding us.
+        // mount and no token is produced (SPEC-301 feedback form).
+        //
+        // HOS-1022: three more embed hosts, one per video provider the
+        // accommodation editor's "Videos" field promises support for
+        // (`VideoGalleryField.tsx`). The accommodation detail page's video
+        // section builds its `<iframe src>` from `resolveVideoEmbed()`
+        // (`apps/web/src/lib/video-embed.ts`), which ONLY ever emits one of
+        // these three fixed templates — never the host-authored URL verbatim —
+        // so widening this directive to exactly these three origins is safe:
+        //   - https://www.youtube-nocookie.com — YouTube, cookie-less embed.
+        //   - https://player.vimeo.com         — Vimeo's dedicated player host.
+        //   - https://www.dailymotion.com       — Dailymotion's embed path.
+        // Every other embed origin stays blocked; frame-ancestors 'none' still
+        // stops others from embedding us. Do NOT add a provider's bare/`watch`
+        // host here (e.g. `youtube.com`) — only the embed-specific host the
+        // resolver actually emits.
         //
         // `'self'` in dev ONLY: Astro's ClientRouter runs a dev-only code path,
         // `prepareForClientOnlyComponents()`, which appends a hidden same-origin
@@ -920,8 +944,8 @@ export function buildCspHeader({
         // dev-only `style-src` relaxation above, same root cause: dev-only
         // ClientRouter behaviour meeting an enforcing CSP.
         isDev
-            ? "frame-src 'self' https://challenges.cloudflare.com"
-            : 'frame-src https://challenges.cloudflare.com',
+            ? "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com"
+            : 'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com',
         // The same dev-only iframe needs BOTH sides of the embed relationship:
         // `frame-src` authorises the PARENT to embed, `frame-ancestors` (sent on
         // the iframe's own response, since it loads one of our pages) authorises

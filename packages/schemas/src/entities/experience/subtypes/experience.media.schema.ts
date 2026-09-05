@@ -1,9 +1,14 @@
 import { z } from 'zod';
 import {
     BaseCommerceMediaSchema,
-    CommerceMediaStateSchema
+    CommerceMediaStateSchema,
+    CommerceMediaUpdatePayloadSchema
 } from '../../../common/commerce-media.schema.js';
-import { ImageAttributionSchema, mediaAssetUrl } from '../../../common/media.schema.js';
+import {
+    hasAtLeastOneMediaTextField,
+    ImageAttributionSchema,
+    mediaAssetUrl
+} from '../../../common/media.schema.js';
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
@@ -310,3 +315,35 @@ export const ExperienceMediaRestoreInputSchema = z.object({
 
 /** Inferred type for the restore-media service input. */
 export type ExperienceMediaRestoreInput = z.infer<typeof ExperienceMediaRestoreInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Update Text Metadata (HOS-1036 — PATCH /experiences/:id/media/:mediaId)
+// ----------------------------------------------------------------------------
+
+/** HTTP payload for `PATCH /experiences/:id/media/:mediaId`. Alias of the shared commerce payload. */
+export const ExperienceMediaUpdatePayloadSchema = CommerceMediaUpdatePayloadSchema;
+/** Inferred type for the update-media HTTP payload. */
+export type ExperienceMediaUpdatePayload = z.infer<typeof ExperienceMediaUpdatePayloadSchema>;
+
+/**
+ * Service input for `updateExperienceMedia`.
+ *
+ * Combines the URL params (`experienceId`, `mediaId`) with the four payload fields
+ * spread from {@link ExperienceMediaUpdatePayloadSchema}'s shape, then adds the
+ * cross-field rule the flat payload cannot express: at least one editable field
+ * must be present. An all-omitted body is a no-op PATCH and is rejected as
+ * `VALIDATION_ERROR` rather than silently answering 200.
+ */
+export const ExperienceMediaUpdateInputSchema = z
+    .object({
+        /** UUID of the parent experience listing (from URL param `/:id`). */
+        experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        /** UUID of the media row to update (from URL param `/:mediaId`). */
+        mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        ...ExperienceMediaUpdatePayloadSchema.shape
+    })
+    .refine(hasAtLeastOneMediaTextField, {
+        message: 'zodError.common.commerceMedia.update.atLeastOneField'
+    });
+/** Inferred type for the update-media service input. */
+export type ExperienceMediaUpdateInput = z.infer<typeof ExperienceMediaUpdateInputSchema>;

@@ -697,15 +697,15 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.reviewsCount).toBe(23);
         });
 
-        it('should map media images and normalize videos from legacy string array', () => {
+        it('should map media images, and exclude a legacy bare-string video (no moderationState)', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
             expect(result.media.images).toEqual(['/img/a.jpg', '/img/b.jpg']);
-            // Legacy payload (bare strings) normalizes to `{ url }` objects so
-            // consumers can read `entry.url` uniformly.
-            expect(result.media.videos).toEqual([{ url: '/vid/c.mp4' }]);
+            // HOS-1022: a legacy bare-string entry predates `moderationState` and
+            // carries no approval signal at all — fail closed, not rendered.
+            expect(result.media.videos).toEqual([]);
         });
 
-        it('should map videos from the new object payload preserving caption + description', () => {
+        it('should map an APPROVED video from the new object payload, dropping moderationState from the output', () => {
             const item = {
                 ...makeFullItem(),
                 media: {
@@ -730,16 +730,49 @@ describe('toAccommodationDetailPageProps', () => {
             ]);
         });
 
-        it('should drop entries without a URL when normalizing videos', () => {
+        // HOS-1022: the moderation filter is the load-bearing behavior here.
+        // Mutating it away (e.g. dropping the `.filter((entry) => entry.moderationState
+        // === 'APPROVED')` line in transforms.ts) turns this red, because PENDING
+        // and REJECTED entries would then leak into the output alongside the
+        // APPROVED one.
+        it('should exclude PENDING and REJECTED videos, keeping only APPROVED ones', () => {
             const item = {
                 ...makeFullItem(),
                 media: {
                     images: [],
                     videos: [
-                        'https://www.youtube.com/watch?v=ok',
+                        {
+                            url: 'https://www.youtube.com/watch?v=approved1',
+                            moderationState: 'APPROVED'
+                        },
+                        {
+                            url: 'https://www.youtube.com/watch?v=pending1',
+                            moderationState: 'PENDING'
+                        },
+                        {
+                            url: 'https://www.youtube.com/watch?v=rejected1',
+                            moderationState: 'REJECTED'
+                        }
+                    ]
+                }
+            };
+            const result = toAccommodationDetailPageProps({ item });
+            expect(result.media.videos).toEqual([
+                { url: 'https://www.youtube.com/watch?v=approved1' }
+            ]);
+        });
+
+        it('should drop entries without a URL, and still exclude the legacy bare-string entry when normalizing videos', () => {
+            const item = {
+                ...makeFullItem(),
+                media: {
+                    images: [],
+                    videos: [
+                        'https://www.youtube.com/watch?v=legacy-no-moderation',
+                        { url: 'https://www.youtube.com/watch?v=ok', moderationState: 'APPROVED' },
                         '',
-                        { caption: 'no url here' },
-                        { url: 123 },
+                        { caption: 'no url here', moderationState: 'APPROVED' },
+                        { url: 123, moderationState: 'APPROVED' },
                         null
                     ]
                 }

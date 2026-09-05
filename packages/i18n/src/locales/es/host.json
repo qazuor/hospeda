@@ -362,7 +362,6 @@
                 "photographerTooLong": "El crédito no puede superar {{max}} caracteres",
                 "promoteFailed": "No se pudo usar esta foto como portada",
                 "promoteToFeaturedAria": "Usar foto {{index}} como portada",
-                "promoteToFeaturedShort": "Portada",
                 "remove": "Eliminar",
                 "removeFailed": "No se pudo eliminar la imagen",
                 "reorderFailed": "No se pudo guardar el nuevo orden",
@@ -376,7 +375,13 @@
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} lugar libre",
                 "galleryCapExceededOnSelectRemaining_other": "{{count}} lugares libres",
                 "processingImage": "Optimizando imagen…",
-                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana."
+                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.",
+                "altWarningTitle": "Fotos sin texto alternativo",
+                "altWarningMessage": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} foto sin ese texto completado.",
+                "altWarningMessage_one": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} foto sin ese texto completado.",
+                "altWarningMessage_other": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} fotos sin ese texto completado.",
+                "altWarningGoBack": "Volver y completarlos",
+                "altWarningContinue": "Continuar sin completarlos"
             },
             "video": {
                 "sectionTitle": "Videos",

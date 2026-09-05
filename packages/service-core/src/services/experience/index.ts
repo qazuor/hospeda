@@ -42,7 +42,8 @@ export {
     getExperienceMedia,
     removeExperienceMedia,
     reorderExperienceMedia,
-    setFeaturedExperienceMedia
+    setFeaturedExperienceMedia,
+    updateExperienceMedia
 } from './experience.media';
 // Media read/compose attach helpers (HOS-372)
 export {

@@ -5789,6 +5789,13 @@ export interface CommerceMediaRow {
     readonly caption?: string | null;
     readonly description?: string | null;
     readonly alt?: string | null;
+    /**
+     * Photo credit, or `null` when there is none (HOS-1036). Read back into
+     * the metadata panel every time it opens, so an existing credit — a stock
+     * import's provenance, for instance — is corrected rather than silently
+     * overwritten.
+     */
+    readonly attribution?: MediaAttribution | null;
     readonly isFeatured: boolean;
     readonly sortOrder: number;
     readonly state: 'visible' | 'archived';
@@ -5936,6 +5943,44 @@ export const commerceMediaApi = {
             path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
             body: { orderedIds }
         });
+    },
+
+    /**
+     * Correct a photo's text metadata — caption, description, alt and the
+     * credit (HOS-1036). Lets an owner write the accessible text the upload
+     * flow never asked for, or fix a typo, without deleting and re-uploading
+     * the photo (which would burn a second Cloudinary asset and lose the row's
+     * gallery position).
+     *
+     * Each field is nullable AND optional: omit it to leave the column
+     * untouched, send `null` to CLEAR it, send a value to replace it. At least
+     * one field must be present — an empty body is rejected by the API as
+     * `VALIDATION_ERROR`, not silently accepted.
+     *
+     * @param params - Vertical, listing ID, media row ID (DB UUID), and the fields to update
+     * @returns `{ media: CommerceMediaRow }` — the updated row
+     */
+    updateMedia({
+        vertical,
+        id,
+        mediaId,
+        body
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly mediaId: string;
+        readonly body: {
+            readonly caption?: string | null;
+            readonly description?: string | null;
+            readonly alt?: string | null;
+            /** Whole credit object, or `null` to clear it. */
+            readonly attribution?: MediaAttribution | null;
+        };
+    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
+            body
+        });
     }
 };
 
@@ -5969,6 +6014,13 @@ export interface ContentMediaRow {
     readonly caption?: string | null;
     readonly description?: string | null;
     readonly alt?: string | null;
+    /**
+     * Photo credit, or `null` when there is none (HOS-1036). Read back into
+     * the metadata panel every time it opens, so an existing credit — a stock
+     * import's provenance, for instance — is corrected rather than silently
+     * overwritten.
+     */
+    readonly attribution?: MediaAttribution | null;
     readonly isFeatured: boolean;
     readonly sortOrder: number;
     readonly state: 'visible' | 'archived';
@@ -6119,6 +6171,43 @@ export const contentMediaApi = {
         return apiClient.patch({
             path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/reorder`,
             body: { orderedIds }
+        });
+    },
+
+    /**
+     * Correct a photo's text metadata — caption, description, alt and the
+     * credit (HOS-1036). Until this endpoint existed the post and event
+     * editors offered no way to write a photo's alt text at all, so every
+     * uploaded photo shipped with nothing a screen reader could announce.
+     *
+     * Each field is nullable AND optional: omit it to leave the column
+     * untouched, send `null` to CLEAR it, send a value to replace it. At least
+     * one field must be present — an empty body is rejected by the API as
+     * `VALIDATION_ERROR`, not silently accepted.
+     *
+     * @param params - Entity, entity ID, media row ID (DB UUID), and the fields to update
+     * @returns `{ media: ContentMediaRow }` — the updated row
+     */
+    updateMedia({
+        entity,
+        id,
+        mediaId,
+        body
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly mediaId: string;
+        readonly body: {
+            readonly caption?: string | null;
+            readonly description?: string | null;
+            readonly alt?: string | null;
+            /** Whole credit object, or `null` to clear it. */
+            readonly attribution?: MediaAttribution | null;
+        };
+    }): Promise<ApiResult<{ readonly media: ContentMediaRow }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}`,
+            body
         });
     }
 };

@@ -38,6 +38,8 @@
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
+import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
+import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
 import { type CommerceMediaRow, commerceMediaApi } from '@/lib/api/endpoints-protected';
 import type { ApiError } from '@/lib/api/types';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
@@ -45,6 +47,7 @@ import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import type { MediaAttribution } from '@/lib/media';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
@@ -66,8 +69,16 @@ interface CommerceMediaItem {
     readonly id: string;
     readonly url: string;
     readonly publicId?: string;
-    readonly caption?: string;
-    readonly alt?: string;
+    readonly caption: string | undefined;
+    /**
+     * Longer photo description. Added by HOS-1036 alongside `attribution`:
+     * both columns existed on the media tables from HOS-372 and were simply
+     * never read here, because nothing in this section could write them.
+     */
+    readonly description: string | undefined;
+    readonly alt: string | undefined;
+    /** Photo credit, when the owner declared one. */
+    readonly attribution: MediaAttribution | undefined;
     readonly isFeatured: boolean;
 }
 
@@ -113,7 +124,9 @@ function rowToItem(row: CommerceMediaRow): CommerceMediaItem {
         url: row.url,
         publicId: row.publicId ?? undefined,
         caption: row.caption ?? undefined,
+        description: row.description ?? undefined,
         alt: row.alt ?? undefined,
+        attribution: row.attribution ?? undefined,
         isFeatured: row.isFeatured
     };
 }
@@ -130,7 +143,9 @@ function legacyToDisplay(img: Image, isFeatured: boolean): CommerceMediaItem {
         url: img.url,
         publicId: img.publicId ?? undefined,
         caption: img.caption ?? undefined,
+        description: img.description ?? undefined,
         alt: img.alt ?? undefined,
+        attribution: img.attribution ?? undefined,
         isFeatured
     };
 }
@@ -636,6 +651,61 @@ export function MediaSection({
         [vertical, listingId, t, reportError]
     );
 
+    /**
+     * Persist a photo's text metadata (alt / caption / description / credit).
+     *
+     * Immediate and per-photo like every other op here: `updateMedia` PATCHes
+     * only this row, and the listing editor's Save button never carries photo
+     * data. A blank field arrives as `null` (clear) rather than `''` — see
+     * `buildPhotoMetadataUpdateBody`, which is what the panel builds the body
+     * with.
+     *
+     * On success the row is replaced in local state so re-opening the panel
+     * shows the CURRENT values rather than the ones it mounted with.
+     *
+     * @returns `true` when the PATCH succeeded — the panel shows its saved
+     *   badge only then.
+     */
+    const handleUpdateText = useCallback(
+        async (item: CommerceMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
+            // An SSR placeholder carries `id: ''` and has no row to patch yet.
+            if (!item.id) {
+                return false;
+            }
+            setError(null);
+            setOpLoading(true);
+
+            const result = await commerceMediaApi.updateMedia({
+                vertical,
+                id: listingId,
+                mediaId: item.id,
+                body
+            });
+
+            setOpLoading(false);
+
+            if (!result.ok) {
+                reportError(
+                    result.error.message ??
+                        t(
+                            'commerce.owner.editor.media.metadataSaveFailed',
+                            'No se pudieron guardar los datos de la foto'
+                        )
+                );
+                return false;
+            }
+
+            const updated = rowToItem(result.data.media);
+            if (updated.isFeatured) {
+                setFeaturedItem(updated);
+            } else {
+                setGalleryItems((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+            }
+            return true;
+        },
+        [vertical, listingId, t, reportError]
+    );
+
     const anyOpInFlight = isUploading || isCompressing || opLoading;
     // Ops require hydrated DB ids; SSR placeholders (id='') cannot be operated on
     const opsReady = isHydrated;
@@ -654,21 +724,43 @@ export function MediaSection({
                         {t('commerce.owner.editor.media.featured', 'Imagen principal')}
                     </span>
                     {featuredItem ? (
-                        <div className={`${styles.mediaThumb} ${styles.mediaThumbFeatured}`}>
-                            <img
-                                src={featuredItem.url}
-                                alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                                className={styles.mediaImage}
+                        <div className={styles.mediaItem}>
+                            <div className={`${styles.mediaThumb} ${styles.mediaThumbFeatured}`}>
+                                <img
+                                    src={featuredItem.url}
+                                    alt={
+                                        featuredItem.alt ??
+                                        t(
+                                            'commerce.owner.editor.media.featured',
+                                            'Imagen principal'
+                                        )
+                                    }
+                                    className={styles.mediaImage}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.mediaRemove}
+                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
+                                    disabled={anyOpInFlight || !opsReady || !featuredItem.id}
+                                    onClick={handleFeaturedRemove}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <PhotoMetadataEditor
+                                locale={locale}
+                                item={featuredItem}
+                                disabled={anyOpInFlight || !opsReady}
+                                toggleAriaLabel={t(
+                                    'host.properties.editor.photo.editFeaturedDetailsAria',
+                                    'Editar textos de la portada'
+                                )}
+                                closeAriaLabel={t(
+                                    'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                    'Cerrar edición de textos de la portada'
+                                )}
+                                onSave={handleUpdateText}
                             />
-                            <button
-                                type="button"
-                                className={styles.mediaRemove}
-                                aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                                disabled={anyOpInFlight || !opsReady || !featuredItem.id}
-                                onClick={handleFeaturedRemove}
-                            >
-                                ×
-                            </button>
                         </div>
                     ) : (
                         <button
@@ -695,28 +787,53 @@ export function MediaSection({
                         {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
                     </span>
                     <div className={styles.mediaGallery}>
-                        {galleryItems.map((image) => (
+                        {galleryItems.map((image, index) => (
                             <div
                                 key={image.id || image.url}
-                                className={styles.mediaThumb}
+                                className={styles.mediaItem}
                             >
-                                <img
-                                    src={image.url}
-                                    alt={t(
-                                        'commerce.owner.editor.media.gallery',
-                                        'Galería de fotos'
+                                <div className={styles.mediaThumb}>
+                                    <img
+                                        src={image.url}
+                                        alt={
+                                            image.alt ??
+                                            t(
+                                                'commerce.owner.editor.media.gallery',
+                                                'Galería de fotos'
+                                            )
+                                        }
+                                        className={styles.mediaImage}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.mediaRemove}
+                                        aria-label={t(
+                                            'commerce.owner.editor.media.remove',
+                                            'Eliminar'
+                                        )}
+                                        disabled={anyOpInFlight || !opsReady || !image.id}
+                                        onClick={() => handleGalleryRemove(image)}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                <PhotoMetadataEditor
+                                    locale={locale}
+                                    item={image}
+                                    disabled={anyOpInFlight || !opsReady}
+                                    compactLayout={true}
+                                    toggleAriaLabel={t(
+                                        'host.properties.editor.photo.editDetailsAria',
+                                        'Editar textos de la foto {{index}}',
+                                        { index: index + 1 }
                                     )}
-                                    className={styles.mediaImage}
+                                    closeAriaLabel={t(
+                                        'host.properties.editor.photo.closeDetailsAria',
+                                        'Cerrar edición de textos de la foto {{index}}',
+                                        { index: index + 1 }
+                                    )}
+                                    onSave={handleUpdateText}
                                 />
-                                <button
-                                    type="button"
-                                    className={styles.mediaRemove}
-                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                                    disabled={anyOpInFlight || !opsReady || !image.id}
-                                    onClick={() => handleGalleryRemove(image)}
-                                >
-                                    ×
-                                </button>
                             </div>
                         ))}
                         {!isGalleryFull && (

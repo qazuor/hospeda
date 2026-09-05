@@ -220,10 +220,12 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
         expect(scriptSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('frame-src allowlists only the Cloudflare Turnstile host in prod (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B)', () => {
+    it('frame-src allowlists the Cloudflare Turnstile host plus the three video-embed hosts in prod (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B; HOS-1022 video embeds)', () => {
         const header = buildCspHeader(NO_HASHES);
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
-        expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
+        expect(frameSrc).toBe(
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+        );
     });
 });
 
@@ -289,20 +291,24 @@ describe("buildCspHeader — dev-only frame-src 'self'", () => {
     it("does NOT grant 'self' in prod (isDev: false)", () => {
         const header = buildCspHeader({ ...NO_HASHES, isDev: false });
 
-        expect(findFrameSrcDirective(header)).toBe('frame-src https://challenges.cloudflare.com');
+        expect(findFrameSrcDirective(header)).toBe(
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+        );
     });
 
     it("does NOT grant 'self' by default (isDev omitted)", () => {
         const header = buildCspHeader(NO_HASHES);
 
-        expect(findFrameSrcDirective(header)).toBe('frame-src https://challenges.cloudflare.com');
+        expect(findFrameSrcDirective(header)).toBe(
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+        );
     });
 
     it("grants 'self' in dev so the ClientRouter client:only iframe is not blocked", () => {
         const header = buildCspHeader({ ...NO_HASHES, isDev: true });
 
         expect(findFrameSrcDirective(header)).toBe(
-            "frame-src 'self' https://challenges.cloudflare.com"
+            "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com"
         );
     });
 

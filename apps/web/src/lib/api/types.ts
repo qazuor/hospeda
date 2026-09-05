@@ -373,16 +373,16 @@ export interface AccommodationMediaItem {
     readonly id: string;
     readonly url: string;
     readonly publicId: string;
-    readonly caption?: string;
+    readonly caption: string | undefined;
     /** Longer photo description (HOS-125 — correctable via updateMedia). */
-    readonly description?: string;
-    readonly alt?: string;
+    readonly description: string | undefined;
+    readonly alt: string | undefined;
     /**
      * Photo credit written by the host, or carried in from a stock import
      * (H-125). Read back into the metadata panel every time it opens, so an
      * existing credit is corrected rather than silently overwritten.
      */
-    readonly attribution?: MediaAttribution;
+    readonly attribution: MediaAttribution | undefined;
     readonly width?: number;
     readonly height?: number;
     readonly isFeatured: boolean;

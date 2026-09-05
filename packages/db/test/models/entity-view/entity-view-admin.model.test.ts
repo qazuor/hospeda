@@ -57,6 +57,35 @@ function extractBoundTimeZones(mockExecute: ReturnType<typeof vi.fn>): string[] 
     );
 }
 
+/**
+ * Reassembles the literal SQL text of the query, i.e. everything that is NOT a
+ * bound parameter.
+ *
+ * Drizzle wraps literal fragments in a `StringChunk` (`{ value: string[] }`),
+ * while an interpolated value appears as the bare value itself. `sql.raw(...)`
+ * produces a nested `SQL` whose own `queryChunks` hold the raw text — which is
+ * how `MARKET_TIMEZONE_SQL` reaches the statement as a literal rather than a
+ * parameter, and why this walker has to recurse.
+ */
+function extractSqlText(mockExecute: ReturnType<typeof vi.fn>): string {
+    const collect = (chunks: unknown[]): string =>
+        chunks
+            .map((chunk) => {
+                if (chunk && typeof chunk === 'object' && 'value' in chunk) {
+                    const { value } = chunk as { value: unknown };
+                    if (Array.isArray(value)) return value.join('');
+                }
+                if (chunk && typeof chunk === 'object' && 'queryChunks' in chunk) {
+                    return collect((chunk as { queryChunks: unknown[] }).queryChunks);
+                }
+                return '';
+            })
+            .join('');
+
+    const sqlArg = mockExecute.mock.calls[0]?.[0] as { queryChunks: unknown[] } | undefined;
+    return collect(sqlArg?.queryChunks ?? []);
+}
+
 // Mock the logger so tests don't produce noise.
 vi.mock('../../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -180,13 +209,29 @@ describe('EntityViewModel — admin methods (SPEC-197)', () => {
             expect(boundWindowStart.toISOString()).toBe(expected.windowStart.toISOString());
             expect(boundWindowStart.toISOString()).not.toBe('2026-05-12T00:00:00.000Z');
 
-            // Assert — the query binds the IANA zone for AT TIME ZONE (used
-            // twice: once in the SELECT, once in GROUP BY), never a
-            // hardcoded offset.
-            expect(extractBoundTimeZones(mockDb.execute)).toEqual([
-                MARKET_TIMEZONE,
-                MARKET_TIMEZONE
-            ]);
+            // Assert — the zone reaches the SQL as a LITERAL, never as a bound
+            // parameter.
+            //
+            // This assertion used to require exactly the opposite (two bound
+            // `MARKET_TIMEZONE` params, one per `AT TIME ZONE`), and it was
+            // green while the query was rejected by Postgres on every call:
+            //
+            //   ERROR: column "entity_views.viewed_at" must appear in the
+            //          GROUP BY clause or be used in an aggregate function
+            //
+            // Binding the zone twice yields `$1` in the SELECT and `$4` in the
+            // GROUP BY. Postgres matches grouping expressions syntactically, so
+            // two different parameter numbers are two different expressions and
+            // the SELECT column counts as ungrouped. A literal is byte-identical
+            // on both sides, which is what makes the query legal.
+            const sqlText = extractSqlText(mockDb.execute);
+            expect(sqlText).toContain(`AT TIME ZONE '${MARKET_TIMEZONE}'`);
+            expect(extractBoundTimeZones(mockDb.execute)).toEqual([]);
+
+            // And the conversion must appear on BOTH sides — dropping it from
+            // the GROUP BY brings back the same Postgres error.
+            const occurrences = sqlText.split(`AT TIME ZONE '${MARKET_TIMEZONE}'`).length - 1;
+            expect(occurrences).toBe(2);
         });
 
         it('getAdminSummaryTotals: windowStart is local-midnight-anchored and covers exactly windowDays calendar dates', async () => {
