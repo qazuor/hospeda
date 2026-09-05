@@ -221,7 +221,14 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
 
           Note it is handed `partnerId`, not `slug`: `entity_views.entity_id` is
           a uuid column.
+
+          Rendered ONLY when `partnerId` is non-empty (M-2): the tracker does
+          not validate its `entityId` prop, so an empty string would still fire
+          a beacon — one the API rejects with 400 — for a raw payload with no
+          `id`. Not rendering it at all is cheaper than teaching the tracker
+          to skip an empty id.
         -->
+        {partnerId && (
         <EntityViewTracker
             client:idle
             entityType="PARTNER"
@@ -229,6 +236,7 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
             entityId={partnerId}
             locale={locale}
         />
+        )}
     </article>
 </DefaultLayout>
 
