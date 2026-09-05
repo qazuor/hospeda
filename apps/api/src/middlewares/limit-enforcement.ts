@@ -120,6 +120,19 @@ export function buildLimitReachedDetails(input: {
  * `currentCount` is ever read — `checkLimit` ignores `currentCount` entirely
  * on that branch. Only a plan with a real, finite cap is refused.
  *
+ * The sentinel is a DECISION input only — it must never reach the response.
+ * `LIMIT_REACHED` is one of the two error codes whose `details` are public on
+ * every route, unconditionally (`PUBLIC_DETAILS_ERROR_CODES` in
+ * `response-helpers.ts`), and the web app interpolates `details.currentCount`
+ * straight into an upgrade toast (`billing-limit-error.ts`). Echoing
+ * `Number.MAX_SAFE_INTEGER` there once read "Ya guardaste 9007199254740991 de
+ * 5 favoritos" to a real user — the exact kind of thing the 403-over-503
+ * choice was supposed to avoid (it was picked BECAUSE the UI already renders
+ * `LIMIT_REACHED` correctly without a frontend change). So the reported
+ * `currentCount` is clamped to `maxAllowed` (and `usagePercent` to 100): "you
+ * saved 5 of 5" is honest — we don't know the real count, and what we're
+ * telling the caller is that they cannot add more.
+ *
  * No-ops (returns normally) when the plan is unlimited; throws otherwise.
  *
  * @param params.context - Hono request context carrying the loaded plan limits.
@@ -135,7 +148,8 @@ function denyOnUnresolvedCount(params: {
 
     // Sentinel currentCount: guaranteed >= any real finite maxAllowed, so
     // checkLimit denies for every plan except the -1 (unlimited) case, which
-    // never inspects currentCount at all.
+    // never inspects currentCount at all. This sentinel decides; it is NEVER
+    // reported below — see the JSDoc above for why.
     const limitCheck = checkLimit({
         context,
         limitKey,
@@ -148,9 +162,12 @@ function denyOnUnresolvedCount(params: {
             limitCheck.upgradeMessage ?? fallbackMessage,
             buildLimitReachedDetails({
                 limitKey,
-                currentCount: limitCheck.currentCount,
+                // Reported as "at the cap" (maxAllowed/100%), NEVER the
+                // sentinel — LIMIT_REACHED's `details` are public on every
+                // route and the web app renders `currentCount` directly.
+                currentCount: limitCheck.maxAllowed,
                 maxAllowed: limitCheck.maxAllowed,
-                usagePercent: calculateUsagePercent(limitCheck.currentCount, limitCheck.maxAllowed)
+                usagePercent: 100
             })
         );
     }
@@ -444,8 +461,12 @@ export function enforcePromotionLimit(): AppMiddleware {
 
             if (countResult.error) {
                 apiLogger.error(
-                    `Failed to count promotions for limit check: ${countResult.error.message}`,
-                    undefined,
+                    {
+                        actorId: actor.id,
+                        errorCode: countResult.error.code,
+                        errorMessage: countResult.error.message
+                    },
+                    'HOS-1087: failed to count promotions for limit check — failing closed',
                     { capture: true }
                 );
                 // HOS-1087: fail CLOSED instead of continuing with an
@@ -507,8 +528,8 @@ export function enforcePromotionLimit(): AppMiddleware {
             }
 
             apiLogger.error(
-                `Error in promotion limit enforcement: ${error instanceof Error ? error.message : String(error)}`,
-                undefined,
+                { error: error instanceof Error ? error.message : String(error) },
+                'HOS-1087: unexpected error in promotion limit enforcement — failing closed',
                 { capture: true }
             );
 
@@ -588,16 +609,23 @@ export async function assertFavoritesLimitOrThrow(params: {
             // which is exactly how this fail-open ran silently for as long
             // as it did.
             apiLogger.error(
-                `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`,
-                undefined,
+                {
+                    actorId: actor.id,
+                    errorCode: countResult.error.code,
+                    errorMessage: countResult.error.message
+                },
+                'HOS-1087: failed to get bookmark count for favorites limit check — failing closed',
                 { capture: true }
             );
         }
     } catch (countError) {
         countFailed = true;
         apiLogger.error(
-            `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`,
-            undefined,
+            {
+                actorId: actor.id,
+                error: countError instanceof Error ? countError.message : String(countError)
+            },
+            'HOS-1087: unexpected error fetching bookmark count — failing closed',
             { capture: true }
         );
     }
