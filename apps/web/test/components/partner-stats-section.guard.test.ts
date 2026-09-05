@@ -33,6 +33,12 @@ const SRC = path.resolve(__dirname, '../../src');
 const PARTNERS_SECTION = path.join(SRC, 'components/sections/PartnersSection.astro');
 const STATS_SECTION = path.join(SRC, 'components/account/PartnerStatsSection.astro');
 const MENTIONS_SECTION = path.join(SRC, 'components/account/PartnerMentionsSection.astro');
+/**
+ * Where the per-card show/withhold decision actually lives. The two `.astro`
+ * files render what this module hands them, so a tier comparison that slipped in
+ * HERE would be the one that matters and the one the guard was not reading.
+ */
+const STATS_CARDS = path.join(SRC, 'lib/partner-stats-cards.ts');
 
 const read = (file: string): string => readFileSync(file, 'utf-8');
 
@@ -66,6 +72,29 @@ describe('HOS-1063 AC-16 — the home carousel gains no island', () => {
         const code = readCode(PARTNERS_SECTION);
         expect(code).toMatch(/sendPartnerLogoClickBeacon/);
         expect(code).toMatch(/addEventListener\(\s*'click'/);
+    });
+
+    /**
+     * B-3: this `<script>` block contains an `import`, which makes it a MODULE
+     * script — one Astro's ClientRouter runs exactly ONCE per browsing session,
+     * not once per page render. Every site navigation goes through View
+     * Transitions (`BaseLayout.astro` renders `<ClientRouter />`
+     * unconditionally), so a listener attached at module top level only ever
+     * sees the FIRST home page's `.partners-track` node: navigate away and back
+     * and the swapped-in track carries no listener at all — zero clicks
+     * recorded, with no console error to notice it by.
+     *
+     * The fix is the same lifecycle StatsSection.astro already uses: (re)attach
+     * on `astro:page-load` and tear down on `astro:before-swap`. A test that
+     * only checked for `addEventListener('click'` (the assertion right above)
+     * cannot tell this apart from the broken, module-scope version — both
+     * contain that exact substring — so this checks for the lifecycle wiring
+     * itself.
+     */
+    it('binds and tears down the listener through the astro navigation lifecycle', () => {
+        const code = readCode(PARTNERS_SECTION);
+        expect(code).toMatch(/addEventListener\(\s*'astro:page-load'/);
+        expect(code).toMatch(/addEventListener\(\s*'astro:before-swap'/);
     });
 });
 
@@ -254,12 +283,24 @@ describe('HOS-1063 AC-11 / §7.2 — no dead column, no tier gating in the view 
         expect(code).not.toMatch(/incrementAnalytics/);
     });
 
+    /**
+     * `partner-stats-cards.ts` is in this list and was not: the two `.astro`
+     * files only RENDER what it decides, so a `tier === 'gold'` there would be
+     * the second source of truth this rule exists to forbid, sitting in the one
+     * file the guard did not read. It legitimately passes the tier THROUGH — as
+     * an argument to `resolvePartnerLogoLink`, which is the single site allowed
+     * to look at it — and passing it is not comparing it, which is why the
+     * predicates below watch for a comparison and a tier LITERAL rather than for
+     * the word `tier`.
+     */
     it.each([
         ['stats section', STATS_SECTION],
-        ['partners carousel', PARTNERS_SECTION]
+        ['partners carousel', PARTNERS_SECTION],
+        ['stats cards', STATS_CARDS]
     ])('%s never compares a tier — that decision belongs to resolvePartnerLogoLink', (_label, file) => {
         const code = readCode(file);
         expect(code).not.toMatch(/tier\s*===/);
+        expect(code).not.toMatch(/tier\s*!==/);
         expect(code).not.toMatch(/['"]gold['"]/);
         expect(code).not.toMatch(/['"]silver['"]/);
     });
