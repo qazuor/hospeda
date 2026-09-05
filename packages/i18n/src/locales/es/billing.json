@@ -318,13 +318,27 @@
             "title": "Llegaste al límite de gastronomías",
             "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomía en tu plan. Actualizalo para publicar más.",
             "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomías en tu plan. Actualizalo para publicar más.",
-            "cta": "Ver mi suscripción"
+            "cta": "Ver mi suscripción",
+            "atLimitPanel": {
+                "title": "Llegaste al límite de tu plan",
+                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} ficha de gastronomía. Para publicar otra, actualizá tu plan.",
+                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} fichas de gastronomía. Para publicar otra, actualizá tu plan.",
+                "primaryCta": "Ver mi suscripción",
+                "secondaryCta": "Ver mis fichas"
+            }
         },
         "max_experiences": {
             "title": "Llegaste al límite de experiencias",
             "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} experiencia en tu plan. Actualizalo para publicar más.",
             "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} experiencias en tu plan. Actualizalo para publicar más.",
-            "cta": "Ver mi suscripción"
+            "cta": "Ver mi suscripción",
+            "atLimitPanel": {
+                "title": "Llegaste al límite de tu plan",
+                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} experiencia. Para publicar otra, actualizá tu plan.",
+                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} experiencias. Para publicar otra, actualizá tu plan.",
+                "primaryCta": "Ver mi suscripción",
+                "secondaryCta": "Ver mis experiencias"
+            }
         },
         "max_photos_per_accommodation": {
             "title": "Llegaste al límite de fotos",

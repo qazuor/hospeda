@@ -1,0 +1,166 @@
+{
+    "signedOut": {
+        "tagline": "Primeiro passo",
+        "title": "Crie sua conta e publique",
+        "body": "Você precisa de uma conta para preencher sua ficha. Leva menos de dois minutos e você volta para esta mesma página para completá-la.",
+        "signupCta": "Criar minha conta",
+        "signinPrompt": "Já tem uma conta?",
+        "signinCta": "Entrar"
+    },
+    "benefits": {
+        "tagline": "Por que a Hospeda?"
+    },
+    "steps": {
+        "tagline": "É simples assim",
+        "title": "Como funciona?"
+    },
+    "plans": {
+        "tagline": "Antes de decidir",
+        "title": "Quer ver os planos primeiro?",
+        "body": "Veja o que cada plano inclui e quanto custa. Você pode voltar a esta página quando quiser.",
+        "plansCta": "Ver planos",
+        "pricingCta": "Ver preços"
+    },
+    "gastronomy": {
+        "meta": {
+            "title": "Publique seu estabelecimento gastronômico",
+            "description": "Cadastre a ficha do seu restaurante, bar, churrascaria ou food truck na Hospeda e alcance os viajantes que procuram onde comer no litoral."
+        },
+        "hero": {
+            "tagline": "Para estabelecimentos gastronômicos",
+            "title": "Publique seu estabelecimento e seja encontrado",
+            "body": "Comece aqui pelo básico: o nome do seu estabelecimento, que tipo é e em qual destino fica. As fotos, o cardápio e os horários você preenche depois, no seu painel."
+        },
+        "steps": {
+            "step1": {
+                "title": "Preencha os dados básicos",
+                "desc": "Nome, tipo de estabelecimento e destino. É só o que precisamos para criar sua ficha na hora."
+            },
+            "step2": {
+                "title": "Complete sua ficha",
+                "desc": "Some fotos, cardápio, horários e formas de contato pelo painel, no seu ritmo."
+            },
+            "step3": {
+                "title": "Você entra no ar",
+                "desc": "Seu estabelecimento aparece no catálogo de gastronomia e quem está na região encontra você."
+            }
+        },
+        "benefits": {
+            "title": "O que você leva",
+            "item1": {
+                "title": "Visto por quem já está aqui",
+                "desc": "Milhares de viajantes procuram todo mês onde comer em Concepción del Uruguay e no litoral de Entre Ríos."
+            },
+            "item2": {
+                "title": "A ficha é sua",
+                "desc": "Você muda o cardápio, as fotos e os horários quando quiser, sem pedir permissão a ninguém."
+            },
+            "item3": {
+                "title": "Sem comissão por consulta",
+                "desc": "Você paga seu plano e pronto. Nenhuma reserva ou consulta cobra um valor à parte."
+            }
+        }
+    },
+    "experience": {
+        "meta": {
+            "title": "Publique sua experiência",
+            "description": "Cadastre seu passeio, excursão ou oficina na Hospeda e alcance os viajantes que já estão procurando o que fazer no litoral."
+        },
+        "hero": {
+            "tagline": "Para quem oferece experiências",
+            "title": "Publique sua experiência e lote as vagas",
+            "body": "Comece aqui pelo básico: o que você oferece, de que tipo é e de qual destino sai. As fotos, o ponto de encontro e os horários você preenche depois, no seu painel."
+        },
+        "steps": {
+            "step1": {
+                "title": "Conte o que você oferece",
+                "desc": "Nome, tipo de experiência e destino. É só o que precisamos para criar sua ficha na hora."
+            },
+            "step2": {
+                "title": "Complete sua ficha",
+                "desc": "Some fotos, ponto de encontro, duração e horários pelo painel, no seu ritmo."
+            },
+            "step3": {
+                "title": "Você entra no ar",
+                "desc": "Sua experiência aparece no catálogo e os viajantes que já estão na região encontram você."
+            }
+        },
+        "benefits": {
+            "title": "O que você leva",
+            "item1": {
+                "title": "Visto por quem já viajou",
+                "desc": "Quem reserva hospedagem no litoral procura depois o que fazer, e é aí que você aparece."
+            },
+            "item2": {
+                "title": "A ficha é sua",
+                "desc": "Você muda fotos, horários e preços quando quiser, sem pedir permissão a ninguém."
+            },
+            "item3": {
+                "title": "Sem comissão por reserva",
+                "desc": "Você paga seu plano e pronto. Nenhuma reserva ou consulta cobra um valor à parte."
+            }
+        }
+    },
+    "precheck": {
+        "gastronomy": {
+            "resumeOrCreate": {
+                "title": "Você já tem uma ficha começada",
+                "body": "Você tem uma ficha de gastronomia sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",
+                "resumeCta": "Retomar a ficha",
+                "createCta": "Criar uma nova"
+            },
+            "resumeDeleteOrUpgrade": {
+                "title": "Você tem uma ficha começada, mas atingiu o limite do seu plano",
+                "body_one": "Você está usando {{currentCount}} ficha e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
+                "body_other": "Você está usando {{currentCount}} fichas e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
+                "resumeCta": "Retomar a ficha",
+                "deleteCta": "Apagar a ficha",
+                "deleteConfirm": "Apagar esta ficha sem publicar? Você vai poder criar uma nova.",
+                "upgradeCta": "Fazer upgrade do plano"
+            },
+            "pickDraftOrCreate": {
+                "title": "Você tem várias fichas sem publicar",
+                "body": "Escolha uma das fichas que já começou para continuar, ou comece uma nova do zero.",
+                "createCta": "Criar uma nova",
+                "pickCta": "Editar uma ficha começada"
+            },
+            "pickDraftDeleteOrUpgrade": {
+                "title": "Você tem várias fichas começadas, mas atingiu o limite do seu plano",
+                "body_one": "Você está usando {{currentCount}} ficha e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
+                "body_other": "Você está usando {{currentCount}} fichas e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
+                "pickCta": "Editar uma ficha começada",
+                "upgradeCta": "Fazer upgrade do plano"
+            }
+        },
+        "experience": {
+            "resumeOrCreate": {
+                "title": "Você já tem uma experiência começada",
+                "body": "Você tem uma experiência sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",
+                "resumeCta": "Retomar a experiência",
+                "createCta": "Criar uma nova"
+            },
+            "resumeDeleteOrUpgrade": {
+                "title": "Você tem uma experiência começada, mas atingiu o limite do seu plano",
+                "body_one": "Você está usando {{currentCount}} experiência e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
+                "body_other": "Você está usando {{currentCount}} experiências e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
+                "resumeCta": "Retomar a experiência",
+                "deleteCta": "Apagar a experiência",
+                "deleteConfirm": "Apagar esta experiência sem publicar? Você vai poder criar uma nova.",
+                "upgradeCta": "Fazer upgrade do plano"
+            },
+            "pickDraftOrCreate": {
+                "title": "Você tem várias experiências sem publicar",
+                "body": "Escolha uma das experiências que já começou para continuar, ou comece uma nova do zero.",
+                "createCta": "Criar uma nova",
+                "pickCta": "Editar uma experiência começada"
+            },
+            "pickDraftDeleteOrUpgrade": {
+                "title": "Você tem várias experiências começadas, mas atingiu o limite do seu plano",
+                "body_one": "Você está usando {{currentCount}} experiência e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
+                "body_other": "Você está usando {{currentCount}} experiências e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
+                "pickCta": "Editar uma experiência começada",
+                "upgradeCta": "Fazer upgrade do plano"
+            }
+        }
+    }
+}

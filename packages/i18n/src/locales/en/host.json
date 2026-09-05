@@ -919,15 +919,33 @@
             "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "pickCta": "Edit an existing draft",
+                    "title": "You have several drafts, but you've reached your plan's limit",
+                    "upgradeCta": "Upgrade plan"
+                },
+                "pickDraftOrCreate": {
+                    "body": "Pick one of your existing drafts to carry on, or start a new property from scratch.",
+                    "createCta": "Create a new one",
+                    "pickCta": "Edit an existing draft",
+                    "title": "You have several unpublished drafts"
+                },
                 "resumeDeleteOrUpgrade": {
                     "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
                     "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
                     "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador"
+                    "deleteCta": "Borrar borrador",
+                    "resumeCta": "Resume draft",
+                    "title": "You have a draft, but you've reached your plan's limit",
+                    "upgradeCta": "Upgrade plan"
                 },
-                "pickDraftDeleteOrUpgrade": {
-                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one."
+                "resumeOrCreate": {
+                    "body": "You have an unpublished property. You can pick it up where you left off or start a new one from scratch.",
+                    "createCta": "Create a new one",
+                    "resumeCta": "Resume draft",
+                    "title": "You already have a draft in progress"
                 }
             }
         }

@@ -318,13 +318,27 @@
             "title": "You've reached your gastronomy limit",
             "message_one": "You have {{currentCount}} of {{maxAllowed}} gastronomy listing in your plan. Upgrade to publish more.",
             "message_other": "You have {{currentCount}} of {{maxAllowed}} gastronomy listings in your plan. Upgrade to publish more.",
-            "cta": "View my subscription"
+            "cta": "View my subscription",
+            "atLimitPanel": {
+                "title": "You've reached your plan's limit",
+                "body_one": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listing. Upgrade your plan to publish another one.",
+                "body_other": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listings. Upgrade your plan to publish another one.",
+                "primaryCta": "View my subscription",
+                "secondaryCta": "View my listings"
+            }
         },
         "max_experiences": {
             "title": "You've reached your experiences limit",
             "message_one": "You have {{currentCount}} of {{maxAllowed}} experience in your plan. Upgrade to publish more.",
             "message_other": "You have {{currentCount}} of {{maxAllowed}} experiences in your plan. Upgrade to publish more.",
-            "cta": "View my subscription"
+            "cta": "View my subscription",
+            "atLimitPanel": {
+                "title": "You've reached your plan's limit",
+                "body_one": "You're using {{currentCount}} of {{maxAllowed}} experience. Upgrade your plan to publish another one.",
+                "body_other": "You're using {{currentCount}} of {{maxAllowed}} experiences. Upgrade your plan to publish another one.",
+                "primaryCta": "View my subscription",
+                "secondaryCta": "View my experiences"
+            }
         },
         "max_photos_per_accommodation": {
             "title": "You've reached your photo limit",

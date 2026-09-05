@@ -1,53 +1,41 @@
 ---
 /**
  * @file publicar-restaurante/index.astro
- * @description Permanent redirect to `/planes/gastronomia/`, the gastronomy
- * sales page (HOS-941 D-8).
+ * @description Permanent redirect to `/{lang}/publicar/gastronomia/`, the
+ * gastronomy publish page (HOS-1156 D-6).
  *
- * ## Why now and not with HOS-985
+ * ## This target OVERRIDES HOS-941 D-8
  *
- * H6 built `/planes/gastronomia/` and deliberately left this URL serving, for
- * one concrete reason it wrote down: this page still carried the vertical's
- * PRICE inline, and the price only moves down to `/planes/gastronomia/precios/`
- * when H7 builds that page. Retiring the URL first would have left the whole
- * vertical with no price anywhere on the site. Both halves land together here.
+ * HOS-1032 pointed this URL at `/planes/gastronomia/`, and its reasoning was
+ * sound at the time: "its successor by content is the SALES page", because this
+ * URL's body was an argument with a price block, and no publish page existed for
+ * this vertical to send anyone to.
  *
- * ## Why `/planes/gastronomia/` and not `.../precios/`
+ * One does now, and it is a superset of what the sales page offers an arriving
+ * visitor: the same argument, plus the form, plus a link back to the sales page
+ * for anyone who wants the numbers first. The URL's own name said *publicar*;
+ * it finally leads there.
  *
- * This URL's content was a SALES page that happened to also carry a price
- * block: hero, benefits, how-it-works, FAQ, and the card at the end. Its
- * successor by content is the sales page, and a visitor arriving from an old
- * link expects the argument they came for, not a grid. The price block's own
- * successor is one level further down, and the sales page's CTA is what takes
- * them there.
+ * ## Why the query string is forwarded
  *
- * ## Why `gastronomia` and not `restaurantes`
- *
- * D-9. HOS-986 is open precisely because "Publicá tu restaurante" reads as
- * excluding food trucks, rotiserías and parrillas — all of which this vertical
- * sells to. The old slug baked that exclusion into the URL, which is the most
- * expensive thing to change later; retiring it is the cheapest this will ever
- * be, since the page shipped on 2026-08-21 (PR #2920) and has accumulated
- * almost no ranking to move.
+ * A URL that MOVED keeps the parameters addressed to it — see
+ * `lib/pricing-redirect.ts` for the live case that made this non-optional.
  *
  * @route     /{lang}/publicar-restaurante/
  * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
 import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale;
 
-// The query string is FORWARDED, not rebuilt away. `?interval=` on the
-// trial-ending nudge is the live case: dropping it shows monthly prices to a
-// customer who chose annual, and nothing about the redirect looks wrong when it
-// happens. See `lib/pricing-redirect.ts`.
 return Astro.redirect(
     buildPricingRedirectTarget({
         locale,
-        path: 'planes/gastronomia',
+        path: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy,
         search: Astro.url.search
     }),
     301
