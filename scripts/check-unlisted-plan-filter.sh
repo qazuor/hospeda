@@ -114,6 +114,28 @@ KEY_DEFINITION_FILE='packages/schemas/src/api/billing/billing-plan.schema.ts'
 
 FAILED=0
 
+# --- Helper: a function's body, with comment lines removed -------------------
+#
+# Every check that greps a WHOLE FILE for an expression is satisfied by that
+# expression sitting in a comment. That is not hypothetical: the predicate
+# checks below and the delegation check (9) were each disarmed by rewriting the
+# real function to `return true;` and leaving a decoy line naming the very text
+# the guard looks for. Both mutations printed "All checks passed", exit 0 — with
+# the public catalogue and the protected /plans endpoint serving every withheld
+# plan.
+#
+# So the anchored checks read a function's BODY and nothing else, and strip
+# comment lines from it before matching. A decoy now has nowhere to sit: inside
+# the function it is stripped, outside the function it is not read.
+#
+# $1 = file, $2 = regex matching the function's opening line.
+# The slice runs to the first line that is exactly `}` at column 0, which is how
+# every function in these files closes.
+function_body_code() {
+    awk -v pat="$2" '$0 ~ pat {inside=1} inside {print} inside && /^\}$/ {exit}' "$1" \
+        | grep -v -E '^[[:space:]]*(//|\*|/\*)'
+}
+
 # --- 1. The handler still exists --------------------------------------------
 if [ ! -f "$HANDLER" ]; then
     echo "ERROR: $HANDLER is missing."
@@ -204,6 +226,28 @@ else
     fi
 fi
 
+# --- 3c. `publiclyListedPlans` actually COMES FROM the filtering loader ------
+# Check 3 proves every return is built from a binding called
+# `publiclyListedPlans`; check 3b proves the loader filters. Neither proves the
+# two are connected, and that gap is a real escape: point the binding at an
+# unfiltered `planService.list({ active: true })`, keep the NAME, and leave
+# `loadPubliclyListedPlans` sitting unused below. Both checks stay green and the
+# public catalogue serves every withheld plan.
+#
+# This closes the chain — returns <- publiclyListedPlans <- loadPubliclyListedPlans()
+# — so the three checks together assert one fact instead of three adjacent ones.
+if ! grep -q -E 'publiclyListedPlans[[:space:]]*=[[:space:]]*await[[:space:]]+loadPubliclyListedPlans\(' "$HANDLER"; then
+    echo "ERROR: publiclyListedPlans is not assigned from loadPubliclyListedPlans()."
+    echo ""
+    echo "  Expected:  const publiclyListedPlans = await loadPubliclyListedPlans();"
+    echo ""
+    echo "  Check 3 only proves the returns read a binding by that NAME, and check 3b"
+    echo "  only proves the loader filters. Without this, the name can be re-pointed"
+    echo "  at an unfiltered fetch while the real loader stays behind as dead code."
+    echo ""
+    FAILED=1
+fi
+
 # --- 3b. Every exit of the public LOADER is a filtered one -------------------
 # Anchored on the SHAPE of the return, never on the accumulator's name. The
 # previous version watched the identifier `collected`, so renaming it to `rows`
@@ -256,7 +300,21 @@ else
 fi
 
 # --- 4. The predicate is still a positive test -------------------------------
-if ! grep -qE "publicListing === 'listed'" "$PREDICATE"; then
+# Read from the FUNCTION'S BODY, not the file: a whole-file grep here passed with
+# the function rewritten to `return true;` and the expected text left behind in a
+# comment. See `function_body_code` above.
+PREDICATE_BODY=$(function_body_code "$PREDICATE" 'function isPubliclyListedPlan')
+
+if [ -z "$PREDICATE_BODY" ]; then
+    echo "ERROR: could not read isPubliclyListedPlan's body in $PREDICATE."
+    echo "  This check slices 'function isPubliclyListedPlan' to its closing brace."
+    echo "  If the function was renamed or reshaped, re-anchor this guard — do not"
+    echo "  drop it."
+    echo ""
+    FAILED=1
+fi
+
+if ! printf '%s\n' "$PREDICATE_BODY" | grep -q -E "publicListing === 'listed'"; then
     echo "ERROR: isPubliclyListedPlan is no longer a positive test for 'listed'."
     echo ""
     echo "  Expected: return plan.publicListing === 'listed';"
@@ -268,9 +326,21 @@ if ! grep -qE "publicListing === 'listed'" "$PREDICATE"; then
     FAILED=1
 fi
 
-if grep -qE "publicListing !== 'unlisted'" "$PREDICATE"; then
+if printf '%s\n' "$PREDICATE_BODY" | grep -q -E "publicListing !== 'unlisted'"; then
     echo "ERROR: isPubliclyListedPlan tests the mark negatively ( !== 'unlisted' )."
     echo "  See above: that inverts the failure direction."
+    echo ""
+    FAILED=1
+fi
+
+# The body must not answer a constant. `return true;` publishes every plan and
+# `return false;` publishes none; both are one keystroke from the real predicate
+# and neither trips the two checks above once a decoy comment is present.
+if printf '%s\n' "$PREDICATE_BODY" | grep -q -E '^[[:space:]]*return[[:space:]]+(true|false)[[:space:]]*;'; then
+    echo "ERROR: isPubliclyListedPlan answers a constant."
+    echo ""
+    echo "  A predicate that ignores its argument is not a filter. 'return true'"
+    echo "  hands every withheld plan to the public catalogue."
     echo ""
     FAILED=1
 fi
@@ -421,7 +491,24 @@ RAW_ACCUMULATOR_RETURNS=$(printf '%s\n' "$PROTECTED_LOADER_BODY" \
 # from the shared one — and one that cannot even be tested: the resolver is total
 # over two values, so `=== 'listed'` and `!== 'unlisted'` are the same expression
 # at this call site. Measured: that mutation survived all 15 route tests.
-if ! grep -qE 'isPubliclyListedPlan\(resolvePlanPublicListing\(' "$PROTECTED"; then
+#
+# Read from the FUNCTION'S BODY, for the same reason as check 4: greping the
+# whole file passed with `isPubliclyListedStoragePlan` rewritten to
+# `return true;` and the expected composition left behind in a comment — the
+# protected endpoint then answered every negotiated plan to any authenticated
+# user, in a green run.
+STORAGE_PREDICATE_BODY=$(function_body_code "$PROTECTED" 'function isPubliclyListedStoragePlan')
+
+if [ -z "$STORAGE_PREDICATE_BODY" ]; then
+    echo "ERROR: could not read isPubliclyListedStoragePlan's body in $PROTECTED."
+    echo "  This check slices 'function isPubliclyListedStoragePlan' to its closing"
+    echo "  brace. Re-anchor it if the adapter was renamed — do not drop it."
+    echo ""
+    FAILED=1
+fi
+
+if ! printf '%s\n' "$STORAGE_PREDICATE_BODY" \
+    | grep -q -E 'isPubliclyListedPlan\(resolvePlanPublicListing\('; then
     echo "ERROR: the protected handler no longer delegates the listing verdict."
     echo ""
     echo "  Expected:  isPubliclyListedPlan(resolvePlanPublicListing({ metadata: plan.metadata }))"
@@ -429,6 +516,16 @@ if ! grep -qE 'isPubliclyListedPlan\(resolvePlanPublicListing\(' "$PROTECTED"; t
     echo "  Restating the comparison here creates a second decision site that no"
     echo "  mutation can catch, because the resolver only ever answers one of two"
     echo "  values. Compose the two shared functions instead."
+    echo ""
+    FAILED=1
+fi
+
+if printf '%s\n' "$STORAGE_PREDICATE_BODY" \
+    | grep -q -E '^[[:space:]]*return[[:space:]]+(true|false)[[:space:]]*;'; then
+    echo "ERROR: isPubliclyListedStoragePlan answers a constant."
+    echo ""
+    echo "  'return true' hands every storage plan — negotiated ones included — to"
+    echo "  any authenticated user through the protected /plans endpoint."
     echo ""
     FAILED=1
 fi
