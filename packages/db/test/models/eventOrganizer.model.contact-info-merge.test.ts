@@ -185,11 +185,22 @@ describe('EventOrganizerModel — `contactInfo` is a mergeable JSONB column', ()
     });
 
     it('puts COALESCE(column, {}) on the LEFT of `||` and the patch on the RIGHT', () => {
-        // The ORDER is the whole contract. `COALESCE('{}'::jsonb, column)` and
-        // `patch || COALESCE(column, '{}')` both still contain a `COALESCE`
-        // and a `||`, and both throw away every stored sibling on every
-        // PATCH — reintroducing the defect this file was written for. Only a
-        // token-by-token shape can tell them apart.
+        // The ORDER is the whole contract, and the two ways to get it wrong
+        // break DIFFERENT things. Both still contain a `COALESCE` and a `||`,
+        // so only a token-by-token shape tells them apart — but they are not
+        // the same defect, and a comment that says they are claims more than
+        // its predicate. Measured against PostgreSQL 17 on a stored
+        // `{whatsapp, workEmail, mobilePhone: OLD}` with a
+        // `{mobilePhone: NEW}` patch:
+        //   - `COALESCE('{}'::jsonb, column) || patch` reads the stored row
+        //     as an empty object, so the write is the patch ALONE:
+        //     `{"mobilePhone": "NEW"}`. Every stored sibling is thrown away —
+        //     this is the original defect, exactly.
+        //   - `patch || COALESCE(column, '{}')` keeps every sibling, but `||`
+        //     lets the RIGHT operand win a shared key, so the STORED value
+        //     survives and the user's edit is the thing discarded:
+        //     `{..., "mobilePhone": "OLD"}`. The PATCH silently does nothing.
+        // The assertion below kills both; only this comment was wrong.
         const mergeable = (
             new EventOrganizerModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
