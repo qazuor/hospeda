@@ -377,7 +377,41 @@ export async function createAddonCheckout(
         // fail open to accommodation" for all of them — the domain check below
         // would pass everything and refuse every commerce purchase, which is
         // both halves of wrong at once.
-        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+        //
+        // Wrapped, and degrading to the UN-hydrated list, for the reason
+        // `commerceVerticalEntitlementMiddleware` wraps its own copy: this
+        // route is shared with accommodation, and accommodation is the only
+        // side with live subscribers. Letting a database blip escape here would
+        // turn a host's add-on purchase into a 500 — a failure mode introduced
+        // by a check that exists for commerce and does nothing for them.
+        //
+        // The degradation is safe in the one direction that matters. An
+        // un-hydrated subscription carries `productDomain: undefined`, which
+        // `subscriptionMatchesDomain` reads as accommodation:
+        //   - a host buying an accommodation add-on still succeeds;
+        //   - a commerce purchase is REFUSED, because `undefined` matches
+        //     neither gastronomy nor experience.
+        // So a blip can only refuse a purchase that should have gone through.
+        // It can never let a cross-domain one past, which is the whole point of
+        // the gate and the thing that must not degrade.
+        // Typed off the raw list so every downstream read (`status`, `planId`)
+        // keeps its type; hydration only ADDS `productDomain`, and the optional
+        // marker is what lets the un-hydrated list stand in on the catch path.
+        let subscriptions: readonly ((typeof rawSubscriptions)[number] & {
+            productDomain?: string | null;
+        })[] = rawSubscriptions;
+        try {
+            subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+        } catch (error) {
+            apiLogger.warn(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                'Failed to hydrate subscription product domains; falling back to the un-hydrated list (HOS-1178)'
+            );
+        }
 
         const grantingSubscriptions = subscriptions.filter((sub: { status: string }) =>
             isEntitlementGrantingStatus(sub.status)
