@@ -44,9 +44,39 @@ import {
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
 
-const accommodationService = new AccommodationService({ logger: apiLogger });
-const gastronomyService = new GastronomyService({ logger: apiLogger });
-const experienceService = new ExperienceService({ logger: apiLogger });
+/**
+ * The three services are built on FIRST USE, never at module load.
+ *
+ * A service constructor reaches into `@repo/db` for its model, and this module
+ * is imported by `middlewares/commerce-limit-enforcement.ts` — a middleware, so
+ * the import lands in a large share of the API's test files. Constructing at
+ * module load therefore ran a real `@repo/db` read inside every one of them,
+ * against the whole-module `vi.mock('@repo/db')` that `test/setup.ts` installs:
+ * the mock declares no `AccommodationModel`, so the import itself threw before
+ * any test body ran (CI shard 5/5). Same reasoning as
+ * `buildAccommodationPublishDeps`, which takes a billing *getter* rather than a
+ * client so a route module instantiated at boot resolves lazily.
+ *
+ * Memoised, so the request path still pays one construction per process.
+ */
+let accommodationService: AccommodationService | null = null;
+let gastronomyService: GastronomyService | null = null;
+let experienceService: ExperienceService | null = null;
+
+const getAccommodationService = (): AccommodationService => {
+    accommodationService ??= new AccommodationService({ logger: apiLogger });
+    return accommodationService;
+};
+
+const getGastronomyService = (): GastronomyService => {
+    gastronomyService ??= new GastronomyService({ logger: apiLogger });
+    return gastronomyService;
+};
+
+const getExperienceService = (): ExperienceService => {
+    experienceService ??= new ExperienceService({ logger: apiLogger });
+    return experienceService;
+};
 
 /**
  * Max number of DRAFT rows returned. Onboarding drafts are always few (the
@@ -73,11 +103,11 @@ export interface PublishDraft {
 function serviceFor(vertical: PublishVertical) {
     switch (vertical) {
         case 'accommodation':
-            return accommodationService;
+            return getAccommodationService();
         case 'gastronomy':
-            return gastronomyService;
+            return getGastronomyService();
         case 'experience':
-            return experienceService;
+            return getExperienceService();
         default: {
             // Defense in depth: `vertical` is already narrowed, so this is
             // unreachable today. It exists so that widening PublishVertical

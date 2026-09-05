@@ -19,8 +19,30 @@ import type { Actor, ServiceOutput } from '@repo/service-core';
 import { ExperienceService, GastronomyService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
-const experienceService = new ExperienceService({ logger: apiLogger });
+/**
+ * Built on FIRST USE, never at module load — the same rule, and for the same
+ * reason, as `services/publish-listing-reads`.
+ *
+ * A service constructor reads a model off `@repo/db`, and `test/setup.ts`
+ * replaces that module wholesale with a `vi.mock` that declares only some of
+ * its exports. Constructing at import time makes every test file that reaches
+ * this module throw before its first assertion. Only one route imports this one
+ * today, so it does not throw yet; its sibling was imported by a middleware and
+ * did (CI shard 5/5). The difference is who imports it, which is not a property
+ * this file controls, so it does not get to rely on it.
+ */
+let gastronomyService: GastronomyService | null = null;
+let experienceService: ExperienceService | null = null;
+
+const getGastronomyService = (): GastronomyService => {
+    gastronomyService ??= new GastronomyService({ logger: apiLogger });
+    return gastronomyService;
+};
+
+const getExperienceService = (): ExperienceService => {
+    experienceService ??= new ExperienceService({ logger: apiLogger });
+    return experienceService;
+};
 
 /**
  * Soft-deletes one DRAFT listing the actor owns, in one commerce vertical.
@@ -45,8 +67,8 @@ export async function deleteOwnCommerceDraft(input: {
     // silently mis-routed delete.
     switch (vertical) {
         case 'gastronomy':
-            return gastronomyService.softDeleteOwnDraft(actor, id);
+            return getGastronomyService().softDeleteOwnDraft(actor, id);
         case 'experience':
-            return experienceService.softDeleteOwnDraft(actor, id);
+            return getExperienceService().softDeleteOwnDraft(actor, id);
     }
 }
