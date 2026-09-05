@@ -243,7 +243,7 @@ such.
 ### 6.7 Seed dual write
 
 Baseline (`entitlements.config.ts`, `plans.config.ts`) **and** data-migration
-`0095-hos-1044-menu-qr-analytics-entitlement.ts`, in the same PR, copying
+`0098-hos-1044-menu-qr-analytics-entitlement.ts`, in the same PR, copying
 `0091-hos-1043-multilingual-gastronomy-menu-entitlement.ts` verbatim in shape:
 
 - frozen literal for the new entitlement (the migration must not import
