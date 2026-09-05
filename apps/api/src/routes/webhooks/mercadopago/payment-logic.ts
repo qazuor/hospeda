@@ -29,11 +29,9 @@ import {
     calculatePromoCodeEffect,
     checkSubscriptionStatusTransition,
     getPromoCodeById,
-    hydrateSubscriptionProductDomains,
     loadSubscriptionDiscountState,
     resolveFullPlanPriceCentavos,
     resolveOwnerPlanGrantsFeatured,
-    subscriptionMatchesDomain,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
@@ -44,6 +42,8 @@ import { normalizeAddonCheckoutMetadata } from '../../../services/addon-checkout
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
+import { isAccommodationDomainSubscription } from '../../../services/billing/plan-domain-guard';
+import { restoreCommerceListingsForUpgrade } from '../../../services/commerce-downgrade-remediation.service';
 import { resolvePaymentFailureReason } from '../../../services/payment-failure-reason';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
@@ -678,68 +678,6 @@ async function resolveDiscountAwareUpgradeAmount(
 }
 
 /**
- * Whether a just-changed subscription belongs to the ACCOMMODATION domain
- * (HOS-1119).
- *
- * ## Why the upgrade path suddenly needs to ask
- *
- * `applyUpgradeRestorationsOrWarn` restores the host's plan-restricted
- * ACCOMMODATIONS and PROMOTIONS against the caps of the plan it is handed. Until
- * commerce had a plan-change route, nothing could hand it a commerce plan id.
- * Now something can — and a commerce tier declares NEITHER of those caps
- * (`commerceVerticalTier` gives each tier only its own vertical's listing
- * limit), so the restoration would be reasoning about an owner's accommodations
- * from a gastronomy plan. The restore direction is the permissive one and every
- * layer beneath resolves an unknown limit key as *unlimited*, so the symptom is
- * not an error: it is rows quietly un-restricted, with no log to find it by.
- *
- * ## It fails OPEN toward accommodation, twice over, and deliberately
- *
- * `subscriptionMatchesDomain` already reads a missing or `null` `productDomain`
- * as accommodation (SPEC-239 — the column post-dates most rows). This function
- * extends the same posture to a FAILED READ: qzpay never populates
- * `productDomain` on a returned subscription, so the value has to be hydrated
- * from the database, and a transient failure there degrades to the un-hydrated
- * subscription rather than to a refusal.
- *
- * That lands on exactly the behaviour this call site had before HOS-1119.
- * Throwing instead would skip the restoration for a genuine host upgrade over a
- * database blip — trading a hazard that only exists for commerce for a
- * regression that hits everyone.
- *
- * @param subscription - The subscription as `changePlan` returned it.
- * @returns `true` when the accommodation-only follow-up steps should run.
- *
- * Exported for its own unit test: it is the whole of HOS-1119's webhook-side
- * change, and the `confirmPlanUpgrade` suite reaches it only through a shared
- * `@repo/db` mock whose sequential `select` chain cannot serve the hydration
- * query — so through that door the branch would be exercised only by way of its
- * own catch, which is a green test proving nothing.
- */
-export async function isAccommodationDomainSubscription(subscription: {
-    id: string;
-    customerId?: string;
-    productDomain?: string | null;
-}): Promise<boolean> {
-    let resolved: { productDomain?: string | null } = subscription;
-    try {
-        const [hydrated] = await hydrateSubscriptionProductDomains([subscription]);
-        if (hydrated !== undefined) {
-            resolved = hydrated;
-        }
-    } catch (error) {
-        apiLogger.warn(
-            {
-                subscriptionId: subscription.id,
-                error: error instanceof Error ? error.message : String(error)
-            },
-            'Product-domain hydration failed — treating the subscription as accommodation'
-        );
-    }
-    return subscriptionMatchesDomain(resolved, 'accommodation');
-}
-
-/**
  * Commit a plan-change upgrade after the user paid the prorated
  * delta upfront (SPEC-141 D7).
  *
@@ -897,6 +835,17 @@ async function confirmPlanUpgrade(input: {
                     },
                     'Plan upgrade: non-accommodation subscription — accommodation restoration skipped by domain isolation'
                 );
+                // HOS-1122: skipping the accommodation restoration is only half
+                // the answer. A commerce subscription that comes back UP a tier
+                // has its own listings to un-restrict, and until this branch
+                // existed a downgrade was one-way — the flag stayed set and the
+                // owner paid the dearer tier for listings that were still
+                // private. Non-throwing and a no-op for the partner domain.
+                await restoreCommerceListingsForUpgrade({
+                    subscriptionId: changeResult.subscription.id,
+                    newPlanId,
+                    subscriptionStatus: changeResult.subscription.status
+                });
             }
             // SPEC-309 T-010: sync featuredByEntitlement to reflect the
             // post-upgrade plan via the shared resolver (T-004), which

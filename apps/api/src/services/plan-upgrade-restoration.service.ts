@@ -62,6 +62,7 @@ import { withTransaction } from '@repo/db';
 import type { EntityChangeData } from '@repo/service-core';
 import { getRevalidationService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
+import { assertAccommodationPlanSlug } from './billing/plan-domain-guard';
 import { restoreAccommodationPhotos } from './plan-photo-restriction.service';
 import { restoreAccommodations, restorePromotions } from './plan-restriction.service';
 import { defaultDeps, splitByHeadroom } from './plan-upgrade-restoration.deps';
@@ -114,7 +115,14 @@ export interface UpgradeRestorationDeps {
     /**
      * Returns the caps for the given plan slug.
      * Production: wraps `getPlanBySlug` from `@repo/billing`.
-     * Returns { -1, -1, -1 } when the slug is not found (treat as unlimited).
+     *
+     * Returns `{0, 0, 0}` when the slug is not found — restore NOTHING
+     * (HOS-1122). It used to answer `{-1, -1, -1}`, "unlimited", described in
+     * its own comment as the safe fallback; it was the branch that restored an
+     * owner's entire restricted portfolio whenever the plan could not be
+     * identified, which is what every commerce plan slug did. The caller now
+     * refuses such a slug outright, so this is a second line rather than the
+     * first.
      */
     getPlanCaps(planSlug: string): PlanCaps;
 
@@ -271,7 +279,17 @@ export async function applyUpgradeRestorations(
     );
 
     // ── 1. Resolve plan caps ────────────────────────────────────────────────
+    //
+    // HOS-1122: the slug is checked BEFORE its caps are read, and that order is
+    // the whole point. `getPlanCaps` answers `{-1, -1, -1}` — unlimited — for a
+    // slug it does not recognise, and a commerce plan id resolves to exactly
+    // such a slug. Reading the caps first therefore restored EVERY
+    // plan-restricted accommodation and promotion the owner had, and reported
+    // success while doing it. The commerce upgrade paths dispatch on the domain
+    // before they get here, so a throw at this point means a call site was
+    // wired wrong rather than that a user did something unusual.
     const planSlug = await deps.getPlanSlug(newPlanId);
+    assertAccommodationPlanSlug(planSlug ?? '', 'applyUpgradeRestorations');
     const caps = deps.getPlanCaps(planSlug ?? '');
 
     // ── 2. Fetch restricted items per dimension ─────────────────────────────
