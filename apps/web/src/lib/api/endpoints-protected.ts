@@ -5252,6 +5252,48 @@ export const accommodationMediaApi = {
     },
 
     /**
+     * Register a photo as the accommodation's COVER in one request (HOS-803).
+     *
+     * Replaces the old `addMedia` + `setFeaturedMedia` pair. That pair could
+     * not run when the gallery was at the plan cap: the first call was refused
+     * by the photo limit — which counts the gallery alone, since a cover is not
+     * a gallery item — so the promotion was never reached, and the one action
+     * exempt from the quota was the only one an owner at the cap could not do.
+     *
+     * `isFeatured` is not part of the body and cannot be: the endpoint decides
+     * it, which is what lets the server waive the gallery cap safely here.
+     *
+     * @param params - Accommodation ID and media body
+     * @returns The created cover, plus the id of the one it replaced — which is
+     *   soft-deleted in the same transaction, unconditionally, so the swap costs
+     *   the gallery nothing. `null` when the accommodation had no cover before.
+     */
+    addFeaturedMedia({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<
+        ApiResult<{
+            readonly media: AccommodationMediaRow;
+            readonly previousFeatured: { readonly id: string } | null;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/media/featured`,
+            body
+        });
+    },
+
+    /**
      * Delete a media row by its DB UUID.
      * Also removes the Cloudinary asset on the server side.
      *

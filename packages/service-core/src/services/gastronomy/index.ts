@@ -31,8 +31,9 @@ export {
     reorderGastronomyFaqs,
     updateGastronomyFaq
 } from './gastronomy.faq';
-// Media helpers (HOS-372)
+// Media helpers (HOS-372); the born-featured cover upload is HOS-803
 export {
+    addGastronomyFeaturedMedia,
     addGastronomyMedia,
     getGastronomyMedia,
     removeGastronomyMedia,

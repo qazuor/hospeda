@@ -45,6 +45,7 @@ import {
     type CommerceMedia,
     type CommerceMediaVertical,
     useCommerceMediaAdd,
+    useCommerceMediaAddFeatured,
     useCommerceMediaList,
     useCommerceMediaRemove,
     useCommerceMediaSetFeatured
@@ -147,6 +148,8 @@ export function CommerceGalleryManager({
     const isLoading = isMediaLoading || isEntityLoading;
 
     const addMutation = useCommerceMediaAdd(vertical, entityId);
+    // HOS-803: the portada uploader has its own one-shot mutation — see below.
+    const addFeaturedMutation = useCommerceMediaAddFeatured(vertical, entityId);
     const removeMutation = useCommerceMediaRemove(vertical, entityId);
     const setFeaturedMutation = useCommerceMediaSetFeatured(vertical, entityId);
 
@@ -206,10 +209,18 @@ export function CommerceGalleryManager({
                 return;
             }
 
-            // 2. Register the URL in the relational table
-            let newRow: CommerceMedia;
+            // 2. Register it as the cover — ONE request (HOS-803).
+            //
+            // This used to be two: register an ordinary gallery row, then
+            // promote it. The first runs the per-entity gallery cap, which
+            // counts the gallery alone because a cover is not a gallery item —
+            // so with the gallery full the registration was refused and the
+            // promotion never ran. The row is now created already featured, and
+            // the photo it replaces is DELETED in the same transaction — it does
+            // NOT fall back into the gallery — so the swap moves no count and
+            // there is no cappable intermediate state.
             try {
-                newRow = await addMutation.mutateAsync({
+                await addFeaturedMutation.mutateAsync({
                     url,
                     publicId,
                     moderationState: ModerationStatusEnum.APPROVED,
@@ -217,26 +228,9 @@ export function CommerceGalleryManager({
                 });
             } catch {
                 setAddError(t('admin-pages.gallery.errors.addFailed'));
-                return;
-            }
-
-            // 3. Promote the new row to featured
-            try {
-                await setFeaturedMutation.mutateAsync({ mediaId: newRow.id });
-            } catch {
-                setSetFeaturedError(t('admin-pages.gallery.errors.setFeaturedFailed'));
             }
         },
-        [
-            vertical,
-            entityId,
-            uploadEntityImage,
-            addMutation,
-            setFeaturedMutation,
-            derivedAlt,
-            t,
-            clearErrors
-        ]
+        [vertical, entityId, uploadEntityImage, addFeaturedMutation, derivedAlt, t, clearErrors]
     );
 
     const portadaInput = useFileInput(handlePortadaFile);
