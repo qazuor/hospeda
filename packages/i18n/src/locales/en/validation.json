@@ -96,11 +96,6 @@
                 "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "El destacado es obligatorio"
-            }
-        },
         "featureFlag": {
             "description": {
                 "max": "Description cannot exceed {{max}} characters",
@@ -1532,6 +1527,9 @@
             "state": {
                 "invalid": "Media state must be 'visible' or 'archived'"
             },
+            "update": {
+                "atLeastOneField": "You must fill in at least one field: caption, description, alt text or attribution"
+            },
             "url": {
                 "invalid": "The URL is not valid"
             }
@@ -1608,6 +1606,9 @@
             },
             "state": {
                 "invalid": "Media state must be 'visible' or 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "You must fill in at least one field: caption, description, alt text or attribution"
             },
             "url": {
                 "invalid": "The URL is not valid"
@@ -1837,6 +1838,14 @@
             "tooLow": "El max rating es demasiado bajo"
         },
         "media": {
+            "featured": {
+                "planCap": {
+                    "int": "The plan photo limit must be an integer"
+                },
+                "previousId": {
+                    "invalid": "The previous cover image identifier is not valid"
+                }
+            },
             "image": {
                 "alt": {
                     "max": "El texto alternativo no puede superar los {{max}} caracteres",

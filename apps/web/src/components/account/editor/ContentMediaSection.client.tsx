@@ -48,6 +48,8 @@ import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
 import fieldStyles from '@/components/account/editor/content-editor-fields.module.css';
+import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
+import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
 import {
     type ContentMediaEntity,
     type ContentMediaRow,
@@ -57,6 +59,7 @@ import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import type { MediaAttribution } from '@/lib/media';
 import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
 import styles from './ContentMediaSection.module.css';
@@ -79,8 +82,16 @@ interface ContentMediaItem {
     readonly id: string;
     readonly url: string;
     readonly publicId?: string;
-    readonly caption?: string;
-    readonly alt?: string;
+    readonly caption: string | undefined;
+    /**
+     * Longer photo description. Added by HOS-1036 alongside `attribution`:
+     * both columns existed on `post_media`/`event_media` from HOS-390 and were
+     * simply never read here, because nothing in this section could write them.
+     */
+    readonly description: string | undefined;
+    readonly alt: string | undefined;
+    /** Photo credit, when the author declared one. */
+    readonly attribution: MediaAttribution | undefined;
     readonly isFeatured: boolean;
 }
 
@@ -118,7 +129,9 @@ function rowToItem(row: ContentMediaRow): ContentMediaItem {
         url: row.url,
         publicId: row.publicId ?? undefined,
         caption: row.caption ?? undefined,
+        description: row.description ?? undefined,
         alt: row.alt ?? undefined,
+        attribution: row.attribution ?? undefined,
         isFeatured: row.isFeatured
     };
 }
@@ -553,33 +566,111 @@ export function ContentMediaSection({
         [canWrite, entity, entityId, t, reportError]
     );
 
+    /**
+     * Persist a photo's text metadata (alt / caption / description / credit).
+     *
+     * Immediate, per-photo and per-field-aware, exactly like every other op in
+     * this section: `contentMediaApi.updateMedia` PATCHes only this row, the
+     * editor's own Save button never carries photo data. A blank field arrives
+     * here as `null` (clear) rather than `''` — see
+     * `buildPhotoMetadataUpdateBody`, which is what the panel builds the body
+     * with.
+     *
+     * On success the row is replaced in local state so the panel re-opens on
+     * the CURRENT values rather than the stale ones it was mounted with, and
+     * the thumbnail's own `alt` attribute updates with it.
+     *
+     * @returns `true` when the PATCH succeeded — the panel shows its saved
+     *   badge only then.
+     */
+    const handleUpdateText = useCallback(
+        async (item: ContentMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
+            if (!item.id || !canWrite) {
+                return false;
+            }
+            setError(null);
+            setOpLoading(true);
+
+            const result = await contentMediaApi.updateMedia({
+                entity,
+                id: entityId,
+                mediaId: item.id,
+                body
+            });
+
+            setOpLoading(false);
+
+            if (!result.ok) {
+                reportError(
+                    result.error.message ??
+                        t(
+                            'account.myContent.editor.media.metadataSaveFailed',
+                            'No se pudieron guardar los datos de la foto'
+                        )
+                );
+                return false;
+            }
+
+            const updated = rowToItem(result.data.media);
+            if (updated.isFeatured) {
+                setFeaturedItem(updated);
+            } else {
+                setGalleryItems((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+            }
+            return true;
+        },
+        [canWrite, entity, entityId, t, reportError]
+    );
+
     const anyOpInFlight = isUploading || opLoading;
 
     const featuredLabel = t('account.myContent.editor.media.featured', 'Imagen principal');
     const galleryLabel = t('account.myContent.editor.media.gallery', 'Galería de fotos');
     const removeLabel = t('account.myContent.editor.media.remove', 'Eliminar');
     const addLabel = t('account.myContent.editor.media.add', 'Agregar foto');
+    // The panel's own copy is reused verbatim from the accommodation editor —
+    // it is the same form, asking the same five questions, so a second set of
+    // strings would only be a second thing to keep translated. That includes
+    // these accessible names, which describe the panel, not the entity.
+    const featuredToggleAria = t(
+        'host.properties.editor.photo.editFeaturedDetailsAria',
+        'Editar textos de la portada'
+    );
+    const featuredCloseAria = t(
+        'host.properties.editor.photo.closeFeaturedDetailsAria',
+        'Cerrar edición de textos de la portada'
+    );
 
     return (
         <div className={styles.media}>
             <div className={styles.mediaGroup}>
                 <span className={fieldStyles.label}>{featuredLabel}</span>
                 {featuredItem ? (
-                    <div className={styles.mediaThumb}>
-                        <img
-                            src={featuredItem.url}
-                            alt={featuredItem.alt ?? featuredLabel}
-                            className={styles.mediaImage}
+                    <div className={styles.mediaItem}>
+                        <div className={styles.mediaThumb}>
+                            <img
+                                src={featuredItem.url}
+                                alt={featuredItem.alt ?? featuredLabel}
+                                className={styles.mediaImage}
+                            />
+                            <button
+                                type="button"
+                                className={styles.mediaRemove}
+                                aria-label={removeLabel}
+                                disabled={anyOpInFlight || !canWrite || !featuredItem.id}
+                                onClick={handleFeaturedRemove}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <PhotoMetadataEditor
+                            locale={locale}
+                            item={featuredItem}
+                            disabled={anyOpInFlight || !canWrite}
+                            toggleAriaLabel={featuredToggleAria}
+                            closeAriaLabel={featuredCloseAria}
+                            onSave={handleUpdateText}
                         />
-                        <button
-                            type="button"
-                            className={styles.mediaRemove}
-                            aria-label={removeLabel}
-                            disabled={anyOpInFlight || !canWrite || !featuredItem.id}
-                            onClick={handleFeaturedRemove}
-                        >
-                            ×
-                        </button>
                     </div>
                 ) : (
                     <button
@@ -605,25 +696,44 @@ export function ContentMediaSection({
             <div className={styles.mediaGroup}>
                 <span className={fieldStyles.label}>{galleryLabel}</span>
                 <div className={styles.mediaGallery}>
-                    {galleryItems.map((image) => (
+                    {galleryItems.map((image, index) => (
                         <div
                             key={image.id || image.url}
-                            className={styles.mediaThumb}
+                            className={styles.mediaItem}
                         >
-                            <img
-                                src={image.url}
-                                alt={image.alt ?? galleryLabel}
-                                className={styles.mediaImage}
+                            <div className={styles.mediaThumb}>
+                                <img
+                                    src={image.url}
+                                    alt={image.alt ?? galleryLabel}
+                                    className={styles.mediaImage}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.mediaRemove}
+                                    aria-label={removeLabel}
+                                    disabled={anyOpInFlight || !canWrite || !image.id}
+                                    onClick={() => handleGalleryRemove(image)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <PhotoMetadataEditor
+                                locale={locale}
+                                item={image}
+                                disabled={anyOpInFlight || !canWrite}
+                                compactLayout={true}
+                                toggleAriaLabel={t(
+                                    'host.properties.editor.photo.editDetailsAria',
+                                    'Editar textos de la foto {{index}}',
+                                    { index: index + 1 }
+                                )}
+                                closeAriaLabel={t(
+                                    'host.properties.editor.photo.closeDetailsAria',
+                                    'Cerrar edición de textos de la foto {{index}}',
+                                    { index: index + 1 }
+                                )}
+                                onSave={handleUpdateText}
                             />
-                            <button
-                                type="button"
-                                className={styles.mediaRemove}
-                                aria-label={removeLabel}
-                                disabled={anyOpInFlight || !canWrite || !image.id}
-                                onClick={() => handleGalleryRemove(image)}
-                            >
-                                ×
-                            </button>
                         </div>
                     ))}
                     {!isGalleryFull && (

@@ -340,6 +340,37 @@ export const PHOTO_DESCRIPTION_MAX_LENGTH = 300;
 /** Mirrors `ImageAttributionSchema.photographer` in `@repo/schemas`. */
 export const PHOTO_PHOTOGRAPHER_MAX_LENGTH = 200;
 
+/**
+ * The minimum a photo row must expose to be edited by `PhotoMetadataEditor`.
+ *
+ * Widened out of `AccommodationMediaItem` by HOS-1036, when the same panel had
+ * to serve post/event galleries (`ContentMediaSection`) and commerce galleries
+ * (`MediaSection`) as well. Those three local item shapes agree on exactly
+ * these five fields and disagree on everything else (`publicId` required vs
+ * optional, `width`/`height`, `isFeatured`), so the panel depends on the
+ * intersection and nothing more.
+ *
+ * `null` is accepted alongside `undefined` on every text field because the API
+ * rows are nullable and the callers map them differently — one normalizes to
+ * `undefined`, another passes the row through.
+ *
+ * The four text keys are REQUIRED and nullable (`string | null | undefined`),
+ * not optional (`?: string | null`). The distinction is the whole safety of
+ * this interface: the panel always sends all four fields back, and a field it
+ * never received is sent as `null`, which CLEARS the column. With `?:`, a
+ * caller that forgets to map `description` compiles clean and erases that
+ * column on the first save; required-and-nullable makes the same omission a
+ * `tsc` error, while still accepting every value the callers actually produce.
+ */
+export interface PhotoMetadataEditableItem {
+    /** DB UUID. Empty string for an SSR placeholder that cannot be edited yet. */
+    readonly id: string;
+    readonly alt: string | null | undefined;
+    readonly caption: string | null | undefined;
+    readonly description: string | null | undefined;
+    readonly attribution: MediaAttribution | null | undefined;
+}
+
 /** Raw form field values for the photo metadata editor, always plain strings. */
 export interface PhotoMetadataFormValues {
     readonly alt: string;

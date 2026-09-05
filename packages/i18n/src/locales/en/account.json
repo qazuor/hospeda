@@ -613,6 +613,8 @@
                 "trialStatus": "Trial period",
                 "freeStatus": "Free Plan",
                 "compStatus": "Complimentary",
+                "multipleSubscriptions_one": "{{count}} active subscription",
+                "multipleSubscriptions_other": "{{count}} active subscriptions",
                 "properties": "My properties",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",
@@ -1129,6 +1131,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Your accommodation is not featured. This add-on features it automatically, no extra step needed.",
             "title": "Feature this accommodation",
             "body": "A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.",
             "scope": "Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.",
@@ -1195,6 +1198,18 @@
             "extra-experiences-1": {
                 "name": "Extra Experience Listing (+1)",
                 "description": "Adds 1 additional experience listing to your plan. Renews monthly."
+            },
+            "private-galleries-5": {
+                "name": "Private Galleries Pack (+5)",
+                "description": "Adds 5 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
+            },
+            "private-galleries-10": {
+                "name": "Private Galleries Pack (+10)",
+                "description": "Adds 10 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
+            },
+            "private-galleries-20": {
+                "name": "Private Galleries Pack (+20)",
+                "description": "Adds 20 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
             }
         }
     },
@@ -1318,7 +1333,8 @@
                 "uploadTimeout": "The upload took too long. Please try again.",
                 "persistFailed": "Could not save the image to the database",
                 "featuredFailed": "Could not set the image as the cover",
-                "removeFailed": "Could not remove the image"
+                "removeFailed": "Could not remove the image",
+                "metadataSaveFailed": "The photo details could not be saved"
             }
         },
         "events": {

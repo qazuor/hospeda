@@ -613,6 +613,8 @@
                 "trialStatus": "Período de prueba",
                 "freeStatus": "Plan Gratuito",
                 "compStatus": "Bonificado",
+                "multipleSubscriptions_one": "{{count}} suscripción activa",
+                "multipleSubscriptions_other": "{{count}} suscripciones activas",
                 "properties": "Mis propiedades",
                 "propertiesDesc": "Alojamientos publicados",
                 "messages": "Mensajes sin leer",
@@ -1105,6 +1107,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Tu alojamiento no está destacado. Con este complemento lo está automáticamente, sin ningún paso extra.",
             "title": "Destacá este alojamiento",
             "body": "Un impulso de visibilidad hace que este alojamiento aparezca destacado en los listados y en los resultados de búsqueda mientras dure el complemento.",
             "scope": "Ojo: el impulso se aplica solo a esta ficha. Si tenés más de un alojamiento, cada uno necesita su propio complemento.",
@@ -1171,6 +1174,18 @@
             "extra-experiences-1": {
                 "name": "Experiencia extra (+1)",
                 "description": "Agrega 1 experiencia adicional a tu plan. Se renueva mensualmente."
+            },
+            "private-galleries-5": {
+                "name": "Pack de galerías privadas (+5)",
+                "description": "Suma 5 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
+            },
+            "private-galleries-10": {
+                "name": "Pack de galerías privadas (+10)",
+                "description": "Suma 10 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
+            },
+            "private-galleries-20": {
+                "name": "Pack de galerías privadas (+20)",
+                "description": "Suma 20 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
             }
         }
     },
@@ -1318,7 +1333,8 @@
                 "uploadTimeout": "La subida tardó demasiado. Probá de nuevo.",
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
                 "featuredFailed": "No se pudo marcar la imagen como principal",
-                "removeFailed": "No se pudo eliminar la imagen"
+                "removeFailed": "No se pudo eliminar la imagen",
+                "metadataSaveFailed": "No se pudieron guardar los datos de la foto"
             }
         },
         "events": {

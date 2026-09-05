@@ -974,6 +974,10 @@ export async function initiateCommerceMonthlySubscription(
                         set: {
                             subscriptionId,
                             status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                            // HOS-1122: a restriction belongs to ONE subscription.
+                            // Re-pointing the row hands the listing to another,
+                            // which has its own tier and has restricted nothing.
+                            planRestricted: false,
                             updatedAt: new Date()
                         }
                     });
@@ -1032,6 +1036,10 @@ export async function initiateCommerceMonthlySubscription(
                     set: {
                         subscriptionId,
                         status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                        // HOS-1122: a restriction belongs to ONE subscription.
+                        // Re-pointing the row hands the listing to another,
+                        // which has its own tier and has restricted nothing.
+                        planRestricted: false,
                         updatedAt: new Date()
                     }
                 });

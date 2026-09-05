@@ -40,6 +40,9 @@ import {
     type AccommodationFaqSingleOutput,
     type AccommodationFaqUpdateInput,
     AccommodationFaqUpdateInputSchema,
+    type AccommodationFeaturedMediaAddInput,
+    AccommodationFeaturedMediaAddInputSchema,
+    type AccommodationFeaturedMediaAddOutput,
     type AccommodationIaDataAddInput,
     AccommodationIaDataAddInputSchema,
     type AccommodationIaDataListInput,
@@ -128,13 +131,15 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
-import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
+import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
 import {
@@ -1164,18 +1169,25 @@ export class AccommodationService extends BaseCrudService<
 
                 if (
                     current &&
-                    shouldRegenerateSlugOnRename({
+                    shouldRegenerateSlugOnListingChange({
                         currentLifecycleState: current.lifecycleState,
                         currentName: current.name,
                         nextName: data.name,
+                        currentType: current.type,
+                        nextType: typeof data.type === 'string' ? data.type : undefined,
                         slugWasProvided,
                         refreshSlugFromName: data.refreshSlugFromName
                     })
                 ) {
+                    // HOS-879: compose the slug from whichever of name/type actually
+                    // changed and the CURRENT value of the one that did not — a
+                    // type-only change must not fall back to `data.name` (undefined
+                    // on a partial update that never touched the name field).
                     const nextType = typeof data.type === 'string' ? data.type : current.type;
+                    const nextName = typeof data.name === 'string' ? data.name : current.name;
                     ctx.hookState.regeneratedSlug = await generateSlug(
                         nextType,
-                        data.name as string,
+                        nextName as string,
                         current.id
                     );
                 }
@@ -3952,6 +3964,95 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Registers a photo that is the accommodation's cover from the moment it
+     * exists, replacing the previous cover in the same transaction (HOS-803).
+     *
+     * ## Why this is not `addMedia` plus `setFeaturedMedia`
+     *
+     * That is exactly what it used to be, and it could not run when it was most
+     * needed. `addMedia` enforces the gallery cap, and since HOS-791 that cap
+     * counts the gallery ALONE because a cover is not a gallery item — so a host
+     * sitting exactly at the cap was refused at step 1 and never reached the
+     * promotion in step 2. The one action declared free of gallery quota was the
+     * only one they could not perform.
+     *
+     * ## Why the cap can safely be waived here
+     *
+     * Because the outcome is guaranteed rather than promised. A client-supplied
+     * "treat this upload as the cover" flag on `addMedia` would be unverifiable —
+     * nothing obliges the caller to send the follow-up promotion — so a caller
+     * that set it on every upload would have no gallery cap at all. Here the row
+     * is created featured inside a transaction, and
+     * `uq_accommodation_media_single_featured` permits exactly one such row, so
+     * quota-exempt rows cannot accumulate.
+     *
+     * No cap is waived either, because none is spent: the previous cover is
+     * SOFT-DELETED in the same transaction, so one row enters the featured slot,
+     * one leaves the table, and the visible gallery is untouched. The swap is
+     * quota-neutral by construction rather than by exception. See
+     * `services/media/add-featured-media.ts` for the rule in full, including why
+     * promotion of an existing gallery photo still demotes instead of deleting.
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
+     * 2. Soft-delete the previous cover and insert the new one, in ONE transaction.
+     * 3. Schedule ISR revalidation — the cover is the first image a visitor and
+     *    every social preview sees, so a stale one is the loudest kind.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Accommodation id, photo payload, and the SERVER-RESOLVED
+     *   plan cap. `planGalleryCap` must come from the route's entitlement
+     *   context and never from a request body.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The created row plus what became of the cover it replaced.
+     */
+    public async addFeaturedMedia(
+        actor: Actor,
+        data: AccommodationFeaturedMediaAddInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationFeaturedMediaAddOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addFeaturedMedia',
+            input: { ...data, actor },
+            schema: AccommodationFeaturedMediaAddInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+
+                const { media, previousFeatured } = await addFeaturedMediaRow({
+                    port: buildOwnedMediaFeaturedPort({
+                        mediaModel,
+                        ownerKey: 'accommodationId',
+                        ownerId: validated.accommodationId,
+                        media: validated.media,
+                        findFeatured: (tx) =>
+                            mediaModel.findFeatured({
+                                accommodationId: validated.accommodationId,
+                                tx
+                            }),
+                        deletedById: actor.id
+                    }),
+                    planGalleryCap: validated.planGalleryCap,
+                    tx: ctx?.tx
+                });
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. Loudest
+                // case: the cover is what every social preview renders.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
+                return { media, previousFeatured };
+            }
+        });
+    }
+
+    /**
      * Removes a single photo from an accommodation gallery (SPEC-204 T-018).
      *
      * Steps:
@@ -4242,7 +4343,18 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                // `deletedAt` is checked here for the same reason `updateMedia` has
+                // always checked it: `findById` does NOT filter soft-deletes, so
+                // without this a deleted row is a promotable target. That is half of
+                // HOS-803 C-1 — `softDelete` leaves `is_featured` set and the partial
+                // unique index ignores deleted rows, so re-featuring one demotes the
+                // LIVE cover into the gallery to make room for a row that no longer
+                // exists: gallery +1 per cycle, uncapped.
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'

@@ -1,15 +1,27 @@
 /**
  * @file use-accommodation-section-form.test.ts
- * @description Guards the shared section-form payload builder (HOS-318 T-019).
+ * @description Guards the shared section-form payload builder (HOS-318 T-019)
+ * and, since HOS-1014, `handleCancel`'s navigation target.
  *
- * These test `buildPartialPayload` directly rather than through the hook. It is
- * the part that can silently corrupt a save — sending a field the page does not
- * own, or dropping half a coordinate pair — and it is pure, so it can be tested
- * for real instead of through a render.
+ * The `buildPartialPayload` suites test it directly rather than through the
+ * hook. It is the part that can silently corrupt a save — sending a field the
+ * page does not own, or dropping half a coordinate pair — and it is pure, so
+ * it can be tested for real instead of through a render.
+ *
+ * The `handleCancel` suite below renders the real hook (no mocked
+ * dependencies — `useZodForm`/`useUnsavedChangesGuard`/`createTranslations`
+ * all run for real, following the pattern already proven in
+ * `use-zod-form.test.ts`) because the thing under test is what it does to
+ * `window.location.href`, not its own internals.
  */
 
-import { describe, expect, it } from 'vitest';
-import { buildPartialPayload } from '@/components/host/editor/use-accommodation-section-form';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
+import {
+    buildPartialPayload,
+    useAccommodationSectionForm
+} from '@/components/host/editor/use-accommodation-section-form';
 
 describe('buildPartialPayload — scoping', () => {
     it('should send nothing when nothing changed', () => {
@@ -192,5 +204,62 @@ describe('buildPartialPayload — coordinates travel together', () => {
         });
 
         expect(payload).toEqual({ latitude: null, longitude: null });
+    });
+});
+
+describe('useAccommodationSectionForm — handleCancel', () => {
+    // HOS-1014: `handleCancel` must always land on THIS accommodation's editor
+    // hub, never on `window.history.back()` — the previous behaviour landed
+    // wherever the user happened to arrive from (a bookmark, a direct link,
+    // another section), not necessarily this accommodation's hub.
+    const schema = z.object({});
+
+    // jsdom refuses to perform a real path navigation ("Not implemented:
+    // navigation (except hash changes)") and, unmocked, leaves `href`
+    // unchanged — the same stand-in `window.location` used by
+    // `CommerceCreateForm.test.tsx` for the identical `window.location.href =
+    // buildUrl(...)` pattern.
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            value: { href: '' },
+            writable: true,
+            configurable: true
+        });
+    });
+
+    it('navigates to the accommodation editor hub with the given id, not history.back()', () => {
+        const { result } = renderHook(() =>
+            useAccommodationSectionForm({
+                locale: 'es',
+                accommodationId: 'acc-123',
+                initialValues: {},
+                ownFields: [],
+                schema
+            })
+        );
+
+        act(() => {
+            result.current.handleCancel();
+        });
+
+        expect(window.location.href).toContain('/es/mi-cuenta/propiedades/acc-123/editar/');
+    });
+
+    it('builds the hub URL for the locale it was given, not a hardcoded one', () => {
+        const { result } = renderHook(() =>
+            useAccommodationSectionForm({
+                locale: 'en',
+                accommodationId: 'acc-456',
+                initialValues: {},
+                ownFields: [],
+                schema
+            })
+        );
+
+        act(() => {
+            result.current.handleCancel();
+        });
+
+        expect(window.location.href).toContain('/en/mi-cuenta/propiedades/acc-456/editar/');
     });
 });

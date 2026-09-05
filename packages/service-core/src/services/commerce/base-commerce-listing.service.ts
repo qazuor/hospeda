@@ -48,7 +48,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
@@ -833,7 +833,7 @@ export abstract class BaseCommerceListingService<
             const current = await this.model.findById(updateId, ctx.tx);
             if (
                 current &&
-                shouldRegenerateSlugOnRename({
+                shouldRegenerateSlugOnListingChange({
                     currentLifecycleState: current.lifecycleState as string | null | undefined,
                     currentName: current.name as string | null | undefined,
                     nextName: typeof payload.name === 'string' ? payload.name : undefined,

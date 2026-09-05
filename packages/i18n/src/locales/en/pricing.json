@@ -62,6 +62,9 @@
         "year": "/year"
     },
     "monthlyOnly": "Monthly plan only",
+    "promoEntry": {
+        "label": "Have a discount code? You'll be able to use it on whichever plan you pick."
+    },
     "index": {
         "title": "Hospeda plans",
         "description": "Pick the audience you belong to and see the plans built for you.",

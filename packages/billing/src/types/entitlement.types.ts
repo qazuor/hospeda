@@ -338,6 +338,47 @@ export enum EntitlementKey {
      * there is no second vertical for this key to be shared with.
      */
     MULTILINGUAL_GASTRONOMY_MENU = 'multilingual_gastronomy_menu',
+
+    /**
+     * Creating private, per-tourist photo galleries for the people who did an
+     * experience (HOS-1060) — the provider uploads the outing's photos, the
+     * tourist opens a token link and downloads them.
+     *
+     * Experience-only by name and on purpose, the mirror image of
+     * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}: a restaurant has no outing
+     * whose photos to hand over, so there is no second vertical for this key to
+     * be shared with.
+     *
+     * ## Two independent sources, which is what makes it unlike its neighbours
+     *
+     * Every other commerce tier differentiator in this enum is granted by a plan
+     * row and by nothing else. This one is granted by TWO things (owner
+     * decision, 2026-09-04):
+     *
+     * - `experience-premium`, through `extraEntitlements` — so it is deliberately
+     *   NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, which is the floor every
+     *   tier of a vertical receives and would hand it to `-basico` too;
+     * - the three `private-galleries-+N` add-ons, through
+     *   `AddonDefinition.grantsEntitlement` — which is how an owner on `-basico`
+     *   or `-pro` gets the capability at all, and how a `-premium` owner who ran
+     *   out of slots raises their cap.
+     *
+     * The precedent for an add-on granting an entitlement is
+     * {@link EntitlementKey.FEATURED_LISTING} (`visibility-boost-*`); what is new
+     * here is that an add-on grants a key a PLAN also grants, so the two sources
+     * are additive and neither is the other's fallback.
+     *
+     * ## Access is only half the gate
+     *
+     * `LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES` is the other half and the two are
+     * not interchangeable: this key answers "may this provider create galleries
+     * at all", the cap answers "how many at once". Storage is the one recurring
+     * per-use cost in this whole epic, so unlike `MENU_ITEM_PHOTOS` — which
+     * deliberately ships with no numeric limit — a gallery capability without a
+     * live cap is an unbounded bill.
+     */
+    MANAGE_EXPERIENCE_PRIVATE_GALLERIES = 'manage_experience_private_galleries',
+
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',

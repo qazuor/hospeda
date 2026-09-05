@@ -166,10 +166,16 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
         /*
          * HOS-1119: one "cambiar de plan" CTA per vertical the owner already
          * subscribes to. `CommercePlanChange` itself renders nothing when
-         * there is no costlier tier to move to (a single-tier vertical, or an
-         * owner already on the top tier) — so this loop can render it
-         * unconditionally for every subscribed vertical without duplicating
-         * that check here.
+         * there is no OTHER tier to move to (a single-tier vertical, or a
+         * catalogue whose every other tier costs exactly the same) — so this
+         * loop can render it unconditionally for every subscribed vertical
+         * without duplicating that check here.
+         *
+         * HOS-1122 passes `currentPeriodEnd` because a downgrade takes effect
+         * THEN, not now, and a screen that does not say when leaves the owner
+         * believing their plan already changed. `null` is a legitimate value
+         * here (the subscription read can omit it) and the component degrades
+         * to date-less copy rather than guessing.
          */
         [...verticalsWithSubscription].map((vertical) => {
             const subscription = subscriptionByVertical.get(vertical);
@@ -184,6 +190,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                     currentPlanSlug={subscription.planSlug}
                     currentPlanName={subscription.planName}
                     plans={plans}
+                    currentPeriodEnd={subscription.currentPeriodEnd}
                     locale={locale}
                 />
             );

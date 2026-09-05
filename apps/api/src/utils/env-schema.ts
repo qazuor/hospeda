@@ -514,6 +514,23 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v === 'true'),
     /**
+     * Feature flag for recurring add-on charging via a dedicated MercadoPago
+     * preapproval per add-on (HOS-847). Ships dark (default false) across the
+     * whole PR chain: while unset/false, add-on checkout keeps using the
+     * one-time `Preference` path (`mode: 'payment'`) byte-for-byte, regardless
+     * of `billingType: 'recurring'` on the add-on. Set to the literal string
+     * `'true'` ONLY once the full chain is merged (checkout, webhook
+     * activation/renewal, hard-cancel on cancellation, and the reconciler
+     * cron) — turning this on before the webhook handler exists leaves a
+     * customer who authorized a charge with a purchase stuck `pending`
+     * forever. Do NOT flip this on staging/prod until the staging + prod
+     * smoke checklists (SPEC-143) have both signed off.
+     */
+    HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
      * Statement descriptor that appears on the cardholder's bank statement
      * after a MercadoPago payment. MP rejects descriptors longer than 11
      * characters and recommends uppercase ASCII (letters, digits, spaces) so

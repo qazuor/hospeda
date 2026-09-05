@@ -20,6 +20,7 @@ import {
     protectedCreateGastronomyListingRoute
 } from './create';
 import { protectedDeleteCommerceDraftRoute } from './delete-draft';
+import { commerceDowngradePreviewRouter } from './downgrade-preview';
 import { startCommerceSubscriptionRouter } from './start-subscription';
 
 const router = createRouter();
@@ -38,6 +39,11 @@ router.route('/', commerceChangePlanRouter);
 // (HOS-1156 AC-14). One route for both verticals, unlike the create pair above:
 // a delete has no payload, so the vertical only picks which service answers.
 router.route('/', protectedDeleteCommerceDraftRoute);
+// GET /subscriptions/:entityType/downgrade-preview — read-only (HOS-1122).
+// Mounted AFTER the change-plan router but on a distinct method+path, so the
+// order is cosmetic; it lives beside it because the two are one flow: preview
+// what a cheaper tier stops covering, then post the change with the keep set.
+router.route('/', commerceDowngradePreviewRouter);
 
 /**
  * Protected commerce routes:
@@ -46,5 +52,6 @@ router.route('/', protectedDeleteCommerceDraftRoute);
  * - POST /listings/:entityType/:entityId/start-subscription
  * - POST /subscriptions/:entityType/change-plan
  * - DELETE /listings/:vertical/:id
+ * - GET  /subscriptions/:entityType/downgrade-preview
  */
 export const protectedCommerceRoutes = router;

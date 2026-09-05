@@ -972,6 +972,28 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // Recurring add-on charging (HOS-847)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED',
+        description:
+            'Feature flag for recurring add-on charging via a dedicated MercadoPago preapproval per add-on (HOS-847). Ships dark (default false) across the whole PR chain: while unset/false, add-on checkout keeps using the one-time Preference path (mode: "payment") byte-for-byte, regardless of billingType: "recurring" on the add-on. Set to "true" ONLY once the full chain is merged (checkout, webhook activation/renewal, hard-cancel on cancellation, and the reconciler cron) — turning this on before the webhook handler exists leaves a customer who authorized a charge with a purchase stuck pending forever.',
+        descriptionEs:
+            'Feature flag del cobro recurrente de add-ons vía un preapproval de MercadoPago dedicado por add-on (HOS-847). Se entrega apagado (default false) durante toda la cadena de PRs: mientras esté sin setear o en false, el checkout de add-ons sigue usando el camino de pago único vía Preference (mode: "payment") sin cambios, sin importar el billingType: "recurring" del add-on. Poné "true" SOLO una vez que toda la cadena esté mergeada (checkout, activación/renovación por webhook, hard-cancel en la cancelación, y el cron reconciliador) — activarlo antes de que exista el handler de webhook deja a un cliente que autorizó un cobro con una compra trabada en pending para siempre.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Leave unset or "false" to keep the one-time add-on checkout (safe default, unchanged behavior). Set "true" ONLY after the entire HOS-847 PR chain (checkout, webhook, cancellation hard-cancel, reconciler) is merged AND both the staging and prod smoke checklists (SPEC-143) have signed off — this is billing CORE. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
+        howToObtainEs:
+            'Dejalo sin setear o en "false" para mantener el checkout de add-ons de pago único (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que toda la cadena de PRs de HOS-847 (checkout, webhook, hard-cancel en cancelación, reconciliador) esté mergeada Y de que los smokes de staging y prod (SPEC-143) hayan firmado — esto es billing CORE. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
+    },
+
+    // -------------------------------------------------------------------------
     // Auth lockout (brute-force protection)
     // -------------------------------------------------------------------------
     {
@@ -1601,6 +1623,28 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     // Testing
     // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS',
+        description:
+            'CI cost guard (HOS-1144). When enabled, every REMOTE media URL is replaced by a placeholder the site serves itself (/assets/images/placeholder.svg), so a run makes zero requests to res.cloudinary.com or any other image CDN. Set ONLY in the CI workflows that boot apps/web (a11y-sweep, e2e-pr, e2e-nightly, lighthouse). MUST stay unset in staging and production: enabling it there would serve grey placeholders instead of real photographs to visitors.',
+        descriptionEs:
+            'Guarda de costo de CI (HOS-1144). Cuando está activa, toda URL de medios REMOTA se reemplaza por un placeholder que sirve el propio sitio (/assets/images/placeholder.svg), de modo que una corrida no hace ni un request a res.cloudinary.com ni a ningún otro CDN de imágenes. Se setea SOLO en los workflows de CI que levantan apps/web (a11y-sweep, e2e-pr, e2e-nightly, lighthouse). DEBE quedar sin setear en staging y producción: activarla ahí serviría placeholders grises en vez de fotos reales a los visitantes.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['web'],
+        category: 'testing',
+        // `stage` is deliberately left at its 'runtime' default even though CI
+        // also exports it for `astro build`: marking it 'build'/'both' tells the
+        // deploy tooling it must be supplied as a Coolify build-arg, and this
+        // variable must never be set on a deployment at all.
+        howToObtain:
+            'Leave unset everywhere except CI. Set to "true" (the only accepted values are "true" and "1"; anything else — including "false" — leaves it off) in a workflow-level env block so it reaches BOTH the `astro build` and the web server process: the URL rewrite happens at resolution time in @repo/media getMediaUrl and apps/web/src/lib/media.ts, and both stages resolve URLs. Playwright and the a11y sweep additionally read it to make res.cloudinary.com unresolvable for Chromium, as a second layer. Deliberately NOT keyed off CI, which production build pipelines also set.',
+        howToObtainEs:
+            'Dejala sin setear en todos lados salvo CI. Poné "true" (los únicos valores aceptados son "true" y "1"; cualquier otro — incluido "false" — la deja apagada) en el bloque env del workflow para que llegue TANTO al `astro build` como al proceso del server web: la reescritura de URLs ocurre en tiempo de resolución, en getMediaUrl de @repo/media y en apps/web/src/lib/media.ts, y ambas etapas resuelven URLs. Playwright y el a11y sweep además la leen para que res.cloudinary.com no resuelva en Chromium, como segunda capa. A propósito NO se apoya en CI, que los pipelines de build de producción también setean.'
+    },
     {
         name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
         description:

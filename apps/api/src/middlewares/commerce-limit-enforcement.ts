@@ -69,6 +69,10 @@ import { buildLimitReachedDetails, LIMIT_COUNT_UNAVAILABLE_MESSAGE } from './lim
  * (503 below) because it is the only gate on the create path; the precheck fails
  * OPEN, because this gate is still behind it. The shared function returns `null`
  * precisely so each caller keeps its own answer to that question.
+ *
+ * HOS-1122's note on PLAN_RESTRICTED listings counting toward the cap travelled
+ * WITH the function, to `services/publish-listing-reads`: it describes what the
+ * count does, and the count is no longer here.
  */
 
 /**

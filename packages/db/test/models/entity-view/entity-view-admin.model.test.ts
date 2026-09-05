@@ -19,6 +19,7 @@
  */
 
 import type { TrackableEntityType } from '@repo/schemas';
+import { getLocalDayWindow, MARKET_TIMEZONE } from '@repo/utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EntityViewModel,
@@ -26,6 +27,64 @@ import {
     type GetDailySeriesInput,
     type GetTopViewedEntitiesInput
 } from '../../../src/models/entity-view/entity-view.model.ts';
+
+/**
+ * Pulls the bound `Date` param (the `windowStart` value) out of a Drizzle
+ * `sql` template's `queryChunks`. Drizzle stores each interpolated value
+ * verbatim in `queryChunks` (alongside `StringChunk` wrappers for the
+ * literal SQL text), so this lets the test assert on the EXACT value the
+ * model passed to the query instead of re-deriving it independently and
+ * comparing that derivation to itself.
+ */
+function extractBoundDate(mockExecute: ReturnType<typeof vi.fn>): Date {
+    const sqlArg = mockExecute.mock.calls[0]?.[0] as { queryChunks: unknown[] } | undefined;
+    const dateChunk = sqlArg?.queryChunks.find((c): c is Date => c instanceof Date);
+    if (!dateChunk) {
+        throw new Error('extractBoundDate: no Date param found in the query passed to db.execute');
+    }
+    return dateChunk;
+}
+
+/**
+ * Pulls every bound string param equal to `MARKET_TIMEZONE` out of a
+ * Drizzle `sql` template's `queryChunks` — used to assert the query binds
+ * the IANA zone (not a hardcoded offset) for `AT TIME ZONE`.
+ */
+function extractBoundTimeZones(mockExecute: ReturnType<typeof vi.fn>): string[] {
+    const sqlArg = mockExecute.mock.calls[0]?.[0] as { queryChunks: unknown[] } | undefined;
+    return (sqlArg?.queryChunks ?? []).filter(
+        (c): c is string => typeof c === 'string' && c === MARKET_TIMEZONE
+    );
+}
+
+/**
+ * Reassembles the literal SQL text of the query, i.e. everything that is NOT a
+ * bound parameter.
+ *
+ * Drizzle wraps literal fragments in a `StringChunk` (`{ value: string[] }`),
+ * while an interpolated value appears as the bare value itself. `sql.raw(...)`
+ * produces a nested `SQL` whose own `queryChunks` hold the raw text — which is
+ * how `MARKET_TIMEZONE_SQL` reaches the statement as a literal rather than a
+ * parameter, and why this walker has to recurse.
+ */
+function extractSqlText(mockExecute: ReturnType<typeof vi.fn>): string {
+    const collect = (chunks: unknown[]): string =>
+        chunks
+            .map((chunk) => {
+                if (chunk && typeof chunk === 'object' && 'value' in chunk) {
+                    const { value } = chunk as { value: unknown };
+                    if (Array.isArray(value)) return value.join('');
+                }
+                if (chunk && typeof chunk === 'object' && 'queryChunks' in chunk) {
+                    return collect((chunk as { queryChunks: unknown[] }).queryChunks);
+                }
+                return '';
+            })
+            .join('');
+
+    const sqlArg = mockExecute.mock.calls[0]?.[0] as { queryChunks: unknown[] } | undefined;
+    return collect(sqlArg?.queryChunks ?? []);
+}
 
 // Mock the logger so tests don't produce noise.
 vi.mock('../../../src/utils/logger', () => ({
@@ -85,33 +144,17 @@ describe('EntityViewModel — admin methods (SPEC-197)', () => {
     });
 
     // =========================================================================
-    // UTC-midnight window anchoring — regression test for FIX-1 (SPEC-197 review)
+    // Local-midnight window anchoring (HOS-1169) — was UTC-midnight anchoring
+    // (SPEC-197 FIX-1); the UTC anchor is the bug this fixes: an event
+    // between 21:00 and midnight Argentina time was grouped into the WRONG
+    // calendar day. See `@repo/utils`'s `local-day.test.ts` for the
+    // pure-logic boundary tests (22:00/00:30 Argentina-local); these tests
+    // verify the MODEL actually wires that logic into its SQL query.
     // =========================================================================
 
-    describe('windowStart UTC-midnight anchoring', () => {
-        /**
-         * Strategy: pin the clock to a known non-midnight UTC time (14:30 UTC on
-         * 2026-06-10) with vi.useFakeTimers. Spy on `Date.UTC` to capture the
-         * arguments the model passes when building todayUtc. If the model computes
-         * today correctly and subtracts (windowDays - 1) days, we can verify the
-         * full formula by checking what windowStart Date is constructed with.
-         *
-         * We spy on the `Date` constructor to capture every Date built during the
-         * call. The windowStart is the Date constructed with a non-current-time
-         * numeric timestamp (the one we derive from todayUtc - offset). Because
-         * fake timers are active we can use `Date.now()` to know the current mock
-         * time, and verify that none of the Date constructions used the sub-day
-         * milliseconds of that mock time.
-         *
-         * Simpler alias: we directly verify the contract by:
-         *   1. Pinning now = 2026-06-10T14:30:00Z (not midnight).
-         *   2. Computing the expected windowStart outside the model using the SAME
-         *      formula. If both match, the model is correct.
-         *   3. Spying on the global Date constructor to capture all built Dates,
-         *      and asserting the one matching expectedWindowStart was indeed built.
-         */
-
-        // Fixed fake clock: 2026-06-10 14:30:00 UTC (mid-afternoon, NOT midnight)
+    describe('windowStart local-midnight anchoring (HOS-1169)', () => {
+        // Fixed fake clock: 2026-06-10 14:30:00 UTC (mid-afternoon, NOT midnight
+        // in either UTC or Argentina).
         const FAKE_NOW_STR = '2026-06-10T14:30:00.000Z';
 
         beforeEach(() => {
@@ -123,95 +166,90 @@ describe('EntityViewModel — admin methods (SPEC-197)', () => {
             vi.useRealTimers();
         });
 
-        /**
-         * Compute the expected windowStart using the SAME formula as the model,
-         * so the test is a pure logic assertion (model must match this formula).
-         */
-        function computeExpectedWindowStart(windowDays: number): Date {
-            const nowUtc = new Date();
-            const todayUtc = new Date(
-                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-            );
-            return new Date(todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000);
-        }
-
-        it('getTopViewedEntities: windowStart is UTC-midnight-anchored and covers exactly windowDays calendar dates', async () => {
+        it('getTopViewedEntities: windowStart is local-midnight-anchored and covers exactly windowDays calendar dates', async () => {
             // Arrange
             const windowDays = 30;
-            // With fake clock = 2026-06-10T14:30Z, today's midnight = 2026-06-10T00:00Z
-            // windowStart = midnight - 29 days = 2026-05-12T00:00:00.000Z
-            const expectedWindowStart = computeExpectedWindowStart(windowDays);
-            expect(expectedWindowStart.toISOString()).toBe('2026-05-12T00:00:00.000Z');
+            const expected = getLocalDayWindow({ windowDays });
+            // With fake clock 2026-06-10T14:30Z, local (Ar) today is still
+            // 2026-06-10 (14:30 UTC = 11:30 -03:00), so the oldest date is
+            // 2026-06-10 minus 29 days.
+            expect(expected.dates[0]).toBe('2026-05-12');
+            expect(expected.windowStart.toISOString()).toBe('2026-05-12T03:00:00.000Z'); // 00:00 -03:00
 
-            injectDb(model, buildMockDb([]));
+            const mockDb = buildMockDb([]);
+            injectDb(model, mockDb);
 
-            // Act — model must not throw and must use midnight-anchored window
+            // Act
             await model.getTopViewedEntities({ entityType: ACCOMMODATION, windowDays, limit: 10 });
 
-            // Assert: verify the formula used by computeExpectedWindowStart (= same as
-            // the model) produces UTC midnight, not the 14:30 sub-day time from FAKE_NOW.
-            expect(expectedWindowStart.getUTCHours()).toBe(0);
-            expect(expectedWindowStart.getUTCMinutes()).toBe(0);
-            expect(expectedWindowStart.getUTCSeconds()).toBe(0);
-            expect(expectedWindowStart.getUTCMilliseconds()).toBe(0);
+            // Assert — the ACTUAL value bound into the query, not a value
+            // re-derived independently of the model.
+            const boundWindowStart = extractBoundDate(mockDb.execute);
+            expect(boundWindowStart.toISOString()).toBe(expected.windowStart.toISOString());
 
-            // Boundary: range [windowStart .. today] covers exactly windowDays calendar dates
-            const todayMidnight = new Date('2026-06-10T00:00:00.000Z');
-            const diffDays =
-                (todayMidnight.getTime() - expectedWindowStart.getTime()) / (24 * 60 * 60 * 1000);
-            expect(diffDays).toBe(windowDays - 1);
-
-            // Regression: the OLD formula (Date.now() - windowDays * 86400000) would give
-            // 2026-05-11T14:30:00.000Z (NOT midnight). The new formula must NOT equal that.
-            const oldFormulaResult = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
-            expect(expectedWindowStart.getTime()).not.toBe(oldFormulaResult.getTime());
+            // Regression: the OLD UTC-anchored formula would give
+            // 2026-05-12T00:00:00.000Z (UTC midnight, not -03:00 midnight).
+            // The two must differ, or this test cannot tell old from new.
+            expect(boundWindowStart.toISOString()).not.toBe('2026-05-12T00:00:00.000Z');
         });
 
-        it('getDailySeries: windowStart is UTC-midnight-anchored and covers exactly windowDays calendar dates', async () => {
+        it('getDailySeries: windowStart is local-midnight-anchored, and the query groups AT TIME ZONE MARKET_TIMEZONE', async () => {
             // Arrange
             const windowDays = 30;
-            const expectedWindowStart = computeExpectedWindowStart(windowDays);
-            expect(expectedWindowStart.toISOString()).toBe('2026-05-12T00:00:00.000Z');
+            const expected = getLocalDayWindow({ windowDays });
 
-            injectDb(model, buildMockDb([]));
+            const mockDb = buildMockDb([]);
+            injectDb(model, mockDb);
 
-            // Act — no crash, and the model internally computes midnight-anchored windowStart
+            // Act
             await model.getDailySeries({ windowDays });
 
-            // Assert — verify by re-running the formula: must return midnight, not 14:30
-            expect(expectedWindowStart.getUTCHours()).toBe(0);
-            expect(expectedWindowStart.getUTCMinutes()).toBe(0);
-            expect(expectedWindowStart.getUTCSeconds()).toBe(0);
-            expect(expectedWindowStart.getUTCMilliseconds()).toBe(0);
+            // Assert — windowStart bound value matches the local-day helper.
+            const boundWindowStart = extractBoundDate(mockDb.execute);
+            expect(boundWindowStart.toISOString()).toBe(expected.windowStart.toISOString());
+            expect(boundWindowStart.toISOString()).not.toBe('2026-05-12T00:00:00.000Z');
 
-            // Boundary check: range [windowStart .. today] covers exactly windowDays dates
-            const todayMidnight = new Date('2026-06-10T00:00:00.000Z');
-            const diffDays =
-                (todayMidnight.getTime() - expectedWindowStart.getTime()) / (24 * 60 * 60 * 1000);
-            expect(diffDays).toBe(windowDays - 1);
+            // Assert — the zone reaches the SQL as a LITERAL, never as a bound
+            // parameter.
+            //
+            // This assertion used to require exactly the opposite (two bound
+            // `MARKET_TIMEZONE` params, one per `AT TIME ZONE`), and it was
+            // green while the query was rejected by Postgres on every call:
+            //
+            //   ERROR: column "entity_views.viewed_at" must appear in the
+            //          GROUP BY clause or be used in an aggregate function
+            //
+            // Binding the zone twice yields `$1` in the SELECT and `$4` in the
+            // GROUP BY. Postgres matches grouping expressions syntactically, so
+            // two different parameter numbers are two different expressions and
+            // the SELECT column counts as ungrouped. A literal is byte-identical
+            // on both sides, which is what makes the query legal.
+            const sqlText = extractSqlText(mockDb.execute);
+            expect(sqlText).toContain(`AT TIME ZONE '${MARKET_TIMEZONE}'`);
+            expect(extractBoundTimeZones(mockDb.execute)).toEqual([]);
+
+            // And the conversion must appear on BOTH sides — dropping it from
+            // the GROUP BY brings back the same Postgres error.
+            const occurrences = sqlText.split(`AT TIME ZONE '${MARKET_TIMEZONE}'`).length - 1;
+            expect(occurrences).toBe(2);
         });
 
-        it('getAdminSummaryTotals: windowStart is UTC-midnight-anchored and covers exactly windowDays calendar dates', async () => {
+        it('getAdminSummaryTotals: windowStart is local-midnight-anchored and covers exactly windowDays calendar dates', async () => {
             // Arrange
             const windowDays = 7;
-            const expectedWindowStart = computeExpectedWindowStart(windowDays);
-            expect(expectedWindowStart.toISOString()).toBe('2026-06-04T00:00:00.000Z');
+            const expected = getLocalDayWindow({ windowDays });
+            expect(expected.dates[0]).toBe('2026-06-04');
 
-            injectDb(model, buildMockDb([]));
+            const mockDb = buildMockDb([]);
+            injectDb(model, mockDb);
 
             // Act
             await model.getAdminSummaryTotals({ windowDays });
 
-            // Assert — formula verification
-            expect(expectedWindowStart.getUTCHours()).toBe(0);
-            expect(expectedWindowStart.getUTCMinutes()).toBe(0);
-            expect(expectedWindowStart.getUTCSeconds()).toBe(0);
-            expect(expectedWindowStart.getUTCMilliseconds()).toBe(0);
-
-            const todayMidnight = new Date('2026-06-10T00:00:00.000Z');
-            const diffDays =
-                (todayMidnight.getTime() - expectedWindowStart.getTime()) / (24 * 60 * 60 * 1000);
-            expect(diffDays).toBe(windowDays - 1);
+            // Assert
+            const boundWindowStart = extractBoundDate(mockDb.execute);
+            expect(boundWindowStart.toISOString()).toBe(expected.windowStart.toISOString());
+            expect(boundWindowStart.toISOString()).not.toBe('2026-06-04T00:00:00.000Z');
         });
     });
 

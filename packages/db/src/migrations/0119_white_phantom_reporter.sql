@@ -1,0 +1,1 @@
+ALTER TABLE "entity_subscriptions" ADD COLUMN "plan_restricted" boolean DEFAULT false NOT NULL;

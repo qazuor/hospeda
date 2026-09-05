@@ -19,12 +19,19 @@ export type SeedSource = 'required' | 'example';
  * - `failures`: fetch/upload failures (either loud or tolerated via fallback).
  * - `skippedExample`: image jobs skipped because they came from the `example`
  *   track.
+ * - `skippedPlaceholder`: image jobs skipped because the run had
+ *   `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` enabled (HOS-1144) and kept a local
+ *   placeholder instead of touching Cloudinary. Counted apart from `failures`
+ *   on purpose: nothing failed, and folding it in would raise the end-of-run
+ *   tally to `warn` on every CI run, drowning a genuine Cloudinary degradation
+ *   in noise (the very thing HOS-922 built the tally to surface).
  */
 export interface ImageProcessingCounters {
     uploaded: number;
     cached: number;
     failures: number;
     skippedExample: number;
+    skippedPlaceholder: number;
 }
 
 /**
@@ -153,6 +160,7 @@ export function createImageProcessingCounters(): ImageProcessingCounters {
         uploaded: 0,
         cached: 0,
         failures: 0,
-        skippedExample: 0
+        skippedExample: 0,
+        skippedPlaceholder: 0
     };
 }

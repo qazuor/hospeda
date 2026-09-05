@@ -36,13 +36,15 @@ export {
     reorderExperienceFaqs,
     updateExperienceFaq
 } from './experience.faq';
-// Media helpers (HOS-372)
+// Media helpers (HOS-372); the born-featured cover upload is HOS-803
 export {
+    addExperienceFeaturedMedia,
     addExperienceMedia,
     getExperienceMedia,
     removeExperienceMedia,
     reorderExperienceMedia,
-    setFeaturedExperienceMedia
+    setFeaturedExperienceMedia,
+    updateExperienceMedia
 } from './experience.media';
 // Media read/compose attach helpers (HOS-372)
 export {

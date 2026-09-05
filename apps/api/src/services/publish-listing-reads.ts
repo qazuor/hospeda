@@ -134,6 +134,29 @@ function serviceFor(vertical: PublishVertical) {
  * cap counts: a DRAFT listing occupies a slot exactly as a published one does.
  * Soft-deleted rows are excluded by the service layer's own default.
  *
+ * ## A PLAN-RESTRICTED listing still counts (HOS-1122) — undecided, not chosen
+ *
+ * This counts every listing the owner holds, including one a commerce downgrade
+ * took private (`entity_subscriptions.plan_restricted = true`). So an owner cut
+ * from three listings to one cannot create a replacement for either of the two
+ * now hidden: their quota is full of listings nobody can see.
+ *
+ * That is SYMMETRIC with accommodation — `enforceAccommodationLimit` counts
+ * plan-restricted properties the same way — and it is deliberately left alone,
+ * because nobody has actually decided it. The alternative (a restricted listing
+ * frees its slot) has its own hazard: the owner creates a replacement, later
+ * upgrades, and lands over the cap with both live. Whichever way it goes it is an
+ * owner decision, not a refactor. Recorded rather than fixed so the next person
+ * finds a note instead of inferring intent from the absence of one. The
+ * owner-facing copy states the current behaviour plainly
+ * (`commerce.owner.planChange.keepPanel.quotaNote`).
+ *
+ * HOS-1122 wrote this against `commerce-limit-enforcement`, which owned the count
+ * at the time; HOS-1156 moved the count here, and the note came with it. It now
+ * also governs the publish precheck, which is a WIDENING of its scope: an owner
+ * whose quota is full of hidden listings is told so before the form, instead of
+ * after a 403.
+ *
  * @param input.vertical - Which vertical to count.
  * @param input.actor - The authenticated actor, who is also the owner.
  * @returns The count, or `null` when it could not be resolved. See the module

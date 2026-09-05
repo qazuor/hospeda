@@ -11,7 +11,6 @@
  * Hydration: client:load — checkout CTAs are interactive immediately.
  */
 
-import { TagIcon } from '@repo/icons';
 import type { EffectPreview } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -20,7 +19,7 @@ import { useSession } from '../../lib/auth-client';
 import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
-import { buildUrl } from '../../lib/urls';
+import { buildUrl, buildUrlWithParams } from '../../lib/urls';
 import { PayerEmailConfirmDialog } from './PayerEmailConfirmDialog.client';
 import styles from './PlanPurchaseButton.module.css';
 
@@ -206,16 +205,64 @@ function appendQueryParam(url: string, key: string, value: string): string {
     return parsed.toString();
 }
 
+/**
+ * Query params carrying a promo code deferred to registration (HOS-984).
+ * `promo` is the raw code and `promoPlan` scopes it to the card that typed it
+ * — validating a code is plan-specific (the endpoint takes an `amount`), so a
+ * code typed on one card must not silently auto-apply on another.
+ */
+const PENDING_PROMO_CODE_PARAM = 'promo';
+const PENDING_PROMO_PLAN_PARAM = 'promoPlan';
+
+/**
+ * Read a `?promo=&promoPlan=` pair off the current URL (HOS-984). Present
+ * when this visitor typed a code before registering and just landed back on
+ * the pricing page — see {@link buildPromoAwareAuthReturnPath}, which is what
+ * puts it there.
+ *
+ * @returns The pair when BOTH are present, otherwise `null` — a half-filled
+ *   pair (e.g. a manually edited URL) is not something to act on.
+ */
+function readPendingPromoFromUrl(): { readonly code: string; readonly planSlug: string } | null {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get(PENDING_PROMO_CODE_PARAM);
+    const planSlug = params.get(PENDING_PROMO_PLAN_PARAM);
+    if (!code || !planSlug) return null;
+    return { code, planSlug };
+}
+
+/**
+ * Removes the pending-promo params from the address bar without a
+ * navigation, once the matching card has consumed them (HOS-984). Mirrors
+ * the same `history.replaceState` pattern used elsewhere in this app (e.g.
+ * `AllianceClaimBanner.client.tsx`) for stripping a one-shot URL token after
+ * it has been read.
+ */
+function stripPendingPromoFromUrl(): void {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete(PENDING_PROMO_CODE_PARAM);
+    url.searchParams.delete(PENDING_PROMO_PLAN_PARAM);
+    window.history.replaceState({}, '', url.toString());
+}
+
 // ---------------------------------------------------------------------------
 // Promo state types
 // ---------------------------------------------------------------------------
 
-/** State machine for the promo code field */
-type PromoStatus = 'idle' | 'applying' | 'valid' | 'error';
+/**
+ * State machine for the promo code field.
+ *
+ * `pending-auth` (HOS-984) is reached instead of `applying`/`valid` when an
+ * UNAUTHENTICATED visitor submits a code: there is no `userId` to validate
+ * against (the endpoint requires one), so the code is not sent to the API at
+ * all — it is only remembered locally and offered to travel to registration
+ * (see {@link buildPromoAwareAuthReturnPath}).
+ */
+type PromoStatus = 'idle' | 'applying' | 'valid' | 'error' | 'pending-auth';
 
 interface PromoState {
-    /** Whether the promo code section is expanded */
-    readonly expanded: boolean;
     /** Raw code string typed by the user */
     readonly code: string;
     /** Current status of the promo apply flow */
@@ -224,7 +271,10 @@ interface PromoState {
     readonly preview: EffectPreview | null;
     /** Error message to show (set when status === 'error') */
     readonly errorMsg: string | null;
-    /** The successfully applied code forwarded to checkout (set when status === 'valid') */
+    /**
+     * The code forwarded to checkout (status === 'valid') or carried to
+     * registration (status === 'pending-auth').
+     */
     readonly appliedCode: string | null;
 }
 
@@ -246,9 +296,11 @@ interface PromoState {
  * double-submission. The `aria-label` is updated to the processing label
  * during loading so assistive technology announces the state change.
  *
- * A collapsible promo-code section is shown when the user is authenticated
- * and the plan is available. Validating a code previews the effect; a valid
- * code is forwarded to `createCheckout` on submit.
+ * A promo-code section is shown whenever the plan is otherwise purchasable
+ * (HOS-984: no longer gated on being authenticated, and no longer collapsed
+ * behind a toggle). An authenticated visitor's code is validated live and
+ * forwarded to `createCheckout` on submit; an unauthenticated visitor's code
+ * is deferred — see `handleApplyPromo` and `buildPromoAwareAuthReturnPath`.
  *
  * For `comp` promo codes, `checkoutUrl` is an in-app success sentinel URL
  * (no MercadoPago redirect) — `window.location.href = checkoutUrl` is still
@@ -302,8 +354,14 @@ export function PlanPurchaseButton({
     // Promo code state
     // ---------------------------------------------------------------------------
 
+    // HOS-984: no longer collapsed behind a "¿Tenés un código de descuento?"
+    // toggle. That toggle — combined with sitting below the CTA and being
+    // gated on a session — was the third of three ways the field was
+    // effectively invisible to a visitor holding a code. A single input+
+    // button row under the CTA is not loud enough to need hiding to protect
+    // the CTA's prominence, so the field is now always rendered directly
+    // when `showPromoSection` is true (see the render below).
     const [promo, setPromo] = useState<PromoState>({
-        expanded: false,
         code: '',
         status: 'idle',
         preview: null,
@@ -397,10 +455,6 @@ export function PlanPurchaseButton({
     const freePlanLegendLabel = t('billing.checkout.button.freePlanLegend', 'Ya tenés este plan');
 
     // Promo i18n strings
-    const promoToggleLabel = t(
-        'billing.checkout.promoApply.toggle',
-        '¿Tenés un código de descuento?'
-    );
     const promoLabel = t('billing.checkout.promoApply.label', 'Código de descuento');
     const promoPlaceholder = t('billing.checkout.promoApply.inputPlaceholder', 'Ingresá tu código');
     const promoApplyButton = t('billing.checkout.promoApply.applyButton', 'Aplicar');
@@ -410,6 +464,14 @@ export function PlanPurchaseButton({
         'billing.checkout.promoApply.errorGeneric',
         'No pudimos verificar el código. Intentá de nuevo.'
     );
+    // HOS-984: shown instead of a live preview when the code was submitted
+    // without a session — `{{code}}` is interpolated manually, mirroring the
+    // `buildPreviewText` pattern elsewhere in this file.
+    const promoPendingAuthMessageTemplate = t(
+        'billing.checkout.promoApply.pendingAuthMessage',
+        'Vas a poder aplicar el código {{code}} en cuanto termines de registrarte.'
+    );
+    const promoRegisterCtaLabel = t('billing.checkout.promoApply.registerCta', 'Registrarme');
 
     /**
      * Map a server `errorCode` from the validate endpoint to a localized,
@@ -489,6 +551,40 @@ export function PlanPurchaseButton({
             cancelled = true;
         };
     }, [isAuthenticated]);
+
+    // HOS-984: re-apply a promo code carried back from registration. When an
+    // unauthenticated visitor submitted a code on THIS card, `handleClick`'s
+    // unauthenticated branch (or the "Registrarme" link built by
+    // `buildRegisterWithPromoHref`) sent them to sign-up with
+    // `?promo=&promoPlan=` riding on the return path
+    // (`buildPromoAwareAuthReturnPath`). Once they
+    // land back here authenticated, this fulfils the promise the pending-auth
+    // message made ("se va a aplicar cuando te registres") by running the
+    // exact same validate call `handleApplyPromo` runs from a manual click —
+    // no new endpoint behaviour, just triggered programmatically once instead
+    // of waiting for a second click.
+    //
+    // Only the card whose `planSlug` matches `promoPlan` acts — validating is
+    // plan-specific (the endpoint takes an `amount`), so a code typed for one
+    // tier must not silently re-apply against a different tier's price. Every
+    // OTHER card's effect reads the same `window.location.search` and finds a
+    // mismatch, so it returns without touching the URL — no race between the
+    // N cards on the page, because only the one match ever calls
+    // `stripPendingPromoFromUrl`.
+    //
+    // Deliberately only depends on the two values that decide WHETHER to run
+    // — `handleApplyPromo` reads `displayPriceCents`/`session` fresh at call
+    // time, and re-running this effect on every one of their changes (or on
+    // every render, since it is a new function reference each time) would
+    // fight the URL-stripping single-shot guarantee above.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above — intentional one-shot effect.
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        const pending = readPendingPromoFromUrl();
+        if (!pending || pending.planSlug !== planSlug) return;
+        stripPendingPromoFromUrl();
+        void handleApplyPromo(pending.code);
+    }, [isAuthenticated, planSlug]);
 
     // HOS-226: fetch the user's trial eligibility once they're authenticated,
     // shared across every PlanPurchaseButton island via trialEligibilityPromise
@@ -600,16 +696,22 @@ export function PlanPurchaseButton({
     const isPlanChange =
         isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
 
-    // Show the promo section only when the user can interact with checkout
+    // Show the promo section whenever there is a live checkout to apply it to
     // (never in the plan-change case — promo codes apply at checkout, not here).
     // HOS-451/H-90: never on a free ($0) plan — a promo code has no semantics
     // against a price that is already zero, and the validate endpoint rejects
     // amount=0 outright (`ValidatePromoCodeSchema.amount` is `.positive()`), so
     // offering the field here only produces a guaranteed error. A user who
     // wants a `comp` grant applies it on a paid plan, where it works.
+    //
+    // HOS-984: deliberately NOT gated on `isAuthenticated` any more. A promo
+    // code is an acquisition tool handed to people who do not have an account
+    // yet — gating the field on a session hid it from exactly the visitor it
+    // is for. An unauthenticated visitor still cannot validate against the
+    // protected endpoint (see `handleApplyPromo`), so the field defers to
+    // registration instead of calling it.
     const showPromoSection =
         showPromo &&
-        isAuthenticated &&
         !isCurrentPlan &&
         !isAnnualUnavailable &&
         !isPlanChange &&
@@ -691,13 +793,41 @@ export function PlanPurchaseButton({
 
     /**
      * Handle "Aplicar" click on the promo code section.
-     * Calls the validate endpoint and updates promo state accordingly.
+     *
+     * Authenticated: calls the validate endpoint and updates promo state
+     * accordingly (unchanged behaviour).
+     *
+     * HOS-984, unauthenticated: the validate endpoint is protected and
+     * requires `userId` (see `apps/api/src/routes/billing/promo-codes.ts`),
+     * which an anonymous visitor does not have — so this deliberately never
+     * calls it for them. The code is only remembered locally, as
+     * `status: 'pending-auth'`, and the render below offers a CTA to
+     * registration carrying it (`buildPromoAwareAuthReturnPath`).
+     *
+     * @param codeOverride - HOS-984: the code to apply, when it did not come
+     *   from the input the user is looking at — used by the mount-time
+     *   effect that re-applies a code carried back from registration, where
+     *   reading `promo.code` from state would race the `setPromo` that just
+     *   set it. Defaults to the current input value.
      */
-    async function handleApplyPromo(): Promise<void> {
-        const code = promo.code.trim();
-        if (!code || !session?.user) return;
+    async function handleApplyPromo(codeOverride?: string): Promise<void> {
+        const code = (codeOverride ?? promo.code).trim();
+        if (!code) return;
 
-        setPromo((prev) => ({ ...prev, status: 'applying', errorMsg: null }));
+        if (!isAuthenticated) {
+            setPromo((prev) => ({
+                ...prev,
+                code,
+                status: 'pending-auth',
+                errorMsg: null,
+                appliedCode: code
+            }));
+            return;
+        }
+
+        if (!session?.user) return;
+
+        setPromo((prev) => ({ ...prev, code, status: 'applying', errorMsg: null }));
 
         try {
             const result = await billingApi.validatePromoCode({
@@ -756,7 +886,9 @@ export function PlanPurchaseButton({
     }
 
     /**
-     * Remove the applied promo code and reset the section to idle.
+     * Remove the applied (or deferred) promo code and reset the section to
+     * idle. Used both from the `valid` state's "Quitar" and the `pending-auth`
+     * state's "Quitar" (HOS-984) — same reset either way.
      */
     function handleRemovePromo(): void {
         setPromo((prev) => ({
@@ -767,6 +899,63 @@ export function PlanPurchaseButton({
             errorMsg: null,
             appliedCode: null
         }));
+    }
+
+    /**
+     * Builds the same-app relative path an unauthenticated visitor should
+     * land on after signing up, carrying a pending promo code so it survives
+     * the trip (HOS-984).
+     *
+     * Reuses the exact query-param mechanism `resolveSafeReturnPath` /
+     * `buildLoginRedirect` already use for `returnUrl` — the code just rides
+     * as extra query params ON that same relative path, so it needs no
+     * changes to the open-redirect guard, `signin.astro`, or `signup.astro`:
+     * `resolveSafeReturnPath` only checks the leading slashes, and a query
+     * string does not change those. This also means the code survives the
+     * password-registration path (which lands on `/auth/verify-email-sent/`
+     * and only reaches this destination via the verification email's
+     * `verificationCallbackUrl`, HOS-838), not just the immediate-session
+     * OAuth path — both ultimately resolve `authenticatedTargetHref` from
+     * this same `returnPath`.
+     *
+     * `promoPlan` scopes the code to THIS card's plan: validating a code is
+     * plan-specific (the endpoint takes an `amount`), so only the card whose
+     * slug matches consumes it on return — see the mount-time effect below.
+     *
+     * @param pendingCode - The code to carry, or `undefined` for a plain
+     *   return with no code attached.
+     * @returns A same-app relative path, safe to hand to `resolveSafeReturnPath`.
+     */
+    function buildPromoAwareAuthReturnPath(pendingCode: string | undefined): string {
+        if (!pendingCode) {
+            return buildUrl({ locale, path: plansPath });
+        }
+        return buildUrlWithParams({
+            locale,
+            path: plansPath,
+            params: {
+                [PENDING_PROMO_CODE_PARAM]: pendingCode,
+                [PENDING_PROMO_PLAN_PARAM]: planSlug
+            }
+        });
+    }
+
+    /**
+     * `href` for the "Registrarme" CTA inside the `pending-auth` promo state
+     * (HOS-984) — a plain link, not a click handler, so it works with no
+     * JavaScript and supports the ordinary link affordances (ctrl/cmd-click,
+     * "copy link address"), matching how `signup.astro` already builds its own
+     * "already have an account?" link. Sends the visitor to sign-up carrying
+     * the deferred code — targets `/auth/signup` specifically ("el CTA lo
+     * lleva al registro"), not `/auth/signin` (the main CTA's unauthenticated
+     * target in `handleClick`, unchanged).
+     *
+     * @param pendingCode - The code to carry (`promo.appliedCode` at the call
+     *   site), or `null` when none is pending.
+     */
+    function buildRegisterWithPromoHref(pendingCode: string | null): string {
+        const returnUrl = buildPromoAwareAuthReturnPath(pendingCode ?? undefined);
+        return `${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${encodeURIComponent(returnUrl)}`;
     }
 
     // ---------------------------------------------------------------------------
@@ -880,7 +1069,15 @@ export function PlanPurchaseButton({
         }
 
         if (!isAuthenticated) {
-            const returnUrl = buildUrl({ locale, path: plansPath });
+            // HOS-984: if this card's promo widget already has a code
+            // deferred (`pending-auth` — the visitor clicked "Aplicar"
+            // without a session), carry it along even when they click the
+            // main CTA instead of the widget's own "Registrarme" link. Not
+            // just a convenience: the widget promised "se va a aplicar
+            // cuando te registres", and dropping the code here because they
+            // clicked the wrong button would break that promise silently.
+            const pendingCode = promo.status === 'pending-auth' ? promo.appliedCode : null;
+            const returnUrl = buildPromoAwareAuthReturnPath(pendingCode ?? undefined);
             const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(returnUrl)}`;
             window.location.href = signinPath;
             return;
@@ -1132,18 +1329,46 @@ export function PlanPurchaseButton({
                 </p>
             )}
 
-            {/* Promo code section — only shown when the user can actually checkout */}
+            {/* Promo code section — HOS-984: rendered directly (no collapsed
+                toggle) whenever there is a live checkout to apply it to,
+                authenticated or not. */}
             {showPromoSection && (
                 <div className={styles.promoSection}>
-                    {promo.expanded ? (
-                        <div className={styles.promoField}>
-                            {promo.status === 'valid' ? (
-                                /* Valid code — show preview */
-                                <div className={styles.promoSuccess}>
-                                    {/* <output> carries an implicit role="status" */}
-                                    <output className={styles.promoPreviewText}>
-                                        {promo.preview ? buildPreviewText(promo.preview) : ''}
-                                    </output>
+                    <div className={styles.promoField}>
+                        {promo.status === 'valid' ? (
+                            /* Authenticated, validated — show the live preview */
+                            <div className={styles.promoSuccess}>
+                                {/* <output> carries an implicit role="status" */}
+                                <output className={styles.promoPreviewText}>
+                                    {promo.preview ? buildPreviewText(promo.preview) : ''}
+                                </output>
+                                <button
+                                    type="button"
+                                    className={styles.promoRemoveButton}
+                                    onClick={handleRemovePromo}
+                                >
+                                    {promoRemoveButton}
+                                </button>
+                            </div>
+                        ) : promo.status === 'pending-auth' ? (
+                            /* HOS-984: submitted without a session — never sent to the
+                               protected validate endpoint. Names the code, promises it
+                               will apply on registration, and links straight to
+                               sign-up carrying it. */
+                            <div className={styles.promoPendingAuth}>
+                                <p className={styles.promoPendingAuthText}>
+                                    {promoPendingAuthMessageTemplate.replace(
+                                        '{{code}}',
+                                        promo.appliedCode ?? ''
+                                    )}
+                                </p>
+                                <div className={styles.promoPendingAuthActions}>
+                                    <a
+                                        href={buildRegisterWithPromoHref(promo.appliedCode)}
+                                        className={styles.promoRegisterButton}
+                                    >
+                                        {promoRegisterCtaLabel}
+                                    </a>
                                     <button
                                         type="button"
                                         className={styles.promoRemoveButton}
@@ -1152,82 +1377,67 @@ export function PlanPurchaseButton({
                                         {promoRemoveButton}
                                     </button>
                                 </div>
-                            ) : (
-                                <>
-                                    <label
-                                        htmlFor={promoInputId}
-                                        className={styles.promoLabel}
+                            </div>
+                        ) : (
+                            <>
+                                <label
+                                    htmlFor={promoInputId}
+                                    className={styles.promoLabel}
+                                >
+                                    {promoLabel}
+                                </label>
+                                <div className={styles.promoInputRow}>
+                                    <input
+                                        id={promoInputId}
+                                        type="text"
+                                        className={styles.promoInput}
+                                        placeholder={promoPlaceholder}
+                                        value={promo.code}
+                                        onChange={(e) =>
+                                            setPromo((prev) => ({
+                                                ...prev,
+                                                code: e.target.value,
+                                                status: 'idle',
+                                                errorMsg: null
+                                            }))
+                                        }
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key === 'Enter' &&
+                                                promo.code.trim() &&
+                                                promo.status !== 'applying'
+                                            ) {
+                                                void handleApplyPromo();
+                                            }
+                                        }}
+                                        disabled={promo.status === 'applying'}
+                                        aria-label={promoLabel}
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.promoApplyButton}
+                                        onClick={() => void handleApplyPromo()}
+                                        disabled={!promo.code.trim() || promo.status === 'applying'}
+                                        aria-busy={promo.status === 'applying'}
                                     >
-                                        {promoLabel}
-                                    </label>
-                                    <div className={styles.promoInputRow}>
-                                        <input
-                                            id={promoInputId}
-                                            type="text"
-                                            className={styles.promoInput}
-                                            placeholder={promoPlaceholder}
-                                            value={promo.code}
-                                            onChange={(e) =>
-                                                setPromo((prev) => ({
-                                                    ...prev,
-                                                    code: e.target.value,
-                                                    status: 'idle',
-                                                    errorMsg: null
-                                                }))
-                                            }
-                                            onKeyDown={(e) => {
-                                                if (
-                                                    e.key === 'Enter' &&
-                                                    promo.code.trim() &&
-                                                    promo.status !== 'applying'
-                                                ) {
-                                                    void handleApplyPromo();
-                                                }
-                                            }}
-                                            disabled={promo.status === 'applying'}
-                                            aria-label={promoLabel}
-                                            autoComplete="off"
-                                            spellCheck={false}
-                                        />
-                                        <button
-                                            type="button"
-                                            className={styles.promoApplyButton}
-                                            onClick={() => void handleApplyPromo()}
-                                            disabled={
-                                                !promo.code.trim() || promo.status === 'applying'
-                                            }
-                                            aria-busy={promo.status === 'applying'}
-                                        >
-                                            {promo.status === 'applying'
-                                                ? promoApplying
-                                                : promoApplyButton}
-                                        </button>
-                                    </div>
-                                    {promo.status === 'error' && promo.errorMsg && (
-                                        <p
-                                            role="alert"
-                                            className={styles.promoErrorMessage}
-                                        >
-                                            {promo.errorMsg}
-                                        </p>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className={styles.promoToggle}
-                            onClick={() => setPromo((prev) => ({ ...prev, expanded: true }))}
-                        >
-                            <TagIcon
-                                size={16}
-                                weight="regular"
-                                aria-hidden="true"
-                            />
-                            <span>{promoToggleLabel}</span>
-                        </button>
-                    )}
+                                        {promo.status === 'applying'
+                                            ? promoApplying
+                                            : promoApplyButton}
+                                    </button>
+                                </div>
+                                {promo.status === 'error' && promo.errorMsg && (
+                                    <p
+                                        role="alert"
+                                        className={styles.promoErrorMessage}
+                                    >
+                                        {promo.errorMsg}
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
