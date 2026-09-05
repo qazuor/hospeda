@@ -43,7 +43,12 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { accommodations, getDb, userRole as userRoleTable } from '@repo/db';
-import { getUserRoles, isAccommodationSubscription, type RoleEnum } from '@repo/service-core';
+import {
+    getUserRoles,
+    hydrateSubscriptionProductDomains,
+    isAccommodationSubscription,
+    type RoleEnum
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
@@ -197,7 +202,7 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
     }
     const entitlements = new Set<EntitlementKey>();
     try {
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
         // HOS-291: route through the shared predicate (active | trialing | comp)
         // instead of re-deriving the status set inline. The inline check omitted
         // `comp` (SPEC-262), so an admin-comped owner resolved to an EMPTY
@@ -217,12 +222,18 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
         // null/undefined productDomain as 'accommodation' (legacy rows + column
         // default), so it can never drop a real accommodation sub.
         //
+        // HOS-847: `getByCustomerId()` returns qzpay-core-mapped objects that never
+        // carry `productDomain` (HOS-934 gap) — without hydration the domain
+        // filter above was a silent no-op, which would have let a recurring
+        // add-on's own preapproval row (product_domain = 'addon') shadow the
+        // owner's real accommodation subscription. Hydrate before filtering.
+        //
         // There should only ever be ONE live accommodation subscription per
         // customer (`start-paid.ts` rejects a second one with this same predicate
         // pair), so `find` order is not load-bearing.
-        const active = subscriptions?.find(
-            (sub: { status: string }) =>
-                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+        const active = subscriptions.find(
+            (sub) => isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
         if (!active) {
             return entitlements;
@@ -615,7 +626,7 @@ async function loadCustomerLimits(
     }
 
     try {
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
         // HOS-291: same selection contract as `loadCustomerEntitlements` above
         // (entitlement-granting status AND accommodation domain) — a comp owner
         // must resolve the limits of the plan they were comped on, not the
@@ -623,9 +634,12 @@ async function loadCustomerLimits(
         // more here: a commerce plan is FOUND but carries no limits, so the
         // resolver would cache an empty map for 5 minutes (`shouldCache: true`)
         // instead of falling back to owner-basico.
-        const active = subscriptions?.find(
-            (sub: { status: string }) =>
-                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+        //
+        // HOS-847: hydrate before filtering — see loadCustomerEntitlements's doc
+        // for why the un-hydrated domain filter is a silent no-op.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+        const active = subscriptions.find(
+            (sub) => isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
 
         if (!active) {

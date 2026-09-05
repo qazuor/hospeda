@@ -477,7 +477,8 @@
             },
             "keepPanel": {
                 "title": "Elegí qué fichas seguís mostrando",
-                "intro": "El plan {plan} incluye {cap} de tus {active} fichas. Las que no elijas van a dejar de verse.",
+                "intro_one": "El plan {plan} incluye {cap} de tu {active} ficha. Si no la elegís, va a dejar de verse.",
+                "intro_other": "El plan {plan} incluye {cap} de tus {active} fichas. Las que no elijas van a dejar de verse.",
                 "when": "El cambio se aplica el {date}. Hasta entonces seguís con tu plan actual y todas tus fichas visibles.",
                 "whenNoDate": "El cambio se aplica al final del período que ya pagaste. Hasta entonces no cambia nada.",
                 "quotaNote": "Una ficha oculta sigue ocupando lugar en tu cupo: no vas a poder crear otra en su lugar. Vuelve a verse si subís de plan.",
@@ -500,17 +501,6 @@
             "downloadListingPdf": "Ficha en PDF para imprimir"
         },
         "create": {
-            "pickVertical": {
-                "title": "Crear nuevo comercio",
-                "subtitle": "Elegí qué tipo de comercio querés publicar.",
-                "gastronomyDescription": "Restaurantes, bares, cafés y otros locales gastronómicos.",
-                "experienceDescription": "Tours, excursiones, alquileres y otras experiencias."
-            },
-            "title": {
-                "gastronomy": "Crear ficha de gastronomía",
-                "experience": "Crear ficha de experiencia"
-            },
-            "subtitle": "Completá lo básico ahora — vas a poder sumar fotos, horarios y más detalles después.",
             "fields": {
                 "name": {
                     "gastronomy": "Nombre del comercio",

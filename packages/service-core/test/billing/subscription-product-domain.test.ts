@@ -31,20 +31,27 @@ vi.mock('@repo/db', () => ({
         planId: 'planId',
         mpSubscriptionId: 'mpSubscriptionId',
         promoCodeId: 'promoCodeId',
-        promoEffectRemainingCycles: 'promoEffectRemainingCycles'
+        promoEffectRemainingCycles: 'promoEffectRemainingCycles',
+        productDomain: 'productDomain'
     },
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
     getDb: vi.fn(),
     inArray: vi.fn((col: unknown, values: unknown[]) => ({ inArray: col, values })),
     isNull: vi.fn((col: unknown) => ({ isNull: col })),
+    // HOS-847: excludeAddonDomainCondition() needs real ne()/or() builders (not
+    // just markers) so the assembled condition object can be inspected by shape.
+    ne: vi.fn((col: unknown, val: unknown) => ({ ne: [col, val] })),
+    or: vi.fn((...conditions: unknown[]) => ({ or: conditions })),
     sql: vi.fn()
 }));
 
 import type { DrizzleClient } from '@repo/db';
 import * as dbModule from '@repo/db';
 import {
+    excludeAddonDomainCondition,
     hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
+    isAddonSubscription,
     isOwnerCategorySubscription,
     loadSubscriptionDiscountState,
     subscriptionMatchesDomain
@@ -532,5 +539,48 @@ describe('hydrateSubscriptionProductDomains (HOS-934)', () => {
         // Assert — the standalone getDb() connection was never touched.
         expect(mockGetDb).not.toHaveBeenCalled();
         expect(selectMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ============================================================================
+// HOS-847 — recurring add-on isolation
+// ============================================================================
+
+describe('isAddonSubscription (HOS-847)', () => {
+    it('recognises an explicit addon row', () => {
+        expect(isAddonSubscription({ productDomain: 'addon' })).toBe(true);
+    });
+
+    it('does NOT treat a legacy row (no domain) as an addon — fail-closed, not fail-open', () => {
+        for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+            expect(isAddonSubscription(legacy)).toBe(false);
+        }
+    });
+
+    it('does not treat any other domain as an addon', () => {
+        for (const domain of ['accommodation', 'gastronomy', 'experience', 'partner']) {
+            expect(isAddonSubscription({ productDomain: domain })).toBe(false);
+        }
+    });
+
+    it('a real add-on row never satisfies isAccommodationSubscription', () => {
+        // The exact contamination this member exists to prevent: an add-on row
+        // must never be mistaken for the owner's accommodation subscription.
+        const addonRow = { productDomain: 'addon' };
+        expect(isAccommodationSubscription(addonRow)).toBe(false);
+        expect(isAddonSubscription(addonRow)).toBe(true);
+    });
+});
+
+describe('excludeAddonDomainCondition (HOS-847)', () => {
+    it('builds an OR(isNull, ne(addon)) condition over billingSubscriptions.productDomain', () => {
+        // Arrange / Act
+        const condition = excludeAddonDomainCondition();
+
+        // Assert — shape produced by this file's real-predicate or()/ne()/isNull()
+        // mocks: an OR of "column is NULL" (legacy row) and "column != 'addon'".
+        expect(condition).toEqual({
+            or: [{ isNull: 'productDomain' }, { ne: ['productDomain', 'addon'] }]
+        });
     });
 });

@@ -102,6 +102,11 @@ vi.mock('drizzle-orm', async () => {
         isNotNull: (a: unknown) => ({ type: 'isNotNull', a }),
         isNull: (a: unknown) => ({ type: 'isNull', a }),
         lt: (a: unknown, b: unknown) => ({ type: 'lt', a, b }),
+        // HOS-847: excludeAddonDomainCondition() (called for real from
+        // @repo/service-core) needs ne()/or() too — markers keep the resulting
+        // condition an inspectable POJO, consistent with the siblings above.
+        ne: (a: unknown, b: unknown) => ({ type: 'ne', a, b }),
+        or: (...args: unknown[]) => ({ type: 'or', args }),
         sql: Object.assign(
             (strings: TemplateStringsArray, ..._values: unknown[]) => ({ type: 'sql', strings }),
             { raw: (s: string) => ({ type: 'sql_raw', value: s }) }
@@ -1086,6 +1091,29 @@ describe('TrialService', () => {
             mockDbForTrial.limit.mockResolvedValue([]);
             mockTxSelectChain.limit.mockResolvedValue([]);
             mockPaymentAdapter.subscriptions.retrieve.mockReset();
+        });
+
+        // HOS-847: a recurring add-on's own preapproval row should never
+        // legitimately be 'trialing' (add-on provisioning always bakes
+        // trialDays: 0), but this claim query must not depend on that staying
+        // true — verifies the WHERE clause itself excludes it.
+        it('includes the addon-domain exclusion in the claim-phase WHERE clause (HOS-847)', async () => {
+            givenClaimedRows([]);
+
+            await trialService.reconcileExpiredTrials(adapterInput());
+
+            expect(mockTxSelectChain.where).toHaveBeenCalledOnce();
+            const condition = mockTxSelectChain.where.mock.calls[0]?.[0] as {
+                type: 'and';
+                args: Array<{ type?: string; args?: unknown[] }>;
+            };
+            const excludeAddon = condition.args.find((c) => c.type === 'or');
+
+            expect(excludeAddon).toBeDefined();
+            expect(excludeAddon?.args).toContainEqual(expect.objectContaining({ type: 'isNull' }));
+            expect(excludeAddon?.args).toContainEqual(
+                expect.objectContaining({ type: 'ne', b: 'addon' })
+            );
         });
 
         // ── AC-6 — THE regression guard ──────────────────────────────────────

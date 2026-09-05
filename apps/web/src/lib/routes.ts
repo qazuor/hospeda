@@ -73,6 +73,27 @@ export const SESSION_OPTIONAL_SEGMENTS = [
 ] as const;
 
 /**
+ * Locale-agnostic paths under a PROTECTED segment that are, despite their
+ * prefix, public — because nothing lives there any more except a 301.
+ *
+ * HOS-1156 retired `/mi-cuenta/comercio/nuevo/` and its `{vertical}` child into
+ * redirects to the public publish pages. Left protected, they would answer a
+ * signed-out visitor with a 302 to login: an old bookmark would demand an
+ * account before revealing that the page it points at no longer requires one,
+ * which is the precise behaviour D-1 removed from the pages themselves.
+ *
+ * The exemption is safe because it is scoped to paths that render nothing. A URL
+ * only belongs here when its page body is a redirect and nothing else — adding a
+ * path that still reads data would silently un-protect it, so
+ * `test/lib/public-redirect-paths.guard.test.ts` asserts each entry's file is a
+ * pure redirect.
+ *
+ * Matched as a PREFIX of the path after the locale, so the `{vertical}` child is
+ * covered by its parent's entry.
+ */
+export const PUBLIC_REDIRECT_PATHS = ['/mi-cuenta/comercio/nuevo'] as const;
+
+/**
  * URL path prefixes that should bypass middleware entirely.
  * These are internal Astro/Vite asset routes and common static files.
  */

@@ -21,6 +21,7 @@ import type { Accommodation } from '@repo/schemas';
 import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
@@ -143,7 +144,14 @@ const subtitle = t('host.properties.list.subtitle', 'Gestioná tus publicaciones
 const emptyMessage = t('host.properties.empty.title', 'Aún no publicaste ninguna propiedad');
 const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
 
-const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
+// HOS-1156: `/publicar/nueva/` was absorbed into `/publicar/`, which now
+// carries the create form itself. Repointed here rather than left riding the
+// 301 — a link to a redirect is a link whose destination somebody else can move,
+// which is exactly how this issue was created.
+const publishNewUrl = buildUrl({
+    locale,
+    path: PUBLISH_PAGE_PATH_BY_VERTICAL.accommodation
+});
 // Owner plans page (NOT mi-cuenta/suscripcion): BETA-195 routes this page's
 // CTA to plan-change when the actor already has an active subscription
 // (e.g. a tourist plan), so it correctly handles the cross-category

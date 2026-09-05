@@ -94,12 +94,17 @@ vi.mock('@repo/db', () => ({
         mpSubscriptionId: 'MP_SUBSCRIPTION_ID',
         promoCodeId: 'PROMO_CODE_ID',
         promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES',
-        deletedAt: 'DELETED_AT'
+        deletedAt: 'DELETED_AT',
+        productDomain: 'PRODUCT_DOMAIN'
     },
     eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
     isNotNull: (a: unknown) => ({ _isNotNull: a }),
     isNull: (a: unknown) => ({ _isNull: a }),
-    and: (...args: unknown[]) => ({ _and: args })
+    and: (...args: unknown[]) => ({ _and: args }),
+    // HOS-847: excludeAddonDomainCondition() (called for real from
+    // @repo/service-core, unmocked) needs ne()/or() too.
+    ne: (a: unknown, b: unknown) => ({ _ne: [a, b] }),
+    or: (...args: unknown[]) => ({ _or: args })
 }));
 
 // @repo/service-core functions used by reconcileActiveDiscountAmounts.
@@ -1244,6 +1249,33 @@ describe('subscription-poll cron job', () => {
             // Ensure no polling jobs interfere with the reconciler-only tests.
             mockFindDuePending.mockResolvedValue([]);
             mockAdapterSubsUpdate.mockResolvedValue(undefined);
+        });
+
+        // HOS-847: a recurring add-on's own preapproval row is never
+        // promo-eligible today (promo codes apply to plans, not add-ons), but
+        // this sweep must not depend on that staying true. Asserts the actual
+        // EFFECT — the WHERE clause handed to the DB genuinely excludes an
+        // add-on row — not just that the helper builds SOME condition.
+        it("excludes a recurring add-on's own row from the discount-reconcile WHERE clause", async () => {
+            setupReconcilerMocks(EXPECTED_DISCOUNTED_MAJOR);
+
+            await subscriptionPollJob.handler(buildContext({ dryRun: false }));
+
+            expect(mockSelectWhere).toHaveBeenCalledOnce();
+            const whereCondition = mockSelectWhere.mock.calls[0]?.[0] as {
+                _and: Array<{ _or?: unknown[] }>;
+            };
+            const excludeAddonCondition = whereCondition._and.find((c): c is { _or: unknown[] } =>
+                Array.isArray(c._or)
+            );
+
+            // The condition is OR(productDomain IS NULL, productDomain != 'addon') —
+            // reject an actual add-on row, accept a legacy/accommodation one.
+            expect(excludeAddonCondition).toBeDefined();
+            expect(excludeAddonCondition?._or).toContainEqual({
+                _ne: ['PRODUCT_DOMAIN', 'addon']
+            });
+            expect(excludeAddonCondition?._or).toContainEqual({ _isNull: 'PRODUCT_DOMAIN' });
         });
 
         it('S1 in-sync: when live auto_recurring.transaction_amount matches expected, subscriptions.update is NOT called', async () => {

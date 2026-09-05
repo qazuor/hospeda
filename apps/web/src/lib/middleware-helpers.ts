@@ -20,6 +20,7 @@ import {
     PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
     PROFILE_COMPLETION_SEGMENT,
     PROTECTED_SEGMENTS,
+    PUBLIC_REDIRECT_PATHS,
     SESSION_OPTIONAL_SEGMENTS,
     SET_PASSWORD_SEGMENT,
     STATIC_PREFIXES
@@ -147,7 +148,20 @@ export function isProtectedRoute({ path }: { path: string }): boolean {
         return false;
     }
 
-    return (PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '');
+    if (!(PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '')) {
+        return false;
+    }
+
+    // HOS-1156: a handful of paths under a protected segment hold nothing but a
+    // 301 to a public page. Gating those behind login makes an old bookmark ask
+    // for an account in order to learn that its destination no longer needs one.
+    // See `PUBLIC_REDIRECT_PATHS` for why the exemption is safe to grant only to
+    // pages whose entire body is a redirect.
+    const pathAfterLocale = `/${segments.slice(1).join('/')}`.replace(/\/$/, '');
+    return !(PUBLIC_REDIRECT_PATHS as readonly string[]).some(
+        (publicPath) =>
+            pathAfterLocale === publicPath || pathAfterLocale.startsWith(`${publicPath}/`)
+    );
 }
 
 /**

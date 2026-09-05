@@ -3816,6 +3816,98 @@ export const hostOnboardingApi = {
 };
 
 /**
+ * The three verticals reachable from the header's "Publicar" menu (HOS-1156).
+ *
+ * A local literal union, same precedent as `HostOnboardingPrecheckDecision`
+ * above: the web app does not import `@repo/billing`'s `PublishVertical` here,
+ * so a change to the API contract surfaces as a typecheck failure at the call
+ * sites rather than silently reshaping a rendered page.
+ */
+export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+
+/**
+ * Publish precheck API (HOS-1156 D-7).
+ *
+ * The vertical-parameterised generalisation of {@link hostOnboardingApi}: one
+ * read-only endpoint each `/publicar/*` page calls BEFORE rendering its create
+ * form, to decide whether to create directly, resume/pick among existing
+ * DRAFTs, or send the owner to upgrade.
+ *
+ * The response shape is identical to the accommodation-only ancestor's, so
+ * {@link HostOnboardingPrecheckResponse} is reused rather than copied.
+ */
+export const publishApi = {
+    /**
+     * Precheck publishing in one vertical for the current actor.
+     *
+     * @param params.vertical - Which vertical to precheck.
+     * @param params.cookieHeader - Optional SSR cookie header (browser callers
+     *   omit it; `credentials: 'include'` covers them).
+     * @returns The listing/draft counts, the quota verdict and the decision.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * if (result.ok) console.log(result.data.decision);
+     * ```
+     */
+    precheck({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/precheck/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Soft-deletes one DRAFT listing the caller owns, in any publish vertical
+     * (HOS-1156 T-015, AC-14).
+     *
+     * The precheck panel's "borrar el borrador" is the FREE way past a full
+     * plan, and it must delete a draft OF THE VERTICAL BEING PUBLISHED — a
+     * gastronomy owner blocked on gastronomy is not helped by deleting a
+     * property.
+     *
+     * ## Why this dispatches instead of calling one endpoint
+     *
+     * The two halves land on different routes on purpose. Accommodation keeps
+     * `DELETE /protected/accommodations/{id}`, which has accepted its owner
+     * since BETA-197 and is live in production; routing it through the commerce
+     * endpoint would move a working flow for no gain (HOS-1156 R-2). Commerce
+     * had no owner-facing delete at all before this change, so it gets the new
+     * one. The branch lives here, in the API layer that already knows about
+     * endpoints, rather than inside the island that renders the button.
+     *
+     * @param params.vertical - Which vertical's draft to delete.
+     * @param params.id - The listing id.
+     * @returns The delete result.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.deleteDraft({ vertical: 'gastronomy', id });
+     * if (result.ok) window.location.reload();
+     * ```
+     */
+    deleteDraft({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        if (vertical === 'accommodation') {
+            return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
+        }
+        return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
+    }
+};
+
+/**
  * Protected accommodation edit API endpoints.
  * Wraps the protected accommodation GET/PATCH and public amenities/destinations
  * endpoints used by the web editor form.

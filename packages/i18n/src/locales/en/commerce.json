@@ -477,7 +477,8 @@
             },
             "keepPanel": {
                 "title": "Choose which listings stay visible",
-                "intro": "The {plan} plan includes {cap} of your {active} listings. The ones you do not pick will stop being shown.",
+                "intro_one": "The {plan} plan includes {cap} of your {active} listing. If you do not pick it, it will stop being shown.",
+                "intro_other": "The {plan} plan includes {cap} of your {active} listings. The ones you do not pick will stop being shown.",
                 "when": "The change applies on {date}. Until then you stay on your current plan with all your listings visible.",
                 "whenNoDate": "The change applies at the end of the period you already paid for. Nothing changes until then.",
                 "quotaNote": "A hidden listing still takes up a slot in your quota: you will not be able to create another one in its place. It becomes visible again if you move up a plan.",
@@ -500,17 +501,6 @@
             "downloadListingPdf": "Printable PDF listing sheet"
         },
         "create": {
-            "pickVertical": {
-                "title": "Create new business",
-                "subtitle": "Choose which type of business you want to publish.",
-                "gastronomyDescription": "Restaurants, bars, cafés, and other dining venues.",
-                "experienceDescription": "Tours, excursions, rentals, and other experiences."
-            },
-            "title": {
-                "gastronomy": "Create dining listing",
-                "experience": "Create experience listing"
-            },
-            "subtitle": "Fill in the basics now — you'll be able to add photos, hours, and more details afterward.",
             "fields": {
                 "name": {
                     "gastronomy": "Business name",

@@ -39,7 +39,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: vi.fn()
+        // Returns a string, rather than a bare `vi.fn()` (i.e. `undefined`).
+        // This suite renders `CommerceDowngradeKeepPanel`, whose intro is now
+        // plural-resolved, and `undefined.replace(...)` threw before the panel
+        // painted anything — every assertion here failed against an empty body,
+        // reading as "the panel disappeared" rather than "the mock returns
+        // nothing". Same shape as that component's own suite.
+        tPlural: (key: string, count: number) => `${key}_${count === 1 ? 'one' : 'other'}`
     })
 }));
 

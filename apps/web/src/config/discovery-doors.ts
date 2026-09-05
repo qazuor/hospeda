@@ -19,6 +19,7 @@ import {
 } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
 /**
  * A single acquirable option inside a `DiscoveryDoor` hub page (spec §6.2/§6.3).
@@ -144,7 +145,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.accommodation.title',
                 descriptionI18nKey: 'account.doors.publish.options.accommodation.description',
                 icon: HomeIcon,
-                href: 'publicar',
+                href: PUBLISH_PAGE_PATH_BY_VERTICAL.accommodation,
                 ctaI18nKey: 'account.doors.publish.options.accommodation.cta',
                 acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE,
                 manageHref: 'mi-cuenta/host-dashboard'
@@ -154,16 +155,15 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.gastronomy.title',
                 descriptionI18nKey: 'account.doors.publish.options.gastronomy.description',
                 icon: ForkKnifeIcon,
-                // HOS-166: the door's `href` still points at the lead form
-                // (`publicar-restaurante`) — an admin still approves the lead
-                // and provisions the owner account (D-4, the lead is a DOOR).
-                // But once acquired (COMMERCE_EDIT_OWN), `manageHref` below
-                // goes to `mi-cuenta/comercio`, which is now a REAL
-                // self-service publish flow (create → complete → checklist →
-                // publish + pay), not admin-provisioned end to end. Do not
-                // "restore" the old "these are lead forms, not publish flows"
-                // framing — that is the exact premise HOS-166 removed.
-                href: 'planes/gastronomia',
+                // HOS-1156: this option leads to PUBLISHING, and for a while it
+                // did not. HOS-1032 repointed it at `/planes/gastronomia/` — a
+                // SALES page — because the URL it used to name had become a 301
+                // to that page, and the repoint was mechanically correct. The
+                // result was a "Publicar" button that sold to you instead.
+                //
+                // `manageHref` below stays `mi-cuenta/comercio`: this href is
+                // where you go to publish, that one is where you go once you do.
+                href: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy,
                 ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
@@ -173,9 +173,9 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.experience.title',
                 descriptionI18nKey: 'account.doors.publish.options.experience.description',
                 icon: CompassIcon,
-                // See the `gastronomy` option above (HOS-166) — same lead-door,
-                // real-self-service-once-acquired shape.
-                href: 'planes/experiencias',
+                // See the `gastronomy` option above (HOS-1156) — same repoint,
+                // other vertical.
+                href: PUBLISH_PAGE_PATH_BY_VERTICAL.experience,
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'

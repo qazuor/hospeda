@@ -199,7 +199,17 @@ function mockRenewalBilling(daysAhead = 7): void {
                     // returns one — and the gate must not fail open on it.
                     status: 'active',
                     interval: 'monthly',
-                    currentPeriodEnd: currentPeriodEnd.toISOString()
+                    currentPeriodEnd: currentPeriodEnd.toISOString(),
+                    // HOS-847: this suite exercises a real accommodation-plan
+                    // renewal, never an add-on's own preapproval. An explicit
+                    // domain here means `hydrateSubscriptionProductDomains`
+                    // (called by the job's `loadActiveNonAddonSubscriptions`)
+                    // sees a defined value and skips its DB hydration lookup
+                    // entirely — this suite mocks `@repo/db` without a
+                    // `select` export, so an undefined `productDomain` would
+                    // make that lookup throw, get swallowed by the job's own
+                    // try/catch, and silently zero out every assertion below.
+                    productDomain: 'accommodation'
                 }
             ])
         },
