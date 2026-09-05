@@ -461,7 +461,10 @@
             "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente.",
             "invalidPlanError": "O plano escolhido não está mais disponível. Recarregue a página e tente novamente.",
             "publishCtaFree": "Publicar",
-            "publishingFree": "Publicando..."
+            "publishingFree": "Publicando...",
+            "publishCtaTrial_one": "Publicar grátis por {{count}} dia",
+            "publishCtaTrial_other": "Publicar grátis por {{count}} dias",
+            "publishCtaTrialNoCount": "Publicar grátis"
         },
         "planPicker": {
             "title": "Escolha seu plano",

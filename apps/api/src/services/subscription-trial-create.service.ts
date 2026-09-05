@@ -33,7 +33,7 @@ import {
     getDb,
     withTransaction
 } from '@repo/db';
-import { type ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
 
@@ -53,8 +53,19 @@ export interface CreateTrialSubscriptionInput {
      * `(customerId, productDomain)` — one trial per DOMAIN, not one per account
      * for life (HOS-1012 D-2, which absorbs HOS-931). Someone who spent their
      * accommodation trial starts clean when they enter gastronomy.
+     *
+     * Typed as the string union rather than the enum (HOS-1184) because that is
+     * what this function actually consumes: it compares against the literal
+     * `'accommodation'` and against `billing_plans.product_domain`, a plain
+     * database string, and writes a string column. The union is strictly wider,
+     * so every existing caller passing an `ProductDomainEnum` member still
+     * type-checks — what it additionally admits is the value produced by
+     * `commerceVerticalToProductDomain`, the shared exhaustive vertical→domain
+     * mapper. Requiring the enum here forced a commerce caller to either cast or
+     * re-derive that mapping locally, and HOS-1079 already removed one such
+     * local ternary for being unsafe.
      */
-    readonly productDomain: ProductDomainEnum;
+    readonly productDomain: ProductDomainValue;
     /** Trial length in days. Defaults to {@link OWNER_TRIAL_DAYS}. */
     readonly trialDays?: number;
     /** Whether the customer/record is in live mode. */
