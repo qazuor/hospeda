@@ -49,10 +49,20 @@ import type { SupportedLocale } from '@/lib/i18n';
  * strings, and what it calls the thing being published.
  *
  * Accommodation keeps `host.pages.nueva.precheck.*` — the keys that shipped with
- * BETA-197 and are live in three locales. Renaming them would have been a pure
- * i18n migration with no user-visible gain, and the guards that check i18n see
- * structure rather than content, so a half-finished rename would have gone
- * unnoticed.
+ * BETA-197. Renaming them would have been a pure i18n migration with no
+ * user-visible gain, and the guards that check i18n see structure rather than
+ * content, so a half-finished rename would have gone unnoticed.
+ *
+ * Those keys are live in three locales, but only since this file was
+ * generalised: BETA-197 shipped **fourteen of the eighteen as inline fallbacks
+ * and no locale entry at all**, so the Spanish literal was served under /en and
+ * /pt too. That was survivable only while the fallback sat in a literal
+ * `t(key, fallback)` call that `scripts/i18n-fallback-inventory.json` could
+ * see. Moving the copy into returned `labelKey` + `labelFallback` DATA — which
+ * is what made one mapper serve three verticals — took those fourteen sites out
+ * of the inventory's reach, so the debt was written into the locales instead of
+ * being trimmed off the list. Anything added here follows the same rule: the
+ * fallback is a safety net for a missing key, never the shipping copy.
  *
  * `noun` exists because the FALLBACK text has to read correctly for a vertical
  * whose key is not translated yet. "Tenés una propiedad sin publicar" is simply
