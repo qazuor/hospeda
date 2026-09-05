@@ -151,10 +151,10 @@ const planService = new PlanService();
  * filtered those in memory. Harmless while the catalogue was a fixed set of six
  * — and no longer harmless as of this very spec, whose premise is one plan row
  * per negotiated agreement. Past twenty active plans the public list would start
- * dropping ordinary catalogue plans it never saw, cached for an hour
- * (`cacheTTL: 3600`), with no error and no log line. Ordering does not save it:
- * `createPlan` never writes `metadata.sortOrder`, so an admin-created plan sorts
- * in the NULL block (last in Postgres' ASC) — until the day an admin sets one.
+ * dropping ordinary catalogue plans it never saw, with no error and no log line.
+ * Ordering does not save it: `createPlan` never writes `metadata.sortOrder`, so
+ * an admin-created plan sorts in the NULL block (last in Postgres' ASC) — until
+ * the day an admin sets one.
  *
  * Same treatment `loadServableCatalog` gives the protected endpoint, through the
  * same walk (`collectCatalogPages`), so there is one implementation of "see the
@@ -181,13 +181,15 @@ async function loadPubliclyListedPlans(): Promise<AdminBillingPlanResponse[] | n
                 return null;
             }
 
-            const { page, totalPages } = result.data.pagination;
-            return { items: result.data.items, hasMore: page < totalPages };
+            const { page, totalPages, total } = result.data.pagination;
+            // `total` is handed over so the walk can CHECK this `hasMore`
+            // against the row count instead of taking it on faith.
+            return { items: result.data.items, hasMore: page < totalPages, total };
         },
-        onTruncated: ({ fetched, maxPages }) => {
+        onTruncated: ({ fetched, maxPages, expected }) => {
             apiLogger.error(
-                { fetched, maxPages },
-                'Billing catalogue exceeded the public /plans fetch bound — response is truncated'
+                { fetched, maxPages, expected },
+                'Public /plans read a short billing catalogue — the response is truncated'
             );
         }
     });

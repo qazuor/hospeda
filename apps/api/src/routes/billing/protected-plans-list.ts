@@ -140,12 +140,14 @@ async function loadServableCatalog(billing: {
                     limit: pageSize,
                     offset: pageIndex * pageSize
                 });
-                return { items: result.data, hasMore: result.hasMore };
+                // qzpay's own `total` is handed over so the walk can CHECK
+                // `hasMore` against the row count instead of believing it.
+                return { items: result.data, hasMore: result.hasMore, total: result.total };
             },
-            onTruncated: ({ fetched, maxPages }) => {
+            onTruncated: ({ fetched, maxPages, expected }) => {
                 apiLogger.error(
-                    { fetched, maxPages },
-                    'Billing catalogue exceeded the protected /plans fetch bound — response is truncated'
+                    { fetched, maxPages, expected },
+                    'Protected /plans read a short billing catalogue — the response is truncated'
                 );
             }
             // `?? []` is unreachable: this `fetchPage` never answers null (a qzpay

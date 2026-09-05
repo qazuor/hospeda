@@ -68,6 +68,7 @@ import {
     isTestPlan,
     servablePlans
 } from '../../../src/routes/billing/protected-plans-list';
+import { apiLogger } from '../../../src/utils/logger';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -282,6 +283,24 @@ describe('handleProtectedPlansList', () => {
                 data: [catalogue[2]],
                 pagination: { limit: 1, offset: 1, hasMore: true, total: 3 }
             });
+        });
+
+        it('announces a catalogue qzpay under-delivered against its own total', async () => {
+            // qzpay's `total` is handed to the walk so `hasMore: false` becomes a
+            // claim that gets CHECKED. Without that wiring a short catalogue is
+            // served as a complete one, with correct-looking pagination on top.
+            const list = vi.fn().mockResolvedValue({ data: [REAL_PLAN], total: 4, hasMore: false });
+            (getQZPayBilling as ReturnType<typeof vi.fn>).mockReturnValue({
+                plans: { list, getActive: vi.fn() }
+            });
+            const ctx = createMockContext();
+
+            await handleProtectedPlansList(ctx as never);
+
+            expect(apiLogger.error).toHaveBeenCalledWith(
+                expect.objectContaining({ fetched: 1, expected: 4 }),
+                expect.stringContaining('truncated')
+            );
         });
 
         it('walks every catalogue page before filtering', async () => {

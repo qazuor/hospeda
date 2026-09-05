@@ -13,7 +13,7 @@
  * and the two tests at the bottom are the ones that say so.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockPlanList, mockCreateSimpleRoute, mockSelectWhere } = vi.hoisted(() => ({
     mockPlanList: vi.fn(),
@@ -51,6 +51,7 @@ vi.mock('@repo/db', () => ({
 
 import '../../../../src/routes/billing/public/listPlans';
 
+import { apiLogger } from '../../../../src/utils/logger';
 import { makePublicPlansCtx } from './public-plans-test-ctx';
 
 const LISTED_ACCOMMODATION_PLAN = {
@@ -232,12 +233,21 @@ describe('publicListPlansRoute — unlisted plans (HOS-1062 AC-13)', () => {
             mockSelectWhere.mockImplementation(answerExclusionQueryFromCondition);
         });
 
+        // The multi-page test adds a slug to the shared domain map. Undone here
+        // rather than at the end of that test body: an assertion that throws
+        // earlier would skip the cleanup and leak the entry into its neighbours.
+        afterEach(() => {
+            delete DOMAIN_BY_SLUG['owner-segunda-pagina'];
+        });
+
         it('asks for a full catalogue page instead of taking the default twenty', async () => {
             // The bug: `list({ active: true })` took `listPlans`' DEFAULT page of
             // 20 and filtered THOSE in memory. Harmless while the catalogue was a
             // fixed six; this spec's premise is one plan row per negotiated
             // agreement, so the catalogue now grows with the customers — and a
-            // truncated public list is cached for an hour with no error and no log.
+            // truncated list goes out as a 200 with no error and no log line.
+            // (This comment used to add "cached for an hour". It is not:
+            // `cacheTTL` is declared on RouteOptions and read by nothing.)
             await getHandler()(makePublicPlansCtx());
 
             expect(mockPlanList).toHaveBeenCalledWith({
@@ -289,8 +299,29 @@ describe('publicListPlansRoute — unlisted plans (HOS-1062 AC-13)', () => {
             });
             expect(servedSlugs(result)).toEqual(['owner-basico', 'owner-segunda-pagina']);
             expect(servedSlugs(result)).not.toContain('partner-municipalidad-cdu');
+        });
 
-            delete DOMAIN_BY_SLUG['owner-segunda-pagina'];
+        it('announces a catalogue the source under-delivered against its own total', async () => {
+            // `hasMore: false` is a CLAIM. Handing the source's `total` to the
+            // walk is what turns it into one that gets checked — without that
+            // wiring a short catalogue goes out as a complete one, silently,
+            // which is the single property this whole loader exists to provide.
+            mockPlanList.mockReset();
+            mockPlanList.mockResolvedValue({
+                success: true,
+                data: {
+                    items: [LISTED_ACCOMMODATION_PLAN],
+                    // One row in hand, five claimed, and the source says it is done.
+                    pagination: { page: 1, pageSize: 100, total: 5, totalPages: 1 }
+                }
+            });
+
+            await getHandler()(makePublicPlansCtx());
+
+            expect(apiLogger.error).toHaveBeenCalledWith(
+                expect.objectContaining({ fetched: 1, expected: 5 }),
+                expect.stringContaining('truncated')
+            );
         });
 
         it('serves nothing when a later page fails, never a silently short catalogue', async () => {
