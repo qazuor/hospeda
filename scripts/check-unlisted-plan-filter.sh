@@ -59,10 +59,26 @@
 #     to any authenticated caller, and this guard does not look at it. That is a
 #     known, deliberately deferred gap, tracked in its own issue — not something
 #     a green run here says anything about.
-#   - The six [present] checks above assert that a required form EXISTS. Each is
-#     paired with a forbid where one was possible; where it was not (2, 4, 7,
-#     7a/7b, 9) a sufficiently creative second path beside the required form is
-#     outside what a line-based check can see.
+#   - **AN INTERMEDIATE VARIABLE CROSSES IT.** This is the ceiling of the whole
+#     approach and it is not a bug to be fixed by one more regex. Every check
+#     here matches SYNTACTIC FORMS, one line at a time, so a value moved through
+#     a local first is a different line and a different shape. Measured, against
+#     this version:
+#
+#         const md = row.metadata;
+#         return md?.publicListing !== 'unlisted';   // check 5 does not see it
+#
+#     Chasing each alias is a race this loses, and losing it quietly is worse
+#     than not running it: the guard would grow while claiming ground it does
+#     not hold. What actually covers that case is the ROUTE TESTS — an aliased
+#     re-derivation still has to produce a response, and
+#     `listPlans.unlisted-plans.test.ts` / `protected-plans-list.test.ts` assert
+#     on the response. Read this guard as protecting the SHAPE of the two
+#     handlers, with the tests protecting their BEHAVIOUR. Neither substitutes
+#     for the other.
+#   - The [present] checks (2, 4, 7, 7a/7b, 9) assert that a required form
+#     EXISTS. Each is paired with a forbid where one was possible; where it was
+#     not, a second path beside the required form is outside what they see.
 #   - It is line-based. A filter call split across lines, or a return built via
 #     an intermediate several statements away, is outside what it can see.
 #   - It pins ONE spelling of `servablePlans`' predicate. A semantically
@@ -163,11 +179,16 @@ if [ -z "$HANDLER_BODY" ]; then
     echo ""
     FAILED=1
 else
+    # `publiclyListedPlans` is matched as a WHOLE identifier. A plain substring
+    # filter let `publiclyListedPlansUnfiltered` through, which is a different
+    # variable holding a different thing and reads almost identically in review.
+    # (`\b` alone does not help here: there is no word boundary between `s` and
+    # `U`, so a trailing-suffix name has to be excluded by the character class.)
     UNFILTERED_RETURNS=$(printf '%s\n' "$HANDLER_BODY" \
         | grep -nE '^[[:space:]]*return[[:space:]]' \
         | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
         | grep -vE 'return[[:space:]]*\[\][[:space:]]*;' \
-        | grep -v 'publiclyListedPlans' \
+        | grep -vE '(^|[^A-Za-z0-9_$])publiclyListedPlans([^A-Za-z0-9_$]|$)' \
         || true)
 
     if [ -n "$UNFILTERED_RETURNS" ]; then
@@ -183,22 +204,55 @@ else
     fi
 fi
 
-# --- 3b. The public loader never returns its raw accumulator -----------------
-# Same escape the protected loader had: an early `return collected;` leaves the
-# filtered return in place further down, so check 2 stays green.
-PUBLIC_RAW_RETURNS=$(grep -nE 'return[^;]*\bcollected\b' "$HANDLER" \
-    | grep -v 'collected.filter(isPubliclyListedPlan)' \
-    | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
-    || true)
+# --- 3b. Every exit of the public LOADER is a filtered one -------------------
+# Anchored on the SHAPE of the return, never on the accumulator's name. The
+# previous version watched the identifier `collected`, so renaming it to `rows`
+# disarmed the check outright (verified: `return rows;` before the filter, guard
+# green, five route tests red) — and `\bcollected\b` did not even match
+# `collected2`, since there is no word boundary between `d` and `2`.
+#
+# Three shapes are allowed inside the loader, and nothing else:
+#   - `return null;`                  the catalogue could not be read
+#   - anything `.filter(isPubliclyListedPlan)`   the filtered catalogue
+#   - `return { items: ... }`         one PAGE handed back to the collector
+# A rename now changes nothing; `return rows;` fails whatever `rows` is called.
+#
+# The end anchor is `^}$` — a line that is NOTHING but a closing brace. `^}` was
+# not enough: a multi-line signature ends on `}): Promise<...> {`, which also
+# starts with `}`, so the slice stopped at the signature and never saw the body.
+# It was still non-empty, so the emptiness check below did not fire and a
+# `return rows;` in the body went unseen. Requiring a `return` in the slice is
+# what makes that failure impossible rather than merely unlikely.
+LOADER_BODY=$(awk '/^async function loadPubliclyListedPlans/{inside=1} inside{print} inside && /^\}$/ && NR>1{exit}' "$HANDLER")
 
-if [ -n "$PUBLIC_RAW_RETURNS" ]; then
-    echo "ERROR: the public catalogue loader returns its RAW accumulator:"
-    echo ""
-    echo "$PUBLIC_RAW_RETURNS"
-    echo ""
-    echo "  Every exit must answer collected.filter(isPubliclyListedPlan)."
+if ! printf '%s\n' "$LOADER_BODY" | grep -qE '^[[:space:]]*return[[:space:]]'; then
+    echo "ERROR: could not read the public catalogue loader's body in $HANDLER."
+    echo "  This check slices 'async function loadPubliclyListedPlans' to its closing"
+    echo "  brace and expects at least one return inside. It found none, so either the"
+    echo "  loader moved or the slice is cutting short — re-anchor it rather than"
+    echo "  dropping it, since without the slice every exit of the loader is unwatched."
     echo ""
     FAILED=1
+else
+    PUBLIC_RAW_RETURNS=$(printf '%s\n' "$LOADER_BODY" \
+        | grep -nE '^[[:space:]]*return[[:space:]]' \
+        | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
+        | grep -vE 'return[[:space:]]*null[[:space:]]*;' \
+        | grep -v '.filter(isPubliclyListedPlan)' \
+        | grep -vE 'return[[:space:]]*\{[[:space:]]*items:' \
+        || true)
+
+    if [ -n "$PUBLIC_RAW_RETURNS" ]; then
+        echo "ERROR: an exit of the public catalogue loader is not filtered:"
+        echo ""
+        echo "$PUBLIC_RAW_RETURNS"
+        echo ""
+        echo "  Allowed: 'return null;', '<rows>.filter(isPubliclyListedPlan)', or a"
+        echo "  '{ items: ... }' page handed back to the collector. Anything else is a"
+        echo "  raw catalogue leaving the one function that is supposed to filter it."
+        echo ""
+        FAILED=1
+    fi
 fi
 
 # --- 4. The predicate is still a positive test -------------------------------
@@ -241,6 +295,11 @@ fi
 # and the field declaration itself. The mark travels ON the DTO by design, so the
 # field name is spelled legitimately in the mapper, in the admin types and in the
 # admin table. The dangerous act is reading it out of raw `metadata`, not naming it.
+#
+# What it does not match and SHOULD, but cannot: the same read through a local.
+# `const md = row.metadata; return md?.publicListing !== 'unlisted';` passes —
+# measured. See the intermediate-variable note in WHAT IT DOES NOT PROVE; the
+# behaviour of an aliased re-derivation is covered by the route tests, not here.
 #
 # Reported with line numbers rather than as a file list, because the docblocks
 # that EXPLAIN the mark have to name `metadata.publicListing` in prose — the
@@ -330,12 +389,31 @@ if ! grep -qE 'return servablePlans\(' "$PROTECTED"; then
 fi
 
 # The presence of ONE filtered return is not enough: a second, unfiltered return
-# of the raw accumulator would leave the first in place and green. Measured —
-# an early `return collected;` inside the paging loop kept both checks above
-# passing while five route tests went red.
-RAW_ACCUMULATOR_RETURNS=$(grep -nE 'return[^;]*\bcollected\b' "$PROTECTED" \
-    | grep -v 'servablePlans(collected)' \
+# would leave the first in place and green. Measured — an early `return
+# collected;` inside the paging loop kept both checks above passing while five
+# route tests went red.
+#
+# Anchored on the SHAPE of the return, not on the accumulator's name, for the
+# same reason as check 3b: watching the identifier `collected` was disarmed by
+# renaming it. Allowed inside the loader: `servablePlans(...)`, `return null;`,
+# and a `{ items: ... }` page handed back to the collector.
+PROTECTED_LOADER_BODY=$(awk '/^async function loadServableCatalog/{inside=1} inside{print} inside && /^\}$/ && NR>1{exit}' "$PROTECTED")
+
+if ! printf '%s\n' "$PROTECTED_LOADER_BODY" | grep -qE '^[[:space:]]*return[[:space:]]'; then
+    echo "ERROR: could not read the protected catalogue loader's body in $PROTECTED."
+    echo "  This check slices 'async function loadServableCatalog' to its closing brace"
+    echo "  and expects at least one return inside. It found none — re-anchor it rather"
+    echo "  than dropping it."
+    echo ""
+    FAILED=1
+fi
+
+RAW_ACCUMULATOR_RETURNS=$(printf '%s\n' "$PROTECTED_LOADER_BODY" \
+    | grep -nE '^[[:space:]]*return[[:space:]]' \
     | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
+    | grep -vE 'return[[:space:]]*null[[:space:]]*;' \
+    | grep -v 'servablePlans(' \
+    | grep -vE 'return[[:space:]]*\{[[:space:]]*items:' \
     || true)
 
 # The protected adapter must DELEGATE the verdict, never restate it. A local
@@ -356,12 +434,13 @@ if ! grep -qE 'isPubliclyListedPlan\(resolvePlanPublicListing\(' "$PROTECTED"; t
 fi
 
 if [ -n "$RAW_ACCUMULATOR_RETURNS" ]; then
-    echo "ERROR: the catalogue loader returns its RAW accumulator:"
+    echo "ERROR: an exit of the protected catalogue loader is not filtered:"
     echo ""
     echo "$RAW_ACCUMULATOR_RETURNS"
     echo ""
-    echo "  Every exit must answer servablePlans(collected). qzpay's pages carry"
-    echo "  every storage plan, negotiated ones included."
+    echo "  Allowed: 'servablePlans(...)', 'return null;', or a '{ items: ... }' page"
+    echo "  handed back to the collector. qzpay's pages carry every storage plan,"
+    echo "  negotiated ones included."
     echo ""
     FAILED=1
 fi

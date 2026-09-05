@@ -167,14 +167,17 @@ describe('check-unlisted-plan-filter.sh — it fails when the lock is removed', 
         expect(result.stdout).toContain('no longer filters unlisted plans');
     });
 
-    it('rejects an ALIASED return, the escape a raw-expression check let through', () => {
-        // Verified by the reviewer against the previous version of this guard:
+    it('rejects a handler return that names anything but the filtered array', () => {
+        // Verified by the reviewer against an earlier version of this guard:
         // `const allPlans = result.data.items; return allPlans;` left the filter
         // in place higher up, so a check looking for the raw expression in the
         // `return` found nothing and passed — tests red, guard green.
         //
-        // The rule is now inverted: a return may answer `[]` or the filtered
-        // array, and any OTHER name fails, whatever it holds.
+        // The rule is inverted now: inside the handler slice a return may answer
+        // `[]` or name the filtered array, and any other name fails. Scoped
+        // claim on purpose — this is about what a RETURN LINE names, and says
+        // nothing about a value re-derived through a local somewhere else in the
+        // file. See the intermediate-variable note in the script's header.
         const result = runWithFixtures({
             handler: [
                 "import { isPubliclyListedPlan } from '@repo/schemas';",
@@ -196,7 +199,32 @@ describe('check-unlisted-plan-filter.sh — it fails when the lock is removed', 
         expect(result.stdout).toContain('does not answer the filtered array');
     });
 
-    it('rejects the public loader returning its raw accumulator', () => {
+    it('rejects a name that merely STARTS WITH the filtered array', () => {
+        // A substring filter passed this: `publiclyListedPlansUnfiltered` is a
+        // different variable holding a different thing, and it reads almost
+        // identically in review. `\\b` does not help — there is no word boundary
+        // between `s` and `U` — so the character class is what excludes it.
+        const result = runWithFixtures({
+            handler: [
+                "import { isPubliclyListedPlan } from '@repo/schemas';",
+                'async function loadPubliclyListedPlans() {',
+                '    return collected.filter(isPubliclyListedPlan);',
+                '}',
+                '    handler: async (ctx: Context) => {',
+                '        const publiclyListedPlansUnfiltered = result.data.items;',
+                '        return publiclyListedPlansUnfiltered;',
+                '    },',
+                '    options: {',
+                '        skipAuth: true',
+                '    }'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('does not answer the filtered array');
+    });
+
+    it('rejects an unfiltered exit of the public loader', () => {
         const result = runWithFixtures({
             handler: [
                 "import { isPubliclyListedPlan } from '@repo/schemas';",
@@ -217,7 +245,58 @@ describe('check-unlisted-plan-filter.sh — it fails when the lock is removed', 
         });
 
         expect(result.exitCode).toBe(1);
-        expect(result.stdout).toContain('returns its RAW accumulator');
+        expect(result.stdout).toContain('is not filtered');
+    });
+
+    it('still rejects it when the accumulator is RENAMED', () => {
+        // The escape that disarmed the previous version: it watched the
+        // identifier `collected`, so calling it `rows` made the check blind
+        // (verified — guard green, five route tests red). And `\\bcollected\\b`
+        // did not even match `collected2`: there is no word boundary between `d`
+        // and `2`. The check is anchored on the SHAPE of the return now, so what
+        // the accumulator is called stopped mattering.
+        const result = runWithFixtures({
+            handler: [
+                "import { isPubliclyListedPlan } from '@repo/schemas';",
+                'async function loadPubliclyListedPlans() {',
+                '    const rows = await collectCatalogPages({});',
+                '    return rows;',
+                '}',
+                '    handler: async (ctx: Context) => {',
+                '        const publiclyListedPlans = await loadPubliclyListedPlans();',
+                '        return publiclyListedPlans;',
+                '    },',
+                '    options: {',
+                '        skipAuth: true',
+                '    }'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('is not filtered');
+    });
+
+    it('fails loudly when the loader body cannot be read', () => {
+        // A slice that stops at the signature would leave every exit unwatched
+        // while still looking non-empty. `^}` matched `}): Promise<...> {` and
+        // did exactly that — measured, guard green with a raw return in the body.
+        // Requiring a return INSIDE the slice is what makes that impossible.
+        const result = runWithFixtures({
+            handler: [
+                "import { isPubliclyListedPlan } from '@repo/schemas';",
+                'const x = collected.filter(isPubliclyListedPlan);',
+                '    handler: async (ctx: Context) => {',
+                '        const publiclyListedPlans = await loadPubliclyListedPlans();',
+                '        return publiclyListedPlans;',
+                '    },',
+                '    options: {',
+                '        skipAuth: true',
+                '    }'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("could not read the public catalogue loader's body");
     });
 
     it('fails loudly when the handler body cannot be located', () => {
@@ -422,21 +501,53 @@ describe('check-unlisted-plan-filter.sh — the second door (protected /plans)',
         expect(result.stdout).toContain('no longer delegates the listing verdict');
     });
 
-    it('rejects an early return of the raw accumulator inside the paging loop', () => {
+    it('rejects an early unfiltered return inside the paging loop', () => {
         // The other measured escape: `return collected;` on the last page left
         // the final `return servablePlans(collected);` in place, so the "loader
         // still filters" check stayed green while five route tests went red.
         const result = runWithFixtures({
             protectedHandler: [
-                ...GOOD_PROTECTED,
-                'if (!result.hasMore) {',
-                '    return collected;',
-                '}'
+                'export function isPubliclyListedStoragePlan(plan) {',
+                '    return isPubliclyListedPlan(resolvePlanPublicListing({ metadata: plan.metadata }));',
+                '}',
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));',
+                '}',
+                'async function loadServableCatalog(billing) {',
+                '    if (!result.hasMore) {',
+                '        return collected;',
+                '    }',
+                '    return servablePlans(collected);',
+                '}',
+                '    return c.json({ success: true, data: servablePlans(active) });'
             ]
         });
 
         expect(result.exitCode).toBe(1);
-        expect(result.stdout).toContain('returns its RAW accumulator');
+        expect(result.stdout).toContain('is not filtered');
+    });
+
+    it('still rejects it when the protected accumulator is RENAMED', () => {
+        // Same escape as the public side, same fix: the check is anchored on the
+        // shape of the return, so the accumulator's name no longer matters.
+        const result = runWithFixtures({
+            protectedHandler: [
+                'export function isPubliclyListedStoragePlan(plan) {',
+                '    return isPubliclyListedPlan(resolvePlanPublicListing({ metadata: plan.metadata }));',
+                '}',
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));',
+                '}',
+                'async function loadServableCatalog(billing) {',
+                '    const rows = await collectCatalogPages({});',
+                '    return rows;',
+                '}',
+                '    return c.json({ success: true, data: servablePlans(active) });'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('is not filtered');
     });
 
     it('rejects a protected handler that has been deleted or moved', () => {
@@ -528,6 +639,39 @@ describe('check-unlisted-plan-filter.sh — the metadata key is not read by hand
 
         try {
             expect(runGuard({ KEY_SCAN_EXTRA_ROOT: probeDir }).exitCode).toBe(1);
+        } finally {
+            rmSync(probeDir, { recursive: true, force: true });
+        }
+    });
+
+    it('DOES NOT catch the same read through a local — the known ceiling', () => {
+        // Not a near-miss and not a passing case: a genuine escape, pinned so it
+        // is a known limit rather than an assumed absence. Every check in this
+        // guard matches syntactic forms one line at a time, so a value moved
+        // through a local first is a different line and a different shape.
+        // Chasing each alias is a race that is lost quietly, and a guard that
+        // grows while claiming ground it does not hold is worse than a modest
+        // one — so the script's header declares this instead.
+        //
+        // What covers the BEHAVIOUR is the route tests: an aliased re-derivation
+        // still has to produce a response, and those assert on responses.
+        //
+        // If someone closes this gap, this test goes red. That is the point:
+        // update it and the header together, deliberately.
+        const probeDir = mkdtempSync(path.join(tmpdir(), 'hos1062-probe-'));
+        writeFileSync(
+            path.join(probeDir, 'aliased.ts'),
+            [
+                'export function leak(row: { metadata?: Record<string, unknown> }): boolean {',
+                '    const md = row.metadata;',
+                "    return md?.publicListing !== 'unlisted';",
+                '}'
+            ].join('\n'),
+            'utf8'
+        );
+
+        try {
+            expect(runGuard({ KEY_SCAN_EXTRA_ROOT: probeDir }).exitCode).toBe(0);
         } finally {
             rmSync(probeDir, { recursive: true, force: true });
         }
