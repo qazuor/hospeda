@@ -1,5 +1,5 @@
 import type { EntitlementKey, LimitKey, PlanDefinition } from '@repo/billing';
-import type { PlanPriceChangeEffect } from '@repo/schemas';
+import type { BillingPlanPublicListing, PlanPriceChangeEffect } from '@repo/schemas';
 
 /**
  * Parsed plan record shape used by DataTable cells and column definitions.
@@ -34,6 +34,18 @@ export interface ParsedPlanRecord {
     readonly isDeleted: boolean;
     /** Count of live subscribers (active/trialing) referencing the plan */
     readonly activeSubscriptionCount: number;
+    /**
+     * Public-catalogue visibility (HOS-1062 F1). ORTHOGONAL to `isActive`: an
+     * `'unlisted'` plan is active and charging, it is simply withheld from the
+     * endpoints that list plans.
+     *
+     * It is here because the whole failure mode of that mark is "nobody notices
+     * anything". A plan is marked by hand today, and a typo (`'unlited'`) makes
+     * the system do the RIGHT thing — the resolver withholds on doubt — which
+     * looks identical to the operator to the case where they got it right. The
+     * table is where those two stop looking the same.
+     */
+    readonly publicListing: BillingPlanPublicListing;
 }
 
 /**

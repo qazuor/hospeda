@@ -203,6 +203,8 @@
         "statusActive": "Active",
         "statusInactive": "Inactive",
         "statusDefault": "Default",
+        "statusUnlisted": "Not publicly listed",
+        "statusUnlistedHint": "Active and charging — withheld from the public plan listings",
         "actionActivate": "Activate",
         "actionDeactivate": "Deactivate",
         "actionEdit": "Edit",

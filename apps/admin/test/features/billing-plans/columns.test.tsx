@@ -29,7 +29,13 @@ const KNOWN_TRANSLATIONS: Record<string, string> = {
     'admin-billing.plans.actionDelete': 'Eliminar',
     'admin-billing.plans.actionRestore': 'Restaurar',
     'admin-billing.plans.actionHardDelete': 'Eliminar permanentemente',
-    'admin-billing.plans.columns.actions': 'Acciones'
+    'admin-billing.plans.columns.actions': 'Acciones',
+    'admin-billing.plans.statusActive': 'Activo',
+    'admin-billing.plans.statusInactive': 'Inactivo',
+    'admin-billing.plans.statusDefault': 'Por defecto',
+    'admin-billing.plans.statusUnlisted': 'No figura en el listado público',
+    'admin-billing.plans.statusUnlistedHint':
+        'Activo y cobrando: no aparece en los listados públicos de planes'
 };
 const t = (key: string): string => KNOWN_TRANSLATIONS[key] ?? `[MISSING: ${key}]`;
 
@@ -55,6 +61,9 @@ function makePlan(overrides: Partial<ParsedPlanRecord>): ParsedPlanRecord {
         updatedAt: '2024-01-15T00:00:00.000Z',
         isDeleted: false,
         activeSubscriptionCount: 0,
+        // HOS-1062 F1: every plan in production carries 'listed'. The badge is
+        // the exception, so the ordinary case is the default here.
+        publicListing: 'listed',
         ...overrides
     };
 }
@@ -68,6 +77,16 @@ function renderNameCell(plan: ParsedPlanRecord): void {
     }
     // The cell renderer receives the record directly as `row`.
     render(nameColumn.cell({ row: plan } as never) as ReactElement);
+}
+
+/** Renders the `status` column cell for a given plan row. */
+function renderStatusCell(plan: ParsedPlanRecord): void {
+    const columns = getPlanColumns({ t });
+    const statusColumn = columns.find((col) => col.id === 'status');
+    if (!statusColumn?.cell) {
+        throw new Error('status column with a cell renderer not found');
+    }
+    render(statusColumn.cell({ row: plan } as never) as ReactElement);
 }
 
 /** Renders the `actions` column cell for a given plan row, wiring all callbacks. */
@@ -151,5 +170,66 @@ describe('getPlanColumns — actions per row state (SPEC-168)', () => {
         // Deleted-row actions absent
         expect(screen.queryByText('Restaurar')).not.toBeInTheDocument();
         expect(screen.queryByText('Eliminar permanentemente')).not.toBeInTheDocument();
+    });
+});
+
+describe('getPlanColumns — the unlisted badge (HOS-1062 F1)', () => {
+    it('shows nothing extra for an ordinary catalogue plan', () => {
+        // Arrange — every plan in production is this one.
+        const plan = makePlan({ publicListing: 'listed' });
+
+        // Act
+        renderStatusCell(plan);
+
+        // Assert
+        expect(screen.getByText('Activo')).toBeInTheDocument();
+        expect(screen.queryByText('No figura en el listado público')).not.toBeInTheDocument();
+    });
+
+    it('marks an unlisted plan', () => {
+        // Arrange
+        const plan = makePlan({ publicListing: 'unlisted' });
+
+        // Act
+        renderStatusCell(plan);
+
+        // Assert
+        expect(screen.getByText('No figura en el listado público')).toBeInTheDocument();
+    });
+
+    it('keeps ACTIVE and UNLISTED as two separate statements, never one', () => {
+        // The whole reason the badge is a separate element rather than a
+        // replacement label. An unlisted plan is active and CHARGING — the
+        // municipality is paying — and the moment the table implies otherwise it
+        // has taught the exact confusion the mark exists to prevent.
+        const plan = makePlan({ isActive: true, publicListing: 'unlisted' });
+
+        renderStatusCell(plan);
+
+        expect(screen.getByText('Activo')).toBeInTheDocument();
+        expect(screen.getByText('No figura en el listado público')).toBeInTheDocument();
+        expect(screen.queryByText('Inactivo')).not.toBeInTheDocument();
+    });
+
+    it('says what it means on hover, in the same terms', () => {
+        const plan = makePlan({ publicListing: 'unlisted' });
+
+        renderStatusCell(plan);
+
+        expect(screen.getByText('No figura en el listado público')).toHaveAttribute(
+            'title',
+            'Activo y cobrando: no aparece en los listados públicos de planes'
+        );
+    });
+
+    it('marks a plan whose mark is INACTIVE and unlisted at once, without merging them', () => {
+        // The two axes are independent, so both badges show. A reader must be
+        // able to tell "nobody can buy this" from "nobody can see this".
+        const plan = makePlan({ isActive: false, publicListing: 'unlisted' });
+
+        renderStatusCell(plan);
+
+        expect(screen.getByText('Inactivo')).toBeInTheDocument();
+        expect(screen.getByText('No figura en el listado público')).toBeInTheDocument();
     });
 });

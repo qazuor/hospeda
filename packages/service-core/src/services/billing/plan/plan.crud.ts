@@ -35,7 +35,7 @@ import type {
     BillingPlanResponse,
     PlanPriceChangeEffect
 } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { resolvePlanPublicListing, ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 import { findCapabilityFieldViolation } from './plan.types.js';
@@ -55,6 +55,13 @@ import { enqueuePlanPriceChange } from './plan-price-change.service.js';
  * - `monthlyPriceArs` ← monthly `billing_prices.unitAmount`
  * - `annualPriceArs` ← annual `billing_prices.unitAmount` (null if absent)
  * - `isActive` ← `active`
+ * - `publicListing` ← `metadata.publicListing` (HOS-1062 F1)
+ *
+ * `publicListing` travels ON the DTO rather than being resolved by a second
+ * query at the public endpoint. That is what makes the public filter fail closed
+ * with no failure mode of its own: the mark arrives with the row that carries
+ * the price, so there is no state in which a plan is served while its visibility
+ * is unknown.
  *
  * @param planRow - Raw DB row from `billing_plans`
  * @param prices - Associated `billing_prices` rows for this plan
@@ -86,6 +93,7 @@ export function mapDbToPlan(
         entitlements: Array.isArray(planRow.entitlements) ? (planRow.entitlements as string[]) : [],
         limits: (planRow.limits as Record<string, number>) ?? {},
         isActive: planRow.active ?? false,
+        publicListing: resolvePlanPublicListing({ metadata: planRow.metadata }).publicListing,
         createdAt: planRow.createdAt.toISOString(),
         updatedAt: planRow.updatedAt?.toISOString() ?? planRow.createdAt.toISOString()
     };

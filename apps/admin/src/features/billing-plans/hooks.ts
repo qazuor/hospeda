@@ -76,7 +76,12 @@ function transformPlanRecord(record: unknown): ParsedPlanRecord {
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
         isDeleted: p.isDeleted,
-        activeSubscriptionCount: p.activeSubscriptionCount
+        activeSubscriptionCount: p.activeSubscriptionCount,
+        // HOS-1062 F1. Parsed and then DROPPED until now, which made the mark
+        // invisible to the only people who set it: an operator marking a plan by
+        // hand had no way to tell a correct `'unlisted'` from a typo'd one, since
+        // both withhold the plan and neither says so anywhere.
+        publicListing: p.publicListing
     };
 }
 

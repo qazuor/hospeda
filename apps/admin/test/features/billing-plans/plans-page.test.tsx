@@ -40,7 +40,10 @@ const existingPlan: ParsedPlanRecord = {
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-15T00:00:00.000Z',
     isDeleted: false,
-    activeSubscriptionCount: 0
+    activeSubscriptionCount: 0,
+    // HOS-1062 F1: required on ParsedPlanRecord. The dialog never reads it, so
+    // vitest stayed green without it — only `tsc` saw the gap.
+    publicListing: 'listed'
 };
 
 describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
