@@ -289,6 +289,12 @@ jobs:
       # never executes here.
       - name: Check 'qrcode' has exactly one importer (HOS-1129)
         run: bash scripts/check-qrcode-engine-isolation.sh
+      # Its own step for the same reason as the two above: `pnpm check:guards`
+      # listing it is not what makes it run here. A guard that only lived in that
+      # npm script would never execute in CI, and this one protects the only
+      # thing between a negotiated price and the public pricing page.
+      - name: Check unlisted plans cannot reach the public catalogue (HOS-1062 AC-14)
+        run: bash scripts/check-unlisted-plan-filter.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
