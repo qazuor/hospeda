@@ -20,7 +20,12 @@ import type {
     PurchaseAddonResult,
     ServiceResult
 } from '@repo/service-core';
-import { AddonCatalogService, PlanService } from '@repo/service-core';
+import {
+    AddonCatalogService,
+    hydrateSubscriptionProductDomains,
+    PlanService,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import {
     isBillingProviderError,
     mapProviderErrorToServiceError
@@ -352,9 +357,9 @@ export async function createAddonCheckout(
             };
         }
 
-        const subscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
 
-        if (!subscriptions || subscriptions.length === 0) {
+        if (!rawSubscriptions || rawSubscriptions.length === 0) {
             return {
                 success: false,
                 error: {
@@ -364,16 +369,84 @@ export async function createAddonCheckout(
             };
         }
 
-        const activeSubscription = subscriptions.find((sub: { status: string }) =>
+        // HOS-1178 — `getByCustomerId()` builds its objects field-by-field from
+        // qzpay-core's own interface, so `productDomain` arrives `undefined` on
+        // EVERY subscription regardless of its real vertical (see
+        // `hydrateSubscriptionProductDomains`'s doc). Handed straight to
+        // `subscriptionMatchesDomain`, that `undefined` reads as "legacy row,
+        // fail open to accommodation" for all of them — the domain check below
+        // would pass everything and refuse every commerce purchase, which is
+        // both halves of wrong at once.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        const grantingSubscriptions = subscriptions.filter((sub: { status: string }) =>
             isEntitlementGrantingStatus(sub.status)
+        );
+
+        if (grantingSubscriptions.length === 0) {
+            return {
+                success: false,
+                error: {
+                    code: 'NO_ACTIVE_SUBSCRIPTION',
+                    message: 'You must have an active subscription to purchase add-ons'
+                }
+            };
+        }
+
+        // ── Product-domain gate (HOS-1178) ───────────────────────────────────
+        //
+        // Until this existed, the route validated `isActive` and
+        // `targetCategories` and nothing else — and `targetCategories` cannot
+        // separate verticals, because all SIX commerce plans declare
+        // `category: 'owner'`, the same value the accommodation plans carry. So
+        // a gastronomy owner could buy `extra-experiences-1`, which is the leak
+        // HOS-974 D-C and HOS-1060's `productDomain` field were meant to close:
+        // the field was declared on all eight add-ons and nothing on the paying
+        // path read it.
+        //
+        // Two things this must NOT do, both of them ways to break hosts, who —
+        // unlike commerce — have live subscriptions in production:
+        //
+        //  1. It resolves the subscription of the ADD-ON's domain, not "the"
+        //     subscription. An owner can hold an accommodation AND a commerce
+        //     subscription at once (`host-provider@local.test` is seeded to
+        //     prove it), and the previous `.find()` took whichever came first.
+        //     That also fixes the `targetCategories` check below, which was
+        //     reading whichever plan that arbitrary pick happened to name.
+        //  2. It goes through `subscriptionMatchesDomain`, the only place in the
+        //     repo that compares a subscription's domain, and reads asymmetric
+        //     ON PURPOSE: `accommodation` fails OPEN (the column post-dates
+        //     almost every row, so a legacy host row still counts as
+        //     accommodation), every other domain fails closed. A hand-written
+        //     `sub.productDomain === domain` here would refuse every host whose
+        //     row predates the column.
+        const addonProductDomain = addon.productDomain;
+
+        if (!addonProductDomain) {
+            // The catalogue does not know this slug — an add-on an operator
+            // created through the SPEC-168 admin UI. It has no declared
+            // vertical, and guessing `'accommodation'` is the `?? ACCOMMODATION`
+            // HOS-1078 deleted one layer down. Fail CLOSED, with its own code so
+            // the operator can see the cause rather than a generic refusal.
+            return {
+                success: false,
+                error: {
+                    code: 'ADDON_DOMAIN_UNKNOWN',
+                    message: `Add-on '${addon.slug}' does not declare a product domain and cannot be purchased`
+                }
+            };
+        }
+
+        const activeSubscription = grantingSubscriptions.find((sub) =>
+            subscriptionMatchesDomain(sub, addonProductDomain)
         );
 
         if (!activeSubscription) {
             return {
                 success: false,
                 error: {
-                    code: 'NO_ACTIVE_SUBSCRIPTION',
-                    message: 'You must have an active subscription to purchase add-ons'
+                    code: 'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
+                    message: `This add-on requires an active ${addonProductDomain} subscription`
                 }
             };
         }
