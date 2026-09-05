@@ -35,8 +35,8 @@
  *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that gastronomy DOES get
  *     contact, the way accommodation has it.
  *  5. AI TRANSLATION TO ENGLISH AND PORTUGUESE — the "en el idioma del que la lee" panel of "La carta, en serio" and the
- *     multi-language line in "Qué más podés mostrar". Commerce listings have the three multilang columns but no AI translation
- *     path; today the owner types all three by hand. Owner says it is coming shortly. NOTE what the page claims about the
+ *     multi-language line in "Qué más podés mostrar". Commerce listings have the FOUR multilang columns but no AI translation
+ *     path, so the owner types every locale by hand. HOS-1192. NOTE what the page claims about the
  *     Premium CARTA specifically (owner decision, 2026-09-05): the AI PROPOSES each dish's translation and the owner ACCEPTS OR
  *     CORRECTS it before it goes live — a review step the rest of the listing does not have. That review is the product stance
  *     and it is deliberate: a dish name is not prose to trust a machine with unwatched. So the carta needs BOTH the translation
@@ -44,7 +44,7 @@
  *  6. STATISTICS BY DAY — "Los números que ves". VERIFIED against the code, not inherited: `CommerceViewsWidget.client.tsx`
  *     renders uniques and totals over a rolling 7d/30d window and plots no series; its own JSDoc says so ("What's explicitly
  *     NOT here (owner decision, HOS-734): the daily-series chart"). The route exists (`getViewsDailySeries`) with no caller in
- *     `apps/web`. So the per-day figure is a promise — same shared widget as experiences.
+ *     `apps/web`. So the per-day figure is a promise — same shared widget as experiences. HOS-1193.
  *  7. MOVING DOWN A PLAN — the line under the tier table. The plan-change route answers 422 on a
  *     downgrade today (HOS-1122); the change is about to land.
  *
