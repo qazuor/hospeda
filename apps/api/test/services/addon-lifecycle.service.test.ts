@@ -16,6 +16,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { AddonDefinition } from '@repo/billing';
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as entitlementMiddleware from '../../src/middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../src/services/addon-lifecycle.service';
@@ -57,6 +58,9 @@ const entitlementAddonDef: AddonDefinition = {
     limitIncrease: null,
     grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner'],
+    // HOS-1060: both fixtures mimic accommodation add-ons
+    // (`visibility-boost-7d` / `extra-photos-20`), so they carry that domain.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 1
 };
@@ -74,6 +78,9 @@ const limitAddonDef: AddonDefinition = {
     limitIncrease: 20,
     grantsEntitlement: null,
     targetCategories: ['owner'],
+    // HOS-1060: both fixtures mimic accommodation add-ons
+    // (`visibility-boost-7d` / `extra-photos-20`), so they carry that domain.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 2
 };

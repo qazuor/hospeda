@@ -52,3 +52,47 @@
     font-size: 0.875rem;
     margin: 0 0 var(--space-3, 0.75rem);
 }
+
+/*
+ * Scheduled-downgrade confirmation (HOS-1122). A downgrade neither redirects
+ * nor reloads — nothing has changed yet — so this is the only thing that tells
+ * the owner the request landed, and WHEN it starts to matter.
+ */
+.scheduled {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    font-family: var(--font-sans);
+    text-align: center;
+}
+
+.scheduledTitle {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+}
+
+.scheduledBody {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--core-muted-foreground);
+}
+
+.scheduledClose {
+    align-self: center;
+    padding: 0.5rem var(--space-5, 1.25rem);
+    border-radius: var(--radius-pill, 9999px);
+    border: 1px solid var(--brand-primary, oklch(0.5 0.18 260));
+    background: var(--brand-primary, oklch(0.5 0.18 260));
+    color: var(--primary-foreground, #fff);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.scheduledClose:hover {
+    opacity: 0.9;
+}

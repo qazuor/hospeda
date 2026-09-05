@@ -16,6 +16,7 @@
 import { z } from 'zod';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
+import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
@@ -110,7 +111,27 @@ export const AddonResponseSchema = z.object({
      * response validation (`stripWithSchema`) for every addon that predates
      * this field.
      */
-    requiresAccommodationTarget: z.boolean().default(false)
+    requiresAccommodationTarget: z.boolean().default(false),
+    /**
+     * The billing product domain this add-on belongs to (HOS-1060 / HOS-1178).
+     *
+     * Carried on the wire so a consumer READS the domain instead of deriving
+     * it. `apps/web` used to derive it from `affectsLimitKey`
+     * (`lib/billing/addon-domain.ts`, HOS-689) — a second source of truth for
+     * the same fact, able to disagree with the catalogue: it had nothing to
+     * read for an add-on whose `affectsLimitKey` is `null` (coerced to
+     * accommodation by hand) and could not tell apart two add-ons raising the
+     * same cap for different verticals.
+     *
+     * `null` — never a domain guessed on the consumer's behalf — means the
+     * add-on's slug is not in the catalogue (one an operator created through
+     * the admin UI). **Consumers MUST fail CLOSED on `null`**: do not offer
+     * it, do not sell it. `.default(null)` is what turns the
+     * `AddonDefinition`'s `undefined` into an explicit wire value, so the
+     * field is never simply ABSENT from the JSON — an absent field is exactly
+     * what would send a consumer back to deriving.
+     */
+    productDomain: ProductDomainEnumSchema.nullable().default(null)
 });
 
 // ─── User Addon Response ────────────────────────────────────────────────────

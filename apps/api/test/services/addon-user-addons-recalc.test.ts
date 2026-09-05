@@ -13,6 +13,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type AddonDefinition, EntitlementKey, LimitKey } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import type { CancelAddonInput } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cancelUserAddon } from '../../src/services/addon.user-addons';
@@ -203,6 +204,9 @@ const limitAddonDef: AddonDefinition = {
     limitIncrease: 20,
     grantsEntitlement: null,
     targetCategories: ['owner'],
+    // HOS-1060: both fixtures mimic accommodation add-ons
+    // (`visibility-boost-7d` / `extra-photos-20`), so they carry that domain.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 3
 };
@@ -220,6 +224,9 @@ const entitlementAddonDef: AddonDefinition = {
     limitIncrease: null,
     grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner'],
+    // HOS-1060: both fixtures mimic accommodation add-ons
+    // (`visibility-boost-7d` / `extra-photos-20`), so they carry that domain.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 1
 };

@@ -72,6 +72,7 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
     checkSubscriptionStatusTransition,
+    excludeAddonDomainCondition,
     withServiceTransaction
 } from '@repo/service-core';
 import { lt } from 'drizzle-orm';
@@ -187,7 +188,12 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
                         isNull(billingSubscriptions.mpSubscriptionId),
                         isNull(billingSubscriptions.deletedAt),
                         eq(billingSubscriptions.cancelAtPeriodEnd, false),
-                        lt(billingSubscriptions.currentPeriodEnd, cutoff)
+                        lt(billingSubscriptions.currentPeriodEnd, cutoff),
+                        // HOS-847: a recurring add-on's own row briefly has
+                        // mp_subscription_id = NULL between checkout and the
+                        // webhook that links its preapproval — exclude it so this
+                        // reconciler never expires an add-on mid-activation.
+                        excludeAddonDomainCondition()
                     )
                 )
                 .limit(BATCH_LIMIT);

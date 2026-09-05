@@ -1335,6 +1335,7 @@
             "gastronomy": "Gastronomia",
             "experience": "Experiência",
             "partner": "Parceiro",
+            "addon": "Complemento",
             "unknown": "Outro"
         },
         "courtesyDialog": {

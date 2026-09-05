@@ -1,7 +1,14 @@
 /**
  * @file addon-domain.test.ts
  * @description Unit tests for the per-domain addon catalog gate helpers
- * (HOS-689 item 2).
+ * (HOS-689 item 2), reading the DECLARED domain since HOS-1178.
+ *
+ * These fixtures carry `productDomain` rather than `affectsLimitKey` because
+ * the module no longer derives: `AddonResponse` declares the domain and this
+ * reads it. The derivation cases these tests used to cover (a null
+ * `affectsLimitKey` coerced to accommodation, a typo'd key answering nothing)
+ * moved to where the fact is now decided — `packages/billing`'s
+ * `productDomainForAddonSlug` and `addon-catalog.mapper`.
  *
  * The domain-resolution/filtering logic that makes a commerce-only owner see
  * gastronomy/experience addons without an accommodation subscription. The
@@ -25,50 +32,39 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('resolveAddonProductDomain', () => {
-    it('resolves accommodation for a null affectsLimitKey (visibility-boost addons)', () => {
-        // Arrange & Act
-        const result = resolveAddonProductDomain({ affectsLimitKey: null });
-
-        // Assert
-        expect(result).toBe(ProductDomainEnum.ACCOMMODATION);
+    it.each([
+        ['accommodation', ProductDomainEnum.ACCOMMODATION],
+        ['gastronomy', ProductDomainEnum.GASTRONOMY],
+        ['experience', ProductDomainEnum.EXPERIENCE]
+    ])('reads the declared %s domain straight off the response', (declared, expected) => {
+        expect(resolveAddonProductDomain({ productDomain: declared })).toBe(expected);
     });
 
-    it('resolves accommodation for an accommodation-scoped limit key', () => {
-        // Arrange & Act
-        const result = resolveAddonProductDomain({ affectsLimitKey: 'max_accommodations' });
-
-        // Assert
-        expect(result).toBe(ProductDomainEnum.ACCOMMODATION);
+    it('answers NO domain — never accommodation — when the API declared none', () => {
+        // `productDomain: null` is what `AddonResponse` carries for an addon
+        // whose slug is not in the catalogue (one an operator created through
+        // the admin UI). Guessing accommodation here is the `?? ACCOMMODATION`
+        // HOS-1078 deleted, and it would offer that addon to every host.
+        //
+        // `undefined` covers a response that predates the field entirely.
+        for (const addon of [{ productDomain: null }, { productDomain: undefined }, {}]) {
+            const result = resolveAddonProductDomain(addon);
+            expect(result).toBeUndefined();
+            expect(result).not.toBe(ProductDomainEnum.ACCOMMODATION);
+        }
     });
 
-    it('resolves gastronomy for the gastronomy vertical cap', () => {
-        // Arrange & Act
-        const result = resolveAddonProductDomain({ affectsLimitKey: 'max_gastronomies' });
+    it('does NOT derive the domain from affectsLimitKey any more (HOS-1178)', () => {
+        // The regression that matters most: while both paths were live they
+        // could disagree, and the derived one was the presentation layer's.
+        // An addon carrying a perfectly derivable `affectsLimitKey` and NO
+        // declared domain must now resolve to nothing, not to gastronomy.
+        const derivableButUndeclared = {
+            affectsLimitKey: 'max_gastronomies',
+            productDomain: null
+        } as { affectsLimitKey: string; productDomain: string | null };
 
-        // Assert
-        expect(result).toBe(ProductDomainEnum.GASTRONOMY);
-    });
-
-    it('resolves experience for the experience vertical cap', () => {
-        // Arrange & Act
-        const result = resolveAddonProductDomain({ affectsLimitKey: 'max_experiences' });
-
-        // Assert
-        expect(result).toBe(ProductDomainEnum.EXPERIENCE);
-    });
-
-    it('resolves NO domain for a key that owns no cap (HOS-1078)', () => {
-        // Arrange — `affectsLimitKey` arrives as a free string off a
-        // `billing_addons` row, so a typo (or a retired key) reaches here. This
-        // used to answer `'accommodation'`, which offered the addon to every
-        // accommodation subscriber and, one layer down, raised a cap read off a
-        // plan that never declared the key.
-        // Act
-        const result = resolveAddonProductDomain({ affectsLimitKey: 'max_gastronomys' });
-
-        // Assert
-        expect(result).toBeUndefined();
-        expect(result).not.toBe(ProductDomainEnum.ACCOMMODATION);
+        expect(resolveAddonProductDomain(derivableButUndeclared)).toBeUndefined();
     });
 });
 
@@ -79,11 +75,24 @@ describe('resolveAddonProductDomain', () => {
 describe('filterAddonsByHeldDomains', () => {
     const accommodationAddon = {
         slug: 'extra-accommodations-5',
-        affectsLimitKey: 'max_accommodations'
+        productDomain: ProductDomainEnum.ACCOMMODATION
     };
-    const gastronomyAddon = { slug: 'extra-gastronomies-1', affectsLimitKey: 'max_gastronomies' };
-    const experienceAddon = { slug: 'extra-experiences-1', affectsLimitKey: 'max_experiences' };
-    const visibilityBoostAddon = { slug: 'visibility-boost-7d', affectsLimitKey: null };
+    const gastronomyAddon = {
+        slug: 'extra-gastronomies-1',
+        productDomain: ProductDomainEnum.GASTRONOMY
+    };
+    const experienceAddon = {
+        slug: 'extra-experiences-1',
+        productDomain: ProductDomainEnum.EXPERIENCE
+    };
+    // HOS-1178: this one is the reason the derivation could not stay. It has no
+    // `affectsLimitKey` to derive from, so the old code coerced it to
+    // accommodation by hand; now it DECLARES accommodation, which is the same
+    // answer arrived at by reading instead of guessing.
+    const visibilityBoostAddon = {
+        slug: 'visibility-boost-7d',
+        productDomain: ProductDomainEnum.ACCOMMODATION
+    };
 
     it('returns only the addons whose domain the caller holds a subscription in', () => {
         // Arrange
@@ -125,11 +134,11 @@ describe('filterAddonsByHeldDomains', () => {
         expect(result).toEqual([]);
     });
 
-    it('drops an addon whose limit key owns no domain, even for a full holder (HOS-1078)', () => {
+    it('drops an addon the API declared no domain for, even for a full holder (HOS-1078, HOS-1178)', () => {
         // Arrange — the caller holds EVERY domain, so the only thing that can
-        // exclude this addon is the unresolvable key itself. With the old
+        // exclude this addon is its own undeclared domain. With the old
         // `?? 'accommodation'` default it was offered here.
-        const typoAddon = { slug: 'extra-gastronomys-1', affectsLimitKey: 'max_gastronomys' };
+        const typoAddon = { slug: 'operator-invented', productDomain: null };
         const addons = [accommodationAddon, typoAddon];
         const domainsWithSubscription = new Set([
             ProductDomainEnum.ACCOMMODATION,

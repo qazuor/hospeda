@@ -34,7 +34,13 @@
  */
 
 import type { AddonDefinition } from '@repo/billing';
-import { type EntitlementKey, isEntitlementKey, isLimitKey, type LimitKey } from '@repo/billing';
+import {
+    type EntitlementKey,
+    isEntitlementKey,
+    isLimitKey,
+    type LimitKey,
+    productDomainForAddonSlug
+} from '@repo/billing';
 import type { QZPayBillingAddon } from '@repo/db';
 
 // ---------------------------------------------------------------------------
@@ -186,6 +192,21 @@ export function mapRowToAddonDefinition(row: QZPayBillingAddon): AddonDefinition
         limitIncrease,
         grantsEntitlement: resolveGrantsEntitlement(row.entitlements),
         targetCategories: resolveTargetCategories(metadata),
+        // HOS-1060 — resolved from the CATALOGUE by slug, never from the row.
+        //
+        // `productDomain` is a Model C `'capability'` fact (which vertical an
+        // add-on belongs to), so config wins and the database follows: an
+        // already-seeded environment whose rows predate the field must not be
+        // able to answer for it. It is also why the eight pre-existing rows
+        // need no backfill — the domain was never stored, so there is nothing
+        // in them to correct.
+        //
+        // Returns `undefined` for a slug the catalogue does not know (an add-on
+        // an operator created through the admin UI). Deliberately NOT
+        // `?? ProductDomainEnum.ACCOMMODATION`: that is the exact default
+        // HOS-1078 deleted from `productDomainForLimitKey`, where it answered
+        // confidently for keys nobody had mapped. Callers fail closed.
+        productDomain: productDomainForAddonSlug(slug),
         isActive: row.active ?? false,
         sortOrder,
         requiresAccommodationTarget: resolveRequiresAccommodationTarget(metadata)

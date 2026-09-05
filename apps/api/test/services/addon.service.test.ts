@@ -48,6 +48,9 @@ const {
             durationDays: 7,
             isActive: true,
             targetCategories: ['owner', 'complex'] as const,
+            // HOS-1178: the purchase route refuses an add-on that declares
+            // no product domain, so every catalogue fixture declares its own.
+            productDomain: 'accommodation',
             sortOrder: 1,
             affectsLimitKey: null,
             limitIncrease: null,
@@ -63,6 +66,9 @@ const {
             durationDays: null,
             isActive: true,
             targetCategories: ['owner'] as const,
+            // HOS-1178: the purchase route refuses an add-on that declares
+            // no product domain, so every catalogue fixture declares its own.
+            productDomain: 'accommodation',
             sortOrder: 2,
             affectsLimitKey: LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
             limitIncrease: 20,
@@ -78,6 +84,9 @@ const {
             durationDays: null,
             isActive: false,
             targetCategories: ['owner'] as const,
+            // HOS-1178: the purchase route refuses an add-on that declares
+            // no product domain, so every catalogue fixture declares its own.
+            productDomain: 'accommodation',
             sortOrder: 99,
             affectsLimitKey: null,
             limitIncrease: null,
@@ -93,6 +102,9 @@ const {
             durationDays: null,
             isActive: true,
             targetCategories: ['complex'] as const,
+            // HOS-1178: the purchase route refuses an add-on that declares
+            // no product domain, so every catalogue fixture declares its own.
+            productDomain: 'accommodation',
             sortOrder: 3,
             affectsLimitKey: null,
             limitIncrease: null,
@@ -174,7 +186,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         // actual runtime path, but keeping it here ensures correct typing for consumers.
         cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
         queryUserAddons: mockQueryUserAddons,
-        queryAddonActive: mockQueryAddonActive
+        queryAddonActive: mockQueryAddonActive,
+        // HOS-1178: the product-domain gate hydrates `productDomain` off
+        // `billing_subscriptions` before comparing (see the helper's own doc —
+        // `getByCustomerId()` never carries that column). `@repo/db` is mocked
+        // wholesale in this file, so the real hydration has no query builder to
+        // run against. Stubbed to 'accommodation', which is what these host
+        // fixtures are, rather than to a passthrough that would leave the field
+        // undefined and pass for the wrong reason.
+        hydrateSubscriptionProductDomains: vi.fn(async (subs: readonly Record<string, unknown>[]) =>
+            subs.map((sub) => ({ ...sub, productDomain: 'accommodation' }))
+        )
     };
 });
 

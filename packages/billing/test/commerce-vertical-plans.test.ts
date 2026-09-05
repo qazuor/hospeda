@@ -115,7 +115,7 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         ]);
     });
 
-    it('declares its own two limit keys plus the seven inherited tourist-VIP ones (HOS-400, HOS-975)', () => {
+    it('declares its own three limit keys plus the seven inherited tourist-VIP ones (HOS-400, HOS-975, HOS-1060)', () => {
         // HOS-400 added a second limit of the tier's OWN to every catalogue: the
         // vertical's AI-chat quota, declared even by tiers that grant zero of it
         // (see `commerceVerticalTier`'s doc — an omitted key would read as
@@ -127,6 +127,13 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         // here would re-create that coupling one merge later. What has to hold
         // is membership and the absence of anything else — a key that appears
         // from nowhere is a plan metering something nobody decided it should.
+        //
+        // HOS-1060 adds a THIRD key of the tier's own, and unlike the two above
+        // it is the SAME key in both verticals: only experiences have
+        // galleries, so gastronomy declares it at an explicit `0` rather than
+        // getting a gastronomy-shaped key of its own. Declared by all six for
+        // the reason the AI-chat quota is — an absent key reads as UNLIMITED,
+        // not as zero.
         for (const [catalogue, ownCap, ownChat] of [
             [
                 ALL_GASTRONOMY_PLANS,
@@ -142,7 +149,12 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
             for (const plan of catalogue) {
                 const keys = plan.limits.map((l) => l.key);
                 expect(new Set(keys)).toEqual(
-                    new Set([ownCap, ownChat, ...INHERITED_TOURIST_VIP_LIMIT_KEYS])
+                    new Set([
+                        ownCap,
+                        ownChat,
+                        LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES,
+                        ...INHERITED_TOURIST_VIP_LIMIT_KEYS
+                    ])
                 );
                 // No key is declared twice — `mergeLimits` collapses by key, and
                 // a duplicate would make "which value wins" depend on order.
@@ -497,6 +509,55 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
             expect(plan.trialDays).toBe(COMMERCE_TRIAL_DAYS);
         }
         expect(COMMERCE_TRIAL_DAYS).toBe(30);
+    });
+
+    it('grants private galleries on experience-PREMIUM alone, and caps every other tier at zero (HOS-1060)', () => {
+        // Three halves, each catching a different mistake, and the third is the
+        // one that costs money:
+        //
+        // - `experience-premium` carries the key: fails if the escalón grant is
+        //   dropped and the feature becomes add-on-only.
+        // - No other tier does: fails if the key is moved into
+        //   `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (which would hand it to
+        //   `experience-basico`, the cheapest tier there is) or copy-pasted
+        //   across to gastronomy, which has no outing to photograph.
+        // - Every tier DECLARES the cap, and only premium's is nonzero. A tier
+        //   that omitted the key would not be capped at zero, it would be
+        //   UNLIMITED — and this cap is what bounds the only recurring
+        //   per-use storage cost in the epic.
+        expect(EXPERIENCE_PREMIUM_PLAN.entitlements).toContain(
+            EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
+        );
+        for (const plan of [EXPERIENCE_BASICO_PLAN, EXPERIENCE_PRO_PLAN, ...ALL_GASTRONOMY_PLANS]) {
+            expect(plan.entitlements).not.toContain(
+                EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
+            );
+        }
+
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            const cap = limitValue(plan, LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES);
+            expect(cap, `plan ${plan.slug} must DECLARE the gallery cap`).toBeDefined();
+            expect(cap, `plan ${plan.slug} must never be uncapped`).not.toBe(-1);
+            if (plan.slug === EXPERIENCE_PREMIUM_PLAN.slug) {
+                expect(cap as number).toBeGreaterThan(0);
+            } else {
+                expect(cap, `plan ${plan.slug} grants no galleries`).toBe(0);
+            }
+        }
+    });
+
+    it('never grants a nonzero gallery cap to a tier that does not grant the capability (HOS-1060)', () => {
+        // The pairing itself, asserted as a property rather than as a list, so
+        // it survives a seventh tier: a cap without the grant is capacity
+        // nobody can use, and a grant without a cap is the fail-open the whole
+        // key exists to close.
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            const grants = plan.entitlements.includes(
+                EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
+            );
+            const cap = limitValue(plan, LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES) ?? 0;
+            expect(grants, `plan ${plan.slug}: cap ${cap} without the grant`).toBe(cap > 0);
+        }
     });
 
     it('leaves NO tier unpriced or dark (HOS-975)', () => {

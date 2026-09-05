@@ -33,6 +33,9 @@ import {
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import {
+    type GastronomyFeaturedMediaAddInput,
+    GastronomyFeaturedMediaAddInputSchema,
+    type GastronomyFeaturedMediaAddOutput,
     type GastronomyMediaAddInput,
     GastronomyMediaAddInputSchema,
     type GastronomyMediaListInput,
@@ -45,6 +48,8 @@ import {
     type GastronomyMediaSetFeaturedInput,
     GastronomyMediaSetFeaturedInputSchema,
     type GastronomyMediaSingleOutput,
+    type GastronomyMediaUpdateInput,
+    GastronomyMediaUpdateInputSchema,
     getGalleryCap,
     ModerationStatusEnum,
     ServiceErrorCode
@@ -52,7 +57,10 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { scheduleCommerceMediaRevalidation } from '../commerce/commerce-revalidation.js';
+import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildMediaTextPatch } from '../media/media-text-patch';
+import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { checkGastronomyCanEditMedia } from './gastronomy.permissions';
 
 // ---------------------------------------------------------------------------
@@ -547,7 +555,11 @@ export async function setFeaturedGastronomyMedia(
 
         const mediaModel = new GastronomyMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId) {
+        // `deletedAt`: `findById` does NOT filter soft-deletes and `softDelete`
+        // leaves `is_featured` set, so without this a released cover stays a
+        // promotable target — HOS-803 C-1. Mirrors `updateMedia`'s long-standing
+        // guard on the accommodation side.
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this gastronomy listing'
@@ -594,6 +606,199 @@ export async function setFeaturedGastronomyMedia(
         await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: updated } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Corrects the TEXT metadata of a single photo in a gastronomy listing gallery (HOS-1036).
+ *
+ * The commerce twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * `updatePostMedia`. Before this existed the only way to fix — or write for the
+ * first time — a photo's `alt` was to delete it and re-upload, burning a second
+ * Cloudinary asset and losing the row's gallery position.
+ *
+ * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `gastronomyId` are not
+ * reachable from {@link GastronomyMediaUpdateInputSchema} even if the client sends
+ * them.
+ *
+ * Each field is three-state — omit to leave unchanged, `null` to clear, a value
+ * to replace — hence `buildMediaTextPatch` rather than a wholesale spread (see
+ * that module for what spreading would erase).
+ *
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another gastronomy listing, a non-existent id, or a soft-deleted row all answer
+ * NOT_FOUND — never FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT gastronomy listing is NOT: `checkGastronomyCanEditMedia` throws FORBIDDEN
+ * on a gastronomy listing the actor may not edit and NOT_FOUND on one that does not
+ * exist, so an ownership-scoped actor (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`)
+ * can tell a stranger's gastronomy listing from an invented one. Every sibling media
+ * helper shares that same gate, so closing the gap in `update` alone would leave it at
+ * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
+ * at once.
+ *
+ * Schedules the same public-page revalidation the add/remove/reorder paths do:
+ * a caption or credit IS rendered content, so a correction that never reaches
+ * the cache is a correction nobody sees.
+ *
+ * @param model - GastronomyModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Update input (`gastronomyId` + `mediaId` + the text fields).
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
+ */
+export async function updateGastronomyMedia(
+    model: GastronomyModel,
+    actor: Actor,
+    data: GastronomyMediaUpdateInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<GastronomyMediaSingleOutput>> {
+    try {
+        const parseResult = GastronomyMediaUpdateInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
+        checkGastronomyCanEditMedia(actor, gastronomy);
+
+        const mediaModel = new GastronomyMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                'Media not found for this gastronomy listing'
+            );
+        }
+
+        const updated = await mediaModel.update(
+            { id: validated.mediaId },
+            buildMediaTextPatch(validated),
+            ctx?.tx
+        );
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to retrieve updated media row after text update'
+            );
+        }
+
+        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+
+        return { data: { media: updated } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Registers a photo that is the gastronomy listing's cover from the moment it exists,
+ * replacing the previous cover in the same transaction (HOS-803).
+ *
+ * ## Why this is not `addGastronomyMedia` plus `setFeaturedGastronomyMedia`
+ *
+ * That is what the admin gallery used to do, and it could not run when it was
+ * most needed. `addGastronomyMedia` enforces the gallery cap, and that cap counts the
+ * gallery ALONE because a cover is not a gallery item (HOS-791) — so an owner
+ * whose gallery sat exactly at the cap was refused at the first step and never
+ * reached the promotion in the second. The one action exempt from the quota was
+ * the only one they could not perform.
+ *
+ * ## Why waiving the cap is safe here
+ *
+ * Because the outcome is guaranteed rather than promised. A client-supplied
+ * "treat this upload as the cover" flag on the gallery endpoint would be
+ * unverifiable — nothing obliges the caller to send the follow-up promotion —
+ * so a caller setting it on every upload would have no cap at all. Here the row
+ * is created featured inside a transaction and
+ * `uq_gastronomy_media_single_featured` permits exactly one, so quota-exempt
+ * rows cannot accumulate. The previous cover is SOFT-DELETED in the same
+ * transaction, so one row enters the featured slot, one leaves the table, and
+ * the visible gallery is untouched — the swap is quota-neutral by construction
+ * rather than by exception, and no cap needs consulting at all.
+ *
+ * Promotion of a photo already in the gallery (`setFeaturedGastronomyMedia`) is a
+ * different operation and is unchanged: it still demotes the old cover into the
+ * gallery, which is quota-neutral on its own.
+ *
+ * @param model - GastronomyModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated featured-media input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns The created cover plus what became of the one it replaced.
+ */
+export async function addGastronomyFeaturedMedia(
+    model: GastronomyModel,
+    actor: Actor,
+    data: GastronomyFeaturedMediaAddInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<GastronomyFeaturedMediaAddOutput>> {
+    try {
+        const parseResult = GastronomyFeaturedMediaAddInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
+        checkGastronomyCanEditMedia(actor, gastronomy);
+
+        const mediaModel = new GastronomyMediaModel();
+
+        const { media, previousFeatured } = await addFeaturedMediaRow({
+            port: buildOwnedMediaFeaturedPort({
+                mediaModel,
+                ownerKey: 'gastronomyId',
+                ownerId: validated.gastronomyId,
+                media: validated.media,
+                findFeatured: (tx) =>
+                    mediaModel.findFeatured({ gastronomyId: validated.gastronomyId, tx }),
+                deletedById: actor.id
+            }),
+            tx: ctx?.tx
+        });
+
+        // HOS-389 §4 — see `addGastronomyMedia` for the rationale. Loudest case: the
+        // cover is what every listing card and social preview renders.
+        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+
+        return { data: { media, previousFeatured } };
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };

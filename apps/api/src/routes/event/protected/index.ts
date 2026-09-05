@@ -24,6 +24,7 @@ import { protectedReorderEventMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedEventMediaRoute } from './setFeaturedMedia';
 import { protectedSoftDeleteEventRoute } from './softDelete';
 import { protectedUpdateEventRoute } from './update';
+import { protectedUpdateEventMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -71,5 +72,9 @@ app.route('/', protectedSetFeaturedEventMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery.
 app.route('/', protectedRemoveEventMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdateEventMediaRoute);
 
 export { app as protectedEventRoutes };

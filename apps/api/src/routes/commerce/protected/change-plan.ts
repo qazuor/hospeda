@@ -36,27 +36,30 @@
  * `initiatePaidPlanUpgrade` both take a subscription id and are genuinely
  * domain-agnostic. This route deliberately adds no third mechanism.
  *
- * ## Upgrades only, and that is a decision rather than an omission
+ * ## Both directions, since HOS-1122
  *
- * A commerce owner may move to a DEARER tier. A move to an equal or cheaper one
- * answers 422.
+ * A dearer tier is charged and applied now (or at once, if the subscription is
+ * still trialing). A cheaper one is SCHEDULED for period end — the owner has
+ * paid for the month, and cutting their tier the moment they ask takes back
+ * something they already bought. An equal-priced target is still 422: there is
+ * no delta to charge and nothing to give back, so it is neither move.
  *
- * The accommodation downgrade path writes a `scheduledPlanChange` that the
- * `apply-scheduled-plan-changes` cron later commits — and that cron, on any row
- * whose metadata says `plan-change-downgrade`, calls `applyDowngradeRestrictions`
- * with the target plan's slug. That function restricts ACCOMMODATIONS and
- * PROMOTIONS against the caps of the named plan. Handed a commerce plan slug,
- * which declares neither cap, it would be reasoning about an owner's
- * accommodations from a gastronomy tier. Wiring commerce into that path to
- * support a downgrade nobody has yet asked for would be trading a real hazard
- * for a hypothetical convenience.
+ * This route shipped upgrades-only, and that was a decision rather than an
+ * oversight — but the reason has since expired twice over. It was: the
+ * `apply-scheduled-plan-changes` cron calls `applyDowngradeRestrictions` on any
+ * row whose metadata says `plan-change-downgrade`, and that function restricts
+ * ACCOMMODATIONS and PROMOTIONS against the named plan's caps, which a commerce
+ * tier does not declare. And it cost little, because both gastronomy tiers
+ * capped listings at ONE.
  *
- * It costs little today and the measurement says so: both gastronomy tiers cap
- * listings at ONE, so the only thing a pro → básico move gives back is the
- * carta — and production held zero commerce subscriptions of any status when
- * this was written. An owner who genuinely wants to step down cancels and
- * re-subscribes, which is the same number of steps and leaves no scheduled
- * state behind.
+ * HOS-975 ended the second half: the caps are 1/3/5 in gastronomy and 1/5/10 in
+ * experiences, so premium → pro on experiences is a real cut from ten listings
+ * to five. HOS-1122 ended the first: the cron now dispatches on the target
+ * plan's own domain, `applyDowngradeRestrictions` refuses a slug from any other
+ * one, and the commerce side has its own remediation — same five steps
+ * (compute the excess, let the owner choose, mail the warning, wait for period
+ * end, restrict what is left over), one mechanism per platform rather than per
+ * vertical.
  *
  * ## Keyed by VERTICAL, not by listing
  *
@@ -68,7 +71,10 @@
  *
  * @module routes/commerce/protected/change-plan
  */
-import type { CommerceVertical } from '@repo/billing';
+import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { type CommerceVertical, LIMIT_KEY_BY_COMMERCE_VERTICAL } from '@repo/billing';
+import { NotificationType } from '@repo/notifications';
+import type { CommerceDowngradePreview, CommerceKeepSelections } from '@repo/schemas';
 import {
     CommercePlanChangeRequestSchema,
     PermissionEnum,
@@ -80,7 +86,9 @@ import { z } from 'zod';
 import { protectedAuthMiddleware } from '../../../middlewares/authorization';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../../middlewares/idempotency-key';
+import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason';
 import { applyTrialingPlanUpgrade } from '../../../services/billing/trialing-plan-upgrade.service';
+import { computeCommerceDowngradeExcess } from '../../../services/commerce-downgrade-remediation.service';
 import {
     CommercePlanNotConfiguredError,
     CommercePlanNotForVerticalError,
@@ -93,11 +101,16 @@ import {
     resolvePlanBySlug,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
+import {
+    SubscriptionDowngradeError,
+    scheduleSubscriptionDowngrade
+} from '../../../services/subscription-downgrade.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { sendNotification } from '../../../utils/notification-helper';
 import { createCRUDRoute } from '../../../utils/route-factory';
 import { buildNotificationUrl } from '../../billing/checkout-return-urls';
 
@@ -151,6 +164,184 @@ function mapCommerceUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPExce
 }
 
 /**
+ * Maps a `SubscriptionDowngradeError` onto an `HTTPException`.
+ *
+ * The three codes reachable from here are guard failures on state the handler
+ * has already checked (same plan, no price, not cheaper), so they mean the
+ * subscription or the catalogue moved between the handler's read and the
+ * service's — a 409 rather than a 422, because retrying is the right response.
+ * `SUBSCRIPTION_NOT_FOUND` keeps its 404.
+ *
+ * @param err - The domain error thrown by the schedule service.
+ * @returns The HTTP exception to throw.
+ */
+function mapCommerceDowngradeErrorToHttp(err: SubscriptionDowngradeError): HTTPException {
+    if (err.code === 'SUBSCRIPTION_NOT_FOUND') {
+        return new HTTPException(404, { message: err.message });
+    }
+    return new HTTPException(409, { message: err.message });
+}
+
+/**
+ * Schedules a commerce tier DOWNGRADE for the end of the current period, and
+ * tells the owner what it will cost them (HOS-1122).
+ *
+ * Three steps, in this order and for these reasons:
+ *
+ * 1. **Schedule.** `scheduleSubscriptionDowngrade` is genuinely
+ *    domain-agnostic — it compares prices, writes qzpay's `scheduledPlanChange`
+ *    and persists the keep selections — so commerce uses it unchanged. This
+ *    happens FIRST: the schedule is what the owner asked for, and neither of
+ *    the two steps below may prevent it.
+ * 2. **Preview, soft-fail.** Which listings the new cap stops covering. Absent
+ *    from the response when it could not be computed, never zeroed — a
+ *    `excessCount: 0` that means "we did not look" is the exact shape this
+ *    whole flow exists to avoid.
+ * 3. **Warn by email, soft-fail.** Only when there IS an excess and only when
+ *    the actor carries an email. Fire-and-forget: a mail failure must not turn
+ *    a completed schedule into an error the owner sees.
+ *
+ * The apply-time cron recomputes the excess fresh, so the preview is advice
+ * rather than a contract — the owner may add or delete listings before period
+ * end.
+ *
+ * @returns The `scheduled` variant of the plan-change response.
+ */
+async function scheduleCommerceDowngrade(input: {
+    readonly billing: QZPayBilling;
+    readonly actorId: string;
+    readonly actorEmail?: string | undefined;
+    readonly actorName?: string | undefined;
+    readonly vertical: CommerceVertical;
+    readonly subscriptionId: string;
+    readonly previousPlanId: string;
+    readonly targetPlanId: string;
+    readonly targetPlanSlug: string;
+    readonly targetPlanDisplayName: string;
+    readonly keepSelections?: CommerceKeepSelections | undefined;
+}): Promise<unknown> {
+    const {
+        billing,
+        actorId,
+        actorEmail,
+        actorName,
+        vertical,
+        subscriptionId,
+        targetPlanId,
+        targetPlanSlug,
+        targetPlanDisplayName,
+        keepSelections
+    } = input;
+
+    let scheduleResult: Awaited<ReturnType<typeof scheduleSubscriptionDowngrade>>;
+    try {
+        scheduleResult = await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: subscriptionId,
+            newPlanId: targetPlanId,
+            // Every commerce tier is monthly and only monthly — see the request
+            // schema's note on why there is no interval field to forward.
+            billingInterval: 'month',
+            intervalCount: 1,
+            billing,
+            requestedBy: actorId,
+            ...(keepSelections === undefined ? {} : { keepSelections })
+        });
+    } catch (error) {
+        if (error instanceof SubscriptionDowngradeError) {
+            throw mapCommerceDowngradeErrorToHttp(error);
+        }
+        throw error;
+    }
+
+    apiLogger.info(
+        {
+            vertical,
+            subscriptionId: scheduleResult.subscriptionId,
+            previousPlanId: scheduleResult.previousPlanId,
+            newPlanId: scheduleResult.newPlanId,
+            applyAt: scheduleResult.applyAt,
+            replacedPriorSchedule: scheduleResult.replacedPriorSchedule
+        },
+        'Commerce tier downgrade scheduled, awaiting apply-scheduled-plan-changes cron'
+    );
+
+    auditLog({
+        auditEvent: AuditEventType.BILLING_MUTATION,
+        actorId,
+        action: 'update',
+        resourceType: 'subscription_plan',
+        resourceId: scheduleResult.subscriptionId
+    });
+
+    let restrictionPreview: CommerceDowngradePreview | undefined;
+    try {
+        restrictionPreview = await computeCommerceDowngradeExcess({
+            subscriptionId,
+            vertical,
+            targetPlanSlug
+        });
+    } catch (previewErr) {
+        apiLogger.warn(
+            {
+                vertical,
+                subscriptionId,
+                targetPlanSlug,
+                error: previewErr instanceof Error ? previewErr.message : String(previewErr)
+            },
+            'Commerce downgrade preview unavailable (soft-fail) — schedule succeeded'
+        );
+    }
+
+    if (restrictionPreview?.hasExcess) {
+        if (actorEmail) {
+            void Promise.resolve(
+                sendNotification({
+                    type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING,
+                    recipientEmail: actorEmail,
+                    recipientName: actorName ?? actorEmail,
+                    userId: actorId,
+                    limitKey: LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical],
+                    // `oldLimit` is reported as the owner's CURRENT usage, the
+                    // same approximation the accommodation route makes: the
+                    // template renders it as "límite anterior", and the count
+                    // they are actually losing listings from is the honest
+                    // number to show without a second plan lookup here.
+                    oldLimit: restrictionPreview.activeCount,
+                    newLimit: restrictionPreview.cap,
+                    currentUsage: restrictionPreview.activeCount,
+                    planName: targetPlanDisplayName
+                })
+            ).catch((notifErr: unknown) => {
+                apiLogger.warn(
+                    {
+                        vertical,
+                        subscriptionId,
+                        error: notifErr instanceof Error ? notifErr.message : String(notifErr)
+                    },
+                    'PLAN_DOWNGRADE_LIMIT_WARNING send failed (soft-fail) — schedule succeeded'
+                );
+            });
+        } else {
+            apiLogger.debug(
+                { vertical, subscriptionId },
+                'PLAN_DOWNGRADE_LIMIT_WARNING skipped — actor has no email in context'
+            );
+        }
+    }
+
+    return {
+        status: 'scheduled' as const,
+        subscriptionId: scheduleResult.subscriptionId,
+        previousPlanId: scheduleResult.previousPlanId,
+        newPlanId: scheduleResult.newPlanId,
+        effectiveAt: scheduleResult.applyAt,
+        ...(restrictionPreview !== undefined && {
+            commerceRestrictionPreview: restrictionPreview
+        })
+    };
+}
+
+/**
  * Handler for the commerce tier change. Exported standalone (mirrors
  * `handleCommerceStartSubscription`) so it is unit-testable against a mocked
  * `Context` without booting the full Hono app.
@@ -163,17 +354,21 @@ function mapCommerceUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPExce
  *     with no billing customer at all: they cannot own a subscription, and
  *     saying "no billing account" instead would describe their account rather
  *     than the resource they asked about.
- *   - 409 — a cancellation is already pending on the subscription.
+ *   - 409 — a cancellation is already pending on the subscription, or the
+ *     subscription moved between this handler's read and the schedule service's.
  *   - 410 — the target plan has been retired.
- *   - 422 — same tier, or a tier that is not dearer (see the module docblock).
+ *   - 422 — the tier the subscription is already on, or one priced identically
+ *     to it (see the module docblock).
  *   - 503 — billing unavailable, or the vertical mapping is unusable.
  *
  * @param ctx - The Hono request context.
  * @param input.entityType - The vertical whose subscription is being changed.
  * @returns A `PlanChangeResponse`: `pending_payment` for the ordinary paid
- *   upgrade (redirect the owner to `checkoutUrl` to pay the prorated delta), or
+ *   upgrade (redirect the owner to `checkoutUrl` to pay the prorated delta),
  *   `active` when the subscription was still `trialing` and the new tier
- *   applied at once with no charge.
+ *   applied at once with no charge, or `scheduled` for a downgrade, which takes
+ *   effect at period end and carries a `commerceRestrictionPreview` of the
+ *   listings the smaller cap will stop covering.
  */
 export async function handleCommerceChangePlan(
     ctx: Context,
@@ -299,13 +494,28 @@ export async function handleCommerceChangePlan(
         throw new HTTPException(404, { message: 'Target plan has no active monthly price' });
     }
 
-    if (targetPrice.unitAmount <= currentPrice.unitAmount) {
-        // See the module docblock: a commerce downgrade is refused rather than
-        // scheduled, because the cron that would commit it runs accommodation
-        // restriction logic against the target plan's slug.
+    if (targetPrice.unitAmount === currentPrice.unitAmount) {
+        // Neither direction. There is no delta to charge and no cap to give
+        // back, so both branches below would be a no-op dressed as a change.
         throw new HTTPException(422, {
-            message:
-                'Moving to an equal or cheaper commerce plan is not supported. Cancel the current subscription and subscribe to the other plan instead.'
+            message: 'The target plan costs the same as the current one. Choose a different tier.'
+        });
+    }
+
+    // ── Cheaper: schedule for period end (HOS-1122) ────────────────────────
+    if (targetPrice.unitAmount < currentPrice.unitAmount) {
+        return await scheduleCommerceDowngrade({
+            billing,
+            actorId: actor.id,
+            actorEmail: actor.email,
+            actorName: actor.name,
+            vertical: entityType,
+            subscriptionId: subscription.id,
+            previousPlanId: subscription.planId,
+            targetPlanId: targetPlan.id,
+            targetPlanSlug: targetSlug,
+            targetPlanDisplayName: planDisplayNameFromPlan(targetPlan),
+            keepSelections: parsed.data.keepSelections
         });
     }
 
@@ -433,7 +643,7 @@ export const protectedCommerceChangePlanRoute = createCRUDRoute({
     path: '/subscriptions/{entityType}/change-plan',
     summary: "Change the tier of the caller's commerce subscription for one vertical",
     description:
-        "Moves the caller's own subscription for the given commerce vertical to a dearer tier. Requires COMMERCE_EDIT_OWN. Upgrades only: an equal or cheaper target answers 422. An `active` subscription answers `pending_payment` with a MercadoPago URL for the prorated delta; a `trialing` one applies at once with no charge.",
+        "Moves the caller's own subscription for the given commerce vertical to another tier. Requires COMMERCE_EDIT_OWN. A dearer target on an `active` subscription answers `pending_payment` with a MercadoPago URL for the prorated delta; on a `trialing` one it applies at once with no charge. A cheaper target answers `scheduled`: it takes effect at period end and the response carries a `commerceRestrictionPreview` of the listings the smaller cap will stop covering, with an optional `keepSelections.listingIds` in the request choosing which to keep. An equally priced target answers 422.",
     tags: ['Protected - Commerce', 'Billing'],
     requestParams: ChangePlanParamsSchema,
     // Same reasoning as the checkout route: the body is read and validated by

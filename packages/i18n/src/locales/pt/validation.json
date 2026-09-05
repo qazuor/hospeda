@@ -1527,6 +1527,9 @@
             "state": {
                 "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
             },
+            "update": {
+                "atLeastOneField": "Você precisa preencher ao menos um campo: legenda, descrição, texto alternativo ou atribuição"
+            },
             "url": {
                 "invalid": "A URL não é válida"
             }
@@ -1603,6 +1606,9 @@
             },
             "state": {
                 "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Você precisa preencher ao menos um campo: legenda, descrição, texto alternativo ou atribuição"
             },
             "url": {
                 "invalid": "A URL não é válida"
@@ -1832,6 +1838,14 @@
             "tooLow": "El max rating es demasiado bajo"
         },
         "media": {
+            "featured": {
+                "planCap": {
+                    "int": "O limite de fotos do plano deve ser um número inteiro"
+                },
+                "previousId": {
+                    "invalid": "O identificador da capa anterior não é válido"
+                }
+            },
             "image": {
                 "alt": {
                     "max": "El texto alternativo no puede superar los {{max}} caracteres",

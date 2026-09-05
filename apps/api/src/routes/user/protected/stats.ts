@@ -14,7 +14,7 @@ import {
     inArray,
     isNull
 } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { BUSINESS_VERTICAL_PRODUCT_DOMAINS, type ProductDomainEnum } from '@repo/schemas';
 import {
     AccommodationReviewService,
     DestinationReviewService,
@@ -100,14 +100,25 @@ export interface UserPlanSummary {
 }
 
 /**
- * All product domains a customer's subscriptions can be resolved into,
- * mirroring the order `subscriptionMatchesDomain` recognises. Iterating this
- * fixed list (rather than reading `productDomain` off the row directly) keeps
- * `subscriptionMatchesDomain` the ONLY place that compares a subscription's
- * domain (see that module's doc) — this file never inspects the column
- * itself.
+ * The domains a customer's subscriptions can be resolved into for THIS
+ * widget: the real business verticals only, never `Object.values(ProductDomainEnum)`.
+ *
+ * `ProductDomainEnum.ADDON` (HOS-847) tags a recurring add-on's own
+ * MercadoPago preapproval row — a billing mechanism, not a vertical the
+ * account "subscribes to" the way accommodation/gastronomy/experience/partner
+ * are. Grouping by the full enum would count an active add-on as a second
+ * "vertical" and turn "one real plan + one add-on" into the 2+ summary case,
+ * hiding the plan name entirely — see
+ * {@link BUSINESS_VERTICAL_PRODUCT_DOMAINS}'s doc in `@repo/schemas` for the
+ * general rule and why this was caught only in review, not by the enum's own
+ * frozen-count guard.
+ *
+ * Iterating this fixed list (rather than reading `productDomain` off the row
+ * directly) keeps `subscriptionMatchesDomain` the ONLY place that compares a
+ * subscription's domain (see that module's doc) — this file never inspects
+ * the column itself.
  */
-const ALL_PRODUCT_DOMAINS = Object.values(ProductDomainEnum);
+const KNOWN_BUSINESS_DOMAINS = BUSINESS_VERTICAL_PRODUCT_DOMAINS;
 
 /**
  * Resolves the plan summary rendered by the "mi plan" widget on `/mi-cuenta/`.
@@ -211,11 +222,12 @@ export async function resolveUserPlanSummary(input: { readonly userId: string })
          * Group by domain: one subscription per domain, the most recent one
          * (subscriptions are already ordered `DESC createdAt`, so `.find()`
          * keeps the first — newest — match per domain). A subscription whose
-         * `productDomain` matches none of the four known domains (e.g. a
-         * stray legacy `'commerce'` row — see `subscriptionMatchesDomain`'s
-         * doc) matches no bucket and is dropped, by design.
+         * `productDomain` matches none of the known BUSINESS VERTICAL domains
+         * (e.g. a stray legacy `'commerce'` row, or a recurring add-on's own
+         * `'addon'`-tagged row — see `subscriptionMatchesDomain`'s doc) matches
+         * no bucket and is dropped, by design.
          */
-        const subscriptionByDomain = ALL_PRODUCT_DOMAINS.reduce((acc, domain) => {
+        const subscriptionByDomain = KNOWN_BUSINESS_DOMAINS.reduce((acc, domain) => {
             const match = subscriptions.find((sub) => subscriptionMatchesDomain(sub, domain));
             if (match) {
                 acc.set(domain, match);
