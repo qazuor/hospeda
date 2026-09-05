@@ -130,7 +130,22 @@ jobs:
         # hang or crash the API on boot. e2e-pr.yml boots the same stack in
         # non-production mode for exactly this reason. See SPEC-294.
         run: |
-          node apps/api/dist/index.js &
+          # The server's own output goes to a FILE, not to this step's stdout.
+          #
+          # The API prints ~1,000 route lines on boot. Sharing this step's stdout
+          # with a backgrounded writer that chatty means the pipe can be full at
+          # the exact moment the shell runs its own `echo`, which then fails with
+          # EAGAIN ("write error: Resource temporarily unavailable"). The default
+          # shell here is `bash -e`, so that failing `echo` aborts the step with
+          # exit 1 — while the API is HEALTHY, before the sweep ever runs, and
+          # with no diagnostic beyond the exit code.
+          #
+          # Observed on run 33939156678: the health check passed, `echo "API
+          # ready"` died on EAGAIN, and the job reported only "Process completed
+          # with exit code 1" — no a11y page was ever visited. Redirecting removes
+          # the class, and the tail below makes a REAL boot failure louder than
+          # the interleaved dump ever was.
+          node apps/api/dist/index.js > /tmp/api-boot.log 2>&1 &
           for i in $(seq 1 30); do
             if curl -s http://localhost:3001/health > /dev/null 2>&1; then
               echo "API ready"
@@ -142,13 +157,16 @@ jobs:
           # server slip through to the sweep step (where it only shows as an opaque
           # "fetch failed"). A boot failure must surface here. See SPEC-294.
           curl -sf http://localhost:3001/health > /dev/null \
-            || { echo "::error::API failed to become ready within 60s"; exit 1; }
+            || { echo "::error::API failed to become ready within 60s"; tail -80 /tmp/api-boot.log; exit 1; }
 
       - name: Start web server
         env:
           NODE_ENV: production
         run: |
-          node apps/web/dist/server/entry.mjs &
+          # Same reasoning as the API step above: keep the backgrounded server's
+          # output off this step's stdout, so it cannot make the shell's own
+          # `echo` fail with EAGAIN under `bash -e`.
+          node apps/web/dist/server/entry.mjs > /tmp/web-boot.log 2>&1 &
           READY=0
           for i in $(seq 1 30); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/es/ 2>/dev/null || echo "000")
@@ -160,7 +178,7 @@ jobs:
             sleep 2
           done
           # Fail loudly if the web server never became ready (see API note above).
-          [ "$READY" = "1" ] || { echo "::error::Web failed to become ready within 60s"; exit 1; }
+          [ "$READY" = "1" ] || { echo "::error::Web failed to become ready within 60s"; tail -80 /tmp/web-boot.log; exit 1; }
 
       - name: Run a11y sweep
         env:
