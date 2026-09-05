@@ -348,16 +348,13 @@ export function usePhotoSection({
                     return;
                 }
 
-                const { media: newRow, previousFeatured } = addResult.data;
+                const { media: newRow } = addResult.data;
 
-                // The old cover joins the gallery only when the server actually
-                // demoted it. With the gallery full it is archived instead, and
-                // appending it here would leave a photo on screen that is no
-                // longer part of the visible set.
-                if (featuredItem && previousFeatured?.disposition === 'demoted') {
-                    const demoted = { ...featuredItem, isFeatured: false };
-                    setGalleryItems((prev) => [...prev, demoted]);
-                }
+                // The replaced cover is NOT added to the gallery. Uploading a
+                // new cover deletes the old one server-side, so appending it
+                // here would leave a photo on screen that no longer exists —
+                // and it is that demotion, on this path, that used to grow the
+                // gallery by one on every replacement.
                 setFeaturedItem(mediaRowToItem(newRow));
             } catch (err) {
                 reportUploadError(
@@ -373,7 +370,9 @@ export function usePhotoSection({
                 }
             }
         },
-        [accommodationId, featuredItem, t, reportUploadError, reportAddMediaError]
+        // `featuredItem` is no longer read here: the replaced cover is deleted
+        // server-side rather than appended to the gallery (HOS-803).
+        [accommodationId, t, reportUploadError, reportAddMediaError]
     );
 
     const handleFeaturedSelect = useCallback(

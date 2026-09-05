@@ -174,10 +174,7 @@ export function useAccommodationMediaAddFeatured(accommodationId: string) {
             const body = response.data as {
                 data?: {
                     media?: AccommodationMedia;
-                    previousFeatured?: {
-                        readonly id: string;
-                        readonly disposition: 'demoted' | 'archived';
-                    } | null;
+                    previousFeatured?: { readonly id: string } | null;
                 };
             };
             const media = body.data?.media;

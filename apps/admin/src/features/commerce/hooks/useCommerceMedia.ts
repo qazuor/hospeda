@@ -210,10 +210,10 @@ export function useCommerceMediaAdd(vertical: CommerceMediaVertical, entityId: s
  * the previous cover is disposed of in the same transaction, leaving no
  * intermediate gallery row to be capped.
  *
- * The response reports what became of the previous cover — `demoted` (it joined
- * the gallery) or `archived` (the gallery was full, so it left the visible set).
- * This hook invalidates and refetches rather than branching on it, but it is
- * returned so an optimistic caller can.
+ * The response reports the id of the previous cover, which is soft-deleted in
+ * the same transaction — unconditionally, so the swap costs the gallery nothing.
+ * This hook invalidates and refetches rather than branching on it, but the id is
+ * returned so an optimistic caller can drop that row.
  *
  * @param vertical - `'gastronomy'` or `'experience'`.
  * @param entityId - UUID of the listing.
@@ -231,10 +231,7 @@ export function useCommerceMediaAddFeatured(vertical: CommerceMediaVertical, ent
             const body = response.data as {
                 data?: {
                     media?: CommerceMedia;
-                    previousFeatured?: {
-                        readonly id: string;
-                        readonly disposition: 'demoted' | 'archived';
-                    } | null;
+                    previousFeatured?: { readonly id: string } | null;
                 };
             };
             const media = body.data?.media;

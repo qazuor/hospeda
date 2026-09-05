@@ -183,27 +183,24 @@ describe('POST /:id/media/featured — cover upload (HOS-803)', () => {
         expect(body.data.media.id).toBe(MEDIA_ID);
     });
 
-    it('reports what became of the cover it replaced', async () => {
+    it('reports the id of the cover it replaced', async () => {
         mockAddFeaturedMedia.mockResolvedValue({
-            data: {
-                media: CREATED_COVER,
-                previousFeatured: { id: PREVIOUS_ID, disposition: 'archived' }
-            },
+            data: { media: CREATED_COVER, previousFeatured: { id: PREVIOUS_ID } },
             error: undefined
         });
 
         const res = await app.request(URL, requestCover());
         const body = await res.json();
 
-        // The client renders the old photo differently depending on this, so a
-        // response that dropped it would leave an archived photo on screen.
+        // That row is soft-deleted server-side, so a response that dropped its
+        // id would leave a client holding a photo that no longer exists.
         expect(body.data.previousFeatured.id).toBe(PREVIOUS_ID);
-        expect(body.data.previousFeatured.disposition).toBe('archived');
     });
 
     it('does not refuse a full gallery — that refusal was the bug', async () => {
         // The plan allows 15 and the owner is at 15. The old flow answered
-        // LIMIT_REACHED here; this route must not.
+        // LIMIT_REACHED here; this route must not. The swap deletes the cover
+        // it replaces, so it moves the gallery by zero either way.
         mockGetRemainingLimit.mockReturnValue(15);
 
         const res = await app.request(URL, requestCover());

@@ -5299,10 +5299,9 @@ export const accommodationMediaApi = {
      * it, which is what lets the server waive the gallery cap safely here.
      *
      * @param params - Accommodation ID and media body
-     * @returns The created cover, plus what became of the one it replaced —
-     *   `demoted` (it joined the gallery) or `archived` (the gallery had no
-     *   room, so it left the visible set and can be restored later). `null`
-     *   when the accommodation had no cover before.
+     * @returns The created cover, plus the id of the one it replaced — which is
+     *   soft-deleted in the same transaction, unconditionally, so the swap costs
+     *   the gallery nothing. `null` when the accommodation had no cover before.
      */
     addFeaturedMedia({
         id,
@@ -5320,10 +5319,7 @@ export const accommodationMediaApi = {
     }): Promise<
         ApiResult<{
             readonly media: AccommodationMediaRow;
-            readonly previousFeatured: {
-                readonly id: string;
-                readonly disposition: 'demoted' | 'archived';
-            } | null;
+            readonly previousFeatured: { readonly id: string } | null;
         }>
     > {
         return apiClient.postProtected({
