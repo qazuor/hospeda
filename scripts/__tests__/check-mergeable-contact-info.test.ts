@@ -28,6 +28,7 @@ import {
     collectModelFiles,
     declaresContactInfoMergeable,
     findClassBodies,
+    findClassBodyBrace,
     findContactInfoTables,
     findMatchingDelimiter,
     findOwningClassBodies,
@@ -159,6 +160,26 @@ const legacyTable = gastronomies;`;
             'legacyTable'
         ]);
     });
+
+    it('follows the chain TRANSITIVELY, not one hop', () => {
+        // One hop stopped here: `catalogTable` is bound to the ALIAS, never to
+        // `gastronomies` itself, so neither pattern matched it.
+        const src = `import { gastronomies as gastroTable } from './x';
+const catalogTable = gastroTable;`;
+        expect([...findTableAliases(src, 'gastronomies')].sort()).toEqual([
+            'catalogTable',
+            'gastroTable',
+            'gastronomies'
+        ]);
+    });
+
+    it('picks up a rebinding that carries a type annotation', () => {
+        const src = 'const catalogTable: typeof gastronomies = gastronomies;';
+        expect([...findTableAliases(src, 'gastronomies')].sort()).toEqual([
+            'catalogTable',
+            'gastronomies'
+        ]);
+    });
 });
 
 describe('stripComments', () => {
@@ -220,6 +241,46 @@ describe('findClassBodies', () => {
         expect(bodies.map((c) => c.name)).toEqual(['A', 'B']);
         expect(bodies[1]?.body).toContain('gastronomies');
         expect(bodies[1]?.body).not.toContain('users');
+    });
+
+    it('does not mistake a brace INSIDE a type argument for the class body', () => {
+        // `indexOf('{')` from the class head landed on the generic's brace, so
+        // the "body" came out as ` id: string ` and the class disappeared.
+        const src = stripComments(
+            'class M extends BaseModelImpl<{ id: string }> { protected table = gastronomies; }'
+        );
+        const bodies = findClassBodies(src);
+
+        expect(bodies).toHaveLength(1);
+        expect(bodies[0]?.body).toContain('protected table = gastronomies;');
+        expect(bodies[0]?.body).not.toContain('id: string');
+    });
+
+    it('names an anonymous default-export class, instead of calling it `extends`', () => {
+        const bodies = findClassBodies(
+            stripComments('export default class extends BaseModelImpl { protected table = g; }')
+        );
+
+        expect(bodies).toHaveLength(1);
+        expect(bodies[0]?.name).not.toBe('extends');
+        expect(bodies[0]?.body).toContain('protected table = g;');
+    });
+});
+
+describe('findClassBodyBrace', () => {
+    it('skips a balanced type-argument list', () => {
+        const src = 'class M extends Base<{ id: string }> { x }';
+        expect(findClassBodyBrace(src, src.indexOf('extends'))).toBe(src.lastIndexOf('{'));
+    });
+
+    it('is not unbalanced by an arrow inside the type argument', () => {
+        const src = 'class M extends Base<(x: number) => { y: string }> { z }';
+        expect(findClassBodyBrace(src, src.indexOf('extends'))).toBe(src.lastIndexOf('{'));
+    });
+
+    it('returns the first brace when there is no type argument at all', () => {
+        const src = 'class M { z }';
+        expect(findClassBodyBrace(src, 'class M'.length)).toBe(src.indexOf('{'));
     });
 });
 
@@ -747,6 +808,236 @@ ${DECLARED}
             'GastronomyPublicModel'
         ]);
         expect(findOwningClassBody(source, 'gastronomies')?.name).toBe('GastronomyModel');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Round 3: the shapes that survived rounds 1 and 2
+//
+// Every fixture here pairs the exotic spelling with the healthy, declared
+// `gastronomy.model.ts`. That pairing is what makes the assertion bite: one
+// declaring owner is enough for a table to pass, so a guard blind to the
+// second owner does not report it as unchecked — it prints "All checks
+// passed" and says nothing at all. Measured before the fix: every one of
+// these returned exit code 0.
+// ---------------------------------------------------------------------------
+
+/** A tree with the healthy declared model PLUS one extra model source. */
+function treeWithSecondOwner(path: string, source: string): string {
+    return makeTree({
+        [SCHEMA_PATH]: SCHEMA_SOURCE,
+        'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED),
+        [`packages/db/src/models/gastronomy/${path}`]: source
+    });
+}
+
+const IMPORT_TABLE = "import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';";
+
+describe('run() — evasion (g): an owning model in a file NOT named `*.model.ts`', () => {
+    it('sees it, so its missing declaration is reported', () => {
+        // The schema side stopped filtering by `*.dbschema.ts` in round 2 and
+        // the models side kept the identical bug: 31 of the 148 `.ts` files
+        // under `packages/db/src/models/**` carry no `.model.ts` suffix, and
+        // `gastronomy/gastronomy-catalog-filters.ts` is one of them today.
+        const root = treeWithSecondOwner(
+            'gastronomy-catalog-filters.ts',
+            `${IMPORT_TABLE}
+
+export class GastronomyCatalogFilterModel extends BaseModelImpl<Gastronomy> {
+    protected table = gastronomies;
+}
+`
+        );
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyCatalogFilterModel');
+        expect(output).not.toContain('All checks passed');
+    });
+});
+
+describe('run() — evasion (h): a type annotation on `protected table`', () => {
+    it('still recognises the class as an owner', () => {
+        const root = treeWithSecondOwner(
+            'gastronomyAnnotated.model.ts',
+            `${IMPORT_TABLE}
+
+export class GastronomyAnnotatedModel extends BaseModelImpl<Gastronomy> {
+    protected table: typeof gastronomies = gastronomies;
+}
+`
+        );
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyAnnotatedModel');
+    });
+});
+
+describe('run() — evasion (i): an inline object type in the class heading', () => {
+    it('still finds the class body, so the owner does not vanish', () => {
+        const root = treeWithSecondOwner(
+            'gastronomyInline.model.ts',
+            `${IMPORT_TABLE}
+
+export class GastronomyInlineModel extends BaseModelImpl<{ id: string }> {
+    protected table = gastronomies;
+}
+`
+        );
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyInlineModel');
+    });
+});
+
+describe('run() — evasion (j): an alias resolved in TWO hops', () => {
+    it('recognises the twice-rebound table as the same table', () => {
+        const root = treeWithSecondOwner(
+            'gastronomyHop.model.ts',
+            `import { gastronomies as gastroTable } from '../../schemas/gastronomy/gastronomy.dbschema';
+
+const catalogTable = gastroTable;
+
+export class GastronomyHopModel extends BaseModelImpl<Gastronomy> {
+    protected table = catalogTable;
+}
+`
+        );
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyHopModel');
+    });
+});
+
+describe('run() — evasion (k): a namespace-qualified table', () => {
+    it('recognises `protected table = schema.gastronomies;` as ownership', () => {
+        const root = treeWithSecondOwner(
+            'gastronomyNamespace.model.ts',
+            `import * as schema from '../../schemas';
+
+export class GastronomyNamespaceModel extends BaseModelImpl<Gastronomy> {
+    protected table = schema.gastronomies;
+}
+`
+        );
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyNamespaceModel');
+    });
+});
+
+describe('run() — evasion (l): the column name written with BACKTICKS', () => {
+    it('discovers it, instead of the column not existing at all', () => {
+        // Worse than unchecked: a single-quote-only scan reported neither a
+        // violation nor an unattributed column. The column was absent from
+        // the run's own account of what it had looked at.
+        const root = treeWithExtraTable(`export const venues = pgTable('venues', {
+    contactInfo: jsonb(\`contact_info\`)
+});`);
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('venues');
+        expect(output).not.toContain('All checks passed');
+    });
+});
+
+describe('run() — evasion (m): a regex literal holding a lone quote', () => {
+    it('reports every column it can only read as a string, rather than skipping it', () => {
+        // `stripComments` does not parse regex literals, so the apostrophe in
+        // `/^[a-z0-9'-]+$/` opens a "string" that swallows the rest of the
+        // file. Every later column then landed inside a string range and was
+        // `continue`d — not a violation, not unattributed, just gone. That is
+        // precisely the "I cannot tell" read as "safe" the header forbids.
+        const root = treeWithExtraTable(`const SLUG_RE = /^[a-z0-9'-]+$/;
+
+export const venues = pgTable('venues', {
+    contactInfo: jsonb('contact_info')
+});`);
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('could not be attributed');
+        expect(output).toContain('inside a string literal');
+        expect(output).not.toContain('All checks passed');
+    });
+
+    it('reports it at the column position, not at the regex', () => {
+        const root = treeWithExtraTable(`const SLUG_RE = /^[a-z0-9'-]+$/;
+
+export const venues = pgTable('venues', {
+    contactInfo: jsonb('contact_info')
+});`);
+
+        // SCHEMA_SOURCE is 7 lines plus the blank the fixture joins on, so the
+        // extra block starts at line 9 and the column is on line 12.
+        expect(runQuiet(root).output).toContain(`${SCHEMA_PATH}:12`);
+    });
+});
+
+describe('run() — the false positives round 2 left behind', () => {
+    it('accepts `public override readonly`, which widens a protected member legally', () => {
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': `${IMPORT_TABLE}
+
+export class GastronomyModel extends BaseModelImpl<Gastronomy> {
+    protected table = gastronomies;
+    public override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+}
+`
+        });
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(0);
+        expect(output).not.toContain("does not declare 'contactInfo'");
+    });
+
+    it('names an anonymous default-export model instead of reporting `:: extends`', () => {
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': `${IMPORT_TABLE}
+
+export default class extends BaseModelImpl<Gastronomy> {
+    protected table = gastronomies;
+}
+`
+        });
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).not.toContain(':: extends');
+        expect(output).toContain('(anonymous default export)');
+    });
+});
+
+describe('discovery is deduplicated per TABLE, not per file', () => {
+    it('counts one table when two schema files declare the same table var', () => {
+        // Ownership is resolved from the table's variable NAME across every
+        // model file, so a second definition adds no verdict — only a count,
+        // which is the number MIN_KNOWN_CONTACT_INFO_TABLES floors. Inflating
+        // it is how a duplicate could mask a table discovery had truly lost.
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/schemas/gastronomy/gastronomy.legacy.dbschema.ts': SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
+        });
+
+        expect(findContactInfoTables(root).map((t) => t.tableVar)).toEqual(['gastronomies']);
+        expect(runQuiet(root).code).toBe(0);
     });
 });
 
