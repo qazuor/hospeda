@@ -82,8 +82,8 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
     description:
         'Register an already-uploaded URL as the accommodation cover. The row is ' +
         'created already featured and the photo it replaces is DELETED in the same ' +
-        'transaction — soft-deleted, so it disappears from the listing and frees its ' +
-        'gallery slot, while its stored file is kept. Unlike POST /:id/media this ' +
+        'transaction — soft-deleted, so it disappears from the listing while its ' +
+        'stored file is kept. Unlike POST /:id/media this ' +
         'does not consume a plan photo slot, because the cover is not a gallery ' +
         'item (HOS-791). Requires ' +
         'EDIT_ACCOMMODATION_INFO; the service layer enforces UPDATE_OWN + ownership.',

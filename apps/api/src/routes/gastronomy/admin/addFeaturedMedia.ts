@@ -59,8 +59,8 @@ export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
     description:
         'Registers an already-uploaded URL as the gastronomy listing cover. The row is created ' +
         'already featured and the photo it replaces is DELETED in the same transaction ' +
-        '— soft-deleted, so it disappears from the listing and frees its gallery ' +
-        'slot, while its stored file is kept. Unlike POST /:id/media this does not ' +
+        '— soft-deleted, so it disappears from the listing while its stored file ' +
+        'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'Media'],
