@@ -2,14 +2,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // vi.hoisted() runs before vi.mock() factories so variables declared here can
 // be safely referenced inside mock factories without temporal dead zone issues.
-const { execRef, mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug } = vi.hoisted(() => {
-    // execRef.fn is replaced per-test to control what tx.execute() returns.
-    const execRef = { fn: vi.fn().mockResolvedValue({ rows: [] }) };
-    const mockPlanGetById = vi.fn();
-    const mockPlanGetBySlug = vi.fn();
-    const mockCatalogGetBySlug = vi.fn();
-    return { execRef, mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug };
-});
+const { execRef, mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug, hydrationRowsRef } =
+    vi.hoisted(() => {
+        // execRef.fn is replaced per-test to control what tx.execute() returns.
+        const execRef = { fn: vi.fn().mockResolvedValue({ rows: [] }) };
+        const mockPlanGetById = vi.fn();
+        const mockPlanGetBySlug = vi.fn();
+        const mockCatalogGetBySlug = vi.fn();
+        // HOS-1176: rows returned by the batched SELECT inside
+        // `hydrateSubscriptionProductDomains` — controls what the "real DB" would
+        // answer for the `billing_subscriptions.product_domain` column when a mock
+        // subscription arrives WITHOUT `productDomain` (the realistic shape
+        // `getByCustomerId()` actually returns).
+        const hydrationRowsRef: { rows: Array<{ id: string; productDomain: string | null }> } = {
+            rows: []
+        };
+        return {
+            execRef,
+            mockPlanGetById,
+            mockPlanGetBySlug,
+            mockCatalogGetBySlug,
+            hydrationRowsRef
+        };
+    });
 
 // Mock external dependencies before importing the module under test
 // (kept for the 3 passing tests that still reference getPlanBySlug/getAddonBySlug)
@@ -72,7 +87,21 @@ vi.mock('@repo/db', () => ({
             execute: vi.fn((..._args: unknown[]) => execRef.fn(..._args))
         };
         return fn(tx);
-    })
+    }),
+    // HOS-1176: `hydrateSubscriptionProductDomains` (imported transitively via
+    // `subscription-product-domain.js`) reads these three off `@repo/db` when
+    // a subscription arrives without `productDomain` already set. Only the
+    // shape matters — `inArray`/`billingSubscriptions` are opaque markers the
+    // mocked `where()`/`select()` below never actually inspect.
+    getDb: vi.fn(() => ({
+        select: vi.fn(() => ({
+            from: vi.fn(() => ({
+                where: vi.fn(() => Promise.resolve(hydrationRowsRef.rows))
+            }))
+        }))
+    })),
+    billingSubscriptions: { id: 'id', productDomain: 'productDomain' },
+    inArray: vi.fn((col: unknown, values: unknown[]) => ({ col, values }))
 }));
 
 vi.mock('drizzle-orm', () => ({
@@ -107,6 +136,17 @@ function setExecError(error: Error): void {
     execRef.fn = vi.fn().mockRejectedValue(error);
 }
 
+/**
+ * Configure what the batched `productDomain` SELECT inside
+ * `hydrateSubscriptionProductDomains` returns (HOS-1176). Only relevant for
+ * mock subscriptions that omit `productDomain` entirely — the realistic
+ * shape `billing.subscriptions.getByCustomerId()` actually returns, per
+ * `hydrateSubscriptionProductDomains`'s own doc.
+ */
+function setHydrationRows(rows: Array<{ id: string; productDomain: string | null }>): void {
+    hydrationRowsRef.rows = rows;
+}
+
 /** Build a minimal mock QZPay billing client */
 function buildMockBilling(
     subscriptions: unknown[],
@@ -134,6 +174,9 @@ describe('recalculateAddonLimitsForCustomer', () => {
         vi.clearAllMocks();
         // Default: no purchases
         setExecResult([]);
+        // Default: no rows to hydrate (most tests inject `productDomain`
+        // directly on the mock subscription, so hydration never fires).
+        setHydrationRows([]);
 
         // Default plan resolution: getById returns NOT_FOUND → getBySlug fallback
         mockPlanGetById.mockResolvedValue({
@@ -386,6 +429,7 @@ describe('recalculateAddonLimitsForCustomer — commerce verticals (HOS-688 AC-1
     beforeEach(() => {
         vi.clearAllMocks();
         setExecResult([]);
+        setHydrationRows([]);
         mockPlanGetById.mockResolvedValue({
             success: false,
             error: { code: 'NOT_FOUND', message: 'plan not found by id' }
@@ -667,5 +711,201 @@ describe('recalculateAddonLimitsForCustomer — commerce verticals (HOS-688 AC-1
         // the old path produced no reason because it produced no failure.
         expect(result.reason).toContain('max_gastronomys');
         expect(mockSet).not.toHaveBeenCalled();
+    });
+});
+
+describe('recalculateAddonLimitsForCustomer — realistic getByCustomerId shape (HOS-1176)', () => {
+    /**
+     * The other two describe blocks in this file inject `productDomain`
+     * directly on the mock subscription literal (e.g.
+     * `{ status: 'active', planId: 'x', productDomain: 'gastronomy' }`).
+     * That is NOT what `billing.subscriptions.getByCustomerId()` actually
+     * returns: qzpay-core's real mapper (`mapDrizzleSubscriptionToCore` in
+     * qzpay `2.1.0`, the version pinned in this repo's `pnpm-lock.yaml`)
+     * builds `QZPaySubscriptionWithHelpers` field-by-field off
+     * `QZPaySubscription`'s own interface, which does not declare
+     * `productDomain` — a qzpay-drizzle-only column added on top of it. Every
+     * real subscription object therefore arrives with `productDomain`
+     * `undefined`, never the hand-injected string the other two blocks use.
+     *
+     * That gap is exactly what let HOS-1176 ship and stay green for 13 days:
+     * the mocks above never exercised the code path where `productDomain` is
+     * missing and must be hydrated from a separate SELECT. These tests build
+     * mock subscriptions WITHOUT `productDomain` — matching the real mapper's
+     * output — and route the hydration read through `setHydrationRows()`
+     * instead, so a regression in the recalculation service's call to
+     * `hydrateSubscriptionProductDomains` fails these tests the same way it
+     * fails in production: silently, as `outcome: 'failed'`.
+     */
+    beforeEach(() => {
+        vi.clearAllMocks();
+        setExecResult([]);
+        setHydrationRows([]);
+        mockPlanGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found by id' }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found' }
+        });
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'addon not found' }
+        });
+    });
+
+    it('raises a gastronomy add-on cap when the raw subscription has no productDomain field', async () => {
+        // Arrange — the addon purchase + catalogue definition, as HOS-688's
+        // fixtures already model them.
+        setExecResult([
+            {
+                addonSlug: 'extra-gastronomies-1',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_gastronomies', increase: 1 }]
+            }
+        ]);
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-gastronomies-1',
+                affectsLimitKey: 'max_gastronomies',
+                limitIncrease: 1
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-gastronomy',
+                slug: 'gastronomy-premium',
+                limits: { max_gastronomies: 1 }
+            }
+        });
+
+        // The raw subscription — no `productDomain` key at all, matching the
+        // real qzpay-core mapper's output.
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        const billing = buildMockBilling(
+            [{ id: 'sub-gastro-1', status: 'active', planId: 'gastronomy-premium' }],
+            { setFn: mockSet }
+        );
+        // The batched hydration SELECT is what actually tells the service
+        // this subscription is a gastronomy one.
+        setHydrationRows([{ id: 'sub-gastro-1', productDomain: 'gastronomy' }]);
+
+        // Act
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-realistic-gastronomy',
+            limitKey: 'max_gastronomies',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        // Assert — the cap actually moves.
+        expect(result.outcome).toBe('success');
+        expect(result.newMaxValue).toBe(2); // base(1) + addon(1)
+        expect(mockSet).toHaveBeenCalledWith(
+            expect.objectContaining({ limitKey: 'max_gastronomies', maxValue: 2 })
+        );
+    });
+
+    it('raises an experience add-on cap when the raw subscription has no productDomain field', async () => {
+        setExecResult([
+            {
+                addonSlug: 'extra-experiences-1',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_experiences', increase: 1 }]
+            }
+        ]);
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-experiences-1',
+                affectsLimitKey: 'max_experiences',
+                limitIncrease: 1
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-experience',
+                slug: 'experience-premium',
+                limits: { max_experiences: 1 }
+            }
+        });
+
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        const billing = buildMockBilling(
+            [{ id: 'sub-exp-1', status: 'active', planId: 'experience-premium' }],
+            { setFn: mockSet }
+        );
+        setHydrationRows([{ id: 'sub-exp-1', productDomain: 'experience' }]);
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-realistic-experience',
+            limitKey: 'max_experiences',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).toBe('success');
+        expect(result.newMaxValue).toBe(2); // base(1) + addon(1)
+        expect(mockSet).toHaveBeenCalledWith(
+            expect.objectContaining({ limitKey: 'max_experiences', maxValue: 2 })
+        );
+    });
+
+    it('still resolves an accommodation add-on when the raw subscription has no productDomain field (fail-open, symmetric case)', async () => {
+        // The accommodation domain fails OPEN by design (subscriptionMatchesDomain),
+        // so this path "worked by accident" even before HOS-1176's fix — this
+        // test guards that the fix does not disturb that fail-open behaviour.
+        // The hydration SELECT answers `null` here (a genuinely legacy row,
+        // column exists but is NULL), which must still read as accommodation.
+        setExecResult([
+            {
+                addonSlug: 'extra-accommodations-5',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_accommodations', increase: 5 }]
+            }
+        ]);
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-accommodations-5',
+                affectsLimitKey: 'max_accommodations',
+                limitIncrease: 5
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-owner',
+                slug: 'owner-premium',
+                limits: { max_accommodations: 3 }
+            }
+        });
+
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        const billing = buildMockBilling(
+            [{ id: 'sub-owner-1', status: 'active', planId: 'owner-premium' }],
+            { setFn: mockSet }
+        );
+        setHydrationRows([{ id: 'sub-owner-1', productDomain: null }]);
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-realistic-accommodation',
+            limitKey: 'max_accommodations',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).toBe('success');
+        expect(result.newMaxValue).toBe(8); // base(3) + addon(5)
+        expect(mockSet).toHaveBeenCalledWith(
+            expect.objectContaining({ limitKey: 'max_accommodations', maxValue: 8 })
+        );
     });
 });

@@ -39,10 +39,41 @@ vi.mock('../../src/middlewares/billing', () => ({
 //     .from(userRole)
 //     .where(inArray(userRole.userId, missing))
 // No `.limit()` — the chain ends at `.where()` which returns a promise.
-const mockSelect = vi.fn();
+//
+// HOS-847: per-owner resolution now goes through the REAL
+// `hydrateSubscriptionProductDomains` (from @repo/service-core, not mocked),
+// which issues its OWN
+// `getDb().select({id, productDomain}).from(billingSubscriptions).where(...)`
+// — a second, distinct caller of the same shared `mockSelect`. Route by the
+// table passed to `.from(...)` (object identity, not shape) so the hydration
+// query gets a real array instead of the user_role chain (which has no
+// `.where` after `.from`, and would otherwise throw and trip every owner's
+// fail-open path — exactly the regression this fix closes). Resolving `[]` is
+// the safe default for every PRE-EXISTING fixture here (none set a
+// productDomain): unmatched ids hydrate to `productDomain: null`, which every
+// domain predicate treats as "not an add-on" — unchanged prior behavior.
+const { billingSubscriptionsTableMarker, mockSelect, mockHydrationRows } = vi.hoisted(() => ({
+    billingSubscriptionsTableMarker: {
+        id: 'billing_subscriptions.id',
+        productDomain: 'billing_subscriptions.product_domain'
+    },
+    mockSelect: vi.fn(),
+    mockHydrationRows: vi.fn().mockResolvedValue([])
+}));
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({ select: mockSelect })),
+    getDb: vi.fn(() => ({
+        select: vi.fn((...args: unknown[]) => ({
+            from: vi.fn((table: unknown) => {
+                if (table === billingSubscriptionsTableMarker) {
+                    return { where: mockHydrationRows };
+                }
+                return mockSelect(...args).from(table);
+            })
+        }))
+    })),
     accommodations: { id: 'accommodations.id', ownerId: 'accommodations.ownerId' },
+    billingSubscriptions: billingSubscriptionsTableMarker,
+    inArray: (column: unknown, values: unknown[]) => ({ inArray: column, values }),
     users: { id: 'users.id' },
     userRole: { userId: 'user_role.user_id', role: 'user_role.role' }
 }));

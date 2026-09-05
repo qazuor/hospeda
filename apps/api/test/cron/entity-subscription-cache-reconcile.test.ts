@@ -236,6 +236,39 @@ describe('entity-subscription-cache-reconcile — drift correction', () => {
         });
     });
 
+    // HOS-847 — a recurring add-on's own MercadoPago preapproval gets its own
+    // billing_subscriptions row (product_domain = 'addon'), separate from the
+    // owner's real accommodation subscription. Without domain isolation this
+    // row would be the only "subscription" this owner has, and
+    // isAccommodationSubscription's accommodation fail-open would count it as
+    // the accommodation subscription — flipping the accommodation cache to
+    // 'active' for an owner whose real plan may be lapsed or nonexistent.
+    it('writes the NEGATIVE row for an owner whose only subscription is a recurring add-on', async () => {
+        queueReads({
+            accommodations: [{ id: 'acc-1', ownerId: 'owner-addon-only' }],
+            subscriptions: [
+                {
+                    ownerId: 'owner-addon-only',
+                    id: 'sub-addon',
+                    status: 'active',
+                    planId: 'plan-addon-extra-accommodations-5',
+                    productDomain: 'addon',
+                    createdAt: new Date('2026-05-01')
+                }
+            ],
+            existing: []
+        });
+
+        await entitySubscriptionCacheReconcileJob.handler(buildCtx());
+
+        expect(inserted[0]).toMatchObject({
+            entityId: 'acc-1',
+            subscriptionId: null,
+            status: 'none',
+            planId: null
+        });
+    });
+
     it('prunes a row whose accommodation no longer exists', async () => {
         queueReads({
             accommodations: [{ id: 'acc-1', ownerId: 'owner-a' }],

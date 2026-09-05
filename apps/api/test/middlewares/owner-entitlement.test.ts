@@ -57,15 +57,56 @@ vi.mock('../../src/middlewares/billing', () => ({
 // Mock the DB module — ownerEntitlementMiddleware uses getDb() to resolve
 // accommodation → ownerId joined onto the owner's `user_role` rows, and the
 // batch resolver uses it for the `inArray` hats query.
-const mockAccommodationSelect = vi.fn();
+//
+// HOS-847: `loadCustomerEntitlements`/`loadCustomerLimits` now call the REAL
+// `hydrateSubscriptionProductDomains` (from @repo/service-core, not mocked)
+// before filtering, which issues its own
+// `getDb().select({id, productDomain}).from(billingSubscriptions).where(...)`.
+// `mockAccommodationSelect` is a single mock shared across every `.select()`
+// call, so it must route by the table passed to `.from(...)` — otherwise the
+// accommodation-lookup's `fromChain` (which only has `.leftJoin`, never
+// `.where`) gets handed to the hydration call and every test throws
+// `.where is not a function`. Resolving `[]` for the hydration branch is the
+// safe default for every PRE-EXISTING fixture here (none set a productDomain):
+// an unmatched id hydrates to `productDomain: null`, which every domain
+// predicate treats as "not an add-on" / accommodation-open — the same
+// effective behavior these tests asserted before HOS-847.
+const { billingSubscriptionsTableMarker, mockAccommodationSelect, mockHydrationRows } = vi.hoisted(
+    () => ({
+        // The SAME object is exported as `billingSubscriptions` below — identity,
+        // not shape, is what `.from(table)` branches on.
+        billingSubscriptionsTableMarker: {
+            id: 'billing_subscriptions.id',
+            productDomain: 'billing_subscriptions.product_domain'
+        },
+        mockAccommodationSelect: vi.fn(),
+        // HOS-847: backs hydrateSubscriptionProductDomains's recovery SELECT.
+        // Defaults to `[]` (no fixture here sets productDomain, so every
+        // pre-existing test hydrates to `null` — accommodation fail-open,
+        // unchanged behavior). A test can override per-id via mockResolvedValueOnce.
+        mockHydrationRows: vi.fn().mockResolvedValue([])
+    })
+);
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
-        select: mockAccommodationSelect
+        select: vi.fn((...args: unknown[]) => ({
+            from: vi.fn((table: unknown) => {
+                if (table === billingSubscriptionsTableMarker) {
+                    return { where: mockHydrationRows };
+                }
+                // Not the hydration query — defer to the per-test accommodation
+                // stub, invoked lazily so its call count/args stay exactly what
+                // every pre-existing test already asserts.
+                return mockAccommodationSelect(...args).from(table);
+            })
+        }))
     })),
     accommodations: {
         id: 'accommodations.id',
         ownerId: 'accommodations.ownerId'
     },
+    billingSubscriptions: billingSubscriptionsTableMarker,
+    inArray: (column: unknown, values: unknown[]) => ({ inArray: column, values }),
     users: {
         id: 'users.id'
     },
@@ -222,6 +263,52 @@ describe('ownerEntitlementMiddleware', () => {
             expect(body.isSet).toBe(true);
             expect(body.hasRichDescription).toBe(true);
             expect(body.size).toBe(1);
+        });
+
+        // HOS-847: a recurring add-on's own MercadoPago preapproval is stored as
+        // its OWN billing_subscriptions row (product_domain = 'addon'). Without
+        // hydration + domain filtering, getByCustomerId()'s qzpay-core mapper
+        // never populates productDomain (HOS-934) — the un-hydrated fail-open
+        // predicate would treat this add-on row as the owner's accommodation
+        // subscription and grant its (irrelevant) plan's entitlements.
+        it("does NOT grant entitlements from a recurring add-on's own row (HOS-847)", async () => {
+            mockAccommodationLookup({ ownerId: 'host-addon-only', ownerRole: RoleEnum.HOST });
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-addon-only' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-addon-extra-accommodations',
+                    status: 'active',
+                    planId: 'plan-addon-extra-accommodations-5'
+                }
+            ]);
+            // The hydration recovery SELECT resolves this row's real domain.
+            mockHydrationRows.mockResolvedValueOnce([
+                { id: 'sub-addon-extra-accommodations', productDomain: 'addon' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-addon-extra-accommodations-5',
+                slug: 'addon-extra-accommodations-5',
+                entitlements: [EntitlementKey.CAN_USE_RICH_DESCRIPTION],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use(
+                '/accommodations/:accommodationId',
+                ownerEntitlementMiddleware({ paramName: 'accommodationId' })
+            );
+            app.get('/accommodations/:accommodationId', (c) => {
+                const ownerEntitlements = c.get('ownerEntitlements');
+                return c.json({ size: ownerEntitlements.size });
+            });
+
+            const res = await app.request('/accommodations/acc-001');
+            const body = await res.json();
+
+            // Assert — the add-on's own plan entitlements are NEVER granted.
+            expect(res.status).toBe(200);
+            expect(body.size).toBe(0);
         });
     });
 
@@ -673,6 +760,44 @@ describe('resolveOwnerLimitsForOwnerId (SPEC-211 T-007 AC-1.1)', () => {
             // PlanService was consulted for the fallback.
             expect(mockGetBySlug).toHaveBeenCalledWith('owner-basico');
             // billing.plans.get was NOT called (no active subscription to look up).
+            expect(mockBilling.plans.get).not.toHaveBeenCalled();
+        });
+    });
+
+    // HOS-847: the exact selection bug the plan's risk section calls out for
+    // this file — without hydration + domain filtering, an add-on's own
+    // preapproval row (never carrying a productDomain from getByCustomerId(),
+    // HOS-934) would be found by the un-hydrated fail-open predicate and its
+    // (empty/irrelevant) plan limits cached for 5 minutes instead of the real
+    // owner-basico fallback.
+    describe("HOS-847 — a recurring add-on's own row must not resolve owner limits", () => {
+        it('falls back to owner-basico when the only subscription is a recurring add-on', async () => {
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-addon-only' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-addon-extra-accommodations',
+                    status: 'active',
+                    planId: 'plan-addon-extra-accommodations-5'
+                }
+            ]);
+            mockHydrationRows.mockResolvedValueOnce([
+                { id: 'sub-addon-extra-accommodations', productDomain: 'addon' }
+            ]);
+            mockGetBySlug.mockResolvedValue({
+                success: true,
+                data: {
+                    slug: 'owner-basico',
+                    limits: { [LimitKey.MAX_AI_CHAT_PER_MONTH]: 20 },
+                    entitlements: []
+                }
+            });
+
+            const result = await resolveOwnerLimitsForOwnerId('owner-addon-only');
+
+            // Assert — owner-basico fallback, never the add-on's own plan.
+            expect(result.get(LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(20);
+            expect(mockGetBySlug).toHaveBeenCalledWith('owner-basico');
             expect(mockBilling.plans.get).not.toHaveBeenCalled();
         });
     });

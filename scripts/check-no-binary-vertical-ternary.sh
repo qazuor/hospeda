@@ -2,9 +2,11 @@
 # check-no-binary-vertical-ternary.sh
 #
 # HOS-1079 — eleven sites across apps/api decided a commerce vertical with a
-# binary ternary: `x === 'gastronomy' ? A : B`. `ProductDomainEnum` has FOUR
-# members (accommodation, gastronomy, experience, partner); every one of
-# those eleven silently answered `B` — `ProductDomainEnum.EXPERIENCE`,
+# binary ternary: `x === 'gastronomy' ? A : B`. `ProductDomainEnum` had FOUR
+# members at the time (accommodation, gastronomy, experience, partner; HOS-847
+# later added a fifth, 'addon', for a recurring add-on's own MercadoPago
+# preapproval — irrelevant to this guard, which is about commerce verticals
+# specifically); every one of those eleven silently answered `B` — `ProductDomainEnum.EXPERIENCE`,
 # `experienceService`, `experienceModel`, … — for ANY value that was not the
 # literal string 'gastronomy', including 'accommodation' and 'partner'. None
 # of the eleven raised.

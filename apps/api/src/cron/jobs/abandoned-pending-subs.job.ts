@@ -54,7 +54,7 @@ import {
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { checkSubscriptionStatusTransition } from '@repo/service-core';
+import { checkSubscriptionStatusTransition, excludeAddonDomainCondition } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
@@ -403,7 +403,12 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                             and(
                                 inArray(billingSubscriptions.status, [...PENDING_STATUSES]),
                                 lt(billingSubscriptions.createdAt, cutoff),
-                                isNull(billingSubscriptions.deletedAt)
+                                isNull(billingSubscriptions.deletedAt),
+                                // HOS-847: exclude a recurring add-on's own
+                                // preapproval row — abandoning it must not send the
+                                // customer a "your subscription was cancelled" email
+                                // (see the notification loop below).
+                                excludeAddonDomainCondition()
                             )
                         );
 
@@ -422,7 +427,9 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                         and(
                             inArray(billingSubscriptions.status, [...PENDING_STATUSES]),
                             lt(billingSubscriptions.createdAt, cutoff),
-                            isNull(billingSubscriptions.deletedAt)
+                            isNull(billingSubscriptions.deletedAt),
+                            // HOS-847: see the dry-run branch above.
+                            excludeAddonDomainCondition()
                         )
                     );
 

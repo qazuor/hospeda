@@ -477,7 +477,8 @@
             },
             "keepPanel": {
                 "title": "Elegí qué fichas seguís mostrando",
-                "intro": "El plan {plan} incluye {cap} de tus {active} fichas. Las que no elijas van a dejar de verse.",
+                "intro_one": "El plan {plan} incluye {cap} de tu {active} ficha. Si no la elegís, va a dejar de verse.",
+                "intro_other": "El plan {plan} incluye {cap} de tus {active} fichas. Las que no elijas van a dejar de verse.",
                 "when": "El cambio se aplica el {date}. Hasta entonces seguís con tu plan actual y todas tus fichas visibles.",
                 "whenNoDate": "El cambio se aplica al final del período que ya pagaste. Hasta entonces no cambia nada.",
                 "quotaNote": "Una ficha oculta sigue ocupando lugar en tu cupo: no vas a poder crear otra en su lugar. Vuelve a verse si subís de plan.",
