@@ -203,6 +203,8 @@
         "statusActive": "Ativo",
         "statusInactive": "Inativo",
         "statusDefault": "Padrão",
+        "statusUnlisted": "Não aparece na listagem pública",
+        "statusUnlistedHint": "Ativo e cobrando: oculto nas listagens públicas de planos",
         "actionActivate": "Ativar",
         "actionDeactivate": "Desativar",
         "actionEdit": "Editar",
