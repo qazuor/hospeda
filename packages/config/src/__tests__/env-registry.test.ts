@@ -267,8 +267,21 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * call/display form (no AR mobile 9); apps/web/src/lib/brand-phone.ts
  * derives the tel:/wa.me forms from it. Ships with a production-safe
  * default so it is not strictly required. 278 + 1 = 279.
+ *
+ * +1 = HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED (HOS-847, billing category,
+ * optional, api only) — feature flag for recurring add-on charging via a
+ * dedicated MercadoPago preapproval per add-on, ships dark (default false)
+ * until the full PR chain lands. 279 + 1 = 280.
+ *
+ * +1 = HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS (HOS-1144, testing category,
+ * optional, web only) — resolves every remote media URL to a local
+ * placeholder so CI never downloads an image from Cloudinary. Default off,
+ * set only by the workflows that build or serve apps/web. Landed on staging
+ * independently, off the same 279 base as HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED
+ * above — both merge in together, so the combined total is 279 + 2 = 281, not
+ * 280 (the value each side would compute alone against the shared base).
  */
-const EXPECTED_VAR_COUNT = 279;
+const EXPECTED_VAR_COUNT = 281;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

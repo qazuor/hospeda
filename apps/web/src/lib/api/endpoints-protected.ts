@@ -392,7 +392,11 @@ export const userApi = {
     /**
      * Get statistics for the authenticated user.
      *
-     * @returns Bookmark count, review count, and current plan info
+     * @returns Bookmark count, review count, current plan info, and how many
+     *   product domains carry a live subscription. `plan` is populated only
+     *   when `activeSubscriptionsCount` is exactly 1 — with 0 or 2+, `plan`
+     *   is `null` and the count is what a caller should render instead
+     *   (HOS-1066: see `resolveUserPlanSummary` in the API's `stats.ts`).
      *
      * @example
      * ```ts
@@ -405,6 +409,7 @@ export const userApi = {
             readonly bookmarkCount: number;
             readonly reviewCount: number;
             readonly plan: { readonly name: string; readonly status: string } | null;
+            readonly activeSubscriptionsCount: number;
         }>
     > {
         return apiClient.getProtected({ path: `${PROTECTED}/users/me/stats` });

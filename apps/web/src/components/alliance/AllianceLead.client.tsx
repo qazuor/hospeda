@@ -55,6 +55,7 @@ import {
     validateAllianceLeadSpecificFields
 } from '@/lib/forms/alliance-lead-message';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
+import { focusFirstInvalidField } from '@/lib/forms/focus-first-invalid-field';
 import { useScrollIntoViewWhen } from '@/lib/forms/use-scroll-into-view-when';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -368,6 +369,14 @@ export function AllianceLead({
 
         if (Object.keys(combinedErrors).length > 0) {
             setErrors(combinedErrors);
+            // Every field's DOM id is `al-<name>` (see the `id={fieldId}` /
+            // `id="al-message"` render sites below), the same `al` prefix +
+            // derivation `focusFirstInvalidField` (HOS-373 phase 2) expects —
+            // so no separate id map is needed here. The fields already exist
+            // in the DOM at this point (only their `aria-invalid` attribute
+            // has yet to flip on the next render), so this can run
+            // synchronously instead of waiting on an effect.
+            focusFirstInvalidField({ fieldNames: Object.keys(combinedErrors), prefix: 'al' });
             return;
         }
 
@@ -596,6 +605,16 @@ export function AllianceLead({
                 const fieldId = `al-${field.name}`;
                 const errorId = `${fieldId}-error`;
                 const hasError = !!errors[field.name];
+                // `benefitValue`'s static `required` flag is always `false`
+                // (see the doc comment on `AllianceLeadSpecificFieldConfig.required`
+                // in `alliance-lead-message.ts` — a static per-field flag can't
+                // express a rule that depends on the sibling `benefitType`
+                // value). `benefitValueApplicable` already computes that live
+                // condition for whether the field renders at all, and it is the
+                // same condition that makes it required, so it doubles as the
+                // required flag here (HOS-652).
+                const isFieldRequired =
+                    field.name === 'benefitValue' ? benefitValueApplicable : field.required;
                 const options =
                     field.name === 'category'
                         ? categoryOptions
@@ -617,7 +636,7 @@ export function AllianceLead({
                             htmlFor={fieldId}
                         >
                             {t(`alliance-leads.form.fields.${field.name}`, field.name)}
-                            {field.required && (
+                            {isFieldRequired && (
                                 <span
                                     className={styles.required}
                                     aria-hidden="true"
@@ -635,7 +654,7 @@ export function AllianceLead({
                                 className={`${styles.select}${hasError ? ` ${styles.inputError}` : ''}`}
                                 aria-describedby={hasError ? errorId : undefined}
                                 aria-invalid={hasError}
-                                required={field.required}
+                                required={isFieldRequired}
                             >
                                 <option value="">
                                     {t(
@@ -668,7 +687,7 @@ export function AllianceLead({
                                 className={`${styles.input}${hasError ? ` ${styles.inputError}` : ''}`}
                                 aria-describedby={hasError ? errorId : undefined}
                                 aria-invalid={hasError}
-                                required={field.required}
+                                required={isFieldRequired}
                                 {...(field.type === 'number' ? { min: 1, step: 1 } : {})}
                             />
                         )}

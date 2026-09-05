@@ -28,6 +28,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from '@playwright/test';
+import { isLocalMediaPlaceholderMode } from '@repo/media';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4321';
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
@@ -398,7 +399,18 @@ async function main() {
 
     mkdirSync(REPORT_DIR, { recursive: true });
 
-    const browser = await chromium.launch({ headless: true });
+    // HOS-1144 — second layer of the CI Cloudinary cost guard. The SSR side
+    // already rewrites remote media URLs to a local placeholder; this makes
+    // `res.cloudinary.com` unresolvable for the browser as well, so a URL that
+    // escaped the rewrite (a client island, which has no `process.env`) still
+    // cannot bill us. `~NOTFOUND` fails DNS, so the request never opens a
+    // socket — which also keeps the `networkidle` wait honest.
+    const browser = await chromium.launch({
+        headless: true,
+        args: isLocalMediaPlaceholderMode()
+            ? ['--host-resolver-rules=MAP res.cloudinary.com ~NOTFOUND']
+            : []
+    });
     const context = await browser.newContext({
         viewport: DESKTOP,
         locale: 'es-AR'

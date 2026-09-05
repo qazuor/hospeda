@@ -154,9 +154,17 @@ async function runRequiredUpload(args: {
     });
 
     if (counters) {
+        // Every status is named EXPLICITLY. This used to end in a bare
+        // `else counters.failures += 1`, which is a gate by exclusion: adding
+        // HOS-1144's `'skipped'` would have silently reported every image of
+        // every CI run as a tolerated failure, flipping the end-of-run tally to
+        // `warn` and printing "N image failure(s) tolerated" on a run where
+        // nothing failed. A new status must now be handled here or TypeScript
+        // leaves it uncounted rather than miscounted.
         if (outcome.status === 'uploaded') counters.uploaded += 1;
         else if (outcome.status === 'cached') counters.cached += 1;
-        else counters.failures += 1;
+        else if (outcome.status === 'skipped') counters.skippedPlaceholder += 1;
+        else if (outcome.status === 'failed') counters.failures += 1;
     }
 
     if (outcome.status === 'failed' && allowFallback) {

@@ -30,6 +30,7 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { isLocalMediaPlaceholderMode, isRemoteMediaUrl } from '@repo/media';
 import { ImageResponse } from '@vercel/og';
 import type { APIRoute } from 'astro';
 import {
@@ -160,6 +161,38 @@ function loadStaticAssets(): OgAssets {
     return assetsCache;
 }
 
+/**
+ * Strip a REMOTE `image` param while local-placeholder mode is on (HOS-1144).
+ *
+ * Satori fetches `props.src` server-side when it renders the photo card, which
+ * is a fourth, easily-missed route to a Cloudinary download — one that no
+ * `<img>` audit or browser-level block would ever catch, because the request
+ * comes out of the Node process. Removing the param is enough: `parseOgParams`
+ * derives `mode` from its presence, so the card falls back to BRAND mode,
+ * whose logo and hero images are already base64 data URIs read from local disk.
+ * Nothing is fetched at all.
+ *
+ * The params are copied rather than mutated — `url.searchParams` belongs to the
+ * request object.
+ *
+ * Exported for its unit test only: exercising it through `GET` would require
+ * the runtime font download the endpoint performs, so the suite would skip
+ * itself whenever CI has no egress — and this branch has to be provable
+ * offline. Astro ignores non-HTTP-method exports on an API route.
+ *
+ * @param searchParams - Query params exactly as received.
+ * @returns The same params, minus a remote `image` when the mode is active.
+ */
+export function stripRemoteOgImage(searchParams: URLSearchParams): URLSearchParams {
+    const image = searchParams.get('image');
+    if (!image || !isLocalMediaPlaceholderMode() || !isRemoteMediaUrl(image)) {
+        return searchParams;
+    }
+    const sanitized = new URLSearchParams(searchParams);
+    sanitized.delete('image');
+    return sanitized;
+}
+
 export const GET: APIRoute = async ({ url }) => {
     let fonts: OgFonts;
     try {
@@ -171,7 +204,7 @@ export const GET: APIRoute = async ({ url }) => {
         });
     }
 
-    const params = parseOgParams(url.searchParams);
+    const params = parseOgParams(stripRemoteOgImage(url.searchParams));
     const assets = loadStaticAssets();
     const element = buildOgElement(params, assets) as SatoriNode;
 

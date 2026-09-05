@@ -269,9 +269,9 @@
                 "ariaLabel": "Navegação de seções do formulário"
             },
             "slugRefresh": {
-                "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
+                "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome ou o tipo.",
                 "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
-                "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+                "checkbox": "Mudar também o endereço web para que ele siga essas mudanças"
             },
             "field": {
                 "name": "Nome",
@@ -431,7 +431,8 @@
             "action": {
                 "save": "Salvar",
                 "saving": "Salvando...",
-                "cancel": "Cancelar"
+                "cancel": "Cancelar",
+                "back": "Voltar"
             },
             "validation": {
                 "nameRequired": "O nome é obrigatório",
