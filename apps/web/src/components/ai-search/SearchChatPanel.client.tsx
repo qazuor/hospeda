@@ -48,8 +48,12 @@ import { useSearchChat } from './useSearchChat';
  * @property locale - Active locale for translations and detail links.
  * @property apiUrl - Base URL of the API server (e.g. `http://localhost:3001`).
  *   Passed by the Astro host from `import.meta.env.PUBLIC_API_URL`.
- * @property currentUrl - Full URL of the current page, used to build the
- *   post-login redirect href. Pass `Astro.url.href` from the host page.
+ * @property currentUrl - Same-origin relative path + query of the current page,
+ *   used to build the post-login redirect href. Pass
+ *   `` `${Astro.url.pathname}${Astro.url.search}` `` from the host page — NOT
+ *   `Astro.url.href`, which the signin page's open-redirect guard
+ *   (`resolveSafeReturnPath`, HOS-1170) rejects outright, absolute URL or not
+ *   (HOS-1185).
  * @property destinations - Catalog of city destinations for chip label
  *   resolution (SPEC-265 A3). A record of `{ [uuid]: name }` built from the
  *   `destinationsApi.list` result in the host page. When provided, the

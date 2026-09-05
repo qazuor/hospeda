@@ -16,8 +16,12 @@ import styles from './SearchChatPanel.module.css';
  * Props for {@link LoginCta}.
  *
  * @property locale - Active locale for translations and the redirect URLs.
- * @property currentUrl - Full URL of the current page, used to build the
- *   post-login redirect href. Pass `Astro.url.href` from the host page.
+ * @property currentUrl - Same-origin relative path + query of the current page,
+ *   used to build the post-login redirect href. Pass
+ *   `` `${Astro.url.pathname}${Astro.url.search}` `` from the host page — NOT
+ *   `Astro.url.href`, which the signin page's open-redirect guard
+ *   (`resolveSafeReturnPath`, HOS-1170) rejects outright, absolute URL or not
+ *   (HOS-1185).
  * @property t - Bound translation function (from `createTranslations`).
  */
 export interface LoginCtaProps {
