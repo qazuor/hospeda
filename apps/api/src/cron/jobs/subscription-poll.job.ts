@@ -31,6 +31,7 @@ import {
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
+    excludeAddonDomainCondition,
     getPromoCodeById,
     resolveFullPlanPriceCentavos
 } from '@repo/service-core';
@@ -552,7 +553,12 @@ async function reconcileActiveDiscountAmounts(params: {
                     eq(billingSubscriptions.status, SubscriptionStatusEnum.ACTIVE),
                     isNotNull(billingSubscriptions.promoCodeId),
                     isNotNull(billingSubscriptions.mpSubscriptionId),
-                    isNull(billingSubscriptions.deletedAt)
+                    isNull(billingSubscriptions.deletedAt),
+                    // HOS-847: a recurring add-on's own preapproval row is never
+                    // promo-eligible today, but this sweep must not depend on that
+                    // staying true — exclude it explicitly so a discount-amount
+                    // mutation is never issued against an add-on's preapproval.
+                    excludeAddonDomainCondition()
                 )
             );
         // The WHERE clause guarantees promoCodeId/mpSubscriptionId are non-null

@@ -68,11 +68,32 @@ vi.mock('../../../src/utils/env', () => ({
     }
 }));
 
+const { mockHydrationRows } = vi.hoisted(() => ({
+    // HOS-847: hasActiveAccommodationSub/hasSoftCancelledSub now hydrate via
+    // hydrateSubscriptionProductDomains (from @repo/service-core, unmocked)
+    // before filtering — it issues a real
+    // getDb().select({id, productDomain}).from(billingSubscriptions)
+    // .where(inArray(...)) for any fixture that lacks an explicit
+    // productDomain. Defaults to `[]`: an unmatched id hydrates to
+    // `productDomain: null`, the same accommodation fail-open every
+    // pre-existing fixture here already relied on. Tests that need a REAL
+    // (non-accommodation) domain override via mockResolvedValueOnce.
+    mockHydrationRows: vi.fn().mockResolvedValue([])
+}));
+
 vi.mock('@repo/db', () => {
     const insertChain = { values: vi.fn().mockResolvedValue(undefined) };
     return {
-        getDb: vi.fn(() => ({ insert: vi.fn(() => insertChain) })),
-        billingSubscriptions: { __table: 'billing_subscriptions' }
+        getDb: vi.fn(() => ({
+            insert: vi.fn(() => insertChain),
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: mockHydrationRows
+                }))
+            }))
+        })),
+        billingSubscriptions: { id: 'ID', productDomain: 'PRODUCT_DOMAIN' },
+        inArray: (column: unknown, values: unknown[]) => ({ inArray: column, values })
     };
 });
 
@@ -102,7 +123,14 @@ function makeContext() {
     };
 }
 
-function makeBillingMock(existingSubs: { status: string; cancelAtPeriodEnd?: boolean }[]) {
+function makeBillingMock(
+    existingSubs: {
+        id?: string;
+        status: string;
+        cancelAtPeriodEnd?: boolean;
+        productDomain?: string;
+    }[]
+) {
     const plan = {
         id: 'plan-basico',
         name: PLAN_SLUG,
@@ -223,7 +251,35 @@ describe('handleStartPaidSubscription — ALREADY_SUBSCRIBED guard (SPEC-262 H2)
 // ---------------------------------------------------------------------------
 
 describe('handleStartPaidSubscription — SPEC-239 commerce isolation in H2 guard', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockHydrationRows.mockResolvedValue([]);
+    });
+
+    // HOS-847 — this is a LIVE bug today, not a future add-on concern:
+    // getByCustomerId() never returns a `productDomain` field (HOS-934), so
+    // every fixture in the rest of this file that sets `productDomain`
+    // explicitly was simulating an ALREADY-hydrated object — masking that the
+    // real, un-hydrated shape hit the accommodation fail-open unconditionally.
+    // This test uses the REAL shape (no productDomain on the fixture) and
+    // arms the hydration recovery SELECT instead, proving a customer whose
+    // only subscription is gastronomy/experience/partner can start their
+    // accommodation plan TODAY.
+    it('does NOT block when the customer has ONLY an active gastronomy subscription (real getByCustomerId() shape, HOS-847)', async () => {
+        const billing = makeBillingMock([{ id: 'sub-gastro-1', status: 'active' }]);
+        mockHydrationRows.mockResolvedValueOnce([
+            { id: 'sub-gastro-1', productDomain: 'gastronomy' }
+        ]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
 
     it('does NOT block when customer has an active COMMERCE sub (product_domain=commerce)', async () => {
         // A customer with an active commerce subscription should be allowed to
