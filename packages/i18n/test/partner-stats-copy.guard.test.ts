@@ -163,3 +163,56 @@ describe('HOS-1063 AC-8 / NG-6 — the two subtrees stay separate and honest', (
         }
     });
 });
+
+describe('HOS-1063 — the panel copy is as tier-blind as the gating is', () => {
+    /**
+     * Every gate in this feature is deliberately blind to the partner's tier:
+     * a card is shown or withheld by `resolvePartnerLogoLink`, by what the
+     * partner's logo actually DOES, never by comparing `tier === 'gold'`. That
+     * is what lets HOS-1159 change which plans include a page of their own
+     * without touching a single gate.
+     *
+     * The copy had to be held to the same rule and was not. `views.notApplicable`
+     * — the ONE line in this panel a partner actually reads when a number is
+     * missing — said "Con el nivel oro tenés tu propia página" in all three
+     * locales. So the single tier-dependent statement in the feature was the one
+     * addressed to the customer, and the day the tiers move it becomes a false
+     * promise shown to the partner it is wrong about, while every gate around it
+     * keeps working.
+     *
+     * The guard watches the WHOLE subtree, not that one key: the next sentence
+     * to name a tier will not be the one already fixed.
+     */
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('%s names no partner tier anywhere in partnerStats', (locale) => {
+        const statsCopy = leaves(statsSubtree(locale)).join(' ').toLowerCase();
+
+        // Both tiers in all three languages. `plata`/`prata` are also ordinary
+        // words, but neither has any business in a statistics panel, so a hit is
+        // worth reading either way.
+        for (const tier of ['oro', 'gold', 'ouro', 'plata', 'silver', 'prata']) {
+            expect(statsCopy).not.toContain(tier);
+        }
+    });
+
+    /**
+     * The positive half: having removed the tier, the sentence still has to
+     * explain the absence, and it explains it by naming the SURFACE — that the
+     * logo goes somewhere other than a page on Hospeda. A guard that only
+     * forbade the tier word would be satisfied by deleting the sentence.
+     */
+    it.each([
+        ['es', /p[áa]gina/i],
+        ['en', /page/i],
+        ['pt', /p[áa]gina/i]
+    ] as const)('%s explains the absence in terms of the surface', (locale, surface) => {
+        const notApplicable = (statsSubtree(locale).views as Record<string, unknown>)
+            .notApplicable as string;
+
+        expect(notApplicable).toMatch(surface);
+        expect(notApplicable).toMatch(/hospeda/i);
+    });
+});

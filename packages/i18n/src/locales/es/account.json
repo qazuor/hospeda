@@ -1569,7 +1569,7 @@
         "views": {
             "label": "Visitas a tu página",
             "help": "Personas que entraron a tu página de aliado.",
-            "notApplicable": "En tu nivel el logo no lleva a una página propia, así que no hay visitas para contar. Con el nivel oro tenés tu propia página."
+            "notApplicable": "Tu logo enlaza directo a tu sitio, así que no hay visitas a una página en Hospeda para contar. Si tu plan pasa a incluir una, sus visitas aparecen acá."
         },
         "clicks": {
             "label": "Clics en tu logo",

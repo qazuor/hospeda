@@ -1569,7 +1569,7 @@
         "views": {
             "label": "Visits to your page",
             "help": "People who opened your partner page.",
-            "notApplicable": "At your level the logo does not lead to a page of your own, so there are no visits to count. Gold level includes your own page."
+            "notApplicable": "Your logo links straight to your own site, so there are no visits to a page on Hospeda to count. If your plan comes to include one, its visits appear here."
         },
         "clicks": {
             "label": "Clicks on your logo",

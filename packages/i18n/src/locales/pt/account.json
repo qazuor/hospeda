@@ -1569,7 +1569,7 @@
         "views": {
             "label": "Visitas à sua página",
             "help": "Pessoas que entraram na sua página de parceiro.",
-            "notApplicable": "No seu nível o logo não leva a uma página própria, então não há visitas para contar. O nível ouro inclui a sua própria página."
+            "notApplicable": "O seu logo leva direto ao seu site, então não há visitas a uma página no Hospeda para contar. Se o seu plano passar a incluir uma, as visitas aparecem aqui."
         },
         "clicks": {
             "label": "Cliques no seu logo",
