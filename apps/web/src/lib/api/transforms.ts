@@ -968,12 +968,21 @@ export function toAccommodationDetailPageProps({
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
             // Normalize videos to `{ url, caption?, description? }`. Accepts both
             // the schema shape (objects) and legacy bare-URL strings so older
-            // accommodation records keep rendering. `moderationState` from the
-            // schema is intentionally dropped — public reads don't surface it.
+            // accommodation records keep rendering.
+            //
+            // HOS-1022: `moderationState` is read here ONLY to filter — it is
+            // still dropped from the output object, exactly as before. Nothing
+            // read `videos` on the public detail page prior to this ticket, so
+            // no filter existed; now that a video actually reaches the DOM as an
+            // `<iframe>`, an un-approved one must not render. A legacy bare-URL
+            // string entry carries no `moderationState` at all (it predates the
+            // field), which is treated as "not approved" — fail closed, matching
+            // the platform's moderation default, rather than assuming old data is
+            // safe to publish unreviewed.
             const videos = (rawVideos ?? [])
                 .map((entry) => {
                     if (typeof entry === 'string') {
-                        return entry.length > 0 ? { url: entry } : null;
+                        return entry.length > 0 ? { url: entry, moderationState: undefined } : null;
                     }
                     if (entry && typeof entry === 'object') {
                         const v = entry as Record<string, unknown>;
@@ -983,15 +992,27 @@ export function toAccommodationDetailPageProps({
                             url,
                             caption: typeof v.caption === 'string' ? v.caption : undefined,
                             description:
-                                typeof v.description === 'string' ? v.description : undefined
+                                typeof v.description === 'string' ? v.description : undefined,
+                            moderationState:
+                                typeof v.moderationState === 'string'
+                                    ? v.moderationState
+                                    : undefined
                         };
                     }
                     return null;
                 })
                 .filter(
-                    (entry): entry is { url: string; caption?: string; description?: string } =>
-                        entry !== null
-                );
+                    (
+                        entry
+                    ): entry is {
+                        url: string;
+                        caption?: string;
+                        description?: string;
+                        moderationState?: string;
+                    } => entry !== null
+                )
+                .filter((entry) => entry.moderationState === 'APPROVED')
+                .map(({ moderationState: _moderationState, ...rest }) => rest);
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
@@ -1917,6 +1938,8 @@ export function transformAccommodationEdit({
         currency: priceObj?.currency == null ? null : String(priceObj.currency),
         isAvailable: item.isAvailable == null ? true : Boolean(item.isAvailable),
         isFeatured: item.isFeatured == null ? false : Boolean(item.isFeatured),
+        featuredByEntitlement:
+            item.featuredByEntitlement == null ? false : Boolean(item.featuredByEntitlement),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)

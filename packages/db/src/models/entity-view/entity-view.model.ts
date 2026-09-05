@@ -28,6 +28,7 @@
  */
 
 import { EntityTypeEnum, type EntityViewStats, type TrackableEntityType } from '@repo/schemas';
+import { getLocalDayWindow, MARKET_TIMEZONE } from '@repo/utils';
 import { lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import type {
@@ -459,10 +460,11 @@ export class EntityViewModel {
      * The alias `"total"` needs no quoting, but `"unique"` (a PG reserved word)
      * MUST be double-quoted in the SQL text (SPEC-159 / SPEC-197 rule).
      *
-     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
-     * oldest calendar date in the range, so the SQL window covers exactly the
-     * same `windowDays` calendar dates as the service-layer gap-fill
-     * (`today - (windowDays - 1)` through `today` inclusive). The SQL uses
+     * **Window semantics:** `windowStart` is anchored to local midnight
+     * (`MARKET_TIMEZONE`) of the oldest calendar date in the range, so the
+     * SQL window covers exactly the same `windowDays` local calendar dates
+     * as the service-layer gap-fill (`today - (windowDays - 1)` through
+     * `today` inclusive, both in `MARKET_TIMEZONE`). The SQL uses
      * `viewed_at >= windowStart` (inclusive) to match that range.
      *
      * @param input - entityType, windowDays, and limit.
@@ -479,16 +481,11 @@ export class EntityViewModel {
         const logContext = { entityType, windowDays, limit };
 
         try {
-            // Anchor to UTC midnight of the oldest day in the window so the SQL
-            // range matches the service-layer gap-fill calendar exactly:
-            //   [today - (windowDays - 1) days .. today] inclusive = windowDays dates.
-            const nowUtc = new Date();
-            const todayUtc = new Date(
-                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-            );
-            const windowStart = new Date(
-                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
-            );
+            // Anchor to local midnight of the oldest day in the window (HOS-1169)
+            // so the SQL range matches the service-layer gap-fill calendar
+            // exactly: [today - (windowDays - 1) days .. today] inclusive, both
+            // computed in MARKET_TIMEZONE.
+            const { windowStart } = getLocalDayWindow({ windowDays });
 
             /*
              * SELECT
@@ -555,12 +552,17 @@ export class EntityViewModel {
      * rows present in the table.
      *
      * Date strings in the result are always in `'YYYY-MM-DD'` format, produced
-     * by `to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD')`.
+     * by `to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE MARKET_TIMEZONE), 'YYYY-MM-DD')`
+     * — grouped by LOCAL calendar day (HOS-1169), not UTC. `AT TIME ZONE` on a
+     * `timestamptz` column converts it to that zone's wall-clock time (as a
+     * plain `timestamp`), which is exactly what `DATE_TRUNC('day', ...)` needs
+     * to truncate.
      *
-     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
-     * oldest calendar date in the range so the SQL window covers exactly the same
-     * `windowDays` calendar dates as the service-layer gap-fill. The SQL uses
-     * `viewed_at >= windowStart` (inclusive) to include that day fully.
+     * **Window semantics:** `windowStart` is anchored to local midnight
+     * (`MARKET_TIMEZONE`) of the oldest calendar date in the range so the SQL
+     * window covers exactly the same `windowDays` local calendar dates as the
+     * service-layer gap-fill. The SQL uses `viewed_at >= windowStart`
+     * (inclusive) to include that day fully.
      *
      * @param input - windowDays (always 30 for V1 callers).
      * @param tx - Optional transaction client.
@@ -576,31 +578,27 @@ export class EntityViewModel {
         const logContext = { windowDays };
 
         try {
-            // Anchor to UTC midnight of the oldest day in the window so the SQL
-            // range matches the service-layer gap-fill calendar exactly:
-            //   [today - (windowDays - 1) days .. today] inclusive = windowDays dates.
-            const nowUtc = new Date();
-            const todayUtc = new Date(
-                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-            );
-            const windowStart = new Date(
-                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
-            );
+            // Anchor to local midnight of the oldest day in the window (HOS-1169)
+            // so the SQL range matches the service-layer gap-fill calendar
+            // exactly: [today - (windowDays - 1) days .. today] inclusive, both
+            // computed in MARKET_TIMEZONE.
+            const { windowStart } = getLocalDayWindow({ windowDays });
 
             /*
              * SELECT
-             *   to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+             *   to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE 'America/Argentina/Buenos_Aires'), 'YYYY-MM-DD')
+             *                                                        AS "date",
              *   entity_type                                          AS "entityType",
              *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
              *                                                        AS "total"
              * FROM entity_views
-             * WHERE viewed_at >= $windowStart   -- >= UTC-midnight of oldest gap-filled date
-             * GROUP BY DATE_TRUNC('day', viewed_at), entity_type
+             * WHERE viewed_at >= $windowStart   -- >= local midnight of oldest gap-filled date
+             * GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE 'America/Argentina/Buenos_Aires'), entity_type
              * ORDER BY "date" ASC, entity_type ASC
              */
             const rows = await db.execute<RawDailySeriesRow>(sql`
                 SELECT
-                    to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+                    to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE}), 'YYYY-MM-DD') AS "date",
                     entity_type                                          AS "entityType",
                     COUNT(DISTINCT (
                         visitor_hash,
@@ -608,7 +606,7 @@ export class EntityViewModel {
                     ))::int                                              AS "total"
                 FROM entity_views
                 WHERE viewed_at >= ${windowStart}
-                GROUP BY DATE_TRUNC('day', viewed_at), entity_type
+                GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE}), entity_type
                 ORDER BY "date" ASC, entity_type ASC
             `);
 
@@ -653,9 +651,9 @@ export class EntityViewModel {
      *
      * Date strings in the result are always in `'YYYY-MM-DD'` format.
      *
-     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
-     * oldest calendar date in the range, matching the convention in
-     * {@link getDailySeries}.
+     * **Window semantics:** `windowStart` is anchored to local midnight
+     * (`MARKET_TIMEZONE`) of the oldest calendar date in the range, matching
+     * the convention in {@link getDailySeries} (HOS-1169).
      *
      * @param input - windowDays and entityIds (must be non-empty).
      * @param tx - Optional transaction client.
@@ -676,13 +674,7 @@ export class EntityViewModel {
         const logContext = { windowDays, entityIdCount: entityIds.length };
 
         try {
-            const nowUtc = new Date();
-            const todayUtc = new Date(
-                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-            );
-            const windowStart = new Date(
-                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
-            );
+            const { windowStart } = getLocalDayWindow({ windowDays });
 
             // Build the IN-list using Drizzle's sql tag — values are bound as
             // parameterized placeholders, not interpolated strings.
@@ -693,19 +685,20 @@ export class EntityViewModel {
 
             /*
              * SELECT
-             *   to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+             *   to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE 'America/Argentina/Buenos_Aires'), 'YYYY-MM-DD')
+             *                                                        AS "date",
              *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
              *                                                        AS "total"
              * FROM entity_views
              * WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
              *   AND entity_id IN ($1, $2, …)
              *   AND viewed_at >= $windowStart
-             * GROUP BY DATE_TRUNC('day', viewed_at)
+             * GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE 'America/Argentina/Buenos_Aires')
              * ORDER BY "date" ASC
              */
             const rows = await db.execute<RawHostDailySeriesRow>(sql`
                 SELECT
-                    to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+                    to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE}), 'YYYY-MM-DD') AS "date",
                     COUNT(DISTINCT (
                         visitor_hash,
                         FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
@@ -714,7 +707,7 @@ export class EntityViewModel {
                 WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
                   AND entity_id IN (${entityIdList})
                   AND viewed_at >= ${windowStart}
-                GROUP BY DATE_TRUNC('day', viewed_at)
+                GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE})
                 ORDER BY "date" ASC
             `);
 
@@ -755,10 +748,11 @@ export class EntityViewModel {
      * Entity types with zero views in the window are NOT returned — the service
      * layer zero-fills missing entity types.
      *
-     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
-     * oldest calendar date in the range — day-granularity only, not sub-day
-     * precision. The SQL uses `viewed_at >= windowStart` (inclusive) to match
-     * the same `windowDays` calendar dates the service-layer zero-fill iterates.
+     * **Window semantics:** `windowStart` is anchored to local midnight
+     * (`MARKET_TIMEZONE`) of the oldest calendar date in the range —
+     * day-granularity only, not sub-day precision (HOS-1169). The SQL uses
+     * `viewed_at >= windowStart` (inclusive) to match the same `windowDays`
+     * calendar dates the service-layer zero-fill iterates.
      *
      * @param input - windowDays (7 or 30).
      * @param tx - Optional transaction client.
@@ -774,16 +768,11 @@ export class EntityViewModel {
         const logContext = { windowDays };
 
         try {
-            // Anchor to UTC midnight of the oldest day in the window so the SQL
-            // range matches the service-layer zero-fill calendar exactly:
-            //   [today - (windowDays - 1) days .. today] inclusive = windowDays dates.
-            const nowUtc = new Date();
-            const todayUtc = new Date(
-                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-            );
-            const windowStart = new Date(
-                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
-            );
+            // Anchor to local midnight of the oldest day in the window (HOS-1169)
+            // so the SQL range matches the service-layer zero-fill calendar
+            // exactly: [today - (windowDays - 1) days .. today] inclusive, both
+            // computed in MARKET_TIMEZONE.
+            const { windowStart } = getLocalDayWindow({ windowDays });
 
             /*
              * SELECT
@@ -792,7 +781,7 @@ export class EntityViewModel {
              *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
              *                                                          AS "total"
              * FROM entity_views
-             * WHERE viewed_at >= $windowStart   -- >= UTC-midnight of oldest calendar date
+             * WHERE viewed_at >= $windowStart   -- >= local midnight of oldest calendar date
              * GROUP BY entity_type
              */
             const rows = await db.execute<RawSummaryTotalsRow>(sql`

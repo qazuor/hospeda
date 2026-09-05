@@ -1131,6 +1131,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Your accommodation is not featured. This add-on features it automatically, no extra step needed.",
             "title": "Feature this accommodation",
             "body": "A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.",
             "scope": "Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.",

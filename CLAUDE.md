@@ -345,10 +345,20 @@ flag driven by **two independent sources** (SPEC-309 OQ-3):
   (`getRevalidationService().scheduleRevalidationBatch`) on every actual write (SPEC-309 G-3).
 - The 6-hourly backstop cron (renamed `featured-by-plan-reconcile` → `featured-by-entitlement-reconcile`,
   `apps/api/src/cron/jobs/featured-by-entitlement-reconcile.job.ts`) corrects drift from both sources.
-- `accommodations.isFeatured` (admin-curated, separate column) is now ALSO settable by an entitled owner
-  via a dedicated self-service toggle — `PATCH`/`GET /api/v1/protected/accommodations/:id/featured-toggle`
-  (SPEC-309 T-019/T-020) — gated by a live `FEATURED_LISTING` entitlement check (plan OR addon), not by
-  the general accommodation update schema.
+- **No owner-facing toggle (HOS-929, 2026-08-29 owner decision, superseding SPEC-309 T-019/T-020).**
+  Holding `FEATURED_LISTING` — plan or addon — features the listing automatically for as long as the
+  entitlement lasts, with no second owner gesture. The `PATCH`/`GET /api/v1/protected/accommodations/:id/featured-toggle`
+  routes, `setAccommodationFeaturedToggle`/`getAccommodationFeaturedEntitlement`, and
+  `FeaturedToggleSection.client.tsx` are gone. Every PUBLIC accommodation read
+  (`apps/api/src/routes/accommodation/public/*`) instead ORs the two source columns via
+  `resolvePublicIsFeatured()` (`apps/api/src/utils/accommodation-featured.ts`) before serializing
+  `isFeatured` — the OR lives ONLY in those routes, never in the generic service (shared with
+  admin/protected) or in the DB ordering resolver, so the two columns stay independent everywhere else.
+  `featuredByEntitlement` itself is never added to `AccommodationPublicSchema`, only to
+  `AccommodationProtectedSchema`/`AccommodationAdminSchema` (admin and the owner's own editor still see
+  both columns separately). The addon upsell for owners who do NOT hold the entitlement (HOS-728) is
+  restored as `FeaturedAddonOffer.astro` in the editor hub — SSR-only (no client island, no fetch on
+  mount), self-hiding once `isFeatured || featuredByEntitlement` is true.
 
 ### Local testing for billing entitlements (SPEC-143)
 
