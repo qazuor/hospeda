@@ -1,7 +1,8 @@
-import { PermissionEnum } from '@repo/schemas';
+import { PartnerContentReviewStateEnum, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { useToast } from '@/components/ui/ToastProvider';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import {
     usePartnerQuery,
@@ -9,7 +10,17 @@ import {
     useSendPartnerPaymentLinkMutation
 } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { formatCalendarShortDate } from '@/lib/format-helpers';
+import { formatCalendarShortDate, formatShortDate } from '@/lib/format-helpers';
+import { SendPaymentLinkCard } from './-components/SendPaymentLinkCard';
+
+/** Spanish labels for {@link PartnerContentReviewStateEnum}, plus "never submitted". */
+const CONTENT_REVIEW_STATE_LABELS: Record<PartnerContentReviewStateEnum, string> = {
+    [PartnerContentReviewStateEnum.PENDING]: 'Pendiente',
+    [PartnerContentReviewStateEnum.APPROVED]: 'Aprobado',
+    [PartnerContentReviewStateEnum.REJECTED]: 'Rechazado'
+};
+
+const NEVER_SUBMITTED_LABEL = 'Sin contenido enviado';
 
 export const Route = createFileRoute('/_authed/partners/$id')({
     component: PartnerViewPage,
@@ -24,6 +35,7 @@ function PartnerViewPage() {
     const sendLinkMutation = useSendPartnerPaymentLinkMutation(id);
     const manualPaymentMutation = useRegisterPartnerManualPaymentMutation(id);
     const [manualNote, setManualNote] = useState('');
+    const { addToast } = useToast();
 
     if (query.isLoading) {
         return <div className="p-6">Cargando partner...</div>;
@@ -67,6 +79,18 @@ function PartnerViewPage() {
                         <span className="font-medium">Lifecycle:</span> {partner.lifecycleState}
                     </div>
                     <div>
+                        <span className="font-medium">Revisión de contenido:</span>{' '}
+                        {partner.contentReviewState
+                            ? CONTENT_REVIEW_STATE_LABELS[partner.contentReviewState]
+                            : NEVER_SUBMITTED_LABEL}
+                    </div>
+                    <div>
+                        <span className="font-medium">Contenido aprobado:</span>{' '}
+                        {partner.contentApprovedAt
+                            ? formatShortDate({ date: partner.contentApprovedAt })
+                            : 'Sin aprobar'}
+                    </div>
+                    <div>
                         <span className="font-medium">Inicio:</span>{' '}
                         {/*
                           startsAt/endsAt are calendar dates: PartnerForm writes them from a
@@ -95,32 +119,11 @@ function PartnerViewPage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-3 rounded-lg border p-4">
-                        <h2 className="font-medium text-lg">Enviar link de pago</h2>
-                        <p className="text-muted-foreground text-sm">
-                            Genera un checkout real para el plan asignado al partner.
-                        </p>
-                        <button
-                            type="button"
-                            className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-                            disabled={sendLinkMutation.isPending}
-                            onClick={async () => {
-                                await sendLinkMutation.mutateAsync();
-                            }}
-                        >
-                            {sendLinkMutation.isPending ? 'Generando...' : 'Generar link'}
-                        </button>
-                        {'data' in sendLinkMutation && sendLinkMutation.data ? (
-                            <div className="space-y-2">
-                                <span className="block font-medium text-sm">URL</span>
-                                <input
-                                    className="w-full rounded-md border px-3 py-2"
-                                    readOnly
-                                    value={sendLinkMutation.data.paymentUrl}
-                                />
-                            </div>
-                        ) : null}
-                    </div>
+                    <SendPaymentLinkCard
+                        partner={partner}
+                        mutation={sendLinkMutation}
+                        addToast={addToast}
+                    />
 
                     <div className="space-y-3 rounded-lg border p-4">
                         <h2 className="font-medium text-lg">Registrar pago manual</h2>

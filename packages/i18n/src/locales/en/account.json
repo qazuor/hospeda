@@ -613,6 +613,8 @@
                 "trialStatus": "Trial period",
                 "freeStatus": "Free Plan",
                 "compStatus": "Complimentary",
+                "multipleSubscriptions_one": "{{count}} active subscription",
+                "multipleSubscriptions_other": "{{count}} active subscriptions",
                 "properties": "My properties",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",

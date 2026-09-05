@@ -79,7 +79,24 @@ vi.mock('../../../../src/middlewares/billing', () => ({
 // return type, without which TypeScript infers `never[]` from the empty literal
 // and rejects every such override.
 const mockDbLimit = vi.fn((): Record<string, unknown>[] => []);
-const mockDbOrderBy = vi.fn(() => ({ limit: mockDbLimit }));
+// HOS-1066: `resolveUserPlanSummary` no longer calls `.limit()` on the
+// subscriptions query — it reads every live subscription (grouped by product
+// domain) instead of the single newest row — so it `await`s the result of
+// `.orderBy()` directly. Real Drizzle query builders are thenable, so this
+// mock must be too: `then()` resolves by delegating to `mockDbLimit()`,
+// consuming the SAME queued `mockResolvedValueOnce` value `setupStatsDbMock`
+// sets up for the subscriptions call, without production ever calling
+// `.limit()` itself. Without this, `await` on the plain `{ limit }` object
+// resolves to that object unchanged, `subscriptions.length === 0` is
+// `undefined === 0` (false), and the next `.find()` call throws — caught by
+// `resolveUserPlanSummary`'s own try/catch, which silently returns
+// `{ plan: null, activeSubscriptionsCount: 0 }` regardless of the fixture.
+const mockDbOrderBy = vi.fn(() => ({
+    limit: mockDbLimit,
+    // biome-ignore lint/suspicious/noThenProperty: intentional thenable — mirrors Drizzle's own awaitable query builder so the production code under test can `await` this mock without a trailing `.limit()`.
+    then: (onFulfilled: (rows: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
+        Promise.resolve(mockDbLimit()).then(onFulfilled, onRejected)
+}));
 const mockDbWhere = vi.fn(() => ({ orderBy: mockDbOrderBy, limit: mockDbLimit }));
 const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
 const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
@@ -183,6 +200,12 @@ vi.mock('../../../../src/utils/actor', () => ({
 
 import '../../../../src/routes/user/protected/subscription';
 import '../../../../src/routes/user/protected/stats';
+// HOS-1066: imported (not just triggered) so the "no subscription" test below
+// can assert `warn` was NOT called — proof the `plan: null` result comes from
+// `resolveUserPlanSummary`'s real "no live subscription" branch and not from
+// its catch block silently swallowing a thrown TypeError (see the `then()`
+// comment on `mockDbOrderBy` above for the failure mode this guards against).
+import { apiLogger } from '../../../../src/utils/logger';
 
 // ─── Capture handlers at module scope (before beforeEach clears mock state) ───
 
@@ -413,11 +436,22 @@ describe('subscription-plan cutover (SPEC-192 T-023)', () => {
             setupStatsDbMock({ id: 'cust-456', externalId: 'test-user-id' }, null);
 
             // Act
-            const result = (await statsHandler(makeCtx())) as { plan: null };
+            const result = (await statsHandler(makeCtx())) as {
+                plan: null;
+                activeSubscriptionsCount: number;
+            };
 
             // Assert
             expect(result.plan).toBeNull();
+            expect(result.activeSubscriptionsCount).toBe(0);
             expect(mockGetBySlug).not.toHaveBeenCalled();
+            // Proves the empty-array "no live subscription" branch ran, not the
+            // catch block: `.limit()` is invoked once for the customer lookup
+            // and once more (via `mockDbOrderBy`'s `then()`) for the
+            // subscriptions lookup — the catch-block failure mode this
+            // regresses only ever consumes the FIRST call.
+            expect(mockDbLimit).toHaveBeenCalledTimes(2);
+            expect(apiLogger.warn).not.toHaveBeenCalled();
         });
 
         it('should return plan: null and not call PlanService when no customer is found', async () => {
@@ -430,6 +464,11 @@ describe('subscription-plan cutover (SPEC-192 T-023)', () => {
             // Assert
             expect(result.plan).toBeNull();
             expect(mockGetBySlug).not.toHaveBeenCalled();
+            // Real early-return branch (no customer row) — the subscriptions
+            // query never runs, so `.limit()` is invoked exactly once (the
+            // customer lookup) and nothing is caught.
+            expect(mockDbLimit).toHaveBeenCalledTimes(1);
+            expect(apiLogger.warn).not.toHaveBeenCalled();
         });
     });
 });

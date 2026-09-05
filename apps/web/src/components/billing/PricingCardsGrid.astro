@@ -165,6 +165,25 @@ const periodMonthLabel = t('pricing.period.month', '/mes');
 const periodYearLabel = t('pricing.period.year', '/año');
 const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
 /**
+ * HOS-984: entry point ABOVE the grid pointing at the promo-code field,
+ * which used to live only below each card's CTA (the third of three ways it
+ * was effectively invisible — see `PlanPurchaseButton.client.tsx`'s own
+ * HOS-984 notes for the other two). A plain fragment anchor rather than a
+ * second input: the field itself is no longer collapsed (also HOS-984), so
+ * a visitor who follows this link straight down the page lands on an
+ * already-usable input, with no JavaScript required for either half.
+ *
+ * Gated on `ctaMode === 'checkout' && priceMode === 'amount'`: the `'link'`
+ * grids (commerce, partner) never mount `PlanPurchaseButton` at all, and
+ * `'consult'` cards (aliados) show no amount to discount — an anchor to a
+ * field that is not there would be a dead link.
+ */
+const showPromoEntry = hasPlans && ctaMode === 'checkout' && priceMode === 'amount';
+const promoEntryLabel = t(
+	'pricing.promoEntry.label',
+	'¿Tenés un código de descuento? Vas a poder usarlo en el plan que elijas.'
+);
+/**
  * The disclosure's OPEN label. Constant, unlike `seeAllLabel`, which carries a
  * per-card count: once the lines are on screen there is nothing left to count.
  */
@@ -209,6 +228,17 @@ const selectGroupName = `pricing-select-${audience}`;
 	data-audience={audience}
 >
 	<h2 class="sr-only">{sectionHeading}</h2>
+
+	{/*
+		HOS-984: entry point above the grid pointing at the (no-longer-collapsed)
+		promo-code field each card carries below its CTA. A plain fragment link,
+		not a second input — see `promoEntryLabel`'s definition above for why.
+	*/}
+	{showPromoEntry && (
+		<a href="#pricing-cards-grid" class="pricing-promo-entry">
+			{promoEntryLabel}
+		</a>
+	)}
 
 	{/*
 		The billing-interval toggle. It used to be a bare pill pair that read as
@@ -263,7 +293,11 @@ const selectGroupName = `pricing-select-${audience}`;
 			actionLabel={emptyActionLabel}
 		/>
 	) : (
-		<div class="pricing-cards__grid" data-count={Math.min(cards.length, 3)}>
+		<div
+			id="pricing-cards-grid"
+			class="pricing-cards__grid"
+			data-count={Math.min(cards.length, 3)}
+		>
 			{cards.map((card, i) => {
 				// Astro renders a capitalised binding as a component. Resolved per
 				// card rather than branched in the template so an unmapped slug is
@@ -1215,6 +1249,34 @@ const selectGroupName = `pricing-select-${audience}`;
 			max-width: 400px;
 			margin: 0 auto;
 		}
+	}
+
+	/* ─── Promo-code entry point (HOS-984) ─────────────────────────────
+	   A plain fragment link, deliberately understated (text + small icon-less
+	   underline on hover) so it does not compete with the annual-toggle badge
+	   or the CTAs below it — it exists to be FOUND, not to be the headline. */
+	.pricing-promo-entry {
+		display: block;
+		width: fit-content;
+		max-width: 100%;
+		margin: 0 auto var(--space-4);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--brand-primary-link);
+		text-align: center;
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+
+	.pricing-promo-entry:hover {
+		color: var(--brand-accent-text);
+	}
+
+	.pricing-promo-entry:focus-visible {
+		outline: 2px solid var(--brand-accent);
+		outline-offset: 2px;
+		border-radius: var(--radius-md);
 	}
 
 	/* ─── Toggle UI ──────────────────────────────────────────────────

@@ -269,9 +269,9 @@
                 "ariaLabel": "Form section navigation"
             },
             "slugRefresh": {
-                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
+                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it or change its type.",
                 "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
-                "checkbox": "Change the web address too so it follows this new name"
+                "checkbox": "Change the web address too so it follows these changes"
             },
             "field": {
                 "name": "Name",
@@ -431,7 +431,8 @@
             "action": {
                 "save": "Save",
                 "saving": "Saving...",
-                "cancel": "Cancel"
+                "cancel": "Cancel",
+                "back": "Back"
             },
             "validation": {
                 "nameRequired": "Name is required",

@@ -128,7 +128,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
-import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
@@ -1164,18 +1164,25 @@ export class AccommodationService extends BaseCrudService<
 
                 if (
                     current &&
-                    shouldRegenerateSlugOnRename({
+                    shouldRegenerateSlugOnListingChange({
                         currentLifecycleState: current.lifecycleState,
                         currentName: current.name,
                         nextName: data.name,
+                        currentType: current.type,
+                        nextType: typeof data.type === 'string' ? data.type : undefined,
                         slugWasProvided,
                         refreshSlugFromName: data.refreshSlugFromName
                     })
                 ) {
+                    // HOS-879: compose the slug from whichever of name/type actually
+                    // changed and the CURRENT value of the one that did not — a
+                    // type-only change must not fall back to `data.name` (undefined
+                    // on a partial update that never touched the name field).
                     const nextType = typeof data.type === 'string' ? data.type : current.type;
+                    const nextName = typeof data.name === 'string' ? data.name : current.name;
                     ctx.hookState.regeneratedSlug = await generateSlug(
                         nextType,
-                        data.name as string,
+                        nextName as string,
                         current.id
                     );
                 }

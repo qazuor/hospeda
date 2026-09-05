@@ -1624,6 +1624,28 @@ export const HOSPEDA_ENV_VARS = [
     // Testing
     // -------------------------------------------------------------------------
     {
+        name: 'HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS',
+        description:
+            'CI cost guard (HOS-1144). When enabled, every REMOTE media URL is replaced by a placeholder the site serves itself (/assets/images/placeholder.svg), so a run makes zero requests to res.cloudinary.com or any other image CDN. Set ONLY in the CI workflows that boot apps/web (a11y-sweep, e2e-pr, e2e-nightly, lighthouse). MUST stay unset in staging and production: enabling it there would serve grey placeholders instead of real photographs to visitors.',
+        descriptionEs:
+            'Guarda de costo de CI (HOS-1144). Cuando está activa, toda URL de medios REMOTA se reemplaza por un placeholder que sirve el propio sitio (/assets/images/placeholder.svg), de modo que una corrida no hace ni un request a res.cloudinary.com ni a ningún otro CDN de imágenes. Se setea SOLO en los workflows de CI que levantan apps/web (a11y-sweep, e2e-pr, e2e-nightly, lighthouse). DEBE quedar sin setear en staging y producción: activarla ahí serviría placeholders grises en vez de fotos reales a los visitantes.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['web'],
+        category: 'testing',
+        // `stage` is deliberately left at its 'runtime' default even though CI
+        // also exports it for `astro build`: marking it 'build'/'both' tells the
+        // deploy tooling it must be supplied as a Coolify build-arg, and this
+        // variable must never be set on a deployment at all.
+        howToObtain:
+            'Leave unset everywhere except CI. Set to "true" (the only accepted values are "true" and "1"; anything else — including "false" — leaves it off) in a workflow-level env block so it reaches BOTH the `astro build` and the web server process: the URL rewrite happens at resolution time in @repo/media getMediaUrl and apps/web/src/lib/media.ts, and both stages resolve URLs. Playwright and the a11y sweep additionally read it to make res.cloudinary.com unresolvable for Chromium, as a second layer. Deliberately NOT keyed off CI, which production build pipelines also set.',
+        howToObtainEs:
+            'Dejala sin setear en todos lados salvo CI. Poné "true" (los únicos valores aceptados son "true" y "1"; cualquier otro — incluido "false" — la deja apagada) en el bloque env del workflow para que llegue TANTO al `astro build` como al proceso del server web: la reescritura de URLs ocurre en tiempo de resolución, en getMediaUrl de @repo/media y en apps/web/src/lib/media.ts, y ambas etapas resuelven URLs. Playwright y el a11y sweep además la leen para que res.cloudinary.com no resuelva en Chromium, como segunda capa. A propósito NO se apoya en CI, que los pipelines de build de producción también setean.'
+    },
+    {
         name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
         description:
             'Override host trial length (days) for testing. Affects every trial while set.',

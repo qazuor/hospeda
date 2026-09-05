@@ -554,6 +554,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     data?: {
                         bookmarkCount?: number;
                         plan?: { name?: string; status?: string };
+                        activeSubscriptionsCount?: number;
                     };
                 };
 
@@ -568,13 +569,36 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 const statusEl = document.getElementById('stat-subscription-status');
                 const planName = statsData.data?.plan?.name;
                 const planStatus = statsData.data?.plan?.status;
+                // HOS-1066: more than one active subscription (across product
+                // domains) means the API deliberately returns `plan: null` — the
+                // card becomes a count summary instead of picking one vertical
+                // arbitrarily. See `resolveUserPlanSummary` in stats.ts.
+                const activeSubscriptionsCount = statsData.data?.activeSubscriptionsCount ?? 0;
+                const hasMultipleActiveSubscriptions = activeSubscriptionsCount > 1;
 
                 if (subEl) {
                     // BETA-32: free-tier users have `plan: null`. The old guard
                     // (`if plan?.name`) never cleared the shimmer for them, so the
                     // widget span loaded forever. Always clear on a successful
-                    // fetch — show the plan name, or the "free" label otherwise.
-                    if (planName) {
+                    // fetch — show the plan name, the multi-subscription summary,
+                    // or the "free" label otherwise.
+                    if (hasMultipleActiveSubscriptions) {
+                        // CLDR plural pair (same pattern as
+                        // AccommodationsListingMap.client.tsx's
+                        // resultsCountOne/resultsCountOther): pick the
+                        // template for the actual count, then interpolate it
+                        // — the server only knows the count is ">1", not
+                        // which exact plural form to render.
+                        const template =
+                            activeSubscriptionsCount === 1
+                                ? (subEl.getAttribute('data-label-multiple-one') ??
+                                  '{{count}} suscripción activa')
+                                : (subEl.getAttribute('data-label-multiple-other') ??
+                                  '{{count}} suscripciones activas');
+                        subEl.textContent = template
+                            .replace('{{count}}', String(activeSubscriptionsCount))
+                            .replace('{count}', String(activeSubscriptionsCount));
+                    } else if (planName) {
                         subEl.textContent = planName;
                     } else {
                         subEl.textContent = subEl.getAttribute('data-label-free') ?? 'Gratuito';
@@ -583,7 +607,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 }
 
                 if (statusEl) {
-                    if (planStatus) {
+                    if (hasMultipleActiveSubscriptions) {
+                        // The summary line above already says how many; a
+                        // single status label doesn't apply to several
+                        // subscriptions in different states, so hide this row
+                        // (same treatment as the free tier below).
+                        statusEl.textContent = '';
+                        statusEl.hidden = true;
+                    } else if (planStatus) {
                         const label = statusEl.getAttribute(`data-label-${planStatus}`);
                         if (label) statusEl.textContent = label;
                     } else {

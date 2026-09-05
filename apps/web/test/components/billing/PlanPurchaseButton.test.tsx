@@ -69,6 +69,22 @@ vi.mock('../../../src/lib/urls', () => ({
         const normalized = path.startsWith('/') ? path : `/${path}`;
         const withSlash = normalized.endsWith('/') ? normalized : `${normalized}/`;
         return `/${locale}${withSlash}`;
+    },
+    // HOS-984: mirrors the real `buildUrlWithParams` shape (locale + path +
+    // trailing slash + `?query`) used by `buildPromoAwareAuthReturnPath`.
+    buildUrlWithParams: ({
+        locale,
+        path,
+        params
+    }: {
+        locale: string;
+        path: string;
+        params: Record<string, string>;
+    }) => {
+        const normalized = path.startsWith('/') ? path : `/${path}`;
+        const withSlash = normalized.endsWith('/') ? normalized : `${normalized}/`;
+        const query = new URLSearchParams(params).toString();
+        return query ? `/${locale}${withSlash}?${query}` : `/${locale}${withSlash}`;
     }
 }));
 
@@ -362,11 +378,18 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             const { container } = render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Act
+            // Act — the payer-email dialog gates the actual checkout POST (and
+            // therefore `loading`); this test used to skip that step and still
+            // pass, because `[aria-hidden="true"]` also matched the promo
+            // section's (now-removed, HOS-984) toggle icon — a coincidence, not
+            // a real assertion on the loading spinner.
             await user.click(getMainButton());
+            await confirmPayerEmail(user);
 
-            // Assert — spinner has aria-hidden="true" and the CSS class name
-            const spinner = container.querySelector('[aria-hidden="true"]');
+            // Assert — target the spinner's own class, not a generic
+            // aria-hidden selector (other decorative elements share that
+            // attribute and would make this pass vacuously again).
+            const spinner = container.querySelector('.spinner');
             expect(spinner).toBeInTheDocument();
         });
 
@@ -968,52 +991,34 @@ describe('PlanPurchaseButton', () => {
     // -----------------------------------------------------------------------
 
     describe('promo code — field reveal', () => {
-        it('shows promo toggle link when user is authenticated', () => {
+        it('shows the promo input directly (no toggle) when the user is authenticated', () => {
             // Arrange
             mockAuthenticated();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Assert — the toggle text comes from the mocked t() which returns the fallback
-            expect(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            ).toBeInTheDocument();
-        });
-
-        it('does not show promo toggle when user is unauthenticated', () => {
-            // Arrange
-            mockUnauthenticated();
-            render(<PlanPurchaseButton {...defaultProps} />);
-
-            // Assert
-            expect(screen.queryByText('¿Tenés un código de descuento?')).not.toBeInTheDocument();
-        });
-
-        it('expands the promo input when the toggle is clicked', async () => {
-            // Arrange
-            mockAuthenticated();
-            const user = userEvent.setup();
-            render(<PlanPurchaseButton {...defaultProps} />);
-
-            // Act
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
-
-            // Assert
+            // Assert — HOS-984: no more collapsed toggle to click through first.
             expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
             expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument();
         });
 
-        it('shows the label for the promo input after expanding', async () => {
-            // Arrange
-            mockAuthenticated();
-            const user = userEvent.setup();
+        it('shows the promo input directly when the user is unauthenticated (HOS-984)', () => {
+            // Regression: the field used to be gated on `isAuthenticated`, which
+            // hid it from exactly the visitor a promo code is handed to — someone
+            // without an account yet. It must render just like the authenticated
+            // case, minus any live-validation affordance this describe block does
+            // not exercise (see "promo code — unauthenticated defers to
+            // registration" below for that).
+            mockUnauthenticated();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Act
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
+            expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument();
+        });
+
+        it('shows the label for the promo input', () => {
+            // Arrange
+            mockAuthenticated();
+            render(<PlanPurchaseButton {...defaultProps} />);
 
             // Assert
             expect(screen.getByText('Código de descuento')).toBeInTheDocument();
@@ -1030,16 +1035,14 @@ describe('PlanPurchaseButton', () => {
                 />
             );
 
-            expect(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            ).toBeInTheDocument();
+            expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
         });
 
         it('promo section is hidden when the annual interval is selected but the plan has no annual price', async () => {
             // Wrapping the island in a [data-billing="annual"] ancestor makes the
             // MutationObserver resolve the interval to 'annual' on mount. With
             // annualPrice=null this yields isAnnualUnavailable=true, so
-            // showPromoSection=false and the toggle must NOT render.
+            // showPromoSection=false and the field must NOT render.
             mockAuthenticated();
             render(
                 <div data-billing="annual">
@@ -1051,13 +1054,11 @@ describe('PlanPurchaseButton', () => {
             );
 
             await waitFor(() => {
-                expect(
-                    screen.queryByText('¿Tenés un código de descuento?')
-                ).not.toBeInTheDocument();
+                expect(screen.queryByPlaceholderText('Ingresá tu código')).not.toBeInTheDocument();
             });
         });
 
-        it('hides the promo toggle on a free ($0) plan (HOS-451 / H-90)', () => {
+        it('hides the promo field on a free ($0) plan (HOS-451 / H-90)', () => {
             // Regression: applying a promo code against a $0 plan sends
             // `amount: 0` to the validate endpoint. `ValidatePromoCodeSchema.amount`
             // is `.positive()`, so the server rejects it with a 400 before ever
@@ -1074,9 +1075,190 @@ describe('PlanPurchaseButton', () => {
                 />
             );
 
-            expect(
-                screen.queryByRole('button', { name: '¿Tenés un código de descuento?' })
-            ).not.toBeInTheDocument();
+            expect(screen.queryByPlaceholderText('Ingresá tu código')).not.toBeInTheDocument();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 10b. Promo code — unauthenticated defers to registration (HOS-984)
+    // -----------------------------------------------------------------------
+
+    describe('promo code — unauthenticated defers to registration', () => {
+        it('does not call the validate endpoint when submitted without a session', async () => {
+            // Regression guard for the fix itself: the validate endpoint is
+            // protected and requires a real `userId` — an unauthenticated submit
+            // must never reach `fetch` at all.
+            mockUnauthenticated();
+            const fetchMock = buildFetchMock();
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('shows a message naming the code and a "Registrarme" CTA instead of a preview', async () => {
+            mockUnauthenticated();
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // The deferred-message template interpolates {{code}} manually (same
+            // pattern as buildPreviewText) — assert on the rendered code, not the
+            // literal template.
+            expect(screen.getByText(/WELCOME20/)).toBeInTheDocument();
+            expect(screen.getByRole('link', { name: 'Registrarme' })).toBeInTheDocument();
+            // No live preview/error was ever requested.
+            expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        });
+
+        it('the "Registrarme" link carries the code and this card\'s planSlug to sign-up', async () => {
+            mockUnauthenticated();
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            const registerLink = screen.getByRole('link', { name: 'Registrarme' });
+            const href = registerLink.getAttribute('href') ?? '';
+            expect(href).toContain('/es/auth/signup/');
+            expect(href).toContain('returnUrl=');
+            const returnUrl = decodeURIComponent(href.split('returnUrl=')[1] ?? '');
+            expect(returnUrl).toContain('/es/suscriptores/planes/anfitriones/');
+            expect(returnUrl).toContain('promo=WELCOME20');
+            expect(returnUrl).toContain(`promoPlan=${defaultProps.planSlug}`);
+        });
+
+        it('carries the pending code when the main CTA is clicked instead of "Registrarme"', async () => {
+            // The widget's promise ("se va a aplicar cuando te registres") must
+            // hold even if the visitor ignores the dedicated link and clicks the
+            // big plan CTA — the code must not be silently dropped.
+            mockUnauthenticated();
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await user.click(getMainButton());
+
+            expect(window.location.href).toContain('/es/auth/signin/');
+            const redirectMatch = window.location.href.match(/redirect=([^&]+)/);
+            expect(redirectMatch).not.toBeNull();
+            const returnUrl = decodeURIComponent(redirectMatch?.[1] ?? '');
+            expect(returnUrl).toContain('promo=WELCOME20');
+            expect(returnUrl).toContain(`promoPlan=${defaultProps.planSlug}`);
+        });
+
+        it('"Quitar" resets a pending-auth code back to the empty input', async () => {
+            mockUnauthenticated();
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await user.click(screen.getByRole('button', { name: 'Quitar' }));
+
+            expect(screen.getByPlaceholderText('Ingresá tu código')).toHaveValue('');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 10c. Promo code — re-applied on return from registration (HOS-984)
+    // -----------------------------------------------------------------------
+
+    describe('promo code — carried back from registration', () => {
+        /**
+         * Points the `beforeEach`-installed `window.location` mock at a URL
+         * carrying `?promo=&promoPlan=`. The suite's `beforeEach` replaces
+         * `window.location` with a bare `{ href: '' }` object (see top of this
+         * file), so `window.history.replaceState` — the real, untouched jsdom
+         * API — does not update it; this sets both `.href` (read by
+         * `stripPendingPromoFromUrl`) and `.search` (read by
+         * `readPendingPromoFromUrl`) directly instead.
+         */
+        function stubLocationWithPendingPromo(query: string): void {
+            Object.defineProperty(window, 'location', {
+                value: {
+                    href: `http://localhost/es/suscriptores/planes/anfitriones/?${query}`,
+                    search: `?${query}`
+                },
+                writable: true,
+                configurable: true
+            });
+        }
+
+        it('auto-applies a pending code from the URL once authenticated, for the matching planSlug', async () => {
+            stubLocationWithPendingPromo('promo=WELCOME20&promoPlan=plan_starter');
+            // Mocked implementation, not just spied: the REAL `history.replaceState`
+            // validates its URL against jsdom's actual (untouched) document origin,
+            // which does not match the fake `window.location` this suite installs —
+            // letting the real call through throws a SecurityError unrelated to the
+            // behaviour under test.
+            const replaceStateSpy = vi
+                .spyOn(window.history, 'replaceState')
+                .mockImplementation(() => undefined);
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'percentage',
+                                    value: 20,
+                                    durationCycles: 3,
+                                    extraDays: null,
+                                    finalAmount: 96000
+                                }
+                            }
+                        })
+                })
+            );
+
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    '20% de descuento por 3 meses'
+                );
+            });
+            // The URL is stripped once consumed, so a refresh does not re-fire it.
+            expect(replaceStateSpy).toHaveBeenCalled();
+            const strippedUrl = String(replaceStateSpy.mock.calls[0]?.[2] ?? '');
+            expect(strippedUrl).not.toContain('promo=');
+            expect(strippedUrl).not.toContain('promoPlan=');
+        });
+
+        it('does NOT auto-apply when promoPlan names a different card', async () => {
+            stubLocationWithPendingPromo('promo=WELCOME20&promoPlan=some-other-plan');
+            const replaceStateSpy = vi
+                .spyOn(window.history, 'replaceState')
+                .mockImplementation(() => undefined);
+            mockAuthenticated();
+            const fetchMock = buildFetchMock();
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Give any stray effect a tick to (not) fire.
+            await act(async () => {
+                await Promise.resolve();
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+            // A non-matching card must not consume/strip the params either — the
+            // matching card (not rendered in this test) still needs them.
+            expect(replaceStateSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -1109,11 +1291,6 @@ describe('PlanPurchaseButton', () => {
             vi.stubGlobal('fetch', fetchMock);
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
-
-            // Expand promo section
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
 
             // Type code and click Apply
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
@@ -1154,9 +1331,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1195,9 +1369,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1234,9 +1405,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500X3');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1275,9 +1443,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BIENVENIDO30');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1321,9 +1486,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500X1');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1363,9 +1525,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1405,9 +1564,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'ONEDAY');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1456,10 +1612,6 @@ describe('PlanPurchaseButton', () => {
                 </div>
             );
 
-            // Apply a promo on the monthly interval.
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => {
@@ -1507,9 +1659,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1546,9 +1695,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('button', { name: 'Quitar' }));
@@ -1589,9 +1735,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'EXPIRED');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1632,9 +1775,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'CODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1665,9 +1805,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'NEWCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1693,9 +1830,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1731,9 +1865,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1754,9 +1885,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1786,9 +1914,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
@@ -1848,10 +1973,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Expand and apply promo
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'SUMMER50');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));
@@ -1911,9 +2032,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));
@@ -1975,9 +2093,6 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.click(
-                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
-            );
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));

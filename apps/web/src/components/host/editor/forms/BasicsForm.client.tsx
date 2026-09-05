@@ -9,10 +9,7 @@
 import { useEffect, useState } from 'react';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
-import {
-    buildSlugRefreshPayload,
-    shouldOfferPublishedSlugRefresh
-} from '@/lib/listing-slug-refresh';
+import { buildSlugRefreshPayload, getSlugRefreshOptInPlacement } from '@/lib/listing-slug-refresh';
 import { ActionBar } from '../ActionBar.client';
 import { AccommodationBasicsSchema } from '../accommodation-edit-form.schema';
 import { BasicInfoSection } from '../BasicInfoSection.client';
@@ -49,20 +46,28 @@ export function BasicsForm({
         schema: AccommodationBasicsSchema,
         extendPayload: ({ payload, values, baseline }) => ({
             ...payload,
+            // HOS-879: the slug is generated from `type` + `name`, so a
+            // type-only change (e.g. COUNTRY_HOUSE -> CABIN) needs the same
+            // opt-in as a rename does.
             ...buildSlugRefreshPayload({
                 currentLifecycleState: initialData.lifecycleState,
                 initialName: baseline.name,
                 currentName: values.name,
+                initialType: baseline.type,
+                currentType: values.type,
                 refreshSlugFromName
             })
         })
     });
 
-    const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
+    const slugRefreshPlacement = getSlugRefreshOptInPlacement({
         currentLifecycleState: initialData.lifecycleState,
         initialName: form.baselineValues.name,
-        currentName: form.values.name
+        currentName: form.values.name,
+        initialType: form.baselineValues.type,
+        currentType: form.values.type
     });
+    const shouldOfferSlugRefresh = slugRefreshPlacement.nearName || slugRefreshPlacement.nearType;
 
     useEffect(() => {
         if (!shouldOfferSlugRefresh) {
@@ -83,7 +88,8 @@ export function BasicsForm({
                     destinations={destinations}
                     errors={form.fieldErrors}
                     onFieldChange={(field, value) => form.setValue(field, value)}
-                    shouldOfferSlugRefresh={shouldOfferSlugRefresh}
+                    shouldOfferSlugRefreshNearName={slugRefreshPlacement.nearName}
+                    shouldOfferSlugRefreshNearType={slugRefreshPlacement.nearType}
                     refreshSlugFromName={refreshSlugFromName}
                     onRefreshSlugFromNameChange={setRefreshSlugFromName}
                 />
