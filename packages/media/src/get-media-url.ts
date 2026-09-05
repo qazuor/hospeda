@@ -1,3 +1,8 @@
+import {
+    isLocalMediaPlaceholderMode,
+    isRemoteMediaUrl,
+    resolveLocalMediaPlaceholder
+} from './local-media-placeholders.js';
 import type { MediaPreset } from './presets.js';
 import { MEDIA_PRESETS } from './presets.js';
 
@@ -255,6 +260,10 @@ export function stripCloudinaryTransform(url: string): string {
  * It MUST NOT make any network call.
  *
  * Behavior:
+ * - ANY remote URL, while `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` is enabled
+ *   (HOS-1144): returns a locally-served placeholder instead, honouring
+ *   `options.fallback` when that fallback is itself local. This branch runs
+ *   first, so no other rule below can produce an outbound image request.
  * - Cloudinary URL (contains 'res.cloudinary.com'): inserts transform string
  *   from the named preset between '/upload/' and the version/path segment.
  * - Cloudinary URL with a `/image/fetch/`, `/image/private/`, or
@@ -310,6 +319,20 @@ export function getMediaUrl(url: string | null | undefined, options?: GetMediaUr
             return FALLBACK_PLACEHOLDER;
         }
         return getMediaUrl(fallbackUrl, rest);
+    }
+
+    // CI cost guard (HOS-1144). When local-placeholder mode is on, ANY remote
+    // URL — Cloudinary or otherwise — is swapped for an image this app serves
+    // itself, so no CI run can bill a third-party CDN. Placed BEFORE the
+    // non-Cloudinary pass-through on purpose: Unsplash/Pexels/wp.com URLs are
+    // remote fetches too, and the mode's whole promise is "zero outbound image
+    // requests", not "zero Cloudinary requests".
+    //
+    // Off by default and enabled ONLY by HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS —
+    // never by `CI`, which production build pipelines also set. See
+    // `local-media-placeholders.ts` for the full rationale.
+    if (isLocalMediaPlaceholderMode() && isRemoteMediaUrl(url)) {
+        return resolveLocalMediaPlaceholder({ fallback: options?.fallback });
     }
 
     // Non-Cloudinary URLs pass through unchanged.

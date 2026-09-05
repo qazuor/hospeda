@@ -213,5 +213,24 @@ export const serverEnvBaseSchema = z.object({
      * if migrating to EU Cloud or self-hosted PostHog.
      */
     PUBLIC_POSTHOG_HOST: z.url().optional(),
+    /**
+     * CI cost guard (HOS-1144): when `'true'` (or `'1'`), every REMOTE media
+     * URL is replaced by a placeholder this site serves itself, so a CI run
+     * makes zero requests to `res.cloudinary.com` or any other image CDN.
+     *
+     * The value is CONSUMED through `isLocalMediaPlaceholderMode()` in
+     * `@repo/media`, which reads `process.env` directly — it has to, because
+     * the same rewrite runs inside a shared package that `apps/admin` and the
+     * seed also use, and none of them share this schema. Declaring it here is
+     * what keeps `pnpm env:check:registry` green and puts the variable in the
+     * generated `.env.example`, so a reader discovers it where they discover
+     * every other web variable.
+     *
+     * Kept as a raw optional string rather than `z.coerce.boolean()`: that
+     * coercion is `Boolean(str)`, which treats the string `'false'` as TRUE —
+     * the worst possible failure mode for a switch that hides real
+     * photographs. The single truthiness decision lives in `@repo/media`.
+     */
+    HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS: z.string().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });

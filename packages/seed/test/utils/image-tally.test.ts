@@ -5,10 +5,17 @@ import { formatImageTally } from '../../src/utils/image-tally.js';
 import type { ImageProcessingCounters } from '../../src/utils/seedContext.js';
 
 /**
- * Builds a counters object with all four fields at zero unless overridden.
+ * Builds a counters object with every field at zero unless overridden.
  */
 function makeCounters(overrides: Partial<ImageProcessingCounters> = {}): ImageProcessingCounters {
-    return { uploaded: 0, cached: 0, failures: 0, skippedExample: 0, ...overrides };
+    return {
+        uploaded: 0,
+        cached: 0,
+        failures: 0,
+        skippedExample: 0,
+        skippedPlaceholder: 0,
+        ...overrides
+    };
 }
 
 describe('formatImageTally — HOS-922', () => {
@@ -54,7 +61,8 @@ describe('formatImageTally — HOS-922', () => {
                 uploaded: 3,
                 cached: 5,
                 failures: 0,
-                skippedExample: 7
+                skippedExample: 7,
+                skippedPlaceholder: 11
             });
 
             // Act
@@ -62,7 +70,7 @@ describe('formatImageTally — HOS-922', () => {
 
             // Assert
             expect(message).toBe(
-                '[seed:images] tally uploaded=3 cached=5 failures=0 skippedExample=7'
+                '[seed:images] tally uploaded=3 cached=5 failures=0 skippedExample=7 skippedPlaceholder=11'
             );
         });
 
@@ -87,6 +95,46 @@ describe('formatImageTally — HOS-922', () => {
 
             // Assert
             expect(message).not.toContain('tolerated');
+        });
+    });
+
+    // HOS-1144 — a run with the image pipeline deliberately switched off is a
+    // normal CI run. Reporting it as a degradation would make the `warn` signal
+    // meaningless exactly where it is read most.
+    describe('skippedPlaceholder — HOS-1144', () => {
+        it('stays at info when every image was skipped for a local placeholder', () => {
+            // Arrange
+            const counters = makeCounters({ skippedPlaceholder: 468 });
+
+            // Act
+            const { level, message } = formatImageTally({ counters });
+
+            // Assert
+            expect(level).toBe('info');
+            expect(message).not.toContain('tolerated');
+        });
+
+        it('reports the skipped count so the run is not silently mistaken for a cache hit', () => {
+            // Arrange
+            const counters = makeCounters({ skippedPlaceholder: 468 });
+
+            // Act
+            const { message } = formatImageTally({ counters });
+
+            // Assert
+            expect(message).toContain('skippedPlaceholder=468');
+            expect(message).toContain('cached=0');
+        });
+
+        it('still raises the level when a REAL failure accompanies the skips', () => {
+            // Arrange
+            const counters = makeCounters({ skippedPlaceholder: 468, failures: 1 });
+
+            // Act
+            const { level } = formatImageTally({ counters });
+
+            // Assert
+            expect(level).toBe('warn');
         });
     });
 });
