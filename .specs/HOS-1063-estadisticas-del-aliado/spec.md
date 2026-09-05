@@ -63,10 +63,11 @@ document previously said:
   auto-creating accounts; the owner decided account provisioning must be
   automatic for whoever needs access. The spec now carries the owner's decision,
   with the technical caveat that shapes *how* it is automatic (§10 OQ-5).
-- **That inversion opened a new question, OQ-7**, and it is the only thing in
-  this spec that is blocked. Every phase below can be built except the answer to
-  "which partners are invited". §6.4 states exactly what OQ-7 gates and what it
-  does not.
+- **That inversion opened a new question, OQ-7 — resolved the same day.** Every
+  ACTIVE partner of either tier qualifies; panel access is not tier-gated, and
+  each card is gated by whether its underlying surface exists. **Nothing in this
+  spec is blocked.** §6.4 records what the question was and why the evidence
+  settled it that way.
 
 ## 2. Three corrections before anything is built
 
@@ -616,7 +617,12 @@ necessarily the address of the person who should hold the account. C-3 therefore
 sends to a recorded address when one exists and **surfaces the partner in C-2's
 indicator when one does not**, instead of guessing.
 
-### 6.4 Blocked on OQ-7 — which partners are invited
+### 6.4 Which partners are invited — OQ-7, resolved 2026-09-04
+
+> **Answer: every ACTIVE partner of either tier.** Panel access is not tier-gated;
+> each card is gated by whether its underlying surface exists. The analysis that
+> follows is what produced that answer and is kept because it is the evidence, not
+> the opinion.
 
 Everything above is buildable. The one thing that is not is **the predicate C-3
 fires on**: «los que tienen estadísticas en su plan» does not select a subset that
@@ -904,8 +910,8 @@ observation on a running page. Nothing here asserts an intention.
 
 ## 10. Open questions — decision record
 
-**All six questions below were resolved by the owner on 2026-09-04. One new
-question, OQ-7, was opened by OQ-5's answer and is the only one still open.**
+**All six questions below were resolved by the owner on 2026-09-04. A seventh,
+OQ-7, was opened by OQ-5's answer and resolved the same day. Nothing is open.**
 
 The options and trade-offs are kept verbatim under each resolved question. They
 are the reason the choice was made, and a decision recorded without its
@@ -921,7 +927,7 @@ explicitly there rather than quietly edited away.**
 | OQ-4 | curated partners with no owner | **RESOLVED** — make it visible **and** give ops an assign action (options 2 + 3) | C-1, C-2 |
 | OQ-5 | account per partner | **RESOLVED — against the spec's recommendation** — automatic invitation | C-3 |
 | OQ-6 | dead `partners.analytics` | **RESOLVED** — drop it in a separate issue (option 2) | its own issue |
-| **OQ-7** | **which partners are invited** | **OPEN** | blocks C-3's trigger only |
+| **OQ-7** | **which partners are invited** | **RESOLVED** — every ACTIVE partner of either tier; cards gated by surface, not by tier | C-3 |
 
 ### OQ-1 · RESOLVED (2026-09-04) — `entity_views` + monthly rollup
 
@@ -1234,9 +1240,28 @@ whoever revisits this in three months is owed both sides.
 >
 > **This spec's own obligation remains only AC-11: touch neither column.**
 
-### OQ-7 · OPEN — which partners qualify for an invitation?
+### OQ-7 · ✅ RESOLVED (2026-09-04) — which partners qualify for an invitation?
 
-Opened by OQ-5's decision on 2026-09-04. **It blocks exactly one thing: the
+**Decision: every ACTIVE partner of either tier. Panel access is not tier-gated;
+each card is gated by whether its underlying surface exists.** The proposal below
+was confirmed as written, and sub-question (a) was answered **yes — a silver
+partner does get a panel**.
+
+Sub-question (b) was settled separately, on the same day, on HOS-1159: the
+presentation is right and the **code is wrong**, so a silver logo must stop being
+clickable. That does not change anything here — under §6.4 (2) the click card is
+gated by whether the logo links anywhere, so it simply will not render for silver
+once HOS-1159 ships. The card rule was written to survive either answer, and it
+did.
+
+**Nothing in this spec is blocked any more.** C-3's trigger now has its predicate.
+
+The reasoning that produced the decision is kept below, unedited, because the
+question was not obvious and the evidence is what settles it if anyone reopens it.
+
+---
+
+Opened by OQ-5's decision on 2026-09-04. **It blocked exactly one thing: the
 predicate C-3 fires on.** Not the panel, not the endpoint, not the cards, not C-1,
 not C-2, not Phase A, not Phase B. C-3's mechanism (AC-18, AC-19) is buildable and
 testable under any answer.
@@ -1283,7 +1308,8 @@ rest.
   against is already running (§6.1 A-6, R-4).
 - **Phase independence.** Phase A → Phase B → Phase C is a delivery order, not a
   dependency chain: B needs nothing from A but the panel to render into, and C
-  needs nothing from either. Only **C-3's trigger** is blocked, on OQ-7 (§6.4).
+  needs nothing from either. **Nothing is blocked** — C-3's trigger got its
+  predicate when OQ-7 was resolved (§6.4).
 - **The i18n subtree is `account.partnerStats.*`.** Chosen so no key can collide
   with `account.partnerMentions.*`, which is what AC-8 asserts.
 - **The stats section ships zero JavaScript**, like its sibling. That keeps its
