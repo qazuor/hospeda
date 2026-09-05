@@ -109,6 +109,7 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import type { SubscriptionStatusFull } from '@repo/service-core';
 import {
     BILLING_EVENT_TYPES,
+    excludeAddonDomainCondition,
     syncFeaturedByEntitlementForOwner,
     validateSubscriptionStatusTransition
 } from '@repo/service-core';
@@ -276,7 +277,11 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
                 inArray(billingSubscriptions.status, [...FINALIZE_ELIGIBLE_STATUSES]),
                 eq(billingSubscriptions.cancelAtPeriodEnd, true),
                 lte(effectiveEndDateExpr(), now),
-                isNull(billingSubscriptions.deletedAt)
+                isNull(billingSubscriptions.deletedAt),
+                // HOS-847: a recurring add-on's own preapproval row must never be
+                // finalized by the plan-cancellation flow below — cancelling one
+                // is PR 6's hard-cancel path, not this soft-cancel finalizer.
+                excludeAddonDomainCondition()
             )
         )
         .limit(MAX_ROWS_PER_TICK);
@@ -338,7 +343,10 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
                     eq(billingSubscriptions.cancelAtPeriodEnd, true),
                     isNull(billingSubscriptions.deletedAt),
                     gte(effectiveEndDateExpr(), windowStart),
-                    lte(effectiveEndDateExpr(), windowEnd)
+                    lte(effectiveEndDateExpr(), windowEnd),
+                    // HOS-847: an add-on's own row must never receive the
+                    // customer-facing "your subscription access is ending" email.
+                    excludeAddonDomainCondition()
                 )
             )
             .limit(MAX_ROWS_PER_TICK);
