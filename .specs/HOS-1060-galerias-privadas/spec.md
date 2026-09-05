@@ -133,9 +133,41 @@ What is genuinely open, and what phase 1's declared field is for:
   `POST /billing/addons/{slug}/purchase` still asks nothing about domain.
 
 The declared field is named `productDomainForAddonSlug` (mirroring
-`productDomainForLimitKey`) precisely so the two cannot be confused. Folding the
-derivation into the declaration, and mounting the API-side refusal, are follow-up
-work — see §9.
+`productDomainForLimitKey`) precisely so the two cannot be confused.
+
+**Both gaps were closed in this PR** (HOS-1178) — see H-7.
+
+### H-7 — Declaring a field is not closing a leak
+
+Filed as HOS-1178 and closed here by owner decision (2026-09-05), knowingly
+widening this PR. Measured on `origin/staging`: `createAddonCheckout` validated
+`isActive` and `targetCategories` and mentioned the domain on no line. Anyone
+reading `addons.config.ts` after phase 1 would have seen eight add-ons neatly
+tagged with their vertical and taken the separation as done.
+
+What closing it required, and what each part defends:
+
+- **The subscription is chosen by the ADD-ON's domain**, not "the" subscription.
+  An owner can hold an accommodation and a commerce subscription at once; the
+  previous `.find()` took whichever came first, which also meant the
+  `targetCategories` check below it read whichever plan that arbitrary pick
+  named.
+- **`subscriptionMatchesDomain` does the comparison**, never a hand-written
+  equality: `accommodation` fails OPEN because the column post-dates almost
+  every host row, and equality would refuse every legacy host — the calibration
+  mistake that would have hurt the only people buying add-ons today.
+- **`hydrateSubscriptionProductDomains` runs first.** `getByCustomerId()` never
+  carries that column, so without it every subscription reads as accommodation:
+  the gate would pass everything and refuse every commerce purchase at once.
+- **Two distinct refusals**, both 422: `ADDON_NOT_AVAILABLE_FOR_DOMAIN` (buy the
+  right subscription) and `ADDON_DOMAIN_UNKNOWN` (an operator must fix the
+  catalogue row). Collapsing them would send someone to buy a subscription that
+  does not help — and, because both answer 422, it is the *reason* that makes
+  the two paths distinguishable in a test at all.
+- **`scripts/check-addon-product-domain.sh`**, its own CI step, is what stops a
+  fifth instance: it fails if the paying route stops calling the comparator, if
+  the field stops travelling on the wire, or if anyone derives an add-on's
+  domain from `affectsLimitKey` again.
 
 ## 5. Phases
 
@@ -264,10 +296,15 @@ card. **A new limit or entitlement key is never a one-file change in this repo.*
 
 ## 9. Follow-up work this phase identified
 
+Two of the four were closed inside this PR by owner decision (2026-09-05) —
+declaring `productDomain` without a reader was the fourth instance in this epic
+of a defense that reads as installed and never executes, so the reader shipped
+with the declaration. See §4 H-7.
+
 | # | Item | Why it is not phase 1 |
 |---|---|---|
-| F-1 | Carry `productDomain` on `AddonResponse` and have `apps/web`'s catalogue read the DECLARED domain instead of deriving it (H-6). | Changes the API contract; the derivation is correct today for every add-on that raises a cap. |
-| F-2 | Refuse a cross-domain purchase at `POST /billing/addons/{slug}/purchase`, not only in the catalogue UI. | It is a GATE, and H-1 says the grant ships first. The declaration landing in phase 1 is what makes it buildable at all. |
+| ~~F-1~~ | **DONE in this PR** (HOS-1178). `AddonResponse` carries `productDomain`, and `apps/web`'s catalogue reads it — the derivation is deleted, not merely bypassed. | — |
+| ~~F-2~~ | **DONE in this PR** (HOS-1178, owner decision 2026-09-05: closed here rather than in a separate issue, knowingly widening the PR). `createAddonCheckout` refuses a cross-domain purchase. | — |
 | F-3 | Move `MAX_ACTIVE_PRIVATE_GALLERIES` from `UNBUILT` to `STOCK` and add its counter arm in `getCurrentUsage`. | Belongs with the phase-2 creation route; until then a counter would publish a placeholder zero as fact. |
 | F-4 | Give the gallery cap a full `message_one`/`message_other`/`cta` in `billing.limit.*`, and an `ADDON_SLUG_BY_LIMIT_KEY` entry so the at-cap row links the pack. | Both are at-limit UI, which needs the route that can BE at the limit. |
 
