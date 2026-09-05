@@ -214,6 +214,21 @@ export const purchaseAddonRoute = createProtectedRoute({
                 NO_SUBSCRIPTION: 422,
                 NO_ACTIVE_SUBSCRIPTION: 422,
                 ADDON_INACTIVE: 422,
+                // "Well-formed but unprocessable" — the 422 row of
+                // `docs/error-contract.md`. All three are business rules (step 5
+                // of the order), reached only once auth, shape and existence
+                // have passed, so none is a 400 or a 404. And none is a 403:
+                // this is not a plan or limit GATE on a capability the caller
+                // holds, it is an add-on that is not sold to them at all.
+                //
+                // `ADDON_NOT_AVAILABLE_FOR_PLAN` was MISSING from this map
+                // (found by HOS-1178 while adding its two siblings): it fell
+                // through to the `?? 500` below, so a plain plan-category
+                // mismatch answered `500 INTERNAL_ERROR` — a 4xx labelled as
+                // our fault, which is what R1 of the contract forbids.
+                ADDON_NOT_AVAILABLE_FOR_PLAN: 422,
+                ADDON_NOT_AVAILABLE_FOR_DOMAIN: 422,
+                ADDON_DOMAIN_UNKNOWN: 422,
                 CUSTOMER_NOT_FOUND: 404,
                 INVALID_PROMO_CODE: 422,
                 ADDON_ALREADY_ACTIVE: 409,

@@ -17,7 +17,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
 import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -382,7 +382,36 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             return {
                 getBySlug: mockAddonCatalogGetBySlug
             };
-        })
+        }),
+        // HOS-1178: the product-domain gate hydrates `productDomain` off
+        // `billing_subscriptions` before comparing, because
+        // `getByCustomerId()` never carries that column (see the helper's own
+        // doc). `@repo/db` is mocked wholesale in this file, so the real
+        // hydration has no query builder to run against.
+        //
+        // Defaults an UNDEFINED `productDomain` to 'accommodation' rather than
+        // to a passthrough: every customer fixture here is a HOST, and a
+        // passthrough would leave `productDomain` undefined, which
+        // `subscriptionMatchesDomain` reads as "legacy row → accommodation"
+        // and would make these tests pass for the wrong reason. The hydration
+        // itself is asserted end to end against the real route and a real
+        // database in `test/e2e/flows/billing/addon-purchase.test.ts` —
+        // removing the call there turns two of those tests red.
+        //
+        // Mirrors the real function's own contract (HOS-847): an EXPLICIT
+        // value already on the fixture (e.g. `productDomain: 'addon'`, used
+        // to simulate a recurring add-on's own preapproval row) must survive
+        // hydration untouched — the real `hydrateSubscriptionProductDomains`
+        // only fills in a value that is `undefined`, never overwrites one
+        // that is already set. An unconditional overwrite here would silently
+        // turn every add-on-row fixture into an accommodation row and make
+        // the HOS-847 domain-isolation tests pass for the wrong reason too.
+        hydrateSubscriptionProductDomains: vi.fn(async (subs: readonly Record<string, unknown>[]) =>
+            subs.map((sub) => ({
+                ...sub,
+                productDomain: sub.productDomain === undefined ? 'accommodation' : sub.productDomain
+            }))
+        )
     };
 });
 
@@ -471,6 +500,11 @@ describe('confirmAddonPurchase', () => {
                         durationDays: null,
                         isActive: true,
                         targetCategories: ['owner'] as const,
+                        // HOS-1178: every add-on fixture in this file is an
+                        // accommodation one (visibility-boost-*, extra-photos-20,
+                        // extra-accommodations-5). The purchase route now refuses an
+                        // add-on that declares no domain, so the fixtures declare theirs.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1,
                         affectsLimitKey: 'max_photos_per_accommodation',
                         limitIncrease: 20,
@@ -490,6 +524,11 @@ describe('confirmAddonPurchase', () => {
                         durationDays: 7,
                         isActive: true,
                         targetCategories: ['owner', 'complex'] as const,
+                        // HOS-1178: every add-on fixture in this file is an
+                        // accommodation one (visibility-boost-*, extra-photos-20,
+                        // extra-accommodations-5). The purchase route now refuses an
+                        // add-on that declares no domain, so the fixtures declare theirs.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 2,
                         affectsLimitKey: null,
                         limitIncrease: null,
@@ -1211,6 +1250,11 @@ describe('confirmAddonPurchase', () => {
                     durationDays: null,
                     isActive: true,
                     targetCategories: ['owner'] as const,
+                    // HOS-1178: every add-on fixture in this file is an
+                    // accommodation one (visibility-boost-*, extra-photos-20,
+                    // extra-accommodations-5). The purchase route now refuses an
+                    // add-on that declares no domain, so the fixtures declare theirs.
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     sortOrder: 1,
                     affectsLimitKey: 'max_photos_per_accommodation',
                     limitIncrease: 20,
@@ -1749,6 +1793,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                         durationDays: null,
                         isActive: true,
                         targetCategories: ['owner'] as const,
+                        // HOS-1178: every add-on fixture in this file is an
+                        // accommodation one (visibility-boost-*, extra-photos-20,
+                        // extra-accommodations-5). The purchase route now refuses an
+                        // add-on that declares no domain, so the fixtures declare theirs.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1,
                         affectsLimitKey: 'max_photos_per_accommodation',
                         limitIncrease: 20,
@@ -1768,6 +1817,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                         durationDays: 7,
                         isActive: true,
                         targetCategories: ['owner', 'complex'] as const,
+                        // HOS-1178: every add-on fixture in this file is an
+                        // accommodation one (visibility-boost-*, extra-photos-20,
+                        // extra-accommodations-5). The purchase route now refuses an
+                        // add-on that declares no domain, so the fixtures declare theirs.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 2,
                         affectsLimitKey: null,
                         limitIncrease: null,
@@ -2036,6 +2090,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                             durationDays: null,
                             isActive: true,
                             targetCategories: ['owner'] as const,
+                            // HOS-1178: every add-on fixture in this file is an
+                            // accommodation one (visibility-boost-*, extra-photos-20,
+                            // extra-accommodations-5). The purchase route now refuses an
+                            // add-on that declares no domain, so the fixtures declare theirs.
+                            productDomain: ProductDomainEnum.ACCOMMODATION,
                             sortOrder: 1,
                             affectsLimitKey: 'max_photos_per_accommodation',
                             limitIncrease: 20,
@@ -2174,6 +2233,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                             durationDays: null,
                             isActive: true,
                             targetCategories: ['owner'] as const,
+                            // HOS-1178: every add-on fixture in this file is an
+                            // accommodation one (visibility-boost-*, extra-photos-20,
+                            // extra-accommodations-5). The purchase route now refuses an
+                            // add-on that declares no domain, so the fixtures declare theirs.
+                            productDomain: ProductDomainEnum.ACCOMMODATION,
                             sortOrder: 1,
                             affectsLimitKey: 'max_photos_per_accommodation',
                             limitIncrease: 20,
@@ -2226,6 +2290,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                             durationDays: 7,
                             isActive: true,
                             targetCategories: ['owner'] as const,
+                            // HOS-1178: every add-on fixture in this file is an
+                            // accommodation one (visibility-boost-*, extra-photos-20,
+                            // extra-accommodations-5). The purchase route now refuses an
+                            // add-on that declares no domain, so the fixtures declare theirs.
+                            productDomain: ProductDomainEnum.ACCOMMODATION,
                             sortOrder: 99,
                             affectsLimitKey: null,
                             limitIncrease: null,
@@ -2863,6 +2932,11 @@ describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () =>
                         durationDays: null,
                         isActive: true,
                         targetCategories: ['owner'] as const,
+                        // HOS-1178: every add-on fixture in this file is an
+                        // accommodation one (visibility-boost-*, extra-photos-20,
+                        // extra-accommodations-5). The purchase route now refuses an
+                        // add-on that declares no domain, so the fixtures declare theirs.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1,
                         affectsLimitKey: 'max_photos_per_accommodation',
                         limitIncrease: 20,
@@ -3126,6 +3200,11 @@ describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', 
                         durationDays: null,
                         isActive: true,
                         targetCategories: ['owner'] as const,
+                        // HOS-1178: every add-on fixture in this file is an
+                        // accommodation one (visibility-boost-*, extra-photos-20,
+                        // extra-accommodations-5). The purchase route now refuses an
+                        // add-on that declares no domain, so the fixtures declare theirs.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1,
                         affectsLimitKey: 'max_photos_per_accommodation',
                         limitIncrease: 20,

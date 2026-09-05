@@ -24,7 +24,8 @@ import {
     AddonCatalogService,
     hydrateSubscriptionProductDomains,
     isAddonSubscription,
-    PlanService
+    PlanService,
+    subscriptionMatchesDomain
 } from '@repo/service-core';
 import {
     isBillingProviderError,
@@ -369,26 +370,125 @@ export async function createAddonCheckout(
             };
         }
 
-        // HOS-847: hydrate `productDomain` (getByCustomerId()'s qzpay-core mapper
-        // never populates it, HOS-934) and explicitly exclude a recurring add-on's
-        // own preapproval row. NOT restricted to accommodation: add-ons are
-        // purchasable against ANY vertical's subscription (gastronomy, experience,
-        // partner — see apps/web/src/lib/billing/addon-domain.ts), so the fix here
-        // is "not an add-on", never "must be accommodation". Without it, `.find()`
-        // could take an add-on's own preapproval row as the "active subscription"
-        // and resolve this check against that row's planId instead of the
-        // customer's real plan.
-        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
-        const activeSubscription = subscriptions.find(
-            (sub) => isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
+        // HOS-1178 — `getByCustomerId()` builds its objects field-by-field from
+        // qzpay-core's own interface, so `productDomain` arrives `undefined` on
+        // EVERY subscription regardless of its real vertical (see
+        // `hydrateSubscriptionProductDomains`'s doc). Handed straight to
+        // `subscriptionMatchesDomain`, that `undefined` reads as "legacy row,
+        // fail open to accommodation" for all of them — the domain check below
+        // would pass everything and refuse every commerce purchase, which is
+        // both halves of wrong at once.
+        //
+        // Wrapped, and degrading to the UN-hydrated list, for the reason
+        // `commerceVerticalEntitlementMiddleware` wraps its own copy: this
+        // route is shared with accommodation, and accommodation is the only
+        // side with live subscribers. Letting a database blip escape here would
+        // turn a host's add-on purchase into a 500 — a failure mode introduced
+        // by a check that exists for commerce and does nothing for them.
+        //
+        // The degradation is safe in the one direction that matters. An
+        // un-hydrated subscription carries `productDomain: undefined`, which
+        // `subscriptionMatchesDomain` reads as accommodation:
+        //   - a host buying an accommodation add-on still succeeds;
+        //   - a commerce purchase is REFUSED, because `undefined` matches
+        //     neither gastronomy nor experience.
+        // So a blip can only refuse a purchase that should have gone through.
+        // It can never let a cross-domain one past, which is the whole point of
+        // the gate and the thing that must not degrade.
+        // Typed off the raw list so every downstream read (`status`, `planId`)
+        // keeps its type; hydration only ADDS `productDomain`, and the optional
+        // marker is what lets the un-hydrated list stand in on the catch path.
+        let subscriptions: readonly ((typeof rawSubscriptions)[number] & {
+            productDomain?: string | null;
+        })[] = rawSubscriptions;
+        try {
+            subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+        } catch (error) {
+            apiLogger.warn(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                'Failed to hydrate subscription product domains; falling back to the un-hydrated list (HOS-1178)'
+            );
+        }
+
+        // HOS-847: never let a recurring add-on's own preapproval row stand in
+        // as "the" customer subscription here — see `isAddonSubscription`'s
+        // doc. Filtered alongside the status check (rather than left to the
+        // domain gate below alone) so a customer whose ONLY granting
+        // subscription is an add-on's own preapproval is correctly refused
+        // with NO_ACTIVE_SUBSCRIPTION instead of a domain-specific error.
+        const grantingSubscriptions = subscriptions.filter(
+            (sub: { status: string }) =>
+                isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
+        );
+
+        if (grantingSubscriptions.length === 0) {
+            return {
+                success: false,
+                error: {
+                    code: 'NO_ACTIVE_SUBSCRIPTION',
+                    message: 'You must have an active subscription to purchase add-ons'
+                }
+            };
+        }
+
+        // ── Product-domain gate (HOS-1178) ───────────────────────────────────
+        //
+        // Until this existed, the route validated `isActive` and
+        // `targetCategories` and nothing else — and `targetCategories` cannot
+        // separate verticals, because all SIX commerce plans declare
+        // `category: 'owner'`, the same value the accommodation plans carry. So
+        // a gastronomy owner could buy `extra-experiences-1`, which is the leak
+        // HOS-974 D-C and HOS-1060's `productDomain` field were meant to close:
+        // the field was declared on all eight add-ons and nothing on the paying
+        // path read it.
+        //
+        // Two things this must NOT do, both of them ways to break hosts, who —
+        // unlike commerce — have live subscriptions in production:
+        //
+        //  1. It resolves the subscription of the ADD-ON's domain, not "the"
+        //     subscription. An owner can hold an accommodation AND a commerce
+        //     subscription at once (`host-provider@local.test` is seeded to
+        //     prove it), and the previous `.find()` took whichever came first.
+        //     That also fixes the `targetCategories` check below, which was
+        //     reading whichever plan that arbitrary pick happened to name.
+        //  2. It goes through `subscriptionMatchesDomain`, the only place in the
+        //     repo that compares a subscription's domain, and reads asymmetric
+        //     ON PURPOSE: `accommodation` fails OPEN (the column post-dates
+        //     almost every row, so a legacy host row still counts as
+        //     accommodation), every other domain fails closed. A hand-written
+        //     `sub.productDomain === domain` here would refuse every host whose
+        //     row predates the column.
+        const addonProductDomain = addon.productDomain;
+
+        if (!addonProductDomain) {
+            // The catalogue does not know this slug — an add-on an operator
+            // created through the SPEC-168 admin UI. It has no declared
+            // vertical, and guessing `'accommodation'` is the `?? ACCOMMODATION`
+            // HOS-1078 deleted one layer down. Fail CLOSED, with its own code so
+            // the operator can see the cause rather than a generic refusal.
+            return {
+                success: false,
+                error: {
+                    code: 'ADDON_DOMAIN_UNKNOWN',
+                    message: `Add-on '${addon.slug}' does not declare a product domain and cannot be purchased`
+                }
+            };
+        }
+
+        const activeSubscription = grantingSubscriptions.find((sub) =>
+            subscriptionMatchesDomain(sub, addonProductDomain)
         );
 
         if (!activeSubscription) {
             return {
                 success: false,
                 error: {
-                    code: 'NO_ACTIVE_SUBSCRIPTION',
-                    message: 'You must have an active subscription to purchase add-ons'
+                    code: 'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
+                    message: `This add-on requires an active ${addonProductDomain} subscription`
                 }
             };
         }

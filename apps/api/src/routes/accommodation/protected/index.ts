@@ -9,6 +9,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
+import { protectedAddFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddMediaRoute } from './addMedia';
 import { protectedAddOccupancyRoute } from './addOccupancy';
 import { protectedBatchOccupancyRoute } from './batchOccupancy';
@@ -151,6 +152,11 @@ app.route('/', protectedReorderMediaRoute);
 
 // GET /:id/media - List gallery photos
 app.route('/', protectedGetMediaRoute);
+
+// POST /:id/media/featured - Upload straight to cover (HOS-803)
+// Registered BEFORE POST /:id/media so "featured" is not swallowed by a route
+// that would treat the rest of the path as part of the collection.
+app.route('/', protectedAddFeaturedMediaRoute);
 
 // POST /:id/media - Add a photo to accommodation gallery
 app.route('/', protectedAddMediaRoute);

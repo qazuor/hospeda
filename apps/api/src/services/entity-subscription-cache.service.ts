@@ -235,6 +235,10 @@ export async function syncAccommodationSubscriptionCacheForOwner(input: {
                     productDomain: sql`excluded.product_domain`,
                     status: sql`excluded.status`,
                     planId: sql`excluded.plan_id`,
+                    // HOS-1122: inert for accommodation, which never sets the
+                    // flag — written anyway so the invariant holds for EVERY
+                    // re-point, and a guard can check it without exceptions.
+                    planRestricted: false,
                     updatedAt: new Date()
                 }
             });

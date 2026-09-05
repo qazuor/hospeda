@@ -66,6 +66,23 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * schema that silently drops an undeclared filter would count every listing on
  * the platform and cap the first owner who tried to create one.
  *
+ * ## A PLAN-RESTRICTED listing still counts (HOS-1122) — undecided, not chosen
+ *
+ * This counts every listing the owner holds, including one a commerce
+ * downgrade took private (`entity_subscriptions.plan_restricted = true`). So an
+ * owner cut from three listings to one cannot create a replacement for either
+ * of the two now hidden: their quota is full of listings nobody can see.
+ *
+ * That is SYMMETRIC with accommodation — `enforceAccommodationLimit` counts
+ * plan-restricted properties the same way — and it is deliberately left alone
+ * here, because nobody has actually decided it. The alternative (a restricted
+ * listing frees its slot) has its own hazard: the owner creates a replacement,
+ * later upgrades, and lands over the cap with both live. Whichever way it goes
+ * it is an owner decision, not a refactor. Recorded rather than fixed so the
+ * next person finds a note instead of inferring intent from the absence of one.
+ * The owner-facing copy states the current behaviour plainly
+ * (`commerce.owner.planChange.keepPanel.quotaNote`).
+ *
  * @param input.vertical - Which vertical to count.
  * @param input.actor - The authenticated actor (also the owner).
  * @returns The count, or `null` when the count could not be resolved.

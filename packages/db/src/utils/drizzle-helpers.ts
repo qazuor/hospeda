@@ -1,3 +1,4 @@
+import { MARKET_TIMEZONE } from '@repo/utils';
 import {
     and,
     asc,
@@ -309,4 +310,51 @@ export function buildSearchCondition(
     if (conditions.length === 0) return undefined;
     if (conditions.length === 1) return conditions[0];
     return or(...conditions);
+}
+
+/**
+ * The market timezone as a SQL *literal*, for use inside `AT TIME ZONE`.
+ *
+ * ## Why this is not just `${MARKET_TIMEZONE}`
+ *
+ * Interpolating the constant into a `sql` template binds it as a PARAMETER, and
+ * a daily-series query names the same conversion twice — once in the `SELECT`
+ * and once in the `GROUP BY`. Drizzle numbers those independently, so Postgres
+ * receives `AT TIME ZONE $1` in one and `AT TIME ZONE $4` in the other. It
+ * compares grouping expressions **syntactically**, decides the two are
+ * different, and rejects the whole query:
+ *
+ * ```
+ * ERROR: column "entity_views.viewed_at" must appear in the GROUP BY clause
+ * ```
+ *
+ * Emitting the zone as a literal makes both sides byte-identical, so the
+ * expressions match and the query runs. This is safe from injection by
+ * construction: `MARKET_TIMEZONE` is a compile-time constant of ours, never
+ * user input — the escape hatch is deliberately NOT parameterised on an
+ * argument, so no caller can route a value through it.
+ *
+ * Found the hard way (HOS-1169): unit tests that mock `execute` assert the SQL
+ * that gets BUILT, never the SQL Postgres ACCEPTS, so this shipped green.
+ *
+ * ## Why a function and not a `const`
+ *
+ * A module-level `const` would call `sql.raw()` at IMPORT time. Several suites
+ * in `apps/api` replace the whole `drizzle-orm` module with `vi.mock`, and that
+ * mock does not export `sql` — so merely importing anything from
+ * `@repo/db/utils` threw before a single test ran:
+ *
+ * ```
+ * [vitest] No "sql" export is defined on the "drizzle-orm" mock
+ * ```
+ *
+ * Deferring the call into a function means an importer that never builds a
+ * query never touches `sql`. Calling it twice in one statement is fine, and is
+ * in fact the normal case: the two `SQL` objects differ by identity but carry
+ * identical raw text, which is what Postgres compares.
+ *
+ * @returns The market timezone as a raw SQL literal, e.g. `'America/Argentina/Buenos_Aires'`.
+ */
+export function marketTimezoneSql(): SQL {
+    return sql.raw(`'${MARKET_TIMEZONE}'`);
 }

@@ -352,5 +352,16 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Multi-language menu',
         description:
             'Allows translating the structured menu into English and Portuguese, shown to the visitor with a language switcher on the public page'
+    },
+    // HOS-1060. Experience-only, and the first key in this file granted by TWO
+    // sources at once: `experience-premium` carries it, and the three
+    // `private-galleries-+N` add-ons grant it to `-basico`/`-pro` as well. See
+    // the enum member for why that is additive rather than one being the
+    // other's fallback.
+    {
+        key: EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES,
+        name: 'Private tourist galleries',
+        description:
+            'Allows creating a private photo gallery per tourist, shared by a secret link rather than an account, so whoever did the outing can see and download their own photos. Capped by max_active_private_galleries and expiring 30 days after creation.'
     }
 ];

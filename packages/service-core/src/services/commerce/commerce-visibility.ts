@@ -10,7 +10,8 @@
  * listing's publish-readiness ("complete") and moderation state:
  *
  * ```
- * shouldBePublic = subscriptionActive AND listingComplete AND NOT moderationRejected
+ * shouldBePublic = subscriptionActive AND NOT planRestricted
+ *                  AND listingComplete AND NOT moderationRejected
  * ```
  *
  * This is the LAST line of defense against a paid-but-empty listing reaching
@@ -62,6 +63,24 @@ export interface ReconcileCommerceListingVisibilityInput {
      * visible + ACTIVE lifecycle. All other values → hidden + PRIVATE lifecycle.
      */
     readonly subscriptionStatus: string;
+    /**
+     * `entity_subscriptions.plan_restricted` for THIS listing (HOS-1122).
+     *
+     * `true` means the owner's subscription is healthy but its tier's listing
+     * cap no longer covers this particular listing — a commerce downgrade
+     * applied and this one fell outside the keep set. It must stay PRIVATE for
+     * exactly as long as the flag stands, which is why the reconciler has to
+     * read it: without it, the next lifecycle event (a renewal webhook, a
+     * dunning recovery, a manual reconcile) would find `subscriptionStatus:
+     * 'active'` and publish the listing straight back.
+     *
+     * Optional, defaulting to `false`, so callers that never restrict — the
+     * accommodation half, and every existing test — are unchanged. That default
+     * is the permissive one, so it is deliberately NOT where the guarantee
+     * lives: the guarantee is that `reconcileCommerceListingForSubscription`
+     * selects the column, and a static guard fails if it stops.
+     */
+    readonly planRestricted?: boolean;
     /** Optional Drizzle transaction client to enlist this write. */
     readonly tx?: DrizzleClient;
 }
@@ -137,9 +156,10 @@ const logger: ILogger = createLogger('commerce-visibility');
  * Reconciles a commerce listing's `visibility` and `lifecycleState` against the
  * current billing subscription status, publish-readiness, and moderation state.
  *
- * **Predicate (HOS-166 G-3, §6.5):**
+ * **Predicate (HOS-166 G-3, §6.5; `planRestricted` term added by HOS-1122):**
  * ```
- * shouldBePublic = subscriptionActive AND listingComplete AND NOT moderationRejected
+ * shouldBePublic = subscriptionActive AND NOT planRestricted
+ *                  AND listingComplete AND NOT moderationRejected
  * ```
  *
  * **Transition table:**
@@ -192,7 +212,7 @@ export async function reconcileCommerceListingVisibility(
     model: CommerceEntityModel,
     resolveCompleteness: ResolveCommerceListingCompleteness
 ): Promise<ReconcileCommerceListingVisibilityResult> {
-    const { entityType, entityId, subscriptionStatus, tx } = input;
+    const { entityType, entityId, subscriptionStatus, planRestricted = false, tx } = input;
 
     // HOS-702: the canonical entitlement-granting set, not a local
     // `new Set(['active', 'trialing'])`. That hand-rolled set excluded `comp`,
@@ -211,18 +231,29 @@ export async function reconcileCommerceListingVisibility(
 
     const moderationRejected = entity.moderationState === ModerationStatusEnum.REJECTED;
 
-    // Only resolve completeness when the subscription is active — when it is
-    // not, the desired state is PRIVATE regardless of completeness, so the
-    // extra query buys nothing.
+    // "Is this listing covered by what its owner is paying for?" — ONE
+    // expression, used both to skip the completeness read and to decide the
+    // outcome (HOS-1122).
+    //
+    // Spelling the same condition out twice would make the second copy dead:
+    // skipping the read leaves `complete` false, so a `shouldBePublic` that
+    // repeated `!planRestricted` could have that term deleted with every test
+    // still green. Naming it once means there is exactly one place a mutation
+    // can land, and it lands on both effects.
+    const planCoversListing = subscriptionActive && !planRestricted;
+
+    // The read is skipped when the listing is not covered because the desired
+    // state is PRIVATE whatever the answer would be — an optimisation, not the
+    // guard.
     let complete = false;
     let missing: readonly string[] = [];
-    if (subscriptionActive) {
+    if (planCoversListing) {
         const completeness = await resolveCompleteness(entityId, tx);
         complete = completeness.complete;
         missing = completeness.missing;
     }
 
-    const shouldBePublic = subscriptionActive && complete && !moderationRejected;
+    const shouldBePublic = planCoversListing && complete && !moderationRejected;
     const desiredVisibility: VisibilityEnum = shouldBePublic
         ? VisibilityEnum.PUBLIC
         : VisibilityEnum.PRIVATE;
@@ -233,7 +264,13 @@ export async function reconcileCommerceListingVisibility(
     // HOS-166 AC-6: a paid-but-incomplete listing is money-taken-nothing-
     // delivered — log loudly (not silently) every time the reconciler observes
     // this state, whether or not a write happens.
-    if (subscriptionActive && !complete) {
+    //
+    // Keyed on `planCoversListing`, not on `subscriptionActive`: a restricted
+    // listing skips the completeness read above, so `complete` is `false` for it
+    // by construction. Alarming on that would report every plan-restricted
+    // listing as paid-but-incomplete on every reconcile — a loud, permanent and
+    // entirely false alarm about the one state the flag exists to describe.
+    if (planCoversListing && !complete) {
         logger.warn(
             { entityType, entityId, subscriptionStatus, missing },
             'Commerce listing has an active subscription but is not complete — staying PRIVATE'

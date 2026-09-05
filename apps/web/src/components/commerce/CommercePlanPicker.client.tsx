@@ -13,9 +13,13 @@
  *
  * - `CommerceListingActions` (create-checkout flow): every active tier of the
  *   vertical, shown only when the owner is choosing their FIRST subscription.
- * - `CommercePlanChange` (tier-upgrade flow): only tiers COSTLIER than the
- *   owner's current one — the API 422s on anything else (commerce supports
- *   upgrades only), so the UI never offers a choice the backend would refuse.
+ * - `CommercePlanChange` (tier-change flow): every tier priced DIFFERENTLY
+ *   from the owner's current one — dearer and cheaper both, since HOS-1122.
+ *   Only an identically-priced tier is withheld, because that is the one the
+ *   API still 422s. That caller also passes {@link CommercePlanPickerProps.planNotes}
+ *   so each card says what choosing it actually does, which is not the same
+ *   sentence in the two directions: a dearer tier is charged now, a cheaper one
+ *   is free and takes effect at period end.
  *
  * Props are a narrow, serializable `CommercePlanOption[]` — never
  * `@repo/billing` or the full `PublicPlanData` — per the static guard
@@ -51,6 +55,17 @@ export interface CommercePlanPickerProps {
     readonly onCancel: () => void;
     /** Disables all interaction while a request driven by a previous confirm is in flight. */
     readonly isPending?: boolean;
+    /**
+     * Optional per-tier note, keyed by slug, rendered under that tier's card
+     * (HOS-1122).
+     *
+     * Plain data rather than a render callback so the picker stays free of any
+     * notion of "current plan" — it renders a string somebody else decided.
+     * The checkout flow passes nothing and is unchanged; the tier-change flow
+     * passes the direction copy, including the date a downgrade takes effect,
+     * which only it can know.
+     */
+    readonly planNotes?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -85,7 +100,8 @@ export function CommercePlanPicker({
     locale,
     onConfirm,
     onCancel,
-    isPending = false
+    isPending = false,
+    planNotes
 }: CommercePlanPickerProps): JSX.Element {
     const { t } = createTranslations(locale);
     const groupName = useId();
@@ -166,6 +182,9 @@ export function CommercePlanPicker({
                                             </li>
                                         ))}
                                     </ul>
+                                )}
+                                {planNotes?.[plan.slug] !== undefined && (
+                                    <span className={styles.planNote}>{planNotes[plan.slug]}</span>
                                 )}
                             </span>
                         </label>

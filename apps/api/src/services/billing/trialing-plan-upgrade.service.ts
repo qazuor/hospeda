@@ -71,10 +71,12 @@ import {
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { apiLogger } from '../../utils/logger.js';
 import { handlePlanChangeAddonRecalculation } from '../addon-plan-change.service.js';
+import { restoreCommerceListingsForUpgrade } from '../commerce-downgrade-remediation.service.js';
 import { applyUpgradeRestorationsOrWarn } from '../plan-upgrade-restoration.service.js';
 import { clearPendingScheduledPlanChange } from '../subscription-downgrade.service.js';
 import { resolveOwnerUserId } from '../subscription-pause.service.js';
 import { resolvePlanChangeReason } from './plan-change-reason.js';
+import { isAccommodationDomainSubscription } from './plan-domain-guard.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
@@ -319,12 +321,32 @@ export async function applyTrialingPlanUpgrade(
     // Step 4a: restore plan-restricted resources + sync featuredByEntitlement.
     // Soft-fail wrapper — mirrors confirmPlanUpgrade exactly: restoration
     // failure must NOT undo the plan change, which already committed above.
+    //
+    // HOS-1122 — the domain gate. This is the site the commerce tier-change
+    // route calls directly for a trialing owner, and HOS-1119's webhook-side
+    // gate never reached it: a gastronomy básico → pro upgrade arrived here with
+    // a gastronomy plan id, whose slug is absent from `ALL_PLANS`, whose caps
+    // therefore resolved to `-1` — UNLIMITED — and every plan-restricted
+    // accommodation and promotion that owner had came back. With no error and
+    // no log, because unlimited is a successful answer.
     try {
         const userId = await resolveOwnerUserId({
             customerId: changeResult.subscription.customerId,
             ...(db ? { db } : {})
         });
-        if (userId) {
+        const isAccommodationUpgrade = await isAccommodationDomainSubscription(
+            changeResult.subscription
+        );
+        if (!isAccommodationUpgrade) {
+            // Commerce has listings of its own to bring back; partner has
+            // nothing, and this returns quietly for it.
+            await restoreCommerceListingsForUpgrade({
+                subscriptionId: changeResult.subscription.id,
+                newPlanId,
+                subscriptionStatus: changeResult.subscription.status
+            });
+        }
+        if (userId && isAccommodationUpgrade) {
             await applyUpgradeRestorationsOrWarn({
                 userId,
                 customerId: changeResult.subscription.customerId,
@@ -361,10 +383,18 @@ export async function applyTrialingPlanUpgrade(
                     'Trialing plan upgrade: syncFeaturedByEntitlementForOwner failed (non-blocking)'
                 );
             }
-        } else {
+        } else if (isAccommodationUpgrade) {
             apiLogger.warn(
                 { subscriptionId, newPlanId, customerId: changeResult.subscription.customerId },
                 'Trialing plan upgrade: could not resolve owner userId for upgrade restoration — skipped'
+            );
+        } else {
+            // Not a warning: a commerce or partner upgrade skipping the
+            // ACCOMMODATION restoration is the correct outcome, and the branch
+            // above has already done whatever its own domain needed.
+            apiLogger.info(
+                { subscriptionId, newPlanId, customerId: changeResult.subscription.customerId },
+                'Trialing plan upgrade: non-accommodation subscription — accommodation restoration skipped by domain isolation'
             );
         }
     } catch (restorationErr) {

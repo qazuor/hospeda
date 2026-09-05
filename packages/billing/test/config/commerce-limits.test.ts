@@ -24,6 +24,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
     LIMIT_KEY_BY_COMMERCE_VERTICAL,
+    PRIVATE_GALLERY_LIMIT_KEY,
     productDomainForLimitKey
 } from '../../src/config/commerce-limits.config.js';
 import { LimitKey } from '../../src/types/plan.types.js';
@@ -75,12 +76,19 @@ describe('productDomainForLimitKey', () => {
         expect(result).not.toBe(ProductDomainEnum.ACCOMMODATION);
     });
 
-    it('assigns a commerce domain to the four commerce keys and to nothing else (HOS-400)', () => {
+    it('assigns a commerce domain to the FIVE commerce keys and to nothing else (HOS-400, HOS-1060)', () => {
         // Two listing caps (LIMIT_KEY_BY_COMMERCE_VERTICAL) plus two AI-chat
         // caps (AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL) — HOS-400 gave each
         // vertical a SECOND commerce-domain key, deliberately in a sibling map
-        // rather than widening the listing one (see that map's own doc). The
-        // union of both is the full set of keys this test must expect.
+        // rather than widening the listing one (see that map's own doc).
+        // HOS-1060 added a FIFTH, and it is not a per-vertical map at all:
+        // only experiences have galleries, so `PRIVATE_GALLERY_LIMIT_KEY` is a
+        // bare constant rather than a `Record` with an invented gastronomy
+        // entry. The union of the two maps plus that constant is the full set.
+        //
+        // Recounted, not incremented: the four in the old title were the two
+        // maps' contents, and this asserts against those maps rather than
+        // against the number.
         const commerceDomains = new Set<string>([
             ProductDomainEnum.GASTRONOMY,
             ProductDomainEnum.EXPERIENCE
@@ -93,8 +101,20 @@ describe('productDomainForLimitKey', () => {
         expect(new Set(keysInACommerceDomain)).toEqual(
             new Set([
                 ...Object.values(LIMIT_KEY_BY_COMMERCE_VERTICAL),
-                ...Object.values(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL)
+                ...Object.values(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL),
+                PRIVATE_GALLERY_LIMIT_KEY
             ])
         );
+    });
+
+    it('puts the private-gallery cap in the EXPERIENCE domain, never accommodation (HOS-1060)', () => {
+        // The specific wrong answer that costs money here: mapped to
+        // accommodation, the resolver reads a host plan that does not declare
+        // the key, gets `-1`, and the photo store is uncapped — the one line
+        // item in this epic with a recurring bill behind it.
+        expect(productDomainForLimitKey(PRIVATE_GALLERY_LIMIT_KEY)).toBe(
+            ProductDomainEnum.EXPERIENCE
+        );
+        expect(PRIVATE_GALLERY_LIMIT_KEY).toBe(LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES);
     });
 });
