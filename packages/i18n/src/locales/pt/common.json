@@ -203,13 +203,21 @@
             "title": "Alterações não salvas",
             "confirm": "Sim, descartar",
             "cancel": "Continuar editando"
+        },
+        "unsavedChangesAndPhotoAlt": {
+            "title": "Alterações não salvas e fotos sem texto alternativo",
+            "message": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} foto continua sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
+            "message_one": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} foto continua sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
+            "message_other": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} fotos continuam sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
+            "confirm": "Sair e descartar as alterações",
+            "cancel": "Continuar editando"
         }
     },
     "modal": {
-        "close": "Cerrar"
+        "close": "Fechar"
     },
-    "back": "Volver",
-    "close": "Cerrar",
-    "deleting": "Eliminando...",
-    "anonymous": "Usuario"
+    "back": "Voltar",
+    "close": "Fechar",
+    "deleting": "Excluindo...",
+    "anonymous": "Usuário"
 }

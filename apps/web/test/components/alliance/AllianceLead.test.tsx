@@ -9,7 +9,7 @@
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AllianceLead } from '../../../src/components/alliance/AllianceLead.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -171,6 +171,22 @@ describe('AllianceLead', () => {
 
             expect(screen.getByLabelText(/^benefitValue/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/^benefitValue/i)).toHaveAttribute('type', 'number');
+        });
+
+        // HOS-652: the label carried no asterisk even though a numeric
+        // benefitType makes the field mandatory — the seven other required
+        // fields on this form all show one, so its absence here read as "this
+        // field is optional" right up until submit rejected it.
+        it('marks benefitValue as required (asterisk + required attribute) once a numeric benefitType is selected (HOS-652)', () => {
+            renderForm('service_provider');
+
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'PERCENTAGE' }
+            });
+
+            const label = document.querySelector('label[for="al-benefitValue"]');
+            expect(label?.textContent).toContain('*');
+            expect(screen.getByLabelText(/^benefitValue/i)).toBeRequired();
         });
 
         it('does not render benefitValue for a non-numeric benefitType (e.g. TWO_FOR_ONE)', () => {
@@ -726,6 +742,99 @@ describe('AllianceLead', () => {
 
             await waitFor(() => {
                 expect(screen.queryByLabelText(/tu nombre/i)).not.toBeInTheDocument();
+            });
+        });
+    });
+
+    // ── Focus on first invalid field (HOS-652) ──────────────────────────────
+    //
+    // Before this, a failed submit set the `errors` state (so the inline
+    // messages did render) and stopped — nothing moved the applicant's
+    // attention to any of them. For someone who filled the form top-to-bottom
+    // and submitted from the bottom, the error sat above their scroll
+    // offset, so the observable effect was "nothing happens".
+
+    describe('Focus first invalid field on failed submit (HOS-652)', () => {
+        // jsdom does not implement `scrollIntoView`. Installed/removed
+        // explicitly (not a plain assignment) so it can't leak across other
+        // test files sharing this worker — see
+        // `test/lib/forms/focus-first-invalid-field.test.ts` for the incident
+        // this pattern was written to prevent.
+        const hadNativeScrollIntoView = 'scrollIntoView' in Element.prototype;
+        let scrollSpy: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            scrollSpy = vi.fn();
+            Object.defineProperty(Element.prototype, 'scrollIntoView', {
+                value: scrollSpy,
+                configurable: true,
+                writable: true
+            });
+        });
+
+        afterEach(() => {
+            if (hadNativeScrollIntoView) {
+                Object.defineProperty(Element.prototype, 'scrollIntoView', {
+                    value: undefined,
+                    configurable: true,
+                    writable: true
+                });
+            } else {
+                delete (Element.prototype as unknown as Record<string, unknown>).scrollIntoView;
+            }
+        });
+
+        it('moves focus to the first invalid field in DOM order, not the order errors were collected in', async () => {
+            renderForm('service_provider');
+            // `email` sits ABOVE the kind-specific fields on the page, but the
+            // kind-specific validator runs first and inserts `businessName`
+            // into the combined errors object before the schema validator
+            // adds `email` — an implementation that focused by object-key
+            // order instead of DOM order would land on `businessName`.
+            fireEvent.change(screen.getByLabelText(/tu nombre/i), {
+                target: { value: 'Juan Pérez' }
+            });
+            fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+                target: { value: 'not-an-email' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(document.activeElement?.id).toBe('al-email');
+            });
+        });
+
+        it('scrolls the focused field into view', async () => {
+            renderForm('partner');
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(scrollSpy).toHaveBeenCalled();
+            });
+        });
+
+        it('focuses benefitValue when it is the only field blocking submission (HOS-652)', async () => {
+            renderForm('service_provider');
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Plomería Acme' }
+            });
+            fireEvent.change(screen.getByLabelText(/^category/i), {
+                target: { value: 'PLOMERIA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^destinationId/i), {
+                target: { value: '11111111-1111-4111-8111-111111111111' }
+            });
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'PERCENTAGE' }
+            });
+            fireEvent.change(screen.getByLabelText(/contanos sobre tu servicio/i), {
+                target: { value: 'Ofrecemos servicio 24hs para hosts.' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(document.activeElement?.id).toBe('al-benefitValue');
             });
         });
     });

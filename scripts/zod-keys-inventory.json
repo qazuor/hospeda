@@ -21,7 +21,6 @@
         "zodError.accommodation.extraInfo.minNights.max",
         "zodError.accommodation.extraInfo.minNights.min",
         "zodError.accommodation.extraInfo.minNights.required",
-        "zodError.accommodation.featuredToggle.isFeatured.required",
         "zodError.accommodation.featureIds.invalidUuid",
         "zodError.accommodation.location.apartment.max",
         "zodError.accommodation.location.apartment.min",
@@ -1921,9 +1920,9 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1920,
+    "total": 1919,
     "byNamespace": {
-        "accommodation": 72,
+        "accommodation": 71,
         "accommodationAmenity": 4,
         "accommodationCalendarSync": 14,
         "accommodationExternalListing": 1,

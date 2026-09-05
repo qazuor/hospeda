@@ -64,6 +64,9 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     destinationId: getMockId('destination') as string,
     ownerId: getMockId('user') as string,
     isFeatured: false,
+    // HOS-929: billing-derived sibling of `isFeatured` (SPEC-292, renamed
+    // SPEC-309 OQ-3) — independent column, defaults false like `isFeatured`.
+    featuredByEntitlement: false,
     ownerSuspended: false,
     planRestricted: false,
     // Server-managed (SPEC-237): owner-controlled master toggle for external reputation block.

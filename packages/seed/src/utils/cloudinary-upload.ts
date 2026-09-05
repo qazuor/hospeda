@@ -1,3 +1,4 @@
+import { isLocalMediaPlaceholderMode } from '@repo/media';
 import type { ImageProvider } from '@repo/media/server';
 import { type ImageCache, isCacheHit, updateCacheEntry } from './cloudinary-cache.js';
 import { describeError, toError } from './errorSerialization.js';
@@ -196,6 +197,47 @@ export type UploadSeedImageOutcome =
           readonly status: 'failed';
           readonly cloudinaryUrl: string;
           readonly errorMessage?: string;
+      }
+    | {
+          /**
+           * The image pipeline was switched off for this run
+           * (`HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS`) — HOS-1144. No network
+           * call of any kind was made: no fetch of the original, no upload, no
+           * Admin API request.
+           *
+           * `cloudinaryUrl` carries the ORIGINAL URL, unchanged. Two reasons,
+           * and the first is not an optimisation:
+           *
+           * 1. **The seed aborts otherwise.** This value is written into
+           *    `media.featuredImage.url` and every `media.gallery[n].url`, and
+           *    `seedFactory` then runs `MediaSchema.parse` on that block
+           *    unconditionally, AFTER the rewrite, rethrowing on failure.
+           *    `mediaAssetUrl` is `z.url({ protocol: /^https?$/ })`, so a
+           *    root-relative placeholder fails validation and kills the run on
+           *    the first entity carrying a media block. Returning the original
+           *    keeps the data's SHAPE identical, so nothing downstream can
+           *    notice the mode at all. An absolute `http://localhost:<port>/…`
+           *    was rejected as the alternative: the port varies per worktree
+           *    and it would persist localhost URLs into the database.
+           * 2. **Storing the URL costs nothing.** The expense is the download
+           *    and the re-upload, and both are already gone. A stored
+           *    Cloudinary URL only costs bandwidth when something RENDERS it,
+           *    which is what the render-layer interception (`getMediaUrl`,
+           *    `toRenderableImageUrl`, `buildImageEndpointUrl`, `/api/og`)
+           *    catches.
+           *
+           * Consequence worth stating plainly: for these URLs the render layer
+           * is the ONLY defence, so it has to stay complete.
+           * `scripts/check-local-media-placeholders.sh` is what enforces that.
+           *
+           * Deliberately NOT `'failed'`: nothing failed, and reporting it as a
+           * failure would raise the end-of-run tally to `warn` and print
+           * "N image failure(s) tolerated" on every CI run — the exact kind of
+           * lying log that makes a real Cloudinary degradation invisible
+           * (HOS-922's whole point).
+           */
+          readonly status: 'skipped';
+          readonly cloudinaryUrl: string;
       };
 
 /**
@@ -203,6 +245,12 @@ export type UploadSeedImageOutcome =
  *
  * The Cloudinary public ID is built as:
  *   `hospeda/{env}/seed/{entityType}/{entityId}/{role}`
+ *
+ * While `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` is enabled (HOS-1144), returns a
+ * `skipped` outcome carrying the ORIGINAL URL before doing anything else — no
+ * cache read, no fetch of the original, no upload, no Admin API call. The data
+ * that reaches the database is therefore byte-identical to a run with no
+ * Cloudinary provider configured, and only the network work is skipped.
  *
  * On cache hit (same original URL already uploaded), returns a `cached`
  * outcome immediately without making any network request.
@@ -249,6 +297,38 @@ export async function uploadSeedImage(
         publicIdOverride
     } = input;
 
+    // ---------------------------------------------------------------------
+    // HOS-1144 — the CI cost guard, and the FIRST statement in this function.
+    //
+    // This is where the bandwidth actually went. The render-layer rewrite
+    // (`getMediaUrl` and friends) does not reach here at all: this pipeline
+    // takes the fixture URL — which IS a `res.cloudinary.com` URL, 468 of them,
+    // none carrying a transform — and `fetch`es the FULL ORIGINAL below, only
+    // to upload it straight back. Cloudinary's own logs put the delivery
+    // traffic alongside Admin API calls on `prefix=hospeda/e2e/*`, and the
+    // shape matches: 90.62% of the incident's requests returned `webp` (the
+    // originals already are `.webp`; no `f_auto` transform serves webp to a
+    // Node client) at 218 KB average, against 212 KB measured over 12 seed
+    // originals.
+    //
+    // The on-disk cache would normally absorb this, but `.cloudinary-cache.json`
+    // is gitignored (`packages/seed/.gitignore:1`) and no workflow restores it,
+    // so a clean runner checkout is a cache MISS on 100% of images, every run.
+    //
+    // Placed ahead of the cache lookup, the SSRF allowlist, the `fetch` and the
+    // upload, so that while the mode is on this function performs NO network
+    // call whatsoever — not delivery, not Admin API, not upload.
+    //
+    // It returns `originalUrl` UNCHANGED. Not because storing a Cloudinary URL
+    // is free to render — it is not, and the render layer is what handles that
+    // — but because the alternative breaks the seed outright: this value lands
+    // in `media.*.url`, and `seedFactory` validates that block against
+    // `MediaSchema` (`z.url({ protocol: /^https?$/ })`) immediately afterwards,
+    // rethrowing on failure. See the `'skipped'` variant's docblock above.
+    if (isLocalMediaPlaceholderMode()) {
+        return { status: 'skipped', cloudinaryUrl: originalUrl };
+    }
+
     // Build the full Cloudinary public ID. The avatar pipeline (T-023) supplies
     // a flat-path override (`hospeda/{env}/seed/avatars/{userId}`) per REQ-02.
     const fullPublicId =
@@ -276,6 +356,26 @@ export async function uploadSeedImage(
         return { status: 'failed', cloudinaryUrl: originalUrl, errorMessage: message };
     }
 
+    // TODO(HOS-1163): 468 of the ~2.242 fixture images are ALREADY hosted on our
+    // own Cloudinary account (`hospeda/seed/required/destinations/...` — the 22
+    // destination photo sets). For those, the download below and the upload that
+    // follows it move the same bytes out of the account and straight back into
+    // it, under a different public ID.
+    //
+    // This is not a design decision anyone made. When this uploader was written
+    // (93309ac06, 2026-04-14) every fixture URL pointed at Pexels or Unsplash,
+    // and pulling a third-party photo into our own account is exactly the right
+    // thing to do. The curated destination photos moved to Cloudinary a month
+    // later (ddb4a526b, 2026-05-19) and the assumption was never revisited. The
+    // branch that turned redundant is indistinguishable from the one that is
+    // still correct, which is why it went unnoticed for months.
+    //
+    // The fix is small — skip both hops when the host is `res.cloudinary.com`
+    // AND the cloud name is ours — and it only affects future seeds: URLs already
+    // written to a database keep pointing wherever they point. It stays a TODO
+    // rather than a fix because the cost is now marginal: the on-disk cache
+    // absorbs the repeat everywhere except CI, and CI no longer reaches this line
+    // at all. Worth doing if you are already editing this function.
     try {
         // Fetch the original image
         const response = await fetch(originalUrl);

@@ -386,6 +386,78 @@ URLs from a curated type-specific pool, NOT from arbitrary stock photos:
 - Lint script: `pnpm lint:image-pool` — verifies every URL in every accommodation JSON belongs to its type pool. Run before committing changes to accommodation seeds.
 - Refresh script: `scripts/refresh-accommodation-images.ts` — deterministic per-accommodation assignment (featured cyclic by id position, gallery random subset 5-24 photos). Re-runnable without drift.
 
+### The Cloudinary image pipeline (HOS-1143)
+
+How a fixture image becomes a URL in the database, why there are two copies of
+every photo, and what the CI-safe flag does. None of this was written down until
+an incident cost 70,66 GB of bandwidth and 312.099 transformations in 30 days.
+
+#### The circuit
+
+1. A fixture names a source URL (`media.featuredImage.url`, `gallery[n].url`).
+2. `uploadSeedImage` (`src/utils/cloudinary-upload.ts`) downloads it and uploads
+   it to `hospeda/{env}/seed/{entityType}/{entityId}/{role}`, where `env` is a
+   free-form label — `dev`, `test`, `preview`, `prod`.
+3. The **uploaded copy's** URL is what lands in the database and what the site
+   serves. Production really does serve
+   `hospeda/prod/seed/destinations/002-destination-colon/featured.webp`.
+4. The result is recorded in `.cloudinary-cache.json` so a re-run skips it.
+
+Every seeded photo therefore exists at least **twice** in the account: the source
+the fixture points at, and one copy per environment that has been seeded.
+
+#### Where the fixture images come from
+
+`ALLOWED_SEED_HOSTNAMES` permits three hosts, and the split matters:
+
+| origin | count | note |
+|---|---|---|
+| `images.pexels.com` | 1.636 | third-party stock; pulling it in is the whole point |
+| `images.unsplash.com` | 138 | idem |
+| `res.cloudinary.com` | 468 | **already ours** — see the `TODO(HOS-1163)` in `cloudinary-upload.ts` |
+
+Those 468 are the **22 destination photo sets** (17-36 photos each, plus one
+`user/required` avatar). They are curated `required` content that ships to
+production, not demo data. Their source lives under
+`hospeda/seed/required/destinations/<NNN>-destination-<slug>/`.
+
+#### Adding or replacing a destination photo
+
+Upload it under `hospeda/seed/required/destinations/<NNN>-destination-<slug>/`
+and point the fixture at that URL. The next seed copies it into the target
+environment. Editing `required` media is covered by the dual-write rule, so the
+change needs a data-migration in the same PR.
+
+#### The cache is gitignored, and that is the whole story of the incident
+
+`.cloudinary-cache.json` is listed in `packages/seed/.gitignore`. It works
+wherever a checkout persists — a developer machine pays the download once — and
+is **absent on every CI runner**, which starts clean with no `actions/cache` step
+restoring it. That made a cache MISS on 100% of images, on every run, of
+workflows that run on every PR.
+
+Do not "fix" that by caching the file in CI without reading HOS-1163 first: the
+`cloudinary-e2e-cleanup` cron (`0 2 * * 0`) wipes the entire `hospeda/e2e/`
+prefix, so a restored cache outlives the assets it points at.
+
+#### `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` (HOS-1144)
+
+When set, `uploadSeedImage` returns immediately — **before** the cache lookup,
+the SSRF allowlist, the download and the upload — so it performs no network call
+at all, and the tally reports `skippedPlaceholder=N`.
+
+It returns the **original URL unchanged** and deliberately does not rewrite the
+`media` block: `seedFactory` validates that block against `MediaSchema`
+(`z.url({ protocol: /^https?$/ })` for `mediaAssetUrl`) immediately afterwards, so
+a root-relative placeholder aborts the seed outright. Keeping those URLs from
+being fetched is the render layer's job, which is why
+`scripts/check-local-media-placeholders.sh` covers `<Image>` from `astro:assets`
+as well as `getImage()`.
+
+Default off. Set only by the four workflows that build or serve `apps/web`, and
+never on a deployment — it is registered with `stage: 'runtime'` precisely so
+deploy tooling does not offer it as a build argument.
+
 ### Accommodation Pricing Tiers (SPEC-119)
 
 Example accommodations use four realism tiers for the `price` field:

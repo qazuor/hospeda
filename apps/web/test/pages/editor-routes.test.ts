@@ -271,8 +271,11 @@ describe('editor routes — preserved behaviours', () => {
         expect(source).toContain('can_use_calendar');
     });
 
-    it('should mount the featured toggle on the hub with no nav item (D-10)', () => {
-        expect(readRoute('index.astro')).toContain('FeaturedToggleSection');
+    it('should not mount an owner-facing featured toggle anywhere (HOS-929)', () => {
+        // The 2026-08-29 owner decision retired the self-service toggle:
+        // holding the FEATURED_LISTING entitlement (plan or addon) now
+        // features the listing automatically, with no second owner gesture.
+        expect(readRoute('index.astro')).not.toContain('FeaturedToggleSection');
         expect(ACCOMMODATION_EDITOR_SECTIONS.map((section) => section.id)).not.toContain(
             'featured'
         );

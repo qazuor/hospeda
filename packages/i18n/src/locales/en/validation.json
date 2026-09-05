@@ -96,11 +96,6 @@
                 "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "El destacado es obligatorio"
-            }
-        },
         "featureFlag": {
             "description": {
                 "max": "Description cannot exceed {{max}} characters",

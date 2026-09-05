@@ -62,6 +62,9 @@
         "year": "/año"
     },
     "monthlyOnly": "Solo plan mensual",
+    "promoEntry": {
+        "label": "¿Tenés un código de descuento? Vas a poder usarlo en el plan que elijas."
+    },
     "index": {
         "title": "Planes de Hospeda",
         "description": "Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.",

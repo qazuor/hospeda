@@ -203,6 +203,14 @@
             "title": "Cambios sin guardar",
             "confirm": "Sí, descartar",
             "cancel": "Seguir editando"
+        },
+        "unsavedChangesAndPhotoAlt": {
+            "title": "Cambios sin guardar y fotos sin texto alternativo",
+            "message": "Tenés cambios sin guardar en esta página: si salís ahora se pierden. Además, {{count}} foto sigue sin texto alternativo, el que los lectores de pantalla leen en voz alta y los buscadores usan para entender tus imágenes. ¿Querés salir igual?",
+            "message_one": "Tenés cambios sin guardar en esta página: si salís ahora se pierden. Además, {{count}} foto sigue sin texto alternativo, el que los lectores de pantalla leen en voz alta y los buscadores usan para entender tus imágenes. ¿Querés salir igual?",
+            "message_other": "Tenés cambios sin guardar en esta página: si salís ahora se pierden. Además, {{count}} fotos siguen sin texto alternativo, el que los lectores de pantalla leen en voz alta y los buscadores usan para entender tus imágenes. ¿Querés salir igual?",
+            "confirm": "Salir y descartar los cambios",
+            "cancel": "Seguir editando"
         }
     },
     "modal": {

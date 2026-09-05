@@ -331,9 +331,11 @@ describe('PricingCardsGrid.astro', () => {
 
     describe('grid stays centred at one, two or three tiers (AC-14, absorbs HOS-891)', () => {
         it('exposes the rendered card count on the grid, clamped to three', () => {
-            expect(src).toContain(
-                '<div class="pricing-cards__grid" data-count={Math.min(cards.length, 3)}>'
-            );
+            // HOS-984 added an `id` attribute to this element (the promo-entry
+            // anchor's scroll target), so this checks the load-bearing pieces
+            // independently rather than one exact attribute-order string.
+            expect(src).toContain('class="pricing-cards__grid"');
+            expect(src).toContain('data-count={Math.min(cards.length, 3)}');
         });
 
         it('gives the one-card and two-card grids their own column template and width', () => {
@@ -357,6 +359,31 @@ describe('PricingCardsGrid.astro', () => {
             expect(mobile?.[0]).toContain(".pricing-cards__grid[data-count='1']");
             expect(mobile?.[0]).toContain(".pricing-cards__grid[data-count='2']");
             expect(mobile?.[0]).toContain('grid-template-columns: minmax(0, 1fr);');
+        });
+    });
+
+    describe('promo-code entry point above the grid (HOS-984)', () => {
+        it('gates the entry point on a checkout grid with a real amount to discount', () => {
+            // `'link'` grids (commerce, partner) never mount PlanPurchaseButton at
+            // all, and `'consult'` cards (aliados) show no amount — an anchor to a
+            // field that is not there would be a dead link either way.
+            expect(src).toContain(
+                "const showPromoEntry = hasPlans && ctaMode === 'checkout' && priceMode === 'amount';"
+            );
+        });
+
+        it('only renders the anchor when showPromoEntry is true', () => {
+            expect(src).toMatch(/\{showPromoEntry && \(\s*<a href="#pricing-cards-grid"/);
+        });
+
+        it('points at the grid container, which carries the matching id', () => {
+            expect(src).toContain('href="#pricing-cards-grid"');
+            expect(src).toContain('id="pricing-cards-grid"');
+        });
+
+        it('renders the promoEntryLabel copy, not a hardcoded string', () => {
+            expect(src).toMatch(/<a href="#pricing-cards-grid"[^>]*>\s*\{promoEntryLabel\}/);
+            expect(src).toContain("const promoEntryLabel = t(\n\t'pricing.promoEntry.label',");
         });
     });
 

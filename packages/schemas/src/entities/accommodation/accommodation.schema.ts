@@ -157,6 +157,18 @@ export const AccommodationSchema = z.object({
 
     isFeatured: z.boolean().default(false),
 
+    /**
+     * Billing-derived denormalization (SPEC-292, renamed SPEC-309): whether an
+     * ACTIVE plan or addon FEATURED_LISTING entitlement currently covers this
+     * accommodation. Written ONLY by the sync primitives in
+     * `accommodation.sync-featured-by-entitlement.ts` — never by the general
+     * update path. Deliberately independent from `isFeatured` (admin-curated);
+     * see SPEC-309 OQ-3. Never exposed on `AccommodationPublicSchema` — public
+     * routes read it internally to compute the OR'd public `isFeatured` value
+     * (HOS-929) and strip the raw column before serialization.
+     */
+    featuredByEntitlement: z.boolean().default(false),
+
     // Base field groups
     ...BaseLifecycleFields,
     ...BaseModerationFields,

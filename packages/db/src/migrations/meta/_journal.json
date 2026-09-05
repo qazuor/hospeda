@@ -827,6 +827,13 @@
       "when": 1788506802495,
       "tag": "0117_hos-1141-qr-scan-columns",
       "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1788563482458,
+      "tag": "0118_mean_bill_hollister",
+      "breakpoints": true
     }
   ]
 }

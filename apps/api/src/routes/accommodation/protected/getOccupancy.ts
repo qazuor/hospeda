@@ -4,9 +4,9 @@
  * Owner-facing occupancy calendar read (HOS-43 Phase 1, spec section 6).
  *
  * No declarative `ownership:` config — ownership is enforced inline inside
- * `getOwnerOccupancyForAccommodation` (mirrors `featured-toggle.ts`'s
- * pattern), which also grants the `ACCOMMODATION_UPDATE_ANY` staff bypass.
- * No `CAN_USE_CALENDAR` gate on reads (see that function's doc).
+ * `getOwnerOccupancyForAccommodation`, which also grants the
+ * `ACCOMMODATION_UPDATE_ANY` staff bypass. No `CAN_USE_CALENDAR` gate on
+ * reads (see that function's doc).
  */
 import {
     AccommodationIdSchema,
