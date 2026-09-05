@@ -27,6 +27,7 @@ import AllianceApplicationsSection from '@/components/account/AllianceApplicatio
 import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.client';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
 import PartnerMentionsSection from '@/components/account/PartnerMentionsSection.astro';
+import PartnerStatsSection from '@/components/account/PartnerStatsSection.astro';
 import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
@@ -80,17 +81,25 @@ const description = t(door.subtitleI18nKey);
 // the same parallel batch rather than being chained off the partner fetch:
 // `listForOwner` resolves ownership server-side from the session, so it does
 // not need the partner id this page is fetching alongside it.
+// The fifth fetch is the statistics block (HOS-1063 A-5). It joins the same
+// parallel batch and degrades to `null` on ANY failure, for the same reason as
+// the others: the section then renders nothing and the page is exactly as it
+// was. Like the mentions log, it resolves ownership server-side from the
+// session, so it does not need the partner id being fetched beside it.
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const [myLeadsResult, myTradeResult, myPartnerResult, myMentionsResult] = await Promise.all([
-    allianceLeadsApi.mine({ cookieHeader }),
-    hostTradesApi.mine({ cookieHeader }),
-    partnersApi.mine({ cookieHeader }),
-    partnersApi.mineMentions({ cookieHeader })
-]);
+const [myLeadsResult, myTradeResult, myPartnerResult, myMentionsResult, myStatsResult] =
+    await Promise.all([
+        allianceLeadsApi.mine({ cookieHeader }),
+        hostTradesApi.mine({ cookieHeader }),
+        partnersApi.mine({ cookieHeader }),
+        partnersApi.mineMentions({ cookieHeader }),
+        partnersApi.mineStats({ cookieHeader, windowDays: 30 })
+    ]);
 const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
 const myTrade = myTradeResult.ok ? myTradeResult.data.trade : null;
 const myPartner = myPartnerResult.ok ? myPartnerResult.data.partner : null;
 const myMentionBatches = myMentionsResult.ok ? myMentionsResult.data.batches : [];
+const myStats = myStatsResult.ok ? myStatsResult.data : null;
 
 // Both force-acquired options are built here rather than inline in the
 // template so the list is one expression to read and to test. Each entry is
@@ -122,6 +131,19 @@ const hasPendingClaim =
       (HOS-277 NG-1): an approved aliado is an ordinary account, so there is no
       permission for that mechanism to read.
     */}
+    {/*
+      HOS-1063 A-5 / AC-8. A SIBLING of the mentions log — its own section, its
+      own heading, its own `account.partnerStats.*` i18n subtree — never a tab
+      or a block inside it. The log answers "what did you do for me?" and this
+      answers "how did it perform?", and merging them is how a record of facts
+      starts implying a measurement Hospeda does not have
+      (`PartnerMentionsSection.astro:16-21`).
+
+      It gates itself on `stats.available`, resolved server-side from the
+      session, rather than on `myPartner` — one ownership signal, not two that
+      can disagree on a page that fetches both.
+    */}
+    <PartnerStatsSection locale={locale} stats={myStats} />
     <PartnerMentionsSection
         locale={locale}
         batches={myMentionBatches}

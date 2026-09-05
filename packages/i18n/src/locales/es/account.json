@@ -1550,6 +1550,21 @@
             }
         }
     },
+    "partnerStats": {
+        "title": "Tus números",
+        "subtitle": "Lo que pasó dentro de Hospeda con tu ficha.",
+        "views": {
+            "label": "Visitas a tu página",
+            "help": "Personas que entraron a tu página de aliado.",
+            "notApplicable": "En tu nivel el logo no lleva a una página propia, así que no hay visitas para contar. Con el nivel oro tenés tu propia página."
+        },
+        "clicks": {
+            "label": "Clics en tu logo",
+            "help": "Veces que alguien entró desde tu logo en la portada."
+        },
+        "window": "Últimos 30 días.",
+        "scopeNote": "Todas las estadísticas que te mostramos son de lo que pasa dentro de Hospeda — nuestras páginas y nuestro newsletter. De lo que publicamos afuera te damos constancia, no medición."
+    },
     "partnerMentions": {
         "title": "Bitácora de menciones",
         "subtitle": "Todo lo que difundimos sobre vos, con el enlace a cada publicación para que puedas verificarlo.",

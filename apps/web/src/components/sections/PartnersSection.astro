@@ -70,6 +70,8 @@ const items = partners.map((partner) => ({
             rel={link.rel}
             class="partner-logo-link"
             aria-label={partner.name}
+            data-partner-id={partner.id}
+            data-partner-destination={link.destination}
           >
             <img
               src={partner.logoPath}
@@ -95,7 +97,15 @@ const items = partners.map((partner) => ({
           </div>
         )
       ))}
-      <!-- Duplicate set for seamless infinite loop (decorative, hidden from AT) -->
+      <!--
+        Duplicate set for seamless infinite loop (decorative, hidden from AT).
+
+        It deliberately carries NO `data-partner-id` (HOS-1063 AC-4). The click
+        listener selects on that attribute, so a click on a decorative clone
+        matches nothing and records nothing — by construction rather than by a
+        filter someone has to remember. Filtering on `aria-hidden` instead would
+        work today and break the first time this markup is refactored.
+      -->
       {items.map(({ partner, link, logoWidth, aspectStyle }) => (
         link.href ? (
           <a
@@ -134,6 +144,56 @@ const items = partners.map((partner) => ({
   </div>
 </section>
 )}
+
+<script>
+  /**
+   * Logo-click capture (HOS-1063 A-3).
+   *
+   * A single DELEGATED listener in a plain script, NOT a React island. That is a
+   * hard constraint, not a preference: this carousel lives on the home page,
+   * whose JS budget is the subject of HOS-160 and HOS-168, and hydrating a
+   * component to attach one `click` handler would be a regression against both.
+   * AC-16 fails the build if a `client:` directive ever appears in this file.
+   *
+   * Three properties worth stating, because each is a bug the obvious
+   * implementation has:
+   *
+   * 1. **It never calls `preventDefault` and never awaits anything.** The
+   *    navigation proceeds exactly as it would without this listener;
+   *    `sendBeacon` is the API that survives the unload (AC-5). Delaying a
+   *    visitor's navigation to record a metric is not a trade worth making.
+   *
+   * 2. **It selects on `data-partner-id`, which only the VISIBLE track carries.**
+   *    The marquee renders its logos twice — the second copy is `aria-hidden`
+   *    and exists only to make the loop seamless — so a naive listener on
+   *    `.partner-logo-link` would count a click on a decorative clone. Matching
+   *    the attribute means the clone is excluded by construction rather than by
+   *    a filter someone has to remember (AC-4).
+   *
+   * 3. **It is attached once, to the track**, not per anchor. Astro re-runs this
+   *    module on View Transitions, so the handler is registered on an element
+   *    that is replaced along with it; there is no accumulation across
+   *    navigations.
+   */
+  import { sendPartnerLogoClickBeacon } from '@/lib/analytics/view-capture';
+
+  const track = document.querySelector('.partners-track');
+
+  track?.addEventListener('click', (event) => {
+      const anchor = (event.target as Element | null)?.closest<HTMLElement>(
+          'a.partner-logo-link[data-partner-id]'
+      );
+      if (!anchor) return;
+
+      const partnerId = anchor.dataset.partnerId;
+      const destination = anchor.dataset.partnerDestination;
+      if (!partnerId) return;
+      if (destination !== 'OWN_PAGE' && destination !== 'EXTERNAL') return;
+
+      sendPartnerLogoClickBeacon({ partnerId, destination });
+      // Deliberately no preventDefault, no return false, no await.
+  });
+</script>
 
 <style>
   .partners {

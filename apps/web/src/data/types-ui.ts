@@ -196,6 +196,16 @@ export interface HomepageConfig {
  * Partner or sponsor logo item for the partners strip section.
  */
 export interface PartnerData {
+    /**
+     * The partner's UUID, when this entry came from the API (HOS-1063).
+     *
+     * Optional because the type also describes decorative/static entries that
+     * have no row behind them. It is what the logo-click beacon reports, since
+     * `partner_logo_clicks.partner_id` is a uuid and the slug is not — and an
+     * entry without one simply produces no click, which is the correct outcome
+     * for a logo that stands for nothing in the database.
+     */
+    readonly id?: string;
     /** Display name of the partner or sponsor (used as `alt` text). */
     readonly name: string;
     /**

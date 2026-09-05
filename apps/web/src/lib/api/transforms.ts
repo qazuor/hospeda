@@ -3253,6 +3253,11 @@ const DEFAULT_PARTNER_LOGO_ASPECT_RATIO = 3.5;
  */
 export function toPartnerData({ item }: { readonly item: Record<string, unknown> }): PartnerData {
     return {
+        // Carried for the logo-click beacon (HOS-1063 A-3). It was already in
+        // `PartnerPublicSchema`; this transform was simply dropping it, so the
+        // browser only ever received a slug — and `partner_logo_clicks.partner_id`
+        // is a uuid.
+        id: item.id == null ? undefined : String(item.id),
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),

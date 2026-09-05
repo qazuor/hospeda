@@ -1550,6 +1550,21 @@
             }
         }
     },
+    "partnerStats": {
+        "title": "Seus números",
+        "subtitle": "O que aconteceu com a sua ficha dentro da Hospeda.",
+        "views": {
+            "label": "Visitas à sua página",
+            "help": "Pessoas que entraram na sua página de parceiro.",
+            "notApplicable": "No seu nível o logo não leva a uma página própria, então não há visitas para contar. O nível ouro inclui a sua própria página."
+        },
+        "clicks": {
+            "label": "Cliques no seu logo",
+            "help": "Vezes que alguém entrou pelo seu logo na página inicial."
+        },
+        "window": "Últimos 30 dias.",
+        "scopeNote": "Todas as estatísticas que mostramos são do que acontece dentro da Hospeda — as nossas páginas e a nossa newsletter. Do que publicamos fora damos registro, não medição."
+    },
     "partnerMentions": {
         "title": "Registro de menções",
         "subtitle": "Tudo o que divulgamos sobre você, com o link de cada publicação para que possa verificar.",

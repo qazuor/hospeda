@@ -1550,6 +1550,21 @@
             }
         }
     },
+    "partnerStats": {
+        "title": "Your numbers",
+        "subtitle": "What happened with your listing inside Hospeda.",
+        "views": {
+            "label": "Visits to your page",
+            "help": "People who opened your partner page.",
+            "notApplicable": "At your level the logo does not lead to a page of your own, so there are no visits to count. Gold level includes your own page."
+        },
+        "clicks": {
+            "label": "Clicks on your logo",
+            "help": "Times someone came in through your logo on the home page."
+        },
+        "window": "Last 30 days.",
+        "scopeNote": "Every statistic we show you is about what happens inside Hospeda — our pages and our newsletter. For what we publish elsewhere we give you a record, not a measurement."
+    },
     "partnerMentions": {
         "title": "Mentions log",
         "subtitle": "Everything we published about you, with a link to each one so you can check it yourself.",

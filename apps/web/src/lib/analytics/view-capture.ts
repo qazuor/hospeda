@@ -76,11 +76,67 @@ function resolveApiBaseUrl(): string {
  * @param input - Entity type and entity ID to record.
  */
 export function sendViewBeacon({ entityType, entityId }: SendViewBeaconInput): void {
+    postBeacon({
+        path: '/api/v1/public/views',
+        payload: JSON.stringify({ entityType, entityId }),
+        label: 'view-capture'
+    });
+}
+
+/**
+ * Input shape for {@link sendPartnerLogoClickBeacon}.
+ */
+export interface SendPartnerLogoClickBeaconInput {
+    /** UUID of the partner whose logo was clicked. */
+    readonly partnerId: string;
+    /** Which linking branch the click followed, per `resolvePartnerLogoLink`. */
+    readonly destination: 'OWN_PAGE' | 'EXTERNAL';
+}
+
+/**
+ * Send a fire-and-forget click beacon to
+ * `POST /api/v1/public/partner-logo-clicks` (HOS-1063 A-3).
+ *
+ * **`sendBeacon` is not a preference here, it is the requirement.** For the
+ * `EXTERNAL` destination the visitor is leaving the page in the same tick, and
+ * `sendBeacon` is precisely the API that survives unload. The caller must NOT
+ * `preventDefault` to "make room" for the request: delaying a navigation to
+ * record telemetry trades the visitor's time for a number (AC-5).
+ *
+ * @param input - Partner id and the destination the click led to.
+ */
+export function sendPartnerLogoClickBeacon({
+    partnerId,
+    destination
+}: SendPartnerLogoClickBeaconInput): void {
+    postBeacon({
+        path: '/api/v1/public/partner-logo-clicks',
+        payload: JSON.stringify({ partnerId, destination }),
+        label: 'partner-logo-click'
+    });
+}
+
+/**
+ * The shared transport behind both beacons.
+ *
+ * Extracted rather than copied so the two capture paths cannot drift: the CORS
+ * footprint, the `sendBeacon`-then-`fetch(keepalive)` ladder and the
+ * never-throw contract are properties of the transport, not of either caller,
+ * and a second copy is a second place to fix when one of them changes.
+ */
+function postBeacon({
+    path,
+    payload,
+    label
+}: {
+    readonly path: string;
+    readonly payload: string;
+    readonly label: string;
+}): void {
     // SSR guard — never call browser APIs during server-side rendering.
     if (typeof navigator === 'undefined') return;
 
-    const url = `${resolveApiBaseUrl()}/api/v1/public/views`;
-    const payload = JSON.stringify({ entityType, entityId });
+    const url = `${resolveApiBaseUrl()}${path}`;
 
     try {
         // Attempt sendBeacon first (survives page unload, browser-optimised).
@@ -91,7 +147,7 @@ export function sendViewBeacon({ entityType, entityId }: SendViewBeaconInput): v
             // queued === false means the browser rejected the beacon (e.g. queue
             // full or payload too large). Fall through to fetch fallback.
             if (isLoggingEnabled()) {
-                console.warn('[view-capture] sendBeacon returned false, falling back to fetch');
+                console.warn(`[${label}] sendBeacon returned false, falling back to fetch`);
             }
         }
 
@@ -103,13 +159,13 @@ export function sendViewBeacon({ entityType, entityId }: SendViewBeaconInput): v
             body: payload
         }).catch((err: unknown) => {
             if (isLoggingEnabled()) {
-                console.warn('[view-capture] fetch fallback failed', err);
+                console.warn(`[${label}] fetch fallback failed`, err);
             }
         });
     } catch (err: unknown) {
         // Absolute safety net — telemetry must never crash a page.
         if (isLoggingEnabled()) {
-            console.warn('[view-capture] unexpected error', err);
+            console.warn(`[${label}] unexpected error`, err);
         }
     }
 }
