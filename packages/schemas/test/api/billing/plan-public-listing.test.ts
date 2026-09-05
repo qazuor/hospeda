@@ -157,11 +157,20 @@ describe('BillingPlanResponseSchema.publicListing', () => {
         updatedAt: '2026-05-30T00:00:00.000Z'
     };
 
-    it('defaults to listed when the field is absent from the payload', () => {
-        // Wire tolerance for a rollout window in which one API container still
-        // predates the field. NOT the security decision — that one is made
-        // before a response is built (see the route filter).
+    it('rejects a payload with no mark at all', () => {
+        // Required, no default — the owner's call. A default would have made an
+        // absent field indistinguishable from an explicit 'listed', and every
+        // reader downstream would have had to assume which one it was looking
+        // at. The cost is one deploy window: while Coolify serves the old and
+        // new containers at once, an admin client can meet a payload from an API
+        // that predates the field, and this is the parse that will refuse it.
         const parsed = BillingPlanResponseSchema.safeParse(base);
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it('accepts a payload that carries the mark explicitly', () => {
+        const parsed = BillingPlanResponseSchema.safeParse({ ...base, publicListing: 'listed' });
 
         expect(parsed.success).toBe(true);
         expect(parsed.success && parsed.data.publicListing).toBe('listed');
@@ -176,7 +185,7 @@ describe('BillingPlanResponseSchema.publicListing', () => {
         expect(parsed.success && parsed.data.publicListing).toBe('unlisted');
     });
 
-    it('rejects an unrecognised value rather than coercing it to the default', () => {
+    it('rejects an unrecognised value', () => {
         expect(
             BillingPlanResponseSchema.safeParse({ ...base, publicListing: 'hidden' }).success
         ).toBe(false);

@@ -359,14 +359,23 @@ export const BillingPlanResponseSchema = z.object({
      * `isActive`: an `'unlisted'` plan is active and charging, it just never
      * appears in a public listing.
      *
-     * `.default('listed')` is wire tolerance, NOT the security decision. The
-     * public endpoint filters unlisted plans out of its own in-process data
-     * before a response is ever built, so this default can never publish a
-     * negotiated price; it only stops an admin client from failing to parse a
-     * payload produced by an API instance older than this field (Coolify serves
-     * both versions during a rollout).
+     * REQUIRED, with no default — an owner decision (HOS-1062). A default would
+     * have absorbed the one deploy window in which this can fail: Coolify serves
+     * the old and new containers at once, so a new admin client can parse a
+     * payload from an API instance that predates the field and get a 502 on the
+     * plans list. That window was accepted, deliberately, in exchange for every
+     * response carrying the mark explicitly — nothing downstream ever has to
+     * assume what an absent field meant.
+     *
+     * The blast radius of that choice was enumerated before it was made: the
+     * only over-the-wire parses of this schema are the three in
+     * `apps/admin/src/features/billing-plans/hooks.ts`, all on the admin
+     * billing-plans screens. `apps/web` never imports it (it declares its own
+     * `PlanPublicItem` for `GET /public/plans`), and no checkout path parses it —
+     * the API's own `stripWithSchema` runs in the same process as `mapDbToPlan`,
+     * so it cannot see a payload without the field.
      */
-    publicListing: BillingPlanPublicListingSchema.default('listed'),
+    publicListing: BillingPlanPublicListingSchema,
     /** ISO 8601 creation timestamp */
     createdAt: z.string().datetime(),
     /** ISO 8601 last-update timestamp */
