@@ -207,8 +207,9 @@ export function useCommerceMediaAdd(vertical: CommerceMediaVertical, entityId: s
  * — the cap counts the gallery alone, because a cover is not a gallery item
  * (HOS-791) — so a listing with a full gallery could not replace the one photo
  * that does not occupy a slot in it. The row is now created already featured and
- * the previous cover is disposed of in the same transaction, leaving no
- * intermediate gallery row to be capped.
+ * the photo it replaces is DELETED (soft-deleted) in the same transaction — it
+ * does NOT fall back into the gallery — so the swap moves no count and there is
+ * no intermediate gallery row to be capped.
  *
  * The response reports the id of the previous cover, which is soft-deleted in
  * the same transaction — unconditionally, so the swap costs the gallery nothing.

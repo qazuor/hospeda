@@ -216,8 +216,9 @@ export function GalleryManager({
             // counts the gallery alone because a cover is not a gallery item —
             // so with the gallery at the cap the upload was refused and the
             // promotion never ran. The row is now created already featured, and
-            // the previous cover is demoted or archived in the same
-            // transaction, so there is no cappable intermediate state.
+            // the photo it replaces is DELETED in the same transaction — it does
+            // NOT fall back into the gallery — so the swap moves no count and
+            // there is no cappable intermediate state.
             try {
                 await addFeaturedMutation.mutateAsync({
                     url,

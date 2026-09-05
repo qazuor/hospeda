@@ -24,10 +24,15 @@
  * support action, not a consumption of that host's plan.
  *
  * Unlike `addMedia` this route never answers `LIMIT_REACHED` for a full
- * gallery — that refusal is the bug. The allowance is spent instead on deciding
- * the fate of the cover being replaced: demoted into the gallery while there is
- * room, archived out of it when there is not, so the visible gallery cannot
- * grow past the allowance however often a cover is swapped.
+ * gallery — that refusal is the bug. The swap cannot move the gallery: the
+ * replaced cover is DELETED (soft-deleted) in the same transaction, so one row
+ * enters the featured slot and one leaves the table. The allowance is read for
+ * one thing only — a plan of zero photos grants no cover either.
+ *
+ * The replaced photo is NOT kept. It does not fall back into the gallery; it
+ * disappears from the listing. Its stored file is deliberately left in place, so
+ * the deletion is reversible at the row level, but callers must not present the
+ * old cover as still available.
  *
  * The cap is read from the entitlement context and never from the request body:
  * a caller able to state its own allowance would have none.
@@ -68,10 +73,11 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
     summary: 'Upload the accommodation cover image (admin)',
     description:
         'Register an already-uploaded URL as the accommodation cover. The row is ' +
-        'created already featured and the previous cover is disposed of in the same ' +
-        'transaction — demoted into the gallery when there is room, archived when ' +
-        'there is not. Unlike POST /:id/media this does not consume a plan photo ' +
-        'slot, because the cover is not a gallery item (HOS-791). Requires ' +
+        'created already featured and the photo it replaces is DELETED in the same ' +
+        'transaction — soft-deleted, so it disappears from the listing and frees its ' +
+        'gallery slot, while its stored file is kept. Unlike POST /:id/media this ' +
+        'does not consume a plan photo slot, because the cover is not a gallery ' +
+        'item (HOS-791). Requires ' +
         'admin-panel access; the service enforces UPDATE_ANY or (UPDATE_OWN + ownership).',
     tags: ['Accommodations', 'Media'],
     requestParams: {

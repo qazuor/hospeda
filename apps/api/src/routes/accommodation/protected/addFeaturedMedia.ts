@@ -28,11 +28,15 @@
  * ## What this route does and does not waive
  *
  * It does NOT return `LIMIT_REACHED` for a full gallery — that refusal is the
- * bug. Instead it resolves the owner's plan allowance and hands it to the
- * service, which uses it to decide what happens to the cover being replaced:
- * demoted into the gallery while there is room, archived out of it when there
- * is not. That keeps the visible gallery within the plan allowance however
- * often a cover is swapped, which an unconditional demotion would not.
+ * bug. The swap cannot move the gallery at all: the replaced cover is DELETED
+ * (soft-deleted) in the same transaction, so one row enters the featured slot
+ * and one leaves the table. The plan allowance is still resolved, for one thing
+ * only — a plan of zero photos grants no cover either.
+ *
+ * The replaced photo is NOT kept. It does not fall back into the gallery; it
+ * disappears from the listing. Its stored file is deliberately left in place, so
+ * the deletion is reversible at the row level, but callers must not present the
+ * old cover as still available.
  *
  * The plan cap is read from the entitlement context here and NOWHERE else. It
  * is never accepted from the request body: a client able to state its own cap
@@ -77,10 +81,11 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
     summary: 'Upload the accommodation cover image (owner)',
     description:
         'Register an already-uploaded URL as the accommodation cover. The row is ' +
-        'created already featured and the previous cover is disposed of in the same ' +
-        'transaction — demoted into the gallery when there is room for it, archived ' +
-        'when there is not. Unlike POST /:id/media this does not consume a plan ' +
-        'photo slot, because the cover is not a gallery item (HOS-791). Requires ' +
+        'created already featured and the photo it replaces is DELETED in the same ' +
+        'transaction — soft-deleted, so it disappears from the listing and frees its ' +
+        'gallery slot, while its stored file is kept. Unlike POST /:id/media this ' +
+        'does not consume a plan photo slot, because the cover is not a gallery ' +
+        'item (HOS-791). Requires ' +
         'EDIT_ACCOMMODATION_INFO; the service layer enforces UPDATE_OWN + ownership.',
     tags: ['Accommodations', 'Media'],
     requestParams: {

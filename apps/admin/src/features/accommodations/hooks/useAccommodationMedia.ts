@@ -151,13 +151,17 @@ export function useAccommodationMediaAdd(accommodationId: string) {
  * pair was refused at its first step whenever the gallery sat at the plan cap —
  * the photo limit counts the gallery alone, because a cover is not a gallery
  * item — so an owner at the cap could never change their cover. This endpoint
- * creates the row already featured and disposes of the previous cover in the
+ * creates the row already featured and DELETES the photo it replaces in the
  * same transaction, so there is no intermediate gallery row left to be capped.
  *
- * The response also reports what became of the previous cover: `demoted` (it
- * joined the gallery) or `archived` (the gallery was full, so it left the
- * visible set and can be restored later). This hook invalidates and refetches
- * rather than branching on it, but it is returned so an optimistic caller can.
+ * The replaced photo is NOT kept: it does not fall back into the gallery, it
+ * disappears from the listing. The delete is soft (`deletedAt`) and its stored
+ * file is left in place, so the row is recoverable, but nothing in the product
+ * surfaces it — do not present the old cover as still available.
+ *
+ * The response reports that photo's id, which is the only handle a caller has on
+ * the row that just went. This hook invalidates and refetches rather than using
+ * it, but it is returned so an optimistic caller can drop that row.
  *
  * @param accommodationId - UUID of the accommodation.
  */

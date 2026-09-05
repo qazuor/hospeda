@@ -16,11 +16,15 @@
  * and the one action exempt from the quota became the only one impossible to
  * perform.
  *
- * The per-entity cap is never waived. What the service spends it on is the fate
- * of the cover being replaced: demoted into the gallery while there is room,
- * archived out of it when there is not — so the visible gallery cannot grow past
- * the cap however often a cover is swapped. Commerce listings have no per-plan
- * photo allowance, so there is no second cap to resolve here.
+ * No cap needs waiving, because none is spent: the replaced cover is DELETED
+ * (soft-deleted) in the same transaction, so one row enters the featured slot
+ * and one leaves the table and the visible gallery never moves. Commerce
+ * listings have no per-plan photo allowance either.
+ *
+ * The replaced photo is NOT kept. It does not fall back into the gallery; it
+ * disappears from the listing. Its stored file is deliberately left in place, so
+ * the deletion is reversible at the row level, but callers must not present the
+ * old cover as still available.
  *
  * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL). The service helper `addGastronomyFeaturedMedia` enforces the
  * same gate via `checkGastronomyCanEditMedia`.
@@ -54,10 +58,11 @@ export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
     summary: 'Upload the gastronomy listing cover image (admin)',
     description:
         'Registers an already-uploaded URL as the gastronomy listing cover. The row is created ' +
-        'already featured and the previous cover is disposed of in the same transaction ' +
-        '— demoted into the gallery when there is room, archived when there is not. ' +
-        'Unlike POST /:id/media this does not consume a gallery slot, because the cover ' +
-        'is not a gallery item (HOS-791). Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'already featured and the photo it replaces is DELETED in the same transaction ' +
+        '— soft-deleted, so it disappears from the listing and frees its gallery ' +
+        'slot, while its stored file is kept. Unlike POST /:id/media this does not ' +
+        'consume a gallery slot, because the cover is not a gallery item ' +
+        '(HOS-791). Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'Media'],
     anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
