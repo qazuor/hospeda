@@ -172,6 +172,31 @@ async function resolveCommerceTrialPlan(input: {
 }
 
 /**
+ * The verdict for an owner already known to be eligible: `trial_available` when
+ * the vertical has a resolvable trial plan, `payment_required` when it does not.
+ *
+ * A missing plan row answers `payment_required` rather than promising a trial
+ * the grant would then fail to create. The owner reaching a checkout they did
+ * not expect is recoverable; a button that promises thirty free days and then
+ * errors is not.
+ */
+async function verdictForEligibleOwner(input: {
+    readonly vertical: CommerceVertical;
+    readonly db: DrizzleClient;
+}): Promise<CommerceTrialVerdictResult> {
+    const plan = await resolveCommerceTrialPlan(input);
+
+    if (!plan) {
+        return { verdict: 'payment_required' };
+    }
+
+    return {
+        verdict: 'trial_available',
+        ...(plan.trialDays > 0 ? { trialDays: plan.trialDays } : {})
+    };
+}
+
+/**
  * What publishing in this vertical would do for this owner, right now.
  *
  * Read-only: reserves nothing and mutates nothing, so it is safe to call on
@@ -184,18 +209,36 @@ async function resolveCommerceTrialPlan(input: {
  * listing is simply being attached to a plan they already bought is worse.
  *
  * @param input.billing - Resolved qzpay billing instance.
- * @param input.customerId - The owner's billing customer id.
+ * @param input.customerId - The owner's billing customer id, or `null` when they
+ *   have none yet. See below — `null` is an answerable state, not an error.
  * @param input.vertical - The commerce vertical being published into.
  * @returns The verdict, plus the trial length when one would be granted.
  */
 export async function resolveCommerceTrialVerdict(input: {
     readonly billing: QZPayBilling;
-    readonly customerId: string;
+    readonly customerId: string | null;
     readonly vertical: CommerceVertical;
     readonly db?: DrizzleClient;
 }): Promise<CommerceTrialVerdictResult> {
     const { billing, customerId, vertical } = input;
     const db = input.db ?? getDb();
+
+    // No billing customer is an ANSWER, not a refusal, and getting this wrong
+    // would aim the bug at the most common owner there is: the brand-new one.
+    //
+    // A customer with no row has no subscription and no spent trial by
+    // construction — there is no history to query, which is exactly why not
+    // querying is safe here rather than a shortcut. And publishing will not
+    // fail on them: the start-subscription route creates the customer on demand
+    // (HOS-596) before it does anything else. So the honest verdict is the one
+    // publishing is about to produce.
+    //
+    // This function stays read-only and does NOT create the row itself. A GET
+    // that renders a button must not mint billing records for anyone who merely
+    // opened the page.
+    if (!customerId) {
+        return verdictForEligibleOwner({ vertical, db });
+    }
 
     const ownerSubscription = await findOwnerVerticalSubscription({
         billing,
@@ -215,20 +258,7 @@ export async function resolveCommerceTrialVerdict(input: {
         return { verdict: 'payment_required' };
     }
 
-    // Eligible by the billing rule, but the vertical still needs a resolvable
-    // trial plan to run on. A missing plan row answers `payment_required`
-    // rather than promising a trial the grant would then fail to create: the
-    // owner reaching a checkout they did not expect is recoverable, a button
-    // that promises thirty free days and then errors is not.
-    const plan = await resolveCommerceTrialPlan({ vertical, db });
-    if (!plan) {
-        return { verdict: 'payment_required' };
-    }
-
-    return {
-        verdict: 'trial_available',
-        ...(plan.trialDays > 0 ? { trialDays: plan.trialDays } : {})
-    };
+    return verdictForEligibleOwner({ vertical, db });
 }
 
 /** Result of {@link startCommerceListingTrial}. */

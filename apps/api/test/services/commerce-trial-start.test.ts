@@ -362,4 +362,78 @@ describe('resolveCommerceTrialVerdict', () => {
         expect(mocks.attachListingToSubscription).not.toHaveBeenCalled();
         expect(mocks.clearEntitlementCache).not.toHaveBeenCalled();
     });
+
+    // -----------------------------------------------------------------------
+    // The owner with no billing customer yet.
+    //
+    // The most common caller there is, and the one a refusal would hurt most:
+    // a brand-new owner about to publish their first listing. `start-subscription`
+    // creates the customer on demand (HOS-596), so publishing works for them and
+    // grants the trial — the verdict has to say so, or the button promises a
+    // charge that will not happen.
+    // -----------------------------------------------------------------------
+
+    it('answers trial_available for an owner who has no billing customer yet', async () => {
+        fixtures.plans = [{ id: 'plan-gastronomy-trial', metadata: { trialDays: 30 } }];
+
+        const result = await resolveCommerceTrialVerdict({
+            billing,
+            customerId: null,
+            vertical: 'gastronomy'
+        });
+
+        // Not a refusal and not `payment_required`: an owner with no billing
+        // row has no subscription and no spent trial by construction.
+        expect(result).toEqual({ verdict: 'trial_available', trialDays: 30 });
+    });
+
+    it('does not ask billing anything about an owner who has no customer row', async () => {
+        fixtures.plans = [{ id: 'plan-gastronomy-trial', metadata: { trialDays: 30 } }];
+
+        await resolveCommerceTrialVerdict({
+            billing,
+            customerId: null,
+            vertical: 'gastronomy'
+        });
+
+        // There is no history to query, which is why skipping the queries is
+        // correct rather than a shortcut. Both of these take a customerId and
+        // would be handed `null`.
+        expect(mocks.findOwnerVerticalSubscription).not.toHaveBeenCalled();
+        expect(mocks.resolveTrialEligibility).not.toHaveBeenCalled();
+    });
+
+    it('creates NO billing customer while answering — a GET must not mint billing rows', async () => {
+        fixtures.plans = [{ id: 'plan-gastronomy-trial', metadata: { trialDays: 30 } }];
+
+        await resolveCommerceTrialVerdict({
+            billing,
+            customerId: null,
+            vertical: 'gastronomy'
+        });
+
+        // The read-only guarantee has to survive the null path too: this is the
+        // one branch where a helpful-looking `ensureCustomerExists` would be
+        // tempting, and it would mint a billing record for anyone who merely
+        // opened the page.
+        expect(mocks.createTrialSubscription).not.toHaveBeenCalled();
+        expect(mocks.attachListingToSubscription).not.toHaveBeenCalled();
+        expect(mocks.clearEntitlementCache).not.toHaveBeenCalled();
+    });
+
+    it('still answers payment_required for a customerless owner when the vertical has no trial plan', async () => {
+        // The null path does not get to skip the plan check. Without a plan row
+        // there is nothing to grant, so promising a trial here would produce the
+        // one failure this module exists to prevent: a button that offers thirty
+        // free days and then errors.
+        fixtures.plans = [];
+
+        const result = await resolveCommerceTrialVerdict({
+            billing,
+            customerId: null,
+            vertical: 'gastronomy'
+        });
+
+        expect(result.verdict).toBe('payment_required');
+    });
 });
