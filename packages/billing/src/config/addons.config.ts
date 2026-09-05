@@ -1,3 +1,4 @@
+import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import type { AddonDefinition } from '../types/addon.types.js';
 import { EntitlementKey } from '../types/entitlement.types.js';
 import { LimitKey } from '../types/plan.types.js';
@@ -16,6 +17,9 @@ export const VISIBILITY_BOOST_ADDON: AddonDefinition = {
     limitIncrease: null,
     grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner', 'complex'],
+    // HOS-1060: accommodation machinery — featuring is a search-result placement
+    // on an ACCOMMODATION, and there is no commerce equivalent for it to leak to.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 1,
     requiresAccommodationTarget: true
@@ -33,6 +37,8 @@ export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = {
     limitIncrease: null,
     grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner', 'complex'],
+    // HOS-1060 — see the 7-day twin above.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 2,
     requiresAccommodationTarget: true
@@ -52,6 +58,11 @@ export const EXTRA_PHOTOS_ADDON: AddonDefinition = {
     limitIncrease: 20,
     grantsEntitlement: null,
     targetCategories: ['owner', 'complex'],
+    // HOS-1060: derived from the cap it raises —
+    // `productDomainForLimitKey(MAX_PHOTOS_PER_ACCOMMODATION)` is accommodation.
+    // Every add-on carrying an `affectsLimitKey` must agree with that map, or it
+    // raises a cap the owner's subscription domain never supplies a base for.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 3
 };
@@ -68,6 +79,8 @@ export const EXTRA_ACCOMMODATIONS_ADDON: AddonDefinition = {
     limitIncrease: 5,
     grantsEntitlement: null,
     targetCategories: ['owner'],
+    // HOS-1060 — agrees with `productDomainForLimitKey(MAX_ACCOMMODATIONS)`.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 4
 };
@@ -84,6 +97,8 @@ export const EXTRA_PROPERTIES_ADDON: AddonDefinition = {
     limitIncrease: 5,
     grantsEntitlement: null,
     targetCategories: ['complex'],
+    // HOS-1060 — agrees with `productDomainForLimitKey(MAX_PROPERTIES)`.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: true,
     sortOrder: 5
 };
@@ -107,6 +122,8 @@ export const AI_SUPPORT_ADDON: AddonDefinition = {
     limitIncrease: 100, // TBD: owner to confirm the monthly AI interaction quota at implementation
     grantsEntitlement: EntitlementKey.AI_SUPPORT,
     targetCategories: ['owner', 'complex'],
+    // HOS-1060 — agrees with `productDomainForLimitKey(MAX_AI_SUPPORT_PER_MONTH)`.
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     isActive: false,
     sortOrder: 6
 };
@@ -149,6 +166,11 @@ export const EXTRA_GASTRONOMIES_ADDON: AddonDefinition = {
     // 'owner' for the same reason the commerce plans use it: PlanCategory has no
     // commerce member and product_domain is the real discriminator.
     targetCategories: ['owner'],
+    // HOS-1060: and here is that discriminator, finally declared. Until this
+    // field existed the comment above described a column no add-on carried, so a
+    // gastronomy owner could buy `extra-experiences-1` — the two rows are
+    // byte-identical on every field anyone could have filtered by.
+    productDomain: ProductDomainEnum.GASTRONOMY,
     isActive: true,
     sortOrder: 7
 };
@@ -166,9 +188,130 @@ export const EXTRA_EXPERIENCES_ADDON: AddonDefinition = {
     limitIncrease: 1,
     grantsEntitlement: null,
     targetCategories: ['owner'],
+    // HOS-1060 — the other half of the pair; see the gastronomy twin above.
+    productDomain: ProductDomainEnum.EXPERIENCE,
     isActive: true,
     sortOrder: 8
 };
+
+// ─── PRIVATE-GALLERY PACKS (HOS-1060) ──────────────────────────
+
+/**
+ * Builds one of the three private-gallery packs (HOS-1060).
+ *
+ * ## What a pack is, commercially
+ *
+ * The owner decided (2026-09-04) that private galleries are sold as an escalón
+ * AND a complemento at once, not one or the other: `experience-premium` grants
+ * the capability with a base cap, and these packs do two different jobs on top
+ * of it.
+ *
+ *   - On `experience-basico` and `experience-pro` they ENABLE the feature —
+ *     those tiers do not grant
+ *     {@link EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES} at all, so the
+ *     pack's `grantsEntitlement` is what turns it on;
+ *   - On `experience-premium` they RAISE the cap, through `affectsLimitKey` +
+ *     `limitIncrease`, for the provider who ran out of slots.
+ *
+ * One definition covers both because an add-on may carry a grant and a limit
+ * increase simultaneously — `AI_SUPPORT_ADDON` is the precedent. What is new is
+ * that the grant DUPLICATES one a plan also makes; the two are additive, and
+ * `loadEntitlements` unions them, so an owner holding both keeps the capability
+ * when either lapses.
+ *
+ * ## Why the three are a family built by a factory
+ *
+ * The three differ in exactly two numbers (the increase and the price) and in
+ * nothing else. Spelling three near-identical literals out invites the failure
+ * `EXTRA_GASTRONOMIES_ADDON` / `EXTRA_EXPERIENCES_ADDON` were built apart to
+ * avoid — a copy-paste that leaves one of them pointing at the wrong limit key,
+ * which raises the wrong cap and reports no error anywhere. Here there is only
+ * ONE limit key, so the factory is the cheaper defense.
+ *
+ * ## They ship INACTIVE, and that is not a placeholder
+ *
+ * {@link AI_SUPPORT_ADDON} sets the precedent and states the reason: an active
+ * add-on at a TBD price, for a feature whose routes do not exist yet, means a
+ * provider pays and receives nothing. Nothing in HOS-1060's phase 1 can create,
+ * serve or expire a gallery. The packs are flipped `isActive: true` by the phase
+ * that ships the gallery itself, together with the prices the owner confirms —
+ * the numbers below are DERIVED placeholders, not decisions (see each pack).
+ *
+ * @param input.galleries - How many active galleries the pack adds.
+ * @param input.priceArs - Monthly price in ARS centavos.
+ * @param input.sortOrder - Display order within the add-on catalogue.
+ * @returns The pack's {@link AddonDefinition}.
+ */
+function privateGalleryPack(input: {
+    galleries: number;
+    priceArs: number;
+    sortOrder: number;
+}): AddonDefinition {
+    return {
+        slug: `private-galleries-${input.galleries}`,
+        name: `Private Galleries Pack (+${input.galleries})`,
+        description: `Adds ${input.galleries} additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly.`,
+        billingType: 'recurring',
+        priceArs: input.priceArs,
+        // Ten months, the rule every recurring definition in this file follows.
+        annualPriceArs: input.priceArs * 10,
+        durationDays: null,
+        affectsLimitKey: LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES,
+        limitIncrease: input.galleries,
+        // The half that makes a pack usable on `-basico` and `-pro`, where the
+        // plan grants nothing. On `-premium` it is redundant with the plan's own
+        // grant and harmless: entitlement sets are unioned, never counted.
+        grantsEntitlement: EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES,
+        // 'owner' for the reason every commerce definition here uses it:
+        // PlanCategory has no commerce member. `productDomain` below is the
+        // discriminator that actually separates this from an accommodation
+        // add-on.
+        targetCategories: ['owner'],
+        productDomain: ProductDomainEnum.EXPERIENCE,
+        // See the factory's doc: the gallery routes do not exist yet.
+        isActive: false,
+        sortOrder: input.sortOrder
+    };
+}
+
+/**
+ * +5 active galleries.
+ *
+ * ARS $8.000/mo is DERIVED, not decided: the owner set the three sizes
+ * (+5/+10/+20) and said the prices differ, without naming them. The three
+ * numbers below price a gallery-month at 1.600 / 1.400 / 1.200 centavos-scaled
+ * ARS — sub-linear, so a bigger pack is cheaper per gallery, which is the shape
+ * every other pack in this file has. They also stay below the $20.000 step from
+ * `experience-basico` to `experience-pro`, so buying capacity never quietly
+ * costs more than moving up the ladder. Owner confirms them when the packs are
+ * activated.
+ */
+export const PRIVATE_GALLERIES_5_ADDON: AddonDefinition = privateGalleryPack({
+    galleries: 5,
+    priceArs: 800_000, // ARS $8.000/month — TBD: owner to confirm at activation
+    sortOrder: 9
+});
+
+/** +10 active galleries. See {@link PRIVATE_GALLERIES_5_ADDON} for the pricing shape. */
+export const PRIVATE_GALLERIES_10_ADDON: AddonDefinition = privateGalleryPack({
+    galleries: 10,
+    priceArs: 1_400_000, // ARS $14.000/month — TBD: owner to confirm at activation
+    sortOrder: 10
+});
+
+/** +20 active galleries. See {@link PRIVATE_GALLERIES_5_ADDON} for the pricing shape. */
+export const PRIVATE_GALLERIES_20_ADDON: AddonDefinition = privateGalleryPack({
+    galleries: 20,
+    priceArs: 2_400_000, // ARS $24.000/month — TBD: owner to confirm at activation
+    sortOrder: 11
+});
+
+/** The three private-gallery packs, smallest first (HOS-1060). */
+export const ALL_PRIVATE_GALLERY_ADDONS: readonly AddonDefinition[] = [
+    PRIVATE_GALLERIES_5_ADDON,
+    PRIVATE_GALLERIES_10_ADDON,
+    PRIVATE_GALLERIES_20_ADDON
+];
 
 // ─── ALL ADD-ONS ───────────────────────────────────────────────
 
@@ -181,8 +324,51 @@ export const ALL_ADDONS: AddonDefinition[] = [
     EXTRA_PROPERTIES_ADDON,
     AI_SUPPORT_ADDON,
     EXTRA_GASTRONOMIES_ADDON,
-    EXTRA_EXPERIENCES_ADDON
+    EXTRA_EXPERIENCES_ADDON,
+    ...ALL_PRIVATE_GALLERY_ADDONS
 ];
+
+/**
+ * The product domain that owns an add-on, resolved from the CATALOGUE
+ * (HOS-1060).
+ *
+ * ## Why this reads config and not the `billing_addons` row
+ *
+ * `productDomain` is a Model C `'capability'` fact: it says which vertical an
+ * add-on belongs to, which is a structural decision, not a price an operator
+ * tunes. Reading it from the database would make an already-seeded environment's
+ * stale row the authority over the binary that also carries the check —
+ * precisely the ordering hazard `commerce-entitlements.config.ts` was written
+ * around, where a lagging row would have locked commerce owners out of
+ * capabilities the catalogue advertises.
+ *
+ * It also means the eight pre-existing `billing_addons` rows need no backfill:
+ * the domain was never stored, so there is nothing in them to correct.
+ *
+ * ## `undefined` is an answer, and it is the safe one
+ *
+ * An operator can create an add-on through the SPEC-168 admin UI with a slug
+ * this catalogue does not know. That add-on has no domain, and this returns
+ * `undefined` rather than guessing — no `?? ACCOMMODATION`, which is the exact
+ * default HOS-1078 removed from `productDomainForLimitKey` one layer down after
+ * it answered confidently for keys nobody had mapped.
+ *
+ * Callers MUST fail CLOSED on `undefined`.
+ *
+ * @param slug - The add-on slug, e.g. from `billing_addons.metadata.slug`.
+ * @returns Its product domain, or `undefined` when the slug is not in the
+ *   catalogue.
+ *
+ * @example
+ * ```ts
+ * resolveAddonProductDomain('extra-experiences-1'); // 'experience'
+ * resolveAddonProductDomain('extra-photos-20');     // 'accommodation'
+ * resolveAddonProductDomain('operator-invented');   // undefined
+ * ```
+ */
+export function resolveAddonProductDomain(slug: string): ProductDomainValue | undefined {
+    return ALL_ADDONS.find((addon) => addon.slug === slug)?.productDomain;
+}
 
 /**
  * Retrieves an add-on definition by its unique slug identifier.
