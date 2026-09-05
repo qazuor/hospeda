@@ -268,6 +268,8 @@ jobs:
         run: bash scripts/check-product-domain-raw-sql.sh
       - name: Check commerce plan resolution stays single-sited (HOS-688 AC-35)
         run: bash scripts/check-commerce-plan-resolution.sh
+      - name: Check subscription domain comparisons are hydrated (HOS-1176)
+        run: bash scripts/check-subscription-domain-hydration.sh
       - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
         run: pnpm check:locale-resolution-single-source
       # HOS-936's read-direction guard (the trial window must not be derived
