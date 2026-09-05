@@ -430,7 +430,8 @@
             "action": {
                 "save": "Save",
                 "saving": "Saving...",
-                "cancel": "Cancel"
+                "cancel": "Cancel",
+                "back": "Back"
             },
             "validation": {
                 "nameRequired": "Name is required",

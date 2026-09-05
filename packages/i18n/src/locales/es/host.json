@@ -430,7 +430,8 @@
             "action": {
                 "save": "Guardar",
                 "saving": "Guardando...",
-                "cancel": "Cancelar"
+                "cancel": "Cancelar",
+                "back": "Volver"
             },
             "validation": {
                 "nameRequired": "El nombre es obligatorio",

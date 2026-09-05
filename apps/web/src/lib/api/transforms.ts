@@ -814,7 +814,15 @@ export function toTestimonialCardProps({
         rating: Number(item.rating ?? 0),
         reviewerName: String(item.userName || 'Usuario'),
         reviewerOrigin: String(item.entityName || ''),
-        reviewerAvatar: item.avatarUrl ? String(item.avatarUrl) : undefined,
+        // Routed through `toRenderableImageUrl` rather than a bare `String()`
+        // for two reasons. It is the same screening the sibling author-avatar
+        // field already gets (HOS-375): `avatarUrl` is written outside Zod, so
+        // a bare relative path or a `javascript:` value can reach here and
+        // render a broken image. And it is what puts the field inside the
+        // HOS-1144 CI cost guard — TestimonialsSection hands this value
+        // straight to Astro's `getImage()`, whose server-side fetch is exactly
+        // what must not reach Cloudinary during a CI run.
+        reviewerAvatar: toRenderableImageUrl(item.avatarUrl),
         initials: getInitialsFromName(String(item.userName || 'U')),
         location: String(item.entityName || ''),
         entityName: String(item.entityName || ''),

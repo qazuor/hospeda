@@ -136,6 +136,37 @@ function readBundledPackages(): readonly string[] {
     return [...block[1].matchAll(/['"]([^'"]+)['"]/g)].map((match) => match[1]);
 }
 
+/**
+ * Packages listed in `ssr.optimizeDeps.include` — the ones esbuild pre-bundles
+ * for the DEV server's SSR graph.
+ *
+ * Read from the slice of the config that follows `noExternal:`, because
+ * `astro.config.mjs` carries a second, unrelated `optimizeDeps` for the CLIENT
+ * graph earlier in the file; matching the first occurrence would read the wrong
+ * list and quietly compare against client entries.
+ *
+ * Unlike `readBundledPackages`, a failure to locate the block THROWS instead of
+ * returning `[]`. A guard whose extraction silently yields nothing reports every
+ * package as missing or as present depending on which side it lands on, and
+ * either way it stops describing reality — so the parse failing must be loud.
+ */
+function readSsrPrebundledPackages(): readonly string[] {
+    const config = readFileSync(join(APP_DIR, 'astro.config.mjs'), 'utf8');
+    const ssrSlice = config.slice(config.indexOf('noExternal:'));
+    if (!ssrSlice) {
+        throw new Error('cjs-esm-bridges guard: no `noExternal:` found in astro.config.mjs');
+    }
+
+    const block = ssrSlice.match(/optimizeDeps:\s*\{\s*include:\s*\[([^\]]*)\]/);
+    if (!block) {
+        throw new Error(
+            'cjs-esm-bridges guard: no `ssr.optimizeDeps.include` found after `noExternal:` in astro.config.mjs'
+        );
+    }
+
+    return [...block[1].matchAll(/['"]([^'"]+)['"]/g)].map((match) => match[1]);
+}
+
 /** Packages `src/lib/warm-cjs-esm-bridges.ts` links at boot. */
 function readWarmedPackages(): readonly string[] {
     const source = readFileSync(join(APP_DIR, 'src/lib/warm-cjs-esm-bridges.ts'), 'utf8');
@@ -325,5 +356,36 @@ describe('CommonJS -> ESM-only dependency bridges (HOS-370)', () => {
         const middleware = readFileSync(join(APP_DIR, 'src/middleware.ts'), 'utf8');
         expect(middleware).toContain('warm-cjs-esm-bridges');
         expect(middleware).toContain('CJS_ESM_BRIDGES_WARMED');
+    });
+
+    it('pre-bundles every bundled package for the dev server too (HOS-1166)', () => {
+        // `ssr.noExternal` fixes the BUILD: Rollup resolves the CommonJS -> ESM
+        // interop while bundling, so no `require()` survives into the server chunk.
+        // The dev server never bundles — it runs each package through
+        // `ssrTransform`, which rewrites ESM syntax but leaves `require` calls
+        // intact, so a CommonJS package executes as ESM and throws
+        // `ReferenceError: require is not defined` on the first line that calls it.
+        //
+        // That is not a corner case: it took down EVERY detail page of the site in
+        // dev for over a month while production stayed healthy and this very file
+        // passed, because listing `noExternal` was believed to be the whole fix.
+        //
+        // Both lists must therefore carry the same packages: `noExternal` for the
+        // build, `ssr.optimizeDeps.include` for dev.
+        const bundled = readBundledPackages();
+        const prebundled = readSsrPrebundledPackages();
+
+        // Guard the guard: if the extraction ever reads an empty list, the
+        // comparison below passes for the wrong reason.
+        expect(bundled.length, 'no packages read from ssr.noExternal').toBeGreaterThan(0);
+
+        const missing = bundled.filter((pkg) => !prebundled.includes(pkg));
+
+        expect(
+            missing,
+            `These packages are in \`ssr.noExternal\` but not in \`ssr.optimizeDeps.include\`: ${missing.join(', ')}. ` +
+                'The production build is fine and the dev server will answer 500 on every page that imports them. ' +
+                'Add them to `ssr.optimizeDeps.include` in astro.config.mjs.'
+        ).toEqual([]);
     });
 });

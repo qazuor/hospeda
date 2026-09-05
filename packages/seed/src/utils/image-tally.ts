@@ -35,6 +35,11 @@ export interface FormatImageTallyOutput {
  * Cloudinary degradation goes unnoticed for weeks. Whenever `failures` is above
  * zero the line is marked `tolerated` and raised to `warn`.
  *
+ * `skippedPlaceholder` (HOS-1144) is reported but never raises the level: a run
+ * with the image pipeline deliberately switched off is a normal CI run, not a
+ * degradation, and treating it as one would make the `warn` signal meaningless
+ * precisely where it is read most.
+ *
  * @param input - The counters to report. See {@link FormatImageTallyInput}.
  * @returns The message and the level to log it at.
  *
@@ -50,9 +55,9 @@ export interface FormatImageTallyOutput {
  */
 export function formatImageTally(input: FormatImageTallyInput): FormatImageTallyOutput {
     const { counters } = input;
-    const { uploaded, cached, failures, skippedExample } = counters;
+    const { uploaded, cached, failures, skippedExample, skippedPlaceholder } = counters;
 
-    const tally = `[seed:images] tally uploaded=${uploaded} cached=${cached} failures=${failures} skippedExample=${skippedExample}`;
+    const tally = `[seed:images] tally uploaded=${uploaded} cached=${cached} failures=${failures} skippedExample=${skippedExample} skippedPlaceholder=${skippedPlaceholder}`;
 
     if (failures > 0) {
         return {
