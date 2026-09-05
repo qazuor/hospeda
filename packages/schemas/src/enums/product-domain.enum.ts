@@ -49,3 +49,36 @@ export enum ProductDomainEnum {
     PARTNER = 'partner',
     ADDON = 'addon'
 }
+
+/**
+ * The subset of {@link ProductDomainEnum} members that represent an actual
+ * subscribable BUSINESS VERTICAL — a product with its own catalogue,
+ * listings and entitlements — as opposed to a domain that exists purely as a
+ * BILLING MECHANISM.
+ *
+ * `ADDON` (HOS-847) is the first non-vertical member: it tags a recurring
+ * add-on's OWN MercadoPago preapproval row, never a customer's real plan
+ * subscription (see `subscriptionMatchesDomain`'s doc in
+ * `@repo/service-core`). Any call site that asks "how many distinct
+ * verticals does this customer hold an active subscription in" — e.g. the
+ * `/mi-cuenta/` plan-summary widget (`resolveUserPlanSummary` in
+ * `apps/api/src/routes/user/protected/stats.ts`, HOS-1066) — MUST iterate
+ * this list, never `Object.values(ProductDomainEnum)` directly. Object.values
+ * silently absorbs every future member as "one more vertical", which is
+ * exactly how `ADDON` almost turned "one active plan + one active add-on"
+ * into a 2-domain summary with no plan name at all (found in review before
+ * merge, HOS-847 PR 2).
+ *
+ * A caller that genuinely wants EVERY domain value — e.g. an admin filter
+ * dropdown that must let staff filter subscriptions by `'addon'` too
+ * (`apps/admin/src/features/billing-subscriptions/SubscriptionFilters.tsx`)
+ * — should keep using `Object.values(ProductDomainEnum)` directly; this
+ * constant is not a blanket replacement for it, only for "count distinct
+ * verticals" call sites.
+ */
+export const BUSINESS_VERTICAL_PRODUCT_DOMAINS = [
+    ProductDomainEnum.ACCOMMODATION,
+    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.EXPERIENCE,
+    ProductDomainEnum.PARTNER
+] as const;
