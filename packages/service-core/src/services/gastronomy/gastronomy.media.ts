@@ -552,7 +552,11 @@ export async function setFeaturedGastronomyMedia(
 
         const mediaModel = new GastronomyMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId) {
+        // `deletedAt`: `findById` does NOT filter soft-deletes and `softDelete`
+        // leaves `is_featured` set, so without this a released cover stays a
+        // promotable target — HOS-803 C-1. Mirrors `updateMedia`'s long-standing
+        // guard on the accommodation side.
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this gastronomy listing'

@@ -23,14 +23,24 @@
  *     demoted, and that difference is invisible from inside one vertical.
  *
  * So the guard asserts the structural facts those depend on: every site in
- * `service-core` that writes `isFeatured: true` is classified as a create, a
- * promotion or a read filter, and every featured-media entry point routes
- * through the shared primitive.
+ * `service-core` matching the LITERAL `isFeatured: true` is classified as a
+ * create, a promotion or a read filter, and every featured-media entry point
+ * routes through the shared primitive.
  *
- * It does NOT claim there is literally one such site — there are two creates,
- * and the second (the legacy JSONB mirror) is exempt for a stated reason. What
- * it claims is that no site is UNCLASSIFIED, which is the property that makes a
- * new one impossible to add silently.
+ * ## Exactly what this does and does not cover
+ *
+ * The sweep is a literal-text match. It sees `isFeatured: true` and nothing
+ * else — NOT `isFeatured: flag`, NOT `{ ...base, isFeatured }`, NOT
+ * `isFeatured: true as boolean`, NOT ``sql`true``` and NOT raw SQL. So it
+ * cannot claim that a new featured-create is impossible to add silently; a
+ * determined or merely indirect one walks past it.
+ *
+ * What it does claim is narrower and still worth having: **no site written the
+ * obvious way is unclassified**. That is the form a copy-paste of the existing
+ * code takes, which is the realistic way a sixth vertical would arrive.
+ *
+ * It also does NOT claim there is literally one create — there are two, and the
+ * second (the legacy JSONB mirror) is exempt for a stated reason.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -171,9 +181,16 @@ describe('HOS-803 — one implementation of the born-featured cover path', () =>
     it.each(
         FEATURED_ENTRY_POINTS
     )('$fn delegates to the shared primitive instead of re-deriving the rules', ({ file, fn }) => {
-        const source = readSource(file);
+        const whole = readSource(file);
 
-        expect(source).toContain(fn);
+        expect(whole).toContain(fn);
+
+        // Slice to the function, not the file. `accommodation.service.ts` is
+        // ~4,700 lines and imports the primitive near the top, so a whole-file
+        // `toContain` would stay green while `addFeaturedMedia` itself was
+        // rewritten by hand — the exact blind spot this guard exists to cover.
+        const start = whole.indexOf(fn);
+        const source = whole.slice(start, start + 3000);
         // Both halves: the policy (addFeaturedMediaRow) and the adapter
         // (buildOwnedMediaFeaturedPort). A vertical that imported only the
         // adapter would still be writing its own cap arithmetic.
@@ -196,7 +213,7 @@ describe('HOS-803 — one implementation of the born-featured cover path', () =>
         expect(createAt).toBeGreaterThan(deleteAt);
     });
 
-    it('releases the outgoing cover by SOFT-DELETING it, never by demoting it', () => {
+    it('releases the outgoing cover by clearing the flag AND soft-deleting it', () => {
         const source = readSource(PORT_FILE);
 
         const body = source.slice(
@@ -204,14 +221,66 @@ describe('HOS-803 — one implementation of the born-featured cover path', () =>
             source.indexOf('createFeatured:')
         );
 
-        // The canonical writer, which stamps the actor — a literal patch
-        // carrying `deletedAt` would also trip check 3 of
+        // TWO writes, both required (HOS-803 C-1).
+        //
+        // `softDelete` patches only the timestamps and the actor, so on its own
+        // it leaves the row carrying `is_featured = true`. The partial unique
+        // index ignores deleted rows and `findById` does not filter them, so
+        // that row stays a promotable target — re-featuring it demotes the LIVE
+        // cover into the gallery for a row that no longer exists.
+        //
+        // The `isFeatured: false` here is therefore REQUIRED, and this
+        // expectation is the inverse of what it was before C-1 was found: the
+        // earlier version forbade the literal outright, on the theory that any
+        // occurrence meant a demote had crept in. It is written as a separate
+        // `update` rather than folded into a literal patch alongside
+        // `deletedAt`, because such a literal would trip check 3 of
         // scripts/check-soft-delete-actor.ts.
+        expect(body).toMatch(/mediaModel\.update\(/);
+        expect(body).toMatch(/isFeatured:\s*false/);
         expect(body).toMatch(/mediaModel\.softDelete\(/);
-        // The mistake this rules out: reusing setFeaturedMedia's demote here,
-        // which leaves the old cover in the gallery as a permanent +1.
-        expect(body).not.toMatch(/isFeatured:\s*false/);
+
+        // Order: the flag must be cleared before, or at worst with, the delete —
+        // never after, which would leave a window where the row is deleted and
+        // still flagged.
+        expect(body.indexOf('mediaModel.update(')).toBeLessThan(
+            body.indexOf('mediaModel.softDelete(')
+        );
+
+        // Still ruled out: archiving the old cover instead of removing it, the
+        // design this replaced.
         expect(body).not.toMatch(/state:\s*'archived'/);
+    });
+
+    it('checks deletedAt in every setFeatured, so a released cover cannot be revived', () => {
+        // The other half of C-1. `findById` returns soft-deleted rows, so each
+        // setFeatured must reject them explicitly — `updateMedia` always did,
+        // these three did not. Behaviour is covered by
+        // `accommodation/featured-media-deleted-row-revival.test.ts`; this
+        // pins the two commerce twins, which have no equivalent suite.
+        const SET_FEATURED_SITES: ReadonlyArray<{ file: string; fn: string }> = [
+            {
+                file: 'services/accommodation/accommodation.service.ts',
+                fn: 'public async setFeaturedMedia('
+            },
+            {
+                file: 'services/gastronomy/gastronomy.media.ts',
+                fn: 'export async function setFeaturedGastronomyMedia('
+            },
+            {
+                file: 'services/experience/experience.media.ts',
+                fn: 'export async function setFeaturedExperienceMedia('
+            }
+        ];
+
+        for (const site of SET_FEATURED_SITES) {
+            const whole = readSource(site.file);
+            const start = whole.indexOf(site.fn);
+            expect(start).toBeGreaterThan(-1);
+            const body = whole.slice(start, start + 2500);
+
+            expect(body).toMatch(/mediaRow\.deletedAt/);
+        }
     });
 
     it('does not consult any gallery count — the swap is quota-neutral', () => {

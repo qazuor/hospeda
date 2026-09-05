@@ -4336,7 +4336,18 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                // `deletedAt` is checked here for the same reason `updateMedia` has
+                // always checked it: `findById` does NOT filter soft-deletes, so
+                // without this a deleted row is a promotable target. That is half of
+                // HOS-803 C-1 — `softDelete` leaves `is_featured` set and the partial
+                // unique index ignores deleted rows, so re-featuring one demotes the
+                // LIVE cover into the gallery to make room for a row that no longer
+                // exists: gallery +1 per cycle, uncapped.
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'

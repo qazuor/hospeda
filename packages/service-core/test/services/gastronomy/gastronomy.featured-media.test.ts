@@ -225,7 +225,15 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
         // rather than joining the gallery, so repeated swaps move no count.
         expect(result.error).toBeUndefined();
         expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(1);
-        expect(mockMediaModel.update).not.toHaveBeenCalled();
+
+        // The single `update` clears `isFeatured` as part of the release
+        // (HOS-803 C-1: softDelete alone leaves the row still flagged as the
+        // cover, and a deleted-but-flagged row can be re-featured). It is not a
+        // demotion — the soft delete follows it immediately.
+        expect(mockMediaModel.update).toHaveBeenCalledTimes(1);
+        const patch = mockMediaModel.update.mock.calls[0]?.[1] as Record<string, unknown>;
+        expect(patch.isFeatured).toBe(false);
+        expect(patch.state).toBeUndefined();
     });
 
     it('reports no previous cover when the listing had none', async () => {

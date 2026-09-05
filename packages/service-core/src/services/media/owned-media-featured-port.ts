@@ -13,7 +13,8 @@
  * So there is one adapter, parameterised by that name, rather than one per
  * vertical. Five copies of this file would be five places for the release of
  * the outgoing cover to drift back into a demotion — which is what made every
- * cover replacement a permanent +1 to the gallery.
+ * cover replacement a permanent +1 to the gallery — and five places to forget
+ * that `softDelete` alone leaves the row still flagged as the cover (C-1).
  */
 
 import type { DrizzleClient } from '@repo/db';
@@ -44,6 +45,7 @@ export type FeaturedCapableMediaModel<TRow> = {
         tx?: DrizzleClient
     ): Promise<{ items: TRow[]; total: number }>;
     create(data: never, tx?: DrizzleClient): Promise<TRow>;
+    update(where: Record<string, unknown>, data: never, tx?: DrizzleClient): Promise<TRow | null>;
     softDelete(
         where: Record<string, unknown>,
         deletedById: string | null,
@@ -130,12 +132,35 @@ export function buildOwnedMediaFeaturedPort<TRow extends { readonly id: string }
 
         findFeatured,
 
-        // The canonical soft-delete writer, so `deletedById` is stamped by the
-        // base model rather than by an object literal here — the shape the
-        // soft-delete-actor guard checks for. The stored asset is untouched on
-        // purpose: a soft delete that destroys the original is not reversible.
+        // TWO writes, and the order matters (HOS-803 C-1).
+        //
+        // `softDelete` patches `deletedAt`/`updatedAt`/`deletedById` and NOTHING
+        // else, so on its own it leaves the released cover carrying
+        // `is_featured = true`. The partial unique index is
+        // `WHERE is_featured = true AND deleted_at IS NULL`, so it cannot see
+        // that row — and `findById` does not filter soft-deletes, so
+        // `setFeaturedMedia` could resolve it and re-feature it, demoting the
+        // LIVE cover into the gallery to make room for a row that no longer
+        // exists. Gallery +1 per cycle, uncapped. The guards added to the three
+        // `setFeatured` functions close the other side of that door; this
+        // clears the flag so there is nothing behind it either.
+        //
+        // Clearing it first also means the row is never both deleted and
+        // flagged, so a future un-delete cannot collide with the incoming cover.
+        //
+        // The `where` carries the owning foreign key as well as the id. The id
+        // comes from `findFeatured` and is already owner-scoped, so this is
+        // belt-and-braces — but it costs nothing and it stops a future caller
+        // from reaching another entity's row through this port.
+        //
+        // The stored asset is untouched on purpose: a soft delete that destroys
+        // the original is not reversible.
         deletePrevious: async (mediaId: string, tx: DrizzleClient) => {
-            await mediaModel.softDelete({ id: mediaId }, deletedById, tx);
+            await mediaModel.update({ id: mediaId, ...owner }, { isFeatured: false } as never, tx);
+            // Canonical writer, so `deletedById` is stamped by the base model
+            // rather than by an object literal — the shape
+            // scripts/check-soft-delete-actor.ts checks for.
+            await mediaModel.softDelete({ id: mediaId, ...owner }, deletedById, tx);
         },
 
         createFeatured: ({ sortOrder }, tx: DrizzleClient) =>
