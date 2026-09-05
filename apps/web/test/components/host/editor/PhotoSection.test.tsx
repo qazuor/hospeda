@@ -7,8 +7,9 @@
  * - SSR initial* props shown as first-paint until listMedia resolves
  * - Adding a gallery photo calls addMedia and shows it in the grid
  * - Removing a gallery photo calls removeMedia and removes it from state
- * - Setting a new featured calls upload → addMedia → setFeaturedMedia,
- *   and the previous featured moves to the gallery
+ * - Setting a new featured calls upload → addFeaturedMedia (ONE request,
+ *   HOS-803), and the previous featured is DELETED server-side rather than
+ *   moved into the gallery
  * - An operation failure surfaces an inline error and does NOT mutate state
  * - Gallery cap enforcement: add button hidden + message shown at cap
  * - Section title / description always rendered
@@ -37,6 +38,7 @@ import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 const {
     mockListMedia,
     mockAddMedia,
+    mockAddFeaturedMedia,
     mockRemoveMedia,
     mockSetFeaturedMedia,
     mockReorderMedia,
@@ -46,6 +48,7 @@ const {
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
+    mockAddFeaturedMedia: vi.fn(),
     mockRemoveMedia: vi.fn(),
     mockSetFeaturedMedia: vi.fn(),
     mockReorderMedia: vi.fn(),
@@ -117,6 +120,8 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
+        // HOS-803: the portada uploader registers the cover in ONE request.
+        addFeaturedMedia: mockAddFeaturedMedia,
         removeMedia: mockRemoveMedia,
         setFeaturedMedia: mockSetFeaturedMedia,
         reorderMedia: mockReorderMedia,
@@ -232,6 +237,23 @@ function makeListEmpty() {
 
 function makeAddOk(row = NEW_ROW) {
     return Promise.resolve({ ok: true as const, data: { media: row } });
+}
+
+/**
+ * Resolved `addFeaturedMedia` response (HOS-803).
+ *
+ * Carries `previousFeatured` because the endpoint changes TWO rows: the cover
+ * created, and the one it replaced, which the server soft-deletes in the same
+ * transaction. `null` when the accommodation had no cover to replace.
+ */
+function makeAddFeaturedOk(row = NEW_ROW, previousFeaturedId: string | null = null) {
+    return Promise.resolve({
+        ok: true as const,
+        data: {
+            media: { ...row, isFeatured: true },
+            previousFeatured: previousFeaturedId ? { id: previousFeaturedId } : null
+        }
+    });
 }
 
 function makeRemoveOk() {
@@ -495,15 +517,11 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
     // ── 4. Setting a new featured image ────────────────────────────────────
 
     describe('setting a new featured (portada)', () => {
-        it('calls upload → addMedia → setFeaturedMedia and updates portada slot', async () => {
+        it('calls upload → addFeaturedMedia in ONE request and updates the portada slot', async () => {
             // Start with no featured, one gallery
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
             mockUploadEntityImage.mockReturnValue(makeUploadOk());
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
-            const featuredRow = { ...NEW_ROW, isFeatured: true };
-            mockSetFeaturedMedia.mockReturnValue(
-                Promise.resolve({ ok: true as const, data: { media: featuredRow } })
-            );
+            mockAddFeaturedMedia.mockReturnValue(makeAddFeaturedOk());
 
             render(<PhotoSection {...defaultProps} />);
 
@@ -521,35 +539,45 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             fireEvent.change(featuredInput, { target: { files: [file] } });
 
             await waitFor(() => {
-                expect(mockAddMedia).toHaveBeenCalledWith({
-                    id: ACC_ID,
-                    body: expect.objectContaining({ url: NEW_ROW.url })
-                });
+                expect(mockAddFeaturedMedia).toHaveBeenCalledTimes(1);
             });
 
-            await waitFor(() => {
-                expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
-                    id: ACC_ID,
-                    mediaId: NEW_ROW.id
-                });
-            });
+            // Read the call rather than matching it with `objectContaining`,
+            // which is blind to a MISSING key — and "missing" is exactly what
+            // the assertion below is about.
+            const [arg] = mockAddFeaturedMedia.mock.calls[0] as [
+                { id: string; body: Record<string, unknown> }
+            ];
+            expect(arg.id).toBe(ACC_ID);
+            expect(arg.body.url).toBe(NEW_ROW.url);
+            // The client never claims the outcome: which kind of row this
+            // becomes is the endpoint's decision, not the payload's.
+            expect('isFeatured' in arg.body).toBe(false);
+
+            // The old chain must be GONE, not merely bypassed. A positive-only
+            // assertion would stay green if someone reinstated addMedia +
+            // setFeaturedMedia alongside the new call — and that first request
+            // is precisely what the plan cap used to refuse.
+            expect(mockAddMedia).not.toHaveBeenCalled();
+            expect(mockSetFeaturedMedia).not.toHaveBeenCalled();
 
             // The portada slot now shows the new image
             await waitFor(() => {
                 const img = screen.getByAltText('Imagen principal');
-                expect(img).toHaveAttribute('src', featuredRow.url);
+                expect(img).toHaveAttribute('src', NEW_ROW.url);
             });
         });
 
-        it('moves the previous featured to the gallery when a new portada is set', async () => {
-            // Start with a featured row already present
+        it('does NOT move the previous portada into the gallery — the server deleted it', async () => {
+            // This assertion is INVERTED from what it used to be, and the
+            // inversion is the feature (HOS-803). Promoting a gallery photo
+            // still demotes the old cover into the gallery; uploading a NEW
+            // one soft-deletes it instead, which is what makes the swap
+            // quota-neutral. Appending it here would leave a photo on screen
+            // that no longer exists.
             mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW]));
             mockUploadEntityImage.mockReturnValue(makeUploadOk());
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
-            const newFeaturedRow = { ...NEW_ROW, isFeatured: true };
-            mockSetFeaturedMedia.mockReturnValue(
-                Promise.resolve({ ok: true as const, data: { media: newFeaturedRow } })
-            );
+            mockAddFeaturedMedia.mockReturnValue(makeAddFeaturedOk(NEW_ROW, FEATURED_ROW.id));
 
             render(<PhotoSection {...defaultProps} />);
 
@@ -567,27 +595,23 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             const file = new File(['img'], 'new-portada.jpg', { type: 'image/jpeg' });
             fireEvent.change(featuredInput, { target: { files: [file] } });
 
-            // After the op completes: new portada is in featured slot
+            // After the op completes: new portada is in the featured slot
             await waitFor(() => {
-                expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
-                    'src',
-                    newFeaturedRow.url
-                );
+                expect(screen.getByAltText('Imagen principal')).toHaveAttribute('src', NEW_ROW.url);
             });
 
-            // Old featured moved to gallery grid — its url is now a gallery img
-            await waitFor(() => {
-                const imgs = screen.getAllByRole('img');
-                const urls = imgs.map((i) => i.getAttribute('src'));
-                expect(urls).toContain(FEATURED_ROW.url);
-            });
+            // And the OLD portada is nowhere on screen — not in the grid, not
+            // anywhere. The server deleted that row.
+            const urls = screen.getAllByRole('img').map((i) => i.getAttribute('src'));
+            expect(urls).not.toContain(FEATURED_ROW.url);
         });
 
-        it('surfaces an inline error and keeps state when setFeaturedMedia fails', async () => {
+        it('surfaces an inline error and keeps state when addFeaturedMedia fails', async () => {
+            // There is no second request to fail any more: the cover upload is
+            // one call, so this is the only failure the portada path has.
             mockListMedia.mockReturnValue(makeListOk([]));
             mockUploadEntityImage.mockReturnValue(makeUploadOk());
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
-            mockSetFeaturedMedia.mockReturnValue(makeError('featured op failed'));
+            mockAddFeaturedMedia.mockReturnValue(makeError('featured op failed'));
 
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
@@ -940,13 +964,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
         it('uploads a file dropped onto the featured slot', async () => {
             mockListMedia.mockReturnValue(makeListEmpty());
             mockUploadEntityImage.mockReturnValue(makeUploadOk());
-            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
-            mockSetFeaturedMedia.mockReturnValue(
-                Promise.resolve({
-                    ok: true as const,
-                    data: { media: { ...NEW_ROW, isFeatured: true } }
-                })
-            );
+            mockAddFeaturedMedia.mockReturnValue(makeAddFeaturedOk());
 
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => {
@@ -964,11 +982,15 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             fireEvent.drop(dropZone as HTMLElement, { dataTransfer: { files: [file] } });
 
             await waitFor(() => {
-                expect(mockAddMedia).toHaveBeenCalledWith({
+                expect(mockAddFeaturedMedia).toHaveBeenCalledWith({
                     id: ACC_ID,
                     body: expect.objectContaining({ url: NEW_ROW.url })
                 });
             });
+
+            // Dropping on the portada slot must take the cover path, not the
+            // gallery one — the gallery call is what the plan cap refuses.
+            expect(mockAddMedia).not.toHaveBeenCalled();
         });
 
         it('uploads a file dropped onto the gallery add zone', async () => {
