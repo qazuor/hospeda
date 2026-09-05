@@ -142,6 +142,17 @@ const USAGE_KIND_BY_LIMIT_KEY: Readonly<Record<string, UsageKindValue>> = {
     [LimitKey.MAX_COMPARE_ITEMS]: UsageKind.PER_OPERATION,
     [LimitKey.MAX_PROPERTIES]: UsageKind.UNBUILT,
     [LimitKey.MAX_STAFF_ACCOUNTS]: UsageKind.UNBUILT,
+    // HOS-1060 — UNBUILT in phase 1, and spelled out rather than left to
+    // `usageKindForLimit`'s `?? UNBUILT` fallback, because the guard test
+    // demands every key be classified once and explicitly. The cap is declared
+    // on all six commerce plan rows (an absent key would read as UNLIMITED),
+    // but nothing creates, stores or expires a gallery yet: there is no counter
+    // and nothing to advertise, so `shouldDisplayLimit` hides the row.
+    //
+    // The phase that ships the creation route MUST move this to STOCK and add
+    // its counter arm to `getCurrentUsage`. Left here, it would report a
+    // permanent `0 / 20` to a provider who is actually at their cap.
+    [LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES]: UsageKind.UNBUILT,
     [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_CHAT_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: UsageKind.MONTHLY,

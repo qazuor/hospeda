@@ -393,6 +393,9 @@
             "title": "Plan limit reached",
             "message": "You've reached your plan's limit. Upgrade to continue.",
             "cta": "View my subscription"
+        },
+        "max_active_private_galleries": {
+            "title": "You've reached your active private galleries limit"
         }
     },
     "limits": {
@@ -568,7 +571,8 @@
         "ai_translate": "AI content translation",
         "ai_accommodation_import": "AI accommodation import",
         "manage_gastronomy_events": "Venue events, dated or weekly",
-        "multilingual_gastronomy_menu": "Menu in multiple languages"
+        "multilingual_gastronomy_menu": "Menu in multiple languages",
+        "manage_experience_private_galleries": "Private galleries for your customers"
     },
     "comparison": {
         "unlimited": "Unlimited",
@@ -703,7 +707,8 @@
             "max_ai_translate_per_month": "AI translations per month",
             "max_ai_accommodation_import_per_month": "AI imports per month",
             "max_search_history_entries": "Search history entries",
-            "max_collections": "Favorites collections"
+            "max_collections": "Favorites collections",
+            "max_active_private_galleries": "Active private galleries"
         }
     },
     "limitHelp": {
@@ -727,6 +732,7 @@
         "max_search_history_entries": "How many past searches are kept in your history. Beyond the cap, the oldest ones are removed.",
         "max_collections": "How many favourite lists you can keep. At the cap you have to delete one to create another.",
         "max_gastronomies": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
-        "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another."
+        "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
+        "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
     }
 }

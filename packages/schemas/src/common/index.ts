@@ -35,6 +35,8 @@ export * from './content-state.schema.js';
 // Relation-selector lookup options (SPEC-169 §5.5)
 export * from './entity-options.schema.js';
 export * from './faq.schema.js';
+// Shared shapes for the born-featured cover endpoints (HOS-803)
+export * from './featured-media.schema.js';
 export * from './helpers.schema.js';
 // Structured service-provider benefit, shared by alliance leads and host trades
 export * from './host-trade-benefit.schema.js';

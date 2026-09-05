@@ -66,6 +66,7 @@ import type { DowngradePreview, KeepSelections } from '@repo/schemas';
 import type { EntityChangeData } from '@repo/service-core';
 import { getRevalidationService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
+import { assertAccommodationPlanSlug } from './billing/plan-domain-guard';
 import { archiveAccommodationPhotos } from './plan-photo-restriction.service';
 import { restrictAccommodations, restrictPromotions } from './plan-restriction.service';
 import type { ComputeDowngradeExcessDeps } from './subscription-downgrade-excess.service';
@@ -467,6 +468,18 @@ export async function applyDowngradeRestrictions(
     if (!targetPlanSlug || targetPlanSlug.trim() === '') {
         throw new Error('applyDowngradeRestrictions: targetPlanSlug is required');
     }
+
+    // ── The slug is no longer taken on trust (HOS-1122) ────────────────────
+    //
+    // Everything below reads the ACCOMMODATION and PROMOTION caps of the named
+    // plan and restricts the owner's accommodations and promotions against
+    // them. A commerce tier declares neither cap, so handing one in used to
+    // mean reasoning about a host's properties from a restaurant's plan. The
+    // symptom was never an exception — `computeDowngradeExcess` would throw
+    // `PlanCatalogMissError`, which the cron logs as "target plan not in
+    // catalog (non-blocking)", i.e. as a data gap rather than as a call from
+    // the wrong domain. This says which it actually is.
+    assertAccommodationPlanSlug(targetPlanSlug, 'applyDowngradeRestrictions');
 
     apiLogger.info(
         { userId, customerId, targetPlanSlug },

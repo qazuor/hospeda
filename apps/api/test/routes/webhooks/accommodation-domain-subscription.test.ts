@@ -48,7 +48,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return { ...actual, hydrateSubscriptionProductDomains: mockHydrate };
 });
 
-import { isAccommodationDomainSubscription } from '../../../src/routes/webhooks/mercadopago/payment-logic';
+import { isAccommodationDomainSubscription } from '../../../src/services/billing/plan-domain-guard';
 
 const SUB = { id: 'sub-1', customerId: 'cust-1' };
 

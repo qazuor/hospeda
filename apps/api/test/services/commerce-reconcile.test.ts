@@ -22,7 +22,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
     /** Rows returned when selecting link rows BY `subscription_id`. */
-    linkRows: [] as Array<{ entityType: string; entityId: string }>,
+    linkRows: [] as Array<{ entityType: string; entityId: string; planRestricted?: boolean }>,
     /** Rows returned when selecting the link row BY `(entity_type, entity_id)`. */
     holderRows: [] as Array<{ subscriptionId: string; status: string }>,
     /** Rows returned when selecting the `billing_subscriptions` row. */
@@ -43,11 +43,18 @@ const loggerMock = vi.hoisted(() => ({
 }));
 
 const reconcileVisibilityMock = vi.hoisted(() =>
-    vi.fn(async (_input: { entityType: string; entityId: string; subscriptionStatus: string }) => ({
-        updated: true,
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE'
-    }))
+    vi.fn(
+        async (_input: {
+            entityType: string;
+            entityId: string;
+            subscriptionStatus: string;
+            planRestricted?: boolean;
+        }) => ({
+            updated: true,
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        })
+    )
 );
 
 vi.mock('@repo/db', () => {
@@ -55,7 +62,8 @@ vi.mock('@repo/db', () => {
         subscriptionId: 'commerce.subscription_id',
         entityType: 'commerce.entity_type',
         entityId: 'commerce.entity_id',
-        status: 'commerce.status'
+        status: 'commerce.status',
+        planRestricted: 'commerce.plan_restricted'
     };
     const billingSubscriptions = {
         id: 'billing.id',
@@ -411,5 +419,84 @@ describe('reconcileCommerceListingForSubscription — untouched paths', () => {
         expect(state.updates[0]?.payload.status).toBe(SubscriptionStatusEnum.ACTIVE);
         expect(reconcileVisibilityMock).toHaveBeenCalledTimes(1);
         expect(state.inserts).toHaveLength(0);
+    });
+});
+
+describe('reconcileCommerceListingForSubscription — plan-restricted listings (HOS-1122)', () => {
+    it('forwards the link row’s planRestricted flag to the visibility reconciler', () => {
+        // The reconciler cannot read the column itself — it takes the value as
+        // an input, defaulting to `false`. So the whole guarantee that a
+        // downgraded listing stays private through a renewal webhook rests on
+        // THIS select carrying the column and THIS call forwarding it. Dropping
+        // either leaves the reconciler seeing the permissive default with no
+        // error anywhere.
+        state.linkRows = [{ entityType: ENTITY_TYPE, entityId: ENTITY_ID, planRestricted: true }];
+
+        return reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        }).then(() => {
+            expect(reconcileVisibilityMock).toHaveBeenCalledTimes(1);
+            expect(reconcileVisibilityMock.mock.calls[0]?.[0]?.planRestricted).toBe(true);
+        });
+    });
+
+    it('forwards FALSE for an unrestricted listing — not undefined, and not the default', async () => {
+        // Distinguishes "the column was read and said false" from "the field was
+        // never passed and the reconciler's own default filled in". Only the
+        // first proves the select still carries the column.
+        state.linkRows = [{ entityType: ENTITY_TYPE, entityId: ENTITY_ID, planRestricted: false }];
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        });
+
+        expect(reconcileVisibilityMock.mock.calls[0]?.[0]?.planRestricted).toBe(false);
+    });
+
+    it('clears plan_restricted when it re-points the row at another subscription', async () => {
+        // HOS-1122. The recovery hands the listing from subB to subA. A
+        // restriction is a fact about ONE subscription — subA has its own tier
+        // and has restricted nothing — so carrying the flag over would leave a
+        // paid listing PRIVATE, and silently: the reconciler's
+        // paid-but-incomplete alarm is keyed on the same predicate the flag
+        // feeds, so a restricted listing produces no log at all.
+        state.linkRows = [];
+        state.holderRows = [
+            { subscriptionId: SUB_B, status: SubscriptionStatusEnum.PENDING_PROVIDER }
+        ];
+        state.subscriptionRows = [
+            { metadata: { commerceEntityType: ENTITY_TYPE, commerceEntityId: ENTITY_ID } }
+        ];
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        });
+
+        expect(state.conflicts).toHaveLength(1);
+        expect(state.conflicts[0]?.set.planRestricted).toBe(false);
+    });
+
+    it('treats a RECOVERED link as unrestricted — a recovery only ever fires for an unlinked subscription', async () => {
+        state.linkRows = [];
+        state.holderRows = [
+            { subscriptionId: SUB_B, status: SubscriptionStatusEnum.PENDING_PROVIDER }
+        ];
+        state.subscriptionRows = [
+            { metadata: { commerceEntityType: ENTITY_TYPE, commerceEntityId: ENTITY_ID } }
+        ];
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        });
+
+        expect(reconcileVisibilityMock.mock.calls[0]?.[0]?.planRestricted).toBe(false);
     });
 });

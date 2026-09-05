@@ -20,6 +20,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedAddExperienceFaqRoute } from './addFaq';
+import { protectedAddExperienceFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddExperienceMediaRoute } from './addMedia';
 import { protectedGetExperienceBrochureRoute } from './brochure';
 import {
@@ -38,6 +39,7 @@ import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateExperienceFaqRoute } from './updateFaq';
+import { protectedUpdateExperienceMediaRoute } from './updateMedia';
 import { protectedExperienceViewStatsRoute } from './viewStats';
 import { protectedExperienceViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
@@ -98,6 +100,11 @@ app.route('/', protectedReorderExperienceMediaRoute);
 app.route('/', protectedGetExperienceMediaRoute);
 
 // POST /{id}/media — Add photo to gallery.
+// POST /:id/media/featured - Upload straight to cover (HOS-803).
+// Registered before POST /:id/media so "featured" resolves as the fixed
+// suffix rather than being absorbed by the collection route.
+app.route('/', protectedAddExperienceFeaturedMediaRoute);
+
 app.route('/', protectedAddExperienceMediaRoute);
 
 // PUT /{id}/media/{mediaId}/featured — Must be before /{id}/media/{mediaId} (DELETE).
@@ -105,5 +112,9 @@ app.route('/', protectedSetFeaturedExperienceMediaRoute);
 
 // DELETE /{id}/media/{mediaId} — Remove photo from gallery.
 app.route('/', protectedRemoveExperienceMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdateExperienceMediaRoute);
 
 export { app as protectedExperienceRoutes };
