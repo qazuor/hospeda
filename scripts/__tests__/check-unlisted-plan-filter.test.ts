@@ -9,11 +9,12 @@
  * at fixtures that REMOVE the protection and asserts it exits 1, and at
  * near-miss fixtures and asserts it does not.
  *
- * The script exposes two test-injection env vars for exactly this, mirroring
+ * The script exposes three test-injection env vars for exactly this, mirroring
  * `SCAN_FILES_OVERRIDE` in check-no-trial-to-mercadopago.sh:
  *
- *   - `HANDLER_FILE_OVERRIDE`   — the file checks 1-3 read instead of the route.
+ *   - `HANDLER_FILE_OVERRIDE`   — the file checks 1-3 read instead of the public route.
  *   - `PREDICATE_FILE_OVERRIDE` — the file check 4 reads instead of the schema.
+ *   - `PROTECTED_FILE_OVERRIDE` — the file checks 6-8 read instead of the protected route.
  *
  * Each test spawns the real script as a subprocess and asserts its exit code and
  * stdout, since the artifact under test is bash rather than a TS module.
@@ -74,6 +75,50 @@ const GOOD_PREDICATE = [
     "    return plan.publicListing === 'listed';",
     '}'
 ];
+
+/** The protected handler as it stands: both branches filter, neither returns raw qzpay data. */
+const GOOD_PROTECTED = [
+    'export function isPubliclyListedStoragePlan(plan) {',
+    '    return isPubliclyListedPlan(resolvePlanPublicListing({ metadata: plan.metadata }));',
+    '}',
+    'export function servablePlans<T>(plans: readonly T[]): T[] {',
+    '    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));',
+    '}',
+    'async function loadServableCatalog(billing) {',
+    '    return servablePlans(collected);',
+    '}',
+    'if (activeOnly) {',
+    '    const active = await billing.plans.getActive();',
+    '    return c.json({ success: true, data: servablePlans(active) });',
+    '}',
+    'const servable = await loadServableCatalog(billing);',
+    'return c.json({ success: true, data: servable.slice(offset, offset + limit) });'
+];
+
+/**
+ * Runs the guard with all three files overridden, so a fixture exercises exactly
+ * one check and the other two files stay valid.
+ */
+function runWithFixtures(overrides: {
+    handler?: readonly string[];
+    predicate?: readonly string[];
+    protectedHandler?: readonly string[];
+    handlerPath?: string;
+}): RunResult {
+    const id = Math.random().toString(36).slice(2, 8);
+    return runGuard({
+        HANDLER_FILE_OVERRIDE:
+            overrides.handlerPath ?? fixture(`handler-${id}.ts`, overrides.handler ?? GOOD_HANDLER),
+        PREDICATE_FILE_OVERRIDE: fixture(
+            `predicate-${id}.ts`,
+            overrides.predicate ?? GOOD_PREDICATE
+        ),
+        PROTECTED_FILE_OVERRIDE: fixture(
+            `protected-${id}.ts`,
+            overrides.protectedHandler ?? GOOD_PROTECTED
+        )
+    });
+}
 
 beforeAll(() => {
     workDir = mkdtempSync(path.join(tmpdir(), 'hos1062-unlisted-'));
@@ -166,7 +211,155 @@ describe('check-unlisted-plan-filter.sh — it fails when the lock is removed', 
     });
 });
 
+describe('check-unlisted-plan-filter.sh — the second door (protected /plans)', () => {
+    it('rejects a protected handler that lost servablePlans() entirely', () => {
+        const result = runWithFixtures({
+            protectedHandler: [
+                'const active = await billing.plans.getActive();',
+                'return c.json({ success: true, data: active.filter((p) => !isTestPlan(p)) });'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no longer defines servablePlans()');
+    });
+
+    it('rejects a servablePlans() that dropped the unlisted mark and kept only isTestPlan', () => {
+        // The pre-HOS-1062 state, and the likeliest regression: someone
+        // "simplifies" the predicate back to the one mark it used to have.
+        const result = runWithFixtures({
+            protectedHandler: [
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan));',
+                '}',
+                '    return c.json({ success: true, data: servablePlans(active) });',
+                'return servablePlans(collected);'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no longer applies both marks');
+    });
+
+    it('rejects the ?active=true branch answering unfiltered, even with the paginated one filtered', () => {
+        // The asymmetric failure this guard exists for: one door watched, the
+        // other left open. A call-site COUNT would have passed this fixture —
+        // loadServableCatalog still calls servablePlans.
+        const result = runWithFixtures({
+            protectedHandler: [
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));',
+                '}',
+                'async function loadServableCatalog(billing) {',
+                '    return servablePlans(collected);',
+                '}',
+                'if (activeOnly) {',
+                '    const active = await billing.plans.getActive();',
+                '    return c.json({ success: true, data: active });',
+                '}',
+                'const servable = await loadServableCatalog(billing);',
+                'return c.json({ success: true, data: servable.slice(offset, offset + limit) });'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('?active=true branch no longer filters');
+        expect(result.stdout).toContain('answers with a RAW qzpay result');
+    });
+
+    it('rejects a catalogue loader that returns the raw pages', () => {
+        const result = runWithFixtures({
+            protectedHandler: [
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));',
+                '}',
+                'async function loadServableCatalog(billing) {',
+                '    return collected;',
+                '}',
+                '    return c.json({ success: true, data: servablePlans(active) });'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('catalogue loader no longer filters');
+    });
+
+    it('rejects a protected handler that answers a raw qzpay result', () => {
+        const result = runWithFixtures({
+            protectedHandler: [...GOOD_PROTECTED, 'return c.json({ data: result.data });']
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('answers with a RAW qzpay result');
+    });
+
+    it('rejects an adapter that restates the comparison instead of delegating', () => {
+        // Measured, not hypothetical: this exact form passed all 15 route tests
+        // AND the guard's other checks. `resolvePlanPublicListing` is total over
+        // two values, so `=== 'listed'` and `!== 'unlisted'` are the same
+        // expression here — a comparison no mutation can distinguish from its own
+        // inverse. Only a static check can require the delegation.
+        const result = runWithFixtures({
+            protectedHandler: [
+                'export function isPubliclyListedStoragePlan(plan) {',
+                "    return resolvePlanPublicListing({ metadata: plan.metadata }).publicListing === 'listed';",
+                '}',
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));',
+                '}',
+                '    return c.json({ success: true, data: servablePlans(active) });',
+                'return servablePlans(collected);'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no longer delegates the listing verdict');
+    });
+
+    it('rejects an early return of the raw accumulator inside the paging loop', () => {
+        // The other measured escape: `return collected;` on the last page left
+        // the final `return servablePlans(collected);` in place, so the "loader
+        // still filters" check stayed green while five route tests went red.
+        const result = runWithFixtures({
+            protectedHandler: [
+                ...GOOD_PROTECTED,
+                'if (!result.hasMore) {',
+                '    return collected;',
+                '}'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('returns its RAW accumulator');
+    });
+
+    it('rejects a protected handler that has been deleted or moved', () => {
+        const result = runGuard({
+            PROTECTED_FILE_OVERRIDE: path.join(workDir, 'no-protected-handler.ts')
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('is missing');
+    });
+});
+
 describe('check-unlisted-plan-filter.sh — it does not cry wolf', () => {
+    it('passes the protected handler as it stands', () => {
+        expect(runWithFixtures({}).exitCode).toBe(0);
+    });
+
+    it('does not mistake prose about raw qzpay data for a return of it', () => {
+        const result = runWithFixtures({
+            protectedHandler: [
+                '// data: active was the pre-HOS-1062 shape.',
+                ' * `data: result.data` is what this no longer answers.',
+                ...GOOD_PROTECTED
+            ]
+        });
+
+        expect(result.exitCode).toBe(0);
+    });
+
     it('passes a handler that filters and never returns the raw items', () => {
         const result = runGuard({
             HANDLER_FILE_OVERRIDE: fixture('handler-ok-3.ts', GOOD_HANDLER),
