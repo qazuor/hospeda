@@ -59,9 +59,19 @@ function countMissingAlt(
     return all.filter((item) => !hasAlt(item)).length;
 }
 
-/** `sessionStorage` key for "already chose to continue" — scoped per listing. */
+/**
+ * `sessionStorage` key for "already chose to continue" — scoped per listing.
+ *
+ * Colon-separated (`hospeda:...`), NOT dot-separated starting with `host` —
+ * the i18n client-namespaces guard (`test/lib/i18n-client-namespaces.guard.test.ts`)
+ * scans every reachable module for dotted string literals whose head matches a
+ * real i18n namespace, and `host` is one. A dotted `host.photoAltWarning...`
+ * storage key was indistinguishable from an i18n key reference and got flagged
+ * as an undeclared namespace prefix, even though nothing here ever calls `t()`
+ * with it.
+ */
 function dismissedStorageKey(accommodationId: string): string {
-    return `host.photoAltWarning.dismissed.${accommodationId}`;
+    return `hospeda:photoAltWarning:dismissed:${accommodationId}`;
 }
 
 /**

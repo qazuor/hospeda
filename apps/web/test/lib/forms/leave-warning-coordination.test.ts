@@ -218,7 +218,9 @@ describe('leave warnings on a page that mounts two guards', () => {
             expect(videoOnConfirm).toHaveBeenCalledTimes(1);
             // The photo guard's own onConfirm: the per-listing session flag.
             expect(
-                window.sessionStorage.getItem(`host.photoAltWarning.dismissed.${ACCOMMODATION_ID}`)
+                window.sessionStorage.getItem(
+                    `hospeda:photoAltWarning:dismissed:${ACCOMMODATION_ID}`
+                )
             ).toBe('1');
             expect(navigateSpy).toHaveBeenCalledTimes(1);
         });
@@ -351,5 +353,60 @@ describe('leave warnings on a page that mounts two guards', () => {
                 ])
             ).toBeNull();
         });
+    });
+
+    describe('solo alt-text dialog across locales', () => {
+        // Same intent as "combined copy across locales" above, but for the
+        // plain single-guard dialog `usePhotoAltWarningGuard` shows on its own
+        // (no `useUnsavedChangesGuard` mounted alongside it). Deliberately does
+        // NOT mock `@/lib/i18n` — a missing key degrades to the raw dotted key,
+        // and only a real resolution proves the copy, not just its existence.
+        const cases: ReadonlyArray<{
+            readonly locale: SupportedLocale;
+            readonly title: string;
+            readonly needle: string;
+        }> = [
+            {
+                locale: 'es',
+                title: 'Fotos sin texto alternativo',
+                needle: 'Tenés 2 fotos sin ese texto completado'
+            },
+            {
+                locale: 'en',
+                title: 'Photos without alt text',
+                needle: 'You have 2 photos without that text filled in'
+            },
+            {
+                locale: 'pt',
+                title: 'Fotos sem texto alternativo',
+                needle: 'Você tem 2 fotos sem esse texto preenchido'
+            }
+        ];
+
+        for (const { locale, title, needle } of cases) {
+            it(`is really translated in ${locale}, not just present`, async () => {
+                showConfirmationDialogMock.mockResolvedValue(false);
+                renderHook(() =>
+                    usePhotoAltWarningGuard({
+                        locale,
+                        accommodationId: `${ACCOMMODATION_ID}-solo-${locale}`,
+                        featuredItem: null,
+                        galleryItems: photosWithoutAlt(2)
+                    })
+                );
+                await flushRouterImport();
+
+                clickAnchor(addAnchor('/es/mi-cuenta/propiedades/'));
+                await flushRouterImport();
+
+                const call = showConfirmationDialogMock.mock.calls[0]?.[0];
+                expect(call?.title).toBe(title);
+                expect(call?.message).toContain(needle);
+                // A missing key degrades to the raw dotted key; a real
+                // translation never contains one.
+                expect(call?.title).not.toContain('host.properties.editor.photo');
+                expect(call?.message).not.toContain('host.properties.editor.photo');
+            });
+        }
     });
 });
