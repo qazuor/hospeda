@@ -27,12 +27,7 @@
  * @module routes/billing/promo-codes.apply
  */
 
-import {
-    ApplyPromoCodeSchema,
-    PermissionEnum,
-    PromoEffectKindEnum,
-    ServiceErrorCode
-} from '@repo/schemas';
+import { ApplyPromoCodeSchema, PermissionEnum, PromoEffectKindEnum } from '@repo/schemas';
 import { assertSubscriptionOwnership, PromoCodeService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -48,6 +43,7 @@ import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger';
 import { createProtectedRoute } from '../../utils/route-factory';
+import { assertPromoEffectIsSelfServiceRedeemable } from './promo-code-effect-gate.js';
 
 // ---------------------------------------------------------------------------
 // Response schema
@@ -197,80 +193,12 @@ export const handleApplyPromoCode = async (
     const peekResult = await service.getByCode(code);
     const peekedEffectKind = peekResult.success ? peekResult.data?.effect?.kind : undefined;
 
-    // ------------------------------------------------------------------
-    // HOS-1195 SELF-SERVICE EFFECT GATE — runs BEFORE anything is redeemed.
-    //
-    // Until this existed the route was `createProtectedRoute` with no
-    // `requiredPermissions` and no effect gate at all, so ANY signed-in user
-    // could POST a `comp` code against their OWN subscription and reach
-    // `service.apply` → `applyPromoCode`, which runs
-    // `UPDATE billing_subscriptions SET status = 'comp'`. The B1 ownership
-    // guard above does not stop it: that one exists for the CROSS-customer
-    // attack ("flip the VICTIM's subscription to comp") and passes by
-    // construction when the subscription is the caller's own. In production
-    // `HOSPEDA_FREE` is active, `effect_kind = comp`, with no max_uses — and
-    // `getPromoCodeByCode` resolves on `eq(code, …)` alone, so `livemode`
-    // never scoped it either. Anyone who learned the string got a permanently
-    // free subscription.
-    //
-    // Two rules, in this order:
-    //
-    //   1. `comp` is refused for EVERY caller, admins included. The one
-    //      legitimate way to grant it is the audited admin path
-    //      (`services/subscription-comp-create.service.ts`), which inserts the
-    //      row directly with no MercadoPago preapproval. Leaving a second,
-    //      unaudited door open for admins would only mean the grant sometimes
-    //      happens where nobody is looking.
-    //
-    //   2. For a non-admin caller this route accepts `trial_extension` and
-    //      NOTHING else. A `discount` code is refused WITHOUT being redeemed
-    //      (owner decision, HOS-1171): it stays usable at checkout, which is
-    //      where a discount belongs. `undefined` lands here too — a legacy row
-    //      whose `value_kind` was never backfilled is a discount that
-    //      `parseEffectFromRow` could not type, and guessing in the permissive
-    //      direction is exactly the shape of failure this gate exists to stop.
-    //
-    // Fail-closed on the peek itself: a code we could not READ is never handed
-    // to a redemption path that would read it again inside its own
-    // transaction. NOT_FOUND keeps answering 404, as `service.apply` did.
-    //
-    // Admin callers keep the full behaviour below (the T-007 discount seam and
-    // `service.apply`), which is what `POST /apply` was built for in SPEC-262
-    // and what its ops tooling still targets.
-    //
-    // On the 403 for `comp` rather than the contract's usual 404-for-anything-
-    // you-may-not-have: the rule that a 403 must not confirm an id exists is
-    // about resources whose ids are guessable and private. It buys nothing
-    // here, because `POST /validate` — unchanged, and the pre-flight the web
-    // form already runs — hands back `effectPreview.effectKind` for any code
-    // the caller can name. A 404 would only make the honest holder of a comp
-    // code read "that code does not exist".
-    // ------------------------------------------------------------------
-    if (peekedEffectKind === PromoEffectKindEnum.COMP) {
-        throw new HTTPException(403, {
-            message:
-                'Complimentary codes cannot be redeemed here. Contact support if you were promised one.',
-            cause: { code: 'PROMO_CODE_COMP_NOT_SELF_SERVICE' }
-        });
-    }
-
-    if (!actorHasAdmin) {
-        if (!peekResult.success) {
-            const peekErrorCode = peekResult.error?.code;
-            const status = peekErrorCode === ServiceErrorCode.NOT_FOUND ? 404 : 500;
-            throw new HTTPException(status as 404 | 500, {
-                message: peekResult.error?.message ?? 'Promo code not found'
-            });
-        }
-
-        if (peekedEffectKind !== PromoEffectKindEnum.TRIAL_EXTENSION) {
-            throw new HTTPException(422, {
-                message:
-                    'This is a discount code. It has not been used — apply it when you subscribe to a plan.',
-                cause: { code: 'PROMO_CODE_DISCOUNT_AT_CHECKOUT' }
-            });
-        }
-    }
+    // HOS-1195 / HOS-1171 self-service effect gate — runs BEFORE anything is
+    // redeemed, and is the whole reason the peek above is unconditional. It
+    // refuses `comp` for every caller and everything but `trial_extension` for
+    // a non-admin one, without spending the code. Read
+    // `promo-code-effect-gate.ts` for why each rule is shaped the way it is.
+    assertPromoEffectIsSelfServiceRedeemable({ peekResult, actorHasAdmin });
 
     if (subscriptionId) {
         if (peekedEffectKind === PromoEffectKindEnum.DISCOUNT) {
