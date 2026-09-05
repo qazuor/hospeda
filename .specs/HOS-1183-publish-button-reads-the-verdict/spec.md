@@ -83,9 +83,23 @@ So `canPublish` is derived **once**, by a pure function next to the type, and BO
 
 `OWNER_TRIAL_DAYS = 30`. The confirm copy is "¿Publicar este alojamiento?" / "Va a aparecer en el sitio, visible para los turistas." — it says nothing about billing, because HOS-171 deliberately stripped that promise when the trial moved to MercadoPago. With HOS-1012, publishing starts the clock again, so the reason for stripping it is gone while the copy is not.
 
+### F-6 · The same collapse exists in the hero, on the same page (found 2026-09-05)
+
+`/publicar/index.astro:117` gates the trial callout on:
+
+```ts
+const isTrialExpired = trialStatus?.isExpired === true;
+```
+
+That asks **"did the trial expire?"**, not **"is this owner eligible for one?"** — and those differ for anybody who never had an expired trial but is no longer eligible: an owner on a paid plan, or one whose trial converted. `isExpired` is `false` for them, so they get the callout.
+
+Observed live with `host-basico@local.test` (plan `owner-basico` active, 1 of 1 properties used): the page renders **"Probá Hospeda gratis por 30 días, sin tarjeta"** in the hero and **"Llegaste al límite de tu plan"** in the slot directly below it, on one screen.
+
+Structurally it is this spec's bug in a second place: a three-way state read through one boolean, on the same page, resolved from a different source than the server's verdict. It joins the scope because splitting it would leave the page telling two stories about the same owner.
+
 ## 4. Scope
 
-**In:** the read endpoint · one shared pure predicate · repointing the web chain · the confirm dialog announcing the trial on `first_publish` · rewriting the three frozen tests.
+**In:** the read endpoint · one shared pure predicate · repointing the web chain · the confirm dialog announcing the trial on `first_publish` · **the hero callout of `/publicar/` reading eligibility rather than expiry (F-6)** · rewriting the three frozen tests.
 
 **Out:** commerce verticals (their listings go live through checkout — see HOS-1184) · the post-edit dialog (inherits this verdict, specified after) · the `--brand-accent`/`--core-card` contrast debt.
 
@@ -95,7 +109,11 @@ So `canPublish` is derived **once**, by a pure function next to the type, and BO
 
 Rejected: a field on `/users/me/entitlements` (would make a transversal endpoint resolve accommodation billing for every caller), and folding it into HOS-1156's precheck (F-2).
 
-**D-2 · The dialog announces the trial on `first_publish`.** Publishing starts a 30-day clock by the owner's own action; not saying so is what later produces "my trial was consumed without warning". The line appears **only** in that branch. It must not say "sin tarjeta": the card is requested at signup.
+**D-2 · The dialog announces the trial on `first_publish`.** Publishing starts a 30-day clock by the owner's own action; not saying so is what later produces "my trial was consumed without warning". The line appears **only** in that branch.
+
+It MAY say "sin tarjeta", because in that branch it is true. **Corrected 2026-09-05** (owner): the first draft of this spec forbade the phrase outright, reasoning that "the card is requested at signup". That premise is false and was measured — the signup collects no card (no `cardNumber`, no `CardForm`, no payment method anywhere in `auth-ui` or the auth pages), and HOS-1012's trial is a local row with `mp_subscription_id = NULL`. The premise was a leftover from HOS-171, when the trial lived on the MercadoPago preapproval the checkout creates and a card genuinely was collected. This spec diagnoses HOS-1012 flipping that premise and then, three sections later, reasoned from the old one — the same mistake it describes.
+
+What the rule actually is: **"sin tarjeta" is true exactly while the owner is still eligible for the trial**, which is precisely `first_publish`. It must never appear on `subscription_required` — a burnt trial with no plan is the one state where promising a free run would be a lie.
 
 ## 6. Acceptance criteria
 
@@ -118,10 +136,18 @@ Rejected: a field on `/users/me/entitlements` (would make a transversal endpoint
 
 ### 6.3 The dialog
 
-- **AC-12** · On `first_publish` the confirm step adds one line stating the 30 days start on publishing. Never says "sin tarjeta".
+- **AC-12** · On `first_publish` the confirm step adds one line stating the 30 days start on publishing. It may say "sin tarjeta" — that branch is exactly where it is true (D-2).
+- **AC-12b** · No trial promise — the 30 days, "gratis", or "sin tarjeta" — appears on `subscription_required`. That state means the trial is spent, so a free-run promise there is a lie. A test asserts the absence, not just the presence.
 - **AC-13** · On `has_active_sub` the confirm copy is byte-identical to today's.
 - **AC-14** · The day count comes from `resolveGenericOwnerTrialDays`, never a literal `30`.
 - **AC-15** · New strings exist in es/en/pt. No entry is added to `scripts/i18n-fallback-inventory.json` — that list may only shrink.
+
+### 6.4 The hero callout (F-6)
+
+- **AC-16** · The trial callout on `/publicar/` is gated on the owner being ELIGIBLE for the trial, not on `isTrialExpired`. It reads the same verdict the button does, so the two cannot disagree on one page.
+- **AC-17** · An owner on an active paid plan never sees the callout — the state that produced F-6. A test covers exactly that owner, since `isExpired` is `false` for them and every expiry-shaped assertion passes while the bug is present.
+- **AC-18** · A signed-out visitor still sees it: they are eligible, and it is the page's main draw. Narrowing to "only signed-in eligible owners" would strip the hero for the largest audience.
+- **AC-19** · An owner whose trial expired keeps today's `trial-expired` block, unchanged. F-6 is about the state that falls through neither branch, not about the branch that works.
 
 ## 7. Open questions
 
@@ -136,7 +162,9 @@ None. D-1 and D-2 are resolved; the post-edit dialog is deliberately out of scop
 
 ## 9. Test plan
 
-Route tests for the three verdicts plus 401 · a unit test per branch of the shared predicate, including that a value outside the union does NOT publish · a static guard for AC-4 · rewritten `PublishButton` tests · a test that the trial line appears on `first_publish` and is absent on `has_active_sub` · mutation-verify each new test.
+Route tests for the three verdicts plus 401 · a unit test per branch of the shared predicate, including that a value outside the union does NOT publish · a static guard for AC-4 · rewritten `PublishButton` tests · a test that the trial line appears on `first_publish` and is absent on `has_active_sub` and on `subscription_required` (AC-12b) · a hero-callout test for the paid-plan owner of AC-17 · mutation-verify each new test.
+
+Two of these assert an ABSENCE (AC-12b, AC-17), which is the shape that passes for the wrong reason most easily — a typo in the selector reads as "not there". Each one needs a sibling that asserts the same string IS present in the state that should show it, or the pair proves nothing.
 
 ## 10. Sequencing
 
