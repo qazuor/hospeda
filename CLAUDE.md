@@ -254,11 +254,13 @@ Commerce listings use a **separate billing domain** that must never pollute the
 accommodation entitlement engine:
 
 - `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
-  `'commerce'` bucket. `ProductDomainEnum` holds exactly four values:
-  `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'` and
-  `'partner'`. The entitlement engine only ever counts `'accommodation'`, so a user
-  who is at once a host, a restaurant owner and a partner keeps correct
-  accommodation entitlements regardless of the other subscriptions' state.
+  `'commerce'` bucket. `ProductDomainEnum` holds five values:
+  `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'`,
+  `'partner'`, and `'addon'` (HOS-847 — a recurring add-on's own MercadoPago
+  preapproval, isolated from the customer's real plan subscription). The
+  entitlement engine only ever counts `'accommodation'`, so a user who is at
+  once a host, a restaurant owner and a partner keeps correct accommodation
+  entitlements regardless of the other subscriptions' state.
 - **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
   legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
   `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
