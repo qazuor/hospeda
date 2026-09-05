@@ -9,8 +9,11 @@
  * opts the column into merge semantics via `mergeableJsonbColumns` — before
  * this fix `EventOrganizerModel` never did, so a patch of
  * `{ contactInfo: { mobilePhone: '...' } }` would have silently deleted every
- * other stored contact field. The table is empty in production, so this is a
- * defect fix, not a data-migration.
+ * other stored contact field. The table held ZERO rows in production when this
+ * shipped — soft-deleted ones included — so there was nothing to backfill
+ * (owner's measurement, 2026-09-05, HOS-1190). That is a dated observation,
+ * not a standing property: re-measure before reusing it to justify skipping a
+ * migration.
  *
  * These assertions are about the SQL the model emits, so they need no
  * database: the merge path is observable as (a) a transaction being opened,
@@ -19,8 +22,11 @@
  * object — mirroring `test/models/user.model.settings-merge.test.ts`.
  *
  * Mutation check: removing `contactInfo` from
- * `EventOrganizerModel.mergeableJsonbColumns` must turn every test in this
- * file red.
+ * `EventOrganizerModel.mergeableJsonbColumns` turns 7 of the 8 tests in this file red
+ * (measured). The eighth is the negative control — "still replaces a
+ * non-mergeable column" — which asserts the UNCHANGED replacement path and is
+ * green by design; a header claiming "every test" would be claiming more than
+ * the file delivers.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -75,6 +81,29 @@ function sqlStringChunks(fragment: unknown): string[] {
         }
     }
     return out;
+}
+
+/**
+ * The fragment's chunks as an ORDER-BEARING token list.
+ *
+ * {@link sqlStringChunks} silently DROPS the column chunk — a Drizzle column
+ * carries no `.value` — so a shape derived from it cannot tell
+ * `COALESCE(column, '{}')` from `COALESCE('{}', column)`, nor the left
+ * operand of `||` from the right. Both of those mutations make every PATCH
+ * discard the stored siblings, which is the exact bug this file exists to
+ * prevent, and both sailed past `toContain('||')` / `toContain('COALESCE')`.
+ */
+function sqlShape(fragment: unknown): string[] {
+    const chunks = (fragment as { queryChunks?: unknown[] })?.queryChunks ?? [];
+    return chunks.map((chunk) => {
+        if (typeof chunk === 'string') return `<value:${chunk}>`;
+        const value = (chunk as { value?: unknown })?.value;
+        if (Array.isArray(value)) return value.join('');
+        if (typeof value === 'string') return value;
+        const name = (chunk as { name?: unknown })?.name;
+        if (typeof name === 'string') return `<column:${name}>`;
+        return '<unknown>';
+    });
 }
 
 describe('EventOrganizerModel — `contactInfo` is a mergeable JSONB column', () => {
@@ -153,6 +182,31 @@ describe('EventOrganizerModel — `contactInfo` is a mergeable JSONB column', ()
         expect(emitted).not.toContain('personalEmail');
         expect(emitted).not.toContain('preferredPhone');
         expect(emitted).not.toContain('whatsapp');
+    });
+
+    it('puts COALESCE(column, {}) on the LEFT of `||` and the patch on the RIGHT', () => {
+        // The ORDER is the whole contract. `COALESCE('{}'::jsonb, column)` and
+        // `patch || COALESCE(column, '{}')` both still contain a `COALESCE`
+        // and a `||`, and both throw away every stored sibling on every
+        // PATCH — reintroducing the defect this file was written for. Only a
+        // token-by-token shape can tell them apart.
+        const mergeable = (
+            new EventOrganizerModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+        ).mergeableJsonbColumns;
+
+        const result = buildMergeSetClause(
+            { contactInfo: PHONE_PATCH },
+            eventOrganizers,
+            mergeable
+        );
+
+        expect(sqlShape(result.contactInfo)).toStrictEqual([
+            'COALESCE(',
+            '<column:contact_info>',
+            ", '{}'::jsonb) || ",
+            `<value:${JSON.stringify(PHONE_PATCH)}>`,
+            '::jsonb'
+        ]);
     });
 
     it('carries an explicit per-key `null` through, so a contact field stays clearable', () => {
