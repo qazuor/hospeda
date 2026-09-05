@@ -572,7 +572,7 @@
         "ai_accommodation_import": "Importação de hospedagens com IA",
         "manage_gastronomy_events": "Eventos do local, com data ou semanais",
         "multilingual_gastronomy_menu": "Cardápio em vários idiomas",
-        "menu_qr_analytics": "QR do cardápio com painel de escaneamentos",
+        "menu_qr_scan_metrics": "QR do cardápio com painel de escaneamentos",
         "manage_experience_private_galleries": "Galerias privadas para seus clientes"
     },
     "comparison": {
@@ -639,7 +639,7 @@
             "gastronomyEvents": "Eventos do estabelecimento",
             "menuItemPhotos": "Fotos por prato",
             "multilingualMenu": "Cardápio em vários idiomas",
-            "menuQrAnalytics": "QR do cardápio com painel de escaneamentos",
+            "menuQrScanMetrics": "QR do cardápio com painel de escaneamentos",
             "maxExperiences": "Experiências que você pode publicar",
             "publishExperience": "Publicar sua experiência",
             "editExperienceInfo": "Editar as informações da experiência",
@@ -680,7 +680,7 @@
             "aiImport": "Quantidade mensal de importações de dados com IA de outras plataformas.",
             "aiChatOwner": "Quantidade mensal de consultas à IA disponíveis para o proprietário.",
             "aiSupport": "Assistente com IA para resolver dúvidas sobre a plataforma em tempo real.",
-            "menuQrAnalytics": "Um QR de mesa que abre seu cardápio, com um painel de escaneamentos: total, por dia, e por dispositivo e idioma."
+            "menuQrScanMetrics": "Um QR de mesa que abre seu cardápio, com um painel de escaneamentos: total, por dia, e por dispositivo e idioma."
         },
         "note": {
             "aiSearch": "Para usuários registrados",

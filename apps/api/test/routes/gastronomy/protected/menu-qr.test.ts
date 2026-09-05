@@ -10,7 +10,7 @@
  *
  * - **AC-2** — the code is provisioned once and REUSED, never re-minted, on a
  *   second call for the same venue.
- * - **AC-3** — the gate is `MENU_QR_ANALYTICS`, granted by `gastronomy-premium`
+ * - **AC-3** — the gate is `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
  *   alone: basic and pro both answer 403, premium answers 200. Asserted per
  *   tier, not once, because a gate that always refused would look identical to
  *   a working one on a single assertion.
@@ -187,8 +187,8 @@ describe('GET /{id}/menu-qr — tier gate (AC-3)', () => {
         expect(mockGetOrCreateForEntity).not.toHaveBeenCalled();
     });
 
-    it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_analytics)', async () => {
-        grantSubscription(['manage_gastronomy_menu', 'menu_item_photos', 'menu_qr_analytics']);
+    it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_scan_metrics)', async () => {
+        grantSubscription(['manage_gastronomy_menu', 'menu_item_photos', 'menu_qr_scan_metrics']);
         const app = buildApp({ billingCustomerId: 'cus-1' });
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr`);
@@ -200,7 +200,7 @@ describe('GET /{id}/menu-qr — tier gate (AC-3)', () => {
 
 describe('GET /{id}/menu-qr — minting (AC-2)', () => {
     beforeEach(() => {
-        grantSubscription(['menu_qr_analytics']);
+        grantSubscription(['menu_qr_scan_metrics']);
     });
 
     it('returns the SAME row on a second call for the same venue', async () => {
@@ -250,7 +250,7 @@ describe('GET /{id}/menu-qr — minting (AC-2)', () => {
 
 describe('GET /{id}/menu-qr — ownership (404, never 403)', () => {
     beforeEach(() => {
-        grantSubscription(['menu_qr_analytics']);
+        grantSubscription(['menu_qr_scan_metrics']);
     });
 
     it('answers 404 for a listing owned by somebody else', async () => {

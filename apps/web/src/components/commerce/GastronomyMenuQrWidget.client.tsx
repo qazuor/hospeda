@@ -8,7 +8,7 @@
  * `client:visible`, a `loading`/`ready`/`error` state machine, its own
  * `*.module.css`. It adds one state CommerceViewsWidget does not need —
  * `locked` — because unlike `VIEW_BASIC_STATS` (the commerce floor every
- * tier gets), `menu_qr_analytics` is a premium-only entitlement
+ * tier gets), `menu_qr_scan_metrics` is a premium-only entitlement
  * (`gastronomy-premium`), so a basic/pro venue's request answers `403`. That
  * refusal is a REAL state, never rendered as a generic error: the copy names
  * the plan gate, mirroring `BrochureDownloadButton.client.tsx` /
@@ -86,7 +86,7 @@ type ListingQrState =
 /**
  * Fetches one listing's QR and scan aggregate together. A `403` on EITHER
  * call means the panel renders the locked state — both endpoints share the
- * same `menu_qr_analytics` gate, so they refuse identically.
+ * same `menu_qr_scan_metrics` gate, so they refuse identically.
  */
 async function fetchListingState(
     listingId: string,
@@ -262,7 +262,7 @@ function QrBlock({
 
 /**
  * GastronomyMenuQrWidget — per-listing menu QR + scan analytics for
- * gastronomy owners, gated by the `menu_qr_analytics` entitlement.
+ * gastronomy owners, gated by the `menu_qr_scan_metrics` entitlement.
  *
  * @example
  * ```astro

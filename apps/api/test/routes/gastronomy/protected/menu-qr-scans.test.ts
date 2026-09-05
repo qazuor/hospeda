@@ -11,7 +11,7 @@
  * `requireEntitlement` pair (not a mocked middleware), with a fake billing
  * provider standing in for MercadoPago/QZPay.
  *
- * - **AC-3** — the gate is `MENU_QR_ANALYTICS`, granted by `gastronomy-premium`
+ * - **AC-3** — the gate is `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
  *   alone: basic and pro both answer 403, premium answers 200. Asserted per
  *   tier.
  * - **"No code yet" (§6.4)** — a venue with no `MENU` code answers 200 with an
@@ -197,8 +197,8 @@ describe('GET /{id}/menu-qr/scans — tier gate (AC-3)', () => {
         expect(mockFindLiveCodeForEntity).not.toHaveBeenCalled();
     });
 
-    it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_analytics)', async () => {
-        grantSubscription(['manage_gastronomy_menu', 'menu_item_photos', 'menu_qr_analytics']);
+    it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_scan_metrics)', async () => {
+        grantSubscription(['manage_gastronomy_menu', 'menu_item_photos', 'menu_qr_scan_metrics']);
         const app = buildApp({ billingCustomerId: 'cus-1' });
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
@@ -210,7 +210,7 @@ describe('GET /{id}/menu-qr/scans — tier gate (AC-3)', () => {
 
 describe('GET /{id}/menu-qr/scans — no code yet (§6.4)', () => {
     beforeEach(() => {
-        grantSubscription(['menu_qr_analytics']);
+        grantSubscription(['menu_qr_scan_metrics']);
     });
 
     it('answers 200 with an all-zero aggregate rather than 404', async () => {
@@ -248,7 +248,7 @@ describe('GET /{id}/menu-qr/scans — no code yet (§6.4)', () => {
 
 describe('GET /{id}/menu-qr/scans — existing code', () => {
     beforeEach(() => {
-        grantSubscription(['menu_qr_analytics']);
+        grantSubscription(['menu_qr_scan_metrics']);
         mockFindLiveCodeForEntity.mockResolvedValue({
             data: {
                 id: QR_ID,
@@ -293,7 +293,7 @@ describe('GET /{id}/menu-qr/scans — existing code', () => {
 
 describe('GET /{id}/menu-qr/scans — ownership (404, never 403)', () => {
     beforeEach(() => {
-        grantSubscription(['menu_qr_analytics']);
+        grantSubscription(['menu_qr_scan_metrics']);
     });
 
     it('answers 404 for a listing owned by somebody else', async () => {

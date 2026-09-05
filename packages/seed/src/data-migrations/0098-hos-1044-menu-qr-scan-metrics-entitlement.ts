@@ -1,9 +1,9 @@
 /**
  * @fileoverview
- * Data migration: 0098-hos-1044-menu-qr-analytics-entitlement
+ * Data migration: 0098-hos-1044-menu-qr-scan-metrics-entitlement
  *
  * Dual-write counterpart (HOS-25) for HOS-1044. The baseline gains one
- * `EntitlementKey` member — `menu_qr_analytics`, the venue's table QR plus
+ * `EntitlementKey` member — `menu_qr_scan_metrics`, the venue's table QR plus
  * its scan-analytics panel — and grants it on `gastronomy-premium`; this
  * migration applies the same delta to an already-seeded database.
  *
@@ -70,7 +70,7 @@ import { billingEntitlements, billingPlans, eq } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0098-hos-1044-menu-qr-analytics-entitlement',
+    name: '0098-hos-1044-menu-qr-scan-metrics-entitlement',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
@@ -83,7 +83,7 @@ export const meta = {
  * delta even after a later baseline change edits the array underneath it.
  */
 const NEW_ENTITLEMENT = {
-    key: 'menu_qr_analytics',
+    key: 'menu_qr_scan_metrics',
     name: 'Menu QR with scan analytics',
     description:
         'Allows minting a table QR that opens the venue menu and viewing a scan-analytics panel for it — total scans, a daily series, and a breakdown by device, OS and browser language'
@@ -151,8 +151,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const changed = entitlementsCreated + plansGranted > 0;
 
     const summary = changed
-        ? `HOS-1044: created ${entitlementsCreated} billing_entitlements row(s) and granted menu_qr_analytics on ${plansGranted} gastronomy premium plan row(s).`
-        : 'HOS-1044: menu_qr_analytics already granted on gastronomy-premium — no change.';
+        ? `HOS-1044: created ${entitlementsCreated} billing_entitlements row(s) and granted menu_qr_scan_metrics on ${plansGranted} gastronomy premium plan row(s).`
+        : 'HOS-1044: menu_qr_scan_metrics already granted on gastronomy-premium — no change.';
 
     return { summary, counts };
 }

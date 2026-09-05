@@ -100,7 +100,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     gastronomyEvents: MegaphoneIcon,
     menuItemPhotos: ImageIcon,
     multilingualMenu: GlobeIcon,
-    menuQrAnalytics: QrCodeIcon,
+    menuQrScanMetrics: QrCodeIcon,
     // Experiences (HOS-1032)
     maxExperiences: CompassIcon,
     publishExperience: HomeIcon,

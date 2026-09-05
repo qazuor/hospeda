@@ -366,7 +366,7 @@ export enum EntitlementKey {
      * column would read the venue's own country almost always, including
      * for the very tourists the metric means to count.
      */
-    MENU_QR_ANALYTICS = 'menu_qr_analytics',
+    MENU_QR_SCAN_METRICS = 'menu_qr_scan_metrics',
 
     /**
      * Creating private, per-tourist photo galleries for the people who did an

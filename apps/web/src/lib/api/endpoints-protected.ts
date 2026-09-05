@@ -3430,7 +3430,7 @@ const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>
  *
  * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
  * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
- * `menu_qr_analytics` entitlement (granted by `gastronomy-premium` only).
+ * `menu_qr_scan_metrics` entitlement (granted by `gastronomy-premium` only).
  * Still out of scope, per vertical, and still without an endpoint or
  * entitlement key: gastronomy's most-viewed dishes, and experience's origin
  * destinations.

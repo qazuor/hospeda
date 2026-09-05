@@ -572,7 +572,7 @@
         "ai_accommodation_import": "AI accommodation import",
         "manage_gastronomy_events": "Venue events, dated or weekly",
         "multilingual_gastronomy_menu": "Menu in multiple languages",
-        "menu_qr_analytics": "Menu QR with scan analytics panel",
+        "menu_qr_scan_metrics": "Menu QR with scan analytics panel",
         "manage_experience_private_galleries": "Private galleries for your customers"
     },
     "comparison": {
@@ -639,7 +639,7 @@
             "gastronomyEvents": "Venue events",
             "menuItemPhotos": "Photos per dish",
             "multilingualMenu": "Menu in several languages",
-            "menuQrAnalytics": "Menu QR with scan analytics",
+            "menuQrScanMetrics": "Menu QR with scan analytics",
             "maxExperiences": "Experiences you can list",
             "publishExperience": "Publish your experience",
             "editExperienceInfo": "Edit the experience's information",
@@ -680,7 +680,7 @@
             "aiImport": "Monthly AI-assisted imports of listing data from external sources.",
             "aiChatOwner": "Monthly AI queries available to you as a host.",
             "aiSupport": "An AI assistant that helps you resolve platform questions in real time.",
-            "menuQrAnalytics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language."
+            "menuQrScanMetrics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language."
         },
         "note": {
             "aiSearch": "For registered users",

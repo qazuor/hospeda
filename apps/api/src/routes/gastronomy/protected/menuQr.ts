@@ -10,7 +10,7 @@
  * 1. **Authentication** — `createProtectedRoute`.
  * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
  *    loads the caller's GASTRONOMY grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MENU_QR_ANALYTICS`. The loader MUST
+ *    caller whose plan does not carry `MENU_QR_SCAN_METRICS`. The loader MUST
  *    stay ahead of the gate: the global `entitlementMiddleware` has already
  *    put the ACCOMMODATION set in the context, and that set never carries a
  *    commerce key (HOS-1074).
@@ -155,7 +155,7 @@ export async function handleGetGastronomyMenuQr(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr
  *
- * Premium-only: gated on `MENU_QR_ANALYTICS`, granted by `gastronomy-premium`
+ * Premium-only: gated on `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
  * alone (HOS-1044 §6.5), NOT by `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that
  * map is the floor every tier gets, and this key is a tier differentiator.
  */
@@ -164,7 +164,7 @@ export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
     path: '/{id}/menu-qr',
     summary: 'Get the menu QR for a gastronomy listing',
     description:
-        'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only, and requires the menu_qr_analytics entitlement granted by the premium gastronomy plan.',
+        'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only, and requires the menu_qr_scan_metrics entitlement granted by the premium gastronomy plan.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -184,7 +184,7 @@ export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
             // commerce key, so `commerceVerticalEntitlementMiddleware` MUST run
             // before `requireEntitlement` on every commerce route.
             commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_QR_ANALYTICS)
+            requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
         ]
     }
 });

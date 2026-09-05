@@ -1023,7 +1023,7 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
         // terms as the translated carta right above it: `-premium` alone,
         // and deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`,
         // which is the floor every tier receives.
-        EntitlementKey.MENU_QR_ANALYTICS
+        EntitlementKey.MENU_QR_SCAN_METRICS
     ],
     // HOS-400: the only commerce tier of this vertical that carries a nonzero
     // chat quota, because it is the only one that grants the capability.

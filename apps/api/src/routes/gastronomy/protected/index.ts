@@ -101,7 +101,7 @@ app.route('/', protectedUploadGastronomyMenuItemPhotoRoute);
 
 // GET /{id}/menu-qr — the venue's printable menu QR (HOS-1044), minted (or
 // reused) on this call only — never on the public /carta/ page. Gated on
-// MENU_QR_ANALYTICS (gastronomy-premium). Registered before /{id} for the
+// MENU_QR_SCAN_METRICS (gastronomy-premium). Registered before /{id} for the
 // same DEFENSIVE reason as the entries above.
 app.route('/', protectedGetGastronomyMenuQrRoute);
 

@@ -572,7 +572,7 @@
         "ai_accommodation_import": "Importación de alojamientos con IA",
         "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
         "multilingual_gastronomy_menu": "Carta en varios idiomas",
-        "menu_qr_analytics": "QR de la carta con panel de escaneos",
+        "menu_qr_scan_metrics": "QR de la carta con panel de escaneos",
         "manage_experience_private_galleries": "Galerías privadas para tus clientes"
     },
     "comparison": {
@@ -639,7 +639,7 @@
             "gastronomyEvents": "Eventos del local",
             "menuItemPhotos": "Fotos por plato",
             "multilingualMenu": "Carta en varios idiomas",
-            "menuQrAnalytics": "QR de la carta con panel de escaneos",
+            "menuQrScanMetrics": "QR de la carta con panel de escaneos",
             "maxExperiences": "Experiencias que podés publicar",
             "publishExperience": "Publicar tu experiencia",
             "editExperienceInfo": "Editar la información de la experiencia",
@@ -680,7 +680,7 @@
             "aiImport": "Cantidad de importaciones con IA desde otras plataformas disponibles por mes.",
             "aiChatOwner": "Cantidad de consultas mensuales a la IA disponibles para propietarios.",
             "aiSupport": "Asistente con IA para resolver dudas sobre la plataforma en tiempo real.",
-            "menuQrAnalytics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma."
+            "menuQrScanMetrics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma."
         },
         "note": {
             "aiSearch": "Para usuarios registrados",

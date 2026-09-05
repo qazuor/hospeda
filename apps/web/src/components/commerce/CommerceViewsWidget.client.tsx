@@ -21,7 +21,7 @@
  * destinations for experiences — those still need their own spec, per
  * vertical. Gastronomy's menu QR and its scan analytics are NOT in that list
  * anymore: HOS-1044 built them (`GastronomyMenuQrWidget.client.tsx`, gated by
- * the `menu_qr_analytics` entitlement), rendered as a separate widget below
+ * the `menu_qr_scan_metrics` entitlement), rendered as a separate widget below
  * this one rather than folded in here.
  *
  * Hydration: `client:visible` — sits below the listing list, not above the

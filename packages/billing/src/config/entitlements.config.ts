@@ -357,7 +357,7 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
     // `MULTILINGUAL_GASTRONOMY_MENU`, and appended to this same trailing
     // commerce section for the slicing reason stated at its head.
     {
-        key: EntitlementKey.MENU_QR_ANALYTICS,
+        key: EntitlementKey.MENU_QR_SCAN_METRICS,
         name: 'Menu QR with scan analytics',
         description:
             'Allows minting a table QR that opens the venue menu and viewing a scan-analytics panel for it — total scans, a daily series, and a breakdown by device, OS and browser language'

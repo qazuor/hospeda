@@ -383,9 +383,9 @@ export const GASTRONOMY_MENU_ROWS: readonly RowConfig[] = [
         status: 'available'
     },
     {
-        id: 'menuQrAnalytics',
-        labelKey: 'billing.comparison.row.menuQrAnalytics',
-        cell: { kind: 'entitlement', key: EntitlementKey.MENU_QR_ANALYTICS },
+        id: 'menuQrScanMetrics',
+        labelKey: 'billing.comparison.row.menuQrScanMetrics',
+        cell: { kind: 'entitlement', key: EntitlementKey.MENU_QR_SCAN_METRICS },
         status: 'available'
     }
 ];

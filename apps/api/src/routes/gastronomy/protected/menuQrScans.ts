@@ -104,7 +104,7 @@ export async function handleGetGastronomyMenuQrScans(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
  *
- * Premium-only: gated on `MENU_QR_ANALYTICS`, granted by `gastronomy-premium`
+ * Premium-only: gated on `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
  * alone (HOS-1044 §6.5), same as `menuQr.ts`.
  */
 export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
@@ -115,7 +115,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
         'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only, ' +
-        'and requires the menu_qr_analytics entitlement granted by the premium gastronomy plan.',
+        'and requires the menu_qr_scan_metrics entitlement granted by the premium gastronomy plan.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -135,7 +135,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
             }),
             // Loader before checker (HOS-1074) — same as `menuQr.ts`.
             commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_QR_ANALYTICS)
+            requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
         ]
     }
 });
