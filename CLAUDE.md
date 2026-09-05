@@ -273,8 +273,19 @@ accommodation entitlement engine:
   reads asymmetrically by design: **`accommodation` fails open** (a missing object,
   or a `null`/`undefined` column, counts as accommodation, because the column
   post-dates most rows), while **every other domain fails closed**. To test
-  membership across all commerce verticals at once use `isCommerceSubscription()`
-  instead of re-deriving that union at the call site.
+  membership across all commerce verticals at once, call it once per domain —
+  there is no union helper, and there deliberately is not one: `HOS-1081`
+  (`ebfd413e0`) deleted `isCommerceSubscription()` because it had zero callers
+  outside its own file and tests. Do not reintroduce it without a consumer, and
+  do not reach for `isAccommodationSubscription()` as a substitute — it answers
+  a different question and, unlike the rest, fails OPEN.
+- **Hydrate before you compare.** `getByCustomerId()` does not populate
+  `productDomain` (QZPay's mapper drops it — HOS-934), so
+  `subscriptionMatchesDomain` over a raw result reads `undefined` and fails
+  closed for every non-accommodation domain: every listing goes dark and nothing
+  errors. Call `hydrateSubscriptionProductDomains()` first, or read the column
+  straight from Drizzle. `scripts/check-subscription-domain-hydration.sh` (HOS-1176)
+  fails CI on a comparison whose file does neither.
 - The commerce-vertical plans in `billing_plans` carry their own
   `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
   accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
