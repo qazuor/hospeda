@@ -1,6 +1,7 @@
 export * from './billing-pending-checkout.model.ts';
 export * from './billingAddonPurchase.model.ts';
 export * from './billingDunningAttempt.model.ts';
+export * from './billingMpAddonPlan.model.ts';
 export * from './billingMpPlan.model.ts';
 export * from './billingNotificationLog.model.ts';
 export * from './billingSettings.model.ts';
