@@ -190,6 +190,40 @@ describe('promotion cap fails CLOSED on a count failure (HOS-1087)', () => {
         expect(body.error?.code).toBe('LIMIT_REACHED');
     });
 
+    it('never echoes the fail-closed sentinel into the PUBLIC error.details — reports "at the cap" instead', async () => {
+        const app: AppOpenAPI = initApp();
+        // `LIMIT_REACHED`'s `details` are public on every route unconditionally
+        // (`PUBLIC_DETAILS_ERROR_CODES` in `response-helpers.ts`), and the web
+        // app interpolates `details.currentCount` straight into an upgrade
+        // toast (`billing-limit-error.ts`). Echoing the internal
+        // `Number.MAX_SAFE_INTEGER` decision sentinel there once produced "Ya
+        // guardaste 9007199254740991 de 5 favoritos" on a real screen — this
+        // pins that it cannot recur for promotions either.
+        mockCount.mockResolvedValue({
+            data: undefined,
+            error: { code: 'INTERNAL_ERROR', message: 'connection terminated unexpectedly' }
+        });
+
+        const res = await app.request(BASE, {
+            method: 'POST',
+            headers: hostHeaders,
+            body: validBody
+        });
+
+        expect(res.status).toBe(403);
+        const body = (await res.json()) as {
+            error?: {
+                code?: string;
+                details?: { currentCount?: number; maxAllowed?: number; usagePercent?: number };
+            };
+        };
+        expect(body.error?.code).toBe('LIMIT_REACHED');
+        expect(body.error?.details?.currentCount).not.toBe(Number.MAX_SAFE_INTEGER);
+        expect(body.error?.details?.currentCount).toBe(maxActivePromotions);
+        expect(body.error?.details?.maxAllowed).toBe(maxActivePromotions);
+        expect(body.error?.details?.usagePercent).toBe(100);
+    });
+
     it('still lets an under-cap create through (non-vacuity)', async () => {
         const app: AppOpenAPI = initApp();
         mockCount.mockResolvedValue({ data: { count: 0 }, error: undefined });
