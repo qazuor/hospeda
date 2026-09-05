@@ -1,10 +1,43 @@
 ---
 /**
  * @file presentacion/editores/index.astro
- * @description Commercial presentation for editors and contributors (HOS-978). A verbatim
- * migration of the owner-approved artifact "Presentación Editores"; the copy and the
- * stylesheet below are the artifact's own and must not be rewritten here —
- * the artifact is the source of truth for both.
+ * @description Commercial presentation for editors and contributors (HOS-978). It STARTED as a
+ * verbatim migration of the owner-approved artifact "Presentación Editores", and the stylesheet
+ * is still the artifact's own.
+ *
+ * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-04). The artifact is
+ * therefore NO LONGER the source of truth for the prose — this file is. What changed and why:
+ *  - the lede now addresses the LOCAL reader too, not only the incoming tourist (nothing
+ *    centralizes what happens in the region, and that is the pitch);
+ *  - the whole page was de-biased from "an editor writes blog posts" to "an editor writes
+ *    notes, loads events, or both" — the EDITOR role grants POST_CREATE *and* EVENT_CREATE;
+ *  - the publishing cadence is no longer a minimum ("una nota por mes es el mínimo" →
+ *    no minimum, one a month or more as the ideal);
+ *  - a new section lists the real catalogs the editor picks from. Its chips are transcribed
+ *    from `PostCategoryEnum` / `EventCategoryEnum` (`packages/schemas/src/enums/`), labelled
+ *    with the Spanish strings in `packages/i18n/src/locales/es/{blog,event}.json` → `categories`.
+ *    If either enum gains or loses a value, this section goes stale — it is hand-maintained
+ *    prose, not a rendered list.
+ *  - the edit row no longer promises "cuando quieras, todas las veces que quieras". That was
+ *    inaccurate BEFORE this revision: `isAuthorEditLockedByModeration`
+ *    (`packages/service-core/src/services/moderation/author-edit-lock.ts`) refuses the edit when
+ *    `moderationState === APPROVED` unless the actor holds `*_PUBLISH_OWN`, and the plain EDITOR
+ *    role holds only `*_UPDATE_OWN`. The cut is APPROVED and nothing else — `PENDING` and
+ *    `REJECTED` stay editable — so the copy names those two states rather than saying "publicado".
+ *    The events FAQ row is worded off the same predicate; keep the two in step.
+ *
+ * ONE ROW DESCRIBES A DECIDED CHANGE, NOT TODAY'S CODE — DO NOT "FIX" IT BACK. The permissions
+ * row reads "Editar las notas y los eventos de otro editor → No. Cada uno edita lo suyo.", which
+ * says an editor CAN see another editor's content and merely cannot edit it. That is the owner's
+ * decision of 2026-09-04 and the behaviour the product is moving to; it is NOT what the code does
+ * today. Today HOS-374 §7.6.2 leaves the plain EDITOR blind to other people's content: it stripped
+ * `POST_VIEW_ALL` / `EVENT_VIEW_ALL` (plus the PRIVATE/DRAFT pair) from `RoleEnum.EDITOR` and
+ * replaced them with `POST_VIEW_OWN` / `EVENT_VIEW_OWN`
+ * (`packages/seed/src/required/rolePermissions.seed.ts`, applied to live envs by
+ * `packages/seed/src/data-migrations/0038-hos-374-cut-editor-panel-access.ts`), and
+ * `GET /protected/posts/:id` 403s a non-author who lacks `POST_VIEW_ALL`. The page is deliberately
+ * ahead of the code here. Restoring the read permission is what closes the gap; rewording the row
+ * back to "Ver o editar" is not.
  *
  * WHY IT IS NOT THE PUBLIC LANDING (/colaborar/editores/). That landing sells and is
  * optimized to rank. This page is what the owner sends personally to one
@@ -72,7 +105,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
 	<SEOHead
 		slot="head"
 		title="Presentación Editores"
-		description="Contá el Litoral que conocés. El blog y la agenda de eventos de Hospeda los lee gente que está por venir a la zona: si te gusta escribir, ese texto puede ser de tu autoría."
+		description="Contá el Litoral que conocés. El blog y la agenda de eventos de Hospeda los lee el que está por venir a la zona y el que vive acá: si querés compartir lo que sabés, escribí notas, cargá eventos, o las dos cosas."
 		canonical={canonical}
 		locale={locale}
 		noindex
@@ -95,8 +128,16 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
     <p class="masthead__lede">
       El blog (publicaciones y notas de interés) y la agenda de eventos de Hospeda los lee gente
       que está por venir a la zona y no sabe dónde parar, qué comer, ni qué pasa este fin de
-      semana. Si conocés el Litoral y te gusta escribir, ese texto puede ser de tu autoría y
-      llevarte los créditos de haberlo hecho.
+      semana. Y los lee también el que vive acá: hoy no hay un solo lugar donde enterarte de qué
+      hay este sábado, qué local abrió o qué se está por hacer en tu ciudad &mdash; está todo
+      desparramado entre mil publicaciones que hay que ir a buscar de a una. <strong>Hospeda lo
+      junta en un solo lado.</strong>
+    </p>
+    <p class="masthead__lede">
+      Si conocés el Litoral y querés compartir lo que sabés &mdash; la historia de tu lugar,
+      curiosidades, costumbres, noticias importantes relacionadas al turismo, entre otras cosas
+      &mdash; este es tu espacio. Escribís notas, cargás eventos en la agenda, o las dos cosas; y
+      todo sale firmado con tu nombre y con los créditos de haberlo hecho.
     </p>
     <div class="factsheet">
       <div class="fact">
@@ -108,8 +149,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
         <span class="fact__v">Tu firma</span>
       </div>
       <div class="fact">
-        <span class="fact__k">Cuánto escribís</span>
-        <span class="fact__v">1 nota al mes</span>
+        <span class="fact__k">Qué cargás</span>
+        <span class="fact__v">Notas y/o eventos</span>
       </div>
     </div>
   </header>
@@ -122,14 +163,15 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
     <div class="notice">
       <h3>No es un trabajo pago, y preferimos decírtelo en el primer párrafo.</h3>
       <p>
-        Es una colaboración: vos ponés el texto y el conocimiento del lugar, nosotros ponemos el
-        lugar donde se lee, la revisión, la edición y la difusión. No hay sueldo, no hay honorarios
-        por nota y no hay relación laboral. Si buscabas una changa de redacción paga, no somos eso.
+        Es una colaboración: vos ponés el texto, los datos y el conocimiento del lugar, nosotros
+        ponemos el lugar donde se lee, la revisión, la edición y la difusión. No hay sueldo, no hay
+        honorarios por nota ni por evento cargado y no hay relación laboral. Si buscabas una changa
+        de redacción paga, no somos eso.
       </p>
       <p>
-        <strong>Lo que sí te llevás</strong> es el firmar la nota públicamente, una página de autor
-        con todo lo que escribiste y/o cargaste, notas que aparecen en Google con tu nombre y
-        difusión en las redes de Hospeda.
+        <strong>Lo que sí te llevás</strong> es el firmar públicamente lo que hacés, una página de
+        autor con todo lo que escribiste y/o cargaste, notas y eventos que aparecen en Google con
+        tu nombre y difusión en las redes de Hospeda.
       </p>
       <p>
         <strong>Y una sola cosa que podría considerarse económica:</strong> si además contratás un
@@ -142,9 +184,14 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
 
   <section>
     <div class="sec-head">
-      <p class="eyebrow">De qué se escribe</p>
+      <p class="eyebrow">Qué se carga</p>
       <h2>Dos cosas: notas y agenda</h2>
     </div>
+    <p>
+      Son dos tareas distintas y <strong>no hace falta que hagas las dos</strong>. Hay quien sólo
+      escribe notas, quien sólo mantiene la agenda al día, y quien hace las dos cosas. Elegís vos,
+      y podés cambiar de idea en cualquier momento.
+    </p>
     <div class="split">
       <div class="panel panel--yes">
         <h3>Notas del blog</h3>
@@ -169,6 +216,70 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
 
   <section>
     <div class="sec-head">
+      <p class="eyebrow">El menú de temas</p>
+      <h2>Sobre qué podés escribir y qué eventos podés cargar</h2>
+    </div>
+    <p>
+      No arrancás de la nada ni tenés que inventar dónde va lo tuyo. Cada nota entra en un tema y
+      cada evento en un tipo, y estas son las listas que usa el sitio hoy. No son decorativas: son
+      las mismas por las que la gente filtra el blog y la agenda del lado público, así que elegir
+      bien es parte de que después te encuentren.
+    </p>
+    <p class="subhead">Los temas de las notas. Estos son los de hoy:</p>
+    <div class="chips">
+      <span class="chip">Turismo</span>
+      <span class="chip">Consejos</span>
+      <span class="chip">Gastronomía</span>
+      <span class="chip">Cultura</span>
+      <span class="chip">Naturaleza</span>
+      <span class="chip">Eventos</span>
+      <span class="chip">Deportes</span>
+      <span class="chip">Carnaval</span>
+      <span class="chip">Noche</span>
+      <span class="chip">Historia</span>
+      <span class="chip">Tradiciones</span>
+      <span class="chip">Bienestar</span>
+      <span class="chip">Familia</span>
+      <span class="chip">Arte</span>
+      <span class="chip">Playa</span>
+      <span class="chip">Rural</span>
+      <span class="chip">Festivales</span>
+      <span class="chip">General</span>
+    </div>
+    <p>
+      <strong>&ldquo;Eventos&rdquo;, acá, es un tema de nota, no la agenda.</strong> Una nota con ese
+      tema es, por ejemplo, &ldquo;Los cinco festivales que no te podés perder este verano&rdquo;
+      &mdash; vos contás, opinás, recomendás. Cargar el Carnaval de Gualeguaychú con su fecha, su
+      lugar y su precio de entrada es otra cosa, y va en la lista de abajo.
+    </p>
+    <p class="subhead">Los tipos de evento de la agenda:</p>
+    <div class="chips">
+      <span class="chip">Música</span>
+      <span class="chip">Cultura</span>
+      <span class="chip">Deportes</span>
+      <span class="chip">Gastronomía</span>
+      <span class="chip">Festival</span>
+      <span class="chip">Naturaleza</span>
+      <span class="chip">Teatro</span>
+      <span class="chip">Taller</span>
+      <span class="chip">Otros</span>
+    </div>
+    <p>
+      Un evento no es sólo un título: lleva su ficha con fecha y horario, lugar, organizador,
+      precio o entrada libre, y la descripción. <strong>Si el organizador todavía no está en el
+      sitio, lo creás vos</strong> desde el mismo formulario, sin pedirle permiso a nadie. Ojo con
+      una cosa: el organizador y el lugar se definen al crear el evento y después no se editan
+      desde tu cuenta &mdash; si te equivocaste, avisanos y lo corregimos nosotros.
+    </p>
+    <p>
+      ¿Lo que querés contar o cargar no entra en ninguna de las dos listas?
+      <strong>Contanos cuál sería</strong> y lo evaluamos: las dos listas se ampliaron antes y se
+      pueden volver a ampliar.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <p class="eyebrow">Paso a paso</p>
       <h2>Cómo entrás</h2>
     </div>
@@ -179,7 +290,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
           <h3>Te postulás</h3>
           <p>
             Un formulario corto: tu nombre, un email y unas líneas contándonos qué te gustaría
-            escribir. Si tenés algo publicado en algún lado, mandanos el enlace.
+            escribir o qué eventos podrías cubrir. Si tenés algo publicado en algún lado, mandanos
+            el enlace.
           </p>
           <p class="step__meta">hospeda.com.ar/es/colaborar/editores</p>
         </div>
@@ -198,7 +310,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       <li>
         <span class="num">03</span>
         <div class="step__body">
-          <h3>Escribís desde tu cuenta</h3>
+          <h3>Escribís y cargás desde tu cuenta</h3>
           <p>
             Tenés tu propio espacio dentro del sitio para redactar notas y cargar eventos, con
             todo a mano: imágenes, temas, organizadores. Nada de paneles técnicos.
@@ -211,9 +323,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
           <h3>Lo publicamos nosotros</h3>
           <p>
             Cuando terminás, lo revisamos y lo publicamos. <strong>Al principio no publicás
-            solo</strong>, y eso es a propósito: la primera nota de alguien nuevo la leemos entre
-            los administradores del portal. Con el tiempo y varias publicaciones ya aprobadas, te
-            habilitamos para publicar directo lo tuyo.
+            solo</strong>, y eso es a propósito: la primera nota y el primer evento de alguien
+            nuevo los leemos entre los administradores del portal. Con el tiempo y varias
+            publicaciones ya aprobadas, te habilitamos para publicar directo lo tuyo.
           </p>
         </div>
       </li>
@@ -231,11 +343,13 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
           <tr><th scope="col">Pregunta</th><th scope="col">Respuesta</th></tr>
         </thead>
         <tbody>
-          <tr><td>¿Cada cuánto tengo que escribir?</td><td><strong>Una nota por mes es el mínimo.</strong> Recomendamos al menos una por semana, pero el piso es ese.</td></tr>
+          <tr><td>¿Cada cuánto tengo que escribir?</td><td><strong>No hay un mínimo</strong>, pero idealmente una nota por mes o más. Recomendamos al menos una por semana.</td></tr>
+          <tr><td>¿Puedo cargar sólo eventos y no escribir notas?</td><td><strong>Sí</strong>, y al revés también. Son dos tareas separadas: hacés la que te guste, o las dos.</td></tr>
           <tr><td>¿De qué largo tiene que ser una nota?</td><td>El que pida el tema. Una recomendación breve y una guía larga entran las dos.</td></tr>
           <tr><td>¿Puedo dejar de colaborar cuando quiera?</td><td>Sí, sin aviso previo y sin explicaciones. Lo que publicaste queda, salvo que pidas que lo bajemos.</td></tr>
           <tr><td>¿El texto sigue siendo mío?</td><td><strong>Sí.</strong> Podés republicarlo en tu blog o en tu portfolio; sólo te pedimos que menciones que salió primero en Hospeda y que sumes el enlace a la nota original.</td></tr>
           <tr><td>¿Puedo escribir también en otros lados?</td><td>Sí, <strong>no pedimos exclusividad</strong>. Y también podés traer a Hospeda algo que ya publicaste en otro lado, siempre que encaje con los temas y el formato que usamos acá.</td></tr>
+          <tr><td>¿Y si el evento que cargué se suspende o cambia de fecha?</td><td>Lo actualizás desde tu cuenta mientras esté en borrador o esperando revisión. Si ya lo aprobamos y todavía no te habilitamos para publicar solo, escribinos y lo corregimos nosotros en el momento. <strong>Mantener al día lo que cargaste es parte del trabajo</strong>: una agenda con datos viejos molesta más de lo que ayuda.</td></tr>
         </tbody>
       </table>
     </div>
@@ -253,7 +367,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
     <ul class="plain">
       <li><span class="tick">&check;</span><span>Tu foto y tu biografía, que <strong>editás vos</strong> cuando quieras.</span></li>
       <li><span class="tick">&check;</span><span>Tus redes, si querés que te encuentren.</span></li>
-      <li><span class="tick">&check;</span><span>Cada nota firmada con tu nombre, enlazada a tu página.</span></li>
+      <li><span class="tick">&check;</span><span>Cada nota y cada evento firmados con tu nombre, enlazados a tu página.</span></li>
       <li><span class="tick">&check;</span><span>Todo indexado en Google: alguien que te busca, te encuentra.</span></li>
       <li><span class="tick">&check;</span><span><strong>Difusión en las redes de Hospeda</strong>: promocionamos notas y eventos con el enlace directo a lo que cargaste vos.</span></li>
     </ul>
@@ -270,12 +384,12 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
           <tr><th scope="col">Acción</th><th scope="col">Cómo es</th></tr>
         </thead>
         <tbody>
-          <tr><td>Escribir y editar tus notas y tus eventos</td><td><strong>Cuando quieras, todas las veces que quieras</strong></td></tr>
+          <tr><td>Escribir y editar tus notas y tus eventos</td><td><strong>Todas las veces que quieras mientras están en borrador o esperando revisión</strong>, y también si te devolvemos algo para corregir. Una vez que lo aprobamos queda fijo: nos pedís el cambio y lo hacemos en el momento, hasta que te habilitamos a publicar solo y lo editás vos.</td></tr>
           <tr><td>Subir imágenes, poner temas, cargar organizadores</td><td><strong>Vos</strong></td></tr>
           <tr><td>Moderar los comentarios de tus notas y eventos</td><td><strong>Vos</strong>, si lo deseás (aprobás, rechazás o borrás), y/o alguno de los administradores del sitio</td></tr>
-          <tr><td>Publicar lo que escribiste</td><td>Al principio lo hacemos nosotros. Se te habilita con el tiempo y publicaciones previas hechas.</td></tr>
-          <tr><td>Ver o editar lo que escribió otro editor</td><td>No. Cada uno ve lo suyo.</td></tr>
-          <tr><td>Borrar una nota tuya ya publicada</td><td>Pedínoslo y la bajamos.</td></tr>
+          <tr><td>Publicar lo que escribiste o cargaste</td><td>Al principio lo hacemos nosotros. Se te habilita con el tiempo y publicaciones previas hechas.</td></tr>
+          <tr><td>Editar las notas y los eventos de otro editor</td><td>No. Cada uno edita lo suyo.</td></tr>
+          <tr><td>Borrar una nota o un evento tuyo ya publicado</td><td>Pedínoslo y lo bajamos.</td></tr>
         </tbody>
       </table>
     </div>
@@ -287,8 +401,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       <h2>Lo que conviene que sepas antes</h2>
     </div>
     <ul class="plain">
-      <li><span class="tick tick--no">!</span><span><strong>El alta la hacemos a mano</strong>, no es automática, y <strong>mientras no te habilitemos para publicar, tus notas quedan esperando.</strong> No se pierden ni se descartan, pero no salen hasta que las revisamos. Si vas a escribir mucho, avisanos y aceleramos ese paso.</span></li>
-      <li><span class="tick tick--no">!</span><span>Revisamos textos: tema, títulos, cortes, etc., para que vayan en línea con toda la editorial de Hospeda. <strong>Nunca cambiamos lo que quisiste decir</strong>, y si algo no te cierra de lo que decidimos cambiar, se conversa.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>El alta la hacemos a mano</strong>, no es automática, y <strong>mientras no te habilitemos para publicar, tus notas y tus eventos quedan esperando.</strong> No se pierden ni se descartan, pero no salen hasta que los revisamos. Si vas a publicar mucho &mdash; y sobre todo si vas a cargar eventos con la fecha encima &mdash; avisanos y aceleramos ese paso.</span></li>
+      <li><span class="tick tick--no">!</span><span>Revisamos lo que mandás: tema, títulos, cortes, los datos del evento, etc., para que vaya en línea con toda la editorial de Hospeda. <strong>Nunca cambiamos lo que quisiste decir</strong>, y si algo no te cierra de lo que decidimos cambiar, se conversa.</span></li>
       <li><span class="tick tick--no">!</span><span>Lo que publiques queda en el sitio con tu firma. Si algún día querés borrar todo, se borra.</span></li>
     </ul>
   </section>
@@ -296,8 +410,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
   <footer class="close">
     <h2>Postulate</h2>
     <p>
-      Si tenés algo para contar del Litoral, escribinos. No hace falta que seas periodista ni que
-      tengas experiencia publicando: hace falta que conozcas el lugar y que te guste contarlo.
+      Si tenés algo para contar del Litoral &mdash; una nota, la agenda de lo que pasa en tu
+      ciudad, o las dos cosas &mdash; escribinos. No hace falta que seas periodista ni que tengas
+      experiencia publicando: hace falta que conozcas el lugar y que te guste contarlo.
     </p>
     <a class="cta" href="https://hospeda.com.ar/es/colaborar/editores">hospeda.com.ar/es/colaborar/editores</a>
     <div class="phone">
