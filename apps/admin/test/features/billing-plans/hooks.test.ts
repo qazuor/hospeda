@@ -91,6 +91,28 @@ describe('billing-plans/hooks — T-012 (transformPlanRecord aligned to DB shape
             expect(item?.entitlements).toEqual(validPlanRecord.entitlements);
         });
 
+        it('should carry publicListing through to the row (HOS-1062 F1)', async () => {
+            // The field was parsed and then DROPPED, which is why the admin had
+            // no way to see that a plan had been marked. Asserted on the UNLISTED
+            // value on purpose: 'listed' is also what a dropped-then-defaulted
+            // field would look like, so it could not tell the two apart.
+            server.use(
+                http.get(`${API_BASE}/api/v1/admin/billing/plans`, () => {
+                    return HttpResponse.json(
+                        makePlanListResponse([{ ...validPlanRecord, publicListing: 'unlisted' }])
+                    );
+                })
+            );
+
+            const { result } = renderHook(() => usePlansQuery(), {
+                wrapper: createTestWrapper()
+            });
+
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+            expect(result.current.data?.items[0]?.publicListing).toBe('unlisted');
+        });
+
         it('should convert limits Record<string, number> to { key, value }[] array', async () => {
             // Arrange
             server.use(

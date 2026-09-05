@@ -1,5 +1,6 @@
 import { defaultIntlLocale } from '@repo/i18n';
 import { DeleteIcon, EditIcon, PowerIcon, RotateCcwIcon } from '@repo/icons';
+import { isPubliclyListedPlan } from '@repo/schemas';
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -165,6 +166,27 @@ export function getPlanColumns(
                             className="border-primary/20 bg-primary/5 text-primary"
                         >
                             {t('admin-billing.plans.statusDefault')}
+                        </Badge>
+                    )}
+                    {/*
+                     * HOS-1062 F1. Deliberately a SEPARATE badge beside the
+                     * active/inactive one, never a replacement for it: the two say
+                     * different things and conflating them is the exact mistake the
+                     * mark exists to prevent. An unlisted plan is active and
+                     * charging; it is only withheld from the public listings. The
+                     * copy says that, and never "inactive".
+                     *
+                     * Rendered from the shared predicate rather than a local
+                     * comparison, so the table cannot come to disagree with the
+                     * endpoints about which plans are catalogue.
+                     */}
+                    {!isPubliclyListedPlan(row) && (
+                        <Badge
+                            variant="outline"
+                            className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            title={t('admin-billing.plans.statusUnlistedHint')}
+                        >
+                            {t('admin-billing.plans.statusUnlisted')}
                         </Badge>
                     )}
                 </div>
