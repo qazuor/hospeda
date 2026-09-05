@@ -25,6 +25,10 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.EXPERIENCE).toBe('experience');
         });
 
+        it('should define ADDON', () => {
+            expect(ProductDomainEnum.ADDON).toBe('addon');
+        });
+
         // HOS-685 — this count is a frozen baseline, not a formality. Nothing in
         // the type system reacts to a member appearing or disappearing (no
         // `Record<ProductDomainEnum, …>`, no exhaustive `switch`, no `satisfies`),
@@ -34,8 +38,15 @@ describe('ProductDomainEnum', () => {
         // HOS-695 (release C) retired COMMERCE, dropping the count from 5 to 4 —
         // the last of the three releases (A widened it, B rewrote every row off
         // it, C removes the member itself).
-        it('should have exactly 4 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(4);
+        //
+        // HOS-847 PR 2 added ADDON, raising the count back to 5 — a recurring
+        // add-on's MercadoPago preapproval gets its own `billing_subscriptions`
+        // row, explicitly tagged so it can never fall into
+        // `subscriptionMatchesDomain`'s accommodation fail-open. Every sweep
+        // that assumed one row per customer was updated in the same PR — see
+        // `subscription-product-domain.ts` and its call sites.
+        it('should have exactly 5 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(5);
         });
 
         it('should NOT define COMMERCE (HOS-695 — retired)', () => {
@@ -68,6 +79,11 @@ describe('ProductDomainEnum', () => {
 
         it('should accept "experience"', () => {
             const result = ProductDomainEnumSchema.safeParse('experience');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "addon"', () => {
+            const result = ProductDomainEnumSchema.safeParse('addon');
             expect(result.success).toBe(true);
         });
 

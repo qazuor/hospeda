@@ -5,6 +5,15 @@
  * - gastronomy: Gastronomy listings, independently subscribable and capped.
  * - experience: Experience listings, independently subscribable and capped.
  * - partner: Partner directory subscriptions.
+ * - addon: A recurring add-on's own MercadoPago preapproval (HOS-847). A
+ *   MercadoPago preapproval carries exactly one `auto_recurring.transaction_amount`
+ *   and no line items, so a recurring add-on gets its OWN `billing_subscriptions`
+ *   row and its OWN preapproval, separate from the customer's real plan
+ *   subscription. Explicit, never omitted: `subscriptionMatchesDomain` fails
+ *   OPEN for `accommodation` (a missing/`null`/`undefined` value counts as
+ *   accommodation, see that function's doc), so an add-on row with no explicit
+ *   domain would silently be counted as the owner's accommodation subscription
+ *   — the exact contamination this member exists to prevent.
  *
  * **`commerce` is retired (HOS-695, release C).** It used to be the single
  * pre-HOS-685 transitional value covering both gastronomy and experience,
@@ -37,5 +46,6 @@ export enum ProductDomainEnum {
     ACCOMMODATION = 'accommodation',
     GASTRONOMY = 'gastronomy',
     EXPERIENCE = 'experience',
-    PARTNER = 'partner'
+    PARTNER = 'partner',
+    ADDON = 'addon'
 }
