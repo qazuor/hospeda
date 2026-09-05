@@ -84,6 +84,7 @@ import {
     countAttachedListings,
     findOwnerVerticalSubscription
 } from '../../../services/commerce-subscription-attach.service';
+import { startCommerceListingTrial } from '../../../services/commerce-trial-start.service';
 import {
     initiateCommerceMonthlySubscription,
     SubscriptionCheckoutError
@@ -459,7 +460,51 @@ export async function handleCommerceStartSubscription(
         };
     }
 
-    // Branch 1 — no subscription for this vertical yet. Today's behaviour.
+    // ── Branch 1a — no subscription yet, and this vertical's trial is intact
+    // (HOS-1184) ────────────────────────────────────────────────────────────
+    //
+    // The branch that restores the promise the public pages already make. It is
+    // placed BEFORE the checkout rather than inside it because a trial is not a
+    // variety of checkout: nothing is charged, no card is collected, and
+    // MercadoPago is never told the subscription exists. The listing is
+    // published by the attach, exactly the way branch 2 publishes one.
+    //
+    // `startCommerceListingTrial` re-checks eligibility itself and answers
+    // `null` when the trial is spent or the vertical's trial plan cannot be
+    // resolved, so this reads as "trial if we can, checkout otherwise" and the
+    // fall-through below is the whole of the not-eligible path.
+    const startedTrial = await startCommerceListingTrial({
+        billing,
+        customerId: billingCustomerId,
+        vertical: entityType as CommerceVertical,
+        entityId
+    });
+
+    if (startedTrial) {
+        apiLogger.info(
+            {
+                localSubscriptionId: startedTrial.localSubscriptionId,
+                customerId: billingCustomerId,
+                entityType,
+                entityId,
+                trialEnd: startedTrial.trialEnd.toISOString()
+            },
+            'Commerce listing published on a local trial — no checkout opened, no card collected'
+        );
+
+        return {
+            // The same in-app sentinel branch 2 and the `comp` path return:
+            // there is no payment page to send the owner to, because there is
+            // no charge. Sending them to MercadoPago here is precisely the bug.
+            checkoutUrl: buildPaymentMethodReturnUrl(locale),
+            localSubscriptionId: startedTrial.localSubscriptionId,
+            expiresAt: startedTrial.trialEnd.toISOString(),
+            appliedEffect: 'trial' as const
+        };
+    }
+
+    // Branch 1 — no subscription for this vertical yet, and no trial to grant.
+    // Today's behaviour.
     try {
         const result = await initiateCommerceMonthlySubscription({
             customerId: billingCustomerId,

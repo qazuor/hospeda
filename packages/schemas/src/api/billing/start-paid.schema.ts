@@ -163,19 +163,31 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      *   the one where a rename would quietly survive: opening a checkout here
      *   creates a SECOND MercadoPago preapproval and charges the owner twice for
      *   a plan that already covers them.
-     * There is no `'trial'` variant. Card-first (HOS-171) deleted the no-card
-     * trial that used to be granted INSTEAD of a paid checkout: a trial is now
-     * `free_trial` on the very preapproval a paid checkout creates, so it is a
-     * normal MP redirect and carries no marker of its own.
+     * - `'trial'` — HOS-1184, commerce only. The owner is eligible for their
+     *   vertical's free trial, so a Hospeda-owned `trialing` subscription was
+     *   created with NO MercadoPago preapproval and no card, and the listing was
+     *   attached to it. Like `'comp'` and `'attached'`, `checkoutUrl` is an
+     *   in-app sentinel rather than a payment page.
      *
-     * Narrowing this enum is a deliberate exception to the additive-only
-     * schema-compat policy, taken while the platform has no real customers and the
-     * API and web release together. The policy guards stored JSONB, cached
-     * responses and queued messages; `appliedEffect` is a transient response field
-     * that nothing persists, so no old value can be in flight to fail parsing.
+     * This variant existed before HOS-171, was deleted by it, and is back for the
+     * reason it was deleted — that reason stopped being true. Card-first removed
+     * the no-card trial, making a trial `free_trial` on the very preapproval a
+     * paid checkout creates: not an alternative to a checkout, so not an effect.
+     * HOS-1012 then reversed card-first (MercadoPago reports a spent trial
+     * identically to a live one, and charged ARS 18.000 in production 118 seconds
+     * after promising 14 free days — HOS-522), and a trial is once again exactly
+     * what this comment used to call "a separate no-card path" granted INSTEAD of
+     * a paid checkout. Re-widening is additive and needs no migration; it is the
+     * NARROWING that was the deliberate exception to the compat policy.
+     *
+     * The accommodation side never needed the marker back: its trial is granted
+     * by the publish flow, which does not go through a checkout route at all.
+     * Commerce grants it from `POST /commerce/listings/:id/start-subscription` —
+     * the same route that otherwise opens a checkout — so the response has to be
+     * able to say which of the two happened.
      */
     appliedEffect: z
-        .enum(['comp', 'discount', 'attached'], {
+        .enum(['comp', 'discount', 'attached', 'trial'], {
             message: 'zodError.billing.startPaid.appliedEffect.invalid'
         })
         .optional(),
