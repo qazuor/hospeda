@@ -96,10 +96,33 @@ applies in full:
 ### H-3 — `productDomain` must not become a second `?? ACCOMMODATION`
 
 HOS-1078 removed exactly that default from `productDomainForLimitKey`, where it
-answered confidently for keys nobody had mapped. `resolveAddonProductDomain`
+answered confidently for keys nobody had mapped. `productDomainForAddonSlug`
 returns `undefined` for a slug the catalogue does not know, and
 `addon-catalog.mapper.ts` propagates that `undefined` rather than guessing.
 **Every future caller must fail CLOSED on it.**
+
+### H-6 — A DERIVED add-on domain already exists, and it is not this one
+
+Measured during phase 1, and worth recording because the issue's own framing
+implies otherwise. `apps/web/src/lib/billing/addon-domain.ts` (HOS-689) already
+exports a `resolveAddonProductDomain` that DERIVES the domain from the add-on's
+`affectsLimitKey` through `productDomainForLimitKey`, and gates the
+`/mi-cuenta/addons/` catalogue with it. So the cross-vertical purchase the owner
+described is **already refused on that page** for any add-on that raises a cap.
+
+What is genuinely open, and what phase 1's declared field is for:
+
+- the derivation has nothing to read for an add-on whose `affectsLimitKey` is
+  `null` (`visibility-boost-7d`/`-30d`), so it coerces those to accommodation by
+  hand;
+- it cannot tell apart two add-ons raising the SAME cap for different verticals;
+- **it gates the catalogue page, not the purchase route.** The API's
+  `POST /billing/addons/{slug}/purchase` still asks nothing about domain.
+
+The declared field is named `productDomainForAddonSlug` (mirroring
+`productDomainForLimitKey`) precisely so the two cannot be confused. Folding the
+derivation into the declaration, and mounting the API-side refusal, are follow-up
+work — see §9.
 
 ### H-4 — An active add-on for a feature that does not exist means the buyer pays for nothing
 
@@ -226,9 +249,29 @@ surfaces.
 | `packages/service-core/.../addon-catalog.mapper.ts` | resolves the domain from the catalogue |
 | `packages/seed/src/data-migrations/0096-…` | dual-write |
 | `apps/api/src/utils/limit-check.ts` | `Record<LimitKey, string>` entry |
+| `apps/api/src/services/usage-tracking.service.ts` | `USAGE_KIND_BY_LIMIT_KEY` — `UNBUILT` in phase 1 |
+| `apps/web/src/lib/billing-limit-error.ts` | `KNOWN_LIMIT_KEYS` |
+| `packages/i18n/.../{es,en,pt}/account.json` | the three pack names + descriptions |
+| `packages/i18n/.../{es,en,pt}/billing.json` | `limit.<key>.title`, `comparison.limitLabel.<key>`, `limitHelp.<key>` |
 | `apps/admin/.../plan-entitlement-groups.ts` | exhaustiveness over `EntitlementKey` |
 
-## 8. Context
+Six of these were found only by running the guards, not by reading the issue.
+Each is exhaustive over `LimitKey` or `EntitlementKey` and each fails in a
+different, quiet way when a key is added without it: an unclassified usage kind
+hides the row forever, a missing `account.addons.catalog.<slug>.name` reaches a
+buyer's MercadoPago checkout as a raw key, a missing `limitHelp` blanks the plan
+card. **A new limit or entitlement key is never a one-file change in this repo.**
+
+## 9. Follow-up work this phase identified
+
+| # | Item | Why it is not phase 1 |
+|---|---|---|
+| F-1 | Carry `productDomain` on `AddonResponse` and have `apps/web`'s catalogue read the DECLARED domain instead of deriving it (H-6). | Changes the API contract; the derivation is correct today for every add-on that raises a cap. |
+| F-2 | Refuse a cross-domain purchase at `POST /billing/addons/{slug}/purchase`, not only in the catalogue UI. | It is a GATE, and H-1 says the grant ships first. The declaration landing in phase 1 is what makes it buildable at all. |
+| F-3 | Move `MAX_ACTIVE_PRIVATE_GALLERIES` from `UNBUILT` to `STOCK` and add its counter arm in `getCurrentUsage`. | Belongs with the phase-2 creation route; until then a counter would publish a placeholder zero as fact. |
+| F-4 | Give the gallery cap a full `message_one`/`message_other`/`cta` in `billing.limit.*`, and an `ADDON_SLUG_BY_LIMIT_KEY` entry so the at-cap row links the pack. | Both are at-limit UI, which needs the route that can BE at the limit. |
+
+## 10. Context
 
 - HOS-974 — the audit this comes from; D-C is the `productDomain` decision.
 - HOS-1071 — the three-surfaces rule.
