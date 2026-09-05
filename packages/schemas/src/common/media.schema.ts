@@ -325,3 +325,35 @@ export const AccommodationEntityMediaFields = {
             .optional()
     }).nullish()
 } as const;
+
+// ============================================================================
+// Text-metadata PATCH — shared cross-field rule (HOS-1036)
+// ============================================================================
+
+/**
+ * The cross-field rule a flat media text-metadata payload cannot express alone:
+ * at least ONE of the four editable text fields must be present
+ * (`!== undefined` — `null` counts as present, since clearing a field is a real
+ * edit). A body with all four omitted is a no-op PATCH, rejected as
+ * `VALIDATION_ERROR` instead of silently answering 200.
+ *
+ * Lives here, in the neutral media module, rather than in one of the three
+ * family-specific media schemas, so `accommodation`, `post`, `event`,
+ * `gastronomy` and `experience` cannot drift on what "an empty PATCH" means.
+ *
+ * @param data - The parsed payload (or a service input that spreads its shape).
+ * @returns `true` when at least one editable field was supplied.
+ */
+export function hasAtLeastOneMediaTextField(data: {
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+    readonly attribution?: unknown;
+}): boolean {
+    return (
+        data.caption !== undefined ||
+        data.description !== undefined ||
+        data.alt !== undefined ||
+        data.attribution !== undefined
+    );
+}

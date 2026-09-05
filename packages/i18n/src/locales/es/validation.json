@@ -1527,6 +1527,9 @@
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
             },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: epígrafe, descripción, texto alternativo o atribución"
+            },
             "url": {
                 "invalid": "La URL no es válida"
             }
@@ -1603,6 +1606,9 @@
             },
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: epígrafe, descripción, texto alternativo o atribución"
             },
             "url": {
                 "invalid": "La URL no es válida"
