@@ -1199,6 +1199,17 @@ export function hasEntitlement(c: Context<AppBindings>, key: EntitlementKey): bo
  * ```
  */
 export function getRemainingLimit(c: Context<AppBindings>, key: LimitKey): number {
+    // NAMING HAZARD (HOS-803 I-3): despite "Remaining", this returns the PLAN'S
+    // ALLOWANCE — the raw value from `userLimits` — and subtracts no consumption.
+    // Callers pair it with a count they take themselves (see `checkLimit`, which
+    // does `currentCount < maxAllowed`).
+    //
+    // Do NOT "fix" it to honour its name. `addFeaturedMedia` passes this value
+    // as `planGalleryCap`, where `0` means "this plan includes no photos at
+    // all". If this started returning allowance-minus-usage, a host with a full
+    // gallery would get `0`, the cover upload would answer LIMIT_REACHED, and
+    // HOS-803 would be back in full — the very bug that endpoint exists to fix.
+    // Renaming it is safe; changing its arithmetic is not.
     const limits = c.get('userLimits');
 
     if (!limits || !limits.has(key)) {

@@ -102,18 +102,22 @@ describe('HOS-803 — the cover endpoints exist where their clients call them', 
         expect(res.status).not.toBe(404);
     });
 
-    it('does not let "featured" be swallowed as a media id', async () => {
+    it('resolves "featured" as a fixed suffix, not as a media id', async () => {
         const app = initApp();
 
-        // If the collection route absorbed the suffix, a POST to the plain
-        // media path and to the featured path would be the same handler — and
-        // the cover upload would silently create a GALLERY row instead, which
-        // is the very refusal this work removes.
-        const featured = await app.request(
-            `/api/v1/protected/accommodations/${ID}/media/featured`,
+        // The `it.each` rows above prove each path is mounted. This proves the
+        // adjacent SHAPE is not: `/media/{mediaId}` must not swallow "featured"
+        // and quietly route a cover upload to the gallery handler. A literal
+        // uuid in the same position is a different route, and answering both
+        // identically would mean the suffix is being treated as a parameter.
+        const uuidInPlaceOfSuffix = await app.request(
+            `/api/v1/protected/accommodations/${ID}/media/00000000-0000-4000-8000-0000000000ee`,
             { method: 'POST', headers: HEADERS, body: BODY }
         );
 
-        expect(featured.status).not.toBe(404);
+        // No POST handler exists at `/media/{mediaId}` — so if this is NOT a
+        // 404, "featured" is matching as a param and the cover upload is
+        // reachable by any id, which would put it back under the gallery cap.
+        expect(uuidInPlaceOfSuffix.status).toBe(404);
     });
 });
