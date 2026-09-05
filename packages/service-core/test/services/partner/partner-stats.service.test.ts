@@ -287,7 +287,10 @@ describe('PartnerStatsService.captureLogoClick — AC-13', () => {
             destination: PartnerLogoClickDestinationEnum.EXTERNAL
         });
 
-        const logged = JSON.stringify(mockLogger.error.mock.calls);
+        // `createLoggerMock` hands back a ServiceLogger, so `.error` is typed as
+        // the real method and carries no `.mock`. vi.mocked is how the rest of
+        // this package reaches a mock's calls through its declared type.
+        const logged = JSON.stringify(vi.mocked(mockLogger.error).mock.calls);
         expect(logged).not.toContain('super-secret-hash');
     });
 });
