@@ -149,7 +149,7 @@ describe('HOS-1063 AC-9 — no numeral where the metric does not apply', () => {
      * through `Intl.NumberFormat` in a locale that spells it differently would
      * pass that test while showing a numeral.
      */
-    it('the not-applicable branch formats no number', () => {
+    it('the not-applicable branch formats no number, for either window', () => {
         const code = readCode(STATS_SECTION);
         const naStart = code.indexOf('partner-stats__card--na');
         expect(naStart).toBeGreaterThan(-1);
@@ -157,7 +157,82 @@ describe('HOS-1063 AC-9 — no numeral where the metric does not apply', () => {
         const naBlock = code.slice(naStart, code.indexOf('</article>', naStart));
         expect(naBlock).toMatch(/account\.partnerStats\.views\.notApplicable/);
         expect(naBlock).not.toMatch(/numberFormatter/);
+        // §7.4 doubled the exposure: with TWO windows per card there are two
+        // numbers that could leak in here, so both value paths are named. A
+        // branch that printed only the 7-day figure would otherwise slip past a
+        // check that looked for the 30-day one.
+        expect(naBlock).not.toMatch(/last30/);
+        expect(naBlock).not.toMatch(/last7/);
         expect(naBlock).not.toMatch(/\d/);
+    });
+
+    /**
+     * The positive half — and note what it says: **declares**, not *renders*.
+     *
+     * A source test over an `.astro` file cannot tell the two apart, and this
+     * one learned it the hard way: an earlier version asserted "renders BOTH
+     * windows" by matching `views.last7` in the card, and stayed GREEN when the
+     * surrounding condition was mutated to `{false && (`. The markup was still
+     * in the file; it just never reached a browser.
+     *
+     * So the gate itself is pinned, not only the value reference. `{false && (`
+     * and `{true && (` both delete the required `last7 !== null` text, and
+     * removing the block deletes everything. What this still cannot prove is
+     * that Astro renders it — only that the file says it should.
+     */
+    it.each([
+        ['views', /views\.last7/],
+        ['clicks', /clicks\.last7/]
+    ])('the %s card declares its 7-day line behind a real null check', (metric, valueRef) => {
+        const code = readCode(STATS_SECTION);
+        const start = code.indexOf(`data-card="${metric}"`);
+        expect(start).toBeGreaterThan(-1);
+
+        const block = code.slice(start, code.indexOf('</article>', start));
+        expect(block).toMatch(valueRef);
+        // The gate — not a constant, not absent.
+        expect(block).toMatch(new RegExp(`${metric}\\.last7\\s*!==\\s*null\\s*&&`));
+        expect(block).not.toMatch(/\{\s*(true|false)\s*&&/);
+    });
+
+    it.each([
+        ['views', /views\.last30/],
+        ['clicks', /clicks\.last30/]
+    ])('the %s card declares its 30-day headline unconditionally', (metric, valueRef) => {
+        const code = readCode(STATS_SECTION);
+        const start = code.indexOf(`data-card="${metric}"`);
+        const block = code.slice(start, code.indexOf('</article>', start));
+
+        expect(block).toMatch(valueRef);
+        expect(block).toMatch(/account\.partnerStats\.windows\.last30/);
+        expect(block).toMatch(/account\.partnerStats\.windows\.last7/);
+    });
+
+    /**
+     * §7.4 satisfied with ZERO JavaScript. The owner chose two static figures
+     * over a window selector precisely so this section keeps shipping no script,
+     * and a rendering test would not notice one being added.
+     */
+    it('the section still ships no script at all', () => {
+        const code = readCode(STATS_SECTION);
+        expect(code).not.toMatch(/<script/);
+        expect(code).not.toMatch(/client:(load|idle|visible|media|only)/);
+    });
+
+    /**
+     * Every rendered figure sits next to its own window label. Two bare numerals
+     * beside each other is exactly how one gets read as the other, and a single
+     * caption for the whole panel is a caption the reader attaches to whichever
+     * number they happened to look at.
+     */
+    it('pairs each formatted figure with exactly one window label', () => {
+        const code = readCode(STATS_SECTION);
+        const figures = (code.match(/numberFormatter\.format/g) ?? []).length;
+        const windowLabels = (code.match(/account\.partnerStats\.windows\.last(7|30)/g) ?? [])
+            .length;
+
+        expect(figures).toBeGreaterThan(0);
+        expect(windowLabels).toBe(figures);
     });
 });
 

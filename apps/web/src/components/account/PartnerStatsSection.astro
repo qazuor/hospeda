@@ -56,32 +56,42 @@
 import type { MyPartnerStats } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolvePartnerStatsCards } from '@/lib/partner-stats-cards';
+import { resolvePartnerStatsView } from '@/lib/partner-stats-cards';
 
 interface Props {
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
-    /** The caller's statistics payload, or null when the fetch failed. */
-    readonly stats: MyPartnerStats | null;
+    /**
+     * The 30-day payload. Load-bearing: it decides whether the panel renders at
+     * all, which cards apply, and the headline figure.
+     */
+    readonly stats30: MyPartnerStats | null;
+    /**
+     * The 7-day payload, or null when that read failed. Secondary — its absence
+     * drops one line, never the panel.
+     */
+    readonly stats7: MyPartnerStats | null;
 }
 
-const { locale, stats } = Astro.props;
+const { locale, stats30, stats7 } = Astro.props;
 const { t } = createTranslations(locale);
 
 /**
- * Card visibility lives in `resolvePartnerStatsCards`, not here.
+ * Card visibility AND both figures live in `resolvePartnerStatsView`, not here.
  *
  * Deliberately extracted: a test over the SOURCE of an `.astro` file cannot
- * tell what is declared from what is rendered, so the one rule in this feature
- * that must never silently invert would otherwise have had no honest test. It
- * is a pure function there, with real inputs and a mutation that turns a test
- * red.
+ * tell what is declared from what is rendered, so the two rules that must never
+ * silently invert — which cards apply, and which window each number belongs to
+ * — would otherwise have had no honest test. They are a pure function there,
+ * with real inputs and mutations that turn tests red.
  */
 const {
     visible,
     showViews: showViewsCard,
-    showClicks: showClicksCard
-} = resolvePartnerStatsCards({ stats, locale });
+    showClicks: showClicksCard,
+    views,
+    clicks
+} = resolvePartnerStatsView({ stats30, stats7, locale });
 
 const numberFormatter = new Intl.NumberFormat(locale);
 ---
@@ -102,9 +112,36 @@ const numberFormatter = new Intl.NumberFormat(locale);
                         <p class="partner-stats__card-label">
                             {t('account.partnerStats.views.label')}
                         </p>
+                        {/*
+                          Both windows, side by side and static (§7.4). A selector
+                          would be the obvious shape and would put JavaScript on a
+                          section that ships none, plus an interaction to maintain
+                          on a read-only panel. Two figures in markup answer the
+                          same requirement for zero bytes.
+
+                          30 days is the primary figure — it is what the partner
+                          looks at and what the commercial promise is scaled to —
+                          so it gets the size and the 7-day line sits under it as
+                          context. Each number carries its own window label
+                          adjacent to it, because two bare numerals beside each
+                          other is exactly how one gets read as the other.
+                        */}
                         <p class="partner-stats__card-value">
-                            {numberFormatter.format(stats?.views?.total ?? 0)}
+                            {numberFormatter.format(views.last30)}
                         </p>
+                        <p class="partner-stats__card-window">
+                            {t('account.partnerStats.windows.last30')}
+                        </p>
+                        {views.last7 !== null && (
+                            <p class="partner-stats__card-secondary">
+                                <span class="partner-stats__card-secondary-value">
+                                    {numberFormatter.format(views.last7)}
+                                </span>
+                                <span class="partner-stats__card-secondary-window">
+                                    {t('account.partnerStats.windows.last7')}
+                                </span>
+                            </p>
+                        )}
                         <p class="partner-stats__card-help">
                             {t('account.partnerStats.views.help')}
                         </p>
@@ -131,18 +168,27 @@ const numberFormatter = new Intl.NumberFormat(locale);
                             {t('account.partnerStats.clicks.label')}
                         </p>
                         <p class="partner-stats__card-value">
-                            {numberFormatter.format(stats?.clicks?.total ?? 0)}
+                            {numberFormatter.format(clicks.last30)}
                         </p>
+                        <p class="partner-stats__card-window">
+                            {t('account.partnerStats.windows.last30')}
+                        </p>
+                        {clicks.last7 !== null && (
+                            <p class="partner-stats__card-secondary">
+                                <span class="partner-stats__card-secondary-value">
+                                    {numberFormatter.format(clicks.last7)}
+                                </span>
+                                <span class="partner-stats__card-secondary-window">
+                                    {t('account.partnerStats.windows.last7')}
+                                </span>
+                            </p>
+                        )}
                         <p class="partner-stats__card-help">
                             {t('account.partnerStats.clicks.help')}
                         </p>
                     </article>
                 )}
             </div>
-
-            <p class="partner-stats__window">
-                {t('account.partnerStats.window')}
-            </p>
 
             {/*
               The presentation's own sentence, not a paraphrase (§7.3). The
@@ -219,16 +265,48 @@ const numberFormatter = new Intl.NumberFormat(locale);
         color: var(--core-foreground);
     }
 
-    .partner-stats__card-help,
-    .partner-stats__card-na {
-        margin: 0;
+    /*
+      The window label under the headline figure. Deliberately adjacent to the
+      number rather than a single caption for the whole panel: with two figures
+      in one card, a caption that sits apart from them is a caption that gets
+      attached to the wrong one by the reader.
+    */
+    .partner-stats__card-window {
+        margin: 0 0 0.6rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--core-muted-foreground, #6b7280);
+    }
+
+    /*
+      The 7-day line: context, not a peer of the headline. Same colour as the
+      helper text and roughly half the size of the primary figure, so the
+      hierarchy is visible before either number is read.
+    */
+    .partner-stats__card-secondary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.35rem;
+        margin: 0 0 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--core-border, #e5e7eb);
         font-size: 0.9rem;
         color: var(--core-muted-foreground, #6b7280);
     }
 
-    .partner-stats__window {
-        margin: 1rem 0 0;
-        font-size: 0.85rem;
+    .partner-stats__card-secondary-value {
+        font-family: var(--font-heading);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .partner-stats__card-help,
+    .partner-stats__card-na {
+        margin: 0;
+        font-size: 0.9rem;
         color: var(--core-muted-foreground, #6b7280);
     }
 

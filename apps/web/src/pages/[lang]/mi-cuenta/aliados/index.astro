@@ -86,20 +86,39 @@ const description = t(door.subtitleI18nKey);
 // the others: the section then renders nothing and the page is exactly as it
 // was. Like the mentions log, it resolves ownership server-side from the
 // session, so it does not need the partner id being fetched beside it.
+//
+// TWO statistics reads rather than one, one per window (§7.4). The owner chose
+// to show both figures at once instead of a window selector, because a selector
+// would put JavaScript on a section that ships none and leave an interaction to
+// maintain on a read-only panel. The endpoint already takes the parameter, so
+// this is the entire cost of that decision: two reads inside a batch that was
+// already parallel, on a page that is never edge-cached.
+//
+// The 30-day read is load-bearing — it decides whether the panel renders at all
+// — while the 7-day read is secondary and its failure drops one line instead of
+// the block. See `resolvePartnerStatsView`.
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const [myLeadsResult, myTradeResult, myPartnerResult, myMentionsResult, myStatsResult] =
-    await Promise.all([
-        allianceLeadsApi.mine({ cookieHeader }),
-        hostTradesApi.mine({ cookieHeader }),
-        partnersApi.mine({ cookieHeader }),
-        partnersApi.mineMentions({ cookieHeader }),
-        partnersApi.mineStats({ cookieHeader, windowDays: 30 })
-    ]);
+const [
+    myLeadsResult,
+    myTradeResult,
+    myPartnerResult,
+    myMentionsResult,
+    myStats30Result,
+    myStats7Result
+] = await Promise.all([
+    allianceLeadsApi.mine({ cookieHeader }),
+    hostTradesApi.mine({ cookieHeader }),
+    partnersApi.mine({ cookieHeader }),
+    partnersApi.mineMentions({ cookieHeader }),
+    partnersApi.mineStats({ cookieHeader, windowDays: 30 }),
+    partnersApi.mineStats({ cookieHeader, windowDays: 7 })
+]);
 const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
 const myTrade = myTradeResult.ok ? myTradeResult.data.trade : null;
 const myPartner = myPartnerResult.ok ? myPartnerResult.data.partner : null;
 const myMentionBatches = myMentionsResult.ok ? myMentionsResult.data.batches : [];
-const myStats = myStatsResult.ok ? myStatsResult.data : null;
+const myStats30 = myStats30Result.ok ? myStats30Result.data : null;
+const myStats7 = myStats7Result.ok ? myStats7Result.data : null;
 
 // Both force-acquired options are built here rather than inline in the
 // template so the list is one expression to read and to test. Each entry is
@@ -143,7 +162,7 @@ const hasPendingClaim =
       session, rather than on `myPartner` — one ownership signal, not two that
       can disagree on a page that fetches both.
     */}
-    <PartnerStatsSection locale={locale} stats={myStats} />
+    <PartnerStatsSection locale={locale} stats30={myStats30} stats7={myStats7} />
     <PartnerMentionsSection
         locale={locale}
         batches={myMentionBatches}
