@@ -39,6 +39,7 @@ import { isPubliclyListedPlan, resolvePlanPublicListing } from '@repo/schemas';
 import type { Context } from 'hono';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { billingAuthMiddleware } from '../../middlewares/billing-auth.middleware';
+import { collectCatalogPages } from '../../utils/collect-catalog-pages';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 
@@ -101,18 +102,6 @@ export function servablePlans<T extends { readonly metadata?: Record<string, unk
 }
 
 /**
- * qzpay's own `PaginationSchema` ceiling — the largest page it will return.
- */
-const CATALOG_PAGE_SIZE = 100;
-
-/**
- * How many `CATALOG_PAGE_SIZE` pages {@link loadServableCatalog} will walk
- * before giving up. A billing catalogue of 1000 plans is a different problem
- * than this endpoint; the bound exists so a paging bug cannot spin forever.
- */
-const CATALOG_MAX_PAGES = 10;
-
-/**
  * Loads the whole catalogue and returns only the servable plans.
  *
  * Why the whole catalogue rather than the caller's page: `pagination.total` and
@@ -123,10 +112,14 @@ const CATALOG_MAX_PAGES = 10;
  * paging to the end would find fewer rows than it was promised. Filtering before
  * paging makes both numbers describe exactly what is returned.
  *
- * Cost: ONE query today, the same as before, because the catalogue fits in a
- * single 100-row page (single digits of plans, plus one per negotiated
- * agreement). It becomes N queries only once the catalogue exceeds 100 plans,
- * and it is bounded by {@link CATALOG_MAX_PAGES} so it can never loop.
+ * The walk itself lives in {@link collectCatalogPages}, shared with the public
+ * plans endpoint, which had the same bug in a different dress (it read
+ * `listPlans`' DEFAULT page of twenty). One implementation of "see the whole
+ * catalogue, then filter" is harder to break than two.
+ *
+ * Cost: ONE query today, the same as before HOS-1062, because the catalogue fits
+ * in a single 100-row page. It becomes N only once the catalogue exceeds that,
+ * and it is bounded so it can never loop.
  *
  * @param billing - The resolved QZPay billing facade
  * @returns Every servable plan, in catalogue order
@@ -140,29 +133,26 @@ async function loadServableCatalog(billing: {
         }>;
     };
 }): Promise<Array<{ readonly metadata?: Record<string, unknown> }>> {
-    const collected: Array<{ readonly metadata?: Record<string, unknown> }> = [];
-
-    for (let page = 0; page < CATALOG_MAX_PAGES; page++) {
-        const result = await billing.plans.list({
-            limit: CATALOG_PAGE_SIZE,
-            offset: page * CATALOG_PAGE_SIZE
-        });
-        collected.push(...result.data);
-
-        if (!result.hasMore) {
-            break;
-        }
-
-        if (page === CATALOG_MAX_PAGES - 1) {
-            // Truncation is announced rather than silent: past this point the
-            // response describes the first CATALOG_MAX_PAGES * CATALOG_PAGE_SIZE
-            // plans only.
-            apiLogger.error(
-                { fetched: collected.length, maxPages: CATALOG_MAX_PAGES },
-                'Billing catalogue exceeded the protected /plans fetch bound — response is truncated'
-            );
-        }
-    }
+    const collected =
+        (await collectCatalogPages<{ readonly metadata?: Record<string, unknown> }>({
+            fetchPage: async ({ pageIndex, pageSize }) => {
+                const result = await billing.plans.list({
+                    limit: pageSize,
+                    offset: pageIndex * pageSize
+                });
+                return { items: result.data, hasMore: result.hasMore };
+            },
+            onTruncated: ({ fetched, maxPages }) => {
+                apiLogger.error(
+                    { fetched, maxPages },
+                    'Billing catalogue exceeded the protected /plans fetch bound — response is truncated'
+                );
+            }
+            // `?? []` is unreachable: this `fetchPage` never answers null (a qzpay
+            // failure throws, as it did before). It is here so that if a future
+            // edit DOES introduce a null page, the endpoint serves nothing rather
+            // than a silently short catalogue.
+        })) ?? [];
 
     // ONE exit, and it filters. A second `return` that answered `collected`
     // would be a raw qzpay catalogue leaving this function, which is what the
