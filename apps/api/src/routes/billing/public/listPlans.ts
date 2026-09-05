@@ -9,7 +9,12 @@
  */
 
 import { billingPlans, getDb, ne } from '@repo/db';
-import { ProductDomainEnumSchema, type ProductDomainValue, ServiceErrorCode } from '@repo/schemas';
+import {
+    isPubliclyListedPlan,
+    ProductDomainEnumSchema,
+    type ProductDomainValue,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { PlanService } from '../../../services/plan.service';
@@ -87,6 +92,11 @@ function resolveRequestedDomain(ctx: Context): ProductDomainValue {
  * Intentionally matches the previous ALL_PLANS shape so existing web client
  * code does not need changes. The `id` field is added for completeness but
  * the web client can ignore it.
+ *
+ * `publicListing` (HOS-1062 F1) is deliberately ABSENT: `stripWithSchema` drops
+ * every key this schema does not declare, so the mark that decides what the
+ * public sees never travels to the public itself. Every plan that survives the
+ * filter is listed, which makes the field redundant here anyway.
  */
 const PlanPublicSchema = z.object({
     id: z.string().uuid().openapi({ description: 'Plan UUID' }),
@@ -162,6 +172,21 @@ export const publicListPlansRoute = createSimpleRoute({
             return [];
         }
 
+        // HOS-1062 F1 — drop every plan not marked as publicly listed, BEFORE any
+        // domain logic and on the single array every return below is built from.
+        //
+        // Placed here, and not inside one of the branches, on purpose: this is
+        // what makes the mark fail CLOSED in every path the handler can take,
+        // including the domain-query failure right below, which fails OPEN for
+        // `accommodation` by deliberate design. That asymmetry belongs to the
+        // DOMAIN filter alone — a plan from another vertical leaking for one
+        // request is a cosmetic wrong; a negotiated price on the pricing page is
+        // not, and nobody files a ticket to report having seen it.
+        //
+        // `isPubliclyListedPlan` tests positively (`=== 'listed'`), so a plan
+        // whose mark went missing on the way here is withheld rather than served.
+        const publiclyListedPlans = result.data.items.filter(isPubliclyListedPlan);
+
         // SPEC-239 T-049 / HOS-685: scope the list to ONE product domain instead
         // of hardcoding "everything that is not accommodation". The isolation the
         // exclusion bought is now preserved by construction, and a new vertical
@@ -176,13 +201,17 @@ export const publicListPlansRoute = createSimpleRoute({
             // briefly leak. Every other domain fails CLOSED — an empty vertical
             // catalogue is recoverable, a response that mixes domains is the one
             // outcome AC-22 forbids.
-            return domain === DEFAULT_DOMAIN ? result.data.items : [];
+            //
+            // Both arms answer from `publiclyListedPlans`: the fail-open half of
+            // this asymmetry serves an UNFILTERED-BY-DOMAIN list, never an
+            // unfiltered-by-visibility one.
+            return domain === DEFAULT_DOMAIN ? publiclyListedPlans : [];
         }
 
         if (excludedSlugs.size === 0) {
-            return result.data.items;
+            return publiclyListedPlans;
         }
-        return result.data.items.filter((plan) => !excludedSlugs.has(plan.slug));
+        return publiclyListedPlans.filter((plan) => !excludedSlugs.has(plan.slug));
     },
     options: {
         skipAuth: true,
