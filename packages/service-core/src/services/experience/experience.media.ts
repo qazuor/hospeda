@@ -49,6 +49,8 @@ import {
     type ExperienceMediaSetFeaturedInput,
     ExperienceMediaSetFeaturedInputSchema,
     type ExperienceMediaSingleOutput,
+    type ExperienceMediaUpdateInput,
+    ExperienceMediaUpdateInputSchema,
     getGalleryCap,
     ModerationStatusEnum,
     ServiceErrorCode
@@ -58,6 +60,7 @@ import { ServiceError } from '../../types';
 import { scheduleCommerceMediaRevalidation } from '../commerce/commerce-revalidation.js';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildMediaTextPatch } from '../media/media-text-patch';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { checkExperienceCanEditMedia } from './experience.permissions';
 
@@ -597,6 +600,106 @@ export async function setFeaturedExperienceMedia(
             );
         }
         // HOS-389 §4 — see `addExperienceMedia` for the rationale.
+        await scheduleCommerceMediaRevalidation({ entityType: 'experience', listing: experience });
+
+        return { data: { media: updated } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Corrects the TEXT metadata of a single photo in an experience listing gallery (HOS-1036).
+ *
+ * The commerce twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * `updatePostMedia`. Before this existed the only way to fix — or write for the
+ * first time — a photo's `alt` was to delete it and re-upload, burning a second
+ * Cloudinary asset and losing the row's gallery position.
+ *
+ * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `experienceId` are not
+ * reachable from {@link ExperienceMediaUpdateInputSchema} even if the client sends
+ * them.
+ *
+ * Each field is three-state — omit to leave unchanged, `null` to clear, a value
+ * to replace — hence `buildMediaTextPatch` rather than a wholesale spread (see
+ * that module for what spreading would erase).
+ *
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another experience listing, a non-existent id, or a soft-deleted row all answer
+ * NOT_FOUND — never FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT experience listing is NOT: `checkExperienceCanEditMedia` throws FORBIDDEN
+ * on an experience listing the actor may not edit and NOT_FOUND on one that does not
+ * exist, so an ownership-scoped actor (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`)
+ * can tell a stranger's experience listing from an invented one. Every sibling media
+ * helper shares that same gate, so closing the gap in `update` alone would leave it at
+ * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
+ * at once.
+ *
+ * Schedules the same public-page revalidation the add/remove/reorder paths do:
+ * a caption or credit IS rendered content, so a correction that never reaches
+ * the cache is a correction nobody sees.
+ *
+ * @param model - ExperienceModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Update input (`experienceId` + `mediaId` + the text fields).
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<ExperienceMediaSingleOutput>` containing the updated row.
+ */
+export async function updateExperienceMedia(
+    model: ExperienceModel,
+    actor: Actor,
+    data: ExperienceMediaUpdateInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<ExperienceMediaSingleOutput>> {
+    try {
+        const parseResult = ExperienceMediaUpdateInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
+        checkExperienceCanEditMedia(actor, experience);
+
+        const mediaModel = new ExperienceMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!mediaRow || mediaRow.experienceId !== validated.experienceId) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                'Media not found for this experience listing'
+            );
+        }
+
+        const updated = await mediaModel.update(
+            { id: validated.mediaId },
+            buildMediaTextPatch(validated),
+            ctx?.tx
+        );
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to retrieve updated media row after text update'
+            );
+        }
+
         await scheduleCommerceMediaRevalidation({ entityType: 'experience', listing: experience });
 
         return { data: { media: updated } };

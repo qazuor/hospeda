@@ -48,6 +48,8 @@ import {
     type GastronomyMediaSetFeaturedInput,
     GastronomyMediaSetFeaturedInputSchema,
     type GastronomyMediaSingleOutput,
+    type GastronomyMediaUpdateInput,
+    GastronomyMediaUpdateInputSchema,
     getGalleryCap,
     ModerationStatusEnum,
     ServiceErrorCode
@@ -57,6 +59,7 @@ import { ServiceError } from '../../types';
 import { scheduleCommerceMediaRevalidation } from '../commerce/commerce-revalidation.js';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildMediaTextPatch } from '../media/media-text-patch';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { checkGastronomyCanEditMedia } from './gastronomy.permissions';
 
@@ -600,6 +603,106 @@ export async function setFeaturedGastronomyMedia(
             );
         }
         // HOS-389 §4 — see `addGastronomyMedia` for the rationale.
+        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+
+        return { data: { media: updated } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Corrects the TEXT metadata of a single photo in a gastronomy listing gallery (HOS-1036).
+ *
+ * The commerce twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * `updatePostMedia`. Before this existed the only way to fix — or write for the
+ * first time — a photo's `alt` was to delete it and re-upload, burning a second
+ * Cloudinary asset and losing the row's gallery position.
+ *
+ * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `gastronomyId` are not
+ * reachable from {@link GastronomyMediaUpdateInputSchema} even if the client sends
+ * them.
+ *
+ * Each field is three-state — omit to leave unchanged, `null` to clear, a value
+ * to replace — hence `buildMediaTextPatch` rather than a wholesale spread (see
+ * that module for what spreading would erase).
+ *
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another gastronomy listing, a non-existent id, or a soft-deleted row all answer
+ * NOT_FOUND — never FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT gastronomy listing is NOT: `checkGastronomyCanEditMedia` throws FORBIDDEN
+ * on a gastronomy listing the actor may not edit and NOT_FOUND on one that does not
+ * exist, so an ownership-scoped actor (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`)
+ * can tell a stranger's gastronomy listing from an invented one. Every sibling media
+ * helper shares that same gate, so closing the gap in `update` alone would leave it at
+ * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
+ * at once.
+ *
+ * Schedules the same public-page revalidation the add/remove/reorder paths do:
+ * a caption or credit IS rendered content, so a correction that never reaches
+ * the cache is a correction nobody sees.
+ *
+ * @param model - GastronomyModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Update input (`gastronomyId` + `mediaId` + the text fields).
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
+ */
+export async function updateGastronomyMedia(
+    model: GastronomyModel,
+    actor: Actor,
+    data: GastronomyMediaUpdateInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<GastronomyMediaSingleOutput>> {
+    try {
+        const parseResult = GastronomyMediaUpdateInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
+        checkGastronomyCanEditMedia(actor, gastronomy);
+
+        const mediaModel = new GastronomyMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                'Media not found for this gastronomy listing'
+            );
+        }
+
+        const updated = await mediaModel.update(
+            { id: validated.mediaId },
+            buildMediaTextPatch(validated),
+            ctx?.tx
+        );
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to retrieve updated media row after text update'
+            );
+        }
+
         await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: updated } };

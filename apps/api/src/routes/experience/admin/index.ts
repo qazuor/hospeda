@@ -37,6 +37,7 @@ import { adminRestoreExperienceRoute } from './restore';
 import { adminSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { adminUpdateExperienceRoute } from './update';
 import { adminUpdateExperienceFaqRoute } from './updateFaq';
+import { adminUpdateExperienceMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -123,5 +124,9 @@ app.route('/', adminSetFeaturedExperienceMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery
 app.route('/', adminRemoveExperienceMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', adminUpdateExperienceMediaRoute);
 
 export { app as adminExperienceRoutes };

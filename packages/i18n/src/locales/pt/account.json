@@ -1321,7 +1321,8 @@
                 "uploadTimeout": "O envio demorou demais. Tente novamente.",
                 "persistFailed": "Não foi possível salvar a imagem no banco de dados",
                 "featuredFailed": "Não foi possível definir a imagem como principal",
-                "removeFailed": "Não foi possível remover a imagem"
+                "removeFailed": "Não foi possível remover a imagem",
+                "metadataSaveFailed": "Não foi possível salvar os dados da foto"
             }
         },
         "events": {

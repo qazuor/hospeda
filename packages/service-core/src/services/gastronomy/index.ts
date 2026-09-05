@@ -38,7 +38,8 @@ export {
     getGastronomyMedia,
     removeGastronomyMedia,
     reorderGastronomyMedia,
-    setFeaturedGastronomyMedia
+    setFeaturedGastronomyMedia,
+    updateGastronomyMedia
 } from './gastronomy.media';
 // Media read/compose attach helpers (HOS-372)
 export {

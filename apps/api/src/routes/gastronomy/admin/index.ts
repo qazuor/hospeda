@@ -37,6 +37,7 @@ import { adminRestoreGastronomyRoute } from './restore';
 import { adminSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { adminUpdateGastronomyRoute } from './update';
 import { adminUpdateGastronomyFaqRoute } from './updateFaq';
+import { adminUpdateGastronomyMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -123,5 +124,9 @@ app.route('/', adminSetFeaturedGastronomyMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery
 app.route('/', adminRemoveGastronomyMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', adminUpdateGastronomyMediaRoute);
 
 export { app as adminGastronomyRoutes };

@@ -1,10 +1,15 @@
 import { z } from 'zod';
 import {
     BaseCommerceMediaSchema,
-    CommerceMediaStateSchema
+    CommerceMediaStateSchema,
+    CommerceMediaUpdatePayloadSchema
 } from '../../../common/commerce-media.schema.js';
 import { PreviousFeaturedOutcomeSchema } from '../../../common/featured-media.schema.js';
-import { ImageAttributionSchema, mediaAssetUrl } from '../../../common/media.schema.js';
+import {
+    hasAtLeastOneMediaTextField,
+    ImageAttributionSchema,
+    mediaAssetUrl
+} from '../../../common/media.schema.js';
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
@@ -360,3 +365,35 @@ export const GastronomyMediaRestoreInputSchema = z.object({
 
 /** Inferred type for the restore-media service input. */
 export type GastronomyMediaRestoreInput = z.infer<typeof GastronomyMediaRestoreInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Update Text Metadata (HOS-1036 — PATCH /gastronomies/:id/media/:mediaId)
+// ----------------------------------------------------------------------------
+
+/** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared commerce payload. */
+export const GastronomyMediaUpdatePayloadSchema = CommerceMediaUpdatePayloadSchema;
+/** Inferred type for the update-media HTTP payload. */
+export type GastronomyMediaUpdatePayload = z.infer<typeof GastronomyMediaUpdatePayloadSchema>;
+
+/**
+ * Service input for `updateGastronomyMedia`.
+ *
+ * Combines the URL params (`gastronomyId`, `mediaId`) with the four payload fields
+ * spread from {@link GastronomyMediaUpdatePayloadSchema}'s shape, then adds the
+ * cross-field rule the flat payload cannot express: at least one editable field
+ * must be present. An all-omitted body is a no-op PATCH and is rejected as
+ * `VALIDATION_ERROR` rather than silently answering 200.
+ */
+export const GastronomyMediaUpdateInputSchema = z
+    .object({
+        /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+        gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        /** UUID of the media row to update (from URL param `/:mediaId`). */
+        mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        ...GastronomyMediaUpdatePayloadSchema.shape
+    })
+    .refine(hasAtLeastOneMediaTextField, {
+        message: 'zodError.common.commerceMedia.update.atLeastOneField'
+    });
+/** Inferred type for the update-media service input. */
+export type GastronomyMediaUpdateInput = z.infer<typeof GastronomyMediaUpdateInputSchema>;

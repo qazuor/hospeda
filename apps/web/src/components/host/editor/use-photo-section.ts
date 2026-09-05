@@ -47,6 +47,16 @@ function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMed
         id: '',
         url: img.url,
         publicId: img.publicId,
+        // Spelled out rather than omitted: the four text keys are REQUIRED on
+        // `AccommodationMediaItem` precisely so a mapper cannot forget one (see
+        // `PhotoMetadataEditableItem`). `MediaImage` — the SSR-only legacy
+        // shape — carries none of them, so `undefined` is the honest answer
+        // here, and the empty `id` keeps the panel shut until the real rows
+        // arrive with the real text.
+        caption: undefined,
+        description: undefined,
+        alt: undefined,
+        attribution: undefined,
         isFeatured
     };
 }

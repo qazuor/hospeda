@@ -41,6 +41,7 @@ import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
+import { protectedUpdateGastronomyMediaRoute } from './updateMedia';
 import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
 import { protectedUploadGastronomyMenuItemPhotoRoute } from './uploadMenuItemPhoto';
 import { protectedGastronomyViewStatsRoute } from './viewStats';
@@ -158,5 +159,9 @@ app.route('/', protectedSetFeaturedGastronomyMediaRoute);
 
 // DELETE /{id}/media/{mediaId} — Remove photo from gallery.
 app.route('/', protectedRemoveGastronomyMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdateGastronomyMediaRoute);
 
 export { app as protectedGastronomyRoutes };
