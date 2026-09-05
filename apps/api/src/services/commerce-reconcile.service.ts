@@ -134,10 +134,19 @@ export async function resolveCommerceListingCompleteness(
  * fixed `entityType`, matching the shape `reconcileCommerceListingVisibility`
  * expects (`(entityId, tx?) => Promise<{complete, missing}>`).
  *
+ * Exported since HOS-1122 so the commerce downgrade remediation reconciles a
+ * listing through the SAME completeness resolver the billing lifecycle uses.
+ * A second resolver there would be a second definition of "publishable", and
+ * the two would diverge the first time one of them learned a new required
+ * field — which is exactly how this path once kept every paid listing PRIVATE
+ * (H-154 / HOS-494).
+ *
  * @param entityType - Commerce entity discriminator for this reconcile call.
  * @returns A resolver closed over `entityType`.
  */
-function bindCompletenessResolver(entityType: string): ResolveCommerceListingCompleteness {
+export function bindCommerceCompletenessResolver(
+    entityType: string
+): ResolveCommerceListingCompleteness {
     return (entityId, tx) => resolveCommerceListingCompleteness(entityType, entityId, tx);
 }
 
@@ -147,6 +156,14 @@ function bindCompletenessResolver(entityType: string): ResolveCommerceListingCom
 interface CommerceLink {
     readonly entityType: string;
     readonly entityId: string;
+    /**
+     * `entity_subscriptions.plan_restricted` for this listing (HOS-1122).
+     *
+     * Carried on the link, not re-read per listing: the reconciler needs it to
+     * refuse publishing a listing the owner's downgraded tier no longer covers,
+     * and this row is where the flag lives.
+     */
+    readonly planRestricted: boolean;
 }
 
 /**
@@ -269,7 +286,11 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
         'Recovered a paid commerce subscription no link row pointed at (superseded by a later checkout click) — link row re-pointed'
     );
 
-    return [{ entityType, entityId }];
+    // A row this path just wrote (or re-pointed) is by construction NOT plan
+    // restricted: the recovery only fires for a subscription no link row points
+    // at, and a downgrade's restriction always leaves the row in place pointing
+    // at the very subscription that was downgraded.
+    return [{ entityType, entityId, planRestricted: false }];
 }
 
 /**
@@ -297,7 +318,12 @@ export async function reconcileCommerceListingForSubscription(input: {
         const linkedRows = await db
             .select({
                 entityType: entitySubscriptions.entityType,
-                entityId: entitySubscriptions.entityId
+                entityId: entitySubscriptions.entityId,
+                // HOS-1122: without this column the next lifecycle event would
+                // publish a listing a commerce downgrade had just restricted —
+                // the subscription is `active`, so every other term of the
+                // reconciler's predicate says PUBLIC.
+                planRestricted: entitySubscriptions.planRestricted
             })
             .from(entitySubscriptions)
             .where(eq(entitySubscriptions.subscriptionId, subscriptionId));
@@ -336,10 +362,11 @@ export async function reconcileCommerceListingForSubscription(input: {
                     {
                         entityType: link.entityType,
                         entityId: link.entityId,
-                        subscriptionStatus
+                        subscriptionStatus,
+                        planRestricted: link.planRestricted
                     },
                     model,
-                    bindCompletenessResolver(link.entityType)
+                    bindCommerceCompletenessResolver(link.entityType)
                 );
                 apiLogger.info(
                     {
@@ -347,6 +374,7 @@ export async function reconcileCommerceListingForSubscription(input: {
                         entityType: link.entityType,
                         entityId: link.entityId,
                         subscriptionStatus,
+                        planRestricted: link.planRestricted,
                         updated: result.updated,
                         visibility: result.visibility,
                         lifecycleState: result.lifecycleState,
