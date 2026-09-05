@@ -56,6 +56,7 @@ import { PhotoGalleryItem } from './PhotoGalleryItem.client';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
 import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
+import { usePhotoAltWarningGuard } from './use-photo-alt-warning-guard';
 import { usePhotoSection } from './use-photo-section';
 
 // Re-export upload helper so existing callers of PhotoSection.client can still import it
@@ -156,6 +157,12 @@ export function PhotoSection({
         initialFeaturedImage,
         initialGallery
     });
+
+    // HOS-1018: nudge (never blocks) the host to fill in `alt` text before
+    // leaving the section — see the hook's file header for why this is a
+    // separate, narrower guard than `useUnsavedChangesGuard`'s usual "unsaved
+    // changes" wiring.
+    usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems });
 
     const remainingGallerySlots = isGalleryCapResolved
         ? Math.max(galleryCap - galleryItems.length, 0)

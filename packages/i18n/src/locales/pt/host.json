@@ -376,7 +376,13 @@
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} espaço livre",
                 "galleryCapExceededOnSelectRemaining_other": "{{count}} espaços livres",
                 "processingImage": "Otimizando imagem…",
-                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}}MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve."
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}}MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
+                "altWarningTitle": "Fotos sem texto alternativo",
+                "altWarningMessage": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} foto sem esse texto preenchido.",
+                "altWarningMessage_one": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} foto sem esse texto preenchido.",
+                "altWarningMessage_other": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} fotos sem esse texto preenchido.",
+                "altWarningGoBack": "Voltar e preenchê-los",
+                "altWarningContinue": "Continuar sem preenchê-los"
             },
             "video": {
                 "sectionTitle": "Vídeos",
