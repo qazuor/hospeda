@@ -819,6 +819,22 @@ async function confirmPlanUpgrade(input: {
             changeResult.subscription
         );
 
+        // HOS-1122: OUTSIDE the `userId` check, unlike the accommodation
+        // restoration below it. This function takes no `userId` — it works from
+        // the subscription's own link rows — so gating it on one made an owner
+        // whose `resolveOwnerUserId` came back null pay the delta for a dearer
+        // tier and keep their listings private. The sibling call in
+        // `trialing-plan-upgrade.service.ts` was already outside; this was the
+        // inconsistent one. Non-throwing, and a no-op for accommodation and
+        // partner alike.
+        if (!isAccommodationUpgrade) {
+            await restoreCommerceListingsForUpgrade({
+                subscriptionId: changeResult.subscription.id,
+                newPlanId,
+                subscriptionStatus: changeResult.subscription.status
+            });
+        }
+
         if (userId) {
             if (isAccommodationUpgrade) {
                 await applyUpgradeRestorationsOrWarn({
@@ -835,17 +851,6 @@ async function confirmPlanUpgrade(input: {
                     },
                     'Plan upgrade: non-accommodation subscription — accommodation restoration skipped by domain isolation'
                 );
-                // HOS-1122: skipping the accommodation restoration is only half
-                // the answer. A commerce subscription that comes back UP a tier
-                // has its own listings to un-restrict, and until this branch
-                // existed a downgrade was one-way — the flag stayed set and the
-                // owner paid the dearer tier for listings that were still
-                // private. Non-throwing and a no-op for the partner domain.
-                await restoreCommerceListingsForUpgrade({
-                    subscriptionId: changeResult.subscription.id,
-                    newPlanId,
-                    subscriptionStatus: changeResult.subscription.status
-                });
             }
             // SPEC-309 T-010: sync featuredByEntitlement to reflect the
             // post-upgrade plan via the shared resolver (T-004), which
