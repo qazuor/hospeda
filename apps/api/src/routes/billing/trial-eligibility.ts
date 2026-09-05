@@ -82,12 +82,21 @@ export const handleTrialEligibility = async (
     const { eligible } = await resolveTrialEligibility({
         billing,
         customerId: billingCustomerId,
-        // HOS-1012 D-2: eligibility is per vertical. This route backs the
-        // accommodation pricing page — the one place a "N days free" badge is
-        // shown — and the commerce plans are deliberately kept out of
-        // `ALL_PLANS` and out of `GET /public/plans`, so there is no commerce
-        // caller to serve here. A commerce pricing surface would pass its own
-        // domain rather than inherit this one.
+        // HOS-1012 D-2: eligibility is per vertical, and this route pins
+        // accommodation because its only caller is an accommodation surface.
+        //
+        // Corrected by HOS-1184. The reasoning here used to be that the commerce
+        // plans are kept out of `GET /public/plans`, so no commerce caller could
+        // exist. That has been false since HOS-685 opened that endpoint by
+        // `?domain=`: /planes/gastronomia and /planes/experiencias are built
+        // from it and advertise their own free days. (Still true, and a separate
+        // fact: those plans stay out of `ALL_PLANS`.)
+        //
+        // What actually keeps this route accommodation-only is narrower. Its one
+        // caller is the `PlanPurchaseButton` island, and the commerce and partner
+        // grids run `ctaMode="link"` — they render a plain link and never mount
+        // it, so nothing on those pages reaches here. A commerce surface that
+        // needs a verdict passes its own domain rather than inheriting this one.
         productDomain: ProductDomainEnum.ACCOMMODATION
     });
 
