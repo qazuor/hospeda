@@ -559,6 +559,12 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     // ── AC-4.3: discount → backward-compat shape ─────────────────────────────
 
+    // NOTE (HOS-1171): the actor here is an ADMIN. AC-4.3 is about the RESPONSE
+    // SHAPE of the discount branch, and that branch is now reachable only by a
+    // caller holding ACCESS_API_ADMIN — a self-service host is refused unspent
+    // (422) by the effect gate, which its own test above covers. Running this
+    // with a host actor would assert the shape of a response the route no
+    // longer produces for them.
     it('AC-4.3 discount effect → backward-compat response (discountAmount, finalAmount, amount)', async () => {
         // Arrange
         mockApply.mockResolvedValue({
@@ -577,7 +583,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         // Act
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeHostActor()),
+            headers: makeHeaders(makeAdminActor()),
             body: JSON.stringify({
                 code: 'SAVE30',
                 customerId: OWN_CUSTOMER_ID,
@@ -607,10 +613,25 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         expect(data.originalAmount).toBe(10000);
     });
 
-    // ── comp effect ───────────────────────────────────────────────────────────
+    // ── HOS-1195: comp effect is REFUSED, for everyone ────────────────────────
+    //
+    // This block replaces a test that asserted the opposite ("comp effect →
+    // effectKind=comp, finalAmount=0, comp=true"). That was the vulnerability
+    // written down as a contract: a signed-in host could POST `HOSPEDA_FREE`
+    // against their own subscription and `service.apply` would run
+    // `UPDATE billing_subscriptions SET status = 'comp'`. In production that
+    // code is active, uncapped, and resolved without a livemode filter.
+    //
+    // The assertions below are deliberately about `mockApply` NOT being called,
+    // not just about the status: a 403 that still redeemed would be worthless.
 
-    it('comp effect → effectKind=comp, finalAmount=0, comp=true', async () => {
-        // Arrange
+    it('HOS-1195 comp effect → 403 and NOTHING is redeemed (self-service host)', async () => {
+        // Arrange — the DB peek sees a comp code; service.apply is armed with a
+        // success it must never be allowed to return.
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: makePromoCodeStub({ code: 'HOSPEDA_FREE', effect: { kind: 'comp' } })
+        });
         mockApply.mockResolvedValue({
             success: true,
             data: {
@@ -636,13 +657,220 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         });
 
         // Assert
-        expect([200, 201]).toContain(res.status);
-        const body = (await res.json()) as { success: boolean; data?: Record<string, unknown> };
-        expect(body.success).toBe(true);
-        const data = body.data!;
-        expect(data.effectKind).toBe('comp');
-        expect(data.finalAmount).toBe(0);
-        expect(data.comp).toBe(true);
+        expect(res.status).toBe(403);
+        const body = (await res.json()) as {
+            success: boolean;
+            error?: { reason?: string };
+        };
+        expect(body.success).toBe(false);
+        // The client must be able to tell this apart from the discount refusal.
+        expect(body.error?.reason).toBe('PROMO_CODE_COMP_NOT_SELF_SERVICE');
+        // The status flip never ran.
+        expect(mockApply).not.toHaveBeenCalled();
+        expect(mockApplySeam).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1195 comp effect → 403 for an ADMIN too (one audited grant path)', async () => {
+        // Arrange — an admin holds ACCESS_API_ADMIN, which clears the ownership
+        // guard. The comp gate is deliberately NOT exempted for them: the only
+        // way to grant comp is `subscription-comp-create.service.ts`.
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: makePromoCodeStub({ code: 'HOSPEDA_FREE', effect: { kind: 'comp' } })
+        });
+        mockApply.mockResolvedValue({
+            success: true,
+            data: {
+                effectKind: 'comp',
+                code: 'HOSPEDA_FREE',
+                discountAmount: 0,
+                finalAmount: 0,
+                originalAmount: 10000
+            }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeAdminActor()),
+            body: JSON.stringify({
+                code: 'HOSPEDA_FREE',
+                customerId: OWN_CUSTOMER_ID,
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(403);
+        expect(mockApply).not.toHaveBeenCalled();
+    });
+
+    // ── HOS-1171: discount is refused UNSPENT for a self-service caller ───────
+
+    it('HOS-1171 discount effect + host → 422, code NOT redeemed, distinct reason', async () => {
+        // Arrange — the default stub is a percentage discount.
+        mockApply.mockResolvedValue({
+            success: true,
+            data: {
+                effectKind: 'discount',
+                code: 'SAVE30',
+                type: 'percentage',
+                value: 30,
+                originalAmount: 10000,
+                discountAmount: 3000,
+                finalAmount: 7000
+            }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'SAVE30',
+                customerId: OWN_CUSTOMER_ID,
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(422);
+        const body = (await res.json()) as { error?: { reason?: string } };
+        // Distinguishable from the comp refusal — they have different remedies.
+        expect(body.error?.reason).toBe('PROMO_CODE_DISCOUNT_AT_CHECKOUT');
+        // The whole point of refusing rather than applying: the code survives.
+        expect(mockApply).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1171 discount effect + host + subscriptionId → 422 before the T-007 seam', async () => {
+        // Arrange — this is the path the account redeem form actually takes
+        // (the dashboard passes the trialing subscription's id). Without the
+        // gate sitting BEFORE the seam branch, a discount typed there would be
+        // burnt on the caller's own live preapproval.
+        mockQZPayBillingCell.value = {};
+        mockApplySeam.mockResolvedValue({
+            success: true,
+            data: { discountedAmountCentavos: 7000 }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'SAVE30',
+                customerId: OWN_CUSTOMER_ID,
+                subscriptionId: randomUUID(),
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(422);
+        expect(mockApplySeam).not.toHaveBeenCalled();
+        expect(mockApply).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1171 legacy code with no typed effect + host → 422 (gate fails closed)', async () => {
+        // Arrange — `parseEffectFromRow` returns undefined for a discount row
+        // whose `value_kind` was never backfilled. Treating "unclassifiable" as
+        // permissive is the exact shape of failure the gate exists to prevent.
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: makePromoCodeStub({ effect: undefined })
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'LEGACY10',
+                customerId: OWN_CUSTOMER_ID,
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(422);
+        expect(mockApply).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1171 unreadable peek + host → no redemption (fail-closed, 500)', async () => {
+        // Arrange — a transient read failure must not fall through into a path
+        // that would read the code again inside its own transaction.
+        mockGetByCode.mockResolvedValue({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve promo code' }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'WHATEVER',
+                customerId: OWN_CUSTOMER_ID,
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(500);
+        expect(mockApply).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1171 unknown code + host → 404 (unchanged status, now decided at the peek)', async () => {
+        // Arrange
+        mockGetByCode.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Promo code not found' }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'NOPE',
+                customerId: OWN_CUSTOMER_ID,
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(404);
+        expect(mockApply).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1171 NO_ACTIVE_TRIAL reaches the client as a distinguishable reason', async () => {
+        // Arrange — a valid trial-extension code with no trial running. The 422
+        // status alone collapses to VALIDATION_ERROR ("Los datos enviados no
+        // son válidos"), which is the wrong thing to tell someone whose code is
+        // fine and unspent.
+        mockGetByCode.mockResolvedValue({
+            success: true,
+            data: makePromoCodeStub({ effect: { kind: 'trial_extension', extraDays: 60 } })
+        });
+        mockApplyTrialExt.mockResolvedValue({
+            success: false,
+            error: { code: 'NO_ACTIVE_TRIAL', message: 'No running trial to extend' }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'LANZAMIENTO60',
+                customerId: OWN_CUSTOMER_ID
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(422);
+        const body = (await res.json()) as { error?: { code?: string; reason?: string } };
+        expect(body.error?.reason).toBe('NO_ACTIVE_TRIAL');
     });
 
     // ── trial_extension effect ────────────────────────────────────────────────
@@ -864,9 +1092,16 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
     it('B1: admin with ACCESS_API_ADMIN + foreign subscriptionId → passes ownership, 200/201', async () => {
         // Arrange — ownership check passes for admin (from beforeEach default).
         // getByCode returns no discount effect → seam skipped → falls to service.apply.
+        //
+        // HOS-1195: this used to stub a `comp` effect, which now answers 403 for
+        // every caller including this admin. An untyped legacy effect keeps the
+        // test doing what its own comment says (skip the seam, reach
+        // service.apply) — and it is only the ADMIN who still gets there:
+        // `effect: undefined` is refused 422 for a self-service caller, covered
+        // by its own test above.
         mockGetByCode.mockResolvedValue({
             success: true,
-            data: makePromoCodeStub({ effect: { kind: 'comp' } })
+            data: makePromoCodeStub({ effect: undefined })
         });
         mockApply.mockResolvedValue({
             success: true,
@@ -901,6 +1136,9 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     // ── SF3: max-uses error → 409 (not 500) ──────────────────────────────────
 
+    // Admin actor (HOS-1171): this pins the `service.apply` statusMap, and that
+    // path is admin-only now. The self-service equivalent is the trial-extension
+    // seam's own PROMO_CODE_MAX_USES → 409 entry.
     it('SF3: code at max uses via /apply → 409 Conflict', async () => {
         // Arrange — service.apply returns PROMO_CODE_MAX_USES error
         mockApply.mockResolvedValue({
@@ -914,7 +1152,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         // Act
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeHostActor()),
+            headers: makeHeaders(makeAdminActor()),
             body: JSON.stringify({
                 code: 'EXHAUSTED',
                 customerId: OWN_CUSTOMER_ID,
@@ -928,6 +1166,10 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     // ── HOS-996: discount-to-zero on the seam → 422 with OUR message ──────────
 
+    // Admin actor (HOS-1171): the T-007 discount seam is admin-only now — a
+    // self-service caller is refused 422 BEFORE the seam, which is what keeps a
+    // discount typed on the redeem page from being burnt on the caller's own
+    // live preapproval. That refusal has its own test above.
     it('HOS-996: seam rejects a 100% discount → 422 with our message, not MercadoPago’s', async () => {
         // Arrange — the peek must see a `discount` effect so the request is routed
         // through the seam rather than the plain service.apply path.
@@ -950,7 +1192,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         // Act
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeHostActor()),
+            headers: makeHeaders(makeAdminActor()),
             body: JSON.stringify({
                 code: 'TODOGRATIS100',
                 customerId: OWN_CUSTOMER_ID,
@@ -1001,7 +1243,8 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeHostActor()),
+            // Admin actor (HOS-1171) — same reason as the companion test above.
+            headers: makeHeaders(makeAdminActor()),
             body: JSON.stringify({
                 code: 'SAVE30',
                 customerId: OWN_CUSTOMER_ID,

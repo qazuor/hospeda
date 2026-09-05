@@ -12,15 +12,27 @@
  *   that is now PERSISTED on the row (HOS-1012 T-039). Before T-039 this branch
  *   burnt the code via `applyPromoCode` and answered a `trialEnd` projected from
  *   `new Date()` that was never written anywhere.
- * - `comp`: returns comp indication (`comp: true`, `finalAmount: 0`).
+ * - `comp`: REFUSED for every caller since HOS-1195 — see below.
  *
  * Ownership guard (AC-6.2): `customerId` must be the caller's own billing
  * customer unless the caller has `ACCESS_API_ADMIN`.
  *
+ * Self-service effect gate (HOS-1195 / HOS-1171): the ownership guard only
+ * ever protected OTHER people's subscriptions, so a signed-in user could
+ * redeem a `comp` code against their own and walk away with a permanently free
+ * subscription. `comp` is now refused outright, and a non-admin caller may
+ * redeem `trial_extension` and nothing else — a `discount` is refused WITHOUT
+ * being spent, so it survives for the checkout where it belongs.
+ *
  * @module routes/billing/promo-codes.apply
  */
 
-import { ApplyPromoCodeSchema, PermissionEnum, PromoEffectKindEnum } from '@repo/schemas';
+import {
+    ApplyPromoCodeSchema,
+    PermissionEnum,
+    PromoEffectKindEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { assertSubscriptionOwnership, PromoCodeService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -128,11 +140,9 @@ export const handleApplyPromoCode = async (
     // Omitting it means "my own customer", which is exactly what this guard
     // enforces for every non-admin caller anyway. An explicitly supplied
     // mismatching id is still a 403.
-    if (
-        body.customerId !== undefined &&
-        !actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) &&
-        body.customerId !== billingCustomerId
-    ) {
+    const actorHasAdmin = actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) ?? false;
+
+    if (body.customerId !== undefined && !actorHasAdmin && body.customerId !== billingCustomerId) {
         throw new HTTPException(403, { message: 'Forbidden: admin access required' });
     }
 
@@ -155,7 +165,7 @@ export const handleApplyPromoCode = async (
         const ownershipResult = await assertSubscriptionOwnership({
             subscriptionId,
             billingCustomerId,
-            actorHasAdmin: actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) ?? false
+            actorHasAdmin
         });
 
         if (!ownershipResult.success) {
@@ -186,6 +196,73 @@ export const handleApplyPromoCode = async (
     // ------------------------------------------------------------------
     const peekResult = await service.getByCode(code);
     const peekedEffectKind = peekResult.success ? peekResult.data?.effect?.kind : undefined;
+
+    // ------------------------------------------------------------------
+    // HOS-1195 SELF-SERVICE EFFECT GATE — runs BEFORE anything is redeemed.
+    //
+    // Until this existed the route was `createProtectedRoute` with no
+    // `requiredPermissions` and no effect gate at all, so ANY signed-in user
+    // could POST a `comp` code against their OWN subscription and reach
+    // `service.apply` → `applyPromoCode`, which runs
+    // `UPDATE billing_subscriptions SET status = 'comp'`. The B1 ownership
+    // guard above does not stop it: that one exists for the CROSS-customer
+    // attack ("flip the VICTIM's subscription to comp") and passes by
+    // construction when the subscription is the caller's own. In production
+    // `HOSPEDA_FREE` is active, `effect_kind = comp`, with no max_uses — and
+    // `getPromoCodeByCode` resolves on `eq(code, …)` alone, so `livemode`
+    // never scoped it either. Anyone who learned the string got a permanently
+    // free subscription.
+    //
+    // Two rules, in this order:
+    //
+    //   1. `comp` is refused for EVERY caller, admins included. The one
+    //      legitimate way to grant it is the audited admin path
+    //      (`services/subscription-comp-create.service.ts`), which inserts the
+    //      row directly with no MercadoPago preapproval. Leaving a second,
+    //      unaudited door open for admins would only mean the grant sometimes
+    //      happens where nobody is looking.
+    //
+    //   2. For a non-admin caller this route accepts `trial_extension` and
+    //      NOTHING else. A `discount` code is refused WITHOUT being redeemed
+    //      (owner decision, HOS-1171): it stays usable at checkout, which is
+    //      where a discount belongs. `undefined` lands here too — a legacy row
+    //      whose `value_kind` was never backfilled is a discount that
+    //      `parseEffectFromRow` could not type, and guessing in the permissive
+    //      direction is exactly the shape of failure this gate exists to stop.
+    //
+    // Fail-closed on the peek itself: a code we could not READ is never handed
+    // to a redemption path that would read it again inside its own
+    // transaction. NOT_FOUND keeps answering 404, as `service.apply` did.
+    //
+    // Admin callers keep the full behaviour below (the T-007 discount seam and
+    // `service.apply`), which is what `POST /apply` was built for in SPEC-262
+    // and what its ops tooling still targets.
+    // ------------------------------------------------------------------
+    if (peekedEffectKind === PromoEffectKindEnum.COMP) {
+        throw new HTTPException(403, {
+            message:
+                'Complimentary codes cannot be redeemed here. Contact support if you were promised one.',
+            cause: { code: 'PROMO_CODE_COMP_NOT_SELF_SERVICE' }
+        });
+    }
+
+    if (!actorHasAdmin) {
+        if (!peekResult.success) {
+            const peekErrorCode = peekResult.error?.code;
+            const status = peekErrorCode === ServiceErrorCode.NOT_FOUND ? 404 : 500;
+            throw new HTTPException(status as 404 | 500, {
+                message: peekResult.error?.message ?? 'Promo code not found'
+            });
+        }
+
+        if (peekedEffectKind !== PromoEffectKindEnum.TRIAL_EXTENSION) {
+            throw new HTTPException(422, {
+                message:
+                    'This is a discount code. It has not been used — apply it when you subscribe to a plan.',
+                cause: { code: 'PROMO_CODE_DISCOUNT_AT_CHECKOUT' }
+            });
+        }
+    }
 
     if (subscriptionId) {
         if (peekedEffectKind === PromoEffectKindEnum.DISCOUNT) {
@@ -287,7 +364,17 @@ export const handleApplyPromoCode = async (
             };
             const status = statusMap[extensionResult.error.code] ?? 500;
             throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500, {
-                message: extensionResult.error.message
+                message: extensionResult.error.message,
+                // HOS-1171: a 422's status-derived `error.code` is
+                // VALIDATION_ERROR, and `translateApiErrorWithT` ranks `code`
+                // above `message` — so without this the host who has no trial
+                // running reads "Los datos enviados no son válidos." for a
+                // request whose data was fine. Same mechanism the add-on 422s
+                // use since HOS-1178: `readEntitlementCause` forwards a
+                // whitelisted `cause.code` as `error.reason`, which outranks
+                // `code` in that chain. Only NO_ACTIVE_TRIAL is whitelisted;
+                // every other code here falls through to the generic copy.
+                cause: { code: extensionResult.error.code }
             });
         }
 
@@ -385,7 +472,7 @@ export const applyPromoCodeRoute = createProtectedRoute({
     path: '/apply',
     summary: 'Apply promo code',
     description:
-        'Applies a promo code to a checkout session. Branches response by effect kind. Requires authentication.',
+        'Applies a promo code to a checkout session. Branches response by effect kind. Requires authentication. Complimentary (comp) codes are always refused; a non-admin caller may only redeem a trial_extension code — a discount is refused unspent (422) and stays usable at checkout.',
     tags: ['Billing - Promo Codes'],
     requestBody: ApplyPromoCodeSchema,
     responseSchema: ApplyResponseSchema,
