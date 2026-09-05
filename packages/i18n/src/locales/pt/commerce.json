@@ -460,9 +460,29 @@
                 "404": "Não encontramos uma assinatura ativa para mudar de plano.",
                 "409": "Você tem um cancelamento pendente — não é possível mudar de plano até que seja resolvido.",
                 "410": "Esse plano não está mais disponível.",
-                "422": "Você não pode mudar para esse plano a partir do atual.",
+                "422": "Esse plano custa o mesmo que o atual, então não há nada a mudar.",
                 "503": "O serviço de pagamentos está indisponível no momento. Tente novamente mais tarde.",
                 "generic": "Não conseguimos mudar seu plano. Tente novamente mais tarde."
+            },
+            "note": {
+                "upgrade": "Você paga a diferença proporcional agora e passa a valer imediatamente.",
+                "downgrade": "Sem cobrança. Passa a valer em {date}.",
+                "downgradeNoDate": "Sem cobrança. Passa a valer no fim do período que você já pagou."
+            },
+            "scheduled": {
+                "title": "Mudança agendada",
+                "body": "Seu plano muda para {plan} em {date}. Até lá nada muda: você continua no {current} e com todas as suas fichas visíveis."
+            },
+            "keepPanel": {
+                "title": "Escolha quais fichas continuam visíveis",
+                "intro": "O plano {plan} inclui {cap} das suas {active} fichas. As que você não escolher deixarão de aparecer.",
+                "when": "A mudança se aplica em {date}. Até lá você continua no seu plano atual e com todas as suas fichas visíveis.",
+                "whenNoDate": "A mudança se aplica no fim do período que você já pagou. Até lá nada muda.",
+                "quotaNote": "Uma ficha oculta continua ocupando espaço na sua cota: você não poderá criar outra no lugar dela. Ela volta a aparecer se você subir de plano.",
+                "overCap": "Você escolheu {selected} e o plano permite {cap}. Desmarque {extra}.",
+                "listLabel": "Suas fichas desta categoria",
+                "suggested": "Sugerida",
+                "confirm": "Agendar a mudança"
             }
         },
         "entitlements": {
