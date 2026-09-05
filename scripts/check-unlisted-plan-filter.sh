@@ -18,43 +18,70 @@
 #   Watching only one of the two doors would be worse than watching neither: it
 #   would report as covered what is not.
 #
-# WHAT IT PROVES
-#   1. The public handler still exists.
-#   2. It still calls the shared predicate on the plan list it serves.
-#   3. No `return` in that handler answers the RAW service items. This is the
-#      check that covers the branch a reader forgets: when the DOMAIN query
-#      fails, `accommodation` deliberately serves an unfiltered-BY-DOMAIN list
-#      (HOS-685). Serving `result.data.items` there would restore the leak while
-#      check 2 stayed green, because the filter would still be present higher up.
-#   4. The predicate is still POSITIVE (`=== 'listed'`). Rewritten as
-#      `!== 'unlisted'` it would publish any plan whose mark went missing, which
-#      is the difference between "withhold on doubt" and "publish on doubt".
-#   5. The metadata key literal lives in exactly one production file. A second
-#      site is a second spelling waiting to drift from the first.
-#   6. The protected handler still exists.
-#   7. Its `servablePlans` still applies BOTH marks, and BOTH branches call it —
-#      `?active=true` and the paginated default. Two call sites are required
-#      because a mark added to one branch and not the other is the exact shape
-#      of this bug: `?active=true` is the branch a consumer reaches for first.
-#   8. No response in the protected handler hands back a raw qzpay result
-#      (`data: active`, `data: result.data`). Same reasoning as check 3.
+# WHAT IT CHECKS, and which kind each one is
+#   A check that asserts "the safe form is present" can be walked around by
+#   adding a second, unsafe path beside it — three of these were, and each is
+#   now paired with a FORBID that rejects the shape instead. The kind is stated
+#   per check so nobody reads more into a green run than it earns.
+#
+#   1. [exists] The public handler is still there.
+#   2. [present] Its loader still calls the shared predicate.
+#   3. [FORBID] Inside the public HANDLER, every `return` is `[]` or names the
+#      filtered array. This replaces a check that looked for a specific raw
+#      expression and was defeated by an alias in one line. It covers the branch
+#      a reader forgets: when the DOMAIN query fails, `accommodation` serves an
+#      unfiltered-BY-DOMAIN list on purpose (HOS-685), and the visibility mark
+#      must still hold there.
+#   3b.[FORBID] The public loader never returns its raw accumulator.
+#   4. [present] The predicate is still POSITIVE (`=== 'listed'`).
+#   4b.[FORBID] ...and is not the negative form. Rewritten as `!== 'unlisted'`
+#      it would publish any plan whose mark went missing, which is the difference
+#      between "withhold on doubt" and "publish on doubt".
+#   5. [FORBID] Nobody reads the mark off raw `metadata` outside the resolver.
+#   6. [exists] The protected handler is still there.
+#   7. [present] `servablePlans` is defined, with BOTH marks CONJOINED — the
+#      whole expression including the `&&`, because swapping it for `||` leaves
+#      both names in place and serves everything.
+#   7a/7b. [present] Each branch filters: `data: servablePlans(...)` for
+#      `?active=true`, `return servablePlans(...)` for the loader the paginated
+#      branch reads. Asserted by name rather than by counting call sites, because
+#      a count of two is satisfied by one branch calling it twice.
+#   8. [FORBID] Every `data:` payload in the protected handler is one of two
+#      allowed forms. An allowlist, so a THIRD unfiltered name fails without the
+#      check having to predict its spelling.
+#   8b.[FORBID] The protected loader never returns its raw accumulator.
+#   9. [present] The protected adapter DELEGATES the verdict rather than
+#      restating it. No test can cover this one — see the comment at that check.
 #
 # WHAT IT DOES NOT PROVE — stated so a green run is not read as more than it is
+#   - **It covers endpoints that ENUMERATE plans, not single-plan reads.**
+#     `GET /api/v1/protected/billing/plans/:id` answers an unlisted plan in full
+#     to any authenticated caller, and this guard does not look at it. That is a
+#     known, deliberately deferred gap, tracked in its own issue — not something
+#     a green run here says anything about.
+#   - The six [present] checks above assert that a required form EXISTS. Each is
+#     paired with a forbid where one was possible; where it was not (2, 4, 7,
+#     7a/7b, 9) a sufficiently creative second path beside the required form is
+#     outside what a line-based check can see.
 #   - It is line-based. A filter call split across lines, or a return built via
-#     an intermediate alias several statements away, is outside what it can see.
+#     an intermediate several statements away, is outside what it can see.
+#   - It pins ONE spelling of `servablePlans`' predicate. A semantically
+#     identical rewrite (two chained `.filter()` calls, say) trips it — a false
+#     positive, and the safe direction: the author updates the guard on purpose.
 #   - It says nothing about the DATABASE. A plan an operator forgot to mark is a
 #     data problem, not a source one.
-#   - It says nothing about `pagination.total`. That the numbers describe the
-#     FILTERED list is asserted by the route's own tests, not here.
-#   - It knows about these two endpoints. A third listing endpoint would need a
-#     line added here; nothing detects one automatically.
+#   - It says nothing about `pagination.total`, nor about the size of the page
+#     either endpoint reads. Those are asserted by the routes' own tests.
+#   - It knows about these two endpoints by path. A third listing endpoint would
+#     need a line added here; nothing detects one automatically.
 #
 # TEST INJECTION (used by scripts/__tests__/check-unlisted-plan-filter.test.ts)
-#   - HANDLER_FILE_OVERRIDE   — path checked by checks 1-3 instead of the public route.
-#   - PREDICATE_FILE_OVERRIDE — path checked by check 4 instead of the schema.
-#   - PROTECTED_FILE_OVERRIDE — path checked by checks 6-8 instead of the protected route.
-#   Check 5 always scans the repository, so an override run cannot make it pass
-#   by pointing it at an empty tree.
+#   - HANDLER_FILE_OVERRIDE   — path checked by checks 1-3b instead of the public route.
+#   - PREDICATE_FILE_OVERRIDE — path checked by checks 4/4b instead of the schema.
+#   - PROTECTED_FILE_OVERRIDE — path checked by checks 6-9 instead of the protected route.
+#   - KEY_SCAN_EXTRA_ROOT     — an ADDITIONAL directory for check 5 to scan.
+#   Check 5 always scans `apps` and `packages` regardless, so no override run can
+#   make it pass by pointing it at an empty tree.
 #
 # There is deliberately NO ignore comment. An exception would mean a response
 # really is wanted for an unlisted plan, which is the thing forbidden.
@@ -97,7 +124,7 @@ echo "  Protected handler: $PROTECTED"
 echo "  Predicate:         $PREDICATE"
 echo ""
 
-# --- 2. The handler filters the list it serves -------------------------------
+# --- 2. The public loader filters the catalogue it collects ------------------
 # Anchored on the exact call. A rename of the predicate trips this check rather
 # than sliding past it, which is the safe direction: the author is forced to
 # update the guard deliberately.
@@ -105,7 +132,7 @@ if ! grep -qE '\.filter\(isPubliclyListedPlan\)' "$HANDLER"; then
     echo "ERROR: the public plans handler no longer filters unlisted plans."
     echo ""
     echo "  Expected a call of the form:"
-    echo "      const publiclyListedPlans = result.data.items.filter(isPubliclyListedPlan);"
+    echo "      return collected.filter(isPubliclyListedPlan);"
     echo ""
     echo "  Without it every ACTIVE plan is public, including a negotiated one. That"
     echo "  failure is silent: the endpoint answers 200 with a correct-looking body."
@@ -113,23 +140,63 @@ if ! grep -qE '\.filter\(isPubliclyListedPlan\)' "$HANDLER"; then
     FAILED=1
 fi
 
-# --- 3. Nothing returns the unfiltered service items -------------------------
-# Comment lines are dropped: the handler's own docblocks name `result.data.items`
-# when explaining what the filter consumes, and a guard that flagged prose is a
-# guard somebody turns off. `grep -n` prefixes each line with `NN:`, so the
-# comment anchor is applied after that prefix.
-RAW_RETURNS=$(grep -nE 'return[^;]*result\.data\.items' "$HANDLER" \
+# --- 3. Every return in the public HANDLER answers the filtered array --------
+# This one is a FORBID, not a presence test, and it replaces a check that was
+# not. The old form looked for `return ... result.data.items`, which an alias
+# defeated in one line — `const allPlans = result.data.items; return allPlans;`
+# left the filter in place higher up and shipped the leak with the guard green
+# (verified by the reviewer, tests red / guard green).
+#
+# The rule instead: inside the handler, a return may answer `[]` or something
+# that names the filtered array, and NOTHING ELSE. Any new name — an alias, a
+# second service call, a re-fetch — fails it by construction.
+#
+# The handler is sliced by its own two anchors. If either moves the slice comes
+# back empty and the check fails LOUDLY rather than passing over nothing.
+HANDLER_BODY=$(awk '/handler: async/{inside=1} inside{print} inside && /^    options: \{/{exit}' "$HANDLER")
+
+if [ -z "$HANDLER_BODY" ]; then
+    echo "ERROR: could not locate the public handler body in $HANDLER."
+    echo "  This check slices from 'handler: async' to the 'options: {' line. One of"
+    echo "  those anchors moved — re-anchor it rather than deleting the check, which"
+    echo "  would leave every return in the handler unwatched."
+    echo ""
+    FAILED=1
+else
+    UNFILTERED_RETURNS=$(printf '%s\n' "$HANDLER_BODY" \
+        | grep -nE '^[[:space:]]*return[[:space:]]' \
+        | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
+        | grep -vE 'return[[:space:]]*\[\][[:space:]]*;' \
+        | grep -v 'publiclyListedPlans' \
+        || true)
+
+    if [ -n "$UNFILTERED_RETURNS" ]; then
+        echo "ERROR: a return in the public plans handler does not answer the filtered array:"
+        echo ""
+        echo "$UNFILTERED_RETURNS"
+        echo ""
+        echo "  Every return must be '[]' or built from publiclyListedPlans. The DOMAIN"
+        echo "  filter fails OPEN for accommodation on purpose (HOS-685); the visibility"
+        echo "  mark must fail CLOSED in that same branch, and in every other."
+        echo ""
+        FAILED=1
+    fi
+fi
+
+# --- 3b. The public loader never returns its raw accumulator -----------------
+# Same escape the protected loader had: an early `return collected;` leaves the
+# filtered return in place further down, so check 2 stays green.
+PUBLIC_RAW_RETURNS=$(grep -nE 'return[^;]*\bcollected\b' "$HANDLER" \
+    | grep -v 'collected.filter(isPubliclyListedPlan)' \
     | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
     || true)
 
-if [ -n "$RAW_RETURNS" ]; then
-    echo "ERROR: the public plans handler returns the UNFILTERED service items:"
+if [ -n "$PUBLIC_RAW_RETURNS" ]; then
+    echo "ERROR: the public catalogue loader returns its RAW accumulator:"
     echo ""
-    echo "$RAW_RETURNS"
+    echo "$PUBLIC_RAW_RETURNS"
     echo ""
-    echo "  Every return must answer from the already-filtered array. The domain"
-    echo "  filter fails OPEN for accommodation on purpose (HOS-685); the visibility"
-    echo "  mark must fail CLOSED in that same branch."
+    echo "  Every exit must answer collected.filter(isPubliclyListedPlan)."
     echo ""
     FAILED=1
 fi
@@ -154,26 +221,55 @@ if grep -qE "publicListing !== 'unlisted'" "$PREDICATE"; then
     FAILED=1
 fi
 
-# --- 5. The metadata key has exactly one production site ---------------------
-# Everyone else must reach it through PLAN_PUBLIC_LISTING_METADATA_KEY or
-# through the resolver, so a rename cannot leave a second spelling behind.
-KEY_SITES=$(grep -rlE --include="*.ts" --include="*.tsx" --include="*.astro" \
-    "['\"]publicListing['\"]" \
-    apps packages 2>/dev/null \
+# --- 5. Nobody reads the mark off `metadata` by hand -------------------------
+# Everyone must reach it through the resolver, so the fail-closed reading of an
+# unreadable mark cannot be bypassed.
+#
+# The first version of this check required QUOTES around the key
+# (`['"]publicListing['"]`), which is not how anybody writes a property read.
+# The reviewer put this in production and the guard printed "OK - the metadata
+# key has one production site" with two:
+#
+#     return row.metadata?.publicListing !== "unlisted";
+#
+# That is precisely the negative comparison checks 4/4b exist to forbid, walking
+# in through the side door. The pattern now matches the RECEIVER — a read off
+# something called `metadata` — in all three spellings, plus the bare quoted
+# literal (an object built by hand, or bracket access on any receiver).
+#
+# What it deliberately does NOT match: `plan.publicListing`, `record.publicListing`
+# and the field declaration itself. The mark travels ON the DTO by design, so the
+# field name is spelled legitimately in the mapper, in the admin types and in the
+# admin table. The dangerous act is reading it out of raw `metadata`, not naming it.
+#
+# Reported with line numbers rather than as a file list, because the docblocks
+# that EXPLAIN the mark have to name `metadata.publicListing` in prose — the
+# mapper's and the protected handler's both do. A guard that flagged those would
+# be a guard somebody turns off, so comment lines are dropped.
+#
+# `KEY_SCAN_EXTRA_ROOT` ADDS a directory to the scan; it never replaces `apps`
+# and `packages`. The positive control needs somewhere to put a probe, and the
+# property that matters — a green run cannot mean "it looked at nothing" —
+# survives, because the repository is scanned either way.
+KEY_SITES=$(grep -rnE --include="*.ts" --include="*.tsx" --include="*.astro" \
+    "(metadata[[:space:]]*\??\.[[:space:]]*publicListing|metadata[[:space:]]*\??\[[[:space:]]*['\"]publicListing['\"]|['\"]publicListing['\"])" \
+    apps packages ${KEY_SCAN_EXTRA_ROOT:+"$KEY_SCAN_EXTRA_ROOT"} 2>/dev/null \
     | grep -v '/node_modules/' \
     | grep -v '/dist/' \
     | grep -v '\.test\.' \
     | grep -v '\.spec\.' \
-    | grep -vE "^${KEY_DEFINITION_FILE}$" \
+    | grep -vE "^${KEY_DEFINITION_FILE}:" \
+    | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' \
     || true)
 
 if [ -n "$KEY_SITES" ]; then
-    echo "ERROR: the 'publicListing' metadata key is spelled outside its definition:"
+    echo "ERROR: the 'publicListing' mark is read off metadata outside its definition:"
     echo ""
     echo "$KEY_SITES"
     echo ""
-    echo "  Use PLAN_PUBLIC_LISTING_METADATA_KEY, resolvePlanPublicListing() or"
-    echo "  isPubliclyListedPlan() from @repo/schemas instead."
+    echo "  Use resolvePlanPublicListing({ metadata }) — it is the ONE reader, and the"
+    echo "  one that withholds a plan whose mark is present but unreadable. A hand-"
+    echo "  written comparison skips that and publishes on doubt."
     echo ""
     FAILED=1
 fi
@@ -190,11 +286,19 @@ if ! grep -qE 'function servablePlans' "$PROTECTED"; then
     echo ""
     FAILED=1
 else
-    if ! grep -qE 'isTestPlan\(plan\)' "$PROTECTED" || ! grep -qE 'isPubliclyListedStoragePlan\(plan\)' "$PROTECTED"; then
-        echo "ERROR: servablePlans() no longer applies both marks."
+    # The WHOLE expression, operator included. Looking for the two names
+    # separately let `&&` become `||` with both texts still present — a one-
+    # character edit that serves every test plan AND every unlisted plan while
+    # the guard stayed green (found by adversarial review, by reading).
+    if ! grep -qE '!isTestPlan\(plan\)[[:space:]]*&&[[:space:]]*isPubliclyListedStoragePlan\(plan\)' "$PROTECTED"; then
+        echo "ERROR: servablePlans() no longer applies both marks, conjoined."
         echo ""
-        echo "  Expected both, in one predicate:"
+        echo "  Expected exactly:"
         echo "      !isTestPlan(plan) && isPubliclyListedStoragePlan(plan)"
+        echo ""
+        echo "  With '||' instead of '&&' a plan needs to satisfy only ONE of the two"
+        echo "  to be served, which is every plan. Both names being present is not"
+        echo "  enough — the operator between them is the whole filter."
         echo ""
         FAILED=1
     fi
@@ -262,18 +366,32 @@ if [ -n "$RAW_ACCUMULATOR_RETURNS" ]; then
     FAILED=1
 fi
 
-# --- 8. Nothing in the protected handler answers a raw qzpay result ----------
-PROTECTED_RAW_RETURNS=$(grep -nE 'data:[[:space:]]*(active\b|[A-Za-z_$][A-Za-z0-9_$]*\.data\b)' "$PROTECTED" \
+# --- 8. Every `data:` the protected handler answers is an ALLOWED form -------
+# An allowlist, not a deny-list. The deny-list version named the two shapes that
+# existed (`data: active`, `data: <x>.data`), which meant a THIRD name — a new
+# local holding an unfiltered fetch — walked straight through. Inverting it makes
+# any unrecognised payload the failure, so the check does not have to predict the
+# next spelling.
+#
+# `ReadonlyArray` is excluded because `data:` also appears in this file as a TYPE
+# annotation (the shape of a qzpay page), which is a declaration, not a payload.
+PROTECTED_DATA_PAYLOADS=$(grep -nE '[[:space:]]data:[[:space:]]' "$PROTECTED" \
     | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
+    | grep -vE 'data:[[:space:]]*(servablePlans\(|servable\.slice\()' \
+    | grep -v 'ReadonlyArray' \
     || true)
 
-if [ -n "$PROTECTED_RAW_RETURNS" ]; then
-    echo "ERROR: the protected plans handler answers with a RAW qzpay result:"
+if [ -n "$PROTECTED_DATA_PAYLOADS" ]; then
+    echo "ERROR: the protected plans handler answers a payload that is not filtered:"
     echo ""
-    echo "$PROTECTED_RAW_RETURNS"
+    echo "$PROTECTED_DATA_PAYLOADS"
     echo ""
-    echo "  Every payload must be built from servablePlans(...). qzpay returns every"
-    echo "  storage plan, unfiltered by active or by anything else."
+    echo "  Allowed forms, and nothing else:"
+    echo "      data: servablePlans(...)        (the ?active=true branch)"
+    echo "      data: servable.slice(...)       (the paginated branch)"
+    echo ""
+    echo "  qzpay returns every storage plan, unfiltered by active or by anything"
+    echo "  else. A new name here is a new way to answer one."
     echo ""
     FAILED=1
 fi

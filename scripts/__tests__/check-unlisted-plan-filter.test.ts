@@ -59,14 +59,31 @@ function fixture(name: string, lines: readonly string[]): string {
     return filePath;
 }
 
-/** The handler as it stands: filters once, returns only from the filtered array. */
+/**
+ * The public handler as it stands: the loader filters the WHOLE catalogue, and
+ * every return inside the handler answers `[]` or the filtered array.
+ *
+ * The `handler: async` and `options: {` lines are load-bearing — check 3 slices
+ * the handler body between them, and fails loudly if it cannot find them.
+ */
 const GOOD_HANDLER = [
     "import { isPubliclyListedPlan } from '@repo/schemas';",
-    'const publiclyListedPlans = result.data.items.filter(isPubliclyListedPlan);',
-    'if (excludedSlugs === null) {',
-    '    return domain === DEFAULT_DOMAIN ? publiclyListedPlans : [];',
+    'async function loadPubliclyListedPlans() {',
+    '    return collected.filter(isPubliclyListedPlan);',
     '}',
-    'return publiclyListedPlans.filter((plan) => !excludedSlugs.has(plan.slug));'
+    '    handler: async (ctx: Context) => {',
+    '        const publiclyListedPlans = await loadPubliclyListedPlans();',
+    '        if (publiclyListedPlans === null) {',
+    '            return [];',
+    '        }',
+    '        if (excludedSlugs === null) {',
+    '            return domain === DEFAULT_DOMAIN ? publiclyListedPlans : [];',
+    '        }',
+    '        return publiclyListedPlans.filter((plan) => !excludedSlugs.has(plan.slug));',
+    '    },',
+    '    options: {',
+    '        skipAuth: true',
+    '    }'
 ];
 
 /** The predicate as it stands. */
@@ -132,38 +149,89 @@ describe('check-unlisted-plan-filter.sh — it fails when the lock is removed', 
     it('rejects a handler that no longer calls the predicate', () => {
         // The refactor this whole guard exists for: someone tidies the filter
         // away and every active plan becomes public again, silently.
-        const handler = fixture('no-filter.ts', [
-            'const publiclyListedPlans = result.data.items;',
-            'return publiclyListedPlans;'
-        ]);
-
-        const result = runGuard({
-            HANDLER_FILE_OVERRIDE: handler,
-            PREDICATE_FILE_OVERRIDE: fixture('predicate-ok-1.ts', GOOD_PREDICATE)
+        const result = runWithFixtures({
+            handler: [
+                'async function loadPubliclyListedPlans() {',
+                '    return collected;',
+                '}',
+                '    handler: async (ctx: Context) => {',
+                '        return await loadPubliclyListedPlans();',
+                '    },',
+                '    options: {',
+                '        skipAuth: true',
+                '    }'
+            ]
         });
 
         expect(result.exitCode).toBe(1);
         expect(result.stdout).toContain('no longer filters unlisted plans');
     });
 
-    it('rejects a handler that keeps the filter but returns the raw items somewhere', () => {
-        // The subtle half of AC-13: the filter is still there, so a check that
-        // only looked for its presence would pass — while the domain-failure
-        // branch answered with the unfiltered list.
-        const handler = fixture('raw-return-in-branch.ts', [
-            ...GOOD_HANDLER,
-            'if (excludedSlugs === null) {',
-            '    return domain === DEFAULT_DOMAIN ? result.data.items : [];',
-            '}'
-        ]);
-
-        const result = runGuard({
-            HANDLER_FILE_OVERRIDE: handler,
-            PREDICATE_FILE_OVERRIDE: fixture('predicate-ok-2.ts', GOOD_PREDICATE)
+    it('rejects an ALIASED return, the escape a raw-expression check let through', () => {
+        // Verified by the reviewer against the previous version of this guard:
+        // `const allPlans = result.data.items; return allPlans;` left the filter
+        // in place higher up, so a check looking for the raw expression in the
+        // `return` found nothing and passed — tests red, guard green.
+        //
+        // The rule is now inverted: a return may answer `[]` or the filtered
+        // array, and any OTHER name fails, whatever it holds.
+        const result = runWithFixtures({
+            handler: [
+                "import { isPubliclyListedPlan } from '@repo/schemas';",
+                'async function loadPubliclyListedPlans() {',
+                '    return collected.filter(isPubliclyListedPlan);',
+                '}',
+                '    handler: async (ctx: Context) => {',
+                '        const publiclyListedPlans = await loadPubliclyListedPlans();',
+                '        const allPlans = result.data.items;',
+                '        return domain === DEFAULT_DOMAIN ? allPlans : [];',
+                '    },',
+                '    options: {',
+                '        skipAuth: true',
+                '    }'
+            ]
         });
 
         expect(result.exitCode).toBe(1);
-        expect(result.stdout).toContain('returns the UNFILTERED service items');
+        expect(result.stdout).toContain('does not answer the filtered array');
+    });
+
+    it('rejects the public loader returning its raw accumulator', () => {
+        const result = runWithFixtures({
+            handler: [
+                "import { isPubliclyListedPlan } from '@repo/schemas';",
+                'async function loadPubliclyListedPlans() {',
+                '    if (somethingWentWrong) {',
+                '        return collected;',
+                '    }',
+                '    return collected.filter(isPubliclyListedPlan);',
+                '}',
+                '    handler: async (ctx: Context) => {',
+                '        const publiclyListedPlans = await loadPubliclyListedPlans();',
+                '        return publiclyListedPlans;',
+                '    },',
+                '    options: {',
+                '        skipAuth: true',
+                '    }'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('returns its RAW accumulator');
+    });
+
+    it('fails loudly when the handler body cannot be located', () => {
+        // A slice that comes back empty would leave every return in the handler
+        // unwatched. It has to be an error, never a silent pass.
+        const result = runWithFixtures({
+            handler: [
+                "import { isPubliclyListedPlan } from '@repo/schemas';",
+                'const publiclyListedPlans = collected.filter(isPubliclyListedPlan);'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('could not locate the public handler body');
     });
 
     it('rejects a handler that has been deleted or moved', () => {
@@ -241,6 +309,44 @@ describe('check-unlisted-plan-filter.sh — the second door (protected /plans)',
         expect(result.stdout).toContain('no longer applies both marks');
     });
 
+    it('rejects && swapped for || — both names present, the filter gone', () => {
+        // One character, found by the adversarial review by reading. With `||` a
+        // plan needs to satisfy only ONE of the two conditions to be served,
+        // which every plan does. A check looking for the two NAMES separately
+        // stayed green; the check pins the whole expression now.
+        const result = runWithFixtures({
+            protectedHandler: [
+                'export function isPubliclyListedStoragePlan(plan) {',
+                '    return isPubliclyListedPlan(resolvePlanPublicListing({ metadata: plan.metadata }));',
+                '}',
+                'export function servablePlans<T>(plans: readonly T[]): T[] {',
+                '    return plans.filter((plan) => !isTestPlan(plan) || isPubliclyListedStoragePlan(plan));',
+                '}',
+                '    return c.json({ success: true, data: servablePlans(active) });',
+                'return servablePlans(collected);'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no longer applies both marks, conjoined');
+    });
+
+    it('rejects a THIRD payload name, which a deny-list of two shapes would miss', () => {
+        // The reason check 8 is an allowlist. Naming `data: active` and
+        // `data: <x>.data` as forbidden left every other spelling — a new local
+        // holding an unfiltered fetch — walking straight through.
+        const result = runWithFixtures({
+            protectedHandler: [
+                ...GOOD_PROTECTED,
+                'const everything = await billing.plans.list({ limit: 100, offset: 0 });',
+                'return c.json({ success: true, data: everything });'
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('answers a payload that is not filtered');
+    });
+
     it('rejects the ?active=true branch answering unfiltered, even with the paginated one filtered', () => {
         // The asymmetric failure this guard exists for: one door watched, the
         // other left open. A call-site COUNT would have passed this fixture —
@@ -264,7 +370,7 @@ describe('check-unlisted-plan-filter.sh — the second door (protected /plans)',
 
         expect(result.exitCode).toBe(1);
         expect(result.stdout).toContain('?active=true branch no longer filters');
-        expect(result.stdout).toContain('answers with a RAW qzpay result');
+        expect(result.stdout).toContain('answers a payload that is not filtered');
     });
 
     it('rejects a catalogue loader that returns the raw pages', () => {
@@ -290,7 +396,7 @@ describe('check-unlisted-plan-filter.sh — the second door (protected /plans)',
         });
 
         expect(result.exitCode).toBe(1);
-        expect(result.stdout).toContain('answers with a RAW qzpay result');
+        expect(result.stdout).toContain('answers a payload that is not filtered');
     });
 
     it('rejects an adapter that restates the comparison instead of delegating', () => {
@@ -369,21 +475,84 @@ describe('check-unlisted-plan-filter.sh — it does not cry wolf', () => {
         expect(result.exitCode).toBe(0);
     });
 
-    it('does not mistake a MENTION of the service items for a return of them', () => {
-        // The handler's own comments name `result.data.items` when explaining
-        // what is filtered. A guard that flagged prose would be turned off.
-        const handler = fixture('prose.ts', [
-            '// result.data.items is what the filter below consumes.',
-            '/* Every return answers from result.data.items only after filtering. */',
-            ...GOOD_HANDLER
-        ]);
-
-        const result = runGuard({
-            HANDLER_FILE_OVERRIDE: handler,
-            PREDICATE_FILE_OVERRIDE: fixture('predicate-ok-5.ts', GOOD_PREDICATE)
+    it('does not mistake a MENTION of the raw accumulator for a return of it', () => {
+        // The loader's own comments name `collected` when explaining what is
+        // filtered. A guard that flagged prose would be turned off.
+        const result = runWithFixtures({
+            handler: [
+                '// return collected; was the shape before HOS-1062.',
+                ' * Every exit answers collected after filtering, never collected itself.',
+                ...GOOD_HANDLER
+            ]
         });
 
         expect(result.exitCode).toBe(0);
+    });
+});
+
+describe('check-unlisted-plan-filter.sh — the metadata key is not read by hand', () => {
+    it('rejects a hand-rolled read off metadata, quotes or no quotes', () => {
+        // Reproduced from the adversarial review. The first version of check 5
+        // required QUOTES around the key, so this file — the exact negative
+        // comparison checks 4/4b forbid — sat in production while the guard
+        // printed "OK - the metadata key has one production site".
+        const probeDir = mkdtempSync(path.join(tmpdir(), 'hos1062-probe-'));
+        writeFileSync(
+            path.join(probeDir, 'probe.ts'),
+            [
+                'export function leak(row: { metadata?: Record<string, unknown> }): boolean {',
+                '    return row.metadata?.publicListing !== "unlisted";',
+                '}'
+            ].join('\n'),
+            'utf8'
+        );
+
+        try {
+            const result = runGuard({ KEY_SCAN_EXTRA_ROOT: probeDir });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain('read off metadata outside its definition');
+            expect(result.stdout).toContain('probe.ts');
+        } finally {
+            rmSync(probeDir, { recursive: true, force: true });
+        }
+    });
+
+    it('rejects bracket access on metadata too', () => {
+        const probeDir = mkdtempSync(path.join(tmpdir(), 'hos1062-probe-'));
+        writeFileSync(
+            path.join(probeDir, 'bracket.ts'),
+            ["const mark = plan.metadata['publicListing'];"].join('\n'),
+            'utf8'
+        );
+
+        try {
+            expect(runGuard({ KEY_SCAN_EXTRA_ROOT: probeDir }).exitCode).toBe(1);
+        } finally {
+            rmSync(probeDir, { recursive: true, force: true });
+        }
+    });
+
+    it('does not flag the DTO field, which is spelled legitimately everywhere', () => {
+        // The mark travels ON the DTO by design. Flagging `plan.publicListing`
+        // would forbid the mapper, the admin types and the admin table from
+        // naming their own field.
+        const probeDir = mkdtempSync(path.join(tmpdir(), 'hos1062-probe-'));
+        writeFileSync(
+            path.join(probeDir, 'dto.ts'),
+            [
+                'const badge = isPubliclyListedPlan(plan) ? null : LABEL;',
+                'export interface ParsedPlanRecord { publicListing: BillingPlanPublicListing; }',
+                'const value = record.publicListing;'
+            ].join('\n'),
+            'utf8'
+        );
+
+        try {
+            expect(runGuard({ KEY_SCAN_EXTRA_ROOT: probeDir }).exitCode).toBe(0);
+        } finally {
+            rmSync(probeDir, { recursive: true, force: true });
+        }
     });
 });
 
