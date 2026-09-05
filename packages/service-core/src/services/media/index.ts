@@ -15,3 +15,5 @@ export type {
     StockImageResult
 } from './image-search.service';
 export { ImageSearchService } from './image-search.service';
+export type { MediaTextPatchInput } from './media-text-patch';
+export { buildMediaTextPatch } from './media-text-patch';

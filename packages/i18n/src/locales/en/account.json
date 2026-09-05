@@ -1321,7 +1321,8 @@
                 "uploadTimeout": "The upload took too long. Please try again.",
                 "persistFailed": "Could not save the image to the database",
                 "featuredFailed": "Could not set the image as the cover",
-                "removeFailed": "Could not remove the image"
+                "removeFailed": "Could not remove the image",
+                "metadataSaveFailed": "The photo details could not be saved"
             }
         },
         "events": {
