@@ -16,11 +16,11 @@
  *     the row is created featured inside a transaction, so the partial unique
  *     index bounds the number of quota-exempt rows at one. A create that sets
  *     the flag outside that path has no such bound.
- *  2. **The previous cover leaks into the gallery.** Demoting it unconditionally
- *     adds one gallery row per replacement, which walks past the cap one
- *     cover-swap at a time. Getting that right requires the cap, and a vertical
- *     writing its own create will reach for the demote it can see in
- *     `setFeaturedMedia` rather than the disposition rule it cannot.
+ *  2. **The previous cover leaks into the gallery.** A vertical writing its own
+ *     create will reach for the demote it can see in `setFeaturedMedia`, and on
+ *     the UPLOAD path that adds one gallery row per replacement — walking past
+ *     the cap one cover-swap at a time. The old cover must be DELETED here, not
+ *     demoted, and that difference is invisible from inside one vertical.
  *
  * So the guard asserts the structural facts those depend on: every site in
  * `service-core` that writes `isFeatured: true` is classified as a create, a
@@ -181,34 +181,46 @@ describe('HOS-803 — one implementation of the born-featured cover path', () =>
         expect(source).toContain('buildOwnedMediaFeaturedPort');
     });
 
-    it('keeps the clear-then-set order in the primitive', () => {
+    it('keeps the release-then-create order in the primitive', () => {
         const source = readSource('services/media/add-featured-media.ts');
 
-        const demoteAt = source.indexOf('port.demote(');
-        const archiveAt = source.indexOf('port.archive(');
+        const deleteAt = source.indexOf('port.deletePrevious(');
         const createAt = source.indexOf('port.createFeatured(');
 
-        expect(demoteAt).toBeGreaterThan(-1);
-        expect(archiveAt).toBeGreaterThan(-1);
+        expect(deleteAt).toBeGreaterThan(-1);
         expect(createAt).toBeGreaterThan(-1);
 
         // Inserting the new cover before releasing the old one would leave two
-        // rows with is_featured = true, which the partial unique index rejects.
-        expect(createAt).toBeGreaterThan(demoteAt);
-        expect(createAt).toBeGreaterThan(archiveAt);
+        // live rows with is_featured = true, which the partial unique index
+        // rejects.
+        expect(createAt).toBeGreaterThan(deleteAt);
     });
 
-    it('archives the outgoing cover in ONE write, never two', () => {
+    it('releases the outgoing cover by SOFT-DELETING it, never by demoting it', () => {
         const source = readSource(PORT_FILE);
 
-        // The CHECK constraint `NOT (is_featured AND state = 'archived')`
-        // rejects a row that is still featured and already archived, so both
-        // columns have to move in the same update.
-        const archiveBody = source.slice(source.indexOf('archive: async'));
-        const firstUpdate = archiveBody.slice(0, archiveBody.indexOf('createFeatured'));
+        const body = source.slice(
+            source.indexOf('deletePrevious:'),
+            source.indexOf('createFeatured:')
+        );
 
-        expect(firstUpdate).toMatch(/isFeatured:\s*false/);
-        expect(firstUpdate).toMatch(/state:\s*'archived'/);
-        expect((firstUpdate.match(/mediaModel\.update\(/g) ?? []).length).toBe(1);
+        // The canonical writer, which stamps the actor — a literal patch
+        // carrying `deletedAt` would also trip check 3 of
+        // scripts/check-soft-delete-actor.ts.
+        expect(body).toMatch(/mediaModel\.softDelete\(/);
+        // The mistake this rules out: reusing setFeaturedMedia's demote here,
+        // which leaves the old cover in the gallery as a permanent +1.
+        expect(body).not.toMatch(/isFeatured:\s*false/);
+        expect(body).not.toMatch(/state:\s*'archived'/);
+    });
+
+    it('does not consult any gallery count — the swap is quota-neutral', () => {
+        const source = readSource('services/media/add-featured-media.ts');
+
+        // One row into the featured slot, one out of the table. A count
+        // reappearing here means someone has reintroduced a disposition
+        // decision, and with it the branch that could keep the old cover.
+        expect(source).not.toMatch(/countVisibleGallery/);
+        expect(source).not.toMatch(/entityGalleryCap/);
     });
 });

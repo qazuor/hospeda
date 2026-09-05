@@ -7,13 +7,13 @@
  * `experience_media`, `post_media`, `event_media` — are the same shape under
  * different names. Each has `is_featured`, `state`, `sort_order`, `deleted_at`
  * and exactly one owning foreign key, and each is reached through a model with
- * the same five methods. The ONLY thing that varies between them is the name of
- * that foreign key.
+ * the same methods. The ONLY thing that varies between them is the name of that
+ * foreign key.
  *
  * So there is one adapter, parameterised by that name, rather than one per
- * vertical. Five copies of this file would be five places for the
- * `isFeatured: false` filter to be dropped from the gallery count (the HOS-791
- * bug) or for the clear-then-set order to be inverted; here there is one.
+ * vertical. Five copies of this file would be five places for the release of
+ * the outgoing cover to drift back into a demotion — which is what made every
+ * cover replacement a permanent +1 to the gallery.
  */
 
 import type { DrizzleClient } from '@repo/db';
@@ -37,10 +37,6 @@ import type { FeaturedMediaPort } from './add-featured-media';
  * @typeParam TRow - The vertical's media row type.
  */
 export type FeaturedCapableMediaModel<TRow> = {
-    count(
-        where: Record<string, unknown>,
-        options?: { readonly tx?: DrizzleClient }
-    ): Promise<number>;
     findAll(
         where: Record<string, unknown>,
         pagination?: unknown,
@@ -48,7 +44,11 @@ export type FeaturedCapableMediaModel<TRow> = {
         tx?: DrizzleClient
     ): Promise<{ items: TRow[]; total: number }>;
     create(data: never, tx?: DrizzleClient): Promise<TRow>;
-    update(where: Record<string, unknown>, data: never, tx?: DrizzleClient): Promise<TRow | null>;
+    softDelete(
+        where: Record<string, unknown>,
+        deletedById: string | null,
+        tx?: DrizzleClient
+    ): Promise<number>;
 };
 
 /** Input for {@link buildOwnedMediaFeaturedPort}. */
@@ -71,17 +71,22 @@ export type BuildOwnedMediaFeaturedPortInput<TRow> = {
      * foreign key by name — see the note on {@link FeaturedCapableMediaModel}.
      */
     readonly findFeatured: (tx: DrizzleClient) => Promise<TRow | null>;
+    /**
+     * Actor performing the upload, stamped on the soft delete of the cover
+     * being replaced. A soft delete must record WHO, not only when — see
+     * `scripts/check-soft-delete-actor.ts`.
+     */
+    readonly deletedById: string;
 };
 
 /**
  * Builds the port the featured-media primitive drives, for any entity whose
  * media table follows the shared shape.
  *
- * Holds no policy: which cap governs, whether the previous cover is demoted or
- * archived, and the order of the writes all live in
- * {@link import('./add-featured-media').addFeaturedMediaRow}.
+ * Holds no policy: the disposition of the old cover and the order of the writes
+ * both live in {@link import('./add-featured-media').addFeaturedMediaRow}.
  *
- * @param input - Model, foreign key, owner id and validated payload — see {@link BuildOwnedMediaFeaturedPortInput}.
+ * @param input - Model, foreign key, owner id, payload, cover reader and actor — see {@link BuildOwnedMediaFeaturedPortInput}.
  * @returns A port bound to this entity and this payload.
  *
  * @example
@@ -91,7 +96,8 @@ export type BuildOwnedMediaFeaturedPortInput<TRow> = {
  *     ownerKey: 'gastronomyId',
  *     ownerId: gastronomyId,
  *     media: validated.media,
- *     findFeatured: (tx) => mediaModel.findFeatured({ gastronomyId, tx })
+ *     findFeatured: (tx) => mediaModel.findFeatured({ gastronomyId, tx }),
+ *     deletedById: actor.id
  * });
  * ```
  */
@@ -100,22 +106,12 @@ export function buildOwnedMediaFeaturedPort<TRow extends { readonly id: string }
     ownerKey,
     ownerId,
     media,
-    findFeatured
+    findFeatured,
+    deletedById
 }: BuildOwnedMediaFeaturedPortInput<TRow>): FeaturedMediaPort<TRow> {
     const owner = { [ownerKey]: ownerId };
 
     return {
-        // HOS-791: every read that MEASURES the gallery excludes the cover,
-        // because a cover is not a gallery item. Dropping `isFeatured: false`
-        // here closes the gallery one photo early — which is the exact bug
-        // HOS-791 fixed, and the reason this filter is written once and not
-        // five times.
-        countVisibleGallery: (tx: DrizzleClient) =>
-            mediaModel.count(
-                { ...owner, state: 'visible', isFeatured: false, deletedAt: null },
-                { tx }
-            ),
-
         // Deliberately NOT filtered by `isFeatured`: this read hands out the
         // next free position, and skipping the featured row would reuse a
         // sortOrder already taken whenever that row holds the maximum.
@@ -134,19 +130,12 @@ export function buildOwnedMediaFeaturedPort<TRow extends { readonly id: string }
 
         findFeatured,
 
-        demote: async (mediaId: string, tx: DrizzleClient) => {
-            await mediaModel.update({ id: mediaId }, { isFeatured: false } as never, tx);
-        },
-
-        // One statement, both columns. The CHECK constraint
-        // `NOT (is_featured AND state = 'archived')` rejects any row that is
-        // still featured and already archived, so these can never be split.
-        archive: async (mediaId: string, tx: DrizzleClient) => {
-            await mediaModel.update(
-                { id: mediaId },
-                { isFeatured: false, state: 'archived', archivedAt: new Date() } as never,
-                tx
-            );
+        // The canonical soft-delete writer, so `deletedById` is stamped by the
+        // base model rather than by an object literal here — the shape the
+        // soft-delete-actor guard checks for. The stored asset is untouched on
+        // purpose: a soft delete that destroys the original is not reversible.
+        deletePrevious: async (mediaId: string, tx: DrizzleClient) => {
+            await mediaModel.softDelete({ id: mediaId }, deletedById, tx);
         },
 
         createFeatured: ({ sortOrder }, tx: DrizzleClient) =>

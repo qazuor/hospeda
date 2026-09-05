@@ -15,59 +15,52 @@
  * refused at step 1 and could never reach step 2. The single action HOS-791
  * declared free of gallery quota became the only action they could not perform.
  *
- * ## Why a dedicated path and not a flag on `addMedia`
+ * ## The rule
  *
- * The obvious repair — let the client say "this upload is the cover" and relax
- * the cap when it does — is exploitable. Nothing obliges a client to send the
- * follow-up promotion, and the server cannot verify a request that has not been
- * made, so a caller that sets the flag on EVERY upload simply has no gallery cap
- * at all: fifty exempt rows on a plan that grants fifteen.
+ * Uploading a NEW photo into the cover slot creates the row already featured and
+ * SOFT-DELETES the cover it replaces, in the same transaction. Unconditionally:
+ * neither the quota nor the amount of room in the gallery is consulted.
  *
- * The exemption is only sound when the server GUARANTEES the outcome. Here the
- * row is created already featured, inside a transaction, and the partial unique
- * index (`uq_<entity>_media_single_featured`) permits exactly one such row per
- * entity. There is no window in which a quota-exempt row exists that is not the
- * cover, and repetition cannot accumulate them.
+ * That is what makes the operation **quota-neutral by construction**. One row
+ * enters the featured slot, one leaves the table, and the visible gallery is
+ * never touched — so a cover upload cannot move any cap, and there is nothing
+ * for a cap to protect. Skipping the gallery gate is safe because the operation
+ * provably costs the gallery nothing, not because an exception was carved out.
  *
- * ## The half that is easy to miss: what happens to the OLD cover
+ * ## Why deletion, and not demotion
  *
- * `setFeaturedMedia` demotes the previous cover into the gallery. Left alone,
- * that turns every cover replacement into a permanent +1 to the gallery — and
- * repeating it walks straight past the cap one swap at a time, which is the very
- * evasion the dedicated path was supposed to close. The unique index does not
- * help: it constrains the featured row, not the residue.
+ * `setFeaturedMedia` demotes the previous cover into the gallery. Carrying that
+ * onto the UPLOAD path is the mistake this file exists to prevent: it makes
+ * every replacement a permanent +1 to the gallery, so repeating it walks past
+ * the cap one cover-swap at a time. The atomic create does not stop that on its
+ * own — the partial unique index constrains the featured row, not the residue
+ * it leaves behind.
  *
- * So the disposition of the previous cover is decided against the cap rather
- * than fixed:
+ * **This applies to the upload path only.** Promoting a photo that is ALREADY in
+ * the gallery stays exactly as it was: the old cover goes down into the gallery
+ * and the promoted one comes out of it. That exchange is quota-neutral by
+ * itself, and deleting there would destroy a photo the owner never asked to
+ * remove.
  *
- *   - room in the gallery  → DEMOTE it (today's behaviour; the host keeps the photo)
- *   - gallery already full → ARCHIVE it (`state = 'archived'`, reversible through
- *     the existing restore endpoint; it leaves the visible gallery, so the count
- *     does not move)
+ * ## Soft, not hard
  *
- * which makes the post-condition hold unconditionally:
+ * The replaced cover is soft-deleted (`deletedAt`), through the model's
+ * canonical `softDelete` so authorship is recorded — see
+ * `scripts/check-soft-delete-actor.ts`. It leaves every cap, because all three
+ * counting paths filter soft-deleted rows: the service-layer entity cap, the
+ * route's plan cap via `findByAccommodation`, and the upload route's
+ * `resolveVisibleGalleryCount`.
  *
- *   **after this returns, visible gallery rows <= effective cap, and exactly one
- *   featured row exists.**
- *
- * Archiving rather than refusing is what keeps the original bug fixed: a host at
- * the cap can always replace their cover, and never loses the old photo.
+ * The stored Cloudinary asset is deliberately NOT deleted. A soft delete that
+ * destroys the original is not reversible, which would defeat the point of its
+ * being soft.
  *
  * ## Write ordering
  *
- * The previous cover is cleared BEFORE the new row is inserted. The reverse
- * order would transiently leave two rows with `is_featured = true`, which the
- * partial unique index rejects — the same clear-then-set contract
+ * The previous cover is released BEFORE the new row is inserted. The reverse
+ * order would transiently leave two live rows with `is_featured = true`, which
+ * the partial unique index rejects — the same clear-then-set contract
  * `setFeaturedMedia` already follows.
- *
- * ## Caps: two of them, and only one is ever waived
- *
- * `entityGalleryCap` is the per-entity structural cap (`getGalleryCap`) and
- * always applies — a cover is still a media row and still costs a stored asset.
- * `planGalleryCap` is the subscriber's plan allowance, known only to the API
- * route (it needs the Hono context the entitlement middleware populates), so it
- * is passed in. It is a SERVER-DERIVED value: it must never be reachable from a
- * request body, or the evasion above returns through the front door.
  */
 
 import type { DrizzleClient } from '@repo/db';
@@ -76,21 +69,17 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../types';
 
 /**
- * What became of the cover that this one replaced.
+ * The cover that was replaced.
  *
- * - `demoted`  — kept, and moved into the gallery as an ordinary photo.
- * - `archived` — moved out of the visible gallery because it had no room left.
- *   Not deleted: the row and its binary survive, and the existing restore
- *   endpoint brings it back once a gallery slot frees up.
+ * `null` at the call site when the entity had no cover at all — the first cover
+ * an entity ever gets replaces nothing.
+ *
+ * Carries only the id: what happened to it is no longer a variable, because it
+ * is always soft-deleted.
  */
-export type PreviousFeaturedDisposition = 'demoted' | 'archived';
-
-/** The previous cover and what happened to it, or `null` when there was none. */
 export type PreviousFeaturedOutcome = {
-    /** Id of the media row that used to be the cover. */
+    /** Id of the media row that used to be the cover, now soft-deleted. */
     readonly id: string;
-    /** Whether it was kept in the gallery or archived out of it. */
-    readonly disposition: PreviousFeaturedDisposition;
 };
 
 /**
@@ -99,22 +88,16 @@ export type PreviousFeaturedOutcome = {
  * Each vertical supplies its own adapter because the five media tables have
  * different foreign-key columns (`accommodationId`, `gastronomyId`, …) and no
  * shared base class. Keeping the port this small is what keeps the POLICY —
- * cap arithmetic, disposition choice, write ordering — in one place instead of
- * being re-derived per entity.
+ * the disposition of the old cover and the write ordering — in one place
+ * instead of being re-derived per entity.
  *
  * Every method receives the transaction client explicitly; none of them may
  * open a transaction of its own.
  *
  * @typeParam TRow - The vertical's media row type. Must expose `id`, which is
- * how the previous cover is addressed for demotion or archival.
+ * how the previous cover is addressed for deletion.
  */
 export type FeaturedMediaPort<TRow extends { readonly id: string }> = {
-    /**
-     * Number of rows in the VISIBLE gallery: `state = 'visible'`,
-     * `isFeatured = false`, not soft-deleted. The featured row is excluded on
-     * purpose (HOS-791) — it is not a gallery item.
-     */
-    readonly countVisibleGallery: (tx: DrizzleClient) => Promise<number>;
     /**
      * Highest `sortOrder` among the entity's visible rows, or `-1` when there
      * are none. Used to append the new row rather than collide with an existing
@@ -123,15 +106,11 @@ export type FeaturedMediaPort<TRow extends { readonly id: string }> = {
     readonly findMaxVisibleSortOrder: (tx: DrizzleClient) => Promise<number>;
     /** The current featured row, or `null` when the entity has no cover yet. */
     readonly findFeatured: (tx: DrizzleClient) => Promise<TRow | null>;
-    /** Clears `isFeatured` on a row, leaving it visible in the gallery. */
-    readonly demote: (mediaId: string, tx: DrizzleClient) => Promise<void>;
     /**
-     * Clears `isFeatured` AND archives the row in a SINGLE write. Both columns
-     * must move together: the CHECK constraint
-     * `NOT (is_featured AND state = 'archived')` rejects any intermediate state
-     * where the row is still featured and already archived.
+     * Soft-deletes the outgoing cover, recording who did it. The row leaves
+     * every gallery count; its stored asset is left alone.
      */
-    readonly archive: (mediaId: string, tx: DrizzleClient) => Promise<void>;
+    readonly deletePrevious: (mediaId: string, tx: DrizzleClient) => Promise<void>;
     /** Inserts the new row with `isFeatured = true` and `state = 'visible'`. */
     readonly createFeatured: (
         input: { readonly sortOrder: number },
@@ -143,15 +122,17 @@ export type FeaturedMediaPort<TRow extends { readonly id: string }> = {
 export type AddFeaturedMediaParams<TRow extends { readonly id: string }> = {
     /** The vertical's adapter over its media table. */
     readonly port: FeaturedMediaPort<TRow>;
-    /** Per-entity structural cap (`getGalleryCap`). Never waived. */
-    readonly entityGalleryCap: number;
     /**
      * The subscriber's plan gallery allowance, resolved SERVER-SIDE from the
-     * entitlement context. `undefined` or `-1` means unlimited (or that the
-     * vertical has no plan tiering at all). `0` means the plan grants no photos
-     * and the call is refused outright.
+     * entitlement context.
      *
-     * Must never be populated from a request body.
+     * It does NOT gate the swap — that is quota-neutral — and is read for
+     * exactly one thing: `0` means the plan includes no photos at all, so it
+     * grants no cover either and the call is refused. A merely FULL allowance
+     * is not a refusal; treating it as one was the reported bug.
+     *
+     * `undefined` or a negative value means unlimited, or that the vertical has
+     * no plan tiering. Must never be populated from a request body.
      */
     readonly planGalleryCap?: number | undefined;
     /** Existing transaction to join. When omitted, one is opened. */
@@ -162,49 +143,26 @@ export type AddFeaturedMediaParams<TRow extends { readonly id: string }> = {
 export type AddFeaturedMediaResult<TRow extends { readonly id: string }> = {
     /** The newly created row, already featured. */
     readonly media: TRow;
-    /** The cover this one replaced, and its fate. `null` when there was none. */
+    /** The cover this one replaced and deleted. `null` when there was none. */
     readonly previousFeatured: PreviousFeaturedOutcome | null;
 };
 
 /**
- * Resolves the cap that actually governs the gallery.
- *
- * The tighter of the two wins. A plan allowance of `-1` (or absent) means
- * unlimited, in which case only the structural cap applies.
- *
- * @param params - The two caps.
- * @returns The effective gallery cap.
- */
-export function resolveEffectiveGalleryCap({
-    entityGalleryCap,
-    planGalleryCap
-}: {
-    readonly entityGalleryCap: number;
-    readonly planGalleryCap?: number | undefined;
-}): number {
-    if (planGalleryCap === undefined || planGalleryCap < 0) {
-        return entityGalleryCap;
-    }
-    return Math.min(entityGalleryCap, planGalleryCap);
-}
-
-/**
- * Creates a media row that is featured from the moment it exists, disposing of
- * the previous cover in the same transaction.
+ * Creates a media row that is featured from the moment it exists, deleting the
+ * previous cover in the same transaction.
  *
  * The caller is responsible for authorization and for validating the payload
- * before reaching here; this function owns only the cap arithmetic, the
- * disposition of the old cover, and the write ordering.
+ * before reaching here; this function owns only the disposition of the old
+ * cover and the write ordering.
  *
- * @param params - Port, caps and optional transaction — see {@link AddFeaturedMediaParams}.
- * @returns The created row plus what happened to the previous cover.
+ * @param params - Port, plan allowance and optional transaction — see {@link AddFeaturedMediaParams}.
+ * @returns The created row plus the id of the cover it replaced.
  * @throws {ServiceError} `LIMIT_REACHED` when the plan grants no photos at all.
  *
  * @example
  * ```ts
  * const { media, previousFeatured } = await addFeaturedMediaRow({
- *     port: buildAccommodationFeaturedMediaPort({ mediaModel, accommodationId, payload }),
- *     entityGalleryCap: getGalleryCap('accommodation'),
+ *     port: buildOwnedMediaFeaturedPort({ mediaModel, ownerKey, ownerId, media, findFeatured, deletedById }),
  *     planGalleryCap: 15
  * });
  * ```
@@ -212,19 +170,17 @@ export function resolveEffectiveGalleryCap({
 export async function addFeaturedMediaRow<TRow extends { readonly id: string }>(
     params: AddFeaturedMediaParams<TRow>
 ): Promise<AddFeaturedMediaResult<TRow>> {
-    const { port, entityGalleryCap, planGalleryCap, tx } = params;
+    const { port, planGalleryCap, tx } = params;
 
-    // A plan that allows zero photos allows no cover either. Refusing here is
-    // deliberate: HOS-791 exempts the cover from the GALLERY count, it does not
-    // grant a photo to a plan that includes none.
+    // The one thing the allowance still decides. A plan that includes zero
+    // photos includes no cover either: HOS-791 exempts the cover from the
+    // GALLERY count, it does not grant a photo to a plan that has none.
     if (planGalleryCap === 0) {
         throw new ServiceError(
             ServiceErrorCode.LIMIT_REACHED,
             'Your current plan does not include photos. Upgrade your plan to add a cover image.'
         );
     }
-
-    const effectiveCap = resolveEffectiveGalleryCap({ entityGalleryCap, planGalleryCap });
 
     const run = async (client: DrizzleClient): Promise<AddFeaturedMediaResult<TRow>> => {
         const previous = await port.findFeatured(client);
@@ -233,24 +189,12 @@ export async function addFeaturedMediaRow<TRow extends { readonly id: string }>(
 
         if (previous) {
             const previousId: string = previous.id;
-
-            // Counted BEFORE the demotion, so the number describes the gallery
-            // the demoted row would be joining.
-            const galleryCount = await port.countVisibleGallery(client);
-
-            if (galleryCount < effectiveCap) {
-                await port.demote(previousId, client);
-                previousFeatured = { id: previousId, disposition: 'demoted' };
-            } else {
-                // No room. Archiving keeps the photo and keeps the count where
-                // it is — refusing instead would reinstate the original bug.
-                await port.archive(previousId, client);
-                previousFeatured = { id: previousId, disposition: 'archived' };
-            }
+            await port.deletePrevious(previousId, client);
+            previousFeatured = { id: previousId };
         }
 
-        // Clear-then-set: the insert happens only after the old cover has given
-        // up `is_featured`, so the partial unique index never sees two.
+        // Release-then-create: the insert happens only after the old cover has
+        // left, so the partial unique index never sees two live featured rows.
         const maxSortOrder = await port.findMaxVisibleSortOrder(client);
         const media = await port.createFeatured({ sortOrder: maxSortOrder + 1 }, client);
 

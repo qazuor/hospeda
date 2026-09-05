@@ -4,20 +4,43 @@
  * HOS-803 — the shared primitive, tested against a fake media table rather than
  * through any one vertical's service.
  *
- * The fake keeps real rows in an array, so the assertions are about STATE after
- * the call ("how many visible gallery rows are there now", "how many rows carry
- * is_featured") rather than about which mock was called with what. That is the
- * only way to catch the failure this primitive exists to prevent: the gallery
- * growing by one on every cover replacement, which no single-call assertion
- * would notice.
+ * ## The rule
+ *
+ * Uploading a NEW photo into the cover slot creates the row already featured
+ * and SOFT-DELETES the cover it replaces, in the same transaction. Always —
+ * the quota is not consulted, because there is nothing left for it to decide.
+ *
+ * That is what makes the operation quota-neutral by construction: one row
+ * enters the featured slot, one leaves the table, and the visible gallery is
+ * never touched. A cover upload cannot move any cap, which is why it is safe
+ * for it to skip the gallery gate that used to refuse it.
+ *
+ * ## What the earlier design got wrong, and why these tests exist
+ *
+ * Promotion demotes the previous cover into the gallery. Carrying that
+ * behaviour onto the UPLOAD path made every replacement a permanent +1 to the
+ * gallery, so repeating it walked past the cap one swap at a time. The atomic
+ * create alone did not stop that: the partial unique index constrains the
+ * featured row, not the residue it leaves behind.
+ *
+ * Deletion removes the residue, so the +1 cannot happen. The hundred-swap test
+ * below holds that, and its mutation twin proves the hundred swaps are capable
+ * of failing.
+ *
+ * NOTE: this is the UPLOAD path only. Promoting a photo ALREADY in the gallery
+ * (`setFeaturedMedia`) still demotes the old cover into the gallery and is
+ * deliberately untouched — that exchange is quota-neutral on its own.
+ *
+ * The fake table holds real rows, so the assertions are about STATE after the
+ * call rather than about which mock was called. A gallery that grows by one per
+ * swap is invisible to any single-call assertion.
  */
 
 import type { DrizzleClient } from '@repo/db';
 import { describe, expect, it, vi } from 'vitest';
 import {
     addFeaturedMediaRow,
-    type FeaturedMediaPort,
-    resolveEffectiveGalleryCap
+    type FeaturedMediaPort
 } from '../../../src/services/media/add-featured-media';
 import { ServiceError } from '../../../src/types';
 
@@ -38,6 +61,7 @@ type FakeRow = {
     isFeatured: boolean;
     state: 'visible' | 'archived';
     sortOrder: number;
+    deletedAt: Date | null;
 };
 
 class FakeMediaTable {
@@ -51,7 +75,8 @@ class FakeMediaTable {
                 id: `gallery-${i}`,
                 isFeatured: false,
                 state: 'visible',
-                sortOrder: i
+                sortOrder: i,
+                deletedAt: null
             });
         }
         if (withCover) {
@@ -59,41 +84,47 @@ class FakeMediaTable {
                 id: 'cover-0',
                 isFeatured: true,
                 state: 'visible',
-                sortOrder: initialGallery
+                sortOrder: initialGallery,
+                deletedAt: null
             });
         }
     }
 
-    /** Visible, non-featured, i.e. what the gallery cap measures (HOS-791). */
+    /**
+     * Visible, non-featured, NOT soft-deleted — what every gallery cap in the
+     * codebase measures (`state: 'visible'`, `isFeatured: false`,
+     * `deletedAt: null`). The last of those three is what makes the replaced
+     * cover free: a count that forgot it would report a cap reached that is not.
+     */
     get visibleGalleryCount(): number {
-        return this.rows.filter((r) => r.state === 'visible' && !r.isFeatured).length;
+        return this.rows.filter(
+            (r) => r.state === 'visible' && !r.isFeatured && r.deletedAt === null
+        ).length;
     }
 
+    /** Live covers. A soft-deleted row is not one, whatever its flag says. */
     get featuredCount(): number {
-        return this.rows.filter((r) => r.isFeatured).length;
+        return this.rows.filter((r) => r.isFeatured && r.deletedAt === null).length;
+    }
+
+    get deletedCount(): number {
+        return this.rows.filter((r) => r.deletedAt !== null).length;
     }
 
     port(): FeaturedMediaPort<FakeRow> {
         return {
-            countVisibleGallery: async () => this.visibleGalleryCount,
             findMaxVisibleSortOrder: async () =>
                 this.rows
-                    .filter((r) => r.state === 'visible')
+                    .filter((r) => r.state === 'visible' && r.deletedAt === null)
                     .reduce((max, r) => Math.max(max, r.sortOrder), -1),
-            findFeatured: async () => this.rows.find((r) => r.isFeatured) ?? null,
-            demote: async (mediaId) => {
-                this.writes.push('demote');
-                const row = this.rows.find((r) => r.id === mediaId);
-                if (row) row.isFeatured = false;
-            },
-            archive: async (mediaId) => {
-                this.writes.push('archive');
+            findFeatured: async () =>
+                this.rows.find((r) => r.isFeatured && r.deletedAt === null) ?? null,
+            deletePrevious: async (mediaId) => {
+                this.writes.push('delete');
                 const row = this.rows.find((r) => r.id === mediaId);
                 if (row) {
-                    // One write, both columns — the CHECK constraint forbids a
-                    // row that is featured and archived at once.
                     row.isFeatured = false;
-                    row.state = 'archived';
+                    row.deletedAt = new Date();
                 }
             },
             createFeatured: async ({ sortOrder }) => {
@@ -103,7 +134,8 @@ class FakeMediaTable {
                     id: `new-${this.nextId}`,
                     isFeatured: true,
                     state: 'visible',
-                    sortOrder
+                    sortOrder,
+                    deletedAt: null
                 };
                 this.rows.push(row);
                 return row;
@@ -116,121 +148,104 @@ const CAP = 15;
 
 // ---------------------------------------------------------------------------
 
-describe('resolveEffectiveGalleryCap', () => {
-    it('takes the tighter of the two caps', () => {
-        expect(resolveEffectiveGalleryCap({ entityGalleryCap: 50, planGalleryCap: 15 })).toBe(15);
-        expect(resolveEffectiveGalleryCap({ entityGalleryCap: 10, planGalleryCap: 30 })).toBe(10);
-    });
-
-    it('treats an absent plan cap as unlimited, leaving only the entity cap', () => {
-        expect(resolveEffectiveGalleryCap({ entityGalleryCap: 50 })).toBe(50);
-        expect(
-            resolveEffectiveGalleryCap({ entityGalleryCap: 50, planGalleryCap: undefined })
-        ).toBe(50);
-    });
-
-    it('treats -1 as unlimited — the entitlement layer spells it that way', () => {
-        expect(resolveEffectiveGalleryCap({ entityGalleryCap: 50, planGalleryCap: -1 })).toBe(50);
-    });
-});
-
 describe('addFeaturedMediaRow (HOS-803)', () => {
     it('creates a featured row when the gallery is at the cap — the reported bug', async () => {
         const table = new FakeMediaTable(CAP, true);
 
-        const result = await addFeaturedMediaRow({
-            port: table.port(),
-            entityGalleryCap: CAP
-        });
+        const result = await addFeaturedMediaRow({ port: table.port() });
 
         expect(result.media.isFeatured).toBe(true);
         expect(result.media.state).toBe('visible');
         expect(table.featuredCount).toBe(1);
     });
 
-    it('demotes the old cover while the gallery has room', async () => {
+    it('soft-deletes the cover it replaces', async () => {
         const table = new FakeMediaTable(3, true);
 
-        const result = await addFeaturedMediaRow({
-            port: table.port(),
-            entityGalleryCap: CAP
-        });
+        const result = await addFeaturedMediaRow({ port: table.port() });
 
-        expect(result.previousFeatured).toEqual({ id: 'cover-0', disposition: 'demoted' });
-        expect(table.rows.find((r) => r.id === 'cover-0')?.state).toBe('visible');
-        expect(table.visibleGalleryCount).toBe(4);
+        const old = table.rows.find((r) => r.id === 'cover-0');
+        expect(old?.deletedAt).toBeInstanceOf(Date);
+        expect(result.previousFeatured).toEqual({ id: 'cover-0' });
     });
 
-    it('archives the old cover once the gallery is full', async () => {
-        const table = new FakeMediaTable(CAP, true);
+    it('does NOT move the old cover into the gallery', async () => {
+        const table = new FakeMediaTable(3, true);
 
-        const result = await addFeaturedMediaRow({
-            port: table.port(),
-            entityGalleryCap: CAP
-        });
+        await addFeaturedMediaRow({ port: table.port() });
 
-        expect(result.previousFeatured).toEqual({ id: 'cover-0', disposition: 'archived' });
-        expect(table.rows.find((r) => r.id === 'cover-0')?.state).toBe('archived');
-        // Archiving keeps the count where it was — the whole point.
-        expect(table.visibleGalleryCount).toBe(CAP);
+        // Demoting it here is what made every replacement a permanent +1.
+        // Uploading a new cover leaves the gallery exactly as it found it.
+        expect(table.visibleGalleryCount).toBe(3);
+    });
+
+    it('deletes the old cover even when the gallery has plenty of room', async () => {
+        const table = new FakeMediaTable(0, true);
+
+        await addFeaturedMediaRow({ port: table.port() });
+
+        // The rule is unconditional: an empty gallery does not earn the old
+        // cover a reprieve, because the disposition no longer depends on space.
+        expect(table.rows.find((r) => r.id === 'cover-0')?.deletedAt).toBeInstanceOf(Date);
+        expect(table.visibleGalleryCount).toBe(0);
     });
 
     it('reports no previous cover when the entity had none', async () => {
         const table = new FakeMediaTable(3, false);
 
-        const result = await addFeaturedMediaRow({
-            port: table.port(),
-            entityGalleryCap: CAP
-        });
+        const result = await addFeaturedMediaRow({ port: table.port() });
 
         expect(result.previousFeatured).toBeNull();
         expect(table.writes).toEqual(['create']);
+        expect(table.deletedCount).toBe(0);
     });
 
-    it('clears the old cover before inserting the new one', async () => {
+    it('releases the old cover before inserting the new one', async () => {
         const table = new FakeMediaTable(3, true);
 
-        await addFeaturedMediaRow({ port: table.port(), entityGalleryCap: CAP });
+        await addFeaturedMediaRow({ port: table.port() });
 
-        // Reversing this order transiently breaks the partial unique index.
-        expect(table.writes).toEqual(['demote', 'create']);
+        // Reversing this order leaves two live featured rows for an instant,
+        // which the partial unique index rejects.
+        expect(table.writes).toEqual(['delete', 'create']);
     });
 
     it('appends the new row rather than colliding with an existing sortOrder', async () => {
+        // Gallery holds 0,1,2 and the outgoing cover holds 3. The cover is
+        // released BEFORE the position is read, so the highest LIVE sortOrder
+        // is 2 and the new cover takes 3 — reusing the slot the deleted row
+        // vacated, and colliding with none of the gallery rows.
         const table = new FakeMediaTable(3, true);
 
-        const result = await addFeaturedMediaRow({ port: table.port(), entityGalleryCap: CAP });
+        const result = await addFeaturedMediaRow({ port: table.port() });
 
-        expect(result.media.sortOrder).toBe(4);
+        expect(result.media.sortOrder).toBe(3);
+        const live = table.rows.filter((r) => r.deletedAt === null).map((r) => r.sortOrder);
+        expect(new Set(live).size).toBe(live.length);
     });
 
     it('refuses when the plan grants no photos', async () => {
         const table = new FakeMediaTable(0, false);
 
         await expect(
-            addFeaturedMediaRow({
-                port: table.port(),
-                entityGalleryCap: CAP,
-                planGalleryCap: 0
-            })
+            addFeaturedMediaRow({ port: table.port(), planGalleryCap: 0 })
         ).rejects.toBeInstanceOf(ServiceError);
 
         expect(table.writes).toEqual([]);
     });
 
-    it('lets the plan cap bite before the entity cap', async () => {
-        const table = new FakeMediaTable(15, true);
+    it('does not refuse a plan allowance that merely happens to be full', async () => {
+        const table = new FakeMediaTable(CAP, true);
 
+        // A full allowance is not a reason to refuse: the swap moves the
+        // gallery by zero, so there is nothing for the allowance to protect.
         const result = await addFeaturedMediaRow({
             port: table.port(),
-            entityGalleryCap: 50,
-            planGalleryCap: 15
+            planGalleryCap: CAP
         });
 
-        // The entity cap alone would have demoted (15 < 50). The plan cap is
-        // what makes this an archive.
-        expect(result.previousFeatured?.disposition).toBe('archived');
-        expect(table.visibleGalleryCount).toBe(15);
+        expect(result.media.isFeatured).toBe(true);
+        expect(table.visibleGalleryCount).toBe(CAP);
     });
 
     it('joins a caller-supplied transaction instead of opening one', async () => {
@@ -243,7 +258,6 @@ describe('addFeaturedMediaRow (HOS-803)', () => {
 
         const result = await addFeaturedMediaRow({
             port: table.port(),
-            entityGalleryCap: CAP,
             tx: { __outer: true } as unknown as DrizzleClient
         });
 
@@ -258,34 +272,41 @@ describe('addFeaturedMediaRow (HOS-803)', () => {
 
 describe('HOS-803 — the gallery cap survives repeated cover replacement', () => {
     it('holds visible gallery <= cap and exactly one cover across 100 swaps', async () => {
-        const table = new FakeMediaTable(CAP - 1, true);
+        const table = new FakeMediaTable(CAP, true);
 
         for (let i = 0; i < 100; i++) {
-            await addFeaturedMediaRow({ port: table.port(), entityGalleryCap: CAP });
+            await addFeaturedMediaRow({ port: table.port() });
 
-            // Both halves of the post-condition, checked every single time —
-            // a violation on swap 3 must not be hidden by the state on swap 100.
+            // Both halves, checked every single time — a violation on swap 3
+            // must not be hidden by the state on swap 100.
             expect(table.visibleGalleryCount).toBeLessThanOrEqual(CAP);
             expect(table.featuredCount).toBe(1);
         }
 
-        // The first swap had room and demoted; every later one archived.
+        // Started full and stayed full: 100 covers in, 100 covers out.
         expect(table.visibleGalleryCount).toBe(CAP);
-        expect(table.rows.filter((r) => r.state === 'archived')).toHaveLength(99);
+        expect(table.deletedCount).toBe(100);
     });
 
-    it('would have exceeded the cap under a plain always-demote policy', async () => {
+    it('would exceed the cap if the old cover were demoted instead of deleted', async () => {
         // Guards the guard: proves the loop above is capable of failing, so its
-        // green is a real result and not an artefact of the fake table.
-        const table = new FakeMediaTable(CAP - 1, true);
+        // green is a result and not an artefact of the fake table.
+        //
+        // The mutation is the exact mistake the rule forbids — reusing
+        // `setFeaturedMedia`'s demote on the UPLOAD path, where nothing leaves
+        // the table to balance the row that arrives.
+        const table = new FakeMediaTable(CAP, true);
         const port = table.port();
-        const alwaysDemote: FeaturedMediaPort<FakeRow> = {
+        const demoteInsteadOfDelete: FeaturedMediaPort<FakeRow> = {
             ...port,
-            archive: port.demote
+            deletePrevious: async (mediaId) => {
+                const row = table.rows.find((r) => r.id === mediaId);
+                if (row) row.isFeatured = false;
+            }
         };
 
         for (let i = 0; i < 5; i++) {
-            await addFeaturedMediaRow({ port: alwaysDemote, entityGalleryCap: CAP });
+            await addFeaturedMediaRow({ port: demoteInsteadOfDelete });
         }
 
         expect(table.visibleGalleryCount).toBeGreaterThan(CAP);

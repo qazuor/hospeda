@@ -2,10 +2,9 @@ export type {
     AddFeaturedMediaParams,
     AddFeaturedMediaResult,
     FeaturedMediaPort,
-    PreviousFeaturedDisposition,
     PreviousFeaturedOutcome
 } from './add-featured-media';
-export { addFeaturedMediaRow, resolveEffectiveGalleryCap } from './add-featured-media';
+export { addFeaturedMediaRow } from './add-featured-media';
 export type { ComposeContentMediaInput } from './content-media-compose';
 export { composeContentMedia } from './content-media-compose';
 export type { DeletableMediaRow, DeleteMediaAssetOutcome } from './delete-media-asset';
