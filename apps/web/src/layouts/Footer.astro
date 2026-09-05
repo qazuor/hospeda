@@ -28,6 +28,7 @@ import { getBrandPhoneDisplay, getBrandPhoneTelHref } from "@/lib/brand-phone";
 import { getApiUrl } from "@/lib/env";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from "@/lib/publish/publish-page-paths";
 import { buildUrl } from "@/lib/urls";
 import {
     AmericanExpressIcon,
@@ -131,10 +132,18 @@ const exploreLinks = [
  *  `/suscriptores/propietarios/` to `/planes/anfitriones/` because the old URL
  *  is now redirect-only (HOS-941 D-12) — the link keeps meaning the same thing,
  *  it just stops costing every visitor a 301 hop. */
+/* HOS-1156: the two commerce entries say "Publicá tu …" and now lead to a page
+   where you can — they pointed at `/planes/*`, which are SALES pages. Both read
+   the same map the header's chooser does, so the parity
+   `footer-publish-parity.guard.test.ts` protects is now structural rather than
+   a matter of two literals agreeing. */
 const forYouLinks = [
+    /* Stays on the sales page by HOS-985's decision, which HOS-1156 did not
+       revisit: the accommodation funnel has had a landing of its own for far
+       longer than the chooser has existed. */
     { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/planes/anfitriones/" }) },
-    { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: "/planes/gastronomia/" }) },
-    { label: t("footer.listExperience"), href: buildUrl({ locale, path: "/planes/experiencias/" }) },
+    { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy }) },
+    { label: t("footer.listExperience"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.experience }) },
     /* HOS-942: ONE link to the plan index, replacing the separate "Planes para
        propietarios" / "Planes para turistas" entries. The footer used to
        enumerate two of the five audiences Hospeda sells to, which meant a

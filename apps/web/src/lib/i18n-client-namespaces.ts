@@ -268,7 +268,13 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'host.dashboard',
     'host.form',
     'host.importFromUrl',
-    'host.landing',
+    // `host.landing` left this list with HOS-1156. Its only client-reachable
+    // namer was `HostLandingCta.client.tsx`, the island that chose between
+    // `/publicar/nueva/` and sign-in — both of which are `/publicar/` now, so
+    // the island was deleted. The keys themselves are alive and still rendered
+    // on that page's hero; they resolve SERVER-side, which reads the full
+    // catalog and is not affected by this list. Shipping the prefix anyway was
+    // download weight for every visitor, which is what the guard measures.
     'host.miniForm',
     'host.pages',
     'host.promotions',

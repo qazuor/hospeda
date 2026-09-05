@@ -7,6 +7,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
 import { PublishMenu } from '../../../../src/components/shared/navigation/PublishMenu.client';
 
 function open() {
@@ -49,12 +50,24 @@ describe('PublishMenu', () => {
         );
         expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
             'href',
-            '/es/planes/gastronomia/'
+            '/es/publicar/gastronomia/'
         );
         expect(screen.getByRole('menuitem', { name: /experiencias/i })).toHaveAttribute(
             'href',
-            '/es/planes/experiencias/'
+            '/es/publicar/experiencias/'
         );
+
+        // HOS-1156: the two commerce entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two commerce options
+        // opened SALES pages. The literals above are deliberately spelled out
+        // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
+        // make this case pass for any value the config happened to hold, which
+        // is exactly how the wrong one survived. What the case still proves
+        // about the config is asserted next.
+        for (const option of PUBLISH_CTA_OPTIONS) {
+            expect(option.href.startsWith('publicar')).toBe(true);
+            expect(option.href.startsWith('planes/')).toBe(false);
+        }
     });
 
     it('closes when Escape is pressed and returns focus to the trigger', () => {

@@ -64,6 +64,12 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // which is what keeps the guard from flagging them as unclassified pages.
     { path: '/suscriptores/planes/', changefreq: 'weekly', priority: 0.8 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
+    // HOS-1156: one publish page per vertical. All three are public, indexable
+    // and carry their own copy, so all three belong here — they are the pages a
+    // restaurant owner searching "publicar mi restaurante" should land on, and
+    // until now that search had nowhere to land at all inside this namespace.
+    { path: '/publicar/gastronomia/', changefreq: 'monthly', priority: 0.8 },
+    { path: '/publicar/experiencias/', changefreq: 'monthly', priority: 0.8 },
     // HOS-985: level 2 of the three-level structure (HOS-941 D-7) — the sales
     // page for a vertical, with its prices one level below at
     // `/planes/<audiencia>/precios/`. `gastronomia`, not `restaurantes`: D-9,
@@ -183,8 +189,11 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/newsletter/desuscripto/': 'noindex',
     '/newsletter/error/': 'noindex',
 
-    // Host-only draft creation form; redirects anonymous visitors to login.
-    '/publicar/nueva/': 'auth-guarded',
+    // Redirect-only since HOS-1156: the draft-creation form was absorbed into
+    // `/publicar/`, which now carries it directly, so this URL 301s there. It
+    // was classified `auth-guarded` while it existed as a page — that is no
+    // longer what it is.
+    '/publicar/nueva/': 'transactional',
 
     // Redirect-only since HOS-942, retargeted by HOS-1032: the tourist pricing
     // page went to `/suscriptores/planes/turistas/` and then on to
@@ -207,6 +216,10 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/suscriptores/planes/turistas/': 'transactional',
     '/suscriptores/planes/comparar/': 'transactional',
     '/suscriptores/turistas/comparar/': 'transactional',
+    // HOS-1156 retargeted these two: their 301 now points at the vertical's
+    // PUBLISH page rather than its sales page, overriding HOS-941 D-8. The URL's
+    // own name said *publicar*, and it finally leads there. Still redirect-only,
+    // so still excluded.
     '/publicar-restaurante/': 'transactional',
     '/publicar-experiencia/': 'transactional',
 

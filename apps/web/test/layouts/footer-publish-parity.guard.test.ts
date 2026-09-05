@@ -35,6 +35,18 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
+
+/**
+ * The sales page each commerce vertical used to point at, before HOS-1156.
+ *
+ * Kept as literals on purpose: this is the regression being guarded against, so
+ * it must be spelled out rather than derived from anything the fix owns.
+ */
+const PLANS_PATH_BY_ID: Readonly<Record<string, string>> = {
+    gastronomy: 'planes/gastronomia',
+    experience: 'planes/experiencias'
+};
 
 const footerSrc = readFileSync(resolve(__dirname, '../../src/layouts/Footer.astro'), 'utf8');
 
@@ -68,14 +80,26 @@ describe('HOS-826 — footer "Para vos" offers every commerce vertical', () => {
     });
 
     for (const id of COMMERCE_OPTION_IDS) {
-        it(`links the ${id} landing at the header's own destination`, () => {
+        it(`links the ${id} vertical at the header's own destination`, () => {
             const option = PUBLISH_CTA_OPTIONS.find((candidate) => candidate.id === id);
             expect(option).toBeDefined();
             const href = option?.href ?? '';
             expect(href).not.toBe('');
-            // `discovery-doors.ts` stores a bare segment (`publicar-experiencia`);
-            // Footer.astro passes buildUrl a leading+trailing-slashed path.
-            expect(forYouBlock).toContain(`"/${href}/"`);
+
+            // HOS-1156: both surfaces now read `PUBLISH_PAGE_PATH_BY_VERTICAL`,
+            // so the two hrefs are the same VALUE by construction and the old
+            // check — that the footer contains the header's path as a literal —
+            // can no longer fail for the reason it was written to catch.
+            //
+            // What is still worth guarding is that the footer names this
+            // vertical AT ALL: an entry silently dropped, or repointed back at a
+            // sales page, is the HOS-826 defect and neither is structural.
+            expect(forYouBlock).toContain(`PUBLISH_PAGE_PATH_BY_VERTICAL.${id}`);
+            expect(forYouBlock).not.toContain(`"/${PLANS_PATH_BY_ID[id]}/"`);
+
+            // And that the map the footer reads still resolves to the same page
+            // the header sends people to, in case the two ever stop sharing it.
+            expect(PUBLISH_PAGE_PATH_BY_VERTICAL[id as 'gastronomy' | 'experience']).toBe(href);
         });
     }
 

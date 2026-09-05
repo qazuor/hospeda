@@ -29,6 +29,7 @@ import type { ContentModerationChangeInput } from '@repo/schemas';
 import {
     ContentModerationChangeInputSchema,
     DestinationTypeEnum,
+    LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
     RoleGrantReason,
@@ -1242,6 +1243,87 @@ export abstract class BaseCommerceListingService<
             const error = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 `Failed to list own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
+     * Soft-deletes ONE of the actor's own DRAFT listings.
+     *
+     * The owner-tier counterpart to `softDelete()`, which is staff-only:
+     * `_canSoftDelete` resolves to `checkCanDeleteCommerce`, i.e.
+     * `COMMERCE_DELETE`, which no owner holds. That gate is right for the
+     * general case — an owner must not be able to erase a listing people are
+     * paying for or linking to — and wrong for the one case this method
+     * serves: the publish precheck offers "borrar el borrador" as the FREE way
+     * out of a full plan (HOS-1156 AC-14), and without an owner path that
+     * button could only ever answer 403.
+     *
+     * Three conditions, all narrowing rather than widening:
+     *
+     * - **Ownership is the gate**, as in {@link listOwn}. No permission is
+     *   required, deliberately: `COMMERCE_OWNER` is granted by the create call
+     *   itself, so requiring the role here would reproduce HOS-687's shape —
+     *   the flow that hands out the role being locked behind it.
+     * - **DRAFT only.** A listing in any other lifecycle state is refused. A
+     *   published or paid-for listing is not a draft to discard, and deleting
+     *   one is an admin action with consequences this path does not carry
+     *   (subscription, visibility reconciliation, cache purges).
+     * - **Someone else's row answers NOT_FOUND, never FORBIDDEN** — a 403 would
+     *   confirm the id exists (see `apps/api/docs/error-contract.md`).
+     *
+     * @param actor - The authenticated actor, who must own the listing.
+     * @param id - The listing to delete.
+     * @param ctx - Optional service context (transaction, hook state).
+     * @returns `ServiceOutput<{ deleted: true }>` on success.
+     */
+    public async softDeleteOwnDraft(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ deleted: true }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'softDeleteOwnDraft requires an authenticated actor'
+                    )
+                };
+            }
+
+            const entity = await this.model.findById(id, ctx?.tx);
+
+            // One branch for "no row", "someone else's row" and "already
+            // deleted": all three are indistinguishable to a caller who has no
+            // business knowing this id, which is the point.
+            if (!entity || entity.deletedAt || entity.ownerId !== actor.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} not found`
+                    )
+                };
+            }
+
+            if (entity.lifecycleState !== LifecycleStatusEnum.DRAFT) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Only a DRAFT ${this.entityName} listing can be deleted by its owner`
+                    )
+                };
+            }
+
+            await this.model.softDelete({ id }, actor.id, ctx?.tx);
+
+            return { data: { deleted: true } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to delete own ${this.entityName} draft: ${err instanceof Error ? err.message : String(err)}`,
                 err
             );
             return { error };
