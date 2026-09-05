@@ -39,10 +39,13 @@
 #     (b) a direct Drizzle read of the column itself — `.from(billingSubscriptions)`
 #         — which, typed or bare-`select()`, already carries `productDomain`
 #         off the row and never goes through QZPay's mapper at all.
-#   `isCommerceSubscription(` is included in the same check for when it
-#   exists — it is documented (this repo's CLAUDE.md) as the union-of-verticals
-#   counterpart to `subscriptionMatchesDomain` and would carry the identical
-#   risk the day it lands.
+#   `isCommerceSubscription(` is included in the same check even though the
+#   symbol does NOT exist: HOS-1081 (`ebfd413e0`) deleted it for having zero
+#   callers, and CLAUDE.md no longer points anyone at it. The alternation stays
+#   because the function is the obvious shape somebody reaches for the day a
+#   union-of-verticals consumer appears, and it would carry the identical
+#   hydration risk — cheaper to keep the name covered than to remember to add
+#   it back. Match it against a symbol that exists before assuming it works.
 #
 #   `isAccommodationSubscription(...)` and a literal-accommodation
 #   `subscriptionMatchesDomain(x, 'accommodation')` are NEVER flagged: the
