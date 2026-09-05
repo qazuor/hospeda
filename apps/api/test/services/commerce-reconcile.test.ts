@@ -457,6 +457,31 @@ describe('reconcileCommerceListingForSubscription — plan-restricted listings (
         expect(reconcileVisibilityMock.mock.calls[0]?.[0]?.planRestricted).toBe(false);
     });
 
+    it('clears plan_restricted when it re-points the row at another subscription', async () => {
+        // HOS-1122. The recovery hands the listing from subB to subA. A
+        // restriction is a fact about ONE subscription — subA has its own tier
+        // and has restricted nothing — so carrying the flag over would leave a
+        // paid listing PRIVATE, and silently: the reconciler's
+        // paid-but-incomplete alarm is keyed on the same predicate the flag
+        // feeds, so a restricted listing produces no log at all.
+        state.linkRows = [];
+        state.holderRows = [
+            { subscriptionId: SUB_B, status: SubscriptionStatusEnum.PENDING_PROVIDER }
+        ];
+        state.subscriptionRows = [
+            { metadata: { commerceEntityType: ENTITY_TYPE, commerceEntityId: ENTITY_ID } }
+        ];
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        });
+
+        expect(state.conflicts).toHaveLength(1);
+        expect(state.conflicts[0]?.set.planRestricted).toBe(false);
+    });
+
     it('treats a RECOVERED link as unrestricted — a recovery only ever fires for an unlinked subscription', async () => {
         state.linkRows = [];
         state.holderRows = [

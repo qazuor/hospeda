@@ -242,6 +242,10 @@ export const entitySubscriptionCacheReconcileJob: CronJobDefinition = {
                                 productDomain: sql`excluded.product_domain`,
                                 status: sql`excluded.status`,
                                 planId: sql`excluded.plan_id`,
+                                // HOS-1122: inert for accommodation, which never
+                                // sets the flag — written anyway so the invariant
+                                // holds for EVERY re-point.
+                                planRestricted: false,
                                 updatedAt: new Date()
                             }
                         });

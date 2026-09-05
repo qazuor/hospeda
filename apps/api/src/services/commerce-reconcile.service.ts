@@ -271,7 +271,16 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
         })
         .onConflictDoUpdate({
             target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
-            set: { subscriptionId, status: subscriptionStatus, updatedAt: new Date() }
+            // HOS-1122: `planRestricted: false` is what makes the value this
+            // function RETURNS true rather than aspirational — the recovery
+            // re-points the row at a different subscription, so the previous
+            // one's restriction does not come with it.
+            set: {
+                subscriptionId,
+                status: subscriptionStatus,
+                planRestricted: false,
+                updatedAt: new Date()
+            }
         });
 
     apiLogger.warn(
@@ -286,10 +295,12 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
         'Recovered a paid commerce subscription no link row pointed at (superseded by a later checkout click) — link row re-pointed'
     );
 
-    // A row this path just wrote (or re-pointed) is by construction NOT plan
-    // restricted: the recovery only fires for a subscription no link row points
-    // at, and a downgrade's restriction always leaves the row in place pointing
-    // at the very subscription that was downgraded.
+    // Not restricted — and true because the upsert above WROTE it, not because
+    // the situation guarantees it. The original claim here was that a recovered
+    // row is unrestricted "by construction"; it was not. A row restricted under
+    // an earlier subscription and then re-pointed at this one would have kept
+    // `plan_restricted = true` in the database while this function reported
+    // `false`, and the next reconcile would have read the database.
     return [{ entityType, entityId, planRestricted: false }];
 }
 
