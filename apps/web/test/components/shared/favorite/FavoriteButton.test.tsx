@@ -34,6 +34,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FavoriteButtonProps } from '../../../../src/components/shared/favorite/FavoriteButton.client';
 import { FavoriteButton } from '../../../../src/components/shared/favorite/FavoriteButton.client';
+import { resolveSafeReturnPath } from '../../../../src/lib/auth-redirect';
 import { resetFavoritesStore } from '../../../../src/store/favorites-store';
 
 // ---------------------------------------------------------------------------
@@ -55,10 +56,14 @@ vi.mock('../../../../src/components/shared/favorite/FavoriteButton.module.css', 
 }));
 
 // Mock AuthRequiredPopover so we can assert on its presence without needing
-// its internal CSS and icon dependencies.
+// its internal CSS and icon dependencies. The `returnUrl` prop is surfaced as
+// a `data-return-url` attribute (HOS-1185): previously this mock discarded
+// the prop entirely, so no test could ever catch a regression in how the
+// return URL is produced.
 vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
     AuthRequiredPopover: ({
-        onClose
+        onClose,
+        returnUrl
     }: {
         message: string;
         onClose: () => void;
@@ -70,6 +75,7 @@ vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
             role="dialog"
             aria-label="Autenticacion requerida"
             data-testid="auth-required-popover"
+            data-return-url={returnUrl}
         >
             <button
                 type="button"
@@ -1215,5 +1221,63 @@ describe('FavoriteButton — favorite_toggled analytics event', () => {
 
         // Assert
         expect(trackEventSpy).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 14. returnUrl passed to the auth popover (HOS-1185 regression)
+// ---------------------------------------------------------------------------
+//
+// Favorites never returned to the listing after sign-in because the
+// component sent the ABSOLUTE `window.location.href` as `returnUrl`, and
+// `resolveSafeReturnPath` (the open-redirect guard added by HOS-1170) only
+// accepts a same-origin relative path — an absolute value always falls back
+// to `/{locale}/mi-cuenta/`. The fix composes `pathname + search + hash`
+// instead. These tests assert the ROUND TRIP through the real guard
+// function, not merely that some string was sent — a mock-prop assertion
+// alone would have stayed green if the value was still absolute but merely
+// non-empty.
+describe('FavoriteButton — returnUrl for auth redirect (HOS-1185)', () => {
+    const ORIGINAL_LOCATION_HREF = window.location.href;
+
+    afterEach(() => {
+        window.history.pushState({}, '', ORIGINAL_LOCATION_HREF);
+    });
+
+    it('sends a same-origin relative path, not the absolute href, as returnUrl', async () => {
+        // Arrange — pushState with a relative URL: jsdom resolves it against
+        // its own origin (http://localhost:3000), so `window.location.href`
+        // is still absolute (e.g. `http://localhost:3000/es/...`) while
+        // `pathname + search + hash` is the relative path under test.
+        window.history.pushState({}, '', '/es/alojamientos/entity-uuid-1/?foo=bar#reviews');
+        await renderButton(arrangeGuest());
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        const popover = screen.getByTestId('auth-required-popover');
+        const returnUrl = popover.getAttribute('data-return-url');
+        expect(returnUrl).toBe('/es/alojamientos/entity-uuid-1/?foo=bar#reviews');
+        expect(returnUrl?.startsWith('http')).toBe(false);
+    });
+
+    it('round-trips through resolveSafeReturnPath back to the original page, including query and hash', async () => {
+        // Arrange
+        const originalPath = '/es/alojamientos/entity-uuid-1/?foo=bar#reviews';
+        window.history.pushState({}, '', originalPath);
+        await renderButton(arrangeGuest());
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+        const returnUrl = screen
+            .getByTestId('auth-required-popover')
+            .getAttribute('data-return-url');
+        const resolved = resolveSafeReturnPath({ rawReturn: returnUrl ?? '', locale: 'es' });
+
+        // Assert — must survive the guard as the ORIGINAL page, not the
+        // `/es/mi-cuenta/` fallback the guard uses when it rejects the input.
+        expect(resolved).toBe(originalPath);
+        expect(resolved).not.toBe('/es/mi-cuenta/');
     });
 });
