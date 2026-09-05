@@ -24,7 +24,7 @@
  */
 
 import type { PartnerLogoClickDestination } from '@repo/schemas';
-import { getLocalDayWindow, MARKET_TIMEZONE } from '@repo/utils';
+import { getLocalDayWindow, getLocalMonthWindow } from '@repo/utils';
 import { lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import type {
@@ -222,9 +222,25 @@ export class PartnerLogoClickModel {
      * instead of duplicating them. That idempotency is not a nicety — repairing
      * a failed cron run is the normal reason this is invoked a second time.
      *
-     * The month is bucketed in `MARKET_TIMEZONE`, matching every other
-     * date-bucketed query in the codebase (HOS-1169), so a click at 22:00 on the
-     * 31st belongs to the month the partner thinks it does.
+     * ## The month boundaries are resolved in TypeScript, not in SQL
+     *
+     * Identical treatment to `EntityViewModel.rollUpMonth`, and for the same two
+     * reasons, the first of which is fatal rather than cosmetic:
+     *
+     * 1. **The `DATE_TRUNC(... AT TIME ZONE $tz)` form could not execute.**
+     *    `MARKET_TIMEZONE` is a plain string, so each interpolation emitted a
+     *    DISTINCT placeholder and Postgres compares `GROUP BY` expressions by
+     *    node identity, not by bound value — the statement was rejected at parse
+     *    time on every run. Resolving the bounds in TypeScript removes the zone
+     *    from the statement entirely. (`marketTimezoneSql()` in
+     *    `../../utils/drizzle-helpers.ts` is the fix where the zone genuinely
+     *    has to be inside SQL; here it does not.)
+     * 2. **`WHERE DATE_TRUNC(...)` is not sargable**, so
+     *    `partnerLogoClicks_clickedAt_idx` went unused and the table was scanned
+     *    in full, twice a day.
+     *
+     * A click at 22:00 on the 31st still belongs to the month the partner thinks
+     * it does: the boundaries are local midnights converted to UTC instants.
      *
      * @param input.month - Any date inside the month to roll up.
      * @param tx - Optional transaction client.
@@ -233,35 +249,36 @@ export class PartnerLogoClickModel {
      */
     async rollUpMonth(input: { readonly month: Date }, tx?: DrizzleClient): Promise<number> {
         const db = this.getClient(tx);
-        const logContext = { month: input.month.toISOString() };
+        const { monthStart, nextMonthStart, monthLabel } = getLocalMonthWindow({
+            instant: input.month
+        });
+        const logContext = { month: monthLabel };
 
         try {
-            const rows = await db.execute(sql`
+            // No RETURNING: `rowCount` answers "how many rows" without dragging
+            // one row per partner into the process to be counted and discarded.
+            const result = await db.execute(sql`
                 INSERT INTO partner_logo_click_monthly_rollups
                     (partner_id, month, total, unique_visitors)
                 SELECT
                     partner_id,
-                    DATE_TRUNC('month', clicked_at AT TIME ZONE ${MARKET_TIMEZONE})::date,
+                    ${monthLabel}::date,
                     COUNT(DISTINCT (
                         visitor_hash,
                         FLOOR(EXTRACT(EPOCH FROM clicked_at) / 1800)
                     ))::int,
                     COUNT(DISTINCT visitor_hash)::int
                 FROM partner_logo_clicks
-                WHERE DATE_TRUNC('month', clicked_at AT TIME ZONE ${MARKET_TIMEZONE})
-                    = DATE_TRUNC('month', ${input.month}::timestamptz AT TIME ZONE ${MARKET_TIMEZONE})
+                WHERE clicked_at >= ${monthStart}
+                  AND clicked_at < ${nextMonthStart}
                 GROUP BY
-                    partner_id,
-                    DATE_TRUNC('month', clicked_at AT TIME ZONE ${MARKET_TIMEZONE})
+                    partner_id
                 ON CONFLICT (partner_id, month) DO UPDATE SET
                     total = EXCLUDED.total,
                     unique_visitors = EXCLUDED.unique_visitors
-                RETURNING id
             `);
 
-            const written = Array.isArray(rows)
-                ? rows.length
-                : ((rows as { rows?: unknown[] }).rows?.length ?? 0);
+            const written = (result as { rowCount?: number | null }).rowCount ?? 0;
 
             try {
                 logQuery('partnerLogoClicks', 'rollUpMonth', logContext, { written });
