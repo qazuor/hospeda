@@ -695,6 +695,8 @@
         "zodError.common.maxPrice.tooLow",
         "zodError.common.maxRating.tooHigh",
         "zodError.common.maxRating.tooLow",
+        "zodError.common.media.featured.planCap.int",
+        "zodError.common.media.featured.previousId.invalid",
         "zodError.common.media.image.alt.max",
         "zodError.common.media.image.alt.min",
         "zodError.common.media.image.attribution.license.max",
@@ -1919,7 +1921,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1918,
+    "total": 1920,
     "byNamespace": {
         "accommodation": 72,
         "accommodationAmenity": 4,
@@ -1937,7 +1939,7 @@
         "attraction": 26,
         "billing": 241,
         "commerce": 14,
-        "common": 245,
+        "common": 247,
         "contact": 7,
         "conversation": 6,
         "dateRange": 11,
