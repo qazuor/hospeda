@@ -630,12 +630,14 @@ export async function setFeaturedExperienceMedia(
  * so a caller setting it on every upload would have no cap at all. Here the row
  * is created featured inside a transaction and
  * `uq_experience_media_single_featured` permits exactly one, so quota-exempt
- * rows cannot accumulate. The previous cover is demoted into the gallery only
- * while the gallery has room and archived otherwise, so the visible gallery
- * never grows past the cap however often a cover is swapped.
+ * rows cannot accumulate. The previous cover is SOFT-DELETED in the same
+ * transaction, so one row enters the featured slot, one leaves the table, and
+ * the visible gallery is untouched — the swap is quota-neutral by construction
+ * rather than by exception, and no cap needs consulting at all.
  *
- * Unlike accommodations there is no plan allowance to consider: commerce
- * listings are governed by the fixed per-entity cap alone.
+ * Promotion of a photo already in the gallery (`setFeaturedExperienceMedia`) is a
+ * different operation and is unchanged: it still demotes the old cover into the
+ * gallery, which is quota-neutral on its own.
  *
  * @param model - ExperienceModel instance.
  * @param actor - The actor performing the action.
@@ -676,9 +678,9 @@ export async function addExperienceFeaturedMedia(
                 ownerId: validated.experienceId,
                 media: validated.media,
                 findFeatured: (tx) =>
-                    mediaModel.findFeatured({ experienceId: validated.experienceId, tx })
+                    mediaModel.findFeatured({ experienceId: validated.experienceId, tx }),
+                deletedById: actor.id
             }),
-            entityGalleryCap: getGalleryCap('experience'),
             tx: ctx?.tx
         });
 

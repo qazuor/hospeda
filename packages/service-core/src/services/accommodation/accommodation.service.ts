@@ -3979,14 +3979,16 @@ export class AccommodationService extends BaseCrudService<
      * `uq_accommodation_media_single_featured` permits exactly one such row, so
      * quota-exempt rows cannot accumulate.
      *
-     * The per-ENTITY cap is never waived: the previous cover is demoted into the
-     * gallery only while the gallery has room, and archived otherwise, so the
-     * visible gallery never grows past the cap however often a cover is swapped.
-     * See `services/media/add-featured-media.ts` for that policy in full.
+     * No cap is waived either, because none is spent: the previous cover is
+     * SOFT-DELETED in the same transaction, so one row enters the featured slot,
+     * one leaves the table, and the visible gallery is untouched. The swap is
+     * quota-neutral by construction rather than by exception. See
+     * `services/media/add-featured-media.ts` for the rule in full, including why
+     * promotion of an existing gallery photo still demotes instead of deleting.
      *
      * Steps:
      * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
-     * 2. Dispose of the previous cover and insert the new one, in ONE transaction.
+     * 2. Soft-delete the previous cover and insert the new one, in ONE transaction.
      * 3. Schedule ISR revalidation — the cover is the first image a visitor and
      *    every social preview sees, so a stale one is the loudest kind.
      *
@@ -4025,9 +4027,9 @@ export class AccommodationService extends BaseCrudService<
                             mediaModel.findFeatured({
                                 accommodationId: validated.accommodationId,
                                 tx
-                            })
+                            }),
+                        deletedById: actor.id
                     }),
-                    entityGalleryCap: getGalleryCap('accommodation'),
                     planGalleryCap: validated.planGalleryCap,
                     tx: ctx?.tx
                 });

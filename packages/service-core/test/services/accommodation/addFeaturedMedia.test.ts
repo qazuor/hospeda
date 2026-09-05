@@ -13,7 +13,7 @@
  * HOS-791 declared free of gallery quota was the only one they could not do.
  *
  * `addFeaturedMedia` closes that by creating the row already featured and
- * disposing of the previous cover in the SAME transaction.
+ * SOFT-DELETING the previous cover in the SAME transaction.
  *
  * ## The counter-invariant
  *
@@ -24,12 +24,15 @@
  * gone. Here the row is featured on arrival and the partial unique index allows
  * exactly one, so repetition cannot accumulate exempt rows.
  *
- * The subtler half, and the one these tests exist for: the PREVIOUS cover does
- * not vanish. `setFeaturedMedia` demotes it into the gallery, which is a +1 to
- * the gallery per replacement — repeat that and the gallery grows past the cap
- * one cover-swap at a time. So the primitive demotes only while the gallery has
- * room and archives otherwise, which keeps the post-condition
- * `visible gallery <= effective cap` true no matter how often it is called.
+ * The subtler half, and the one these tests exist for: the PREVIOUS cover must
+ * not survive. `setFeaturedMedia` demotes it into the gallery, and carrying
+ * that onto the UPLOAD path would make every replacement a +1 to the gallery —
+ * repeat it and the gallery grows past the cap one swap at a time. Deleting it
+ * makes the whole operation quota-neutral: one row in the featured slot, one
+ * out of the table, gallery untouched.
+ *
+ * This covers the UPLOAD path only. Promotion of a photo already in the gallery
+ * is unchanged and is asserted as such below.
  *
  * All DB interactions are mocked at the MODEL level (not the Drizzle level) so
  * the `where` filters are visible to assertions — see
@@ -181,10 +184,14 @@ beforeEach(() => {
     });
     mockMediaModel.update.mockImplementation(
         async (_where: unknown, patch: Record<string, unknown>) => {
-            writeLog.push(patch.state === 'archived' ? 'archive' : 'demote');
+            writeLog.push('update');
             return makeMediaRow(patch);
         }
     );
+    mockMediaModel.softDelete.mockImplementation(async () => {
+        writeLog.push('delete');
+        return 1;
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -245,7 +252,7 @@ describe('AccommodationService.addFeaturedMedia (HOS-803)', () => {
         expect(createdRow.url).toBe(VALID_PAYLOAD.url);
     });
 
-    it('archives the previous cover when the gallery has no room for it', async () => {
+    it('soft-deletes the previous cover, stamping the actor', async () => {
         const service = buildService();
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
@@ -254,37 +261,32 @@ describe('AccommodationService.addFeaturedMedia (HOS-803)', () => {
             media: VALID_PAYLOAD
         });
 
-        expect(mockMediaModel.update).toHaveBeenCalledTimes(1);
-        const [where, patch] = mockMediaModel.update.mock.calls[0] as [
+        expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(1);
+        const [where, deletedById] = mockMediaModel.softDelete.mock.calls[0] as [
             Record<string, unknown>,
-            Record<string, unknown>
+            string
         ];
         expect(where.id).toBe(PREVIOUS_FEATURED_ID);
-        expect(patch.isFeatured).toBe(false);
-        expect(patch.state).toBe('archived');
+        // A soft delete must record WHO — see scripts/check-soft-delete-actor.ts.
+        expect(deletedById).toBe(OWNER_ID);
 
         expect(result.data?.previousFeatured?.id).toBe(PREVIOUS_FEATURED_ID);
-        expect(result.data?.previousFeatured?.disposition).toBe('archived');
     });
 
-    it('demotes the previous cover into the gallery when there IS room', async () => {
+    it('deletes the previous cover even when the gallery has room', async () => {
         const service = buildService();
         arrangeGallery({ galleryCount: 3, previousFeatured: true });
 
-        const result = await service.addFeaturedMedia(ownerActor, {
+        await service.addFeaturedMedia(ownerActor, {
             accommodationId: ACCOMMODATION_ID,
             media: VALID_PAYLOAD
         });
 
-        const [where, patch] = mockMediaModel.update.mock.calls[0] as [
-            Record<string, unknown>,
-            Record<string, unknown>
-        ];
-        expect(where.id).toBe(PREVIOUS_FEATURED_ID);
-        expect(patch.isFeatured).toBe(false);
-        expect(patch.state).toBeUndefined();
-
-        expect(result.data?.previousFeatured?.disposition).toBe('demoted');
+        // Unconditional: the old cover never lands in the gallery on this path,
+        // however much room there is. Demoting it is what let the gallery grow
+        // by one on every replacement.
+        expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(1);
+        expect(mockMediaModel.update).not.toHaveBeenCalled();
     });
 
     it('clears the previous cover BEFORE creating the new one (partial unique index)', async () => {
@@ -296,9 +298,9 @@ describe('AccommodationService.addFeaturedMedia (HOS-803)', () => {
             media: VALID_PAYLOAD
         });
 
-        // Setting the new row first would transiently leave two featured rows,
-        // which `uq_accommodation_media_single_featured` rejects.
-        expect(writeLog).toEqual(['demote', 'create']);
+        // Setting the new row first would transiently leave two live featured
+        // rows, which `uq_accommodation_media_single_featured` rejects.
+        expect(writeLog).toEqual(['delete', 'create']);
     });
 
     it('touches nothing else when the accommodation has no cover yet', async () => {
@@ -310,12 +312,12 @@ describe('AccommodationService.addFeaturedMedia (HOS-803)', () => {
             media: VALID_PAYLOAD
         });
 
-        expect(mockMediaModel.update).not.toHaveBeenCalled();
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
         expect(result.data?.previousFeatured).toBeNull();
         expect(writeLog).toEqual(['create']);
     });
 
-    it('measures the gallery alone — the featured row is excluded from the count (HOS-791)', async () => {
+    it('does not count the gallery at all — the swap cannot move it', async () => {
         const service = buildService();
         arrangeGallery({ galleryCount: 3, previousFeatured: true });
 
@@ -324,11 +326,10 @@ describe('AccommodationService.addFeaturedMedia (HOS-803)', () => {
             media: VALID_PAYLOAD
         });
 
-        expect(mockMediaModel.count).toHaveBeenCalledTimes(1);
-        const where = mockMediaModel.count.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(where.isFeatured).toBe(false);
-        expect(where.state).toBe('visible');
-        expect(where.accommodationId).toBe(ACCOMMODATION_ID);
+        // One row into the featured slot, one out of the table, gallery
+        // untouched. There is no cap arithmetic left to get wrong, which is
+        // the point of the rule — not an oversight.
+        expect(mockMediaModel.count).not.toHaveBeenCalled();
     });
 
     // ── Authorization ──────────────────────────────────────────────────────
@@ -365,27 +366,26 @@ describe('AccommodationService.addFeaturedMedia (HOS-803)', () => {
 // ---------------------------------------------------------------------------
 
 describe('HOS-803 — the gallery quota cannot be evaded through the featured path', () => {
-    it('never leaves more visible gallery rows than the cap, however often it is called', async () => {
+    it('never grows the visible gallery, however often the cover is replaced', async () => {
         const service = buildService();
 
-        // The DB is simulated as a counter: rows demoted into the gallery raise
-        // it, rows archived do not. Starting one below the cap so the first
-        // replacement demotes and every later one must archive.
-        let galleryCount = ENTITY_CAP - 1;
+        // The DB is simulated as a counter over VISIBLE, NON-DELETED gallery
+        // rows — the same three conditions every cap in the codebase measures.
+        // A demoted cover would raise it; a deleted one cannot.
+        let galleryCount = ENTITY_CAP;
         mockMediaModel.count.mockImplementation(async () => galleryCount);
         mockMediaModel.findFeatured.mockResolvedValue(
             makeMediaRow({ id: PREVIOUS_FEATURED_ID, isFeatured: true, sortOrder: 0 })
         );
-        mockMediaModel.update.mockImplementation(
-            async (_where: unknown, patch: Record<string, unknown>) => {
-                if (patch.state === 'archived') {
-                    // Archived rows leave the visible gallery — no growth.
-                } else {
-                    galleryCount += 1;
-                }
-                return makeMediaRow(patch);
-            }
-        );
+        mockMediaModel.softDelete.mockImplementation(async () => {
+            // Leaves the table: contributes nothing to any count.
+            return 1;
+        });
+        mockMediaModel.update.mockImplementation(async () => {
+            // Only reachable if someone reintroduces the demote.
+            galleryCount += 1;
+            return makeMediaRow({});
+        });
 
         for (let i = 0; i < 25; i++) {
             const result = await service.addFeaturedMedia(ownerActor, {
@@ -397,9 +397,42 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
         }
 
         expect(galleryCount).toBe(ENTITY_CAP);
+        expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(25);
+        expect(mockMediaModel.update).not.toHaveBeenCalled();
     });
 
-    it('honours a plan cap tighter than the entity cap', async () => {
+    it('leaves the deleted cover out of the gallery count the cap reads', async () => {
+        const service = buildService();
+        arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
+
+        await service.addFeaturedMedia(ownerActor, {
+            accommodationId: ACCOMMODATION_ID,
+            media: VALID_PAYLOAD
+        });
+
+        const deletedId = (mockMediaModel.softDelete.mock.calls[0]?.[0] as Record<string, unknown>)
+            .id;
+        expect(deletedId).toBe(PREVIOUS_FEATURED_ID);
+
+        // Now ask the cap the same question `addMedia` asks. The filter it
+        // builds must exclude soft-deleted rows, or the replaced cover would
+        // keep occupying a slot it no longer holds — a cap reported as reached
+        // that is not. `addMedia` is the real code path, not a re-derivation.
+        mockMediaModel.count.mockClear();
+        mockMediaModel.count.mockResolvedValue(ENTITY_CAP - 1);
+
+        await service.addMedia(ownerActor, {
+            accommodationId: ACCOMMODATION_ID,
+            media: VALID_PAYLOAD
+        });
+
+        const where = mockMediaModel.count.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(where.deletedAt).toBeNull();
+        expect(where.state).toBe('visible');
+        expect(where.isFeatured).toBe(false);
+    });
+
+    it('accepts a plan allowance that is exactly full', async () => {
         const service = buildService();
         arrangeGallery({ galleryCount: 15, previousFeatured: true });
 
@@ -409,12 +442,11 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
             planGalleryCap: 15
         });
 
-        // 15 gallery photos on a 15-photo plan: demoting the old cover would
-        // make 16, so it is archived instead — and the swap still succeeds.
-        const patch = mockMediaModel.update.mock.calls[0]?.[1] as Record<string, unknown>;
-        expect(patch.state).toBe('archived');
-        expect(result.data?.previousFeatured?.disposition).toBe('archived');
+        // 15 gallery photos on a 15-photo plan: the swap moves the gallery by
+        // zero, so a full allowance is no reason to refuse. This is the exact
+        // scenario HOS-803 was reported for.
         expect(result.error).toBeUndefined();
+        expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(1);
     });
 
     it('ignores a plan cap smuggled inside the media payload', async () => {
@@ -432,9 +464,6 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
         expect(result.error).toBeUndefined();
         const createdRow = mockMediaModel.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(createdRow.planGalleryCap).toBeUndefined();
-
-        const patch = mockMediaModel.update.mock.calls[0]?.[1] as Record<string, unknown>;
-        expect(patch.state).toBe('archived');
     });
 
     it('refuses outright on a plan that grants no photos at all', async () => {
@@ -449,5 +478,43 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
 
         expect(result.error?.code).toBe('LIMIT_REACHED');
         expect(mockMediaModel.create).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// The promotion path is a DIFFERENT operation and stays as it was.
+// ---------------------------------------------------------------------------
+
+describe('HOS-803 — promoting an existing gallery photo is unchanged', () => {
+    it('still demotes the old cover into the gallery instead of deleting it', async () => {
+        const service = buildService();
+        const targetId = '00000000-0000-4000-8000-0000000000c1';
+
+        mockMediaModel.findFeatured.mockResolvedValue(
+            makeMediaRow({ id: PREVIOUS_FEATURED_ID, isFeatured: true, sortOrder: 0 })
+        );
+        mockMediaModel.findById.mockResolvedValue(
+            makeMediaRow({ id: targetId, isFeatured: false, state: 'visible', sortOrder: 2 })
+        );
+
+        const result = await service.setFeaturedMedia(ownerActor, {
+            accommodationId: ACCOMMODATION_ID,
+            mediaId: targetId
+        });
+
+        expect(result.error).toBeUndefined();
+
+        // The exchange is quota-neutral on its own: the promoted photo leaves
+        // the gallery as the old cover enters it, so there is nothing to
+        // delete and the count does not move. Deleting here would destroy a
+        // photo the owner never asked to remove.
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
+
+        const demote = mockMediaModel.update.mock.calls.find(
+            ([where]) => (where as Record<string, unknown>).id === PREVIOUS_FEATURED_ID
+        );
+        expect(demote).toBeDefined();
+        expect((demote?.[1] as Record<string, unknown>).isFeatured).toBe(false);
+        expect((demote?.[1] as Record<string, unknown>).state).toBeUndefined();
     });
 });

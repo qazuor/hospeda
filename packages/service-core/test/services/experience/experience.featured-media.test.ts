@@ -8,9 +8,9 @@
  * `test/services/media/add-featured-media.test.ts`. This file asserts only the
  * things the WIRING can get wrong and the primitive cannot:
  *
- *  - that the cap handed over is experience's own (30), not another vertical's;
  *  - that the foreign key threaded into every read and write is `experienceId`;
  *  - that the permission gate still runs before any of it;
+ *  - that the outgoing cover is soft-deleted with the actor stamped on it;
  *  - and that the bug is actually fixed here too — a full gallery no longer
  *    blocks a cover replacement.
  *
@@ -136,6 +136,7 @@ beforeEach(() => {
     mockMediaModel.update.mockImplementation(async (_w: unknown, patch: Record<string, unknown>) =>
         makeMediaRow(patch)
     );
+    mockMediaModel.softDelete.mockResolvedValue(1);
 });
 
 describe('addExperienceFeaturedMedia (HOS-803)', () => {
@@ -169,7 +170,7 @@ describe('addExperienceFeaturedMedia (HOS-803)', () => {
         expect(created.experienceId).toBe(EXPERIENCE_ID);
     });
 
-    it('threads experienceId, not another vertical key, through the gallery count', async () => {
+    it('threads experienceId, not another vertical key, through the reads and writes', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 4, previousFeatured: true });
 
@@ -178,14 +179,20 @@ describe('addExperienceFeaturedMedia (HOS-803)', () => {
             media: PAYLOAD
         });
 
-        const where = mockMediaModel.count.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(where.experienceId).toBe(EXPERIENCE_ID);
-        // HOS-791 — the cover is not a gallery item and must not be counted.
-        expect(where.isFeatured).toBe(false);
-        expect(where.state).toBe('visible');
+        const created = mockMediaModel.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(created.experienceId).toBe(EXPERIENCE_ID);
+
+        const findFeaturedArg = mockMediaModel.findFeatured.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(findFeaturedArg.experienceId).toBe(EXPERIENCE_ID);
+
+        // The swap moves the gallery by zero, so nothing counts it.
+        expect(mockMediaModel.count).not.toHaveBeenCalled();
     });
 
-    it('demotes the previous cover while the gallery has room', async () => {
+    it('soft-deletes the previous cover, stamping the actor', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 4, previousFeatured: true });
 
@@ -194,13 +201,18 @@ describe('addExperienceFeaturedMedia (HOS-803)', () => {
             media: PAYLOAD
         });
 
-        const patch = mockMediaModel.update.mock.calls[0]?.[1] as Record<string, unknown>;
-        expect(patch.isFeatured).toBe(false);
-        expect(patch.state).toBeUndefined();
-        expect(result.data?.previousFeatured?.disposition).toBe('demoted');
+        expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(1);
+        const [where, deletedById] = mockMediaModel.softDelete.mock.calls[0] as [
+            Record<string, unknown>,
+            string
+        ];
+        expect(where.id).toBe(PREVIOUS_ID);
+        // A soft delete must record WHO — see scripts/check-soft-delete-actor.ts.
+        expect(deletedById).toBe(OWNER_ID);
+        expect(result.data?.previousFeatured).toEqual({ id: PREVIOUS_ID });
     });
 
-    it('archives the previous cover at the cap, so the gallery cannot grow', async () => {
+    it('deletes the previous cover at the cap too, so the gallery cannot grow', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
@@ -209,10 +221,11 @@ describe('addExperienceFeaturedMedia (HOS-803)', () => {
             media: PAYLOAD
         });
 
-        const patch = mockMediaModel.update.mock.calls[0]?.[1] as Record<string, unknown>;
-        expect(patch.isFeatured).toBe(false);
-        expect(patch.state).toBe('archived');
-        expect(result.data?.previousFeatured?.disposition).toBe('archived');
+        // Unconditional, and never a demotion: the old cover leaves the table
+        // rather than joining the gallery, so repeated swaps move no count.
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(1);
+        expect(mockMediaModel.update).not.toHaveBeenCalled();
     });
 
     it('reports no previous cover when the listing had none', async () => {
@@ -224,7 +237,7 @@ describe('addExperienceFeaturedMedia (HOS-803)', () => {
             media: PAYLOAD
         });
 
-        expect(mockMediaModel.update).not.toHaveBeenCalled();
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
         expect(result.data?.previousFeatured).toBeNull();
     });
 
