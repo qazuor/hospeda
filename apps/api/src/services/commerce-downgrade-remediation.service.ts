@@ -50,6 +50,13 @@
  * republish — leaves it alone. See the column's own docblock for why the flag
  * lives on the link row and why unlinking would have been worse.
  *
+ * What it does NOT do is free a quota slot. `countOwnListings`
+ * (`middlewares/commerce-limit-enforcement.ts`) counts every listing the owner
+ * holds, restricted or not, so a cut listing keeps occupying its place and no
+ * replacement can be created for it. That matches accommodation and is left
+ * exactly as it is — see that function's docblock for why it is recorded as
+ * undecided rather than quietly changed here.
+ *
  * @module services/commerce-downgrade-remediation
  */
 
