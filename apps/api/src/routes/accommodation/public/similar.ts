@@ -272,12 +272,10 @@ export const publicGetSimilarRoute = createPublicRoute({
         ];
         const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
         return filterAccommodationListByOwnerEntitlements(
-            // HOS-929: the explicit `isFeatured` override above narrows this
-            // object literal enough that TS no longer sees "sufficient
-            // overlap" with `AccommodationData` for a direct `as` cast — go
-            // through `unknown` first, same as other raw-query mappings in
-            // this codebase (e.g. `accommodation.model.ts`'s DRIZZLE-LIMITATION
-            // casts).
+            // TYPE-WORKAROUND: HOS-929's explicit `isFeatured` override above narrows
+            // this object literal enough that TS no longer sees "sufficient overlap"
+            // with `AccommodationData` for a direct `as` cast — go through `unknown`
+            // first, same as other raw-query mappings in this codebase.
             mappedRows as unknown as AccommodationData[],
             ownerEntitlementsMap
         );
