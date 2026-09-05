@@ -1,5 +1,5 @@
 {
-  "id": "57db0bdc-fc50-4379-8d8d-05dd9549e735",
+  "id": "6b16e0da-b745-4208-8163-7793d8c55446",
   "prevId": "a10d8a00-ab19-4414-bdb3-c144326c5f1e",
   "version": "7",
   "dialect": "postgresql",
@@ -4936,6 +4936,37 @@
           "notNull": true,
           "default": false
         },
+        "mp_subscription_id": {
+          "name": "mp_subscription_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_period_start": {
+          "name": "current_period_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_period_end": {
+          "name": "current_period_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_at_period_end": {
+          "name": "cancel_at_period_end",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -5181,6 +5212,21 @@
           ],
           "isUnique": false,
           "where": "needs_entitlement_sync = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_addon_purchases_mp_subscription_id": {
+          "name": "idx_addon_purchases_mp_subscription_id",
+          "columns": [
+            {
+              "expression": "mp_subscription_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -5458,6 +5504,137 @@
             "id"
           ],
           "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.billing_mp_addon_plans": {
+      "name": "billing_mp_addon_plans",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "addon_id": {
+          "name": "addon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mp_preapproval_plan_id": {
+          "name": "mp_preapproval_plan_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_ars": {
+          "name": "amount_ars",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "billingMpAddonPlans_variant_uniq": {
+          "name": "billingMpAddonPlans_variant_uniq",
+          "columns": [
+            {
+              "expression": "addon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "billing_interval",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "billingMpAddonPlans_mpPreapprovalPlanId_uniq": {
+          "name": "billingMpAddonPlans_mpPreapprovalPlanId_uniq",
+          "columns": [
+            {
+              "expression": "mp_preapproval_plan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "billingMpAddonPlans_addonId_idx": {
+          "name": "billingMpAddonPlans_addonId_idx",
+          "columns": [
+            {
+              "expression": "addon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "billing_mp_addon_plans_addon_id_billing_addons_id_fk": {
+          "name": "billing_mp_addon_plans_addon_id_billing_addons_id_fk",
+          "tableFrom": "billing_mp_addon_plans",
+          "tableTo": "billing_addons",
+          "columnsFrom": [
+            "addon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -6999,13 +7176,6 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
-        },
-        "plan_restricted": {
-          "name": "plan_restricted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",

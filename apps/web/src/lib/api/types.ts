@@ -271,6 +271,13 @@ export interface AccommodationEditData {
     readonly currency: string | null;
     readonly isAvailable: boolean;
     readonly isFeatured: boolean;
+    /**
+     * HOS-929: billing-derived sibling of `isFeatured` (SPEC-292, renamed
+     * SPEC-309 OQ-3). Holding EITHER flag means the listing is currently
+     * featured — the editor's addon upsell reads both to decide whether to
+     * show at all, since featuring is now automatic (no owner toggle).
+     */
+    readonly featuredByEntitlement: boolean;
     readonly amenityIds: readonly string[];
     readonly featureIds: readonly string[];
     // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)

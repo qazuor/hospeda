@@ -237,6 +237,244 @@ describe('save feedback', () => {
 });
 
 // ---------------------------------------------------------------------------
+// HOS-879: a type-only change is just as capable of invalidating a published
+// slug as a rename is (the slug is generated from `type` + `name`), so it
+// must offer — and honor — the exact same opt-in.
+// ---------------------------------------------------------------------------
+
+describe('HOS-879: a type-only change offers the same published-slug opt-in as a rename', () => {
+    it('offers the opt-in checkbox once the type changes, not before', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('sends refreshSlugFromName for a type-only change only when the opt-in is checked', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        const checkbox = screen.getByLabelText(/cambiar igual la dirección web/i);
+        await user.click(checkbox);
+        submitFrom(typeSelect);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ type: 'CABIN', refreshSlugFromName: true });
+    });
+
+    it('does NOT send refreshSlugFromName for a type-only change when the opt-in is left unchecked', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+        submitFrom(typeSelect);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        expect(firstPatchBody()).toEqual({ type: 'CABIN' });
+    });
+
+    it('does not offer the opt-in for a type change on a DRAFT listing — it regenerates automatically server-side', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'DRAFT', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-879 UI gap fix: the UI used to gate the opt-in on `=== 'ACTIVE'` while
+// the backend gate (`listing-slug-policy.ts`) treats anything other than
+// DRAFT as published — so a paused (INACTIVE) or archived (ARCHIVED)
+// listing, or one with no recognized lifecycle state at all, never saw the
+// checkbox even though the backend would have honored the flag had it
+// arrived. `isListingPublished` now mirrors the backend's `!== DRAFT` gate.
+// ---------------------------------------------------------------------------
+
+describe('HOS-879 gap fix: non-ACTIVE published states also offer the opt-in', () => {
+    it('offers the opt-in on an INACTIVE (paused) listing', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'INACTIVE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('offers the opt-in on an ARCHIVED listing', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ARCHIVED' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('offers the opt-in when lifecycleState is absent — cannot prove it was never published', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-879 UX follow-up: the opt-in notice used to render pinned next to
+// `name` regardless of which field actually changed, so a host who edited
+// only `type` on a published listing saw it next to a field they never
+// touched. It must now render next to whichever field(s) changed.
+// ---------------------------------------------------------------------------
+
+describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
+    it('shows a single opt-in next to Name when only the name changed', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        // Exactly one instance — the type field was never touched, so the
+        // type-position notice must not appear alongside the name-position one.
+        expect(screen.getAllByLabelText(/cambiar igual la dirección web/i)).toHaveLength(1);
+
+        // It renders inside `name`'s own field wrapper, not `type`'s: the
+        // checkbox and the name input share the same `.field` ancestor.
+        const checkbox = screen.getByLabelText(/cambiar igual la dirección web/i);
+        expect(checkbox.closest('.field')?.contains(name)).toBe(true);
+    });
+
+    it('shows a single opt-in next to Type when only the type changed', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        expect(screen.getAllByLabelText(/cambiar igual la dirección web/i)).toHaveLength(1);
+    });
+
+    it('shows the opt-in in BOTH positions when both name and type changed, sharing one state', async () => {
+        const user = userEvent.setup();
+        render(
+            <BasicsForm
+                {...COMMON}
+                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                destinations={DESTINATIONS}
+            />
+        );
+
+        const name = screen.getByLabelText(/^nombre/i) as HTMLInputElement;
+        await user.clear(name);
+        await user.type(name, 'Hotel Renombrado');
+
+        const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+        await user.selectOptions(typeSelect, 'CABIN');
+
+        const checkboxes = screen.getAllByLabelText(/cambiar igual la dirección web/i);
+        expect(checkboxes).toHaveLength(2);
+
+        // Distinct DOM ids (no duplicate-id a11y violation) ...
+        expect(checkboxes[0]?.id).not.toBe(checkboxes[1]?.id);
+
+        // ... but ONE shared `refreshSlugFromName` state: checking either
+        // instance checks both.
+        await user.click(checkboxes[0] as HTMLElement);
+        const [nameCheckbox, typeCheckbox] = screen.getAllByLabelText(
+            /cambiar igual la dirección web/i
+        );
+        expect(nameCheckbox).toBeChecked();
+        expect(typeCheckbox).toBeChecked();
+
+        submitFrom(typeSelect);
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        expect(firstPatchBody()).toEqual({
+            name: 'Hotel Renombrado',
+            type: 'CABIN',
+            refreshSlugFromName: true
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
 

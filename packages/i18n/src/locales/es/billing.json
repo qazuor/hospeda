@@ -241,7 +241,6 @@
             "freePlanLegend": "Ya tenés este plan"
         },
         "promoApply": {
-            "toggle": "¿Tenés un código de descuento?",
             "label": "Código de descuento",
             "inputPlaceholder": "Ingresá tu código",
             "applyButton": "Aplicar",
@@ -266,7 +265,9 @@
             "errorMaxUsesPerUser": "Ya usaste este código la cantidad máxima de veces.",
             "errorPlanRestriction": "Este código no es válido para el plan seleccionado.",
             "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
-            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código."
+            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código.",
+            "pendingAuthMessage": "Vas a poder aplicar el código {{code}} en cuanto termines de registrarte.",
+            "registerCta": "Registrarme"
         },
         "payerEmailConfirm": {
             "title": "Con qué email vas a poder pagar",

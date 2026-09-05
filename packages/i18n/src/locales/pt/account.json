@@ -613,6 +613,8 @@
                 "trialStatus": "Período de avaliação",
                 "freeStatus": "Plano Gratuito",
                 "compStatus": "Bonificado",
+                "multipleSubscriptions_one": "{{count}} assinatura ativa",
+                "multipleSubscriptions_other": "{{count}} assinaturas ativas",
                 "properties": "Meus imóveis",
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
@@ -1129,6 +1131,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Sua hospedagem não está em destaque. Com este complemento ela fica em destaque automaticamente, sem nenhum passo extra.",
             "title": "Destaque esta hospedagem",
             "body": "Um impulso de visibilidade faz esta hospedagem aparecer em destaque nas listagens e nos resultados de busca enquanto durar o complemento.",
             "scope": "Atenção: o impulso vale somente para esta ficha. Se você tem mais de uma hospedagem, cada uma precisa do seu próprio complemento.",

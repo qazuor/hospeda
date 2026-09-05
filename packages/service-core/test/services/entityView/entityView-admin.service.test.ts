@@ -14,6 +14,7 @@
 
 import { EntityViewModel } from '@repo/db';
 import { EntityTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { getLocalDayWindow } from '@repo/utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     EntityViewService,
@@ -70,9 +71,11 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
     beforeEach(() => {
-        // Pin the clock so the getDailySeries gap-fill window (last N UTC days from
-        // "today") deterministically includes the hard-coded 2026-06-0x fixture
-        // dates. Without this the test decays: once real "today" drifts past the
+        // Pin the clock so the getDailySeries gap-fill window (last N LOCAL
+        // Argentina days from "today", HOS-1169) deterministically includes the
+        // hard-coded 2026-06-0x fixture dates. 12:00 UTC = 09:00 -03:00, well
+        // clear of the day boundary, so the local day equals the UTC day here.
+        // Without this the test decays: once real "today" drifts past the
         // 30-day window the fixture rows fall outside it (unrelated to HOS-28 /
         // Vitest 4 — it would fail on v3 run today too).
         vi.setSystemTime(new Date('2026-06-20T12:00:00Z'));
@@ -644,15 +647,14 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
 
             it('should set total=0 for missing (date, entityType) combinations', async () => {
                 // Arrange — model returns only one row; 89 others must be zero-filled.
-                // The mocked date must fall inside the [today-29 .. today] UTC window that
-                // gapFillDailySeries generates, so derive it from today (today-5) instead of
-                // hard-coding a calendar date that drifts out of the window as time passes.
-                const nowUtc = new Date();
-                const inWindowUtc = new Date(
-                    Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()) -
-                        5 * 24 * 60 * 60 * 1000
-                );
-                const inWindowDate = `${inWindowUtc.getUTCFullYear()}-${String(inWindowUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(inWindowUtc.getUTCDate()).padStart(2, '0')}`;
+                // The mocked date must fall inside the [today-29 .. today] LOCAL
+                // (Argentina, HOS-1169) window that gapFillDailySeries generates,
+                // so derive it from the SAME helper the service uses instead of
+                // hard-coding a calendar date that drifts out of the window as
+                // time passes.
+                const { dates } = getLocalDayWindow({ windowDays: 30 });
+                // biome-ignore lint/style/noNonNullAssertion: windowDays=30 guarantees at least 6 entries.
+                const inWindowDate = dates.at(-6)!; // today - 5
                 asMock(modelMock.getDailySeries).mockResolvedValue([
                     { date: inWindowDate, entityType: EntityTypeEnum.ACCOMMODATION, total: 42 }
                 ]);
@@ -731,9 +733,9 @@ describe('EntityViewService — admin methods (SPEC-197)', () => {
                 const matchingRow = (result.data ?? []).find(
                     (r) => r.date === '2026-06-05' && r.entityType === EntityTypeEnum.POST
                 );
-                // The row is only present if '2026-06-05' is within the last 30 UTC days.
-                // For the test to be date-independent we only assert the row is preserved
-                // IF it appears in the result.
+                // The row is only present if '2026-06-05' is within the last 30 LOCAL
+                // (Argentina, HOS-1169) days. For the test to be date-independent we
+                // only assert the row is preserved IF it appears in the result.
                 if (matchingRow) {
                     expect(matchingRow.total).toBe(99);
                 }

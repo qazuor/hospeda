@@ -16,7 +16,6 @@ export * from './accommodation.batch.schema.js'; // Batch request and response s
 export * from './accommodation.comparison.schema.js'; // Side-by-side comparison request/response
 // CRUD operations
 export * from './accommodation.crud.schema.js'; // Create, Update, Delete, Restore schemas
-export * from './accommodation.featured-toggle.schema.js'; // Owner self-service featured toggle body (SPEC-309 T-019)
 // HTTP operations
 export * from './accommodation.http.schema.js'; // HTTP-compatible schemas with query coercion
 // Relation-selector lookup options (SPEC-169 §5.5)

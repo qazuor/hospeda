@@ -258,7 +258,6 @@
                 "photosDescription_other": "Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes",
                 "photosDescriptionLoading": "Cargando tu límite de fotos…",
                 "externalReputation": "Reputación externa",
-                "featuredToggle": "Destacado",
                 "calendar": "Calendario",
                 "capacityPricing": "Capacidad y precio",
                 "contactSocial": "Contacto y redes",
@@ -269,9 +268,9 @@
                 "ariaLabel": "Navegación de secciones del formulario"
             },
             "slugRefresh": {
-                "notice": "Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.",
+                "notice": "Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre o el tipo.",
                 "warning": "Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
-                "checkbox": "Cambiar igual la dirección web para que siga este nuevo nombre"
+                "checkbox": "Cambiar igual la dirección web para que siga estos cambios"
             },
             "field": {
                 "name": "Nombre",
@@ -363,7 +362,6 @@
                 "photographerTooLong": "El crédito no puede superar {{max}} caracteres",
                 "promoteFailed": "No se pudo usar esta foto como portada",
                 "promoteToFeaturedAria": "Usar foto {{index}} como portada",
-                "promoteToFeaturedShort": "Portada",
                 "remove": "Eliminar",
                 "removeFailed": "No se pudo eliminar la imagen",
                 "reorderFailed": "No se pudo guardar el nuevo orden",
@@ -377,7 +375,13 @@
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} lugar libre",
                 "galleryCapExceededOnSelectRemaining_other": "{{count}} lugares libres",
                 "processingImage": "Optimizando imagen…",
-                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana."
+                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.",
+                "altWarningTitle": "Fotos sin texto alternativo",
+                "altWarningMessage": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} foto sin ese texto completado.",
+                "altWarningMessage_one": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} foto sin ese texto completado.",
+                "altWarningMessage_other": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} fotos sin ese texto completado.",
+                "altWarningGoBack": "Volver y completarlos",
+                "altWarningContinue": "Continuar sin completarlos"
             },
             "video": {
                 "sectionTitle": "Videos",
@@ -538,11 +542,6 @@
                 "textUnavailable": "Se generó recién. Actualizá la página para leerlo.",
                 "expandText": "Ver completo",
                 "collapseText": "Ver menos"
-            },
-            "featuredToggle": {
-                "label": "Destacar mi alojamiento",
-                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Calendario de ocupación",

@@ -56,6 +56,7 @@ import {
     ServiceErrorCode,
     type TrackableEntityType
 } from '@repo/schemas';
+import { getLocalDayWindow } from '@repo/utils';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
@@ -1174,12 +1175,16 @@ function normalizeAdminSummary(
 
 /**
  * Gap-fills a daily series result so that every (date, entityType) combination
- * in the last `windowDays` calendar days (UTC) has an entry.
+ * in the last `windowDays` LOCAL calendar days (`MARKET_TIMEZONE`) has an
+ * entry.
  *
- * The date range is generated in UTC to match the `DATE_TRUNC('day', viewed_at)`
- * bucketing used by the model SQL query. "Today" is the current UTC date; the
- * range includes `windowDays` dates: from `today - (windowDays - 1) days` through
- * `today` inclusive (so a 30-day window yields exactly 30 distinct dates).
+ * The date range is generated via {@link getLocalDayWindow} to match the
+ * `DATE_TRUNC('day', viewed_at AT TIME ZONE MARKET_TIMEZONE)` bucketing used
+ * by the model SQL query (HOS-1169 — both sides MUST derive "today" and "N
+ * days ago" from the same helper, or the fill produces gaps/duplicates).
+ * "Today" is the current local date; the range includes `windowDays` dates:
+ * from `today - (windowDays - 1) days` through `today` inclusive (so a
+ * 30-day window yields exactly 30 distinct dates).
  *
  * Missing (date, entityType) pairs are emitted as `{ date, entityType, total: 0 }`.
  *
@@ -1197,23 +1202,11 @@ function gapFillDailySeries(
         modelRows.map((r) => [`${r.date}|${r.entityType}`, r])
     );
 
-    // Generate the date list in UTC. Today = UTC midnight of the current day.
-    // The window is [today - (windowDays - 1) days .. today] inclusive.
-    const nowUtc = new Date();
-    const todayUtc = new Date(
-        Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-    );
+    const { dates } = getLocalDayWindow({ windowDays });
 
     const result: DailySeriesRow[] = [];
 
-    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
-        const dayMs = todayUtc.getTime() - dayOffset * 24 * 60 * 60 * 1000;
-        const d = new Date(dayMs);
-        const year = d.getUTCFullYear();
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
+    for (const dateStr of dates) {
         for (const entityType of TRACKABLE_ENTITY_TYPES) {
             const key = `${dateStr}|${entityType}`;
             result.push(rowMap.get(key) ?? { date: dateStr, entityType, total: 0 });
@@ -1224,11 +1217,13 @@ function gapFillDailySeries(
 }
 
 /**
- * Gap-fills a per-host daily series result so that every calendar day in the
- * last `windowDays` days (UTC) has an entry, even if no views were recorded.
+ * Gap-fills a per-host daily series result so that every LOCAL calendar day
+ * (`MARKET_TIMEZONE`) in the last `windowDays` days has an entry, even if no
+ * views were recorded.
  *
- * The date range is generated in UTC to match the `DATE_TRUNC('day', viewed_at)`
- * bucketing used by the model SQL query. "Today" is the current UTC date; the
+ * The date range is generated via {@link getLocalDayWindow} to match the
+ * `DATE_TRUNC('day', viewed_at AT TIME ZONE MARKET_TIMEZONE)` bucketing used
+ * by the model SQL query (HOS-1169). "Today" is the current local date; the
  * range includes `windowDays` dates: from `today - (windowDays - 1)` through
  * `today` inclusive.
  *
@@ -1245,21 +1240,11 @@ function gapFillHostDailySeries(
     // Build a lookup keyed by 'YYYY-MM-DD' for O(1) access.
     const rowMap = new Map<string, number>(modelRows.map((r) => [r.date, r.total]));
 
-    const nowUtc = new Date();
-    const todayUtc = new Date(
-        Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-    );
+    const { dates } = getLocalDayWindow({ windowDays });
 
     const result: HostViewDailySeriesOutputItem[] = [];
 
-    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
-        const dayMs = todayUtc.getTime() - dayOffset * 24 * 60 * 60 * 1000;
-        const d = new Date(dayMs);
-        const year = d.getUTCFullYear();
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
+    for (const dateStr of dates) {
         result.push({ date: dateStr, total: rowMap.get(dateStr) ?? 0 });
     }
 
