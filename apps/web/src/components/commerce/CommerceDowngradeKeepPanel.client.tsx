@@ -69,7 +69,7 @@ export function CommerceDowngradeKeepPanel({
     onBack,
     isPending
 }: CommerceDowngradeKeepPanelProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     // Pre-ticked with the system's own suggestion, so an owner who agrees can
     // confirm without reading every row — and one who does not can see exactly
@@ -110,10 +110,18 @@ export function CommerceDowngradeKeepPanel({
             </h2>
 
             <p className={styles.intro}>
-                {t(
-                    'commerce.owner.planChange.keepPanel.intro',
-                    'El plan {plan} incluye {cap} de tus {active} fichas. Las que no elijas van a dejar de verse.'
-                )
+                {/*
+                 * Plural-resolved on `activeCount`, which is the count the noun
+                 * hangs off ("de tus {active} fichas"). `{cap}` is the target
+                 * plan's allowance and never governs it, so it stays a plain
+                 * substitution. A single active listing used to read "de tus 1
+                 * fichas" in all three locales.
+                 *
+                 * `tPlural` takes no inline fallback, and none is added: the
+                 * `_one`/`_other` pair exists in es/en/pt, and
+                 * `scripts/i18n-fallback-inventory.json` may only shrink.
+                 */}
+                {tPlural('commerce.owner.planChange.keepPanel.intro', preview.activeCount)
                     .replace('{plan}', targetPlanName)
                     .replace('{cap}', String(preview.cap))
                     .replace('{active}', String(preview.activeCount))}

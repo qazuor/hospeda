@@ -25,6 +25,7 @@ import {
     calculateTrialDaysRemaining,
     checkSubscriptionStatusTransition,
     DEFAULT_TRIAL_PLAN_SLUG,
+    excludeAddonDomainCondition,
     QZPAY_TO_HOSPEDA_STATUS,
     type ReactivateFromTrialInput,
     type ReactivateFromTrialResult,
@@ -677,7 +678,12 @@ export class TrialService {
                             eq(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING),
                             isNotNull(billingSubscriptions.trialEnd),
                             lt(billingSubscriptions.trialEnd, new Date()),
-                            isNull(billingSubscriptions.deletedAt)
+                            isNull(billingSubscriptions.deletedAt),
+                            // HOS-847: a recurring add-on's own preapproval row
+                            // should never legitimately be 'trialing' (add-on
+                            // provisioning always bakes trialDays: 0), but this
+                            // sweep must not depend on that staying true.
+                            excludeAddonDomainCondition()
                         )
                     )
                     .limit(BLOCK_EXPIRED_TRIALS_BATCH_SIZE);

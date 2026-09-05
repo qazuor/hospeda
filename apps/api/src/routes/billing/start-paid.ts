@@ -38,7 +38,11 @@ import {
     StartPaidSubscriptionRequestSchema,
     StartPaidSubscriptionResponseSchema
 } from '@repo/schemas';
-import { isAccommodationSubscription, ServiceError } from '@repo/service-core';
+import {
+    hydrateSubscriptionProductDomains,
+    isAccommodationSubscription,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -173,8 +177,18 @@ export const handleStartPaidSubscription = async (
     const locale = resolveReturnUrlLocale(c);
 
     try {
-        const existingSubscriptions =
+        const rawExistingSubscriptions =
             await billing.subscriptions.getByCustomerId(billingCustomerId);
+        // HOS-847: getByCustomerId()'s qzpay-core mapper never populates
+        // productDomain (HOS-934) — without hydration the SPEC-239 isolation
+        // filter below is a silent no-op, so a customer with ONLY an active
+        // gastronomy/experience/partner subscription falls into the
+        // accommodation fail-open and is wrongly blocked here with
+        // ALREADY_SUBSCRIBED. This is a live bug independent of add-ons;
+        // HOS-847 just closes it while touching every getByCustomerId() call
+        // site in the codebase.
+        const existingSubscriptions =
+            await hydrateSubscriptionProductDomains(rawExistingSubscriptions);
 
         // SPEC-262 H2: block checkout when the customer already has ANY active
         // ACCOMMODATION subscription (active, trialing, OR comp). Creating a second
