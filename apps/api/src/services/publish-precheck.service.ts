@@ -38,7 +38,30 @@
  * @module services/publish-precheck.service
  */
 
-import { LIMIT_KEY_BY_PUBLISH_VERTICAL, type LimitKey, type PublishVertical } from '@repo/billing';
+// `isCommercePublishVertical` is imported HERE, from the package, and NOT through
+// `./publish-listing-reads` — which used to re-export it as a convenience.
+//
+// That convenience was a live bug. This file's test mocks
+// `./publish-listing-reads` to stub two reads, rebuilding the module as
+// `{ ...actual, countOwnListings, listOwnDraftListings }`. Spreading an ESM
+// namespace copies VALUES, not live bindings, so a re-exported symbol is
+// captured at whatever state it holds the instant the factory runs — and this
+// one came out `undefined`, making `ensureVerticalLimitLoaded` throw
+// `isCommercePublishVertical is not a function`. `resolvePublishPrecheck`
+// catches everything and fails open, so all six matrix cells silently answered
+// `create_direct` — including the one cell where that IS the right answer, which
+// therefore still passed. It read as a decision bug, not a missing function.
+// Whether it broke at all depended on module evaluation ORDER, which is why an
+// unrelated edit to that file surfaced it.
+//
+// Importing from the package means mocking the reads module can only affect the
+// reads that module declares.
+import {
+    isCommercePublishVertical,
+    LIMIT_KEY_BY_PUBLISH_VERTICAL,
+    type LimitKey,
+    type PublishVertical
+} from '@repo/billing';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { resolveCommerceVerticalCap } from '../middlewares/commerce-entitlement';
@@ -46,12 +69,7 @@ import type { AppBindings } from '../types';
 import { checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
 import { deriveOnboardingDecision, type OnboardingPrecheckDecision } from './onboarding-precheck';
-import {
-    countOwnListings,
-    isCommercePublishVertical,
-    listOwnDraftListings,
-    type PublishDraft
-} from './publish-listing-reads';
+import { countOwnListings, listOwnDraftListings, type PublishDraft } from './publish-listing-reads';
 
 /** What the precheck answers, for any vertical. */
 export interface PublishPrecheckResult {

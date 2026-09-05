@@ -34,7 +34,7 @@
  * @module services/publish-listing-reads
  */
 
-import { isCommercePublishVertical, type PublishVertical } from '@repo/billing';
+import type { PublishVertical } from '@repo/billing';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
@@ -227,10 +227,15 @@ export async function listOwnDraftListings(input: {
     }));
 }
 
-/**
- * Whether a vertical's listings are commerce listings.
- *
- * Re-exported from `@repo/billing` so callers in this module's orbit have one
- * import rather than two. See its own doc for why it narrows.
- */
-export { isCommercePublishVertical };
+// `isCommercePublishVertical` used to be re-exported from here, so that callers
+// in this module's orbit had one import rather than two. That saved an import
+// line and cost a day: this module is MOCKED by the precheck's test, which
+// rebuilds it as `{ ...actual, ...stubs }`, and spreading an ESM namespace
+// copies values rather than live bindings — so the re-export reached the
+// consumer as `undefined` depending on module evaluation order, and the
+// precheck's fail-open turned that into six wrong decisions with no error
+// anywhere. Its one consumer now imports it from `@repo/billing` directly.
+//
+// The rule this leaves behind: a module that any test mocks wholesale must
+// export only what it OWNS. A re-export through it is a binding whose validity
+// depends on somebody else's mocking strategy.
