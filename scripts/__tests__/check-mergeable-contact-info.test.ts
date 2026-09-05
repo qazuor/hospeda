@@ -6,10 +6,19 @@
  * verdict. The repo-wide run is the CI step; this is what stops the predicate
  * from silently becoming unable to fail.
  *
- * The three "evasion" cases below are not hypothetical. An earlier revision of
- * this guard matched raw file text with a lazy regex and returned exit code 0
- * — "All checks passed" — on all three, while the model's own unit tests were
- * red at the same time.
+ * The "evasion" cases below are not hypothetical. An earlier revision of this
+ * guard matched raw file text with a lazy regex and returned exit code 0 —
+ * "All checks passed" — on the first three, while the model's own unit tests
+ * were red at the same time.
+ *
+ * The DISCOVERY cases (a table written in a shape the scan did not recognise)
+ * are equally measured, and they were the more dangerous half: an unseen table
+ * does not merely go unchecked, it is invisible in the report, so the guard
+ * announces that every column it found is protected and says nothing about the
+ * one it lost. Each of those fixtures pairs the exotic table with a healthy,
+ * fully-declared `gastronomies` — otherwise the old guard would have exited 1
+ * anyway via its "found zero contact_info columns" branch and the fixture
+ * would prove nothing.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,12 +30,18 @@ import {
     findClassBodies,
     findContactInfoTables,
     findMatchingDelimiter,
+    findOwningClassBodies,
     findOwningClassBody,
     findOwningModels,
+    findStringRanges,
+    findTableAliases,
+    isInsideString,
+    MIN_KNOWN_CONTACT_INFO_TABLES,
     REPO_ROOT,
     resolveConstArrayLiteral,
     run,
-    stripComments
+    stripComments,
+    tableFloorViolation
 } from '../check-mergeable-contact-info.js';
 
 // ---------------------------------------------------------------------------
@@ -88,9 +103,63 @@ function runQuiet(root: string): { code: number; output: string } {
     }
 }
 
+/** The declaration a healthy model carries. */
+const DECLARED =
+    "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;";
+
+/**
+ * A tree holding the healthy, declared `gastronomies` table PLUS one extra
+ * table written in `extra`, with no model of its own.
+ *
+ * The healthy table is what makes the fixture bite: with it present the scan is
+ * never empty, so a guard blind to `extra` reports "All checks passed" instead
+ * of failing on its own zero-columns branch. Exit code 1 therefore means "the
+ * extra table was discovered", not "the scan broke".
+ */
+function treeWithExtraTable(extra: string, extraPath: string = SCHEMA_PATH): string {
+    const files: Record<string, string> = {
+        'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
+    };
+    if (extraPath === SCHEMA_PATH) {
+        files[SCHEMA_PATH] = `${SCHEMA_SOURCE}\n${extra}\n`;
+    } else {
+        files[SCHEMA_PATH] = SCHEMA_SOURCE;
+        files[extraPath] = `import { jsonb, pgTable } from 'drizzle-orm/pg-core';\n\n${extra}\n`;
+    }
+    return makeTree(files);
+}
+
 // ---------------------------------------------------------------------------
 // Source primitives
 // ---------------------------------------------------------------------------
+
+describe('findStringRanges / isInsideString', () => {
+    it('covers the literal including its quotes, and nothing else', () => {
+        const src = "const a = 'x'; const b = 2;";
+        const ranges = findStringRanges(src);
+
+        expect(ranges).toHaveLength(1);
+        expect(isInsideString(ranges, src.indexOf('x'))).toBe(true);
+        expect(isInsideString(ranges, src.indexOf('const b'))).toBe(false);
+    });
+
+    it('treats a template literal as a string too', () => {
+        const src = 'const a = `mergeableJsonbColumns`;';
+        expect(isInsideString(findStringRanges(src), src.indexOf('mergeable'))).toBe(true);
+    });
+});
+
+describe('findTableAliases', () => {
+    it('picks up an import alias and a module-level rebinding', () => {
+        const src = `import { gastronomies as gastroTable } from './x';
+const legacyTable = gastronomies;`;
+        expect([...findTableAliases(src, 'gastronomies')].sort()).toEqual([
+            'gastroTable',
+            'gastronomies',
+            'legacyTable'
+        ]);
+    });
+});
 
 describe('stripComments', () => {
     it('blanks a line comment but keeps the line and the offsets', () => {
@@ -441,6 +510,243 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
         });
 
         expect(findContactInfoTables(root)).toEqual([]);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Discovery: the table shapes the `^export const X = pgTable(` scan lost
+// ---------------------------------------------------------------------------
+
+describe('run() — discovery of tables written in unusual shapes', () => {
+    const shapes: ReadonlyArray<readonly [string, string, string]> = [
+        [
+            'written on ONE line',
+            "export const venues = pgTable('venues', { contactInfo: jsonb('contact_info') });",
+            SCHEMA_PATH
+        ],
+        [
+            'declared with an explicit type annotation',
+            `export const venues: PgTableWithColumns<VenuesShape> = pgTable('venues', {
+    contactInfo: jsonb('contact_info')
+});`,
+            SCHEMA_PATH
+        ],
+        [
+            'with the `pgTable(` call spread over several lines',
+            `export const venues = pgTable(
+    'venues',
+    {
+        contactInfo: jsonb('contact_info')
+    }
+);`,
+            SCHEMA_PATH
+        ],
+        [
+            'with the assignment itself split across lines before `pgTable(`',
+            `export const venues =
+    pgTable('venues', {
+        contactInfo: jsonb('contact_info')
+    });`,
+            SCHEMA_PATH
+        ],
+        [
+            'using double quotes for the column name',
+            `export const venues = pgTable("venues", {
+    contactInfo: jsonb("contact_info")
+});`,
+            SCHEMA_PATH
+        ],
+        [
+            'declared and exported in two separate statements',
+            `const venues = pgTable('venues', {
+    contactInfo: jsonb('contact_info')
+});
+export { venues };`,
+            SCHEMA_PATH
+        ],
+        [
+            'living in a file NOT named `*.dbschema.ts`',
+            `export const venues = pgTable('venues', {
+    contactInfo: jsonb('contact_info')
+});`,
+            'packages/db/src/schemas/venue/venue.schema.ts'
+        ]
+    ];
+
+    for (const [label, extra, path] of shapes) {
+        it(`sees a table ${label}`, () => {
+            const root = treeWithExtraTable(extra, path);
+
+            const { code, output } = runQuiet(root);
+
+            // The table has no model at all, so being SEEN is exactly what
+            // makes this fail. A guard blind to the shape prints the healthy
+            // `gastronomies` and calls it a day.
+            expect(code).toBe(1);
+            expect(output).toContain('venues');
+            expect(output).not.toContain('All checks passed');
+        });
+    }
+
+    it('attributes a separately-exported table to ITSELF, not to the table above it', () => {
+        // Worse than invisible: the slice-between-`export const`s scan handed
+        // this table's column to its predecessor, so the report showed
+        // `gastronomies` twice and `venues` never.
+        const root = treeWithExtraTable(`const venues = pgTable('venues', {
+    contactInfo: jsonb('contact_info')
+});
+export { venues };`);
+
+        expect(
+            findContactInfoTables(root)
+                .map((t) => t.tableVar)
+                .sort()
+        ).toEqual(['gastronomies', 'venues']);
+    });
+
+    it('reports a column it cannot attribute to a table as a VIOLATION, not a skip', () => {
+        // Columns hoisted into a shared object and spread into `pgTable` sit
+        // outside every table span. "I cannot tell" is not "safe".
+        const root = treeWithExtraTable(`const venueColumns = {
+    contactInfo: jsonb('contact_info')
+};
+
+export const venues = pgTable('venues', { ...venueColumns });`);
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('could not be attributed');
+        expect(output).not.toContain('All checks passed');
+    });
+
+    it('reports a column with no readable property key rather than looking away', () => {
+        const root = treeWithExtraTable(`export const venues = pgTable('venues', {
+    ...{ [dynamicKey]: jsonb('contact_info') }
+});`);
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('could not be attributed');
+    });
+});
+
+describe('tableFloorViolation', () => {
+    it('flags a repo-root scan that lost one of the known tables', () => {
+        expect(tableFloorViolation(REPO_ROOT, 3)).toContain('guard regression');
+    });
+
+    it('is silent at the known count', () => {
+        expect(tableFloorViolation(REPO_ROOT, MIN_KNOWN_CONTACT_INFO_TABLES)).toBe(undefined);
+    });
+
+    it('does not apply to a synthetic tree, which legitimately holds one table', () => {
+        expect(tableFloorViolation(makeTree({}), 1)).toBe(undefined);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Declaration side: the evasions left after round 1
+// ---------------------------------------------------------------------------
+
+describe('run() — evasion (d): the declaration exists only inside a STRING literal', () => {
+    it('fails, instead of accepting quoted prose as the declaration', () => {
+        // Round 1 taught `stripComments` to blank comments while PRESERVING
+        // strings — it has to, the guard reads `'contactInfo'`. That moved the
+        // "it only lives in prose" evasion from a comment into a string.
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+                `    private readonly legacyNote =
+        "protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;";`
+            )
+        });
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain("does not declare 'contactInfo'");
+    });
+});
+
+describe('run() — evasion (e): an owning model that imports the table under an ALIAS', () => {
+    it('recognises it as an owner, so its missing declaration is not invisible', () => {
+        // One declaring owner is enough for the table to pass, so an
+        // unrecognised second owner does not merely go unchecked — it vanishes
+        // from the report while the run goes green.
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED),
+            'packages/db/src/models/gastronomy/gastronomyRead.model.ts': `import { gastronomies as gastroTable } from '../../schemas/gastronomy/gastronomy.dbschema';
+
+export class GastronomyReadModel extends BaseModelImpl<Gastronomy> {
+    protected table = gastroTable;
+    public entityName = 'gastronomies';
+}
+`
+        });
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyReadModel');
+    });
+});
+
+describe('run() — evasion (f): two owning CLASSES in the same file', () => {
+    const declaredClass = `export class GastronomyModel extends BaseModelImpl<Gastronomy> {
+    protected table = gastronomies;
+${DECLARED}
+}`;
+    const undeclaredClass = `export class GastronomyPublicModel extends BaseModelImpl<Gastronomy> {
+    protected table = gastronomies;
+}`;
+
+    // Round 1 fixed the order dependence BETWEEN files; `findOwningClassBody`
+    // still used `.find()`, so the same bug survived one granularity down.
+    it.each([
+        ['declared first', `${declaredClass}\n\n${undeclaredClass}\n`],
+        ['undeclared first', `${undeclaredClass}\n\n${declaredClass}\n`]
+    ])('fails with the %s, so class order cannot decide the verdict', (_label, body) => {
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': `import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';
+
+${body}`
+        });
+
+        const { code, output } = runQuiet(root);
+
+        expect(code).toBe(1);
+        expect(output).toContain('GastronomyPublicModel');
+    });
+
+    it('passes when both classes declare it', () => {
+        const root = makeTree({
+            [SCHEMA_PATH]: SCHEMA_SOURCE,
+            'packages/db/src/models/gastronomy/gastronomy.model.ts': `import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';
+
+${declaredClass}
+
+export class GastronomyPublicModel extends BaseModelImpl<Gastronomy> {
+    protected table = gastronomies;
+${DECLARED}
+}
+`
+        });
+
+        expect(runQuiet(root).code).toBe(0);
+    });
+
+    it('findOwningClassBodies returns BOTH, where findOwningClassBody returns one', () => {
+        const source = `${declaredClass}\n\n${undeclaredClass}\n`;
+
+        expect(findOwningClassBodies(source, 'gastronomies').map((c) => c.name)).toEqual([
+            'GastronomyModel',
+            'GastronomyPublicModel'
+        ]);
+        expect(findOwningClassBody(source, 'gastronomies')?.name).toBe('GastronomyModel');
     });
 });
 
