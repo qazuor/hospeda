@@ -129,6 +129,7 @@ import {
     protectedOwnerPromotionRoutes,
     publicOwnerPromotionRoutes
 } from './owner-promotion';
+import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
     adminCreatePartnerMentionsRoute,
     adminCreatePartnerRoute,
@@ -416,6 +417,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Cross-entity view tracking capture (SPEC-159 T-008)
         // Fire-and-forget; always 202. No auth required.
         app.route('/api/v1/public', viewsRoutes);
+
+        // Partner logo click capture (HOS-1063 A-3)
+        // The sibling of the view beacon: fire-and-forget, always 202, no auth.
+        // A separate endpoint and a separate table because a click written into
+        // `entity_views` would be indistinguishable from a page view of the same
+        // partner and would inflate the views card (OQ-2).
+        app.route('/api/v1/public', partnerLogoClickRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
