@@ -23,6 +23,7 @@ import type {
 import {
     AddonCatalogService,
     hydrateSubscriptionProductDomains,
+    isAddonSubscription,
     PlanService,
     subscriptionMatchesDomain
 } from '@repo/service-core';
@@ -413,8 +414,15 @@ export async function createAddonCheckout(
             );
         }
 
-        const grantingSubscriptions = subscriptions.filter((sub: { status: string }) =>
-            isEntitlementGrantingStatus(sub.status)
+        // HOS-847: never let a recurring add-on's own preapproval row stand in
+        // as "the" customer subscription here — see `isAddonSubscription`'s
+        // doc. Filtered alongside the status check (rather than left to the
+        // domain gate below alone) so a customer whose ONLY granting
+        // subscription is an add-on's own preapproval is correctly refused
+        // with NO_ACTIVE_SUBSCRIPTION instead of a domain-specific error.
+        const grantingSubscriptions = subscriptions.filter(
+            (sub: { status: string }) =>
+                isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
         );
 
         if (grantingSubscriptions.length === 0) {
@@ -1045,17 +1053,21 @@ export async function confirmAddonPurchase(
 
         const addon = addonResult.data;
 
-        const subscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
 
-        if (!subscriptions || subscriptions.length === 0) {
+        if (!rawSubscriptions || rawSubscriptions.length === 0) {
             return {
                 success: false,
                 error: { code: 'NO_SUBSCRIPTION', message: 'Customer has no active subscription' }
             };
         }
 
-        const activeSubscription = subscriptions.find((sub: { status: string }) =>
-            isEntitlementGrantingStatus(sub.status)
+        // HOS-847: see the equivalent selection above (createAddonCheckout) —
+        // hydrate and exclude a recurring add-on's own preapproval row so it can
+        // never be confirmed as if it were the customer's real subscription.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+        const activeSubscription = subscriptions.find(
+            (sub) => isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
         );
 
         if (!activeSubscription) {
@@ -1120,9 +1132,19 @@ export async function confirmAddonPurchase(
         // insert. The initial check at the top of this function happened earlier
         // in the request lifecycle; the subscription could have been cancelled
         // in the window between checkout creation and payment confirmation.
-        const currentSubscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
-        const stillActive = currentSubscriptions?.find((sub: { status: string }) =>
-            isEntitlementGrantingStatus(sub.status)
+        // HOS-847: same hydrate-then-filter-by-domain fix as the two selections
+        // above — this re-verification must not pass just because an unrelated
+        // recurring add-on preapproval happens to be active. Found beyond the
+        // two call sites the HOS-847 plan named explicitly (:367 / :950 in the
+        // pre-PR-2 file); same bug, same fix.
+        const rawCurrentSubscriptions = await billing.subscriptions.getByCustomerId(
+            input.customerId
+        );
+        const currentSubscriptions = await hydrateSubscriptionProductDomains(
+            rawCurrentSubscriptions ?? []
+        );
+        const stillActive = currentSubscriptions.find(
+            (sub) => isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
         );
 
         if (!stillActive) {

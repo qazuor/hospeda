@@ -20,8 +20,10 @@
  * @module cron/jobs/notification-schedule
  */
 
+import type { QZPayBilling, QZPaySubscription } from '@qazuor/qzpay-core';
 import { billingNotificationLog, eq, getDb, sql, withTransaction } from '@repo/db';
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
+import { hydrateSubscriptionProductDomains, isAddonSubscription } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
@@ -152,6 +154,40 @@ async function markNotificationSent(
 }
 
 /**
+ * Loads every `active` subscription via `billing.subscriptions.listAll`,
+ * excluding a recurring add-on's own preapproval row (HOS-847).
+ *
+ * **Why this matters here specifically**: once an add-on preapproval row
+ * reaches `active` (PR 5 of the HOS-847 chain), this sweep would otherwise
+ * send it a "your subscription renews in N days" email. `subscription.planId`
+ * for that row does not resolve via `billing.plans.get()` to a real
+ * `billing_plans` row, so the email would read "your Unknown Plan renews" for
+ * a ~$5.000 add-on. Worse: {@link wasNotificationSent} dedupes by
+ * `customerId` alone (no `subscriptionId`), so that add-on notification could
+ * consume the dedup slot for the SAME customer's real plan reminder in the
+ * same window, silently swallowing the renewal notice for what they actually
+ * pay for.
+ *
+ * **Hydration is required**: `listAll()` returns `QZPaySubscription` objects
+ * built field-by-field by qzpay-core's mapper, which does not declare
+ * `productDomain` (a Hospeda-only column beyond qzpay-core's interface) — so
+ * every object arrives with it `undefined`, never the real string. See
+ * {@link hydrateSubscriptionProductDomains}'s own doc for the full mechanism.
+ *
+ * @param billing - The QZPay billing facade (`getQZPayBilling()`).
+ * @returns Every active subscription that is NOT an add-on's own preapproval.
+ */
+async function loadActiveNonAddonSubscriptions(
+    billing: QZPayBilling
+): Promise<QZPaySubscription[]> {
+    const activeSubscriptions = await billing.subscriptions.listAll({
+        filters: { status: 'active' }
+    });
+    const hydrated = await hydrateSubscriptionProductDomains(activeSubscriptions ?? []);
+    return hydrated.filter((sub) => !isAddonSubscription(sub));
+}
+
+/**
  * Discriminated union returned by the withTransaction callback in the cron handler.
  * Allows the outer handler to distinguish lock-skip from real execution results.
  */
@@ -271,10 +307,10 @@ export const notificationScheduleJob: CronJobDefinition = {
                         // page, and the reminder pass must see every active
                         // subscription. The status filter is applied by the storage
                         // layer as of qzpay-drizzle 2.0.0 — before that it was
-                        // accepted and discarded (HOS-854).
-                        const activeSubscriptions = await billing.subscriptions.listAll({
-                            filters: { status: 'active' }
-                        });
+                        // accepted and discarded (HOS-854). HOS-847: excludes a
+                        // recurring add-on's own preapproval row — see
+                        // loadActiveNonAddonSubscriptions's doc.
+                        const activeSubscriptions = await loadActiveNonAddonSubscriptions(billing);
 
                         const now = new Date();
                         const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
@@ -304,10 +340,9 @@ export const notificationScheduleJob: CronJobDefinition = {
                     try {
                         // See the dry-run branch above: `listAll` so the pass is not
                         // capped at one page, and the status filter is now honoured
-                        // by storage rather than silently dropped.
-                        const activeSubscriptions = await billing.subscriptions.listAll({
-                            filters: { status: 'active' }
-                        });
+                        // by storage rather than silently dropped. HOS-847: excludes
+                        // a recurring add-on's own preapproval row.
+                        const activeSubscriptions = await loadActiveNonAddonSubscriptions(billing);
 
                         const now = new Date();
                         const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
