@@ -271,10 +271,10 @@ const COMMERCE_SUBSCRIPTIONS_PATH = '/api/v1/protected/commerce/subscriptions';
  * changes.
  *
  * Only `422` is now reserved for a target priced IDENTICALLY to the current
- * tier: it is neither direction. This docblock said "upgrades only" until
- * HOS-1122 gave commerce a downgrade, and the caller that acts on it —
- * `CommercePlanChange.client.tsx` — still offers dearer tiers only. That is a
- * UI gap, not a contract one: a cheaper target answers `scheduled` here.
+ * tier: it is neither direction. A cheaper target answers `scheduled`, and
+ * `CommercePlanChange.client.tsx` offers those tiers — it filtered to dearer
+ * ones only until HOS-1122, which is what made "puede subir pero no bajar"
+ * true from the owner's side even after the API accepted the move.
  *
  * Other error codes: `400` (malformed/foreign-vertical slug), `404` (no live
  * subscription for this vertical, or the target plan does not exist), `409`

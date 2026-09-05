@@ -281,13 +281,15 @@ export async function applyUpgradeRestorations(
     // ── 1. Resolve plan caps ────────────────────────────────────────────────
     //
     // HOS-1122: the slug is checked BEFORE its caps are read, and that order is
-    // the whole point. `getPlanCaps` answers `{-1, -1, -1}` — unlimited — for a
-    // slug it does not recognise, and a commerce plan id resolves to exactly
-    // such a slug. Reading the caps first therefore restored EVERY
-    // plan-restricted accommodation and promotion the owner had, and reported
-    // success while doing it. The commerce upgrade paths dispatch on the domain
-    // before they get here, so a throw at this point means a call site was
-    // wired wrong rather than that a user did something unusual.
+    // the whole point. `getPlanCaps` USED TO answer `{-1, -1, -1}` — unlimited —
+    // for a slug it did not recognise, and a commerce plan id resolves to
+    // exactly such a slug, so reading the caps first restored EVERY
+    // plan-restricted accommodation and promotion the owner had and reported
+    // success while doing it. That fallback now fails closed at `{0, 0, 0}`
+    // (see `plan-upgrade-restoration.deps.ts`), which makes this assertion the
+    // FIRST line rather than the only one. The commerce upgrade paths dispatch
+    // on the domain before they get here, so a throw at this point means a call
+    // site was wired wrong rather than that a user did something unusual.
     const planSlug = await deps.getPlanSlug(newPlanId);
     assertAccommodationPlanSlug(planSlug ?? '', 'applyUpgradeRestorations');
     const caps = deps.getPlanCaps(planSlug ?? '');
