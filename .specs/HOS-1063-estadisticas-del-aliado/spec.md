@@ -1192,9 +1192,11 @@ whoever revisits this in three months is owed both sides.
 > creates the account, backfills `ownerUserId`, and the token does not work
 > twice). NG-7 states the boundary.
 >
-> **This decision opened OQ-7.** «los que tienen estadísticas en su plan» has to
-> name a set before C-3 has a trigger, and §5.7 found that the presentation does
-> not define one.
+> **This decision opened OQ-7, resolved the same day.** «los que tienen
+> estadísticas en su plan» had to name a set before C-3 had a trigger, and §5.7
+> found that the presentation does not define one. The answer was therefore not to
+> invent the subset but to drop the tier gate: **every ACTIVE partner of either
+> tier qualifies**, with each card gated by whether its surface exists.
 
 ### OQ-6 · RESOLVED (2026-09-04) — drop it, in its own issue
 
