@@ -11,6 +11,7 @@
 
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 
@@ -82,12 +83,14 @@ describe('useUnsavedChangesGuard', () => {
         navigateSpy = vi.fn();
         __setNavigateImpl(navigateSpy);
         showConfirmationDialogMock.mockReset();
+        __resetLeaveWarningRegistry();
     });
 
     afterEach(() => {
         confirmSpy.mockRestore();
         __setNavigateImpl(null);
         document.body.replaceChildren();
+        __resetLeaveWarningRegistry();
         vi.restoreAllMocks();
     });
 
@@ -194,6 +197,85 @@ describe('useUnsavedChangesGuard', () => {
             expect(confirmSpy).not.toHaveBeenCalled();
             expect(navigateSpy).toHaveBeenCalledTimes(1);
             expect(navigateSpy.mock.calls[0]?.[0]).toContain('/es/destinos/');
+        });
+    });
+
+    describe('includeBeforeUnload', () => {
+        // HOS-1018 H-2. `includeBeforeUnload: false` exists so a soft nudge can
+        // skip the browser's own non-customizable tab-close prompt, and nothing
+        // asserted that it actually skipped it. With five consumers relying on
+        // the DEFAULT staying `true`, both directions need to be pinned.
+        it('should NOT intercept beforeunload when explicitly disabled', () => {
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL,
+                    includeBeforeUnload: false
+                })
+            );
+
+            const event = fireBeforeUnload();
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should still guard internal link clicks when beforeunload is disabled', async () => {
+            showConfirmationDialogMock.mockResolvedValue(false);
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL,
+                    includeBeforeUnload: false
+                })
+            );
+            const anchor = addAnchor({ href: '/es/destinos/' });
+
+            const event = clickAnchor(anchor);
+            await flushRouterImport();
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('should intercept beforeunload when explicitly enabled', () => {
+            renderHook(() =>
+                useUnsavedChangesGuard({
+                    isDirty: true,
+                    message: MESSAGE,
+                    title: TITLE,
+                    confirmLabel: CONFIRM_LABEL,
+                    cancelLabel: CANCEL_LABEL,
+                    includeBeforeUnload: true
+                })
+            );
+
+            expect(fireBeforeUnload().defaultPrevented).toBe(true);
+        });
+
+        it('should stop intercepting beforeunload when the option flips to false', () => {
+            const { rerender } = renderHook(
+                ({ includeBeforeUnload }) =>
+                    useUnsavedChangesGuard({
+                        isDirty: true,
+                        message: MESSAGE,
+                        title: TITLE,
+                        confirmLabel: CONFIRM_LABEL,
+                        cancelLabel: CANCEL_LABEL,
+                        includeBeforeUnload
+                    }),
+                { initialProps: { includeBeforeUnload: true } }
+            );
+            expect(fireBeforeUnload().defaultPrevented).toBe(true);
+
+            rerender({ includeBeforeUnload: false });
+
+            expect(fireBeforeUnload().defaultPrevented).toBe(false);
         });
     });
 

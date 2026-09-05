@@ -26,6 +26,7 @@ import { protectedSetFeaturedPostMediaRoute } from './setFeaturedMedia';
 import { protectedSoftDeletePostRoute } from './softDelete';
 import { protectedUnlikePostRoute } from './unlike';
 import { protectedUpdatePostRoute } from './update';
+import { protectedUpdatePostMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -79,5 +80,9 @@ app.route('/', protectedSetFeaturedPostMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery.
 app.route('/', protectedRemovePostMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdatePostMediaRoute);
 
 export { app as protectedPostRoutes };

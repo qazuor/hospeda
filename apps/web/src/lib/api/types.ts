@@ -271,6 +271,13 @@ export interface AccommodationEditData {
     readonly currency: string | null;
     readonly isAvailable: boolean;
     readonly isFeatured: boolean;
+    /**
+     * HOS-929: billing-derived sibling of `isFeatured` (SPEC-292, renamed
+     * SPEC-309 OQ-3). Holding EITHER flag means the listing is currently
+     * featured — the editor's addon upsell reads both to decide whether to
+     * show at all, since featuring is now automatic (no owner toggle).
+     */
+    readonly featuredByEntitlement: boolean;
     readonly amenityIds: readonly string[];
     readonly featureIds: readonly string[];
     // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
@@ -366,16 +373,16 @@ export interface AccommodationMediaItem {
     readonly id: string;
     readonly url: string;
     readonly publicId: string;
-    readonly caption?: string;
+    readonly caption: string | undefined;
     /** Longer photo description (HOS-125 — correctable via updateMedia). */
-    readonly description?: string;
-    readonly alt?: string;
+    readonly description: string | undefined;
+    readonly alt: string | undefined;
     /**
      * Photo credit written by the host, or carried in from a stock import
      * (H-125). Read back into the metadata panel every time it opens, so an
      * existing credit is corrected rather than silently overwritten.
      */
-    readonly attribution?: MediaAttribution;
+    readonly attribution: MediaAttribution | undefined;
     readonly width?: number;
     readonly height?: number;
     readonly isFeatured: boolean;

@@ -613,6 +613,8 @@
                 "trialStatus": "Trial period",
                 "freeStatus": "Free Plan",
                 "compStatus": "Complimentary",
+                "multipleSubscriptions_one": "{{count}} active subscription",
+                "multipleSubscriptions_other": "{{count}} active subscriptions",
                 "properties": "My properties",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",
@@ -1129,6 +1131,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Your accommodation is not featured. This add-on features it automatically, no extra step needed.",
             "title": "Feature this accommodation",
             "body": "A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.",
             "scope": "Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.",
@@ -1330,7 +1333,8 @@
                 "uploadTimeout": "The upload took too long. Please try again.",
                 "persistFailed": "Could not save the image to the database",
                 "featuredFailed": "Could not set the image as the cover",
-                "removeFailed": "Could not remove the image"
+                "removeFailed": "Could not remove the image",
+                "metadataSaveFailed": "The photo details could not be saved"
             }
         },
         "events": {

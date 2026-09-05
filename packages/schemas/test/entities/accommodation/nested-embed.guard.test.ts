@@ -31,6 +31,16 @@
  * match "any schema that can carry the premium pair" — false in this package, where
  * `AccommodationWithRelationsSchema` and friends carry it too. The set that is safe
  * to embed is small and fixed; the set that is dangerous grows on its own.
+ *
+ * Both checks are FIELD-AGNOSTIC by construction: they reason about which SCHEMA
+ * IDENTIFIER an embedder names, never which fields that schema happens to carry.
+ * So they cover `featuredByEntitlement` (HOS-929, omitted from
+ * `AccommodationProtectedCardSchema` the same way as the rich-description pair) with
+ * no changes needed here — and they will cover whatever field is added to the full
+ * schema next, as long as it stays out of the card tiers. The behavioural half in
+ * `accommodation-protected-card.test.ts` is where a NAMED field (rich-description
+ * pair, `featuredByEntitlement`) gets its own assertion; this file only ever asks
+ * "is the embedded schema one of the safe identifiers".
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';

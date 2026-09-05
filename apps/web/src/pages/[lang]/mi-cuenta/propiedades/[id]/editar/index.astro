@@ -14,7 +14,7 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
-import { FeaturedToggleSection } from '@/components/host/editor/FeaturedToggleSection.client';
+import FeaturedAddonOffer from '@/components/host/editor/FeaturedAddonOffer.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import {
 	ACCOMMODATION_EDITOR_REGISTRY,
@@ -86,26 +86,16 @@ const statuses = resolveEditorSectionStatuses({
 	/>
 
 	{/*
-	 * HOS-318 D-10: the featured toggle gets no nav item and no hub row.
-	 * Rendered here at the foot, where it costs the hub nothing.
-	 *
-	 * HOS-728 changed what it renders, not where: an owner WITHOUT the
-	 * entitlement now sees the two visibility add-ons offered here instead of
-	 * nothing — this is the only surface in the product that names what
-	 * featuring a listing is. It still renders nothing while the entitlement
-	 * check is in flight, so the foot of the page never jumps.
-	 *
-	 * HOS-1031: mounted with `client:idle`, not `client:visible`. The
-	 * component's first render is `return null` while `isLoading` (see
-	 * `FeaturedToggleSection.client.tsx`), and `<astro-island>` carries a
-	 * fixed `display: contents` — with no SSR children the wrapper has zero
-	 * observed area, so the `IntersectionObserver` behind `client:visible`
-	 * never fires and the island never hydrates. Same root cause and fix as
-	 * `CompareCardSelect.client.tsx` (see its file header). `client:idle` does
-	 * not depend on layout size, so it hydrates regardless.
+	 * HOS-318 D-10 / HOS-929: no nav item and no hub row — rendered here at
+	 * the foot, where it costs the hub nothing. Self-hides once the listing
+	 * is featured from either source (see the component header).
 	 */}
 	<div class="editor-hub-page__extra">
-		<FeaturedToggleSection locale={locale} accommodationId={accommodationId} client:idle />
+		<FeaturedAddonOffer
+			locale={locale}
+			isFeatured={accommodation.isFeatured}
+			featuredByEntitlement={accommodation.featuredByEntitlement}
+		/>
 	</div>
 </EditorSectionLayout>
 

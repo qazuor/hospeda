@@ -96,11 +96,6 @@
                 "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "El destacado es obligatorio"
-            }
-        },
         "featureFlag": {
             "description": {
                 "max": "A descrição não pode exceder {{max}} caracteres",
@@ -1532,6 +1527,9 @@
             "state": {
                 "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
             },
+            "update": {
+                "atLeastOneField": "Você precisa preencher ao menos um campo: legenda, descrição, texto alternativo ou atribuição"
+            },
             "url": {
                 "invalid": "A URL não é válida"
             }
@@ -1608,6 +1606,9 @@
             },
             "state": {
                 "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Você precisa preencher ao menos um campo: legenda, descrição, texto alternativo ou atribuição"
             },
             "url": {
                 "invalid": "A URL não é válida"
