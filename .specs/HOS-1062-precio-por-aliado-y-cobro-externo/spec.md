@@ -3,6 +3,8 @@ title: Precio por aliado y cobro fuera de MercadoPago
 linear: HOS-1062
 statusSource: linear
 created: 2026-09-04
+decided: 2026-09-04
+status: decidida — lista para implementar
 type: feature
 areas:
   - db
@@ -13,9 +15,15 @@ areas:
 
 # Precio por aliado y cobro fuera de MercadoPago
 
-> **Esta spec no implementa nada todavía.** Su producto es un documento sobre el
-> que el dueño decide. Las cinco preguntas de §11 tienen que estar contestadas
-> antes de abrir tareas; §10 dice qué se puede empezar sin esperarlas.
+> **Las cinco preguntas de §11 están RESUELTAS (2026-09-04).** Quedan escritas
+> con su decisión y su fundamento, no borradas: el registro de por qué se eligió
+> cada cosa es lo que evita re-litigarlo en tres meses. Cuatro se resolvieron por
+> la opción que la spec recomendaba; **OQ-2 se resolvió por una tercera vía que
+> la spec no había contemplado** —un plan exclusivo por aliado— y por eso §5.5,
+> §6, §7, §9 y §12 se reescribieron alrededor de esa decisión.
+>
+> **Esta spec sigue sin implementar nada**, pero ya no espera decisiones: se
+> pueden abrir tareas contra el plan de fases de §12.
 
 ## 1. Summary
 
@@ -133,7 +141,8 @@ ningún reloj**.
 - **G-4** — Que el historial de pagos de un aliado se vea en el admin, en un solo
   lugar, sin importar por dónde entró la plata.
 - **G-5** — Que ningún cron trate una fila del camino externo como rota.
-- **G-6** — Que el monto negociado no sea visible para nadie fuera del admin.
+- **G-6** — Que el monto negociado no sea visible para nadie fuera del admin —
+  **ni el monto ni el plan que lo lleva** (I-6, tras la decisión de OQ-2).
 
 ## 4. Non-goals
 
@@ -149,10 +158,15 @@ ningún reloj**.
   será una extensión deliberada, no un derrame de ésta.
 - **NG-4** — **No se construye autoservicio.** El aliado sigue sin poder elegir
   su plan ni su precio: los dos salen de una conversación con un admin.
-- **NG-5** — **No se toca el checkout de MercadoPago de partner** salvo que la
-  decisión OQ-2 diga explícitamente que sí (fase F3).
+- **NG-5** — **No se toca el checkout de MercadoPago de partner.** Con la
+  decisión de OQ-2 (plan exclusivo por aliado) esto pasó de condicional a firme:
+  el checkout ya resuelve el plan por ID arbitrario y soporta un plan exclusivo
+  sin una línea de cambio (§6.4.3). Verificado.
 - **NG-6** — **No se construye facturación.** Registrar un pago no es emitir un
   comprobante fiscal. HOS-20 (IVA) es otro tema.
+- **NG-7** — **No se toca el cron de propagación de precios.** Ídem NG-5: la
+  decisión de OQ-2 lo vuelve innecesario (§6.4.1). Si alguna vez hace falta, es
+  otra spec.
 
 ## 5. Current baseline
 
@@ -287,7 +301,7 @@ detrás a ese «Consultar».
 |---|---|---|
 | Cupón permanente (`effect_kind:'discount'`, `duration_cycles:null`) | descuento fijo o porcentual, para siempre, y **sobrevive a la propagación** (§5.1) | sólo **baja** desde un precio de lista, nunca sube. No está atado a un cliente: `maxUses:1` lo hace de un solo uso, pero quien tenga el string lo redime. Y `initiatePartnerMonthlySubscription` **no acepta `promoCode`** — los dos checkouts que sí lo aceptan son los de alojamiento |
 | `status='comp'` | gratis permanente, sin preapproval | sólo cubre el caso gratis total, y hoy rechaza planes de partner (§5.3) |
-| Un plan por segmento | precios reales distintos | N planes, y la segmentación se vuelve **pública**: una municipalidad viendo que paga 5× lo del almacén es un problema político, no técnico |
+| Un plan por segmento | precios reales distintos | N planes, y la segmentación se vuelve **pública**: una municipalidad viendo que paga 5× lo del almacén es un problema político, no técnico. **⚠️ Esta objeción cayó**: la decisión de OQ-2 mantiene la idea (un plan por aliado, no por segmento) y le agrega la pieza que la hacía inviable —que esos planes no se vean en ninguna superficie salvo el admin—. Ver §6.4 |
 | Mutar `transaction_amount` del preapproval | el monto sí vive por suscripción del lado de MP | la maquinaria está construida para cambios de precio **de plan** (HOS-176), no por cliente — y es la misma que después lo pisa |
 
 ### 5.6 La restricción legal
@@ -310,31 +324,46 @@ lleva la dirección sintética `partner-<id>@partners.hospeda.invalid`
 
 ## 6. Proposed design
 
-El diseño concreto **depende de las decisiones de §11** y por eso acá se fija
-sólo lo que no depende de ellas: las tres piezas que hacen falta en cualquier
-variante, y las invariantes que ninguna variante puede violar.
+**Las decisiones de §11 están tomadas (2026-09-04).** El diseño que sigue ya no
+es condicional: §6.1 lista las piezas, §6.2 las invariantes, §6.3 explica por qué
+la hipótesis que la spec traía se descartó, y §6.4 desarrolla la decisión de OQ-2
+—el plan exclusivo por aliado— con lo que se verificó contra el código.
 
-### 6.1 Las tres piezas
+### 6.1 Las cuatro piezas
 
 1. **Un registro de pagos por aliado.** Entidad propia, no un campo: monto,
    moneda, fecha de pago, medio, referencia/comprobante, período cubierto, nota,
    y quién lo registró. Es lo que hace posible el vencimiento (pieza 2), el
    historial que pide el issue (G-4), y lo que retira el `// TODO` de la línea
-   439.
+   439. **Decidido en OQ-5 (a).**
 2. **Un reloj para el camino externo.** El período cubierto por el pago es lo que
    sella `partners.endsAt`, y `partner-expiry` —que ya existe y hoy no atrapa a
-   nadie— pasa a tener población real.
-3. **El monto acordado.** Dónde vive y si pasa o no por MercadoPago es OQ-1 y
-   OQ-2. Lo que no está en discusión es que tiene que existir en algún lado
-   escrito, porque hoy vive sólo en la cabeza de quien negoció.
+   nadie— pasa a tener población real. **El bug de §2.4 sigue en pie y esta
+   pieza es lo único que lo cierra**: el plan exclusivo de la pieza 4 no lo toca,
+   porque un aliado sobre MercadoPago nunca dependió de `endsAt` (§2.4, último
+   párrafo).
+3. **El monto acordado escrito en algún lado.** Columna en `partners`
+   (`negotiated_amount_centavos`), **decidido en OQ-1 (a)**. Es el registro del
+   acuerdo: vale igual si el aliado paga en efectivo o por MercadoPago, y
+   sobrevive a cambios de plan y a re-suscripciones. Hoy ese número vive sólo en
+   la cabeza de quien negoció.
+4. **Un plan exclusivo por aliado, invisible fuera del admin.** Es el camino para
+   que un aliado con precio negociado **conserve el débito automático**.
+   **Decidido en OQ-2, por una vía que esta spec no había contemplado**; se
+   desarrolla entero en §6.4.
+
+Las piezas 1-2 y la 4 son **dos caminos de cobro, no uno**: ver §6.5.
 
 ### 6.2 Las invariantes, valgan las decisiones que valgan
 
 - **I-1 — Inmunidad a la propagación.** Ningún monto acordado puede depender de
-  que nadie edite el precio de un plan. Si el diseño elegido deja el monto en el
-  `transaction_amount` de un preapproval, la propagación tiene que aprender a
-  excluirlo con una marca explícita, y esa exclusión tiene que estar cubierta por
-  un test que muera si alguien la borra.
+  que nadie edite el precio de un plan **ajeno**. La decisión de OQ-2 satisface
+  esto por construcción y no por código: el plan exclusivo tiene **un solo
+  suscriptor**, así que el radio de explosión del cron es exactamente ese aliado
+  —que es el comportamiento deseado—. Editar el precio del plan exclusivo **ES**
+  renegociar el acuerdo, no un accidente. La formulación general sigue valiendo:
+  ningún proceso automático puede modificar un monto acordado por su cuenta
+  (OQ-4).
 - **I-2 — Fallar cerrado.** Una fila sin monto acordado se cobra al precio de
   lista. Nunca al revés: la ausencia de dato no puede significar «gratis».
 - **I-3 — El monto acordado es privado.** No sale por ningún endpoint público, ni
@@ -347,36 +376,189 @@ variante, y las invariantes que ninguna variante puede violar.
 - **I-5 — Un pago no es una activación silenciosa.** Registrar un pago escribe
   quién lo registró y cuándo. Es plata que entró por fuera de toda plataforma:
   el único control que queda es la trazabilidad.
+- **I-6 — Un plan negociado no se ve fuera del admin.** Es I-3 aplicado a la
+  pieza 4: si el monto acordado es privado, el plan que lo lleva también lo es.
+  No puede aparecer en la respuesta de ningún endpoint público, ni en la página
+  de precios de anfitriones, ni en la de aliados. Esto **no es cierto hoy** y es
+  lo primero que hay que construir (§6.4.2, F1 en §12).
 
-### 6.3 La hipótesis fuerte que vale la pena mirar de frente
+### 6.3 La hipótesis que la spec traía, y por qué se descartó
 
-Si el aliado que negocia precio es, en la práctica, el mismo que paga en efectivo
-o por cheque —que es lo que la landing ya ofrece y lo que un municipio
-razonablemente va a preferir—, entonces:
+La spec proponía mirar de frente esta hipótesis:
 
-**negociado ⟹ fuera de MercadoPago**
+> **negociado ⟹ fuera de MercadoPago**
 
-y los dos huecos colapsan en un mecanismo solo. Además **la trampa de §5.1
-desaparece por construcción**, sin tocar el cron: esas filas nunca tendrían
-`mp_subscription_id`, y las dos consultas exigen `isNotNull`.
+Si el aliado que negocia precio fuera, en la práctica, el mismo que paga en
+efectivo o por cheque, los dos huecos colapsaban en un mecanismo solo y la trampa
+de §5.1 desaparecía sin tocar el cron.
 
-Es una decisión de producto, no técnica, y por eso va como OQ-2 y no como diseño
-cerrado. El costo de aceptarla está dicho ahí.
+**El dueño la descartó (OQ-2, 2026-09-04)**, y el motivo es el costo que la
+propia spec le había puesto: *«pierde el cobro recurrente automático justo con
+quien más paga»*. Un municipio que negocia un monto alto es exactamente el aliado
+al que menos conviene obligar a un trámite manual todos los meses.
+
+La tercera vía elegida —§6.4— **consigue las dos cosas**: neutraliza la trampa
+de §5.1 igual de bien, pero sin quitarle el débito automático al aliado.
+
+### 6.4 La decisión de OQ-2 — un plan exclusivo por aliado
+
+La propuesta, textual del dueño (2026-09-04):
+
+> «por cada partner yo negocio el precio y quiere pagar con MP, le creo un plan
+> exclusivo para ese partner y se usa ese, y todos los planes de ese tipo se
+> filtran en todos lados, solo lo ve un admin para asignárselo a un partner»
+
+Es la opción que §5.5 había descartado («un plan por segmento»), con la pieza que
+la hacía inviable puesta encima: los planes negociados **no se ven en ningún lado
+salvo el admin**, así que la objeción política —una municipalidad viendo que paga
+5× lo del almacén— desaparece.
+
+#### 6.4.1 Por qué es mejor que lo que la spec recomendaba
+
+**Neutraliza la trampa de §5.1 sin tocar el cron.**
+`propagate-plan-price-changes.job.ts:442-467` enumera suscriptores **por
+`planId`**. Con un único suscriptor, el radio de explosión del cron es
+exactamente ese aliado — que es el comportamiento deseado, no un daño colateral.
+Editar el precio del plan exclusivo **es** renegociar el acuerdo, y que el cron
+lo empuje a MercadoPago es justamente lo que se quiere que pase.
+
+De ahí se siguen tres ventajas sobre la recomendación anterior:
+
+1. **No hay flag que mantener ni filtro que alguien pueda olvidar** en las dos
+   consultas del cron. La defensa es estructural, no por código.
+2. **El aliado conserva el débito automático**, que era el costo que la
+   recomendación anterior le trasladaba al dueño (§6.3).
+3. **El checkout no se toca** (§6.4.3).
+
+#### 6.4.2 Lo que hay que construir — «se filtran en todos lados» es FALSO hoy
+
+Se auditó el diseño contra el código y esta parte de la propuesta **no se cumple
+hoy**. Son tres cosas, y las tres tienen evidencia:
+
+**(1) `createPlan` NO expone `productDomain`. Bug vivo, independiente de este
+issue.**
+`CreatePlanInput`
+(`packages/service-core/src/services/billing/plan/plan.types.ts:21-50`) no tiene
+el campo, y el insert de `createPlan` (`plan.crud.ts:458-476`) no lo setea.
+Verificado por grep: `productDomain` sólo se escribe desde el seed y desde
+data-migrations, **nunca desde la ruta admin**.
+
+> **Consecuencia**: un plan creado hoy vía
+> `POST /api/v1/admin/billing/plans` cae con `product_domain = 'accommodation'`
+> (el default de la columna) y **aparece en la página de precios de
+> ANFITRIONES** — la superficie pública más visitada del sitio.
+
+Esto pasa hoy, sin esta spec, con cualquier plan que un admin cree a mano. Ver
+R-9 y la recomendación de §12 sobre si sale como issue propio.
+
+**(2) `product_domain` no alcanza para ocultar.**
+`GET /api/v1/public/plans?domain=partner`
+(`apps/api/src/routes/billing/public/listPlans.ts:37-52,142-186`) es **público**
+(`skipAuth: true`) y devuelve **todos** los planes activos de ese dominio,
+completos y con precio. El filtro `SELLABLE_PARTNER_PLAN_SLUGS` de `apps/web`
+(`audience-plans.ts:226,334-337`) es **cosmético**: corre del lado del cliente y
+no protege la API cruda.
+
+Hace falta, entonces, una **marca de visibilidad individual** por plan. La vía
+más barata **no necesita migración**: `billing_plans.metadata` ya es `jsonb`.
+
+> Detalle del mismo handler a tener en cuenta al diseñar el filtro: si la query
+> de dominio falla, `accommodation` sirve la lista **SIN filtrar** (fail-open,
+> deliberado desde HOS-685 para no romper la página de precios) mientras todos
+> los demás dominios devuelven vacío (fail-closed). El filtro de ocultamiento
+> **no puede heredar esa asimetría**: un plan negociado tiene que desaparecer en
+> los dos modos.
+
+**(3) Ningún test valida un plan creado a mano.**
+Toda la batería de `packages/billing/test/*` protege el catálogo **escrito en
+código** (`ALL_PLANS` congelado en 6, los guards de tier que iteran
+`PartnerTierEnum`). Un plan que nace en la base no lo mira nadie.
+
+Hace falta un **guard que falle en CI** si un plan marcado como oculto aparece en
+una respuesta pública. El daño acá es político y silencioso: nadie va a abrir un
+ticket para avisar que vio el precio de la municipalidad.
+
+#### 6.4.3 Lo que ya funciona sin cambios (verificado)
+
+- **El checkout resuelve el plan por ID arbitrario.** `billing.plans.get(planId)`
+  en `subscription-checkout.service.ts:1116-1163`: un plan exclusivo se soporta
+  **sin tocar código**.
+- **El `preapproval_plan` de MercadoPago se materializa en el primer checkout**,
+  no al crear el plan (`resolveCheckoutMpPlanId`, líneas 1151-1163). Un plan
+  exclusivo que nadie paga no crea nada del lado de MP.
+- **Los guards de conteo congelado no se rompen**: los planes de partner nunca
+  entran a `ALL_PLANS`
+  (`packages/billing/test/config/partner-tier-plans.test.ts:64-77`).
+- **El selector de plan de la ficha de partner ya filtra bien** y es reutilizable:
+  `apps/api/src/routes/partners/admin/list-plans.ts:23-99` hace
+  `eq(productDomain, PARTNER)` bajo `PARTNER_MANAGE`.
+
+#### 6.4.4 Lo que NO se sabe y lo que se acepta
+
+- **No se encontró límite documentado de `preapproval_plan` por cuenta en
+  MercadoPago.** Se escribe como **no se sabe**: ni se inventa un número ni se da
+  por ilimitado. Si el volumen de aliados crece, hay que medirlo antes de asumir.
+- **Degradación conocida y aceptada**: `BillingPlanSearchSchema`
+  (`packages/schemas/src/api/billing/billing-plan.schema.ts:189-204`) **no filtra
+  por dominio**, así que N planes exclusivos ensucian el listado de planes del
+  admin. Es ruido interno, no una fuga: se acepta.
+
+### 6.5 El plan exclusivo NO reemplaza el efectivo ni el cheque
+
+Que OQ-2 se haya resuelto **no cierra el hueco 2** (§2.3), y conviene decirlo con
+todas las letras porque es el malentendido más fácil de esta spec:
+
+- Quien paga **con MercadoPago** a precio negociado va por el **plan exclusivo**.
+- Quien paga **en efectivo o por cheque** sigue necesitando `manual-payment`
+  completo, con monto, fecha, medio, comprobante y período — más el registro de
+  pagos y el `endsAt` derivado.
+
+Son **dos caminos vivos**, y la landing promete los dos (§5.4). El bug del
+`endsAt` (§2.4) pertenece al segundo camino y el plan exclusivo no lo roza.
 
 ## 7. Data model / contracts
 
-Forma tentativa, sujeta a §11. Se escribe para que se vea el tamaño de cada
-opción, no para fijarla.
+La forma que sigue **ya no es tentativa**: es la que corresponde a las decisiones
+de §11 (OQ-1a + OQ-2 «plan exclusivo» + OQ-3a + OQ-4b/c + OQ-5a).
 
-### Si se acepta la recomendación (OQ-1a + OQ-2a + OQ-3a + OQ-5 sí)
+### Cambios estructurales
 
 | tabla | cambio | notas |
 |---|---|---|
 | `partners` | `+ negotiated_amount_centavos` (integer, null) | El acuerdo. `null` = precio de lista (I-2). Entero en centavos, como todo el dinero del repo |
+| `partners` | `+ negotiated_amount_effective_from` (timestamptz, null) | La constancia que pide OQ-4c: desde cuándo rige el monto vigente. Barato, y deja el rastro por si la lectura legal termina siendo (a) |
 | `partners` | `+ negotiated_currency` (varchar(3), null) | Sólo si el acuerdo puede no ser ARS. Si no, se omite |
 | `partner_payments` | **tabla nueva** | Ver abajo |
+| `billing_plans` | **sin migración** | La marca de ocultamiento va en `metadata` (`jsonb`, ya existe). Ver abajo |
 
-`partner_payments` (propiedad de Hospeda, no de qzpay):
+### La marca de plan oculto (pieza 4)
+
+No hace falta columna: `billing_plans.metadata` ya es `jsonb`. Una clave del
+estilo `metadata.adminOnly: true` (nombre exacto a fijar en implementación)
+alcanza, y **el filtro tiene que aplicarse del lado del servidor**, en la
+respuesta del endpoint público, nunca en `apps/web` — el filtro cosmético que ya
+existe ahí no protege la API cruda (§6.4.2).
+
+Reglas del filtro, las tres necesarias:
+
+1. Se aplica en `apps/api/src/routes/billing/public/listPlans.ts`, **antes** de
+   devolver, para **todos** los dominios.
+2. **Falla cerrado en los dos modos.** No hereda la asimetría del filtro de
+   dominio: si la marca no se pudo resolver, el plan no se sirve. Un catálogo
+   público al que le falta un plan es recuperable; un precio negociado publicado,
+   no.
+3. Está cubierto por un **guard que corre en CI** (§6.4.2 punto 3) y por AC-13.
+
+### `productDomain` en el CRUD de planes del admin
+
+`CreatePlanInput` suma `productDomain` (requerido, sin default silencioso) y
+`createPlan` lo escribe en el insert. Es el arreglo del bug de §6.4.2 punto 1 y
+es **prerrequisito** de crear cualquier plan exclusivo: sin él, el primer plan
+negociado nace en `accommodation` y sale publicado en la página de anfitriones.
+
+### `partner_payments` (camino externo, hueco 2)
+
+Propiedad de Hospeda, no de qzpay:
 
 ```
 id                uuid pk
@@ -406,21 +588,24 @@ desde el webhook o dejarlo para después es detalle de implementación.
 | `POST` | `/api/v1/admin/partners/{id}/manual-payment` | **existe**; se le agrega body con monto, fecha, medio, referencia y período |
 | `GET` | `/api/v1/admin/partners/{id}/payments` | historial, paginado con `page`+`pageSize` (convención admin) |
 | `PATCH` | `/api/v1/admin/partners/{id}` | ya existe; suma `negotiatedAmountCentavos` al schema de update |
+| `POST` | `/api/v1/admin/billing/plans` | ya existe; suma `productDomain` al input y a la validación |
+| `GET` | `/api/v1/public/plans` | ya existe; **se le agrega el filtro de planes ocultos**, del lado del servidor |
 
-Todos bajo `PermissionEnum.PARTNER_MANAGE`, que ya cubre esto.
+Los de partner y los de plan van bajo `PermissionEnum.PARTNER_MANAGE` y el
+permiso de billing que ya gatea el CRUD de planes respectivamente. El selector de
+plan de la ficha del partner ya existe y filtra bien
+(`routes/partners/admin/list-plans.ts:23-99`): es el lugar natural desde donde un
+admin asigna el plan exclusivo, y **no hay endpoint nuevo para eso**.
 
 ### Migraciones
 
-Carril estructural (`pnpm db:generate` + `db:migrate`). No hay cambio de datos
-sembrados, así que **la regla de dual-write del seed no aplica** — no hay
-baseline que editar ni data-migration que escribir.
+Carril estructural (`pnpm db:generate` + `db:migrate`) para las columnas de
+`partners` y para `partner_payments`. **La marca de plan oculto no lleva
+migración**: vive en `metadata`.
 
-### Si en cambio se elige OQ-1b (monto en `billing_subscriptions`)
-
-Cambia el tamaño por completo: columna nueva en tabla de qzpay (molde de
-`courtesy_*`, §5.2), **más** una marca de exclusión, **más** modificar las dos
-consultas del cron de propagación, **más** el test que mate esa exclusión si
-alguien la borra. Es la opción con más superficie y la única que toca HOS-176.
+No hay cambio de datos sembrados, así que **la regla de dual-write del seed no
+aplica** — no hay baseline que editar ni data-migration que escribir. Los planes
+exclusivos **no se siembran**: nacen desde el admin, uno por acuerdo.
 
 ## 8. UX / UI behavior
 
@@ -436,9 +621,17 @@ alguien la borra. Es la opción con más superficie y la única que toca HOS-176
 - **Vencimiento** — la fecha de fin del último período pagado se muestra en el
   detalle. Un aliado sin vencimiento (los que ya existen hoy) tiene que verse
   como tal, no como un campo en blanco.
+- **Alta de plan en el admin** — el formulario de creación de plan suma
+  **dominio de producto** (obligatorio, sin default silencioso: hoy la ausencia
+  del campo es lo que hace que un plan nuevo nazca en `accommodation`) y la
+  **marca de plan oculto**. Un plan marcado como oculto tiene que verse como tal
+  en el listado de planes del admin, para que nadie lo confunda con catálogo.
+- **Asignación al aliado** — se hace desde el selector de plan que ya existe en
+  la ficha del partner. No hay pantalla nueva.
 - **Nada de esto sale a la web.** El panel del aliado no muestra ni el monto
-  acordado ni el historial de pagos (I-3). Toda copy nueva del admin sigue la
-  convención del panel; no hace falta i18n público.
+  acordado ni el historial de pagos (I-3), y **ninguna superficie pública muestra
+  un plan oculto** (I-6). Toda copy nueva del admin sigue la convención del
+  panel; no hace falta i18n público.
 
 ## 9. Acceptance criteria
 
@@ -461,10 +654,17 @@ Escritos para poder ejercerlos. Cada uno nombra qué se rompe si falla.
 - **AC-7** — `findAffectedSubscribers` y `findUnnoticedAffectedSubscribers` no
   devuelven ninguna fila con `mp_subscription_id IS NULL`. **Guard con mutación**:
   borrar el `isNotNull` de cualquiera de las dos tiene que poner el test en rojo.
-- **AC-8** — Con un partner que tiene monto acordado, editar el precio de su plan
-  y correr el cron de propagación de punta a punta **no cambia** el monto
-  acordado ni lo que se le va a cobrar. (Éste es el AC que vigila la trampa; su
-  forma exacta depende de OQ-1/OQ-2, pero la propiedad se afirma igual.)
+  (Es la inmunidad del camino externo, que no crea filas de suscripción; sigue
+  valiendo aunque el camino de MercadoPago ya no dependa de ella.)
+- **AC-8** — Editar el precio de un plan **de catálogo** (`partner-gold`,
+  `partner-silver`) y correr el cron de propagación de punta a punta **no cambia**
+  el monto de ningún aliado que esté en un **plan exclusivo**. Se ejerce con dos
+  aliados sembrados: uno en catálogo, uno en plan exclusivo; después del cron sólo
+  el primero cambió.
+- **AC-8b** — Editar el precio del **plan exclusivo** y correr el cron cambia el
+  monto de **exactamente un** suscriptor: el aliado dueño de ese plan. Es la otra
+  mitad de AC-8 y afirma la propiedad que hace viable el diseño (§6.4.1): el radio
+  de explosión del cron es el acuerdo mismo.
 - **AC-9** — `negotiatedAmountCentavos` no aparece en la respuesta de ningún
   endpoint público ni en la del panel del propio aliado (I-3), verificado contra
   el schema de salida, no contra una llamada de ejemplo.
@@ -473,23 +673,56 @@ Escritos para poder ejercerlos. Cada uno nombra qué se rompe si falla.
 - **AC-11** — El detalle del partner en el admin muestra el historial con los
   pagos ordenados por fecha descendente y el medio de cada uno.
 
+Los que siguen son los que trajo la decisión de OQ-2 (el plan exclusivo, §6.4):
+
+- **AC-12** — `createPlan` con `productDomain: 'partner'` persiste
+  `billing_plans.product_domain = 'partner'`. Y una creación **sin** dominio
+  explícito es rechazada con 400: hoy cae silenciosamente en `accommodation`
+  (§6.4.2 punto 1), y esa es exactamente la falla que este criterio prohíbe.
+- **AC-13** — Un plan marcado como oculto **no aparece** en la respuesta de
+  `GET /api/v1/public/plans` para **ningún** valor de `?domain=`, incluido el
+  default `accommodation`. Se ejerce además con la query de dominio forzada a
+  fallar: el plan oculto sigue sin aparecer en los dos modos (fail-closed, §7).
+- **AC-14** — **Guard con mutación, corre en CI**: borrar el filtro de planes
+  ocultos del handler público tiene que poner el guard en rojo. Sin esto la
+  protección es una línea que cualquier refactor puede llevarse puesta sin que
+  nadie se entere — el daño es político y silencioso, nadie abre un ticket para
+  avisar que vio el precio de la municipalidad.
+- **AC-15** — Un aliado asignado a un plan exclusivo completa el checkout de
+  partner contra el stub de MercadoPago y el preapproval se crea con el monto del
+  plan exclusivo, **sin ningún cambio en `subscription-checkout.service.ts`**.
+  (Afirma §6.4.3: el checkout resuelve el plan por ID arbitrario.)
+- **AC-16** — **Guard estático**: ninguna escritura a
+  `partners.negotiated_amount_centavos` existe fuera de la ruta admin de
+  actualización de partner. Es OQ-4 hecho ejercible: ningún proceso automático
+  modifica un monto acordado.
+
 Criterios que **no** entran porque no se pueden ejercer: nada sobre «el aliado
 percibe», nada sobre montos reales de producción, y nada sobre el
 comportamiento de MercadoPago que no se pueda probar contra el stub o contra el
-sandbox en un smoke declarado.
+sandbox en un smoke declarado. En particular **no hay criterio sobre la cantidad
+máxima de `preapproval_plan` por cuenta**: no se encontró límite documentado, y
+afirmar «soporta N planes exclusivos» sería inventarlo (§6.4.4).
 
 ## 10. Risks
 
-- **R-1 — La trampa del cron de propagación. Riesgo número uno.**
+- **R-1 — La trampa del cron de propagación. Era el riesgo número uno; la
+  decisión de OQ-2 lo desarma.**
   En castellano: *hoy, si alguien edita el precio de un plan de aliados desde el
   admin, un proceso automático le reescribe el monto a todos los aliados que
   estén en ese plan y tengan una suscripción activa en MercadoPago.* No pregunta
-  si ese monto se había acordado distinto, porque no tiene forma de saberlo: el
-  monto acordado no existe en ningún lado. Si el precio negociado se guarda mal,
-  el acuerdo con la municipalidad se pierde **solo, en silencio y sin dejar
-  rastro**, el día que alguien actualice la lista de precios. Cualquier diseño
-  tiene que ser inmune a esto por construcción (I-1), y la inmunidad tiene que
-  estar cubierta por un test que muera si la borran (AC-7, AC-8).
+  si ese monto se había acordado distinto, porque no tiene forma de saberlo.
+
+  **Con un plan exclusivo por aliado el riesgo se convierte en el comportamiento
+  deseado**: el cron enumera por `planId`, y si el plan tiene un solo suscriptor,
+  editar su precio es renegociar ese acuerdo y nada más (§6.4.1). No queda flag
+  que mantener ni filtro que olvidar.
+
+  **Lo que sobrevive del riesgo**, y por eso AC-8 y AC-8b siguen escritos: que
+  alguien deje a un aliado con precio negociado sobre un plan **de catálogo**
+  compartido. Ahí la trampa vuelve entera. La defensa es de proceso —negociar
+  precio implica plan exclusivo— y los dos criterios la vigilan desde los dos
+  lados.
 
 - **R-2 — El aviso legal de subida se manda a una dirección inválida.**
   Si un aliado está sobre MercadoPago y sube el precio de su plan, la Disposición
@@ -530,14 +763,68 @@ sandbox en un smoke declarado.
   control es la trazabilidad (I-5) y el hecho de que registrar sea un acto
   permisionado y auditado.
 
-## 11. Open questions
+- **R-9 — Un plan creado desde el admin nace en `accommodation` y se publica en
+  la página de anfitriones. Bug vivo, hoy, independiente de esta spec.**
+  `CreatePlanInput` no expone `productDomain` y `createPlan` no lo escribe
+  (§6.4.2 punto 1, verificado): el default de la columna hace el resto. Cualquier
+  plan que un admin cree hoy a mano —negociado o no— aparece en la superficie
+  pública más visitada del sitio, con su precio. **Es prerrequisito duro de esta
+  spec**: sin arreglarlo, el primer plan exclusivo que se cree publica el acuerdo
+  que venía a ocultar. Recomendación sobre dónde vive el arreglo: §12.
 
-Las cinco decisiones. Cada una con opciones concretas, qué toca cada una, y una
-recomendación con su fundamento. **El dueño elige; no hace falta que diseñe.**
+- **R-10 — «Se filtran en todos lados» todavía no es cierto, y el filtro que hay
+  es cosmético.** `GET /api/v1/public/plans` es público y devuelve todos los
+  planes activos del dominio pedido, con precio; el `SELLABLE_PARTNER_PLAN_SLUGS`
+  de `apps/web` corre del lado del cliente y no protege la API cruda (§6.4.2
+  punto 2). Y ningún test mira un plan creado a mano (punto 3). El modo de falla
+  es el peor de los que tiene esta spec: **silencioso y político**. Nadie abre un
+  ticket para avisar que vio el precio de la municipalidad. De ahí I-6, AC-13 y
+  el guard de AC-14.
+
+- **R-11 — Riesgo que NO existe, y conviene decirlo para que nadie lo persiga:
+  un plan de partner con `entitlements: []` no está roto.**
+  Podría parecer que crear planes de partner a mano expone al problema de HOS-973
+  (planes que no otorgan nada por el motor de entitlements). **Para el dominio
+  `partner` ese riesgo no existe.** `PARTNER_SILVER_PLAN` y `PARTNER_GOLD_PLAN`
+  tienen `entitlements: []` **a propósito**, con comentario explícito en
+  `packages/billing/src/config/plans.config.ts:1287-1289`: *«partner visibility is
+  driven by the subscription status and the partner row's own
+  lifecycle/subscription columns, NOT by the entitlement engine»*. La visibilidad
+  del aliado la deciden `subscriptionStatus` y `lifecycleState` de la fila de
+  `partners`, no el motor.
+  **Dónde SÍ aplicaría**: en `gastronomy` y `experience`, que desde HOS-1074 sí
+  leen entitlements. Queda anotado para el día que alguien quiera generalizar el
+  precio negociado a esos verticales (NG-3) — ahí un plan exclusivo con
+  `entitlements: []` sí dejaría el listado a oscuras.
+
+- **R-12 — Proliferación de planes en el listado del admin.**
+  `BillingPlanSearchSchema` no filtra por dominio
+  (`packages/schemas/src/api/billing/billing-plan.schema.ts:189-204`), así que N
+  planes exclusivos ensucian la pantalla de planes del admin. **Degradación
+  conocida y aceptada** (§6.4.4): es ruido interno, no una fuga. Si el volumen
+  molesta, agregar el filtro por dominio a ese schema es una mejora chica y
+  aparte.
+
+## 11. Decisiones (ex Open questions)
+
+**Las cinco están resueltas. Decididas por el dueño el 2026-09-04.** Se dejan
+enteras —opciones, contras y recomendación original— y no borradas: el registro
+de por qué se eligió cada cosa es lo que evita re-litigarlo en tres meses.
+
+| # | Pregunta | Decisión | ¿Como recomendaba la spec? |
+|---|---|---|---|
+| OQ-1 | ¿Dónde vive el precio negociado? | (a) Columna en `partners` | Sí |
+| OQ-2 | ¿El precio negociado pasa por MercadoPago? | **Sí, vía un plan exclusivo por aliado** | **No — tercera vía no contemplada** |
+| OQ-3 | ¿`manual-payment` se extiende o se reemplaza? | (a) Extender, + registro de pagos | Sí |
+| OQ-4 | ¿La Disposición 954/2025 aplica al precio negociado? | (b) + constancia de (c); lectura acotada | Sí |
+| OQ-5 | ¿Hace falta historial de pagos por aliado? | (a) Sí, entidad propia | Sí |
 
 ---
 
-### OQ-1 — ¿Dónde vive el precio negociado?
+### OQ-1 — ¿Dónde vive el precio negociado? · ✅ RESUELTA (2026-09-04)
+
+> **Decisión: (a), columna en `partners`.** Aprobada tal como la spec la
+> recomendaba. El acuerdo es un hecho del aliado, no de una suscripción.
 
 | # | Opción | A favor | En contra | Qué toca |
 |---|---|---|---|---|
@@ -565,9 +852,31 @@ cierto, y si el dueño anticipa precio negociado en gastronomía o experiencias
 dentro de los próximos meses, (b) evita hacerlo dos veces. La pregunta que
 decide es esa, no la técnica.
 
+**Cómo se resolvió**: el dueño no anticipa precio negociado en otros verticales
+por ahora (NG-3 sigue en pie), así que la generalidad de (b) no compraba nada
+contra el costo de meter el monto adentro del radio del cron. Además la decisión
+de OQ-2 vuelve el punto discutible: el monto que MercadoPago cobra sale del plan
+exclusivo, y la columna en `partners` es el **registro del acuerdo** —el número
+que un admin mira para saber qué se negoció y cuánto poner en el plan—, no la
+fuente que alimenta al cobro.
+
 ---
 
-### OQ-2 — ¿El precio negociado pasa por MercadoPago?
+### OQ-2 — ¿El precio negociado pasa por MercadoPago? · ✅ RESUELTA (2026-09-04)
+
+> **Decisión: sí — vía un PLAN EXCLUSIVO por aliado.**
+> **Esta es la única de las cinco que NO se resolvió como la spec recomendaba.**
+> El dueño propuso una tercera vía que ninguna de las tres opciones de abajo
+> contemplaba, y es mejor que la recomendación. El diseño completo está en §6.4;
+> acá queda el registro de la deliberación.
+
+Textual del dueño:
+
+> «por cada partner yo negocio el precio y quiere pagar con MP, le creo un plan
+> exclusivo para ese partner y se usa ese, y todos los planes de ese tipo se
+> filtran en todos lados, solo lo ve un admin para asignárselo a un partner»
+
+#### Las tres opciones que la spec había planteado
 
 | # | Opción | A favor | En contra |
 |---|---|---|---|
@@ -575,24 +884,33 @@ decide es esa, no la técnica.
 | b | Negociado también por MP, mutando el `transaction_amount` del preapproval | Cobro automático a precio propio | Reusa la maquinaria de HOS-176, que es la misma que después lo pisa: hay que construir la exclusión (R-1). Recordar que **las fechas del preapproval son inmutables y el monto tiene piso de $15**. Y arrastra R-2: el aviso legal iría a un correo inválido |
 | c | Las dos, según el aliado | Cubre todo | Dos caminos vivos desde el día uno, con el doble de superficie a probar |
 
-**Recomendación: (a) para la primera entrega, con (c) como destino explícito.**
+La recomendación era **(a) para la primera entrega, con (c) como destino**, y su
+razonamiento era que (a) *«compra la inmunidad a R-1 sin escribir una línea de
+defensa»*. La spec cerraba diciendo que lo que había que decidir de verdad no era
+técnico: **si el dueño aceptaba que negociar precio implicara cobrar por fuera**.
 
-El razonamiento es que **el canal de cobro y el monto son ortogonales, pero
-empezar por (a) compra la inmunidad a R-1 sin escribir una línea de defensa**, y
-cubre la promesa que ya está publicada. La puerta a (b) queda abierta: el día que
-un aliado negocie precio y quiera débito automático, se agrega la marca de
-exclusión y la mutación, con el modelo de datos ya en su lugar y con el aprendizaje
-de haberlo operado.
+#### La cuarta opción, que es la elegida
 
-Lo que hay que decidir de verdad acá no es técnico: es **si el dueño acepta que,
-por ahora, negociar precio implique cobrar por fuera**. Si la respuesta es no —si
-quiere una municipalidad con débito automático a precio propio— entonces la
-respuesta a OQ-1 se inclina hacia (b), la exclusión del cron entra en el alcance,
-y R-2 hay que arreglarlo antes.
+| # | Opción | A favor | En contra |
+|---|---|---|---|
+| **d** | **Un plan exclusivo por aliado, invisible fuera del admin** | Consigue las dos cosas que (a) y (b) se repartían: **neutraliza la trampa del cron sin tocar el cron** —enumera por `planId`, y con un único suscriptor el radio de explosión es exactamente ese aliado, que es el comportamiento deseado— **y el aliado conserva el débito automático**. No hay flag que mantener ni filtro que alguien pueda olvidar: la defensa es estructural. Editar el precio del plan exclusivo **ES** renegociar el acuerdo. El checkout y el cron no se tocan (§6.4.3) | Revive «un plan por segmento», que §5.5 había descartado — pero le agrega lo que la hacía inviable: que esos planes no se vean en ningún lado salvo el admin, con lo que la objeción política desaparece. **Y exige construir el ocultamiento, que hoy no existe** (§6.4.2): tres cosas, con un bug vivo de por medio (R-9) |
+
+**Por qué gana a la recomendación (a)**: (a) compraba la inmunidad al precio de
+quitarle el débito automático a quien más paga. (d) compra la misma inmunidad y
+no cobra ese precio. El costo que sí tiene —construir la marca de ocultamiento y
+su guard— es trabajo acotado, verificable y con AC propios (AC-13, AC-14).
+
+**Lo que esta decisión NO cierra**: el hueco 2. El plan exclusivo es el camino de
+**MercadoPago**; quien paga en efectivo o por cheque sigue necesitando
+`manual-payment` completo, y el bug del `endsAt` (§2.4) sigue en pie. Ver §6.5.
 
 ---
 
-### OQ-3 — ¿`manual-payment` se extiende o se reemplaza?
+### OQ-3 — ¿`manual-payment` se extiende o se reemplaza? · ✅ RESUELTA (2026-09-04)
+
+> **Decisión: (a), extender, más el registro de pagos de OQ-5.** Aprobada tal
+> como la spec la recomendaba. Sigue vigente entera después de OQ-2: es el camino
+> de cobro externo, que el plan exclusivo no reemplaza (§6.5).
 
 | # | Opción | A favor | En contra |
 |---|---|---|---|
@@ -615,7 +933,19 @@ formas.
 
 ---
 
-### OQ-4 — ¿La Disposición 954/2025 aplica al precio negociado?
+### OQ-4 — ¿La Disposición 954/2025 aplica al precio negociado? · ✅ RESUELTA (2026-09-04)
+
+> **Decisión: la lectura acotada — (b) reforzada con la constancia de (c).**
+> Aprobada tal como la spec la recomendaba. Lo que la ingeniería firma es una
+> sola cosa, y es ejercible: **prohibir que cualquier proceso automático
+> modifique un monto acordado** (AC-16). La fecha de vigencia se guarda
+> (`negotiated_amount_effective_from`, §7).
+>
+> **Nota tras OQ-2**: el plan exclusivo no contradice esto. El cron sí puede
+> empujar a MercadoPago un cambio de precio del plan exclusivo — pero ese cambio
+> **lo tipeó un admin después de renegociar**, no lo originó un proceso
+> automático. La prohibición es sobre el origen del cambio, no sobre el
+> mecanismo que lo transporta.
 
 **Es una pregunta legal, no técnica**, y el dueño no la resolvió ni para el caso
 general (`PRICE_INCREASE_NOTICE_GRACE_DAYS` sigue siendo un placeholder).
@@ -644,7 +974,11 @@ propio issue: son dos preguntas distintas que comparten una ley.
 
 ---
 
-### OQ-5 — ¿Hace falta historial de pagos por aliado en el admin?
+### OQ-5 — ¿Hace falta historial de pagos por aliado en el admin? · ✅ RESUELTA (2026-09-04)
+
+> **Decisión: (a), sí, entidad propia de pagos.** Aprobada tal como la spec la
+> recomendaba. Es la pieza de la que dependen el vencimiento (G-3) y el historial
+> (G-4).
 
 | # | Opción | Consecuencia |
 |---|---|---|
@@ -666,10 +1000,13 @@ respondería «cuánto pagó la última vez» y ninguna otra pregunta.
 
 ## 12. Implementation notes
 
-### El bug del vencimiento: dentro de esta spec, tarea propia, primera fase
+### El bug del vencimiento: dentro de esta spec, tarea propia, junto al dato real
 
 **Recomendación explícita**, porque el tech lead la pidió: va **adentro** de esta
-spec, como tarea separada, en la primera fase.
+spec, como tarea separada, **en F4** — la fase que trae el período de pago del
+que la fecha de vencimiento se deriva. (La spec decía «primera fase» cuando el
+camino externo era F1; el reordenamiento de fases lo movió a F4, pero la razón no
+cambió: el arreglo llega con el dato real, no antes.)
 
 Razones:
 
@@ -690,20 +1027,51 @@ además un backfill y una conversación con el dueño sobre esas filas. Es una
 consulta de lectura contra staging y producción, con `hops psql`, y es trabajo de
 la primera tarea — no de esta spec.
 
+### El bug de `productDomain` (R-9): ¿issue propio o dentro de esta spec?
+
+**Recomendación: issue propio, abierto ya, y bloqueante de F2 de esta spec.**
+
+Las dos cosas a la vez, y no es contradictorio:
+
+- **Issue propio** porque el bug es **anterior e independiente**: existe hoy,
+  afecta a cualquier plan que un admin cree a mano —negociado o no—, y su daño
+  (un plan cualquiera publicado en la página de precios de anfitriones) no tiene
+  nada que ver con precio por aliado. Enterrarlo adentro de esta spec lo vuelve
+  invisible para quien busque «por qué apareció este plan en la home» dentro de
+  seis meses, y lo ata a una spec que puede demorarse.
+- **Bloqueante de F2** porque sin él el primer plan exclusivo que se cree publica
+  el acuerdo que venía a ocultar. La relación en Linear es `blocks`, no
+  «subtarea».
+
+Si el dueño prefiere una sola unidad de trabajo, la alternativa aceptable es
+dejarlo como tarea propia dentro de F2 con su propio PR — lo que **no** es
+aceptable es mezclarlo en el mismo PR que el resto de F2, porque es el arreglo
+que hay que poder verificar y revertir solo.
+
+### El bug del `endsAt` (§2.4): sigue en pie, y OQ-2 no lo toca
+
+Vale repetirlo acá porque es el malentendido más caro posible de esta spec: **el
+plan exclusivo no arregla el aliado que nunca vence**. Un aliado sobre
+MercadoPago nunca dependió de `endsAt` —el preapproval es su reloj—; el que
+queda activo para siempre es el que pagó en efectivo. Lo cierra F4 y sólo F4.
+
 ### Plan por fases
 
-Ordenado por dependencia con §11, para que se vea qué arranca sin esperar
-respuestas.
+**Arranca por lo que protege**, para que nunca exista un plan negociado sin el
+candado puesto. Éste es el orden que aprobó el dueño (2026-09-04).
 
 | Fase | Depende de | Qué |
 |---|---|---|
-| **F0** | **nada** | (1) Guard con mutación sobre `mp_subscription_id IS NOT NULL` en las dos consultas de propagación (AC-7): fija hoy la propiedad de la que va a depender todo el diseño. (2) Contar la población de `ends_at IS NULL`. (3) Abrir el issue de R-5 (anual prometido, mensual implementado) y el de R-2 (aviso legal a correo inválido) |
-| **F1** | OQ-3, OQ-5 | `partner_payments` + `manual-payment` ampliado + `endsAt` derivado del período + historial en el detalle del admin. Cierra G-2, G-3, G-4 y el bug de §2.4 |
-| **F2** | OQ-1, OQ-2 | Monto acordado donde se haya decidido + el registro de pago lo propone por defecto + privacidad (I-3). Cierra G-1 y G-6 |
-| **F3** | OQ-2b, OQ-4 | **Sólo si el dueño quiere negociado sobre MercadoPago.** Marca de exclusión, cambio de las dos consultas del cron, defensa de R-1 por código, y R-2 arreglado antes. Cierra G-5 en su versión difícil |
+| **F0** | **nada** | (1) Guard con mutación sobre `mp_subscription_id IS NOT NULL` en las dos consultas de propagación (AC-7). (2) Contar la población de `ends_at IS NULL` en staging y producción. (3) Abrir el issue de R-9 (`productDomain`), el de R-5 (anual prometido, mensual implementado) y el de R-2 (aviso legal a correo inválido) |
+| **F1 — el candado** | F0 | **Primero lo que protege.** Marca de plan oculto en `billing_plans.metadata` + filtro server-side en `GET /api/v1/public/plans`, fail-closed en los dos modos + **guard que corre en CI** y muere si alguien saca el filtro. Cierra I-6. AC-13, AC-14 |
+| **F2 — el dominio** | F1, R-9 | `productDomain` en `CreatePlanInput` y en el insert de `createPlan`, obligatorio y sin default silencioso; el formulario de alta de plan del admin lo pide. AC-12. **Es el arreglo de R-9**, y va en su propio PR (ver arriba) |
+| **F3 — el primer plan exclusivo real** | F1, F2 | Recién acá. Columna `negotiated_amount_centavos` + `negotiated_amount_effective_from` en `partners`, privacidad (I-3), asignación desde el selector que ya existe, y el checkout verificado de punta a punta contra el stub. Cierra G-1 y G-6. AC-8, AC-8b, AC-9, AC-15, AC-16 |
+| **F4 — el camino externo** | OQ-3, OQ-5 (ya resueltas) | `partner_payments` + `manual-payment` ampliado + `endsAt` derivado del período + historial en el detalle del admin. Cierra G-2, G-3, G-4, G-5 y el bug de §2.4. **Independiente de F1-F3**: no comparte código con el plan exclusivo y puede correr en paralelo si hay dos manos |
 
-F0 vale la pena aunque después se elija cualquier cosa: pone un test que muere si
-alguien borra la única inmunidad que hoy existe.
+La razón del orden: F1 y F2 son los únicos que fallan **en silencio y hacia
+afuera**. Un plan exclusivo creado antes de tiempo publica un precio negociado en
+la home de anfitriones y nadie se entera hasta que un aliado lo menciona. Todo lo
+demás falla hacia adentro.
 
 ### Notas técnicas sueltas
 
@@ -721,9 +1089,16 @@ alguien borra la única inmunidad que hoy existe.
 - **Nada de esto es dual-write de seed**: no se toca ninguna fila sembrada.
 - **Ninguna variable de entorno nueva** prevista. Si aparece, va con el flujo
   completo del registro de `packages/config` + Coolify.
-- **Smoke**: F1 y F2 son local-first (nada depende de MercadoPago real). F3, si
-  llega a existir, es smoke de staging obligatorio contra el sandbox de MP y
-  entra en la lista de PRs que tocan el core de billing.
+- **Smoke**: F1, F2 y F4 son local-first (nada depende de MercadoPago real; el
+  filtro público y el guard de CI se ejercen enteros contra la base local). **F3
+  lleva smoke de staging obligatorio** contra el sandbox de MP: es un checkout
+  real sobre un plan creado a mano, y el stub no puede decir si MercadoPago
+  acepta ese `preapproval_plan`. Entra además en la lista de PRs que tocan el
+  core de billing.
+- **El plan exclusivo no se siembra ni se versiona en código.** No entra a
+  `ALL_PLANS` (los de partner nunca entraron) ni a ninguna data-migration: nace
+  desde el admin, uno por acuerdo. Por eso los guards de conteo congelado siguen
+  verdes sin tocarlos.
 
 ## 13. Linear
 
@@ -741,8 +1116,20 @@ HOS-171 (todo es preapproval desde entonces), HOS-409 (sellado de `startsAt`),
 HOS-702 (`comp` en el reconcile de partner), HOS-180/HOS-993 (precedente de
 columnas nuevas en `billing_subscriptions`).
 
-Familia: HOS-973 (planes que no otorgan nada por el motor de entitlements).
+Familia: HOS-973 (planes que no otorgan nada por el motor de entitlements) —
+**pero ojo con la analogía**: para el dominio `partner` ese problema no aplica,
+porque los planes de aliado tienen `entitlements: []` a propósito y la
+visibilidad la deciden las columnas de la fila de `partners`. Ver R-11, que
+explica dónde sí aplicaría (`gastronomy`/`experience`, desde HOS-1074) por si
+alguna vez se generaliza el precio negociado a esos verticales. HOS-1074
+(commerce leyendo entitlements) es la referencia de ese caso futuro.
 
-Derivados propuestos, a abrir aparte (R-5, R-2): el anual de aliados que la
-landing promete y el checkout no soporta; y el aviso legal de subida que se manda
-a `partner-<id>@partners.hospeda.invalid`.
+Derivados propuestos, a abrir aparte:
+
+- **R-9 — `createPlan` no escribe `product_domain`**, así que todo plan creado
+  desde el admin nace en `accommodation` y se publica en la página de precios de
+  anfitriones. **Bug vivo, anterior a esta spec, y bloqueante de F3.** Es el más
+  urgente de los tres. Recomendación de dónde vive: §12.
+- **R-5** — el anual de aliados que la landing promete y el checkout no soporta.
+- **R-2** — el aviso legal de subida que se manda a
+  `partner-<id>@partners.hospeda.invalid`.
