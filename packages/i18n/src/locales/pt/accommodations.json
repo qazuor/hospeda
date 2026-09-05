@@ -479,6 +479,11 @@
             "backToAccommodation": "← Voltar ao alojamento",
             "photosSubpage": "Fotos"
         },
+        "videos": {
+            "title": "Vídeos",
+            "play": "Reproduzir vídeo",
+            "playNamed": "Reproduzir vídeo: {{caption}}"
+        },
         "pricing": {
             "from": "A partir de",
             "perNightLabel": "/noite",

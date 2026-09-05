@@ -131,7 +131,15 @@ export const KNOWN_LIMIT_KEYS = new Set([
     'max_ai_translate_per_month',
     'max_ai_accommodation_import_per_month',
     'max_search_history_entries',
-    'max_collections'
+    'max_collections',
+    // HOS-1060 — the private-gallery cap. Title-only entry, the same honest
+    // partial the two comments above describe: nothing in `apps/web/src` passes
+    // this limitKey to `buildLimitReachedPayload*` yet, because the creation
+    // route it would come from is a later phase. Whoever wires that route still
+    // owes this key a message and a CTA; what the entry buys today is that the
+    // toast names the gallery cap instead of falling back to
+    // `billing.limit.generic.*`, which never says which limit was hit.
+    'max_active_private_galleries'
 ]);
 
 /**

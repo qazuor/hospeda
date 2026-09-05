@@ -37,8 +37,22 @@ const mockListData: {
 const mockAddMutateAsync = vi.fn();
 const mockRemoveMutateAsync = vi.fn();
 const mockSetFeaturedMutateAsync = vi.fn();
+const mockAddFeaturedMutateAsync = vi.fn();
 const mockUploadEntityImageMutateAsync = vi.fn();
 
+/**
+ * Exhaustive by design — NOT `importOriginal` with a spread.
+ *
+ * These tests render without a `QueryClientProvider`, so any export left real
+ * would run `useMutation`/`useQueryClient` outside a provider and throw a
+ * react-query error that names neither the hook nor this file. The explicit
+ * form fails instead with vitest's own "No <name> export is defined on the
+ * mock", which points straight at the line to add — the failure mode you want
+ * when someone adds a hook the component starts calling.
+ *
+ * The cost is that this list has to grow with the module. It already had to
+ * once (HOS-388) and now again (HOS-803).
+ */
 vi.mock('@/features/accommodations/hooks/useAccommodationMedia', () => ({
     useAccommodationMediaList: () => mockListData,
     useAccommodationMediaAdd: () => ({
@@ -54,6 +68,13 @@ vi.mock('@/features/accommodations/hooks/useAccommodationMedia', () => ({
     }),
     useAccommodationMediaSetFeatured: () => ({
         mutateAsync: mockSetFeaturedMutateAsync,
+        isPending: false,
+        isError: false
+    }),
+    // HOS-803: the portada uploader now registers the cover in ONE request
+    // instead of add + setFeatured, so the tree reaches this hook too.
+    useAccommodationMediaAddFeatured: () => ({
+        mutateAsync: mockAddFeaturedMutateAsync,
         isPending: false,
         isError: false
     }),
@@ -374,20 +395,19 @@ describe('GalleryManager — alt derived from entity name', () => {
 });
 
 describe('GalleryManager — set portada (upload → add → setFeatured)', () => {
-    it('calls upload → addMedia → setFeatured in sequence for portada upload', async () => {
+    it('calls upload → addFeaturedMedia in ONE request for portada upload', async () => {
         const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
             url: 'https://cdn.example.com/portada.jpg',
             publicId: 'hospeda/dev/portada'
         });
-        mockAddMutateAsync.mockResolvedValue({
-            id: 'portada-row',
-            url: 'https://cdn.example.com/portada.jpg',
-            isFeatured: false
-        });
-        mockSetFeaturedMutateAsync.mockResolvedValue({
-            id: 'portada-row',
-            isFeatured: true
+        mockAddFeaturedMutateAsync.mockResolvedValue({
+            media: {
+                id: 'portada-row',
+                url: 'https://cdn.example.com/portada.jpg',
+                isFeatured: true
+            },
+            previousFeatured: null
         });
 
         mockListData.data = [];
@@ -402,10 +422,21 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
             expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({ role: 'gallery' })
             );
-            expect(mockAddMutateAsync).toHaveBeenCalledWith(
+            expect(mockAddFeaturedMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({ url: 'https://cdn.example.com/portada.jpg' })
             );
-            expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'portada-row' });
+        });
+
+        // HOS-803: the cover used to be registered as an ordinary gallery row
+        // and promoted afterwards. That first call ran the gallery cap, which
+        // counts the gallery alone, so an owner at the cap was refused at step
+        // one and never reached step two. Asserting the two old calls are ABSENT
+        // is the point: a regression would re-introduce them and pass the
+        // positive assertion above unchanged.
+        expect(mockAddMutateAsync).not.toHaveBeenCalled();
+        expect(mockSetFeaturedMutateAsync).not.toHaveBeenCalled();
+        await waitFor(() => {
+            expect(mockAddFeaturedMutateAsync).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -414,20 +445,19 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
     // handler's. The grid-path tests above ("alt derived from entity name")
     // exercise a completely different code path and would stay green even
     // if this spread were removed from the portada handler alone.
-    it('sends a non-empty alt on the portada addMedia call when entityName is provided', async () => {
+    it('sends a non-empty alt on the portada cover call when entityName is provided', async () => {
         const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
             url: 'https://cdn.example.com/portada.jpg',
             publicId: 'hospeda/dev/portada'
         });
-        mockAddMutateAsync.mockResolvedValue({
-            id: 'portada-row',
-            url: 'https://cdn.example.com/portada.jpg',
-            isFeatured: false
-        });
-        mockSetFeaturedMutateAsync.mockResolvedValue({
-            id: 'portada-row',
-            isFeatured: true
+        mockAddFeaturedMutateAsync.mockResolvedValue({
+            media: {
+                id: 'portada-row',
+                url: 'https://cdn.example.com/portada.jpg',
+                isFeatured: true
+            },
+            previousFeatured: null
         });
 
         mockListData.data = [];
@@ -444,26 +474,25 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
         fireEvent.change(portadaInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(mockAddMutateAsync).toHaveBeenCalledWith(
+            expect(mockAddFeaturedMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({ alt: 'Hotel Costanera' })
             );
         });
     });
 
-    it('does NOT send an alt key on the portada addMedia call when entityName is absent', async () => {
+    it('does NOT send an alt key on the portada cover call when entityName is absent', async () => {
         const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
             url: 'https://cdn.example.com/portada.jpg',
             publicId: 'hospeda/dev/portada'
         });
-        mockAddMutateAsync.mockResolvedValue({
-            id: 'portada-row',
-            url: 'https://cdn.example.com/portada.jpg',
-            isFeatured: false
-        });
-        mockSetFeaturedMutateAsync.mockResolvedValue({
-            id: 'portada-row',
-            isFeatured: true
+        mockAddFeaturedMutateAsync.mockResolvedValue({
+            media: {
+                id: 'portada-row',
+                url: 'https://cdn.example.com/portada.jpg',
+                isFeatured: true
+            },
+            previousFeatured: null
         });
 
         mockListData.data = [];
@@ -475,9 +504,9 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
         fireEvent.change(portadaInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(mockAddMutateAsync).toHaveBeenCalled();
+            expect(mockAddFeaturedMutateAsync).toHaveBeenCalled();
         });
-        const call = mockAddMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
+        const call = mockAddFeaturedMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(Object.hasOwn(call, 'alt')).toBe(false);
     });
 });

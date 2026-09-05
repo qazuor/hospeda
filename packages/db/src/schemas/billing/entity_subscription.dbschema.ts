@@ -1,5 +1,13 @@
 import { relations } from 'drizzle-orm';
-import { index, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    pgTable,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { billingSubscriptions } from '../../billing/index.ts';
 
 /**
@@ -128,6 +136,35 @@ export const entitySubscriptions = pgTable(
          * (commerce reads its plan from the subscription, so it never needs it).
          */
         planId: varchar('plan_id', { length: 255 }),
+        /**
+         * The listing is linked to a LIVE subscription whose plan no longer
+         * covers it (HOS-1122) — a commerce downgrade cut the tier's listing cap
+         * and this listing fell outside the owner's keep set.
+         *
+         * ## Why the flag lives here and not on the listing
+         *
+         * `accommodations.plan_restricted` and `owner_promotions.plan_restricted`
+         * sit on the entity because the accommodation restriction is derived from
+         * `owner_id` and has no link table to hang off. Commerce does have one,
+         * and this is it: the row already answers "which listings does this
+         * subscription cover", so "…and which of them has it stopped covering"
+         * belongs on the same row. Putting it on `gastronomies` and `experiences`
+         * would be the same fact in two tables, kept in step by hand.
+         *
+         * ## Why a flag rather than unlinking the row
+         *
+         * Clearing `subscription_id` would hide the listing just as well and
+         * needs no column — and would make "cut by a downgrade" indistinguishable
+         * from "never subscribed", which is precisely the reversibility
+         * `plan-restriction.service.ts` refuses to lose for accommodations ("a
+         * lifecycle flip loses that context"). An upgrade has to know which
+         * listings to bring back, and a null link cannot say.
+         *
+         * Read by the visibility reconciler, which will not publish a restricted
+         * listing however healthy the subscription is. Always `false` on
+         * accommodation rows: that vertical carries its own column.
+         */
+        planRestricted: boolean('plan_restricted').notNull().default(false),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },

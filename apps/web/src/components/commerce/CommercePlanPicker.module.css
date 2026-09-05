@@ -171,3 +171,16 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/*
+ * Per-tier note (HOS-1122) — says what choosing this tier does, which differs
+ * by direction: a dearer tier charges the prorated delta now, a cheaper one
+ * costs nothing and takes effect at period end.
+ */
+.planNote {
+    display: block;
+    margin-top: var(--space-1, 0.25rem);
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--core-muted-foreground);
+}

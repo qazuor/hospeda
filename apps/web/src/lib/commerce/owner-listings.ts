@@ -12,6 +12,8 @@
  * are still returned rather than failing the whole page.
  */
 import type {
+    CommerceDowngradePreview,
+    CommerceKeepSelections,
     CommerceListingCompletenessListing,
     CommerceOwnerListingSummary,
     ExperienceOwnerCreateInput,
@@ -254,43 +256,89 @@ export function startOwnerListingCheckout({
 }
 
 // ---------------------------------------------------------------------------
-// HOS-1119 — owner self-service tier upgrade
+// HOS-1119 — owner self-service tier change
 // ---------------------------------------------------------------------------
 
 const COMMERCE_SUBSCRIPTIONS_PATH = '/api/v1/protected/commerce/subscriptions';
 
 /**
- * Moves the caller's own commerce subscription for one vertical to a dearer
- * tier (HOS-1119).
+ * Moves the caller's own commerce subscription for one vertical to another
+ * tier (HOS-1119, both directions since HOS-1122).
  *
  * `POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`.
  * Mirrors {@link startOwnerListingCheckout}'s idempotency-key pattern — a
  * fresh `X-Idempotency-Key` per call, so a retried click cannot open two
- * upgrades.
+ * changes.
  *
- * Upgrades only: the backend answers `422` for a target that is equal to or
- * cheaper than the caller's current tier (commerce has no downgrade path —
- * see `apps/api/src/routes/commerce/protected/change-plan.ts`'s module doc).
+ * Only `422` is now reserved for a target priced IDENTICALLY to the current
+ * tier: it is neither direction. A cheaper target answers `scheduled`, and
+ * `CommercePlanChange.client.tsx` offers those tiers — it filtered to dearer
+ * ones only until HOS-1122, which is what made "puede subir pero no bajar"
+ * true from the owner's side even after the API accepted the move.
+ *
  * Other error codes: `400` (malformed/foreign-vertical slug), `404` (no live
  * subscription for this vertical, or the target plan does not exist), `409`
- * (a cancellation is already pending), `410` (target plan retired), `503`
- * (billing unavailable).
+ * (a cancellation is already pending, or the subscription moved mid-request),
+ * `410` (target plan retired), `503` (billing unavailable).
  *
  * @param params - Vertical to act on, and the target tier's slug.
  * @returns A discriminated `PlanChangeResponse`: `pending_payment` (redirect
- *   to `checkoutUrl` to pay the prorated delta) or `active` (applied at once,
- *   no charge — the subscription was still trialing).
+ *   to `checkoutUrl` to pay the prorated delta), `active` (applied at once,
+ *   no charge — the subscription was still trialing), or `scheduled` (a
+ *   downgrade, effective at period end, carrying a
+ *   `commerceRestrictionPreview` of the listings the smaller cap stops
+ *   covering).
  */
 export function changeCommercePlan({
+    vertical,
+    planSlug,
+    keepSelections
+}: {
+    readonly vertical: CommerceVertical;
+    readonly planSlug: string;
+    /**
+     * Which listings to keep public when this is a DOWNGRADE (HOS-1122).
+     * Omitted for an upgrade — the API ignores it there, and sending it would
+     * suggest a choice was made where none exists.
+     */
+    readonly keepSelections?: CommerceKeepSelections;
+}): Promise<ApiResult<PlanChangeResponse>> {
+    return apiClient.postProtected<PlanChangeResponse>({
+        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/change-plan`,
+        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+        body: { planSlug, ...(keepSelections === undefined ? {} : { keepSelections }) }
+    });
+}
+
+/**
+ * Reads which listings a cheaper tier would stop covering — WITHOUT scheduling
+ * anything (HOS-1122).
+ *
+ * `GET /api/v1/protected/commerce/subscriptions/{vertical}/downgrade-preview`.
+ *
+ * The read that has to happen BEFORE {@link changeCommercePlan} on a
+ * downgrade, so the owner picks what to keep while nothing is written yet.
+ * Mirrors `billingApi.previewDowngrade`, which plays the same part in the
+ * accommodation flow.
+ *
+ * `422` here is not "no excess": it means the target tier's listing cap could
+ * not be resolved, and the caller must NOT fall through to a zero-excess
+ * assumption — that is precisely the reading the whole feature is built to
+ * avoid. `404` means the caller holds no subscription for this vertical.
+ *
+ * @param params - Vertical to preview, and the target tier's slug.
+ * @returns The preview: the cap, how many listings exceed it, and every
+ *   covered listing ordered by default-keep priority.
+ */
+export function fetchCommerceDowngradePreview({
     vertical,
     planSlug
 }: {
     readonly vertical: CommerceVertical;
     readonly planSlug: string;
-}): Promise<ApiResult<PlanChangeResponse>> {
-    return apiClient.postProtected<PlanChangeResponse>({
-        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/change-plan`,
-        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
-        body: { planSlug }
+}): Promise<ApiResult<CommerceDowngradePreview>> {
+    return apiClient.getProtected<CommerceDowngradePreview>({
+        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/downgrade-preview`,
+        params: { targetPlan: planSlug }
     });
 }

@@ -108,6 +108,48 @@ export const billingAddonPurchases = pgTable(
          * the next successful activation.
          */
         needsEntitlementSync: boolean('needs_entitlement_sync').default(false).notNull(),
+        /**
+         * MercadoPago preapproval id backing a RECURRING add-on purchase (HOS-847
+         * PR 1). `NULL` for one-time add-ons (paid via `Preference`, never a
+         * preapproval) and for recurring purchases whose checkout has not yet
+         * created the preapproval. Populated by the recurring checkout path
+         * introduced behind `HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED` (currently
+         * OFF everywhere — this column ships dark, written by nothing yet).
+         */
+        mpSubscriptionId: varchar('mp_subscription_id', { length: 255 }),
+        /**
+         * Start of the current billing period for a recurring add-on purchase.
+         * Computed locally from the confirmed `subscription_authorized_payment`
+         * webhook, never copied from MercadoPago's `next_payment_date` (HOS-1012 —
+         * that field describes the plan's terms, not this payer's actual charge
+         * timing; trusting it cost HOS-522 a false 14-day trial promise followed by
+         * a real charge 118 seconds later). `NULL` until the recurring checkout
+         * path (behind the same flag) starts writing it.
+         */
+        currentPeriodStart: timestamp('current_period_start', { withTimezone: true }),
+        /**
+         * End of the current billing period for a recurring add-on purchase, i.e.
+         * the next expected charge. Same locally-computed-only rule as
+         * {@link currentPeriodStart}. `NULL` until the recurring checkout path
+         * starts writing it.
+         */
+        currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+        /**
+         * Recurring-cancellation intent: when `true`, the purchase should stop
+         * renewing at `current_period_end` instead of being revoked immediately.
+         * Defaults to `false` so existing (one-time) rows keep today's
+         * immediate-revoke behavior untouched. Not yet read or written by any
+         * caller — the cancellation flow that honors it lands in a later PR of
+         * this chain.
+         */
+        cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+        /**
+         * Snapshot of the billing cadence (`monthly` | `annual`) selected at
+         * purchase time for a recurring add-on, mirroring
+         * `billing_mp_addon_plans.billing_interval`. `NULL` for one-time add-ons,
+         * which have no cadence. Not yet written by any caller.
+         */
+        billingInterval: varchar('billing_interval', { length: 20 }),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         deletedAt: timestamp('deleted_at', { withTimezone: true })
@@ -148,7 +190,17 @@ export const billingAddonPurchases = pgTable(
             'idx_addon_purchases_needs_entitlement_sync'
         )
             .on(table.customerId, table.status)
-            .where(sql`needs_entitlement_sync = true`)
+            .where(sql`needs_entitlement_sync = true`),
+        /**
+         * Webhook routing lookup for recurring add-ons (HOS-847 PR 1): resolving
+         * MercadoPago's `data.id` (preapproval id) against this column is how the
+         * webhook handler distinguishes an add-on charge from a plan renewal
+         * before dispatching to either handler. Mirrors
+         * `idx_subscriptions_mp_id` on `billing_subscriptions`.
+         */
+        addonPurchases_mpSubscriptionId_idx: index('idx_addon_purchases_mp_subscription_id').on(
+            table.mpSubscriptionId
+        )
     })
 );
 

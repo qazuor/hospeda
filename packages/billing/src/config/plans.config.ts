@@ -10,7 +10,8 @@ import { ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL } from './commerce-entitlements.c
 import {
     AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
     type CommerceVertical,
-    LIMIT_KEY_BY_COMMERCE_VERTICAL
+    LIMIT_KEY_BY_COMMERCE_VERTICAL,
+    PRIVATE_GALLERY_LIMIT_KEY
 } from './commerce-limits.config.js';
 import { LIMIT_METADATA } from './limits.config.js';
 
@@ -663,6 +664,17 @@ export const COMMERCE_AI_CHAT_PER_MONTH = 1250;
  *   Pass `0` for a tier that does not grant `AI_CHAT` — it is the belt to the
  *   entitlement gate's braces, and it is what the owner-side check reads as
  *   "feature disabled in this plan".
+ * @param input.privateGalleries - How many private galleries this tier may hold
+ *   ALIVE at once (HOS-1060). REQUIRED with no default, for exactly the reason
+ *   `aiChatPerMonth` is: an omitted key is resolved as UNLIMITED, not as zero,
+ *   so a default would make "nobody considered this tier" read identically to
+ *   "deliberately uncapped" — and this is the one cap in the file with a
+ *   recurring storage bill behind it. Every GASTRONOMY tier passes `0`: a
+ *   restaurant has no outing whose photos to hand over, and an explicit zero is
+ *   a decision where an absent key is an accident. `experience-basico` and
+ *   `experience-pro` also pass `0` — they do not grant the capability, and the
+ *   `private-galleries-+N` add-on that enables it raises this same key from
+ *   there.
  * @returns The tier's {@link PlanDefinition}.
  */
 function commerceVerticalTier(input: {
@@ -678,6 +690,7 @@ function commerceVerticalTier(input: {
     trialDays?: number;
     extraEntitlements?: readonly EntitlementKey[];
     aiChatPerMonth: number;
+    privateGalleries: number;
 }): PlanDefinition {
     return {
         slug: input.slug,
@@ -752,7 +765,17 @@ function commerceVerticalTier(input: {
             // an explicit `0` ("disabled in this plan"), which is a decision
             // somebody made, and a future seventh tier cannot inherit an
             // uncapped chat by forgetting an argument.
-            limit(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.aiChatPerMonth)
+            limit(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.aiChatPerMonth),
+            // HOS-1060 — the private-gallery cap. Declared by all SIX tiers,
+            // including the four that grant zero of it, on exactly the terms
+            // the AI-chat quota above is declared: an absent key reads as
+            // unlimited through five layers without raising, and this is the
+            // one cap in this file with a per-use storage bill behind it.
+            //
+            // Not a `Record<CommerceVertical, LimitKey>` like its two
+            // neighbours: only experiences have galleries, so there is no
+            // gastronomy key to look up — see `PRIVATE_GALLERY_LIMIT_KEY`.
+            limit(PRIVATE_GALLERY_LIMIT_KEY, input.privateGalleries)
         ])
     };
 }
@@ -837,7 +860,11 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-400: the AI chat is premium-only in both verticals (owner decision),
     // so básico declares an explicit zero rather than omitting the key.
-    aiChatPerMonth: 0
+    aiChatPerMonth: 0,
+    // HOS-1060: gastronomy has no outing whose photos to hand a customer, so
+    // every tier of this vertical declares an explicit zero. Omitting the key
+    // would read as UNLIMITED, not as "not applicable".
+    privateGalleries: 0
 });
 
 /**
@@ -905,7 +932,9 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     // HOS-400: the AI chat is PREMIUM in both verticals (owner decision), so
     // `-pro` declares an explicit zero. It is the one capability in this file
     // that pro does NOT inherit upward from.
-    aiChatPerMonth: 0
+    aiChatPerMonth: 0,
+    // HOS-1060 — see `GASTRONOMY_BASICO_PLAN`: gastronomy-wide explicit zero.
+    privateGalleries: 0
 });
 
 /**
@@ -993,7 +1022,10 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     ],
     // HOS-400: the only commerce tier of this vertical that carries a nonzero
     // chat quota, because it is the only one that grants the capability.
-    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH
+    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH,
+    // HOS-1060: still zero on the dearest gastronomy tier — the capability is
+    // experience-only, not a premium perk this vertical is missing out on.
+    privateGalleries: 0
 });
 
 /**
@@ -1029,7 +1061,11 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-400: the AI chat is premium-only in both verticals (owner decision),
     // so básico declares an explicit zero rather than omitting the key.
-    aiChatPerMonth: 0
+    aiChatPerMonth: 0,
+    // HOS-1060: the entry tier does not grant private galleries (owner
+    // decision, 2026-09-04) — a `private-galleries-+N` add-on is what enables
+    // them here, and it raises this key from the explicit zero below.
+    privateGalleries: 0
 });
 
 /**
@@ -1090,7 +1126,11 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     // HOS-400: the AI chat is PREMIUM in both verticals (owner decision), so
     // `-pro` declares an explicit zero. It is the one capability in this file
     // that pro does NOT inherit upward from.
-    aiChatPerMonth: 0
+    aiChatPerMonth: 0,
+    // HOS-1060 — the SECOND capability `-pro` does not inherit upward from, and
+    // the second reason to buy an add-on rather than a tier. Explicit zero, see
+    // `EXPERIENCE_BASICO_PLAN`.
+    privateGalleries: 0
 });
 
 /**
@@ -1130,11 +1170,27 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
         // HOS-400 — see the twin comment on GASTRONOMY_PREMIUM_PLAN. Same key,
         // different subscription domain; the isolation comes from the domain and
         // the per-vertical quota, not from a duplicated entitlement.
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        // HOS-1060 — private per-tourist galleries. Owner decision
+        // (2026-09-04): the escalón that GRANTS the capability, with a cap the
+        // `private-galleries-+N` add-ons then raise. Experience-only, so unlike
+        // `DOWNLOAD_LISTING_PDF` right above it there is no gastronomy twin to
+        // keep in step.
+        EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
     ],
     // HOS-400: the only commerce tier of this vertical that carries a nonzero
     // chat quota, because it is the only one that grants the capability.
-    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH
+    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH,
+    // HOS-1060: the only tier in either vertical with a nonzero gallery cap,
+    // because it is the only one that grants the capability from the plan.
+    //
+    // TWENTY is a placeholder derived from the issue's own example ("un
+    // proveedor con dos salidas al mes no necesita lo mismo que uno con
+    // veinte") and from the add-on ladder that tops out at +20: a gallery lives
+    // 30 days, so the cap is roughly "outings per month". The owner set the
+    // pack SIZES on 2026-09-04 and did not set this base — it is confirmed
+    // alongside the pack prices when the packs are activated.
+    privateGalleries: 20
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */

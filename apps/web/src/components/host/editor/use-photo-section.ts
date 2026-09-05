@@ -47,6 +47,16 @@ function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMed
         id: '',
         url: img.url,
         publicId: img.publicId,
+        // Spelled out rather than omitted: the four text keys are REQUIRED on
+        // `AccommodationMediaItem` precisely so a mapper cannot forget one (see
+        // `PhotoMetadataEditableItem`). `MediaImage` — the SSR-only legacy
+        // shape — carries none of them, so `undefined` is the honest answer
+        // here, and the empty `id` keeps the panel shut until the real rows
+        // arrive with the real text.
+        caption: undefined,
+        description: undefined,
+        alt: undefined,
+        attribution: undefined,
         isFeatured
     };
 }
@@ -328,7 +338,13 @@ export function usePhotoSection({
                     onProgress: setUploadProgress
                 });
 
-                const addResult = await accommodationMediaApi.addMedia({
+                // HOS-803: ONE request, not two. The old pair — register a
+                // gallery row, then promote it — was refused at the first step
+                // whenever the gallery sat at the plan cap, so an owner at the
+                // cap could never change their cover. This endpoint creates the
+                // row already featured and disposes of the previous cover in
+                // the same transaction.
+                const addResult = await accommodationMediaApi.addFeaturedMedia({
                     id: accommodationId,
                     body: {
                         url: uploaded.url,
@@ -342,30 +358,14 @@ export function usePhotoSection({
                     return;
                 }
 
-                const newRow = addResult.data.media;
-                const featuredResult = await accommodationMediaApi.setFeaturedMedia({
-                    id: accommodationId,
-                    mediaId: newRow.id
-                });
+                const { media: newRow } = addResult.data;
 
-                if (!featuredResult.ok) {
-                    reportUploadError(
-                        featuredResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.featuredFailed',
-                                'No se pudo marcar la imagen como portada'
-                            )
-                    );
-                    return;
-                }
-
-                setGalleryItems((prev) => {
-                    const base = featuredItem
-                        ? [...prev, { ...featuredItem, isFeatured: false }]
-                        : [...prev];
-                    return base;
-                });
-                setFeaturedItem(mediaRowToItem(featuredResult.data.media));
+                // The replaced cover is NOT added to the gallery. Uploading a
+                // new cover deletes the old one server-side, so appending it
+                // here would leave a photo on screen that no longer exists —
+                // and it is that demotion, on this path, that used to grow the
+                // gallery by one on every replacement.
+                setFeaturedItem(mediaRowToItem(newRow));
             } catch (err) {
                 reportUploadError(
                     err instanceof Error
@@ -380,7 +380,9 @@ export function usePhotoSection({
                 }
             }
         },
-        [accommodationId, featuredItem, t, reportUploadError, reportAddMediaError]
+        // `featuredItem` is no longer read here: the replaced cover is deleted
+        // server-side rather than appended to the gallery (HOS-803).
+        [accommodationId, t, reportUploadError, reportAddMediaError]
     );
 
     const handleFeaturedSelect = useCallback(

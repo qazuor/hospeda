@@ -45,7 +45,23 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
     // that just isn't active/trialing (NO_ACTIVE_SUBSCRIPTION above). Both
     // resolve to the same client-side "you need an active subscription"
     // gate copy, so they share the whitelist here.
-    'NO_SUBSCRIPTION'
+    'NO_SUBSCRIPTION',
+    // addon purchase route (HOS-1178) — the product-domain gate's two
+    // refusals. Whitelisted for the same reason the four above are: a 422's
+    // status-derived `error.code` collapses every rejection into
+    // `VALIDATION_ERROR`, so without a forwarded reason the buyer is told
+    // "the data you sent is invalid" for a purchase whose data was fine.
+    //
+    // They are two DIFFERENT remedies and must not be merged:
+    //   ADDON_NOT_AVAILABLE_FOR_DOMAIN — you need a subscription in this
+    //     add-on's vertical. The buyer can act on that.
+    //   ADDON_DOMAIN_UNKNOWN — the add-on declares no vertical at all. Nothing
+    //     the buyer does fixes it; it is an operator's catalogue row to correct.
+    // Collapsing them would send someone to buy a subscription that would not
+    // help. It is also what makes the two paths distinguishable in a test,
+    // where both answer 422.
+    'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
+    'ADDON_DOMAIN_UNKNOWN'
 ]);
 
 /** The client-safe projection of an entitlement cause. */

@@ -1,6 +1,6 @@
 {
-  "id": "44775295-bc19-43cb-adb7-892b57ab1f8c",
-  "prevId": "b6123141-b3c6-41c5-9786-bad0a9be5b61",
+  "id": "c9b4b10e-7650-47c2-86a1-906d6df533d1",
+  "prevId": "6b16e0da-b745-4208-8163-7793d8c55446",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -4936,6 +4936,37 @@
           "notNull": true,
           "default": false
         },
+        "mp_subscription_id": {
+          "name": "mp_subscription_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_period_start": {
+          "name": "current_period_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_period_end": {
+          "name": "current_period_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_at_period_end": {
+          "name": "cancel_at_period_end",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -5181,6 +5212,21 @@
           ],
           "isUnique": false,
           "where": "needs_entitlement_sync = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_addon_purchases_mp_subscription_id": {
+          "name": "idx_addon_purchases_mp_subscription_id",
+          "columns": [
+            {
+              "expression": "mp_subscription_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -5458,6 +5504,137 @@
             "id"
           ],
           "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.billing_mp_addon_plans": {
+      "name": "billing_mp_addon_plans",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "addon_id": {
+          "name": "addon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mp_preapproval_plan_id": {
+          "name": "mp_preapproval_plan_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_ars": {
+          "name": "amount_ars",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "billingMpAddonPlans_variant_uniq": {
+          "name": "billingMpAddonPlans_variant_uniq",
+          "columns": [
+            {
+              "expression": "addon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "billing_interval",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "billingMpAddonPlans_mpPreapprovalPlanId_uniq": {
+          "name": "billingMpAddonPlans_mpPreapprovalPlanId_uniq",
+          "columns": [
+            {
+              "expression": "mp_preapproval_plan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "billingMpAddonPlans_addonId_idx": {
+          "name": "billingMpAddonPlans_addonId_idx",
+          "columns": [
+            {
+              "expression": "addon_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "billing_mp_addon_plans_addon_id_billing_addons_id_fk": {
+          "name": "billing_mp_addon_plans_addon_id_billing_addons_id_fk",
+          "tableFrom": "billing_mp_addon_plans",
+          "tableTo": "billing_addons",
+          "columnsFrom": [
+            "addon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -6999,6 +7176,13 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
+        },
+        "plan_restricted": {
+          "name": "plan_restricted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -10713,85 +10897,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.entity_view_monthly_rollups": {
-      "name": "entity_view_monthly_rollups",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "entity_type": {
-          "name": "entity_type",
-          "type": "entity_type_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "entity_id": {
-          "name": "entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "month": {
-          "name": "month",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "total": {
-          "name": "total",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "unique_visitors": {
-          "name": "unique_visitors",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "entityViewMonthlyRollups_entity_month_uq": {
-          "name": "entityViewMonthlyRollups_entity_month_uq",
-          "columns": [
-            {
-              "expression": "entity_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "entity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "month",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -19068,183 +19173,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.partner_logo_clicks": {
-      "name": "partner_logo_clicks",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "partner_id": {
-          "name": "partner_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "visitor_hash": {
-          "name": "visitor_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "destination": {
-          "name": "destination",
-          "type": "partner_logo_click_destination_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "clicked_at": {
-          "name": "clicked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "partnerLogoClicks_partnerId_clickedAt_idx": {
-          "name": "partnerLogoClicks_partnerId_clickedAt_idx",
-          "columns": [
-            {
-              "expression": "partner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "clicked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "partnerLogoClicks_clickedAt_idx": {
-          "name": "partnerLogoClicks_clickedAt_idx",
-          "columns": [
-            {
-              "expression": "clicked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "partner_logo_clicks_partner_id_partners_id_fk": {
-          "name": "partner_logo_clicks_partner_id_partners_id_fk",
-          "tableFrom": "partner_logo_clicks",
-          "tableTo": "partners",
-          "columnsFrom": [
-            "partner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.partner_logo_click_monthly_rollups": {
-      "name": "partner_logo_click_monthly_rollups",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "partner_id": {
-          "name": "partner_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "month": {
-          "name": "month",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "total": {
-          "name": "total",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "unique_visitors": {
-          "name": "unique_visitors",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "partnerLogoClickMonthlyRollups_partner_month_uq": {
-          "name": "partnerLogoClickMonthlyRollups_partner_month_uq",
-          "columns": [
-            {
-              "expression": "partner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "month",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "partner_logo_click_monthly_rollups_partner_id_partners_id_fk": {
-          "name": "partner_logo_click_monthly_rollups_partner_id_partners_id_fk",
-          "tableFrom": "partner_logo_click_monthly_rollups",
-          "tableTo": "partners",
-          "columnsFrom": [
-            "partner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -33533,8 +33461,7 @@
         "PAYMENT",
         "EXPERIENCE",
         "GASTRONOMY",
-        "HOST_TRADE",
-        "PARTNER"
+        "HOST_TRADE"
       ]
     },
     "public.event_category_enum": {
@@ -33856,14 +33783,6 @@
         "pending",
         "approved",
         "rejected"
-      ]
-    },
-    "public.partner_logo_click_destination_enum": {
-      "name": "partner_logo_click_destination_enum",
-      "schema": "public",
-      "values": [
-        "OWN_PAGE",
-        "EXTERNAL"
       ]
     },
     "public.partner_mention_channel_enum": {

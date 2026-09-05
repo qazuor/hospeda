@@ -308,6 +308,43 @@ describe('config parity — mapRowToAddonDefinition vs ALL_ADDONS static config'
             expect(mapped.targetCategories).toEqual(staticAddon.targetCategories);
             expect(mapped.isActive).toBe(staticAddon.isActive);
             expect(mapped.sortOrder).toBe(staticAddon.sortOrder);
+            // HOS-1060 — resolved from the catalogue by slug, so parity here is
+            // what proves the read path reaches the same domain the config
+            // declares rather than the row's (absent) metadata.
+            expect(mapped.productDomain).toBe(staticAddon.productDomain);
         });
     }
+});
+
+// ─── productDomain resolution (HOS-1060) ─────────────────────────────────────
+
+describe('productDomain — resolved from config, never defaulted', () => {
+    it('answers a domain for every catalogue slug', () => {
+        // The parity loop above already asserts each one equals its config
+        // value; this is the non-vacuity half — that none of them is
+        // `undefined`, which parity would happily accept if the resolver
+        // returned nothing for everything.
+        for (const staticAddon of ALL_ADDONS) {
+            const mapped = mapRowToAddonDefinition(buildRowFromAddon(staticAddon));
+            expect(mapped.productDomain, `slug ${staticAddon.slug}`).toBeDefined();
+        }
+        expect(ALL_ADDONS.length).toBeGreaterThan(8);
+    });
+
+    it('answers undefined — never accommodation — for a row whose slug is not in the catalogue', () => {
+        // An operator can create an add-on through the SPEC-168 admin UI with a
+        // slug this catalogue does not know. Guessing `'accommodation'` there is
+        // the `?? ACCOMMODATION` HOS-1078 deleted from `productDomainForLimitKey`
+        // one layer down, and it would silently let that add-on through a
+        // domain filter it was never meant to satisfy.
+        const row = buildRowFromAddon(ALL_ADDONS[0]!);
+        const mapped = mapRowToAddonDefinition({
+            ...row,
+            metadata: { ...(row.metadata as Record<string, unknown>), slug: 'operator-invented' }
+        });
+
+        expect(mapped.slug).toBe('operator-invented');
+        expect(mapped.productDomain).toBeUndefined();
+        expect(mapped.productDomain).not.toBe('accommodation');
+    });
 });
