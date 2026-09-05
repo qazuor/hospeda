@@ -1,10 +1,36 @@
 ---
 /**
  * @file presentacion/alojamientos/index.astro
- * @description Commercial presentation for accommodation owners (HOS-978). A verbatim
- * migration of the owner-approved artifact "Presentación Alojamientos"; the copy and the
- * stylesheet below are the artifact's own and must not be rewritten here —
- * the artifact is the source of truth for both.
+ * @description Commercial presentation for accommodation owners (HOS-978). It STARTED as a
+ * verbatim migration of the owner-approved artifact "Presentación Alojamientos", and the
+ * stylesheet is still the artifact's own.
+ *
+ * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-05). The artifact is no
+ * longer the source of truth for the prose — this file is. The trial rewrite is the reason:
+ * HOS-1012 moved the trial to first publish and took the card out of it, so the three places
+ * that described the card-first flow (step 03, step 04 and the "la tarjeta se pide para
+ * publicar" bullet) were factually wrong and are gone. The trial is 30 days
+ * (`OWNER_TRIAL_DAYS`, `packages/billing/src/constants/billing.constants.ts`), starts inside the
+ * publish transaction (`apps/api/src/services/accommodation-publish-deps.ts`), is a local
+ * `billing_subscriptions` row with no MercadoPago preapproval, and runs on `owner-trial`
+ * (owner-pro entitlements, owner-basico limits).
+ *
+ * ONE BULLET DESCRIBES DECIDED BEHAVIOUR, NOT TODAY'S CODE — DO NOT "FIX" IT BACK. The last
+ * bullet of "Lo que conviene que sepas antes" says a listing goes dark when you stop paying and
+ * comes back online when you reactivate. Neither half is true yet, and both are tracked:
+ *  - HOS-1181 — the listing does NOT come back on its own after payment. `trial-expiry` takes it
+ *    down (`lifecycleState → INACTIVE`) but no billing path ever writes it back to ACTIVE, so the
+ *    owner must republish by hand. Two win-back emails already promise otherwise.
+ *  - HOS-1182 — a CANCELLED PAID subscription never takes the listing down at all. Only an
+ *    expired trial does; `finalize-cancelled-subs` and the rest leave `lifecycleState` alone.
+ * The page is deliberately ahead of the code on both. Shipping those two issues is what closes
+ * the gap; rewording the bullet is not.
+ *
+ * NAMING AIRBNB AND BOOKING IN THE IMPORT BULLET IS ALLOWED HERE. The public marketing rule is
+ * to name them for the CALENDAR but not for importing a listing (public copy says "Google,
+ * Mercado Libre y otras plataformas de alquiler"). The owner lifted that for this page on
+ * 2026-09-05: it is `noindex` and hand-delivered to one prospect, not public marketing. Keep the
+ * restriction anywhere that ranks.
  *
  * WHY IT IS NOT THE PUBLIC LANDING (/suscriptores/propietarios/ y /publicar/). That landing sells and is
  * optimized to rank. This page is what the owner sends personally to one
@@ -104,12 +130,12 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
         <span class="fact__v fact__v--free">Ninguna</span>
       </div>
       <div class="fact">
-        <span class="fact__k">Prueba</span>
+        <span class="fact__k">Prueba sin costo</span>
         <span class="fact__v">30 días</span>
       </div>
       <div class="fact">
         <span class="fact__k">Cómo se entra</span>
-        <span class="fact__v">Solo, en el momento</span>
+        <span class="fact__v">Te registrás y publicás vos</span>
       </div>
     </div>
   </header>
@@ -175,17 +201,17 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
             Queda guardada como borrador, sin que nadie la vea, el tiempo que necesites. Vas
             cargando fotos, precio, capacidad, ubicación, servicios y horarios cuando puedas.
           </p>
-          <p class="step__meta">Sigue sin costo mientras esté en borrador</p>
+          <p class="step__meta">Sin costo y sin tarjeta &middot; El borrador no vence</p>
         </div>
       </li>
       <li>
         <span class="num">03</span>
         <div class="step__body">
-          <h3>Le das publicar</h3>
+          <h3>Le das publicar y arrancan los 30 días</h3>
           <p>
-            Recién <strong>acá</strong> elegís tu plan y cargás la tarjeta. Ese es el momento en
-            que arranca la prueba: tu alojamiento sale publicado y <strong>tenés 30 días sin
-            que se te cobre nada</strong>.
+            Tu alojamiento sale publicado <strong>en ese momento</strong> y ahí arranca la prueba:
+            <strong>30 días sin costo y sin tarjeta</strong>. No elegís plan, no cargás nada.
+            Durante esos 30 días tenés las funciones del plan Profesional.
           </p>
           <p class="step__meta">Para publicar hacen falta: capacidad, noches mínimas, dormitorios, baños y la foto principal</p>
         </div>
@@ -193,11 +219,27 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       <li>
         <span class="num">04</span>
         <div class="step__body">
-          <h3>Al día 31 se cobra el primer mes</h3>
+          <h3>Recién al final elegís plan y cargás la tarjeta</h3>
           <p>
-            Si en esos 30 días decidís que no es para vos, cancelás y <strong>no se te cobra
-            nada</strong>. Si seguís, se debita el primer mes y después uno por mes.
+            Te avisamos por mail cuando faltan diez días, cinco y uno. Si querés seguir, elegís tu
+            plan y cargás la tarjeta; recién ahí se cobra. Si no hacés nada, tu ficha sale del
+            sitio ese día &mdash; <strong>no se borra nada</strong>, y vuelve cuando elijas un plan.
+            Podés adelantarte y elegir plan antes, si preferís.
           </p>
+          <p class="step__meta">La prueba es una sola, por única vez</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">05</span>
+        <div class="step__body">
+          <h3>Ya publicado, el panel es tuyo</h3>
+          <p>
+            Editás la ficha cuando querés, cargás tus preguntas frecuentes, marcás las fechas
+            ocupadas, armás promociones, contestás las consultas y mirás tus números. Cambiás de
+            plan, sumás adicionales, pausás o cancelás vos mismo, desde tu cuenta, sin llamar a
+            nadie.
+          </p>
+          <p class="step__meta">Lo único que conviene no descuidar: mantener el calendario y el precio al día</p>
         </div>
       </li>
     </ol>
@@ -206,7 +248,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
   <section>
     <div class="sec-head">
       <p class="eyebrow">Los planes</p>
-      <h2>Tres, según cuántos alojamientos tengas</h2>
+      <h2>Tres planes, según cuántos alojamientos tengas y qué funcionalidades quieras</h2>
     </div>
     <p>
       El de entrada <strong>ronda los veinte mil pesos por mes</strong> — menos que una noche en
@@ -230,37 +272,57 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
           <tr><td>Aparecer destacado</td><td>con un adicional</td><td>sí</td><td>sí</td></tr>
           <tr><td>Calendario conectado con Airbnb, Booking y Google</td><td>—</td><td>sí</td><td>sí</td></tr>
           <tr><td>Descripción con formato y video</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Botón directo de WhatsApp en tu ficha</td><td>sólo se muestra</td><td>sí</td><td>sí</td></tr>
           <tr><td>Atención prioritaria</td><td>—</td><td>sí</td><td>sí</td></tr>
           <tr><td>Estadísticas avanzadas</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>Insignia de verificado</td><td>—</td><td>—</td><td>sí</td></tr>
-          <tr><td>Tu identidad visual en la ficha</td><td>—</td><td>—</td><td>sí</td></tr>
+          <tr><td>Usos de inteligencia artificial por mes <span class="mono">(mejorar textos, chat con turistas)</span></td><td class="mono">50</td><td class="mono">250</td><td class="mono">1250</td></tr>
+          <tr><td>Traducciones automáticas por mes</td><td class="mono">200</td><td class="mono">1000</td><td class="mono">5000</td></tr>
+          <tr><td>Tu identidad visual en la ficha</td><td>—</td><td>—</td><td>próximamente</td></tr>
         </tbody>
       </table>
     </div>
     <p class="subhead">
       <strong>En los tres planes</strong> entran: editar toda tu ficha, calendario de ocupación,
-      preguntas frecuentes, promociones, estadísticas básicas, la ayuda de la inteligencia
-      artificial (ver abajo) y el paquete completo de turista VIP para usar el sitio como viajero.
+      preguntas frecuentes, promociones, estadísticas básicas y la ayuda de la inteligencia
+      artificial (ver abajo).
     </p>
+    <div class="notice">
+      <h3>Además, sos turista VIP sin pagar un peso más.</h3>
+      <p>
+        Hospeda tiene una cuenta paga para viajeros que sale <strong>quince mil pesos por
+        mes</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas,
+        recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el WhatsApp de
+        los otros anfitriones</strong>.
+      </p>
+      <p>
+        <strong>Con cualquiera de los tres planes eso viene incluido.</strong> No es un descuento ni
+        una promoción: el plan de anfitrión trae adentro el paquete completo de turista VIP. Cuando
+        salís vos de viaje por la zona, usás el sitio con todo desbloqueado.
+      </p>
+    </div>
   </section>
 
   <section>
     <div class="sec-head">
       <p class="eyebrow">Lo que te ahorra trabajo</p>
-      <h2>Cuatro cosas que no vas a encontrar juntas en otro lado</h2>
+      <h2>Siete cosas que no vas a encontrar juntas en otro lado</h2>
     </div>
     <ul class="plain">
-      <li><span class="tick">1</span><span><strong>Traé tu ficha de otro lado, hecha.</strong> Pegás el enlace de tu publicación en Google, Mercado Libre u otras plataformas de alquiler y el sistema completa fotos, textos y datos solo. Después corregís lo que quieras.</span></li>
-      <li><span class="tick">2</span><span><strong>Un solo calendario.</strong> Se conecta con Airbnb, Booking y Google Calendar: cuando te ocupan fechas en uno, se bloquean acá. Se terminan las reservas dobles. <em>(Desde el plan Profesional.)</em></span></li>
-      <li><span class="tick">3</span><span><strong>Tu ficha en tres idiomas.</strong> El sitio está en español, inglés y portugués, y traduce tus textos automáticamente. El turista brasileño te lee en portugués.</span></li>
-      <li><span class="tick">4</span><span><strong>Escrito para que Google te encuentre</strong> — y también para que te recomienden los asistentes de inteligencia artificial cuando alguien les pregunta dónde parar en la zona. Casi ninguna plataforma de la región está preparada para eso.</span></li>
+      <li><span class="tick">1</span><span><strong>Esto es el Litoral, no un portal del mundo.</strong> Veintidós destinos de Entre Ríos y la zona: Concepción del Uruguay, Colón, Gualeguaychú, Federación, Villa Elisa, San José, Concordia. El que entra acá ya decidió que viene a esta zona. En un portal con millones de publicaciones tu cabaña es una entre un millón; acá es una entre las de tu ciudad.</span></li>
+      <li><span class="tick">2</span><span><strong>Traé tu ficha de otro lado, hecha.</strong> Pegás el enlace de tu publicación de Airbnb, Booking, Mercado Libre o Google y el sistema completa fotos, textos y datos solo. Después corregís lo que quieras.</span></li>
+      <li><span class="tick">3</span><span><strong>Tu ficha en tres idiomas, traducida sola.</strong> Escribís en castellano y la inteligencia artificial la traduce a inglés y portugués. El turista brasileño te lee en portugués sin que vos hagas nada. Podés ver cómo quedó cada traducción; poder retocarla a mano es de lo próximo que sale.</span></li>
+      <li><span class="tick">4</span><span><strong>La inteligencia artificial te escribe mejor los textos.</strong> Le pedís que mejore tu descripción, tu resumen o una respuesta, y te propone una versión más clara. Vos decidís si la usás, y la seguís editando como cualquier texto.</span></li>
+      <li><span class="tick">5</span><span><strong>Un asistente que le contesta a tus huéspedes por vos.</strong> Cargás tus preguntas frecuentes &mdash;si aceptás mascotas, a qué hora es el check-in, si hay cochera&mdash; y el que mira tu ficha le puede preguntar directo a un asistente que le responde como una persona, con tus datos, a cualquier hora. Las consultas repetidas dejan de caerte al WhatsApp a las once de la noche.</span></li>
+      <li><span class="tick">6</span><span><strong>Un solo calendario.</strong> Se conecta con Airbnb, Booking y Google Calendar: cuando te ocupan fechas en uno, se bloquean acá. Se terminan las reservas dobles. <em>(Desde el plan Profesional.)</em></span></li>
+      <li><span class="tick">7</span><span><strong>Escrito para que Google te encuentre</strong> &mdash; y también para que te recomienden los asistentes de inteligencia artificial cuando alguien les pregunta dónde parar en la zona. Casi ninguna plataforma de la región está preparada para eso.</span></li>
     </ul>
   </section>
 
   <section>
     <div class="sec-head">
       <p class="eyebrow">Los números que ves</p>
-      <h2>Qué pasa con tu alojamiento</h2>
+      <h2>Qué información tenés de tu alojamiento</h2>
     </div>
     <ul class="plain">
       <li><span class="tick">&check;</span><span>Cuántas veces vieron tu ficha, día por día.</span></li>
@@ -278,7 +340,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       <h2>Si un mes necesitás más</h2>
     </div>
     <p>
-      No hace falta cambiar de plan: se suman aparte y se sacan cuando no los necesitás.
+      No hace falta cambiar de plan: se suman aparte y se sacan cuando no los necesitás. Estos son
+      los que hay hoy.
     </p>
     <div class="tablewrap">
       <table>
@@ -292,6 +355,33 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
         </tbody>
       </table>
     </div>
+    <p class="subhead">
+      El listado completo y actualizado está en <strong>tu panel, en Mi cuenta &rsaquo;
+      Complementos</strong>. Entrás cuando querés, ves qué hay disponible con el precio del día y lo
+      contratás ahí mismo, sin llamar a nadie ni esperar a nadie. Igual para darlo de baja.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">En camino</p>
+      <h2>Lo que se viene</h2>
+    </div>
+    <p>
+      Sin fechas, porque no las prometemos. Es en lo que estamos trabajando.
+    </p>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span><strong>Corregir a mano las traducciones.</strong> Hoy ves lo que la inteligencia artificial escribió en inglés y portugués; vas a poder retocarlo palabra por palabra.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Un cartel con QR para imprimir.</strong> Para pegar en la puerta o el mostrador: lo escanean y caen en tu ficha.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Responder las reseñas de tus huéspedes.</strong> Que tu respuesta se vea abajo de la reseña, en la ficha.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Mejorar tus fotos con inteligencia artificial.</strong> Corregir luz y color, y recortar, sin salir del editor.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Llevarte tu calendario a otro lado.</strong> Hoy traés a Hospeda las fechas que tenés ocupadas afuera; vas a poder mandar para el otro lado las que bloqueás acá, hacia otros portales y hacia tu Google Calendar.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Complejos y hoteles, unidad por unidad.</strong> Cada cabaña o cada habitación con su propia capacidad y su propio calendario, dentro de una misma publicación.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Una cuenta para el que administra propiedades ajenas.</strong> Varios alojamientos independientes, cada uno con su dueño y sus datos, manejados desde un solo usuario.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Una tarjeta de beneficios para tus huéspedes.</strong> Que el que se aloja con vos tenga descuentos y ventajas en comercios de la zona, de parte tuya.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Ver lo que la gente busca y no encuentra.</strong> Las búsquedas que quedaron sin resolver &mdash;qué fechas, cuántas personas, en qué zona&mdash; para que puedas salir a ofrecerle a alguien que hoy se te está pasando de largo.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Reservar desde la ficha.</strong> Que el turista cierre la reserva sin salir de Hospeda. La cuota va a seguir siendo fija: <strong>sin comisión por reserva</strong>, como hoy.</span></li>
+    </ul>
   </section>
 
   <section>
@@ -300,7 +390,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       <h2>Lo que conviene que sepas antes</h2>
     </div>
     <ul class="plain">
-      <li><span class="tick tick--no">!</span><span><strong>La tarjeta se pide para publicar</strong>, antes de los 30 días de prueba, no después. Registrarte y armar la ficha no cuesta nada; publicarla exige dejar la tarjeta cargada.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>La prueba es una sola, por única vez.</strong> Son 30 días desde que publicás tu primer alojamiento, y no se renuevan: si la dejás pasar y volvés más adelante, ya entrás pagando.</span></li>
       <li><span class="tick tick--no">!</span><span><strong>Tu WhatsApp no lo ve cualquiera.</strong> Se muestra a los viajeros con cuenta paga; el visitante suelto te escribe por el mensajero del sitio. Es a propósito: filtra las consultas que no van en serio.</span></li>
       <li><span class="tick tick--no">!</span><span>Un alojamiento sin la foto principal, la capacidad, las noches mínimas y los ambientes cargados <strong>no se puede publicar</strong>. No es un capricho: una ficha incompleta no la elige nadie.</span></li>
       <li><span class="tick tick--no">!</span><span>Si dejás de pagar, tu ficha deja de verse, pero <strong>no se borra</strong>: tus fotos, textos y reseñas quedan, y vuelven a estar en línea cuando reactivás.</span></li>
