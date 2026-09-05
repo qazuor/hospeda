@@ -702,10 +702,12 @@ export interface AccommodationDetailData {
         }[];
         /**
          * Video entries carrying the URL plus optional caption and description.
-         * Aligned with `@repo/schemas` `VideoSchema` (drops `moderationState`,
-         * which is irrelevant for the public read). The transform also accepts
-         * a legacy `string[]` payload (a bare URL) and normalizes each entry
-         * to `{ url }` so older accommodation records keep rendering.
+         * Aligned with `@repo/schemas` `VideoSchema` minus `moderationState`
+         * (HOS-1022: read to filter — only `APPROVED` entries survive — then
+         * dropped from the output, since it is irrelevant to the public read
+         * once filtering is done). The transform also accepts a legacy
+         * `string[]` payload (a bare URL, predating `moderationState`); those
+         * entries are excluded rather than assumed approved (fail closed).
          */
         readonly videos: readonly {
             readonly url: string;
