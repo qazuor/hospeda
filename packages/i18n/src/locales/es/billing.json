@@ -241,7 +241,6 @@
             "freePlanLegend": "Ya tenés este plan"
         },
         "promoApply": {
-            "toggle": "¿Tenés un código de descuento?",
             "label": "Código de descuento",
             "inputPlaceholder": "Ingresá tu código",
             "applyButton": "Aplicar",
