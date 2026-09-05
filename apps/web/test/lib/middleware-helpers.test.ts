@@ -540,6 +540,17 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('https://platform-lookaside.fbsbx.com');
     });
 
+    // HOS-1022: the accommodation /fotos sub-page renders a YouTube poster via
+    // a plain <img src="https://img.youtube.com/vi/<id>/maxresdefault.jpg">
+    // (see getYoutubePosterUrl() in @/lib/video-embed). Without this host the
+    // poster is silently CSP-blocked — exactly the bug found while wiring up
+    // the video section (the host was never in img-src before this ticket).
+    it('should allowlist the YouTube poster-thumbnail host in img-src (HOS-1022)', () => {
+        const header = buildCspHeader({ ...NO_HASHES });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        expect(imgSrc).toContain('https://img.youtube.com');
+    });
+
     it('should use exact cloudinary hostname, not a wildcard', () => {
         const header = buildCspHeader({ ...NO_HASHES });
         expect(header).not.toContain('https://*.cloudinary.com');

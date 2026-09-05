@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveVideoEmbed } from '@/lib/video-embed';
+import { getYoutubePosterUrl, resolveVideoEmbed } from '@/lib/video-embed';
 
 describe('resolveVideoEmbed', () => {
     describe('YouTube — accepted forms', () => {
@@ -119,6 +119,25 @@ describe('resolveVideoEmbed', () => {
         it('rejects a vimeo.com subdomain decoy', () => {
             expect(resolveVideoEmbed({ url: 'https://vimeo.com.evil.com/76979871' })).toBeNull();
         });
+
+        // Regression: fotos.astro used to run a bare substring regex
+        // (`url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)`)
+        // against the WHOLE url string with no host parsing. That regex matches
+        // anywhere in the string, so a Vimeo URL carrying YouTube-shaped text in
+        // a query param (e.g. a referrer/share param) would extract THAT id and
+        // render the video with the wrong (YouTube) poster instead of Vimeo's.
+        // resolveVideoEmbed parses the real hostname first, so the query string
+        // is never even inspected for this purpose.
+        it('does not misread a Vimeo URL carrying YouTube-shaped text in a query param', () => {
+            const result = resolveVideoEmbed({
+                url: 'https://vimeo.com/76979871?ref=https://youtube.com/watch?v=dQw4w9WgXcQ'
+            });
+            expect(result).toEqual({
+                provider: 'vimeo',
+                videoId: '76979871',
+                embedUrl: 'https://player.vimeo.com/video/76979871'
+            });
+        });
     });
 
     describe('Dailymotion', () => {
@@ -185,5 +204,19 @@ describe('resolveVideoEmbed', () => {
         it('rejects a scheme-relative URL', () => {
             expect(resolveVideoEmbed({ url: '//www.youtube.com/watch?v=dQw4w9WgXcQ' })).toBeNull();
         });
+    });
+});
+
+describe('getYoutubePosterUrl', () => {
+    it('defaults to the maxresdefault quality', () => {
+        expect(getYoutubePosterUrl({ videoId: 'dQw4w9WgXcQ' })).toBe(
+            'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+        );
+    });
+
+    it('builds the hqdefault fallback quality', () => {
+        expect(getYoutubePosterUrl({ videoId: 'dQw4w9WgXcQ', quality: 'hqdefault' })).toBe(
+            'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg'
+        );
     });
 });

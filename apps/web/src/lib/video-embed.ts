@@ -185,3 +185,44 @@ export function resolveVideoEmbed({ url }: { readonly url: string }): ResolvedVi
 
     return null;
 }
+
+/** Static-thumbnail image qualities YouTube serves without an API call. */
+export type YoutubePosterQuality = 'maxresdefault' | 'hqdefault';
+
+/**
+ * Builds YouTube's static poster-thumbnail URL for an already-validated video
+ * id (as returned by {@link resolveVideoEmbed} with `provider: 'youtube'`).
+ *
+ * This is the ONE place that knows YouTube's poster URL template
+ * (`img.youtube.com/vi/<id>/<quality>.jpg`), so both the accommodation `/fotos`
+ * sub-page and any other consumer build the same URL from the same id instead
+ * of re-deriving it independently. `img.youtube.com` must be allowlisted in
+ * CSP `img-src` (`middleware-helpers.ts`) for the resulting `<img>` to load.
+ *
+ * Vimeo and Dailymotion have no equivalent free, predictable static-thumbnail
+ * URL (only an oEmbed API round-trip would give one), so this helper only
+ * covers YouTube — callers fall back to a generic placeholder for the other
+ * two providers.
+ *
+ * @param params - Object with the validated YouTube `videoId` and the desired
+ * `quality` (defaults to `'maxresdefault'`, the high-resolution poster).
+ * @returns The poster image URL.
+ *
+ * @example
+ * ```ts
+ * getYoutubePosterUrl({ videoId: 'dQw4w9WgXcQ' })
+ * // => 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+ *
+ * getYoutubePosterUrl({ videoId: 'dQw4w9WgXcQ', quality: 'hqdefault' })
+ * // => 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg'
+ * ```
+ */
+export function getYoutubePosterUrl({
+    videoId,
+    quality = 'maxresdefault'
+}: {
+    readonly videoId: string;
+    readonly quality?: YoutubePosterQuality;
+}): string {
+    return `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
+}

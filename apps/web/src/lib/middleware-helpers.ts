@@ -813,6 +813,17 @@ export function buildCspHeader({
     const oauthAvatarHosts =
         'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
 
+    // HOS-1022: YouTube's static poster-thumbnail host. Used by the
+    // accommodation `/fotos` sub-page (`img.youtube.com/vi/<id>/maxresdefault.jpg`
+    // + `hqdefault.jpg` fallback — see `getYoutubePosterUrl()` in
+    // `@/lib/video-embed`) as a plain `<img src>`, never through Astro's
+    // `getImage()`, so — like the OAuth avatar hosts above — it does NOT belong
+    // in `ALLOWED_REMOTE_HOSTS` (that list doubles as the SSRF guard for
+    // server-side image fetches, which this isn't). Vimeo and Dailymotion have
+    // no equivalent free, predictable static-thumbnail URL (only an oEmbed API
+    // round-trip would give one), so only YouTube's poster host is added here.
+    const videoPosterImgHosts = 'https://img.youtube.com';
+
     // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
     // Cloudflare Worker forwards to PostHog Cloud US — see
     // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
@@ -890,7 +901,7 @@ export function buildCspHeader({
         //     used for tokenized inline colors and per-card transition delays)
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} ${videoPosterImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
