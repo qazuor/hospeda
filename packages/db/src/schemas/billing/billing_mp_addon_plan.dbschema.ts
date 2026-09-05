@@ -50,10 +50,22 @@ export const billingMpAddonPlans = pgTable(
         mpPreapprovalPlanId: varchar('mp_preapproval_plan_id', { length: 255 }).notNull(),
         /**
          * Snapshot of the add-on price this MP plan was provisioned with, in
-         * **ARS** (whole pesos, mirroring `billing_mp_plans.amount_ars`). Used to
-         * detect drift between the add-on catalog and the MP plan so provisioning
-         * can re-provision when they diverge. Not authoritative — the add-on
-         * catalog is.
+         * **CENTAVOS** — despite the `_ars` suffix, which is historical and mirrors
+         * `billing_mp_plans.amount_ars` (that column stores centavos too).
+         *
+         * Reading this as whole pesos is a factor-100 error that charges ARS 500.000
+         * for a ARS 5.000 add-on, so trace it rather than trust the name: the catalog
+         * declares `priceArs: 500000` for "ARS $5,000"
+         * (`packages/billing/src/config/addons.config.ts`), the checkout passes that
+         * number straight through as `unitAmount` with an explicit "do NOT pre-divide
+         * here" note, and the MercadoPago price adapter is the one place that divides
+         * by 100 when building `transaction_amount`.
+         *
+         * Used to detect drift between the add-on catalog and the MP plan so
+         * provisioning can re-provision when they diverge. Always the LIST price:
+         * the registry key has no discount dimension, so a promotion-adjusted amount
+         * written here makes every subsequent checkout read as a price drift. Not
+         * authoritative — the add-on catalog is.
          */
         amountArs: integer('amount_ars').notNull(),
         /** Registry lifecycle: `active` | `inactive`. */
