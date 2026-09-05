@@ -28,12 +28,23 @@
  *     replacement path and is green by design; a header claiming "every
  *     test" would be claiming more than the file delivers.
  *   - narrowing `BaseModelImpl.update()`'s merge trigger from
- *     `Object.keys(data).some(...)` to `.every(...)` turns exactly ONE test
- *     red: "takes the merge path for the MIXED payload production actually
- *     sends". That mutation reinstates the original bug for 100% of real
- *     traffic — every update reaching this model from a service carries
- *     `updatedById` alongside the patch — and it survived 124 tests across 9
- *     files until that one test existed.
+ *     `Object.keys(data).some(...)` to `.every(...)` turns exactly ONE test in
+ *     this file red: "takes the merge path for the MIXED payload production
+ *     actually sends". That mutation reinstates the original bug for 100% of
+ *     real traffic — every update reaching this model from a service carries
+ *     `updatedById` alongside the patch. Its blast radius was re-measured on
+ *     2026-09-05 across the eight files under `packages/db/test/**` that
+ *     mention `mergeableJsonbColumns` or `buildMergeSetClause` (101 tests, 98
+ *     of them executing): it reddens FOUR and nothing else — this file's
+ *     mixed-payload test and the identical test in its three sibling
+ *     `*.contact-info-merge.test.ts` files. The other 94 stay green.
+ *
+ * An earlier revision of this header said that mutation "survived 124 tests
+ * across 9 files". That number is not reproducible: it named neither the files
+ * nor a date, and no plausible set of nine yields it. It was removed rather
+ * than rounded to something equally unauditable. Both counts above are stated
+ * with the set they were measured over and the day they were measured, which
+ * is the only form in which such a number is worth reading.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -158,13 +169,21 @@ describe('EventOrganizerModel — `contactInfo` is a mergeable JSONB column', ()
         // in `BaseModelImpl.update()` from `.some()` to `.every()` therefore
         // sends 100% of real traffic back down the replacement path — the
         // original bug, whole — while every single-key test in this file stays
-        // green. That mutation survived 124 tests across 9 files before this
-        // one existed.
+        // green. Re-measured 2026-09-05 across the eight `packages/db/test/**`
+        // files that mention `mergeableJsonbColumns` or `buildMergeSetClause`:
+        // the mutation reddens this test and its three siblings, and leaves
+        // the other 94 executing tests green.
         const innerTx = buildMockInnerTx();
         const withTransaction = vi
             .spyOn(clientModule, 'withTransaction')
             .mockImplementation(async (callback) => callback(innerTx as unknown as DrizzleClient));
-        setDb({} as unknown as DrizzleClient);
+        // A WORKING plain client, not `{}`. Under that mutation this test takes
+        // the REPLACEMENT path, and an empty object made the red read
+        // `DbError: db.update is not a function`, thrown from the Act. The kill
+        // was genuine but the message named the stub instead of the defect.
+        // With a usable client the failure is the assertion below — the merge
+        // path was never entered — which is the thing that actually broke.
+        setDb(buildMockPlainDb() as unknown as DrizzleClient);
 
         // Act
         await new EventOrganizerModel().update({ id: 'organizer-1' }, {
