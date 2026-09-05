@@ -295,3 +295,76 @@ describe('HOS-1066 — resolveUserPlanSummary groups active subscriptions by pro
         expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
     });
 });
+
+describe('HOS-847 — a recurring add-on subscription must not count as a second vertical', () => {
+    beforeEach(() => {
+        fixtures.customers = [];
+        fixtures.subscriptions = [];
+    });
+
+    it('still reports the single accommodation plan when the customer also holds an active add-on subscription', async () => {
+        fixtures.customers = [liveCustomer];
+        fixtures.subscriptions = [
+            {
+                id: 'sub-accommodation',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-owner-premium',
+                productDomain: 'accommodation',
+                createdAt: '2026-08-01T00:00:00.000Z',
+                deletedAt: null
+            },
+            {
+                // A recurring add-on's OWN MercadoPago preapproval row
+                // (HOS-847) — never the customer's real plan. Before the
+                // fix, ALL_PRODUCT_DOMAINS = Object.values(ProductDomainEnum)
+                // absorbed 'addon' as a 5th bucket, so this pushed
+                // activeSubscriptionsCount from 1 to 2 and the widget lost
+                // the accommodation plan name entirely.
+                id: 'sub-addon',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-addon-extra-photos',
+                productDomain: 'addon',
+                createdAt: '2026-08-02T00:00:00.000Z',
+                deletedAt: null
+            }
+        ];
+
+        const result = await resolveUserPlanSummary({ userId: USER_ID });
+
+        expect(result).toEqual({
+            plan: { name: 'plan-owner-premium', status: 'active' },
+            activeSubscriptionsCount: 1
+        });
+    });
+
+    it('still reports the summary case (no single plan) for two real verticals, unaffected by the add-on fix', async () => {
+        fixtures.customers = [liveCustomer];
+        fixtures.subscriptions = [
+            {
+                id: 'sub-accommodation',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-owner-premium',
+                productDomain: 'accommodation',
+                createdAt: '2026-08-01T00:00:00.000Z',
+                deletedAt: null
+            },
+            {
+                id: 'sub-gastronomy',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-gastronomy-premium',
+                productDomain: 'gastronomy',
+                createdAt: '2026-08-02T00:00:00.000Z',
+                deletedAt: null
+            }
+        ];
+
+        const result = await resolveUserPlanSummary({ userId: USER_ID });
+
+        expect(result.activeSubscriptionsCount).toBe(2);
+        expect(result.plan).toBeNull();
+    });
+});

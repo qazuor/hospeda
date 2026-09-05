@@ -19,13 +19,22 @@
  *
  * **One function decides (HOS-685)**: {@link subscriptionMatchesDomain} is the
  * only place in the codebase that compares a subscription's `productDomain`
- * against a value. Everything else — the two exported predicates below and the
- * two dispatch sites in `apps/api` — goes through it. This is not tidiness:
- * billing has twice grown a canonical helper and left call sites behind
+ * against a value. Everything else — the exported predicates in this module
+ * ({@link isAccommodationSubscription}, {@link isAddonSubscription},
+ * {@link excludeAddonDomainCondition}) and the dispatch sites across
+ * `apps/api` — goes through it. This is not tidiness: billing has twice grown
+ * a canonical helper and left call sites behind
  * (`normalizeStoredSubscriptionStatus`, `isEntitlementGrantingStatus`), which
  * is how two endpoints ended up disagreeing about the same subscription.
  * `scripts/check-product-domain-vocabulary.sh` fails CI on a new call site that
  * compares the domain itself.
+ *
+ * **Add-on isolation (HOS-847)**: a recurring add-on's MercadoPago preapproval
+ * gets its own `billing_subscriptions` row (`product_domain = 'addon'`),
+ * separate from the customer's real plan subscription. Every sweep that
+ * assumed one row per customer per relevant domain must exclude these rows —
+ * see {@link isAddonSubscription} (post-fetch, JS objects) and
+ * {@link excludeAddonDomainCondition} (SQL-level, direct Drizzle queries).
  *
  * @module services/billing/subscription/subscription-product-domain
  */
@@ -39,6 +48,8 @@ import {
     getDb,
     inArray,
     isNull,
+    ne,
+    or,
     sql
 } from '@repo/db';
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
@@ -88,6 +99,73 @@ export interface SubscriptionDiscountState {
  */
 export function isAccommodationSubscription(sub: unknown): boolean {
     return subscriptionMatchesDomain(sub, ProductDomainEnum.ACCOMMODATION);
+}
+
+/**
+ * Returns `true` when the subscription backs a recurring add-on's own
+ * MercadoPago preapproval (HOS-847), never a customer's real plan.
+ *
+ * **Why this exists**: a recurring add-on cannot share the customer's plan
+ * preapproval — a MercadoPago preapproval carries exactly one
+ * `auto_recurring.transaction_amount` and no line items — so it gets its own
+ * `billing_subscriptions` row, tagged `product_domain = 'addon'`. Every
+ * subsystem that sweeps `billing_subscriptions` assuming one row IS "the"
+ * customer's subscription (dunning, polling, expiry crons, entitlement
+ * resolution, the add-on checkout's own "find my active subscription" scan)
+ * MUST exclude rows this returns `true` for, or an add-on row gets treated as
+ * the owner's accommodation subscription — exactly the contamination
+ * `subscriptionMatchesDomain`'s accommodation fail-open was built to avoid
+ * for legacy rows, now aimed at a row it was never meant to cover.
+ *
+ * Unlike {@link isAccommodationSubscription}, this is fail-CLOSED by
+ * construction: `subscriptionMatchesDomain` only returns `true` for a
+ * non-accommodation domain on an exact string match, never on a
+ * missing/`null`/`undefined` value. A legacy row with no `productDomain` is
+ * correctly never mistaken for an add-on.
+ *
+ * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`
+ *   or a typed `billing_subscriptions` row.
+ * @returns `true` when the subscription is a recurring add-on's own preapproval.
+ *
+ * @example
+ * ```ts
+ * const realPlanSubs = subscriptions.filter((sub) => !isAddonSubscription(sub));
+ * ```
+ */
+export function isAddonSubscription(sub: unknown): boolean {
+    return subscriptionMatchesDomain(sub, ProductDomainEnum.ADDON);
+}
+
+/**
+ * SQL-level mirror of `!isAddonSubscription(sub)`, for a sweep that queries
+ * `billing_subscriptions` directly via Drizzle rather than through qzpay-core's
+ * `billing.subscriptions.*` API (HOS-847).
+ *
+ * Excludes only rows explicitly tagged `product_domain = 'addon'`; a `NULL`
+ * column (legacy row, predates the column) still passes, matching
+ * {@link subscriptionMatchesDomain}'s accommodation fail-open so this never
+ * drops a real customer subscription. Mirrors the same
+ * `isNull(...) OR ne(...)` shape `trial-supersede-on-activation.ts` already
+ * uses for the accommodation-only case — this is the general "not an add-on"
+ * version, useful anywhere a sweep must not load every subscription just to
+ * filter it in JS afterward.
+ *
+ * @returns A Drizzle SQL condition to `and()` into a `billing_subscriptions`
+ *   query's `WHERE` clause.
+ *
+ * @example
+ * ```ts
+ * const rows = await db
+ *   .select(...)
+ *   .from(billingSubscriptions)
+ *   .where(and(eq(billingSubscriptions.status, 'past_due'), excludeAddonDomainCondition()));
+ * ```
+ */
+export function excludeAddonDomainCondition() {
+    return or(
+        isNull(billingSubscriptions.productDomain),
+        ne(billingSubscriptions.productDomain, ProductDomainEnum.ADDON)
+    );
 }
 
 /**
