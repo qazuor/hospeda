@@ -583,13 +583,21 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     // fetch — show the plan name, the multi-subscription summary,
                     // or the "free" label otherwise.
                     if (hasMultipleActiveSubscriptions) {
+                        // CLDR plural pair (same pattern as
+                        // AccommodationsListingMap.client.tsx's
+                        // resultsCountOne/resultsCountOther): pick the
+                        // template for the actual count, then interpolate it
+                        // — the server only knows the count is ">1", not
+                        // which exact plural form to render.
                         const template =
-                            subEl.getAttribute('data-label-multiple') ??
-                            '{count} suscripciones activas';
-                        subEl.textContent = template.replace(
-                            '{count}',
-                            String(activeSubscriptionsCount)
-                        );
+                            activeSubscriptionsCount === 1
+                                ? (subEl.getAttribute('data-label-multiple-one') ??
+                                  '{{count}} suscripción activa')
+                                : (subEl.getAttribute('data-label-multiple-other') ??
+                                  '{{count}} suscripciones activas');
+                        subEl.textContent = template
+                            .replace('{{count}}', String(activeSubscriptionsCount))
+                            .replace('{count}', String(activeSubscriptionsCount));
                     } else if (planName) {
                         subEl.textContent = planName;
                     } else {
