@@ -9,6 +9,7 @@ export * from './billing-plan.schema.js';
 export * from './billing-query.schema.js';
 export * from './billing-settings.schema.js';
 export * from './checkout-retry.schema.js';
+export * from './commerce-trial-verdict.schema.js';
 export * from './customer-addons.schema.js';
 export * from './downgrade-preview.schema.js';
 export * from './link-preapproval.schema.js';
