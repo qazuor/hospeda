@@ -297,7 +297,14 @@ const KNOWN_NON_BUGS = new Set<string>([
     // `labelParams` threading change to the shared quality-score signal
     // type, tracked separately — pluralizing on top of a placeholder that
     // never resolves would just be a second bug stacked on the first.
-    'admin-entities::qualityScore.signals.galleryPhotos.label'
+    'admin-entities::qualityScore.signals.galleryPhotos.label',
+    // --- "Includes {{bonus}} extra from add-ons". The noun the matcher lands
+    // on is "add-ons" — the name of the feature the allowance comes FROM, so
+    // its plurality is fixed and owes nothing to `{{bonus}}`. The word that
+    // does follow the count is "extra", invariable here in all three locales
+    // ("{{bonus}} extra" / "{{bonus}} a mais"), which is why only `en` trips
+    // the matcher at all while es/pt read identically at every count.
+    'account::subscription.usage.addonBonus'
 ]);
 
 // ---------------------------------------------------------------------------
