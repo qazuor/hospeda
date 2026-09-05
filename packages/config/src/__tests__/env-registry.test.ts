@@ -267,8 +267,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * call/display form (no AR mobile 9); apps/web/src/lib/brand-phone.ts
  * derives the tel:/wa.me forms from it. Ships with a production-safe
  * default so it is not strictly required. 278 + 1 = 279.
+ *
+ * +1 = HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS (HOS-1144, testing category,
+ * optional, web only) — resolves every remote media URL to a local
+ * placeholder so CI never downloads an image from Cloudinary. Default off,
+ * set only by the workflows that build or serve apps/web. 279 + 1 = 280.
  */
-const EXPECTED_VAR_COUNT = 279;
+const EXPECTED_VAR_COUNT = 280;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

@@ -10,6 +10,7 @@
  *   comment.
  */
 
+import { getMediaUrl } from '@repo/media';
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import { DestinationViewTracker } from '@/components/analytics/DestinationViewTracker.client';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -158,12 +159,28 @@ const mediaRaw = dest.media as
 	| { featuredImage?: MediaImage; gallery?: ReadonlyArray<MediaImage> }
 	| undefined;
 const PLACEHOLDER = '/assets/images/placeholder-destination.svg';
-const featuredImageObj: MediaImage =
+const rawFeaturedImageObj: MediaImage =
 	mediaRaw?.featuredImage && typeof mediaRaw.featuredImage === 'object'
 		? mediaRaw.featuredImage
 		: typeof dest.featuredImage === 'string' && dest.featuredImage
 		  ? { url: dest.featuredImage, caption: name }
 		  : { url: PLACEHOLDER, caption: name };
+// HOS-1144. This page reads `result.data` RAW — it uses none of the
+// `toXCardProps` transforms, so nothing upstream had applied `getMediaUrl`, and
+// the hero URL reached `<Image>` untouched. The `!url.includes('placeholder')`
+// guard below looks like protection but is inert on an un-rewritten value: a
+// real Cloudinary URL never contains that substring, so it sailed through and
+// Astro downloaded the full-size original SERVER-SIDE on every destination
+// render. Chromium's DNS block cannot see that request — no browser makes it.
+//
+// `preset: 'full'` is `q_auto,f_auto,dpr_auto`: no resize, so the hero's
+// framing is byte-for-byte what it was, only the delivery is optimised. The
+// per-call `fallback` keeps the destination-specific placeholder rather than
+// the generic one when the mode is on.
+const featuredImageObj: MediaImage = {
+	...rawFeaturedImageObj,
+	url: getMediaUrl(rawFeaturedImageObj.url, { preset: 'full', fallback: PLACEHOLDER })
+};
 const galleryImages: ReadonlyArray<MediaImage> = mediaRaw?.gallery ?? [];
 
 // --- Domain data passed to the new section components -----------------------

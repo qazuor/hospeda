@@ -298,7 +298,22 @@ function toRelatedEntity(raw: Record<string, unknown>, type: EntityType): Relate
 		name,
 		slug: entitySlug,
 		summary: raw.summary ? String(raw.summary) : null,
-		image: raw.featuredImage ? String(raw.featuredImage) : null,
+		// Routed through `getMediaUrl` rather than a bare `String()` (HOS-1144).
+		// `PostRelatedEntityCard` asks `isCloudinaryDeliveryUrl()` and, when the
+		// answer is yes, hands this value to Astro's `<Image>` — which fetches
+		// it SERVER-SIDE, from the Node process. A raw value therefore made this
+		// page download a full-size original for an 80x56 thumbnail on every
+		// render, and Chromium's DNS block cannot see that request at all,
+		// because no browser makes it.
+		//
+		// Two effects, both wanted. Under `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS`
+		// the URL becomes a local placeholder, so `isCloudinaryDeliveryUrl()`
+		// turns false and the card falls to a plain `<img>` with no fetch. In
+		// production the thumbnail preset means `<Image>` pulls a 200px asset
+		// instead of the untransformed original.
+		image: raw.featuredImage
+			? getMediaUrl(String(raw.featuredImage), { preset: 'thumbnail' })
+			: null,
 		type,
 	};
 }
