@@ -473,7 +473,10 @@
             "issueExperienceCertificate": "Experience certificates",
             "manageGastronomyDailySpecial": "Today's menu",
             "manageGastronomyEvents": "Venue schedule",
-            "multilingualGastronomyMenu": "Multi-language menu"
+            "multilingualGastronomyMenu": "Multi-language menu",
+            "manageExperiencePrivateGalleries": "Private galleries per customer",
+            "aiChat": "AI chat on your listing",
+            "downloadListingPdf": "Printable PDF listing sheet"
         },
         "create": {
             "pickVertical": {

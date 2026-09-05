@@ -1174,6 +1174,18 @@
             "extra-experiences-1": {
                 "name": "Experiencia extra (+1)",
                 "description": "Agrega 1 experiencia adicional a tu plan. Se renueva mensualmente."
+            },
+            "private-galleries-5": {
+                "name": "Pack de galerías privadas (+5)",
+                "description": "Suma 5 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
+            },
+            "private-galleries-10": {
+                "name": "Pack de galerías privadas (+10)",
+                "description": "Suma 10 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
+            },
+            "private-galleries-20": {
+                "name": "Pack de galerías privadas (+20)",
+                "description": "Suma 20 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
             }
         }
     },

@@ -97,7 +97,38 @@ export enum LimitKey {
      * its doc for why each vertical carries both its own cap AND its own
      * `AiFeature` counter rather than sharing either.
      */
-    MAX_AI_CHAT_EXPERIENCE_PER_MONTH = 'max_ai_chat_experience_per_month'
+    MAX_AI_CHAT_EXPERIENCE_PER_MONTH = 'max_ai_chat_experience_per_month',
+
+    /**
+     * Maximum number of private galleries an experience provider may hold ALIVE
+     * at once (HOS-1060).
+     *
+     * ## Active, not created
+     *
+     * A gallery lives 30 days from its creation and a cron deletes it, so this
+     * counts what has not expired yet — the number of tourists who can still
+     * open their link today. A lifetime counter would make the cap a quota that
+     * runs out and never refills, which is not what was sold: the provider who
+     * ran twenty outings last month should be able to run twenty more.
+     *
+     * ## Why this key exists at all, when `MENU_ITEM_PHOTOS` has none
+     *
+     * `MENU_ITEM_PHOTOS` deliberately ships with no numeric limit because access
+     * is its whole gate. Galleries cannot do that: photo storage is the only
+     * recurring per-use cost in this epic, and the cap is what bounds it. It is
+     * also what the three `private-galleries-+N` add-ons sell more of.
+     *
+     * ## Experience-only, and declared as an explicit ZERO elsewhere
+     *
+     * `PRODUCT_DOMAIN_BY_LIMIT_KEY` maps it to the EXPERIENCE domain, so an
+     * accommodation or gastronomy subscription never supplies its base value.
+     * Even so, all six commerce tiers declare it — gastronomy at `0` — for the
+     * reason `commerceVerticalTier` states about `aiChatPerMonth`: an ABSENT key
+     * is resolved as UNLIMITED through five layers without raising, so "nobody
+     * thought about this tier" and "deliberately uncapped" would be the same
+     * row.
+     */
+    MAX_ACTIVE_PRIVATE_GALLERIES = 'max_active_private_galleries'
 }
 
 /**
