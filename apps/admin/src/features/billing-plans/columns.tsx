@@ -183,7 +183,7 @@ export function getPlanColumns(
                     {!isPubliclyListedPlan(row) && (
                         <Badge
                             variant="outline"
-                            className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            className="whitespace-nowrap border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
                             title={t('admin-billing.plans.statusUnlistedHint')}
                         >
                             {t('admin-billing.plans.statusUnlisted')}
