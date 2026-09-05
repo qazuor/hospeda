@@ -40,6 +40,30 @@ function makeSource(total: number) {
     return { rows, fetchPage };
 }
 
+/**
+ * The same source, reporting its own row count on every page — the shape both
+ * real callers actually have (`planService`'s `pagination.total`, qzpay's
+ * `total`), and the one that lets the walk CHECK `hasMore` instead of believing
+ * it.
+ */
+function makeCountingSource(total: number) {
+    const rows = Array.from({ length: total }, (_, index) => ({ id: index }));
+    const fetchPage = vi.fn(
+        async ({
+            pageIndex,
+            pageSize
+        }: {
+            pageIndex: number;
+            pageSize: number;
+        }): Promise<CatalogPage<{ id: number }>> => {
+            const start = pageIndex * pageSize;
+            const items = rows.slice(start, start + pageSize);
+            return { items, hasMore: start + pageSize < rows.length, total: rows.length };
+        }
+    );
+    return { rows, fetchPage };
+}
+
 describe('collectCatalogPages — it sees the whole catalogue', () => {
     it('costs ONE request while the source fits in a single page', async () => {
         // The case that holds today for every catalogue in this repo. If this
@@ -133,6 +157,74 @@ describe('collectCatalogPages — it cannot loop', () => {
         await collectCatalogPages({ fetchPage, onTruncated });
 
         expect(onTruncated).not.toHaveBeenCalled();
+    });
+});
+
+describe('collectCatalogPages — it checks `hasMore` instead of believing it', () => {
+    it('announces a source that stops early while its own total says otherwise', () => {
+        // The last path on which "partial" looked exactly like "complete": a
+        // source answering hasMore:false with rows still pending returned a short
+        // catalogue with no null and no callback. The number to catch it was
+        // already on the wire — both callers were discarding it.
+        const fetchPage = vi.fn(async () => ({
+            items: [{ id: 1 }, { id: 2 }],
+            hasMore: false,
+            total: 7
+        }));
+        const onTruncated = vi.fn();
+
+        return collectCatalogPages({ fetchPage, onTruncated }).then((result) => {
+            expect(result).toHaveLength(2);
+            expect(onTruncated).toHaveBeenCalledWith(
+                expect.objectContaining({ fetched: 2, expected: 7 })
+            );
+        });
+    });
+
+    it('stays quiet when the count agrees with what it collected', async () => {
+        const { fetchPage } = makeCountingSource(250);
+        const onTruncated = vi.fn();
+
+        const result = await collectCatalogPages({ fetchPage, pageSize: 100, onTruncated });
+
+        expect(result).toHaveLength(250);
+        expect(onTruncated).not.toHaveBeenCalled();
+    });
+
+    it('does not cry truncation when the source collected MORE than it claimed', async () => {
+        // A stale or approximate count is not a truncation. Only fewer rows than
+        // promised is, and this is the direction that matters.
+        const fetchPage = vi.fn(async () => ({
+            items: [{ id: 1 }, { id: 2 }, { id: 3 }],
+            hasMore: false,
+            total: 2
+        }));
+        const onTruncated = vi.fn();
+
+        await collectCatalogPages({ fetchPage, onTruncated });
+
+        expect(onTruncated).not.toHaveBeenCalled();
+    });
+
+    it('still trusts hasMore when the source cannot count', async () => {
+        // `total` is optional on purpose. A source that never reports one keeps
+        // the previous behaviour rather than being treated as truncated forever.
+        const { fetchPage } = makeSource(5);
+        const onTruncated = vi.fn();
+
+        const result = await collectCatalogPages({ fetchPage, onTruncated });
+
+        expect(result).toHaveLength(5);
+        expect(onTruncated).not.toHaveBeenCalled();
+    });
+
+    it('reports the source total alongside a ceiling truncation', async () => {
+        const fetchPage = vi.fn(async () => ({ items: [{ id: 1 }], hasMore: true, total: 900 }));
+        const onTruncated = vi.fn();
+
+        await collectCatalogPages({ fetchPage, maxPages: 3, onTruncated });
+
+        expect(onTruncated).toHaveBeenCalledWith({ fetched: 3, maxPages: 3, expected: 900 });
     });
 });
 

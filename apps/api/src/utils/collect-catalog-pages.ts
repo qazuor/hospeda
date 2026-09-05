@@ -13,8 +13,14 @@
  * DEFAULT page of 20 and filtering in memory — a limit nobody noticed because
  * the catalogue was a fixed set of six. HOS-1062 is what changes that: one plan
  * row per negotiated agreement means the catalogue now grows with the customers,
- * and a truncated public list is cached for an hour (`cacheTTL: 3600`) with no
- * error and no log.
+ * and a truncated list is answered with a 200 and no log line at all.
+ *
+ * (An earlier version of this note said such a response was "cached for an hour
+ * (`cacheTTL: 3600`)". It is not: `cacheTTL` is declared on `RouteOptions`
+ * (`route-factory.ts`) and read by nothing — `applyRouteMiddlewares` consumes
+ * only `customRateLimit` and `middlewares`. The truncation is real; the caching
+ * was not, and a safety argument resting on an inert mechanism is worse than no
+ * argument.)
  *
  * This module exists so there is ONE implementation of that walk instead of two
  * that can drift. It is deliberately dumb: it knows how to ask for page N and
@@ -29,6 +35,20 @@ export interface CatalogPage<T> {
     readonly items: readonly T[];
     /** Whether the source holds more rows beyond this page. */
     readonly hasMore: boolean;
+    /**
+     * How many rows the source says it holds in total, when it can say.
+     *
+     * Supplying it turns `hasMore` from an assertion into a claim that gets
+     * CHECKED. Without it, a source answering `hasMore: false` while rows are
+     * still pending hands back a short catalogue with no `null` and no
+     * truncation callback — the last path on which "partial" still looks exactly
+     * like "complete", which is the one thing this module exists to prevent.
+     * Both callers already receive this number and were discarding it.
+     *
+     * Omit it only for a source that genuinely cannot count; the walk then
+     * trusts `hasMore` alone.
+     */
+    readonly total?: number;
 }
 
 /** Input for {@link collectCatalogPages}. */
@@ -47,11 +67,19 @@ export interface CollectCatalogPagesInput<T> {
     /** Hard ceiling on requests. Defaults to {@link DEFAULT_CATALOG_MAX_PAGES}. */
     readonly maxPages?: number;
     /**
-     * Called when the ceiling is reached with the source still reporting more
-     * rows. Truncation is announced rather than silent: the caller logs, and its
-     * response then describes `pageSize * maxPages` rows only.
+     * Called when the walk ends with rows left behind — either the ceiling was
+     * reached with the source still reporting more, or the source stopped early
+     * while its own `total` said there were more. Truncation is announced rather
+     * than silent: the caller logs, and its response then describes fewer rows
+     * than the source holds.
+     *
+     * `expected` carries the source's `total` when it reported one.
      */
-    readonly onTruncated?: (info: { readonly fetched: number; readonly maxPages: number }) => void;
+    readonly onTruncated?: (info: {
+        readonly fetched: number;
+        readonly maxPages: number;
+        readonly expected?: number;
+    }) => void;
 }
 
 /**
@@ -98,6 +126,7 @@ export async function collectCatalogPages<T>(
     } = input;
 
     const collected: T[] = [];
+    let reportedTotal: number | undefined;
 
     for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
         const page = await fetchPage({ pageIndex, pageSize });
@@ -110,12 +139,25 @@ export async function collectCatalogPages<T>(
         }
 
         collected.push(...page.items);
+        reportedTotal = page.total ?? reportedTotal;
 
         if (!page.hasMore) {
+            // `hasMore: false` is a CLAIM, and this is where it gets checked
+            // against the source's own count. A source that stops early while
+            // its `total` says otherwise has truncated the catalogue, and the
+            // caller hears about it — the alternative is a short list that is
+            // indistinguishable from a complete one.
+            if (reportedTotal !== undefined && collected.length < reportedTotal) {
+                onTruncated?.({
+                    fetched: collected.length,
+                    maxPages,
+                    expected: reportedTotal
+                });
+            }
             return collected;
         }
     }
 
-    onTruncated?.({ fetched: collected.length, maxPages });
+    onTruncated?.({ fetched: collected.length, maxPages, expected: reportedTotal });
     return collected;
 }
