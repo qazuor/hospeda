@@ -18,7 +18,10 @@ import { isEntitlementGrantingStatus, productDomainForLimitKey } from '@repo/bil
 import type { DrizzleClient } from '@repo/db';
 import { sql, withTransaction } from '@repo/db';
 import { PlanService } from '../plan/plan.service.js';
-import { subscriptionMatchesDomain } from '../subscription/subscription-product-domain.js';
+import {
+    hydrateSubscriptionProductDomains,
+    subscriptionMatchesDomain
+} from '../subscription/subscription-product-domain.js';
 import { AddonCatalogService } from './addon-catalog.service.js';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
@@ -240,9 +243,9 @@ export async function recalculateAddonLimitsForCustomer(
             // because we need the subscription data to determine the base plan
             // limit. The call is read-only and does not mutate any state.
 
-            const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+            const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 const skippedResult: ReadPhaseResult = {
                     skipped: true,
                     result: {
@@ -256,6 +259,20 @@ export async function recalculateAddonLimitsForCustomer(
                 };
                 return skippedResult;
             }
+
+            // HOS-1176: hydrate `productDomain` before matching —
+            // `getByCustomerId()` never populates it (see
+            // `hydrateSubscriptionProductDomains`'s doc: qzpay-core's mapper
+            // builds the object field-by-field and drops any qzpay-drizzle
+            // column outside its own interface). Without this, every row
+            // below reaches `subscriptionMatchesDomain` with
+            // `productDomain: undefined`, which fails OPEN for accommodation
+            // (masking the bug there) and fails CLOSED for every other
+            // domain — a gastronomy/experience addon recalculation always
+            // finds no matching subscription and returns 'failed' silently,
+            // even though the customer has an active subscription for that
+            // vertical.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             // The base plan comes from the subscription that OWNS this limit key,
             // which is not always the accommodation one (HOS-688).
