@@ -133,6 +133,21 @@ vi.mock('../../../../src/middlewares/commerce-entitlement', () => ({
     resolveCommerceVerticalCap: mockResolveCommerceVerticalCap
 }));
 
+// HOS-1184: branch 1a's collaborator. Mocked at the module boundary for the
+// same reason as the three above — its own DB reads and writes are covered by
+// `test/services/commerce-trial-start.test.ts`, and what this file asserts is
+// WHICH BRANCH the route takes.
+//
+// The default is `null`, meaning "there was no trial to grant". That is what
+// keeps every pre-HOS-1184 test in this file saying what it always said: with
+// no trial available, an owner with no subscription still reaches the checkout.
+const { mockStartCommerceListingTrial } = vi.hoisted(() => ({
+    mockStartCommerceListingTrial: vi.fn()
+}));
+vi.mock('../../../../src/services/commerce-trial-start.service', () => ({
+    startCommerceListingTrial: mockStartCommerceListingTrial
+}));
+
 const { mockGetCommerceListingSubscriptionStatus } = vi.hoisted(() => ({
     mockGetCommerceListingSubscriptionStatus: vi.fn()
 }));
@@ -310,6 +325,9 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         // Branch 1 by default: the owner holds no subscription for this
         // vertical, which is the behaviour every pre-HOS-688 case asserts.
         mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        // HOS-1184: and no trial to grant either, so branch 1 stays branch 1.
+        // Every assertion below that expects a checkout depends on this.
+        mockStartCommerceListingTrial.mockResolvedValue(null);
         mockCountAttachedListings.mockResolvedValue(0);
         mockResolveCommerceVerticalCap.mockResolvedValue(1);
         mockGetQZPayBilling.mockReturnValue(DEFAULT_BILLING);
@@ -718,10 +736,16 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
     });
 
-    it('still opens a checkout when the owner has NO subscription for this vertical (AC-14 branch 1)', async () => {
+    it('still opens a checkout with NO subscription and NO trial to grant (AC-14 branch 1)', async () => {
         // Non-vacuity for the pair above: the fork has to be able to reach the
         // checkout, or "no second preapproval" would be trivially true.
+        //
+        // Since HOS-1184 "no subscription" is no longer sufficient on its own —
+        // the trial has to be unavailable too, which is the `null` default. Both
+        // are set explicitly here because this is the test that pins the
+        // checkout still being reachable at all.
         mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        mockStartCommerceListingTrial.mockResolvedValue(null);
         const ctx = createMockContext();
 
         await handleCommerceStartSubscription(ctx as never, {
@@ -731,6 +755,97 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
 
         expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
         expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
+    });
+
+    // ── HOS-1184 branch 1a: the trial, before the checkout ────────────────
+    //
+    // The whole issue in one branch. A gastronomy or experience owner publishing
+    // their first listing was sent to MercadoPago and charged on day 1, while
+    // /planes/gastronomia promised them thirty free days in three languages
+    // reading `trialDays` live from the same column the checkout ignored.
+
+    it('grants the trial instead of opening a checkout when one is available', async () => {
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        mockStartCommerceListingTrial.mockResolvedValue({
+            localSubscriptionId: 'sub-trial-1',
+            trialEnd: new Date('2026-10-05T12:00:00.000Z')
+        });
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // Not "also opens a checkout": sending the owner to MercadoPago here is
+        // precisely the bug, because MP charges on card authorization.
+        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+    });
+
+    it('answers with the trial subscription and appliedEffect trial', async () => {
+        const trialEnd = new Date('2026-10-05T12:00:00.000Z');
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        mockStartCommerceListingTrial.mockResolvedValue({
+            localSubscriptionId: 'sub-trial-1',
+            trialEnd
+        });
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // `expiresAt` is the trial's end, not a checkout's expiry — the field is
+        // reused, so a test that only checked `localSubscriptionId` would not
+        // notice it still carrying a payment deadline.
+        expect(result.localSubscriptionId).toBe('sub-trial-1');
+        expect(result.expiresAt).toBe(trialEnd.toISOString());
+        expect(result.appliedEffect).toBe('trial');
+    });
+
+    it('grants the trial for the LISTING own vertical', async () => {
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        mockStartCommerceListingTrial.mockResolvedValue({
+            localSubscriptionId: 'sub-trial-1',
+            trialEnd: new Date('2026-10-05T12:00:00.000Z')
+        });
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityId: ENTITY_ID
+        });
+
+        // Trials are one per (customer, vertical). Granting gastronomy here
+        // would spend the wrong vertical's trial and still look like a working
+        // feature from the outside.
+        expect(mockStartCommerceListingTrial).toHaveBeenCalledWith(
+            expect.objectContaining({
+                vertical: CommerceEntityTypeEnum.EXPERIENCE,
+                entityId: ENTITY_ID
+            })
+        );
+    });
+
+    it('never reaches the trial when the owner already has a subscription', async () => {
+        // Branch 2 wins, and it must: an owner who already pays is not eligible
+        // for a trial in any useful sense, and granting one would hand them a
+        // second subscription in the same vertical.
+        mockFindOwnerVerticalSubscription.mockResolvedValue({
+            id: 'sub-existing-1',
+            status: 'active',
+            planId: 'plan-1'
+        });
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        expect(mockStartCommerceListingTrial).not.toHaveBeenCalled();
+        expect(mockAttachListingToSubscription).toHaveBeenCalledTimes(1);
     });
 
     it('scopes the subscription lookup to the listing OWN vertical', async () => {
