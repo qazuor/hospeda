@@ -11,7 +11,7 @@ import {
     PRIVATE_GALLERIES_5_ADDON,
     PRIVATE_GALLERIES_10_ADDON,
     PRIVATE_GALLERIES_20_ADDON,
-    resolveAddonProductDomain,
+    productDomainForAddonSlug,
     VISIBILITY_BOOST_30D_ADDON,
     VISIBILITY_BOOST_ADDON
 } from '../src/config/addons.config.js';
@@ -271,10 +271,10 @@ describe('Add-on Configuration', () => {
         });
 
         it('resolves a domain by slug, and answers undefined for a slug it does not know', () => {
-            expect(resolveAddonProductDomain('extra-experiences-1')).toBe(
+            expect(productDomainForAddonSlug('extra-experiences-1')).toBe(
                 ProductDomainEnum.EXPERIENCE
             );
-            expect(resolveAddonProductDomain('extra-photos-20')).toBe(
+            expect(productDomainForAddonSlug('extra-photos-20')).toBe(
                 ProductDomainEnum.ACCOMMODATION
             );
 
@@ -282,7 +282,7 @@ describe('Add-on Configuration', () => {
             // does not know must NOT come back as accommodation — that is the
             // `?? ACCOMMODATION` HOS-1078 deleted one layer down.
             for (const unknown of ['operator-invented', 'extra-experiences-2', '']) {
-                const result = resolveAddonProductDomain(unknown);
+                const result = productDomainForAddonSlug(unknown);
                 expect(result).toBeUndefined();
                 expect(result).not.toBe(ProductDomainEnum.ACCOMMODATION);
             }

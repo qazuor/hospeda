@@ -39,7 +39,7 @@ import {
     isEntitlementKey,
     isLimitKey,
     type LimitKey,
-    resolveAddonProductDomain
+    productDomainForAddonSlug
 } from '@repo/billing';
 import type { QZPayBillingAddon } from '@repo/db';
 
@@ -206,7 +206,7 @@ export function mapRowToAddonDefinition(row: QZPayBillingAddon): AddonDefinition
         // `?? ProductDomainEnum.ACCOMMODATION`: that is the exact default
         // HOS-1078 deleted from `productDomainForLimitKey`, where it answered
         // confidently for keys nobody had mapped. Callers fail closed.
-        productDomain: resolveAddonProductDomain(slug),
+        productDomain: productDomainForAddonSlug(slug),
         isActive: row.active ?? false,
         sortOrder,
         requiresAccommodationTarget: resolveRequiresAccommodationTarget(metadata)

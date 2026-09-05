@@ -355,18 +355,41 @@ export const ALL_ADDONS: AddonDefinition[] = [
  *
  * Callers MUST fail CLOSED on `undefined`.
  *
+ * ## Named for its INPUT, because a derived near-twin already exists
+ *
+ * `apps/web/src/lib/billing/addon-domain.ts` exports its own
+ * `resolveAddonProductDomain`, which answers the same question by DERIVING the
+ * domain from the add-on's `affectsLimitKey` through `productDomainForLimitKey`
+ * (HOS-689). That derivation gates the `/mi-cuenta/addons/` catalogue today, and
+ * it is why the cross-vertical purchase the owner described is already refused
+ * there for any add-on that raises a cap.
+ *
+ * It cannot replace this one, and this one does not replace it:
+ *
+ * - the derivation has nothing to read for an add-on whose `affectsLimitKey` is
+ *   `null` (`visibility-boost-7d`/`-30d`), so it coerces those to accommodation
+ *   by hand;
+ * - it cannot tell apart two add-ons that raise the SAME cap for different
+ *   verticals, a shape the catalogue is one edit away from.
+ *
+ * So this is the DECLARED answer and that is the DERIVED one, deliberately
+ * named apart (`…ForAddonSlug`, mirroring `productDomainForLimitKey`) so a
+ * reader can never mistake which is which. Folding the derivation into this
+ * declaration is follow-up work: the web only sees `AddonResponse`, so it needs
+ * `productDomain` carried on that contract first.
+ *
  * @param slug - The add-on slug, e.g. from `billing_addons.metadata.slug`.
  * @returns Its product domain, or `undefined` when the slug is not in the
  *   catalogue.
  *
  * @example
  * ```ts
- * resolveAddonProductDomain('extra-experiences-1'); // 'experience'
- * resolveAddonProductDomain('extra-photos-20');     // 'accommodation'
- * resolveAddonProductDomain('operator-invented');   // undefined
+ * productDomainForAddonSlug('extra-experiences-1'); // 'experience'
+ * productDomainForAddonSlug('extra-photos-20');     // 'accommodation'
+ * productDomainForAddonSlug('operator-invented');   // undefined
  * ```
  */
-export function resolveAddonProductDomain(slug: string): ProductDomainValue | undefined {
+export function productDomainForAddonSlug(slug: string): ProductDomainValue | undefined {
     return ALL_ADDONS.find((addon) => addon.slug === slug)?.productDomain;
 }
 
