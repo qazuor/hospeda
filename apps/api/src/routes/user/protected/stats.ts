@@ -14,10 +14,12 @@ import {
     inArray,
     isNull
 } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import {
     AccommodationReviewService,
     DestinationReviewService,
     ServiceError,
+    subscriptionMatchesDomain,
     UserBookmarkService
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -38,14 +40,27 @@ const destinationReviewService = new DestinationReviewService({ logger: apiLogge
 const UserStatsResponseSchema = z.object({
     bookmarkCount: z.number(),
     reviewCount: z.number(),
-    /** Plan info is included when billing is available */
+    /**
+     * Plan info, populated only when exactly one product domain (HOS-1066)
+     * has a live entitlement-granting subscription. `null` with
+     * `activeSubscriptionsCount > 1` means the account has several active
+     * subscriptions across domains — the UI renders a count summary instead
+     * of a single plan and links to the (domain-scoped) subscription page.
+     */
     plan: z
         .object({
             name: z.string(),
             status: z.string()
         })
         .nullable()
-        .optional()
+        .optional(),
+    /**
+     * Number of distinct product domains carrying a live entitlement-granting
+     * subscription (HOS-1066). `0` means no active subscription (free tier),
+     * `1` means `plan` above describes it, `2+` means the UI must show a
+     * summary rather than a single plan.
+     */
+    activeSubscriptionsCount: z.number().optional()
 });
 
 /**
@@ -85,6 +100,16 @@ export interface UserPlanSummary {
 }
 
 /**
+ * All product domains a customer's subscriptions can be resolved into,
+ * mirroring the order `subscriptionMatchesDomain` recognises. Iterating this
+ * fixed list (rather than reading `productDomain` off the row directly) keeps
+ * `subscriptionMatchesDomain` the ONLY place that compares a subscription's
+ * domain (see that module's doc) — this file never inspects the column
+ * itself.
+ */
+const ALL_PRODUCT_DOMAINS = Object.values(ProductDomainEnum);
+
+/**
  * Resolves the plan summary rendered by the "mi plan" widget on `/mi-cuenta/`.
  *
  * Both reads exclude soft-deleted rows (HOS-755). Neither did before, so a
@@ -99,6 +124,20 @@ export interface UserPlanSummary {
  * `external_id` carries no UNIQUE constraint: without the predicate a stale,
  * soft-deleted customer row can win the unordered `LIMIT 1` over the live one.
  *
+ * HOS-1066: this used to pick the single most-recently-created entitlement-
+ * granting subscription regardless of vertical (`orderBy(desc(createdAt)).limit(1)`),
+ * so a host who also holds a gastronomy/experience/partner subscription could
+ * see that OTHER vertical's plan here, while the "Ver mi suscripción" link
+ * (`GET /users/me/subscription`, domain-scoped via `subscriptionMatchesDomain`)
+ * correctly showed the accommodation plan — two contiguous surfaces
+ * disagreeing about the same subscriber. This now groups the customer's live
+ * subscriptions by domain (one entry per domain, most-recent-first thanks to
+ * the `ORDER BY createdAt DESC` below) and reports a single plan only when
+ * exactly one domain has an active subscription. With more than one, the
+ * card is a summary — see {@link UserPlanSummary}'s `activeSubscriptionsCount`
+ * — and delegates plan detail to the (domain-scoped) subscription page,
+ * per owner decision.
+ *
  * @remarks `getDb()` is used directly because billing entities are managed by
  *   the external qzpay library and have no service in `@repo/service-core`.
  *   The read is deliberately non-fatal: a billing failure must not break the
@@ -106,12 +145,17 @@ export interface UserPlanSummary {
  *
  * @param input - Lookup input.
  * @param input.userId - The actor id, matched against `billing_customers.external_id`.
- * @returns `{ plan }` — `null` when the user has no live entitlement-granting
- *   subscription, or when the billing read fails.
+ * @returns `{ plan, activeSubscriptionsCount }`. `plan` is `null` when the
+ *   user has no live entitlement-granting subscription, when the billing read
+ *   fails, OR when more than one domain has an active subscription (the
+ *   summary case — check `activeSubscriptionsCount` instead).
+ *   `activeSubscriptionsCount` is the number of DISTINCT domains carrying a
+ *   live entitlement-granting subscription (0, 1, or more).
  */
-export async function resolveUserPlanSummary(input: {
-    readonly userId: string;
-}): Promise<{ readonly plan: UserPlanSummary | null }> {
+export async function resolveUserPlanSummary(input: { readonly userId: string }): Promise<{
+    readonly plan: UserPlanSummary | null;
+    readonly activeSubscriptionsCount: number;
+}> {
     try {
         const db = getDb();
 
@@ -128,11 +172,12 @@ export async function resolveUserPlanSummary(input: {
             .limit(1);
 
         if (!customer) {
-            return { plan: null };
+            return { plan: null, activeSubscriptionsCount: 0 };
         }
 
         /**
-         * Find the most recent live entitlement-granting subscription.
+         * Find every live entitlement-granting subscription for this customer,
+         * most-recent-first.
          *
          * H-70: this used a hand-written `active || trialing` pair and
          * therefore dropped `comp`. A complimentary subscriber got
@@ -146,7 +191,7 @@ export async function resolveUserPlanSummary(input: {
          * its `active`/`comp` status forever — the status set alone never
          * excludes it.
          */
-        const [subscription] = await db
+        const subscriptions = await db
             .select()
             .from(billingSubscriptions)
             .where(
@@ -156,11 +201,39 @@ export async function resolveUserPlanSummary(input: {
                     isNull(billingSubscriptions.deletedAt)
                 )
             )
-            .orderBy(desc(billingSubscriptions.createdAt))
-            .limit(1);
+            .orderBy(desc(billingSubscriptions.createdAt));
 
+        if (subscriptions.length === 0) {
+            return { plan: null, activeSubscriptionsCount: 0 };
+        }
+
+        /**
+         * Group by domain: one subscription per domain, the most recent one
+         * (subscriptions are already ordered `DESC createdAt`, so `.find()`
+         * keeps the first — newest — match per domain). A subscription whose
+         * `productDomain` matches none of the four known domains (e.g. a
+         * stray legacy `'commerce'` row — see `subscriptionMatchesDomain`'s
+         * doc) matches no bucket and is dropped, by design.
+         */
+        const subscriptionByDomain = ALL_PRODUCT_DOMAINS.reduce((acc, domain) => {
+            const match = subscriptions.find((sub) => subscriptionMatchesDomain(sub, domain));
+            if (match) {
+                acc.set(domain, match);
+            }
+            return acc;
+        }, new Map<ProductDomainEnum, (typeof subscriptions)[number]>());
+
+        const activeSubscriptionsCount = subscriptionByDomain.size;
+
+        if (activeSubscriptionsCount !== 1) {
+            // 0 (all subscriptions were dark/unrecognised domains) or 2+
+            // (the summary case) both report no single `plan`.
+            return { plan: null, activeSubscriptionsCount };
+        }
+
+        const [subscription] = subscriptionByDomain.values();
         if (!subscription) {
-            return { plan: null };
+            return { plan: null, activeSubscriptionsCount };
         }
 
         /**
@@ -174,14 +247,15 @@ export async function resolveUserPlanSummary(input: {
             plan: {
                 name: resolvedName ?? subscription.planId,
                 status: subscription.status
-            }
+            },
+            activeSubscriptionsCount
         };
     } catch (error) {
         apiLogger.warn(
             'Failed to resolve billing plan for user stats',
             error instanceof Error ? error.message : String(error)
         );
-        return { plan: null };
+        return { plan: null, activeSubscriptionsCount: 0 };
     }
 }
 
@@ -231,12 +305,15 @@ export const userStatsRoute = createProtectedRoute({
         const destReviewTotal = destReviewResult.data?.pagination?.total ?? 0;
         const reviewCount = accReviewTotal + destReviewTotal;
 
-        const { plan } = await resolveUserPlanSummary({ userId: actor.id });
+        const { plan, activeSubscriptionsCount } = await resolveUserPlanSummary({
+            userId: actor.id
+        });
 
         return {
             bookmarkCount,
             reviewCount,
-            plan
+            plan,
+            activeSubscriptionsCount
         };
     },
     options: {

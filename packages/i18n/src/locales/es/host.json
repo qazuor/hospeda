@@ -258,7 +258,6 @@
                 "photosDescription_other": "Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes",
                 "photosDescriptionLoading": "Cargando tu límite de fotos…",
                 "externalReputation": "Reputación externa",
-                "featuredToggle": "Destacado",
                 "calendar": "Calendario",
                 "capacityPricing": "Capacidad y precio",
                 "contactSocial": "Contacto y redes",
@@ -269,9 +268,9 @@
                 "ariaLabel": "Navegación de secciones del formulario"
             },
             "slugRefresh": {
-                "notice": "Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.",
+                "notice": "Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre o el tipo.",
                 "warning": "Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
-                "checkbox": "Cambiar igual la dirección web para que siga este nuevo nombre"
+                "checkbox": "Cambiar igual la dirección web para que siga estos cambios"
             },
             "field": {
                 "name": "Nombre",
@@ -538,11 +537,6 @@
                 "textUnavailable": "Se generó recién. Actualizá la página para leerlo.",
                 "expandText": "Ver completo",
                 "collapseText": "Ver menos"
-            },
-            "featuredToggle": {
-                "label": "Destacar mi alojamiento",
-                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Calendario de ocupación",

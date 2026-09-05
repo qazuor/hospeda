@@ -1917,6 +1917,8 @@ export function transformAccommodationEdit({
         currency: priceObj?.currency == null ? null : String(priceObj.currency),
         isAvailable: item.isAvailable == null ? true : Boolean(item.isAvailable),
         isFeatured: item.isFeatured == null ? false : Boolean(item.isFeatured),
+        featuredByEntitlement:
+            item.featuredByEntitlement == null ? false : Boolean(item.featuredByEntitlement),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)

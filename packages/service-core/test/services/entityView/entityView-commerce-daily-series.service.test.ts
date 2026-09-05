@@ -76,7 +76,9 @@ describe('EntityViewService.getDailySeriesForOwnCommerceListings (HOS-734)', () 
             experienceModelMock
         );
 
-        // Pin the clock so gap-fill date assertions are stable.
+        // Pin the clock so gap-fill date assertions are stable. Deliberately UTC
+        // midnight (2026-06-15T00:00:00Z), which is 2026-06-14T21:00:00-03:00 in
+        // Argentina — local today is 2026-06-14, not 2026-06-15 (HOS-1169).
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
     });
@@ -168,7 +170,8 @@ describe('EntityViewService.getDailySeriesForOwnCommerceListings (HOS-734)', () 
 
         it('should gap-fill missing days to total=0 in the output', async () => {
             // Arrange — model returns only one day; all others must be gap-filled.
-            // Fake clock = 2026-06-15; with window=7d, the oldest date is 2026-06-09.
+            // Local today = 2026-06-14 (see beforeEach); with window=7d, the local
+            // window is [2026-06-08 .. 2026-06-14], so the oldest date is 2026-06-08.
             asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([
                 { date: '2026-06-12', total: 8 }
@@ -183,7 +186,7 @@ describe('EntityViewService.getDailySeriesForOwnCommerceListings (HOS-734)', () 
             // Assert
             expect(result.data).toHaveLength(7);
             expect(result.data?.find((item) => item.date === '2026-06-12')?.total).toBe(8);
-            expect(result.data?.find((item) => item.date === '2026-06-09')?.total).toBe(0);
+            expect(result.data?.find((item) => item.date === '2026-06-08')?.total).toBe(0);
         });
     });
 

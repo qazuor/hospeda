@@ -392,7 +392,11 @@ export const userApi = {
     /**
      * Get statistics for the authenticated user.
      *
-     * @returns Bookmark count, review count, and current plan info
+     * @returns Bookmark count, review count, current plan info, and how many
+     *   product domains carry a live subscription. `plan` is populated only
+     *   when `activeSubscriptionsCount` is exactly 1 — with 0 or 2+, `plan`
+     *   is `null` and the count is what a caller should render instead
+     *   (HOS-1066: see `resolveUserPlanSummary` in the API's `stats.ts`).
      *
      * @example
      * ```ts
@@ -405,6 +409,7 @@ export const userApi = {
             readonly bookmarkCount: number;
             readonly reviewCount: number;
             readonly plan: { readonly name: string; readonly status: string } | null;
+            readonly activeSubscriptionsCount: number;
         }>
     > {
         return apiClient.getProtected({ path: `${PROTECTED}/users/me/stats` });
@@ -3987,46 +3992,6 @@ export const accommodationEditApi = {
      */
     softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
-    },
-
-    /**
-     * Read the current `isFeatured` value and whether the owner currently
-     * holds an active FEATURED_LISTING entitlement (plan or addon) for this
-     * accommodation (SPEC-309 T-020). Used to decide whether the owner
-     * self-service featured toggle should render in the editor at all.
-     *
-     * @param params - Accommodation ID
-     * @returns The current featured status and entitlement gate
-     */
-    getFeaturedEntitlement({
-        id
-    }: {
-        readonly id: string;
-    }): Promise<ApiResult<{ readonly isFeatured: boolean; readonly hasEntitlement: boolean }>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/accommodations/${id}/featured-toggle`
-        });
-    },
-
-    /**
-     * Set `isFeatured` for an accommodation the actor owns (SPEC-309 T-019).
-     * Rejected server-side (403) if the owner does not currently hold an
-     * active FEATURED_LISTING entitlement (plan or addon) for it.
-     *
-     * @param params - Accommodation ID and the target `isFeatured` value
-     * @returns The new `isFeatured` value
-     */
-    setFeaturedToggle({
-        id,
-        isFeatured
-    }: {
-        readonly id: string;
-        readonly isFeatured: boolean;
-    }): Promise<ApiResult<{ readonly isFeatured: boolean }>> {
-        return apiClient.patch({
-            path: `${PROTECTED}/accommodations/${id}/featured-toggle`,
-            body: { isFeatured }
-        });
     },
 
     /**
