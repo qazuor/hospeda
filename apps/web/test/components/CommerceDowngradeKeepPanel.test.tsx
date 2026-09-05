@@ -33,7 +33,13 @@ import { CommerceDowngradeKeepPanel } from '@/components/commerce/CommerceDowngr
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: vi.fn()
+        // Echoes WHICH CLDR form was asked for, rather than returning a bare
+        // `vi.fn()` (i.e. `undefined`, which threw the moment the component
+        // started calling it). The intro is the only plural-resolved string
+        // here, and what a test can meaningfully assert about it is that the
+        // count picked the right form — not the copy, which lives in the
+        // locale files.
+        tPlural: (key: string, count: number) => `${key}_${count === 1 ? 'one' : 'other'}`
     })
 }));
 
@@ -180,6 +186,27 @@ describe('CommerceDowngradeKeepPanel (HOS-1122)', () => {
         renderPanel();
 
         expect(screen.getByText(/sigue ocupando lugar en tu cupo/)).toBeInTheDocument();
+    });
+
+    it('asks for the SINGULAR intro when the owner has one active listing', () => {
+        // Regression: the intro was one flat key, so a single listing read
+        // "de tus 1 fichas" in all three locales. The count that governs the
+        // noun is `activeCount`, not the target plan's `cap`.
+        renderPanel({ preview: makePreview(0, 1) });
+
+        expect(
+            screen.getByText('commerce.owner.planChange.keepPanel.intro_one')
+        ).toBeInTheDocument();
+    });
+
+    it('asks for the PLURAL intro on more than one, keyed on activeCount not cap', () => {
+        // cap === 1 with three listings: were the form resolved from `cap`,
+        // this would ask for `_one` while the sentence names three.
+        renderPanel({ preview: makePreview(1, 3) });
+
+        expect(
+            screen.getByText('commerce.owner.planChange.keepPanel.intro_other')
+        ).toBeInTheDocument();
     });
 
     it('disables everything while the request is in flight', () => {
