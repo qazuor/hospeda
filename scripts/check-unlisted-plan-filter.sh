@@ -131,9 +131,19 @@ FAILED=0
 # $1 = file, $2 = regex matching the function's opening line.
 # The slice runs to the first line that is exactly `}` at column 0, which is how
 # every function in these files closes.
+#
+# The trailing `|| true` is load-bearing under `set -euo pipefail`: when the
+# function is absent the awk slice is empty, `grep -v` then exits 1 on no match,
+# and pipefail kills the whole script mid-run — every check after this point
+# silently never executes. That is strictly worse than the hole it was added to
+# close, and it is what scripts/__tests__/check-unlisted-plan-filter.test.ts
+# caught: one fixture lacks isPubliclyListedStoragePlan, and the guard died
+# there instead of reporting the two errors the fixture was built to trigger.
+# Empty output is a legitimate answer here — the caller checks for it.
 function_body_code() {
     awk -v pat="$2" '$0 ~ pat {inside=1} inside {print} inside && /^\}$/ {exit}' "$1" \
-        | grep -v -E '^[[:space:]]*(//|\*|/\*)'
+        | grep -v -E '^[[:space:]]*(//|\*|/\*)' \
+        || true
 }
 
 # --- 1. The handler still exists --------------------------------------------
