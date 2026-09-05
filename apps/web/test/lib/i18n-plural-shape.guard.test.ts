@@ -128,7 +128,15 @@ const VOCAB_BLOCKLIST = new Set([
     // like "Ya tenés {{currentCount}} de..." / "...the plan allows {cap}" —
     // adjacent to a placeholder by chance, not a noun taking a plural form.
     'tenés',
-    'allows'
+    'allows',
+    // "The {plan} plan includes {cap} of your {active} listings" puts a verb
+    // ending in "es" immediately before a placeholder, so the vocabulary
+    // harvest reads "includes" as a noun — and from then on every string
+    // shaped like "Includes {{bonus}} extra from add-ons" looks like a missing
+    // plural pair. Blocked here rather than allowlisting the keys it hits:
+    // the defect is the harvest mistaking a verb for a noun, and an allowlist
+    // would leave the next such key to be discovered the same way.
+    'includes'
 ]);
 
 /**
@@ -297,14 +305,7 @@ const KNOWN_NON_BUGS = new Set<string>([
     // `labelParams` threading change to the shared quality-score signal
     // type, tracked separately — pluralizing on top of a placeholder that
     // never resolves would just be a second bug stacked on the first.
-    'admin-entities::qualityScore.signals.galleryPhotos.label',
-    // --- "Includes {{bonus}} extra from add-ons". The noun the matcher lands
-    // on is "add-ons" — the name of the feature the allowance comes FROM, so
-    // its plurality is fixed and owes nothing to `{{bonus}}`. The word that
-    // does follow the count is "extra", invariable here in all three locales
-    // ("{{bonus}} extra" / "{{bonus}} a mais"), which is why only `en` trips
-    // the matcher at all while es/pt read identically at every count.
-    'account::subscription.usage.addonBonus'
+    'admin-entities::qualityScore.signals.galleryPhotos.label'
 ]);
 
 // ---------------------------------------------------------------------------
