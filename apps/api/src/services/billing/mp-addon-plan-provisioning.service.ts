@@ -94,10 +94,42 @@ export interface ResolveOrProvisionMpAddonPlanInput {
     /** Billing cadence of this variant. */
     readonly billingInterval: AddonBillingIntervalLabel;
     /**
-     * Current catalog price for this variant, in **centavos**. Stored as the drift
-     * snapshot in `billing_mp_addon_plans.amount_ars` (the column name mirrors
-     * `billing_mp_plans.amount_ars`, which likewise stores centavos) and used as
-     * the MP plan's `transaction_amount`.
+     * The add-on's LIST price from the catalog, in **centavos** — never a
+     * promotion-adjusted amount.
+     *
+     * ## This is a hard contract, not a preference
+     *
+     * The registry key is `(addon_id, billing_interval)` and carries NO discount
+     * dimension, unlike `billing_mp_plans`, which needed
+     * `discount_cycle1_amount_ars` as a fourth key dimension precisely to hold
+     * discounted variants apart from full-price ones (HOS-244). Here, the amount is
+     * only ever a DRIFT SNAPSHOT of the catalog price — the thing that answers "has
+     * the product's price changed since we provisioned this plan?".
+     *
+     * Feed it a per-buyer amount and that question gets the wrong answer on every
+     * request. `addon.checkout.ts` computes `finalPrice = addon.priceArs -
+     * discountAmount` unconditionally (the promo block is not gated on
+     * `billingType`), so a caller that forwards `finalPrice` makes each checkout
+     * look like a price drift to the next one:
+     *
+     * 1. buyer A with a coupon → 450_000 → row provisioned as `mp_A`, and A is on
+     *    MercadoPago's authorization page holding that plan id;
+     * 2. buyer B without one → `500_000 !== 450_000` → the DRIFT branch → creates
+     *    `mp_B`, wins the CAS, and archives `mp_A` — killing the plan behind A's
+     *    still-open page;
+     * 3. buyer C with a coupon → drift again, in the other direction.
+     *
+     * The registry stops being a cache (a `POST /preapproval_plan` per checkout,
+     * unbounded inactive plans on MercadoPago) and concurrent buyers lose their
+     * authorization window. Applying a discount to a recurring add-on has to happen
+     * downstream of the plan — on the preapproval — or gain its own key dimension
+     * here, which is an owner decision and new scope, not something a caller may
+     * improvise by passing a smaller number.
+     *
+     * Stored as-is in `billing_mp_addon_plans.amount_ars` and used as the MP plan's
+     * `transaction_amount`. Despite the column name, the unit is CENTAVOS: the
+     * catalog declares `priceArs: 500000` for ARS $5.000 and the MercadoPago price
+     * adapter divides by 100. `billing_mp_plans.amount_ars` stores centavos too.
      */
     readonly amountCentavos: number;
     /** ISO currency code (e.g. `'ARS'`). */
@@ -184,9 +216,17 @@ function truncateToLength(value: string, maxLength: number): string {
  * an add-on variant. Rendered in Spanish; the `addonName` is a display name and is
  * left as-is.
  *
- * Only two fragments, because only two dimensions exist: there is no trial
- * fragment (a `sin prueba` label would be noise on a registry where no other value
- * is possible) and no discount marker (add-on signup discounts are not a thing).
+ * Only two fragments, because the registry has only two dimensions: there is no
+ * trial fragment (a `sin prueba` label would be noise where no other value is
+ * possible) and no discount marker.
+ *
+ * The missing discount marker is NOT because add-on discounts do not exist — they
+ * do, in production today: `addon.checkout.ts` applies a promo code to
+ * `finalPrice` unconditionally. It is because a discounted amount must never reach
+ * this module at all. See {@link ResolveOrProvisionMpAddonPlanInput.amountCentavos}:
+ * the MP plan is provisioned at the LIST price, and a per-buyer discount is applied
+ * downstream of it, not baked into the plan the way `billing_mp_plans` does with
+ * `discount_cycle1_amount_ars`.
  *
  * The result is GUARANTEED to fit {@link MP_PLAN_REASON_MAX_LENGTH}. The cadence
  * suffix is bounded by this module, so the add-on name — the one caller-supplied,
@@ -278,6 +318,28 @@ async function createMpAddonPlan(input: ResolveOrProvisionMpAddonPlanInput): Pro
 export async function resolveOrProvisionMpAddonPlan(
     input: ResolveOrProvisionMpAddonPlanInput
 ): Promise<ResolveOrProvisionMpAddonPlanResult> {
+    // A missing `addonId` must die HERE, before the model is touched, because the
+    // lookup below cannot fail on it. `buildWhereClause` DROPS every key whose value
+    // is `undefined` and only errors when ALL of them are unusable, so
+    // `findOne({ addonId: undefined, billingInterval: 'monthly' })` builds the exact
+    // same clause as filtering on the cadence alone — and returns SOME OTHER
+    // add-on's MP plan, whichever row that cadence hits first. Nothing downstream
+    // could tell: the row is well-formed, `status` is `active`, and the only
+    // symptom is a buyer authorizing a preapproval for a product they did not buy,
+    // at that product's price.
+    //
+    // This is reachable, not defensive theatre: `billing_addon_purchases` is keyed
+    // by `addon_slug`, not by id, so the recurring checkout (PR 4) has to resolve
+    // slug → `billing_addons.id` first, and a resolution miss yields exactly this
+    // `undefined`. An empty string is rejected on the same grounds — it matches no
+    // row today, but it is not a value any caller means to send.
+    if (!input.addonId) {
+        throw new SubscriptionCheckoutError(
+            'MP_PLAN_PROVISIONING_FAILED',
+            'Cannot resolve a MercadoPago add-on plan without an addonId — a blank id would silently match another add-on’s plan.'
+        );
+    }
+
     const key = {
         addonId: input.addonId,
         billingInterval: input.billingInterval
@@ -370,7 +432,15 @@ export interface ResolveCheckoutMpAddonPlanIdInput {
     readonly addonId: string;
     /** Human-readable add-on name, used as the MP plan `reason` (dashboard label). */
     readonly addonName: string;
-    /** Current catalog price for this variant, in centavos. */
+    /**
+     * The add-on's LIST price from the catalog, in **centavos** — never a
+     * promotion-adjusted amount such as `addon.checkout.ts`'s `finalPrice`. The
+     * registry has no discount key dimension (unlike `billing_mp_plans`, which
+     * carries `discount_cycle1_amount_ars`), so a per-buyer amount makes every
+     * checkout look like a price drift and re-provisions the plan each time,
+     * archiving the one a concurrent buyer is authorizing against. Full reasoning
+     * on {@link ResolveOrProvisionMpAddonPlanInput.amountCentavos}.
+     */
     readonly amountCentavos: number;
     /** ISO currency code (e.g. `'ARS'`). */
     readonly currency: string;
@@ -410,6 +480,16 @@ export async function resolveCheckoutMpAddonPlanId(
         );
     }
     try {
+        // The E2E test-control seam (`applyTestControl('provisionPlan', …)`) that
+        // wraps the commercial equivalent belongs HERE, around the whole
+        // resolve/provision step — deliberately omitted for now because HOS-847 has
+        // no add-on checkout resilience specs to arm it, and an unexercised seam is
+        // behaviour without a test. Restore it at this exact level if such specs are
+        // written: it cannot move down to the adapter, because the per-variant cache
+        // fires `prices.create` at most ONCE per variant across all customers, so a
+        // seam below this point could not be forced to fail deterministically.
+        // Scope it by `customerId` like the mold does, so parallel E2E workers do
+        // not consume each other's armed failures.
         const { mpPreapprovalPlanId } = await resolveOrProvisionMpAddonPlan({
             adapter,
             addonId: input.addonId,

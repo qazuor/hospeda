@@ -133,6 +133,56 @@ describe('resolveOrProvisionMpAddonPlan', () => {
         });
     });
 
+    /**
+     * The blank-`addonId` guard.
+     *
+     * `buildWhereClause` (packages/db/src/utils/drizzle-helpers.ts) DROPS every key
+     * whose value is `undefined` and only errors when ALL of them are unusable, so
+     * `findOne({ addonId: undefined, billingInterval: 'monthly' })` builds the same
+     * clause as filtering on the cadence alone — and returns some OTHER add-on's MP
+     * plan. Nothing downstream can tell: that row is well-formed and `active`, and
+     * the only symptom is a buyer subscribed to the wrong product at the wrong price.
+     *
+     * Reachable, not hypothetical: `billing_addon_purchases` is keyed by
+     * `addon_slug`, so the recurring checkout must resolve slug → id first, and a
+     * miss yields exactly this `undefined`.
+     *
+     * Each case asserts the model was NEVER CONSULTED, not merely that something
+     * threw — a throw from further down the function would satisfy a rejects-only
+     * assertion while the dangerous lookup had already happened.
+     */
+    it.each([
+        ['undefined', undefined],
+        ['an empty string', ''],
+        ['null', null]
+    ])('refuses a %s addonId without ever querying the registry', async (_label, addonId) => {
+        const adapter = createAdapter();
+
+        await expect(
+            resolveOrProvisionMpAddonPlan({
+                adapter,
+                ...BASE_INPUT,
+                addonId
+                // The cast is the violation: the input contract types addonId as string.
+            } as any)
+        ).rejects.toBeInstanceOf(SubscriptionCheckoutError);
+
+        // The whole point of the guard: it fires BEFORE the model is touched.
+        expect(findOne).not.toHaveBeenCalled();
+        expect(create).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
+        // And before MercadoPago is touched, so no orphan plan is created either.
+        expect(adapter.prices.create).not.toHaveBeenCalled();
+    });
+
+    it('reports the blank addonId as a typed provisioning failure', async () => {
+        const adapter = createAdapter();
+
+        await expect(
+            resolveOrProvisionMpAddonPlan({ adapter, ...BASE_INPUT, addonId: '' })
+        ).rejects.toMatchObject({ code: 'MP_PLAN_PROVISIONING_FAILED' });
+    });
+
     it('provisions and inserts on a registry miss', async () => {
         findOne.mockResolvedValue(null);
         create.mockResolvedValue({ id: 'row1' });
