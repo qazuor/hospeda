@@ -199,6 +199,35 @@ describe('favorites cap fails CLOSED on a count failure (HOS-1087)', () => {
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
     });
 
+    it('never echoes the fail-closed sentinel into the PUBLIC error.details — reports "at the cap" instead', async () => {
+        // `LIMIT_REACHED`'s `details` are public on every route unconditionally
+        // (`PUBLIC_DETAILS_ERROR_CODES` in `response-helpers.ts`), and
+        // `apps/web/src/lib/billing-limit-error.ts` interpolates
+        // `details.currentCount` straight into the "Ya guardaste {{currentCount}}
+        // de {{maxAllowed}} favoritos" toast. Echoing the internal
+        // `Number.MAX_SAFE_INTEGER` decision sentinel there once rendered "Ya
+        // guardaste 9007199254740991 de 5 favoritos" on a real screen — this
+        // pins that it cannot recur.
+        mockBookmarkService.countBookmarksForUser.mockResolvedValue({
+            data: undefined,
+            error: { code: 'INTERNAL_ERROR', message: 'connection terminated unexpectedly' }
+        });
+
+        const res = await app.request(BASE_URL, {
+            method: 'POST',
+            headers: actorHeaders(actor),
+            body: makeToggleBody()
+        });
+
+        expect(res.status).toBe(403);
+        const body = await res.json();
+        expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
+        expect(body.error.details?.currentCount).not.toBe(Number.MAX_SAFE_INTEGER);
+        expect(body.error.details?.currentCount).toBe(maxFavorites);
+        expect(body.error.details?.maxAllowed).toBe(maxFavorites);
+        expect(body.error.details?.usagePercent).toBe(100);
+    });
+
     it('still lets an under-cap create through (non-vacuity)', async () => {
         mockBookmarkService.countBookmarksForUser.mockResolvedValue({
             data: { count: MAX_FAVORITES - 1 }
