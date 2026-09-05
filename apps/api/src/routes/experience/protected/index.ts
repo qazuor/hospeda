@@ -20,6 +20,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedAddExperienceFaqRoute } from './addFaq';
+import { protectedAddExperienceFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddExperienceMediaRoute } from './addMedia';
 import { protectedGetExperienceBrochureRoute } from './brochure';
 import {
@@ -99,6 +100,11 @@ app.route('/', protectedReorderExperienceMediaRoute);
 app.route('/', protectedGetExperienceMediaRoute);
 
 // POST /{id}/media — Add photo to gallery.
+// POST /:id/media/featured - Upload straight to cover (HOS-803).
+// Registered before POST /:id/media so "featured" resolves as the fixed
+// suffix rather than being absorbed by the collection route.
+app.route('/', protectedAddExperienceFeaturedMediaRoute);
+
 app.route('/', protectedAddExperienceMediaRoute);
 
 // PUT /{id}/media/{mediaId}/featured — Must be before /{id}/media/{mediaId} (DELETE).

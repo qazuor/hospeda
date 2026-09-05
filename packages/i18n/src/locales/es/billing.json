@@ -393,6 +393,9 @@
             "title": "Límite del plan alcanzado",
             "message": "Alcanzaste el límite de tu plan. Actualizalo para continuar.",
             "cta": "Ver mi suscripción"
+        },
+        "max_active_private_galleries": {
+            "title": "Llegaste al límite de galerías privadas activas"
         }
     },
     "limits": {
@@ -569,7 +572,8 @@
         "ai_accommodation_import": "Importación de alojamientos con IA",
         "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
         "multilingual_gastronomy_menu": "Carta en varios idiomas",
-        "menu_qr_analytics": "QR de la carta con panel de escaneos"
+        "menu_qr_analytics": "QR de la carta con panel de escaneos",
+        "manage_experience_private_galleries": "Galerías privadas para tus clientes"
     },
     "comparison": {
         "unlimited": "Ilimitado",
@@ -706,7 +710,8 @@
             "max_ai_translate_per_month": "Traducciones con IA por mes",
             "max_ai_accommodation_import_per_month": "Importaciones con IA por mes",
             "max_search_history_entries": "Entradas de historial de búsquedas",
-            "max_collections": "Colecciones de favoritos"
+            "max_collections": "Colecciones de favoritos",
+            "max_active_private_galleries": "Galerías privadas activas"
         }
     },
     "limitHelp": {
@@ -730,6 +735,7 @@
         "max_search_history_entries": "Cuántas búsquedas anteriores se guardan en tu historial. Al superar el tope se borran las más viejas.",
         "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
         "max_gastronomies": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
-        "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra."
+        "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
+        "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
     }
 }

@@ -278,6 +278,10 @@ jobs:
         run: bash scripts/check-no-trial-to-mercadopago.sh
       - name: Check no binary vertical ternary remains (HOS-1079)
         run: bash scripts/check-no-binary-vertical-ternary.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above).
+      - name: Check the add-on purchase route reads the declared domain (HOS-1178)
+        run: bash scripts/check-addon-product-domain.sh
       - name: Check server code does no local-timezone date math (HOS-1010)
         run: bash scripts/check-local-date-math.sh
       - name: Check the qzpay wave converges on one core (HOS-232)

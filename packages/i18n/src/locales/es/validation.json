@@ -1838,6 +1838,14 @@
             "tooLow": "El max rating es demasiado bajo"
         },
         "media": {
+            "featured": {
+                "planCap": {
+                    "int": "El límite de fotos del plan debe ser un número entero"
+                },
+                "previousId": {
+                    "invalid": "El identificador de la portada anterior no es válido"
+                }
+            },
             "image": {
                 "alt": {
                     "max": "El texto alternativo no puede superar los {{max}} caracteres",

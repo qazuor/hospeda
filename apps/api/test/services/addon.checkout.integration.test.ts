@@ -28,6 +28,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import type { PurchaseAddonInput } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -364,7 +365,13 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 getBySlug: mockPlanGetBySlug
             };
         }),
-        isAccommodationSubscription: () => true
+        isAccommodationSubscription: () => true,
+        // HOS-1178 — see the twin comment in `addon.checkout.test.ts`:
+        // `@repo/db` is mocked wholesale here, so the real hydration has no
+        // query builder to run against, and every customer fixture is a host.
+        hydrateSubscriptionProductDomains: vi.fn(async (subs: readonly Record<string, unknown>[]) =>
+            subs.map((sub) => ({ ...sub, productDomain: 'accommodation' }))
+        )
     };
 });
 
@@ -480,6 +487,10 @@ describe('addon checkout → accommodation-scoped featuring (SPEC-309 T-025 inte
                         durationDays: 7,
                         isActive: true,
                         targetCategories: ['owner', 'complex'] as const,
+                        // HOS-1178: an accommodation add-on (visibility-boost-7d /
+                        // extra-photos-20). The purchase route refuses an add-on that
+                        // declares no product domain, so the fixture declares its own.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 2,
                         affectsLimitKey: null,
                         limitIncrease: null,
@@ -500,6 +511,10 @@ describe('addon checkout → accommodation-scoped featuring (SPEC-309 T-025 inte
                         durationDays: null,
                         isActive: true,
                         targetCategories: ['owner'] as const,
+                        // HOS-1178: an accommodation add-on (visibility-boost-7d /
+                        // extra-photos-20). The purchase route refuses an add-on that
+                        // declares no product domain, so the fixture declares its own.
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1,
                         affectsLimitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
                         limitIncrease: 20,

@@ -130,7 +130,14 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // HOS-1044 — the table QR and its scan-analytics panel. Same
             // shape and tier as the translated carta right above it:
             // gastronomy PREMIUM only.
-            EntitlementKey.MENU_QR_ANALYTICS
+            EntitlementKey.MENU_QR_ANALYTICS,
+            // HOS-1060 — private per-tourist galleries. Experience-only and
+            // tier-dependent (`experience-premium`), with the same flat-checklist
+            // caveat as its neighbours. Unlike them it is ALSO granted by the
+            // `private-galleries-+N` add-ons, so an operator ticking it here adds
+            // a plan-level grant on top of whatever add-on the owner holds — the
+            // two sets are unioned, never counted.
+            EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
         ]
     }
 ];

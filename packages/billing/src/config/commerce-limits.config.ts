@@ -96,6 +96,27 @@ export const AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL: Readonly<Record<CommerceVer
     } as const;
 
 /**
+ * The private-gallery cap (HOS-1060) — experience-only, and NOT a per-vertical
+ * map.
+ *
+ * ## Why a bare constant where its two neighbours are `Record<CommerceVertical, …>`
+ *
+ * {@link LIMIT_KEY_BY_COMMERCE_VERTICAL} and
+ * {@link AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL} are maps because BOTH verticals
+ * have the thing they cap: every commerce owner holds listings, and either
+ * vertical can carry the AI chat. Galleries are not like that — a restaurant has
+ * no outing whose photos to hand a customer, so a
+ * `Record<CommerceVertical, LimitKey>` would have to invent a gastronomy key
+ * that nothing meters, and inventing one is how a cap stops describing anything.
+ * The same asymmetry `MANAGE_GASTRONOMY_MENU` has in the other direction.
+ *
+ * Gastronomy tiers still DECLARE this key at `0` (see `commerceVerticalTier`):
+ * declaring zero and having no key are opposite things downstream, where an
+ * absent key reads as unlimited.
+ */
+export const PRIVATE_GALLERY_LIMIT_KEY: LimitKey = LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES;
+
+/**
  * The billing product domain that owns each cap — EXHAUSTIVELY (HOS-1078).
  *
  * `Record<LimitKey, …>` rather than `Partial<…>` on purpose: a twentieth
@@ -120,6 +141,12 @@ const PRODUCT_DOMAIN_BY_LIMIT_KEY: Readonly<Record<LimitKey, ProductDomainValue>
     // declare the key, which comes back `-1` — an uncapped chat.
     [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: ProductDomainEnum.GASTRONOMY,
     [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: ProductDomainEnum.EXPERIENCE,
+    // HOS-1060 — the private-gallery cap is borne by the EXPERIENCE
+    // subscription, like the two keys above it. Mapping it to ACCOMMODATION
+    // would send the resolver to read a host plan that does not declare it,
+    // which comes back `-1`: an uncapped photo store, the one line item in this
+    // epic that costs money every month it is wrong.
+    [LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES]: ProductDomainEnum.EXPERIENCE,
 
     // Accommodation domain — host caps.
     [LimitKey.MAX_ACCOMMODATIONS]: ProductDomainEnum.ACCOMMODATION,

@@ -42,6 +42,7 @@
  */
 
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
+import { commerceVerticalForPlanSlug } from '@repo/billing';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import {
@@ -60,6 +61,7 @@ import {
     planDisplayNameFromPlan,
     resolvePlanChangeReason
 } from '../../services/billing/plan-change-reason.js';
+import { applyCommerceDowngradeRestrictions } from '../../services/commerce-downgrade-remediation.service.js';
 import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
 import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
 import { PlanCatalogMissError } from '../../services/subscription-downgrade-excess.service.js';
@@ -184,6 +186,17 @@ interface PendingPlanChangeRow {
     readonly customerId: string;
     readonly currentPlanId: string;
     readonly mpSubscriptionId: string | null;
+    /**
+     * The subscription's status as of the start of this tick (HOS-1122).
+     *
+     * Read rather than assumed. The commerce restriction step forwards it to
+     * the visibility reconciler, which decides PUBLIC vs PRIVATE from it; a
+     * hardcoded `'active'` there would republish the kept listings of an owner
+     * whose subscription had lapsed between the schedule and the apply.
+     * `changePlan` (step 1) moves the plan, never the status, so the value read
+     * here still describes the subscription when the restriction runs.
+     */
+    readonly status: string;
     readonly scheduledPlanChange: QZPayScheduledPlanChange;
 }
 
@@ -218,6 +231,7 @@ async function findDueScheduledChanges(): Promise<PendingPlanChangeRow[]> {
             customerId: billingSubscriptions.customerId,
             currentPlanId: billingSubscriptions.planId,
             mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
+            status: billingSubscriptions.status,
             scheduledPlanChange: billingSubscriptions.scheduledPlanChange
         })
         .from(billingSubscriptions)
@@ -233,6 +247,7 @@ async function findDueScheduledChanges(): Promise<PendingPlanChangeRow[]> {
         customerId: r.customerId,
         currentPlanId: r.currentPlanId,
         mpSubscriptionId: r.mpSubscriptionId,
+        status: r.status,
         scheduledPlanChange: r.scheduledPlanChange as QZPayScheduledPlanChange
     }));
 }
@@ -274,8 +289,14 @@ async function applyOne(
         error: (m: string, d?: Record<string, unknown>) => void;
     }
 ): Promise<ApplyOutcome> {
-    const { subscriptionId, customerId, currentPlanId, mpSubscriptionId, scheduledPlanChange } =
-        row;
+    const {
+        subscriptionId,
+        customerId,
+        currentPlanId,
+        mpSubscriptionId,
+        status: subscriptionStatus,
+        scheduledPlanChange
+    } = row;
     const { newPlanId, newPriceId, targetTransactionAmountMajor } = scheduledPlanChange;
     const now = new Date();
 
@@ -473,34 +494,52 @@ async function applyOne(
     let restrictionFailed = false;
     if (isDowngrade) {
         try {
-            // Resolve the userId (owner) from the billing customer ID.
-            const userId = await resolveOwnerUserId({ customerId });
+            // Resolve the target plan slug FIRST (HOS-1122). It used to be
+            // resolved inside the `userId` branch, because there was only one
+            // kind of downgrade; now it is what SAYS which kind this is, so it
+            // has to come before the owner lookup — the commerce path works off
+            // the subscription's link rows and needs no `userId` at all.
+            let targetPlanSlug: string | null = null;
+            try {
+                const plan = await billing.plans.get(newPlanId);
+                targetPlanSlug = plan?.name ?? null;
+            } catch (slugErr) {
+                logger.warn(
+                    'Scheduled plan change: could not resolve target plan slug for restriction',
+                    {
+                        subscriptionId,
+                        customerId,
+                        newPlanId,
+                        error: slugErr instanceof Error ? slugErr.message : String(slugErr)
+                    }
+                );
+            }
 
-            if (userId) {
-                // Resolve the target plan slug from the plan ID so
-                // applyDowngradeRestrictions can look up limits.
-                let targetPlanSlug: string | null = null;
-                try {
-                    const plan = await billing.plans.get(newPlanId);
-                    targetPlanSlug = plan?.name ?? null;
-                } catch (slugErr) {
-                    logger.warn(
-                        'Scheduled plan change: could not resolve target plan slug for restriction',
-                        {
-                            subscriptionId,
-                            customerId,
-                            newPlanId,
-                            error: slugErr instanceof Error ? slugErr.message : String(slugErr)
-                        }
-                    );
-                }
+            // Read the owner's persisted keepSelections from the scheduled
+            // change metadata. Returns undefined when absent → the default
+            // most-recently-updated sort applies, in either vertical.
+            const keepSelections = getKeepSelectionsForChange(scheduledPlanChange);
 
-                if (targetPlanSlug) {
-                    // Read host's persisted keepSelections from the scheduled change
-                    // metadata. Returns undefined when absent → defaults apply in
-                    // applyDowngradeRestrictions (most-recently-updated sort).
-                    const keepSelections = getKeepSelectionsForChange(scheduledPlanChange);
+            // A commerce tier slug answers its vertical here; an accommodation
+            // one answers `undefined`. Derived from the TARGET PLAN rather than
+            // from the subscription's `product_domain` because the plan is what
+            // supplies the caps being applied — and the two cannot disagree
+            // harmfully: the commerce path only ever touches
+            // `entity_subscriptions` rows of that vertical belonging to THIS
+            // subscription, of which an accommodation subscription has none.
+            const commerceVertical =
+                targetPlanSlug === null ? undefined : commerceVerticalForPlanSlug(targetPlanSlug);
 
+            if (targetPlanSlug === null) {
+                logger.warn(
+                    'Scheduled plan change: skipping restriction — target plan slug unresolvable',
+                    { subscriptionId, customerId, newPlanId }
+                );
+            } else if (commerceVertical === undefined) {
+                // Accommodation: the original path, unchanged below.
+                const userId = await resolveOwnerUserId({ customerId });
+
+                if (userId) {
                     await applyDowngradeRestrictions({
                         userId,
                         customerId,
@@ -552,15 +591,32 @@ async function applyOne(
                     }
                 } else {
                     logger.warn(
-                        'Scheduled plan change: skipping restriction — target plan slug unresolvable',
-                        { subscriptionId, customerId, newPlanId }
+                        'Scheduled plan change: skipping restriction — could not resolve owner userId',
+                        { subscriptionId, customerId }
                     );
                 }
             } else {
-                logger.warn(
-                    'Scheduled plan change: skipping restriction — could not resolve owner userId',
-                    { subscriptionId, customerId }
-                );
+                // Commerce: cut the owner's listings to the new tier's cap.
+                // No `featuredByEntitlement` sync — that flag is an
+                // accommodation column driven by accommodation plans, and
+                // `resolveOwnerPlanGrantsFeatured` already ignores commerce
+                // subscriptions, so calling it here would be a query that can
+                // only ever answer "no change".
+                const summary = await applyCommerceDowngradeRestrictions({
+                    subscriptionId,
+                    vertical: commerceVertical,
+                    targetPlanSlug,
+                    subscriptionStatus,
+                    keepSelections
+                });
+                logger.info('Scheduled plan change: commerce downgrade restrictions applied', {
+                    subscriptionId,
+                    customerId,
+                    vertical: commerceVertical,
+                    targetPlanSlug,
+                    cap: summary.cap,
+                    restrictedCount: summary.restricted.length
+                });
             }
         } catch (restrictionErr) {
             // PlanCatalogMissError: the target plan slug is not registered in

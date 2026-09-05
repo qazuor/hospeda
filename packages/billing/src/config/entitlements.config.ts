@@ -361,5 +361,16 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Menu QR with scan analytics',
         description:
             'Allows minting a table QR that opens the venue menu and viewing a scan-analytics panel for it — total scans, a daily series, and a breakdown by device, OS and browser language'
+    },
+    // HOS-1060. Experience-only, and the first key in this file granted by TWO
+    // sources at once: `experience-premium` carries it, and the three
+    // `private-galleries-+N` add-ons grant it to `-basico`/`-pro` as well. See
+    // the enum member for why that is additive rather than one being the
+    // other's fallback.
+    {
+        key: EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES,
+        name: 'Private tourist galleries',
+        description:
+            'Allows creating a private photo gallery per tourist, shared by a secret link rather than an account, so whoever did the outing can see and download their own photos. Capped by max_active_private_galleries and expiring 30 days after creation.'
     }
 ];
