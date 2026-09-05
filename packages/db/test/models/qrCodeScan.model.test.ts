@@ -213,5 +213,61 @@ describe('QrCodeScanModel', () => {
                 expect(fragment.queryChunks).toContain(QR_ID);
             }
         });
+
+        it('groups the daily series by the market timezone as a LITERAL, never a bound param', async () => {
+            // This assertion exists because the mocked-`execute` tests above
+            // cannot tell a query Postgres ACCEPTS from one it REJECTS, and the
+            // first version of this feature shipped a rejected one.
+            //
+            // Interpolating the zone binds it as a parameter. The conversion is
+            // named twice — SELECT and GROUP BY — so Drizzle numbers them
+            // separately and Postgres receives `AT TIME ZONE $1` against
+            // `AT TIME ZONE $4`. It matches grouping expressions syntactically,
+            // so those count as different expressions and the whole query dies:
+            //
+            //   ERROR: column "qr_code_scans.scanned_at" must appear in the
+            //          GROUP BY clause or be used in an aggregate function
+            //
+            // Measured live: the endpoint answered DATABASE_ERROR on every call
+            // while this file was green (HOS-1169).
+            const mockDb = injectDb(model, {
+                total: [{ total: '0' }],
+                daily: [],
+                device: [],
+                os: [],
+                language: []
+            });
+
+            await model.getScanAggregateForCode({ qrCodeId: QR_ID, windowStart: WINDOW_START });
+
+            // The daily-series query is the second of the five.
+            const dailyCall = mockDb.execute.mock.calls[1]?.[0] as {
+                queryChunks?: unknown[];
+            };
+
+            const collect = (chunks: unknown[]): string =>
+                chunks
+                    .map((chunk) => {
+                        if (chunk && typeof chunk === 'object' && 'value' in chunk) {
+                            const { value } = chunk as { value: unknown };
+                            if (Array.isArray(value)) return value.join('');
+                        }
+                        if (chunk && typeof chunk === 'object' && 'queryChunks' in chunk) {
+                            return collect((chunk as { queryChunks: unknown[] }).queryChunks);
+                        }
+                        return '';
+                    })
+                    .join('');
+
+            const sqlText = collect(dailyCall.queryChunks ?? []);
+
+            // The zone is inline text on BOTH sides…
+            const occurrences =
+                sqlText.split("AT TIME ZONE 'America/Argentina/Buenos_Aires'").length - 1;
+            expect(occurrences).toBe(2);
+
+            // …and never travels as a bound parameter.
+            expect(dailyCall.queryChunks).not.toContain('America/Argentina/Buenos_Aires');
+        });
     });
 });

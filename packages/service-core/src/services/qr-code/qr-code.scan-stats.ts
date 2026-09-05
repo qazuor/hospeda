@@ -5,6 +5,7 @@ import type {
     QrCodeScanStats,
     QrCodeScanWindow
 } from '@repo/schemas';
+import { getLocalDayWindow } from '@repo/utils';
 
 /**
  * Pure helpers behind {@link QrCodeService.getScanStatsForCode} (HOS-1044 §6.4).
@@ -14,21 +15,29 @@ import type {
  * silently wrong (timezone-safe day boundaries, the null → `'unknown'`
  * mapping), and none of it needs a database connection to test.
  *
- * ## Why every date computation goes through UTC getters, never `toISOString()`
+ * ## Why the day boundary is the ARGENTINE calendar day, not UTC
  *
- * This repo has hit the bug once already (129 vs 259 rows on another "last N
- * days" window): building a day boundary from LOCAL date components
- * (`getFullYear()`/`getMonth()`/`getDate()`) and then serialising it with
- * `toISOString()` silently shifts the boundary by the server's UTC offset,
- * because `toISOString()` always renders in UTC regardless of how the `Date`
- * was built. The fix used by `entity-view.model.ts`'s `getDailySeries` /
- * `entity-view.service.ts`'s `gapFillHostDailySeries` — and copied verbatim
- * here — is to read `getUTCFullYear()` / `getUTCMonth()` / `getUTCDate()` off
- * "now" and reconstruct UTC midnight with `Date.UTC(...)`. Every getter used
- * below is a `getUTC*` one; introducing a bare `getFullYear()` anywhere in
- * this file reintroduces the bug, which is exactly what
- * `qr-code.scan-stats.test.ts`'s timezone-independence assertion exists to
- * catch.
+ * A scan at 22:02 on a Tuesday in Argentina is 01:02 UTC on Wednesday. Bucketing
+ * by UTC day therefore reports a restaurant's dinner service as the next day's
+ * traffic — and dinner is precisely when a table QR gets scanned. Measured on
+ * 2026-09-04: five scans at 22:02 local came back as
+ * `{"2026-09-04": 1, "2026-09-05": 4}`.
+ *
+ * So both halves derive the day from `MARKET_TIMEZONE` (HOS-1169):
+ * `QrCodeScanModel.getScanAggregateForCode` groups by
+ * `DATE_TRUNC('day', scanned_at AT TIME ZONE MARKET_TIMEZONE)`, and the
+ * gap-fill below takes its dates from {@link getLocalDayWindow}. **They MUST
+ * come from the same helper**: if one side counts local days and the other
+ * fills UTC days, the series grows holes or duplicates instead of failing
+ * loudly.
+ *
+ * The older hazard this file used to guard against is still real and still
+ * avoided: never build a boundary from local getters and serialise it with
+ * `toISOString()`, which renders in UTC no matter how the `Date` was built
+ * (this repo already paid for it once — 129 vs 259 rows on another "last N
+ * days" window). The date strings here come from the helper, which resolves
+ * them through `Intl.DateTimeFormat` in the target IANA zone, never from an
+ * offset arithmetic shortcut.
  */
 
 /** Rolling window → number of calendar days it covers. */
@@ -37,38 +46,29 @@ export const QR_SCAN_WINDOW_DAYS: Readonly<Record<QrCodeScanWindow, number>> = {
     '30d': 30
 };
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/** UTC midnight of `now`'s calendar date — never derived from local getters. */
-function utcMidnight(now: Date): Date {
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
-
-/** Formats a UTC-midnight-aligned `Date` as `YYYY-MM-DD`, reading UTC fields only. */
-function formatUtcDate(date: Date): string {
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 /**
- * The inclusive lower bound for a `windowDays`-day rolling window ending
- * today (UTC), i.e. `[result, now]` spans exactly `windowDays` calendar days.
+ * The inclusive lower bound for a `windowDays`-day rolling window ending today
+ * in `MARKET_TIMEZONE`: the UTC instant of local midnight of the oldest
+ * included day, ready for a `WHERE scanned_at >= $windowStart` bound.
  *
  * @param windowDays - Number of calendar days in the window (7 or 30).
  * @param now - Injectable for tests; defaults to the current instant.
- * @returns UTC midnight of the oldest included day.
+ * @returns The UTC instant of local midnight of the oldest included day.
  */
-export function computeUtcWindowStart(windowDays: number, now: Date = new Date()): Date {
-    const todayUtc = utcMidnight(now);
-    return new Date(todayUtc.getTime() - (windowDays - 1) * MS_PER_DAY);
+export function computeScanWindowStart(windowDays: number, now: Date = new Date()): Date {
+    return getLocalDayWindow({ now, windowDays }).windowStart;
 }
 
 /**
  * Gap-fills a sparse daily series (only days with at least one scan) into
  * exactly `windowDays` entries, oldest first, with `total: 0` on days with no
- * scans — the same contract `gapFillHostDailySeries` provides for host views.
+ * scans.
+ *
+ * The dates come from {@link getLocalDayWindow}, the same helper that produced
+ * the `windowStart` handed to the SQL — which is what keeps the fill aligned
+ * with `DATE_TRUNC('day', scanned_at AT TIME ZONE MARKET_TIMEZONE)`. Deriving
+ * them here instead would put the two halves one offset apart on every scan
+ * after 21:00 local.
  *
  * @param rows - Sparse per-day counts, as returned by
  *   `QrCodeScanModel.getScanAggregateForCode`.
@@ -82,16 +82,9 @@ export function gapFillQrScanDailySeries(
     now: Date = new Date()
 ): QrCodeScanDailySeriesItem[] {
     const rowMap = new Map<string, number>(rows.map((row) => [row.date, row.total]));
-    const todayUtc = utcMidnight(now);
+    const { dates } = getLocalDayWindow({ now, windowDays });
 
-    const result: QrCodeScanDailySeriesItem[] = [];
-    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
-        const day = new Date(todayUtc.getTime() - dayOffset * MS_PER_DAY);
-        const dateStr = formatUtcDate(day);
-        result.push({ date: dateStr, total: rowMap.get(dateStr) ?? 0 });
-    }
-
-    return result;
+    return dates.map((date) => ({ date, total: rowMap.get(date) ?? 0 }));
 }
 
 /**

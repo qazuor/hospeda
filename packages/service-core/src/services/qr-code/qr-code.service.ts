@@ -56,7 +56,7 @@ import {
 } from './qr-code.permissions';
 import {
     buildQrScanBreakdown,
-    computeUtcWindowStart,
+    computeScanWindowStart,
     gapFillQrScanDailySeries,
     QR_SCAN_WINDOW_DAYS
 } from './qr-code.scan-stats';
@@ -757,7 +757,7 @@ export class QrCodeService extends BaseCrudService<
             ctx,
             execute: async (validated) => {
                 const windowDays = QR_SCAN_WINDOW_DAYS[validated.window];
-                const windowStart = computeUtcWindowStart(windowDays);
+                const windowStart = computeScanWindowStart(windowDays);
 
                 const aggregate = await this.scanModel.getScanAggregateForCode(
                     { qrCodeId: validated.qrCodeId, windowStart },

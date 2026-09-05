@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     buildEmptyQrCodeScanStats,
     buildQrScanBreakdown,
-    computeUtcWindowStart,
+    computeScanWindowStart,
     gapFillQrScanDailySeries,
     QR_SCAN_WINDOW_DAYS
 } from '../../../src/services/qr-code/qr-code.scan-stats';
@@ -29,65 +29,76 @@ describe('QR_SCAN_WINDOW_DAYS', () => {
     });
 });
 
-describe('computeUtcWindowStart', () => {
-    it('returns UTC midnight of "today" for a 1-day window', () => {
+describe('computeScanWindowStart', () => {
+    // Every expectation below is the UTC instant of ARGENTINE local midnight
+    // (HOS-1169), which is 03:00Z of the same date — not 00:00Z. A window
+    // anchored on the UTC day reports a restaurant's dinner service as the next
+    // day's traffic, which is the whole reason this moved.
+    it('returns local midnight of "today" for a 1-day window', () => {
         const now = new Date('2026-01-15T14:30:00.000Z');
 
-        const start = computeUtcWindowStart(1, now);
+        const start = computeScanWindowStart(1, now);
 
-        expect(start.toISOString()).toBe('2026-01-15T00:00:00.000Z');
+        expect(start.toISOString()).toBe('2026-01-15T03:00:00.000Z');
     });
 
     it('goes back exactly (windowDays - 1) calendar days for a 7-day window', () => {
         const now = new Date('2026-01-15T14:30:00.000Z');
 
-        const start = computeUtcWindowStart(7, now);
+        const start = computeScanWindowStart(7, now);
 
-        expect(start.toISOString()).toBe('2026-01-09T00:00:00.000Z');
+        expect(start.toISOString()).toBe('2026-01-09T03:00:00.000Z');
     });
 
     it('goes back exactly (windowDays - 1) calendar days for a 30-day window', () => {
+        // 00:00Z on Feb 1 is 21:00 on Jan 31 in Argentina, so "today" is Jan 31
+        // locally — one day EARLIER than the UTC date. A 30-day window from
+        // Jan 31 therefore starts on Jan 2, not Jan 3.
         const now = new Date('2026-02-01T00:00:00.000Z');
 
-        const start = computeUtcWindowStart(30, now);
+        const start = computeScanWindowStart(30, now);
 
-        // Jan has 31 days: Feb 1 minus 29 days = Jan 3.
-        expect(start.toISOString()).toBe('2026-01-03T00:00:00.000Z');
+        expect(start.toISOString()).toBe('2026-01-02T03:00:00.000Z');
+    });
+
+    it('puts a 22:00 local scan inside TODAY, not tomorrow (the HOS-1169 bug)', () => {
+        // The measured incident: 22:02 on Sep 4 in Argentina is 01:02Z on Sep 5.
+        // A UTC-anchored window called that "Sep 5" and moved the whole dinner
+        // service to the next day.
+        const now = new Date('2026-09-05T01:02:18.000Z');
+
+        const start = computeScanWindowStart(1, now);
+
+        // Local midnight of Sep 4 — so the 22:02 scan falls inside the window.
+        expect(start.toISOString()).toBe('2026-09-04T03:00:00.000Z');
+        expect(start.getTime()).toBeLessThan(now.getTime());
     });
 
     describe('timezone safety', () => {
         const ORIGINAL_TZ = process.env.TZ;
 
-        beforeEach(() => {
-            // Argentina, UTC-3 — chosen because it is this platform's own
-            // market timezone, and because it is far enough from UTC that a
-            // local-time bug would shift the boundary onto the wrong
-            // calendar day rather than just the wrong hour.
-            process.env.TZ = 'America/Argentina/Buenos_Aires';
-        });
-
         afterEach(() => {
             process.env.TZ = ORIGINAL_TZ;
         });
 
-        it('anchors to the UTC calendar day, not the shifted local one, when "now" is just after UTC midnight', () => {
-            // 02:00 UTC on Jan 2 is 23:00 on Jan 1 in Buenos Aires (-3). A
-            // local-time implementation would compute "today" as Jan 1.
-            const now = new Date('2026-01-02T02:00:00.000Z');
-
-            const start = computeUtcWindowStart(1, now);
-
-            expect(start.toISOString()).toBe('2026-01-02T00:00:00.000Z');
-        });
-
         it('produces the identical instant regardless of the process timezone', () => {
+            // The zone is resolved from MARKET_TIMEZONE, never from the host's
+            // TZ, so a server running in UTC and one running in Buenos Aires
+            // must agree. This is the assertion that would catch someone
+            // "simplifying" the helper into local getters.
             const now = new Date('2026-01-02T02:00:00.000Z');
-            const underBuenosAires = computeUtcWindowStart(7, now);
+
+            process.env.TZ = 'America/Argentina/Buenos_Aires';
+            const underBuenosAires = computeScanWindowStart(7, now);
 
             process.env.TZ = 'UTC';
-            const underUtc = computeUtcWindowStart(7, now);
+            const underUtc = computeScanWindowStart(7, now);
+
+            process.env.TZ = 'Asia/Tokyo';
+            const underTokyo = computeScanWindowStart(7, now);
 
             expect(underBuenosAires.toISOString()).toBe(underUtc.toISOString());
+            expect(underBuenosAires.toISOString()).toBe(underTokyo.toISOString());
         });
     });
 });
@@ -147,14 +158,27 @@ describe('gapFillQrScanDailySeries', () => {
             process.env.TZ = ORIGINAL_TZ;
         });
 
-        it('keys the last day of the series by the UTC calendar date, not the local one', () => {
-            // Same boundary case as computeUtcWindowStart's own test: 02:00 UTC
-            // on Jan 2 is still Jan 1 in Buenos Aires local time.
+        it('keys the last day of the series by the LOCAL calendar date (HOS-1169)', () => {
+            // 02:00Z on Jan 2 is 23:00 on Jan 1 in Argentina, so the local day
+            // is still Jan 1 — which is the day the owner is looking at.
             const now = new Date('2026-01-02T02:00:00.000Z');
 
-            const series = gapFillQrScanDailySeries([{ date: '2026-01-02', total: 4 }], 1, now);
+            const series = gapFillQrScanDailySeries([{ date: '2026-01-01', total: 4 }], 1, now);
 
-            expect(series).toEqual([{ date: '2026-01-02', total: 4 }]);
+            expect(series).toEqual([{ date: '2026-01-01', total: 4 }]);
+        });
+
+        it('fills the day the SQL would emit, so a late-evening scan is not orphaned', () => {
+            // The two halves must agree on the day. The model groups by
+            // `DATE_TRUNC('day', scanned_at AT TIME ZONE MARKET_TIMEZONE)`, so a
+            // 22:02 local scan is keyed '2026-09-04'. If the fill still built UTC
+            // days it would emit '2026-09-05' and the row would land in NO
+            // bucket: the total would say 4 and every day would show 0.
+            const now = new Date('2026-09-05T01:02:18.000Z');
+
+            const series = gapFillQrScanDailySeries([{ date: '2026-09-04', total: 4 }], 1, now);
+
+            expect(series).toEqual([{ date: '2026-09-04', total: 4 }]);
         });
     });
 });

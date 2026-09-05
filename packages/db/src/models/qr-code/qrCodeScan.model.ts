@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { qrCodeScans } from '../../schemas/qr-code/qr_code_scan.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { marketTimezoneSql } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -11,18 +12,25 @@ export interface QrCodeScanAggregateInput {
     /** The code whose scans are being read. Counting is by code, never by entity. */
     readonly qrCodeId: string;
     /**
-     * Inclusive lower bound, expected to be UTC midnight of the oldest day the
-     * caller wants included. Computed by the SERVICE layer
-     * (`computeUtcWindowStart`) — this model does not know about "windows",
-     * only about a timestamp to filter from, so a timezone mistake cannot be
-     * introduced twice.
+     * Inclusive lower bound: the UTC instant of LOCAL midnight
+     * (`MARKET_TIMEZONE`) of the oldest day the caller wants included, computed
+     * by the SERVICE layer (`computeScanWindowStart`, which delegates to
+     * `getLocalDayWindow`). This model does not know about "windows", only
+     * about a timestamp to filter from, so a timezone mistake cannot be
+     * introduced twice — but note the day GROUPING below is this model's job,
+     * and it must stay on the same zone the service used for the bound.
      */
     readonly windowStart: Date;
 }
 
 /** One day of raw (non-gap-filled) scan counts. Gap-filling is a service concern. */
 export interface QrCodeScanDailyRow {
-    /** Calendar date in `YYYY-MM-DD`, UTC. */
+    /**
+     * Calendar date in `YYYY-MM-DD`, in the MARKET timezone — not UTC
+     * (HOS-1169). A 22:00 scan in Argentina belongs to that evening's service,
+     * and bucketing it by UTC would file a restaurant's whole dinner under the
+     * next day.
+     */
     readonly date: string;
     readonly total: number;
 }
@@ -131,11 +139,11 @@ export class QrCodeScanModel extends BaseModelImpl<QrCodeScan> {
                     `),
                     db.execute<RawDailyRow>(sql`
                         SELECT
-                            to_char(DATE_TRUNC('day', scanned_at), 'YYYY-MM-DD') AS "date",
+                            to_char(DATE_TRUNC('day', scanned_at AT TIME ZONE ${marketTimezoneSql()}), 'YYYY-MM-DD') AS "date",
                             COUNT(*)::int AS total
                         FROM qr_code_scans
                         WHERE qr_code_id = ${qrCodeId} AND scanned_at >= ${windowStart}
-                        GROUP BY DATE_TRUNC('day', scanned_at)
+                        GROUP BY DATE_TRUNC('day', scanned_at AT TIME ZONE ${marketTimezoneSql()})
                         ORDER BY "date" ASC
                     `),
                     db.execute<RawKeyedCountRow>(sql`
