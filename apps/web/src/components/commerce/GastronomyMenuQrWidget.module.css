@@ -80,7 +80,7 @@
 }
 
 .totalNumber {
-    font-size: var(--text-heading-3, 1.5rem);
+    font-size: var(--text-body-lg, 1.5rem);
     font-weight: 700;
     color: var(--core-foreground);
     font-variant-numeric: tabular-nums;
