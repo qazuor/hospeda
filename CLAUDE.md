@@ -851,6 +851,26 @@ a PR, spot-check `mcp__linear__get_issue` on every issue named in that title bef
 trusting its state, and prefer NOT putting an HOS-N in a PR title unless that PR is
 genuinely the completing work for that issue.
 
+**The same automation also fires on PR OPEN, not only on merge** (measured
+2026-09-05). Opening PR #3237 — a docs-only PR publishing a spec, carrying no magic
+word — with `[HOS-1183]` in its title moved that issue straight from `Backlog` to
+`In Progress` on its own. So the spot-check above is needed at BOTH ends: once when
+the PR is opened, and again after it merges. This matters most for the Phase 1
+docs PR, whose title the `Validate PR Title` check REQUIRES to carry the tag — the
+tag is not optional, so the state drift is not avoidable by naming, only by
+correcting it afterwards. A spec whose implementation has not started belongs in
+`Backlog`; move it back by hand.
+
+**When a merge does NOT move the issue, suspect the automation, not the labels.**
+The `smoke-gate-sync` Action calls the Linear API over `curl`, and a degraded API
+that answers 5xx with an HTML body used to abort that job with a bare
+`Process completed with exit code 5`, leaving the issue in its pre-merge state with
+its `status-needs-smoke-*` labels intact — invisible from Linear's side, where the
+issue simply looks untouched. The job now validates the response and exits naming
+every issue it could not move, but the check that catches this in one step is the
+same either way: compare the issue's `updatedAt` against the merge time. If it is
+older, no automation touched it, and the state has to be set by hand.
+
 ### Legacy system (`.qtm/`) — do not use for new work
 
 `.qtm/specs/index.json`, `.qtm/tasks/index.json`, and `specs-prioritization.csv` are
