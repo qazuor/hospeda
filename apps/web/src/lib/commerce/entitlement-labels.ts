@@ -56,7 +56,27 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     ai_chat: 'aiChat',
     // HOS-1043 — same tier and same reasoning as `menu_item_photos`: the
     // second key that separates gastronomy PREMIUM from `-pro`.
-    multilingual_gastronomy_menu: 'multilingualGastronomyMenu'
+    multilingual_gastronomy_menu: 'multilingualGastronomyMenu',
+    // HOS-1060 — private per-tourist galleries, `experience-premium` only, so
+    // it lands in the experience picker's premium-vs-pro "adds" list. Unlike
+    // `manage_experience_directions` above, which was labelled BEFORE it could
+    // ever render, this one renders the day it ships: all three experience
+    // tiers have been active since HOS-975, so `deriveCommercePlanTierDiffs`
+    // builds that diff for real. Without this entry BOTH `??` in
+    // `CommercePlanPicker` fall through and the bullet reads
+    // `manage_experience_private_galleries` on the screen a provider buys
+    // from — the exact fallback the HOS-1049 note above warns nobody notices
+    // before a customer does. `entitlement-label-coverage` catches the missing
+    // `billing.entitlement.*` label; only
+    // `commerce-entitlement-label-coverage` catches this one.
+    manage_experience_private_galleries: 'manageExperiencePrivateGalleries',
+    // HOS-1058 — the printable PDF ficha, granted by the PREMIUM tier of BOTH
+    // verticals, so it has been in the premium column's "adds" list since
+    // HOS-975 activated those tiers. It was missing from both maps the whole
+    // time and rendered as the raw `download_listing_pdf` on the buying
+    // screen; `commerce-entitlement-label-coverage` is what finally saw it
+    // (HOS-1178). Not introduced by that issue — uncovered by it.
+    download_listing_pdf: 'downloadListingPdf'
 };
 
 /**
@@ -70,5 +90,7 @@ export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_gastronomy_daily_special: 'Menú del día',
     manage_gastronomy_events: 'Eventos del local',
     ai_chat: 'Chat con IA en tu ficha',
-    multilingual_gastronomy_menu: 'Carta en varios idiomas'
+    multilingual_gastronomy_menu: 'Carta en varios idiomas',
+    manage_experience_private_galleries: 'Galerías privadas por cliente',
+    download_listing_pdf: 'Ficha en PDF para imprimir'
 };

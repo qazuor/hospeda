@@ -473,7 +473,10 @@
             "issueExperienceCertificate": "Certificados de experiencia",
             "manageGastronomyDailySpecial": "Menú del día",
             "manageGastronomyEvents": "Agenda de eventos",
-            "multilingualGastronomyMenu": "Carta en varios idiomas"
+            "multilingualGastronomyMenu": "Carta en varios idiomas",
+            "manageExperiencePrivateGalleries": "Galerías privadas por cliente",
+            "aiChat": "Chat con IA en tu ficha",
+            "downloadListingPdf": "Ficha en PDF para imprimir"
         },
         "create": {
             "pickVertical": {

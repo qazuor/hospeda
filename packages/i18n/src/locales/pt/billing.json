@@ -571,7 +571,8 @@
         "ai_translate": "Tradução de conteúdo com IA",
         "ai_accommodation_import": "Importação de hospedagens com IA",
         "manage_gastronomy_events": "Eventos do local, com data ou semanais",
-        "multilingual_gastronomy_menu": "Cardápio em vários idiomas"
+        "multilingual_gastronomy_menu": "Cardápio em vários idiomas",
+        "manage_experience_private_galleries": "Galerias privadas para seus clientes"
     },
     "comparison": {
         "unlimited": "Ilimitado",
