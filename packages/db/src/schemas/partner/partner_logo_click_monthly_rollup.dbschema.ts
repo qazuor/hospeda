@@ -17,10 +17,23 @@
  *
  * ## Why a second table rather than a `metric` column on the view rollup
  *
- * The same reasoning OQ-2 already applied one level up. A discriminator column
- * shared by two metrics fails OPEN: every read has to remember the filter, and
- * a read that forgets it silently sums views and clicks together into a number
- * that looks plausible. Two tables cannot be mixed up by omission.
+ * **DO NOT MERGE THIS TABLE INTO `entity_view_monthly_rollups`.** The two are
+ * ~80% identical and that similarity is the trap, not the argument: it is the
+ * same 80% that made "just put the clicks in `entity_views`" look reasonable,
+ * and OQ-2 rejected it one level up for the reason that applies here unchanged.
+ *
+ * A discriminator column shared by two metrics fails OPEN. Every read has to
+ * remember the filter; a read that forgets it silently SUMS views and clicks
+ * into a single number that looks entirely plausible, on a panel whose whole
+ * purpose is to report two separate figures honestly. Nothing goes red, and the
+ * partner is shown a number that is the addition of two things they were told
+ * are different. Two tables cannot be mixed up by omission — the wrong query
+ * does not compile against a table that has no such column.
+ *
+ * This decision was reviewed and approved (HOS-1063, tech lead 2026-09-05) as a
+ * deliberate extension of A-6 beyond its literal text. It is recorded here, in
+ * the code, and not only in a PR description, because a future contributor
+ * tidying up two near-identical tables will read this file and not that thread.
  *
  * @see packages/db/src/schemas/partner/partner_logo_click.dbschema.ts — the source.
  * @see packages/db/src/schemas/entity-view/entity_view_monthly_rollup.dbschema.ts — the sibling.
