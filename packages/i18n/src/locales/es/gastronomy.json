@@ -62,7 +62,9 @@
             "viewPdf": "Ver carta en PDF",
             "consultPrice": "A consultar",
             "unavailable": "No disponible",
-            "switchLanguage": "Ver la carta en:"
+            "switchLanguage": "Ver la carta en:",
+            "seoDescription": "Carta de {{name}}",
+            "backToListing": "← Volver a la ficha"
         },
         "dailySpecials": {
             "title": "Menú del día",

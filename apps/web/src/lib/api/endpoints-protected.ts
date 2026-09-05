@@ -3428,10 +3428,12 @@ const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>
  * `entity_views` telemetry table, same `view_basic_stats` entitlement,
  * applied to the two commerce verticals instead of ACCOMMODATION.
  *
- * Advanced commerce analytics (gastronomy: QR scans, most-viewed dishes;
- * experience: origin destinations) are explicitly OUT of scope here — owner
- * decision, HOS-734 — and will define their own endpoints and entitlement key
- * in a follow-up spec.
+ * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
+ * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
+ * `menu_qr_scan_metrics` entitlement (granted by `gastronomy-premium` only).
+ * Still out of scope, per vertical, and still without an endpoint or
+ * entitlement key: gastronomy's most-viewed dishes, and experience's origin
+ * destinations.
  */
 export const commerceAnalyticsApi = {
     /**
@@ -3486,6 +3488,67 @@ export const commerceAnalyticsApi = {
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get the menu QR for one gastronomy listing (HOS-1044 §6.2). Mints the
+     * code on first call and reuses it afterwards — the SAME `qr_codes` row
+     * every time, even across a slug rename (the target is repointed
+     * server-side, not the code itself).
+     *
+     * Premium-only: a caller on gastronomy basic/pro gets a `403`, which the
+     * panel renders as a locked upsell state, never a generic error.
+     *
+     * @param params - `{ gastronomyId }`
+     * @returns The QR's SVG markup, the scan URL it encodes, its target URL,
+     *   and both slugs.
+     */
+    getMenuQr({ gastronomyId }: { readonly gastronomyId: string }): Promise<
+        ApiResult<{
+            readonly svg: string;
+            readonly url: string;
+            readonly targetUrl: string;
+            readonly slug: string;
+            readonly qrSlug: string;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr`
+        });
+    },
+
+    /**
+     * Get the scan aggregate for one gastronomy listing's menu QR (HOS-1044
+     * §6.4): total, a gap-filled daily series, and device/OS/language
+     * breakdowns over a rolling window. A venue with no menu QR minted yet
+     * gets an all-zero aggregate — this endpoint never mints a code.
+     *
+     * Same gate as {@link getMenuQr}: a `403` means the panel should render
+     * the locked upsell state.
+     *
+     * @param params - `{ gastronomyId, window }`
+     * @returns The scan aggregate for the requested window.
+     */
+    getMenuQrScans({
+        gastronomyId,
+        window: windowParam
+    }: {
+        readonly gastronomyId: string;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: AnalyticsWindow;
+            readonly total: number;
+            readonly dailySeries: readonly { readonly date: string; readonly total: number }[];
+            readonly byDeviceType: Readonly<Record<string, number>>;
+            readonly byOs: Readonly<Record<string, number>>;
+            readonly byBrowserLanguage: Readonly<Record<string, number>>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr/scans`,
             params: { window: windowParam }
         });
     }
@@ -3812,6 +3875,98 @@ export const hostOnboardingApi = {
             path: `${PROTECTED}/host-onboarding/precheck`,
             cookieHeader
         });
+    }
+};
+
+/**
+ * The three verticals reachable from the header's "Publicar" menu (HOS-1156).
+ *
+ * A local literal union, same precedent as `HostOnboardingPrecheckDecision`
+ * above: the web app does not import `@repo/billing`'s `PublishVertical` here,
+ * so a change to the API contract surfaces as a typecheck failure at the call
+ * sites rather than silently reshaping a rendered page.
+ */
+export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+
+/**
+ * Publish precheck API (HOS-1156 D-7).
+ *
+ * The vertical-parameterised generalisation of {@link hostOnboardingApi}: one
+ * read-only endpoint each `/publicar/*` page calls BEFORE rendering its create
+ * form, to decide whether to create directly, resume/pick among existing
+ * DRAFTs, or send the owner to upgrade.
+ *
+ * The response shape is identical to the accommodation-only ancestor's, so
+ * {@link HostOnboardingPrecheckResponse} is reused rather than copied.
+ */
+export const publishApi = {
+    /**
+     * Precheck publishing in one vertical for the current actor.
+     *
+     * @param params.vertical - Which vertical to precheck.
+     * @param params.cookieHeader - Optional SSR cookie header (browser callers
+     *   omit it; `credentials: 'include'` covers them).
+     * @returns The listing/draft counts, the quota verdict and the decision.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * if (result.ok) console.log(result.data.decision);
+     * ```
+     */
+    precheck({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/precheck/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Soft-deletes one DRAFT listing the caller owns, in any publish vertical
+     * (HOS-1156 T-015, AC-14).
+     *
+     * The precheck panel's "borrar el borrador" is the FREE way past a full
+     * plan, and it must delete a draft OF THE VERTICAL BEING PUBLISHED — a
+     * gastronomy owner blocked on gastronomy is not helped by deleting a
+     * property.
+     *
+     * ## Why this dispatches instead of calling one endpoint
+     *
+     * The two halves land on different routes on purpose. Accommodation keeps
+     * `DELETE /protected/accommodations/{id}`, which has accepted its owner
+     * since BETA-197 and is live in production; routing it through the commerce
+     * endpoint would move a working flow for no gain (HOS-1156 R-2). Commerce
+     * had no owner-facing delete at all before this change, so it gets the new
+     * one. The branch lives here, in the API layer that already knows about
+     * endpoints, rather than inside the island that renders the button.
+     *
+     * @param params.vertical - Which vertical's draft to delete.
+     * @param params.id - The listing id.
+     * @returns The delete result.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.deleteDraft({ vertical: 'gastronomy', id });
+     * if (result.ok) window.location.reload();
+     * ```
+     */
+    deleteDraft({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        if (vertical === 'accommodation') {
+            return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
+        }
+        return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
     }
 };
 

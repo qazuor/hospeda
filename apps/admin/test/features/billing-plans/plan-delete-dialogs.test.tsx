@@ -61,7 +61,10 @@ function makePlan(activeSubscriptionCount: number): ParsedPlanRecord {
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-15T00:00:00.000Z',
         isDeleted: false,
-        activeSubscriptionCount
+        activeSubscriptionCount,
+        // HOS-1062 F1: required on ParsedPlanRecord. These dialogs never read it,
+        // so vitest stayed green without it — only `tsc` saw the gap.
+        publicListing: 'listed'
     };
 }
 

@@ -36,11 +36,13 @@ import {
     AccommodationService,
     BILLING_EVENT_TYPES,
     checkSubscriptionStatusTransition,
+    isAccommodationSubscription,
     withServiceTransaction
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { createSystemActor } from '../../utils/actor.js';
 import { apiLogger } from '../../utils/logger.js';
+import { reconcileSubscriptionLinkedEntities } from '../subscription-linked-entities.service.js';
 import { resolveOwnerUserId } from '../subscription-pause.service.js';
 
 /**
@@ -116,10 +118,64 @@ export interface LocalTrialExpiryResult {
  * @returns How many listings came down, and how many refused to.
  */
 export async function unpublishListingsForExpiredTrial(input: {
+    readonly subscriptionId: string;
     readonly customerId: string;
     readonly db?: DrizzleClient;
 }): Promise<{ readonly unpublished: number; readonly failed: number }> {
     const db = input.db ?? getDb();
+
+    // ── Which vertical's listings are we taking down? (HOS-1184) ────────────
+    //
+    // This function used to walk `accommodations` unconditionally, which was
+    // correct while accommodation was the only vertical that could hold a local
+    // trial. Commerce can now hold one too, and the same customer legitimately
+    // owns a cabin AND a restaurant — so an unconditional walk would expire the
+    // gastronomy trial by unpublishing the accommodation listings, taking down a
+    // listing the owner still pays for and leaving the restaurant public.
+    //
+    // The domain is re-read from the subscription row rather than taken from the
+    // caller, and that is deliberate rather than defensive noise:
+    // `isAccommodationSubscription` fails OPEN — a row whose `productDomain` is
+    // absent from the SELECT reads as accommodation. That default is right for
+    // legacy rows and catastrophic for a commerce row the caller forgot to
+    // project, because the failure is silent and lands on the WRONG vertical's
+    // listings. Reading it here means no caller can produce that shape.
+    const [subscriptionRow] = await db
+        .select({ productDomain: billingSubscriptions.productDomain })
+        .from(billingSubscriptions)
+        .where(eq(billingSubscriptions.id, input.subscriptionId))
+        .limit(1);
+
+    if (!isAccommodationSubscription(subscriptionRow)) {
+        // Commerce verticals do not have listings of their own to unpublish:
+        // visibility is DERIVED. `reconcileCommerceListingVisibility` gates on
+        // `isEntitlementGrantingStatus`, so once the status is `expired` the
+        // listing resolves to PRIVATE/INACTIVE on its own — through the single
+        // authorised bridge, never a second write path to the same state.
+        //
+        // The status is passed explicitly because this runs BEFORE the row is
+        // flipped (D-3's ordering, preserved). The bridge is non-throwing by
+        // contract, so unlike the accommodation branch there is no failure to
+        // report back: `failed: 0` here means "nothing to report", not "verified
+        // down". The 6-hourly `entity-subscription-cache-reconcile` cron is what
+        // actually backstops a silent miss.
+        await reconcileSubscriptionLinkedEntities({
+            subscriptionId: input.subscriptionId,
+            subscriptionStatus: SubscriptionStatusEnum.EXPIRED,
+            source: 'trial-local-expiry-cron'
+        });
+
+        apiLogger.info(
+            {
+                subscriptionId: input.subscriptionId,
+                customerId: input.customerId,
+                productDomain: subscriptionRow?.productDomain
+            },
+            'HOS-1184: commerce trial expired — listing visibility handed to the reconciler'
+        );
+
+        return { unpublished: 0, failed: 0 };
+    }
 
     const ownerId = await resolveOwnerUserId({ customerId: input.customerId, db });
     if (!ownerId) {
@@ -270,6 +326,7 @@ export async function expireLocalTrial(input: {
     // failure simply gets retried, and `unpublish` is filtered to ACTIVE rows so
     // the retry skips whatever already came down.
     const { unpublished, failed } = await unpublishListingsForExpiredTrial({
+        subscriptionId: subscription.id,
         customerId: subscription.customerId,
         db
     });

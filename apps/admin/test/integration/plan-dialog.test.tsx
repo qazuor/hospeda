@@ -352,7 +352,10 @@ describe('PlanDialog', () => {
                 createdAt: '2026-05-30T00:00:00.000Z',
                 updatedAt: '2026-05-30T00:00:00.000Z',
                 isDeleted: false,
-                activeSubscriptionCount: 0
+                activeSubscriptionCount: 0,
+                // HOS-1062 F1: required on ParsedPlanRecord. PlanDialog never
+                // reads it, so vitest stayed green without it — only `tsc` saw it.
+                publicListing: 'listed' as const
             };
 
             // Act
@@ -565,7 +568,10 @@ describe('PlanDialog', () => {
                 createdAt: '2026-05-30T00:00:00.000Z',
                 updatedAt: '2026-05-30T00:00:00.000Z',
                 isDeleted: false,
-                activeSubscriptionCount: 0
+                activeSubscriptionCount: 0,
+                // HOS-1062 F1: required on ParsedPlanRecord. PlanDialog never
+                // reads it, so vitest stayed green without it — only `tsc` saw it.
+                publicListing: 'listed' as const
             };
 
             // Act
@@ -635,7 +641,10 @@ describe('PlanDialog', () => {
                 createdAt: '2026-05-30T00:00:00.000Z',
                 updatedAt: '2026-05-30T00:00:00.000Z',
                 isDeleted: false,
-                activeSubscriptionCount: 0
+                activeSubscriptionCount: 0,
+                // HOS-1062 F1: required on ParsedPlanRecord. PlanDialog never
+                // reads it, so vitest stayed green without it — only `tsc` saw it.
+                publicListing: 'listed' as const
             };
 
             // Act

@@ -225,3 +225,67 @@ export const QrCodeDownloadResponseSchema = z.object({
 });
 
 export type QrCodeDownloadResponse = z.infer<typeof QrCodeDownloadResponseSchema>;
+
+// ============================================================================
+// SCAN AGGREGATE (HOS-1044 §6.4)
+// ============================================================================
+
+/**
+ * Rolling window accepted by the scan-aggregate read.
+ *
+ * Deliberately the same two values `hostAnalyticsApi`/`commerceAnalyticsApi`
+ * already expose for view stats (`apps/web/.../endpoints-protected.ts`,
+ * `AnalyticsWindow`), per HOS-1044 §11 OQ-1 — a third window here would be a
+ * UI convention this panel invented alone. Declared as its own schema rather
+ * than importing `EntityViewWindowSchema` because that one's Zod error message
+ * (`zodError.entityView.window.invalid`) belongs to a different domain; the
+ * VALUE SET is what is mirrored, not the schema object.
+ */
+export const QrCodeScanWindowSchema = z.enum(['7d', '30d'], {
+    message: 'zodError.qrCode.scan.window.invalid'
+});
+
+export type QrCodeScanWindow = z.infer<typeof QrCodeScanWindowSchema>;
+
+/** One day of the gap-filled daily series. */
+export const QrCodeScanDailySeriesItemSchema = z.object({
+    /** Calendar date in `YYYY-MM-DD`, UTC. */
+    date: z.string(),
+    total: z.number().int().nonnegative()
+});
+
+export type QrCodeScanDailySeriesItem = z.infer<typeof QrCodeScanDailySeriesItemSchema>;
+
+/**
+ * A breakdown keyed by an observed value, plus the `'unknown'` bucket.
+ *
+ * `qr_code_scans.deviceType` / `.os` / `.browserLanguage` are all nullable —
+ * the redirect records a scan best-effort, so a missing derivation is the
+ * NORMAL case, not an exception (HOS-1044 §6.4). A row whose column is `NULL`
+ * is grouped under the literal key `'unknown'` rather than dropped, so the
+ * total of every breakdown's values always equals `total`.
+ */
+export const QrCodeScanBreakdownSchema = z.record(z.string(), z.number().int().nonnegative());
+
+export type QrCodeScanBreakdown = z.infer<typeof QrCodeScanBreakdownSchema>;
+
+/**
+ * Aggregate read of `qr_code_scans` for ONE `qrCodeId` over a rolling window
+ * (HOS-1044 §6.4). Generic by code id — not gastronomy-specific — so the same
+ * shape serves the ficha QR (HOS-982) and any future `purpose` (§11 OQ-4).
+ *
+ * Counting is by `qrCodeId`, never by the entity behind it: a code can be
+ * repointed at a new target (a slug rename) and the scan history must survive
+ * that, which counting by entity would not.
+ */
+export const QrCodeScanStatsSchema = z.object({
+    window: QrCodeScanWindowSchema,
+    total: z.number().int().nonnegative(),
+    /** Exactly `windowDays` entries, oldest first, gap-filled with `total: 0`. */
+    dailySeries: z.array(QrCodeScanDailySeriesItemSchema),
+    byDeviceType: QrCodeScanBreakdownSchema,
+    byOs: QrCodeScanBreakdownSchema,
+    byBrowserLanguage: QrCodeScanBreakdownSchema
+});
+
+export type QrCodeScanStats = z.infer<typeof QrCodeScanStatsSchema>;

@@ -295,6 +295,13 @@ jobs:
       # never executes here.
       - name: Check 'qrcode' has exactly one importer (HOS-1129)
         run: bash scripts/check-qrcode-engine-isolation.sh
+      # Its own step for the same reason as the two above: `pnpm check:guards`
+      # listing it is not what makes it run here. A guard that only lived in that
+      # npm script would never execute in CI, and this one watches both doors
+      # between a negotiated price and the people who may not see it — the public
+      # plans endpoint and the protected one.
+      - name: Check unlisted plans cannot reach either plan listing (HOS-1062 AC-14)
+        run: bash scripts/check-unlisted-plan-filter.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above).
       - name: Check every contact_info column declares mergeableJsonbColumns

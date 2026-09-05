@@ -69,6 +69,9 @@ const STUB_DB_PLAN = {
     entitlements: ['CAN_LIST_ACCOMMODATION'],
     limits: { max_accommodations: 1 },
     isActive: true,
+    // HOS-1062 F1: the public handler serves a plan only when it is POSITIVELY
+    // marked as publicly listed, so a fixture without this field is withheld.
+    publicListing: 'listed',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -121,7 +124,11 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
     // -------------------------------------------------------------------------
 
     describe('DB-backed delegation', () => {
-        it('should call PlanService.list with { active: true } to fetch from DB', async () => {
+        // HOS-1062: the explicit page is not decoration. This handler used to
+        // call `list({ active: true })` and silently take `listPlans`' DEFAULT
+        // page of TWENTY, filtering those in memory — so past twenty active plans
+        // it dropped catalogue plans it had never seen, cached for an hour.
+        it('should ask PlanService.list for a full catalogue page, active only', async () => {
             // Arrange
             mockPlanList.mockResolvedValue({
                 success: true,
@@ -132,8 +139,8 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
             const handler = getRegisteredHandler();
             await handler(makePublicPlansCtx());
 
-            // Assert — DB filter applied: active plans only
-            expect(mockPlanList).toHaveBeenCalledWith({ active: true });
+            // Assert — DB filter applied: active plans only, whole catalogue page
+            expect(mockPlanList).toHaveBeenCalledWith({ active: true, page: 1, pageSize: 100 });
         });
 
         it('should return the DB plan items directly', async () => {

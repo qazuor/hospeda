@@ -38,7 +38,12 @@ export interface AuthRequiredPopoverProps {
     readonly onClose: () => void;
     /** Current locale for building auth page URLs. Defaults to 'es'. */
     readonly locale?: 'es' | 'en' | 'pt';
-    /** Current page URL to return to after sign-in. Defaults to empty string. */
+    /**
+     * Same-origin relative path to return to after auth. Defaults to empty
+     * string. Feeds BOTH the sign-in and register links (HOS-1185) — signup
+     * honors it the same way sign-in does, via `resolveAuthTabsRedirectConfig`
+     * reading `returnUrl`/`redirect` for either tab.
+     */
     readonly returnUrl?: string;
     /** Additional CSS class to apply to the popover container */
     readonly className?: string;
@@ -130,7 +135,7 @@ function computePosition(
  *     message="Debes iniciar sesion para guardar favoritos"
  *     onClose={() => setOpen(false)}
  *     locale="es"
- *     returnUrl={window.location.href}
+ *     returnUrl={`${window.location.pathname}${window.location.search}${window.location.hash}`}
  *   />
  * )}
  * ```
@@ -154,7 +159,13 @@ export function AuthRequiredPopover({
     const [mounted, setMounted] = useState(false);
 
     const loginHref = `/${locale}/auth/signin/?returnUrl=${encodeURIComponent(returnUrl)}`;
-    const registerHref = `/${locale}/auth/signup/`;
+    // HOS-1185: the register button must carry the same returnUrl the sign-in
+    // button does. `signup.astro` already honors it (via
+    // `resolveAuthTabsRedirectConfig`, which reads `returnUrl`/`redirect` for
+    // BOTH auth tabs) — this popover was simply not passing it through for
+    // the register path, so half of the "return to the listing" fix was
+    // silently missing for anyone who registers instead of signing in.
+    const registerHref = `/${locale}/auth/signup/?returnUrl=${encodeURIComponent(returnUrl)}`;
 
     useEffect(() => {
         setMounted(true);

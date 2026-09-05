@@ -49,6 +49,10 @@ const planResponse = {
     entitlements: [],
     limits: {},
     isActive: true,
+    // HOS-1062 F1: required, no default — a payload without the mark is refused,
+    // which is the deploy-window cost the owner accepted in exchange for every
+    // response carrying it explicitly.
+    publicListing: 'listed' as const,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-15T00:00:00.000Z',
     priceChangeEffects: []

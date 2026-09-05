@@ -1,32 +1,28 @@
 ---
 /**
  * @file publicar-experiencia/index.astro
- * @description Permanent redirect to `/planes/experiencias/`, the experience
- * sales page (HOS-941 D-8).
+ * @description Permanent redirect to `/{lang}/publicar/experiencias/`, the
+ * experiences publish page (HOS-1156 D-6).
  *
  * See `/publicar-restaurante/index.astro` for the rationale — same decision,
- * other vertical, including why the target is the SALES page rather than the
- * pricing one and why this could not land before H7 built
- * `/planes/experiencias/precios/`.
+ * other vertical, including why this target overrides HOS-941 D-8 and why the
+ * query string is forwarded rather than rebuilt away.
  *
  * @route     /{lang}/publicar-experiencia/
  * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
 import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale;
 
-// The query string is FORWARDED, not rebuilt away. `?interval=` on the
-// trial-ending nudge is the live case: dropping it shows monthly prices to a
-// customer who chose annual, and nothing about the redirect looks wrong when it
-// happens. See `lib/pricing-redirect.ts`.
 return Astro.redirect(
     buildPricingRedirectTarget({
         locale,
-        path: 'planes/experiencias',
+        path: PUBLISH_PAGE_PATH_BY_VERTICAL.experience,
         search: Astro.url.search
     }),
     301

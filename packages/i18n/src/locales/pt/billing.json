@@ -318,13 +318,27 @@
             "title": "Você atingiu o limite de gastronomias",
             "message_one": "Você tem {{currentCount}} de {{maxAllowed}} gastronomia no seu plano. Faça um upgrade para publicar mais.",
             "message_other": "Você tem {{currentCount}} de {{maxAllowed}} gastronomias no seu plano. Faça um upgrade para publicar mais.",
-            "cta": "Ver minha assinatura"
+            "cta": "Ver minha assinatura",
+            "atLimitPanel": {
+                "title": "Você atingiu o limite do seu plano",
+                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} ficha de gastronomia. Faça um upgrade do plano para publicar outra.",
+                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} fichas de gastronomia. Faça um upgrade do plano para publicar outra.",
+                "primaryCta": "Ver minha assinatura",
+                "secondaryCta": "Ver minhas fichas"
+            }
         },
         "max_experiences": {
             "title": "Você atingiu o limite de experiências",
             "message_one": "Você tem {{currentCount}} de {{maxAllowed}} experiência no seu plano. Faça um upgrade para publicar mais.",
             "message_other": "Você tem {{currentCount}} de {{maxAllowed}} experiências no seu plano. Faça um upgrade para publicar mais.",
-            "cta": "Ver minha assinatura"
+            "cta": "Ver minha assinatura",
+            "atLimitPanel": {
+                "title": "Você atingiu o limite do seu plano",
+                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} experiência. Faça um upgrade do plano para publicar outra.",
+                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} experiências. Faça um upgrade do plano para publicar outra.",
+                "primaryCta": "Ver minha assinatura",
+                "secondaryCta": "Ver minhas experiências"
+            }
         },
         "max_photos_per_accommodation": {
             "title": "Você atingiu o limite de fotos",
@@ -572,6 +586,7 @@
         "ai_accommodation_import": "Importação de hospedagens com IA",
         "manage_gastronomy_events": "Eventos do local, com data ou semanais",
         "multilingual_gastronomy_menu": "Cardápio em vários idiomas",
+        "menu_qr_scan_metrics": "QR do cardápio com painel de escaneamentos",
         "manage_experience_private_galleries": "Galerias privadas para seus clientes"
     },
     "comparison": {
@@ -638,6 +653,7 @@
             "gastronomyEvents": "Eventos do estabelecimento",
             "menuItemPhotos": "Fotos por prato",
             "multilingualMenu": "Cardápio em vários idiomas",
+            "menuQrScanMetrics": "QR do cardápio com painel de escaneamentos",
             "maxExperiences": "Experiências que você pode publicar",
             "publishExperience": "Publicar sua experiência",
             "editExperienceInfo": "Editar as informações da experiência",
@@ -677,7 +693,8 @@
             "aiTranslate": "Quantidade mensal de traduções automáticas com IA para seu conteúdo.",
             "aiImport": "Quantidade mensal de importações de dados com IA de outras plataformas.",
             "aiChatOwner": "Quantidade mensal de consultas à IA disponíveis para o proprietário.",
-            "aiSupport": "Assistente com IA para resolver dúvidas sobre a plataforma em tempo real."
+            "aiSupport": "Assistente com IA para resolver dúvidas sobre a plataforma em tempo real.",
+            "menuQrScanMetrics": "Um QR de mesa que abre seu cardápio, com um painel de escaneamentos: total, por dia, e por dispositivo e idioma."
         },
         "note": {
             "aiSearch": "Para usuários registrados",

@@ -1,0 +1,166 @@
+---
+/**
+ * @file publicar/gastronomia/index.astro
+ * @description The gastronomy publish page (HOS-1156 T-020) — funnel and create
+ * form on one URL.
+ *
+ * ## What this replaces
+ *
+ * The header's "Publicar → Gastronomía" pointed at `/planes/gastronomia/`, a
+ * SALES page, and the only way to reach a form was three clicks deep under
+ * `/mi-cuenta/comercio/nuevo/gastronomy/`. That form also lived inside
+ * `AccountLayout`, behind an in-page login redirect — so the "Publicar" button
+ * either sold to you or bounced you to a login screen, and never once led to
+ * publishing.
+ *
+ * This page carries the argument AND the form, in `MarketingLayout` (D-2), and a
+ * signed-out visitor reads all of it (D-1).
+ *
+ * @route     /{lang}/publicar/gastronomia/
+ * @rendering SSR (prerender = false — reads the session to resolve the form
+ *            slot; consequently absent from every cacheable-route list, AC-8).
+ */
+
+import { CheckCircleIcon, ClockIcon, EyeIcon, ForkKnifeIcon, ImageIcon, ReceiptIcon, SettingsIcon } from '@repo/icons';
+import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
+import PublishFormSlot from '@/components/publish/PublishFormSlot.astro';
+import PublishHero from '@/components/publish/PublishHero.astro';
+import PublishHowItWorks from '@/components/publish/PublishHowItWorks.astro';
+import PublishPlanLinks from '@/components/publish/PublishPlanLinks.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import {
+    PLANS_PAGE_PATH_BY_VERTICAL,
+    PRICING_PAGE_PATH_BY_VERTICAL
+} from '@/lib/publish/publish-page-paths';
+import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const VERTICAL = 'gastronomy' as const;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const slot = await resolvePublishPageSlot({
+    locale,
+    vertical: VERTICAL,
+    isAuthenticated: Boolean(Astro.locals.user),
+    cookieHeader: Astro.request.headers.get('cookie'),
+    pathname: Astro.url.pathname,
+    wantsCreate: Astro.url.searchParams.get('create') === '1'
+});
+
+// The destination catalog is fetched ONLY when the form is what renders. On the
+// other two states the island is never emitted (see `PublishFormSlot`), so this
+// would be a round trip whose result nothing reads.
+const destinationsResult =
+    slot.state === 'form'
+        ? await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 })
+        : null;
+const destinations = destinationsResult?.ok
+    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+// HOS-166: "the catalog fetch failed" and "the catalog is empty" must stay
+// distinguishable, or the form silently omits a REQUIRED field.
+const destinationsLoadFailed = destinationsResult !== null && !destinationsResult.ok;
+
+const steps = [
+    {
+        title: t('publish.gastronomy.steps.step1.title', 'Cargá los datos básicos'),
+        desc: t(
+            'publish.gastronomy.steps.step1.desc',
+            'Nombre, tipo de local y destino. Con eso creamos tu ficha en el momento.'
+        )
+    },
+    {
+        title: t('publish.gastronomy.steps.step2.title', 'Completá tu ficha'),
+        desc: t(
+            'publish.gastronomy.steps.step2.desc',
+            'Sumá fotos, menú, horarios y formas de contacto desde el panel, a tu ritmo.'
+        )
+    },
+    {
+        title: t('publish.gastronomy.steps.step3.title', 'Salís publicado'),
+        desc: t(
+            'publish.gastronomy.steps.step3.desc',
+            'Tu local aparece en el catálogo de gastronomía y los comensales de la zona te encuentran.'
+        )
+    }
+] as const;
+
+const benefits = [
+    {
+        Icon: EyeIcon,
+        title: t('publish.gastronomy.benefits.item1.title', 'Te ven los que ya están acá'),
+        desc: t(
+            'publish.gastronomy.benefits.item1.desc',
+            'Miles de viajeros buscan cada mes dónde comer en Concepción del Uruguay y el litoral entrerriano.'
+        )
+    },
+    {
+        Icon: SettingsIcon,
+        title: t('publish.gastronomy.benefits.item2.title', 'La ficha es tuya'),
+        desc: t(
+            'publish.gastronomy.benefits.item2.desc',
+            'Cambiás el menú, las fotos y los horarios cuando quieras, sin pedirle permiso a nadie.'
+        )
+    },
+    {
+        Icon: ReceiptIcon,
+        title: t('publish.gastronomy.benefits.item3.title', 'Sin comisión por consulta'),
+        desc: t(
+            'publish.gastronomy.benefits.item3.desc',
+            'Pagás tu plan y listo. Ninguna reserva ni consulta te suma un cargo aparte.'
+        )
+    }
+] as const;
+---
+
+<MarketingLayout
+    locale={locale}
+    title={t('publish.gastronomy.meta.title', 'Publicá tu local gastronómico')}
+    description={t(
+        'publish.gastronomy.meta.description',
+        'Cargá la ficha de tu restaurante, bar, parrilla o food truck en Hospeda y llegá a los viajeros que buscan dónde comer en el litoral.'
+    )}
+>
+    <PublishHero
+        tagline={t('publish.gastronomy.hero.tagline', 'Para locales gastronómicos')}
+        title={t('publish.gastronomy.hero.title', 'Publicá tu local y que te encuentren')}
+        body={t(
+            'publish.gastronomy.hero.body',
+            'Empezá acá con lo básico: cómo se llama tu local, qué tipo es y en qué destino está. Las fotos, el menú y los horarios los cargás después, desde tu panel.'
+        )}
+        Icon={ForkKnifeIcon}
+        floatingIcons={[ImageIcon, ClockIcon, CheckCircleIcon]}
+    />
+
+    <PublishFormSlot locale={locale} vertical={VERTICAL} resolution={slot}>
+        <CommerceCreateForm
+            client:load
+            vertical={VERTICAL}
+            locale={locale}
+            destinations={destinations}
+            destinationsLoadFailed={destinationsLoadFailed}
+        />
+    </PublishFormSlot>
+
+    <PublishHowItWorks
+        stepsTagline={t('publish.steps.tagline', 'Es así de fácil')}
+        stepsTitle={t('publish.steps.title', '¿Cómo funciona?')}
+        steps={steps}
+        benefitsTagline={t('publish.benefits.tagline', '¿Por qué Hospeda?')}
+        benefitsTitle={t('publish.gastronomy.benefits.title', 'Lo que te llevás')}
+        benefits={benefits}
+    />
+
+    <PublishPlanLinks
+        locale={locale}
+        plansUrl={buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
+        pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
+    />
+</MarketingLayout>

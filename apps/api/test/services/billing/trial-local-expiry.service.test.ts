@@ -34,10 +34,51 @@ const withServiceTransactionMock = vi.fn(
     async (cb: (ctx: { tx: typeof txStub }) => Promise<unknown>) => cb({ tx: txStub })
 );
 
+/**
+ * The three tables this service reads. Held as module-level identities so the
+ * `db.select()` chains can be told apart by WHICH table they hit rather than by
+ * call order — HOS-1184 made order an unreliable discriminator, because the
+ * commerce branch skips the accommodation query entirely.
+ */
+// Hoisted with the `vi.mock` factory that consumes them: the factory reads these
+// identities eagerly, so a plain `const` here would be in its temporal dead zone
+// by the time the mocked module is first imported.
+const { accommodationsTable, billingSubscriptionsTable, billingSubscriptionEventsTable } =
+    vi.hoisted(() => ({
+        accommodationsTable: {
+            id: 'id',
+            ownerId: 'owner_id',
+            lifecycleState: 'lifecycle_state',
+            deletedAt: 'deleted_at'
+        },
+        billingSubscriptionsTable: { id: 'id', productDomain: 'product_domain' },
+        billingSubscriptionEventsTable: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            eventType: 'event_type'
+        }
+    }));
+
 const selectLimitMock = vi.fn();
 const selectWhereMock = vi.fn(() => ({ limit: selectLimitMock }));
-const selectFromMock = vi.fn(() => ({ where: selectWhereMock }));
-const selectMock = vi.fn(() => ({ from: selectFromMock }));
+const selectFromMock = vi.fn((_table: unknown) => ({ where: selectWhereMock }));
+
+/** Resolves the `{ productDomain }` row read by `unpublishListingsForExpiredTrial`. */
+const subscriptionRowLimitMock = vi.fn();
+
+/**
+ * Every `.from(table)` of the run, so a test can assert which tables were NOT
+ * touched. `vi.clearAllMocks()` resets its call log between tests, which is why
+ * this is a mock rather than a plain array.
+ */
+const fromTableMock = vi.fn((table: unknown) => {
+    if (table === billingSubscriptionsTable) {
+        return { where: vi.fn(() => ({ limit: subscriptionRowLimitMock })) };
+    }
+    return selectFromMock(table);
+});
+
+const selectMock = vi.fn(() => ({ from: fromTableMock }));
 
 /**
  * The accommodation lookup and the dedup lookup both go through `db.select()`.
@@ -50,19 +91,16 @@ vi.mock('@repo/db', () => ({
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
     isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
-    accommodations: {
-        id: 'id',
-        ownerId: 'owner_id',
-        lifecycleState: 'lifecycle_state',
-        deletedAt: 'deleted_at'
-    },
-    billingSubscriptions: { id: 'id' },
-    billingSubscriptionEvents: {
-        id: 'id',
-        subscriptionId: 'subscription_id',
-        eventType: 'event_type'
-    },
+    accommodations: accommodationsTable,
+    billingSubscriptions: billingSubscriptionsTable,
+    billingSubscriptionEvents: billingSubscriptionEventsTable,
     getDb: vi.fn(() => ({ select: selectMock }))
+}));
+
+const reconcileLinkedEntitiesMock = vi.fn();
+vi.mock('../../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: (...args: unknown[]) =>
+        reconcileLinkedEntitiesMock(...args)
 }));
 
 const unpublishMock = vi.fn();
@@ -100,6 +138,7 @@ vi.mock('../../../src/middlewares/entitlement', () => ({
 }));
 
 // Import after mocks.
+import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { expireLocalTrial } from '../../../src/services/billing/trial-local-expiry.service';
 
 const NOW = new Date('2026-09-01T10:00:00.000Z');
@@ -126,6 +165,23 @@ function updatedRow(): Record<string, unknown> {
 function insertedEvent(): Record<string, unknown> {
     return insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
 }
+
+/** Which tables `.from()` was handed this run. */
+function tablesRead(): unknown[] {
+    return fromTableMock.mock.calls.map((call) => call[0]);
+}
+
+// Runs BEFORE every block's own `beforeEach`, so no block can inherit the
+// domain another one set. `vi.clearAllMocks()` clears call logs but NOT
+// implementations, so a `mockResolvedValue` left behind by the commerce block
+// would otherwise leak into every block declared after it.
+beforeEach(() => {
+    // The default shape: the subscription row projects no domain at all, which
+    // `isAccommodationSubscription` reads as accommodation because it fails
+    // OPEN. That is what every pre-HOS-1184 test in this file assumes.
+    subscriptionRowLimitMock.mockResolvedValue([]);
+    reconcileLinkedEntitiesMock.mockResolvedValue(undefined);
+});
 
 describe('expireLocalTrial', () => {
     beforeEach(() => {
@@ -443,5 +499,176 @@ describe('expireLocalTrial — the full chain and its re-run', () => {
 
         expect(second.outcome).toBe('expired');
         expect(insertValuesMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1184 — a commerce trial expires through ITS OWN vertical.
+//
+// The regression this block exists for: `unpublishListingsForExpiredTrial` used
+// to walk `accommodations` unconditionally, which was correct while
+// accommodation was the only vertical that could hold a local trial. Gastronomy
+// and experience can hold one now, and the same person legitimately owns a cabin
+// AND a restaurant — so expiring the restaurant's trial down the old path would
+// have taken down the cabin the owner still pays for while leaving the
+// restaurant public. Both halves wrong, in one write.
+//
+// Every test here gives the owner TWO active accommodations. If the domain
+// branch is removed, those are exactly the rows that come down, so the
+// assertions below fail rather than pass vacuously.
+// ---------------------------------------------------------------------------
+
+describe('expireLocalTrial — a commerce trial expires through its own vertical (HOS-1184)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        selectLimitMock.mockResolvedValue([]);
+        resolveOwnerUserIdMock.mockResolvedValue('owner-1');
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }, { id: 'accom-2' }]);
+        unpublishMock.mockResolvedValue({ data: { id: 'accom-1' } });
+        selectFromMock.mockImplementation(() => ({
+            where: vi.fn((...args: unknown[]) => {
+                const chain = listingSelectWhereMock(...args) as Promise<unknown>;
+                return Object.assign(chain, { limit: selectLimitMock });
+            })
+        }));
+        subscriptionRowLimitMock.mockResolvedValue([
+            { productDomain: ProductDomainEnum.GASTRONOMY }
+        ]);
+    });
+
+    it('does NOT unpublish the accommodations of an owner whose GASTRONOMY trial expired', async () => {
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // The protection: a restaurant's trial ending must not take a cabin off
+        // the site the owner is still paying for.
+        expect(unpublishMock).not.toHaveBeenCalled();
+    });
+
+    it('never even reads the accommodations table on the commerce branch', async () => {
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // Stronger than "did not unpublish": the query that finds the rows is
+        // never built, so there is nothing for a later edit to accidentally act
+        // on. Asserted by table identity rather than by call order, because the
+        // commerce branch changes how many queries run.
+        expect(tablesRead()).not.toContain(accommodationsTable);
+        expect(resolveOwnerUserIdMock).not.toHaveBeenCalled();
+    });
+
+    it('hands the listing to reconcileSubscriptionLinkedEntities instead', async () => {
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // Commerce visibility is DERIVED, so the listing comes down by resolving
+        // the status through the single authorised bridge — never a second write
+        // path to the same state.
+        expect(reconcileLinkedEntitiesMock).toHaveBeenCalledOnce();
+        expect(reconcileLinkedEntitiesMock).toHaveBeenCalledWith({
+            subscriptionId: 'sub-local-1',
+            subscriptionStatus: SubscriptionStatusEnum.EXPIRED,
+            source: 'trial-local-expiry-cron'
+        });
+    });
+
+    it('passes EXPIRED explicitly, because the row still says trialing at that point', async () => {
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // D-3's ordering: the listing comes down BEFORE the status write. A
+        // bridge that re-read the row here would still see `trialing` and leave
+        // the listing public.
+        const handedStatus = (
+            reconcileLinkedEntitiesMock.mock.calls[0]?.[0] as { subscriptionStatus: string }
+        ).subscriptionStatus;
+
+        expect(handedStatus).toBe(SubscriptionStatusEnum.EXPIRED);
+        expect(handedStatus).not.toBe(localTrial().status);
+    });
+
+    it('takes the listing down BEFORE sealing the expiry', async () => {
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        // Same ordering the accommodation branch keeps. Sealing first would let
+        // the next tick find the dedup event and skip the row without ever
+        // looking at the listing again.
+        const reconciledAt = reconcileLinkedEntitiesMock.mock.invocationCallOrder[0] as number;
+        const sealedAt = withServiceTransactionMock.mock.invocationCallOrder[0] as number;
+
+        expect(reconciledAt).toBeLessThan(sealedAt);
+    });
+
+    it('still seals the expiry, recording zero listings unpublished', async () => {
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('expired');
+        expect(updatedRow().status).toBe(SubscriptionStatusEnum.EXPIRED);
+        // Not a silent skip: the commerce branch has no listings of its own to
+        // unpublish, so zero is the honest count, and the event records it.
+        expect((insertedEvent().metadata as Record<string, unknown>).listingsUnpublished).toBe(0);
+        expect(clearEntitlementCacheMock).toHaveBeenCalledWith('cust-1');
+    });
+
+    it('treats an EXPERIENCE trial exactly like a gastronomy one', async () => {
+        subscriptionRowLimitMock.mockResolvedValue([
+            { productDomain: ProductDomainEnum.EXPERIENCE }
+        ]);
+
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('expired');
+        expect(unpublishMock).not.toHaveBeenCalled();
+        expect(reconcileLinkedEntitiesMock).toHaveBeenCalledOnce();
+    });
+
+    it('keeps a row still carrying the retired "commerce" string off the accommodation table', async () => {
+        // `'commerce'` was retired by release B / HOS-692 and survives only on
+        // legacy rows. It satisfies neither gastronomy nor experience — HOS-695
+        // narrowed that on purpose — but it is emphatically NOT accommodation
+        // either, so it must not reach the cabin-unpublishing path.
+        subscriptionRowLimitMock.mockResolvedValue([{ productDomain: 'commerce' }]);
+
+        const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(result.outcome).toBe('expired');
+        expect(unpublishMock).not.toHaveBeenCalled();
+        expect(tablesRead()).not.toContain(accommodationsTable);
+    });
+
+    describe('and the accommodation half it is contrasted against', () => {
+        it('DOES unpublish when the row is accommodation', async () => {
+            subscriptionRowLimitMock.mockResolvedValue([
+                { productDomain: ProductDomainEnum.ACCOMMODATION }
+            ]);
+
+            const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+            // The other half of the branch. Without this the tests above would
+            // pass just as well against a function that unpublishes nothing at
+            // all.
+            expect(result.outcome).toBe('expired');
+            expect(unpublishMock).toHaveBeenCalledTimes(2);
+            expect(tablesRead()).toContain(accommodationsTable);
+            expect(reconcileLinkedEntitiesMock).not.toHaveBeenCalled();
+        });
+
+        it('DOES unpublish a legacy row whose productDomain is null — accommodation fails OPEN', async () => {
+            // The column post-dates most rows. A null must keep behaving as
+            // accommodation, or every pre-column host stops being cleaned up.
+            subscriptionRowLimitMock.mockResolvedValue([{ productDomain: null }]);
+
+            await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+            expect(unpublishMock).toHaveBeenCalledTimes(2);
+            expect(reconcileLinkedEntitiesMock).not.toHaveBeenCalled();
+        });
+
+        it('DOES unpublish when the subscription row cannot be found at all', async () => {
+            // Same fail-open, one step further out: no row, no domain, so the
+            // pre-HOS-1184 behaviour is what survives.
+            subscriptionRowLimitMock.mockResolvedValue([]);
+
+            await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+            expect(unpublishMock).toHaveBeenCalledTimes(2);
+            expect(reconcileLinkedEntitiesMock).not.toHaveBeenCalled();
+        });
     });
 });

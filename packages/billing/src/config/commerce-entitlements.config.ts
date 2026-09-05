@@ -88,8 +88,12 @@ export const ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL: Readonly<
  * Every entitlement key owned by a commerce vertical, across both verticals.
  *
  * Exists so a consumer can ask "is this key a commerce key?" without
- * re-deriving the union at the call site — the same reason
- * `isCommerceSubscription()` exists next to `subscriptionMatchesDomain()`.
+ * re-deriving the union at the call site.
+ *
+ * The subscription side has no equivalent: `isCommerceSubscription()` was
+ * deleted by HOS-1081 (`ebfd413e0`) for having zero callers, so a caller that
+ * needs the union of DOMAINS calls `subscriptionMatchesDomain()` once per
+ * domain. This constant survives because it does have consumers.
  */
 export const ALL_COMMERCE_ENTITLEMENT_KEYS: readonly EntitlementKey[] = Object.values(
     ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL

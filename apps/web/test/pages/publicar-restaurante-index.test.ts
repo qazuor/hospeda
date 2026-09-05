@@ -50,12 +50,13 @@ describe('publicar-restaurante/index.astro', () => {
         expect(src).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
     });
 
-    it('targets the gastronomy sales page directly, not an intermediate hop', () => {
-        // A link to `/planes/gastronomia/precios/` (one level further) would
-        // skip the sales copy a visitor following an old marketing link
-        // expects; a redirect to some other in-between URL would spend an
-        // extra round trip this page's own docblock explains it must not.
-        expect(src).toContain("path: 'planes/gastronomia'");
-        expect(src).not.toContain("path: 'planes/gastronomia/precios'");
+    it('targets the gastronomy PUBLISH page, overriding HOS-941 D-8', () => {
+        // This redirect pointed at `/planes/gastronomia/` — a SALES page — and the
+        // reasoning was correct while no publish page existed for this vertical.
+        // One does now, and it carries the argument AND the form, so it is a
+        // superset of what the sales page offers an arriving visitor. The URL's
+        // own name said *publicar*; it finally leads there (HOS-1156 D-6).
+        expect(src).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy');
+        expect(src).not.toContain("path: 'planes/gastronomia'");
     });
 });
