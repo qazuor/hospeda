@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0096-hos-1044-menu-qr-analytics-entitlement
+ * Data migration: 0097-hos-1044-menu-qr-analytics-entitlement
  *
  * Dual-write counterpart (HOS-25) for HOS-1044. The baseline gains one
  * `EntitlementKey` member — `menu_qr_analytics`, the venue's table QR plus
@@ -70,7 +70,7 @@ import { billingEntitlements, billingPlans, eq } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0096-hos-1044-menu-qr-analytics-entitlement',
+    name: '0097-hos-1044-menu-qr-analytics-entitlement',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
