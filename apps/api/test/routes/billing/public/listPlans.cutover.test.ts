@@ -124,7 +124,11 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
     // -------------------------------------------------------------------------
 
     describe('DB-backed delegation', () => {
-        it('should call PlanService.list with { active: true } to fetch from DB', async () => {
+        // HOS-1062: the explicit page is not decoration. This handler used to
+        // call `list({ active: true })` and silently take `listPlans`' DEFAULT
+        // page of TWENTY, filtering those in memory — so past twenty active plans
+        // it dropped catalogue plans it had never seen, cached for an hour.
+        it('should ask PlanService.list for a full catalogue page, active only', async () => {
             // Arrange
             mockPlanList.mockResolvedValue({
                 success: true,
@@ -135,8 +139,8 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
             const handler = getRegisteredHandler();
             await handler(makePublicPlansCtx());
 
-            // Assert — DB filter applied: active plans only
-            expect(mockPlanList).toHaveBeenCalledWith({ active: true });
+            // Assert — DB filter applied: active plans only, whole catalogue page
+            expect(mockPlanList).toHaveBeenCalledWith({ active: true, page: 1, pageSize: 100 });
         });
 
         it('should return the DB plan items directly', async () => {

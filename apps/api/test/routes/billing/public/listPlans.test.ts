@@ -129,7 +129,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         const result = await handler(makePublicPlansCtx());
 
         // Assert — T-011: only active plans from DB
-        expect(mockPlanList).toHaveBeenCalledWith({ active: true });
+        expect(mockPlanList).toHaveBeenCalledWith({ active: true, page: 1, pageSize: 100 });
         expect(result).toEqual([ACTIVE_PLAN]);
     });
 
@@ -179,7 +179,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         const result = await handler(makePublicPlansCtx());
 
         // Assert
-        expect(mockPlanList).toHaveBeenCalledWith({ active: true });
+        expect(mockPlanList).toHaveBeenCalledWith({ active: true, page: 1, pageSize: 100 });
         expect(result).not.toContain(expect.objectContaining({ id: INACTIVE_COMPLEX_PLAN.id }));
     });
 

@@ -223,4 +223,95 @@ describe('publicListPlansRoute — unlisted plans (HOS-1062 AC-13)', () => {
             expect(result).toEqual([]);
         });
     });
+
+    // -----------------------------------------------------------------------
+    // The catalogue window (HOS-1062 — adversarial review finding)
+    // -----------------------------------------------------------------------
+    describe('reading the catalogue before filtering it', () => {
+        beforeEach(() => {
+            mockSelectWhere.mockImplementation(answerExclusionQueryFromCondition);
+        });
+
+        it('asks for a full catalogue page instead of taking the default twenty', async () => {
+            // The bug: `list({ active: true })` took `listPlans`' DEFAULT page of
+            // 20 and filtered THOSE in memory. Harmless while the catalogue was a
+            // fixed six; this spec's premise is one plan row per negotiated
+            // agreement, so the catalogue now grows with the customers — and a
+            // truncated public list is cached for an hour with no error and no log.
+            await getHandler()(makePublicPlansCtx());
+
+            expect(mockPlanList).toHaveBeenCalledWith({
+                active: true,
+                page: 1,
+                pageSize: 100
+            });
+        });
+
+        it('walks every page before filtering, so a plan past the first page still serves', async () => {
+            // Two pages, with the unlisted plan on the first and an ordinary
+            // catalogue plan on the second. Filtering per page would have served
+            // page one only and dropped `owner-segunda-pagina` outright.
+            const SECOND_PAGE_PLAN = {
+                ...LISTED_ACCOMMODATION_PLAN,
+                id: '44444444-4444-4444-4444-444444444444',
+                slug: 'owner-segunda-pagina'
+            };
+            DOMAIN_BY_SLUG['owner-segunda-pagina'] = 'accommodation';
+
+            mockPlanList.mockReset();
+            mockPlanList
+                .mockResolvedValueOnce({
+                    success: true,
+                    data: {
+                        items: [LISTED_ACCOMMODATION_PLAN, UNLISTED_PARTNER_PLAN],
+                        pagination: { page: 1, pageSize: 100, total: 3, totalPages: 2 }
+                    }
+                })
+                .mockResolvedValueOnce({
+                    success: true,
+                    data: {
+                        items: [SECOND_PAGE_PLAN],
+                        pagination: { page: 2, pageSize: 100, total: 3, totalPages: 2 }
+                    }
+                });
+
+            const result = await getHandler()(makePublicPlansCtx());
+
+            expect(mockPlanList).toHaveBeenNthCalledWith(1, {
+                active: true,
+                page: 1,
+                pageSize: 100
+            });
+            expect(mockPlanList).toHaveBeenNthCalledWith(2, {
+                active: true,
+                page: 2,
+                pageSize: 100
+            });
+            expect(servedSlugs(result)).toEqual(['owner-basico', 'owner-segunda-pagina']);
+            expect(servedSlugs(result)).not.toContain('partner-municipalidad-cdu');
+
+            delete DOMAIN_BY_SLUG['owner-segunda-pagina'];
+        });
+
+        it('serves nothing when a later page fails, never a silently short catalogue', async () => {
+            // A partial catalogue is indistinguishable from a complete one at the
+            // caller, so it is never handed back. Losing the list for one request
+            // is recoverable; publishing a list that quietly lost rows is not
+            // even noticed.
+            mockPlanList.mockReset();
+            mockPlanList
+                .mockResolvedValueOnce({
+                    success: true,
+                    data: {
+                        items: [LISTED_ACCOMMODATION_PLAN],
+                        pagination: { page: 1, pageSize: 100, total: 2, totalPages: 2 }
+                    }
+                })
+                .mockResolvedValueOnce({ success: false, error: { message: 'connection reset' } });
+
+            const result = await getHandler()(makePublicPlansCtx());
+
+            expect(result).toEqual([]);
+        });
+    });
 });
