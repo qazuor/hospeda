@@ -185,8 +185,20 @@ async function listingModelFor(
     const { experienceModel, gastronomyModel } = await import('@repo/db');
     switch (vertical) {
         case 'gastronomy':
+            // The two models are structurally compatible with the narrow
+            // `{ findByIds }` shape this function promises, but their concrete
+            // `BaseModelImpl<Gastronomy>` / `BaseModelImpl<Experience>` types
+            // are wider and mutually incompatible, so no common supertype
+            // exists to return them both as. Only `findByIds` is ever called,
+            // and its rows are read field-by-field into
+            // `CommerceListingForExcess` immediately after, so nothing
+            // downstream trusts the erased type.
+            //
+            // TYPE-WORKAROUND: same cast, and the same reason, as
+            // `resolveCommerceEntityModel` in `commerce-reconcile.service.ts`.
             return gastronomyModel as unknown as { findByIds: (ids: string[]) => Promise<unknown> };
         case 'experience':
+            // TYPE-WORKAROUND: same structural compatibility as gastronomy above.
             return experienceModel as unknown as { findByIds: (ids: string[]) => Promise<unknown> };
         default:
             throw new Error(`listingModelFor: unsupported commerce vertical '${vertical}'`);
