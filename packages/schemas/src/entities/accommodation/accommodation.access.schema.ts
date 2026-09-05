@@ -687,10 +687,19 @@ export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema
  * had to arrive in the same change. Omitting the fields here makes the nested case
  * fail-closed by construction: there is no per-route strip to forget, and no
  * entitlement to resolve for a relation nobody renders rich text from.
+ *
+ * `featuredByEntitlement` (HOS-929) rides the same hazard: `PostService.getDefaultListRelations()`
+ * eager-loads `relatedAccommodation` with no column allowlist on every `GET /protected/posts`
+ * and `/protected/posts/:id`, which authorize only `authorId === actor.id` — never ownership of
+ * the referenced accommodation. A content author who lists/edits their own post about ANOTHER
+ * user's accommodation would otherwise receive that owner's billing-derived flag. Omitted here
+ * for the same fail-closed reason as the rich-description pair, not because it is equally
+ * sensitive (it is a boolean, not PII/credentials).
  */
 export const AccommodationProtectedCardSchema = AccommodationProtectedSchema.omit({
     richDescription: true,
-    richDescriptionI18n: true
+    richDescriptionI18n: true,
+    featuredByEntitlement: true
 });
 
 export type AccommodationProtectedCard = z.infer<typeof AccommodationProtectedCardSchema>;

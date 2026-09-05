@@ -178,6 +178,24 @@ describe('AccommodationAdminSchema — featuredByEntitlement retained (HOS-929)'
     });
 });
 
+describe('AccommodationProtectedCardSchema — featuredByEntitlement strip (HOS-929)', () => {
+    it('the nested CARD variant omits featuredByEntitlement, so embeds are fail-closed', () => {
+        // Same hazard as the rich-description pair: this schema is embedded as
+        // a relation by post (`relatedAccommodation`, eager-loaded by
+        // `PostService.getDefaultListRelations()` with no column allowlist,
+        // and gated only by `authorId === actor.id` — not by ownership of the
+        // referenced accommodation) and no data-level strip ever reaches an
+        // accommodation nested inside another entity's payload.
+        const result = AccommodationProtectedCardSchema.safeParse(
+            entityPayloadFeaturedByEntitlement
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('featuredByEntitlement');
+        }
+    });
+});
+
 // ---------------------------------------------------------------------------
 // socialNetworks inclusion in access schemas
 // ---------------------------------------------------------------------------
