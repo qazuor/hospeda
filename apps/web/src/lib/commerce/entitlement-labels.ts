@@ -57,6 +57,13 @@ export const COMMERCE_ENTITLEMENT_I18N_SUFFIX: Record<string, string> = {
     // HOS-1043 — same tier and same reasoning as `menu_item_photos`: the
     // second key that separates gastronomy PREMIUM from `-pro`.
     multilingual_gastronomy_menu: 'multilingualGastronomyMenu',
+    // HOS-1044 — the table QR and its scan panel: the third key separating
+    // gastronomy PREMIUM from `-pro`, alongside the two above. Same reasoning
+    // as `manage_experience_private_galleries` below — all three gastronomy
+    // tiers are active, so this renders in the premium column's "adds" list the
+    // day it ships, and without an entry here the bullet on the buying screen
+    // would read `menu_qr_analytics`.
+    menu_qr_analytics: 'menuQrAnalytics',
     // HOS-1060 — private per-tourist galleries, `experience-premium` only, so
     // it lands in the experience picker's premium-vs-pro "adds" list. Unlike
     // `manage_experience_directions` above, which was labelled BEFORE it could
@@ -91,6 +98,7 @@ export const COMMERCE_ENTITLEMENT_FALLBACK_LABEL: Record<string, string> = {
     manage_gastronomy_events: 'Eventos del local',
     ai_chat: 'Chat con IA en tu ficha',
     multilingual_gastronomy_menu: 'Carta en varios idiomas',
+    menu_qr_analytics: 'QR de la carta con panel de escaneos',
     manage_experience_private_galleries: 'Galerías privadas por cliente',
     download_listing_pdf: 'Ficha en PDF para imprimir'
 };

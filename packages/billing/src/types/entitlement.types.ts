@@ -340,6 +340,35 @@ export enum EntitlementKey {
     MULTILINGUAL_GASTRONOMY_MENU = 'multilingual_gastronomy_menu',
 
     /**
+     * The venue's own table QR for its menu, plus the scan-analytics panel
+     * behind it (HOS-1044) — a `purpose = MENU` code minted through the
+     * central QR engine, and an aggregate read of `qr_code_scans` for that
+     * code: total, a daily series, and a breakdown by device, OS and
+     * browser language.
+     *
+     * A TIER differentiator granted by `gastronomy-premium` ALONE, on
+     * exactly the terms {@link EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU}
+     * is: deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that
+     * map is the floor every tier of a vertical receives, and a paid
+     * capability there would be handed to `-basico` and `-pro` as well).
+     *
+     * ## One key covers both the code and its measurement, on purpose
+     *
+     * Splitting them would sell a QR and its scan count separately, and
+     * neither half is worth anything alone — the code with no panel is just
+     * a link, and the panel with no code has nothing to count.
+     *
+     * ## No location, by decision
+     *
+     * The panel reports device, OS and browser language — never a
+     * country or coordinates. `qr_code_scans` carries no geolocation
+     * column; a table QR is scanned from inside the venue, so a location
+     * column would read the venue's own country almost always, including
+     * for the very tourists the metric means to count.
+     */
+    MENU_QR_ANALYTICS = 'menu_qr_analytics',
+
+    /**
      * Creating private, per-tourist photo galleries for the people who did an
      * experience (HOS-1060) — the provider uploads the outing's photos, the
      * tourist opens a token link and downloads them.

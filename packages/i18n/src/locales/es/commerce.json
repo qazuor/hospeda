@@ -122,6 +122,21 @@
                 "unique": "únicos",
                 "total": "totales",
                 "error": "No pudimos cargar las vistas. Probá de nuevo más tarde."
+            },
+            "menuQr": {
+                "title": "QR de la carta",
+                "scans": "escaneos",
+                "device": "Dispositivo",
+                "os": "Sistema operativo",
+                "language": "Idioma",
+                "unknown": "Desconocido",
+                "download": "Descargar QR (PNG)",
+                "downloaded": "Listo, lo descargamos.",
+                "qrAlt": "Código QR que lleva a la carta de {{name}}",
+                "encodes": "Lleva a: {{url}}",
+                "locked": "El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de gastronomía.",
+                "error": "No pudimos cargar los escaneos del QR. Probá de nuevo más tarde.",
+                "empty": "Todavía no tuvo escaneos en este período."
             }
         },
         "editor": {
@@ -495,6 +510,7 @@
             "manageGastronomyDailySpecial": "Menú del día",
             "manageGastronomyEvents": "Agenda de eventos",
             "multilingualGastronomyMenu": "Carta en varios idiomas",
+            "menuQrAnalytics": "QR de la carta con panel de escaneos",
             "manageExperiencePrivateGalleries": "Galerías privadas por cliente",
             "aiChat": "Chat con IA en tu ficha",
             "downloadListingPdf": "Ficha en PDF para imprimir"

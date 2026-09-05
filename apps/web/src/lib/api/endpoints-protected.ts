@@ -3428,10 +3428,12 @@ const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>
  * `entity_views` telemetry table, same `view_basic_stats` entitlement,
  * applied to the two commerce verticals instead of ACCOMMODATION.
  *
- * Advanced commerce analytics (gastronomy: QR scans, most-viewed dishes;
- * experience: origin destinations) are explicitly OUT of scope here — owner
- * decision, HOS-734 — and will define their own endpoints and entitlement key
- * in a follow-up spec.
+ * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
+ * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
+ * `menu_qr_analytics` entitlement (granted by `gastronomy-premium` only).
+ * Still out of scope, per vertical, and still without an endpoint or
+ * entitlement key: gastronomy's most-viewed dishes, and experience's origin
+ * destinations.
  */
 export const commerceAnalyticsApi = {
     /**
@@ -3486,6 +3488,67 @@ export const commerceAnalyticsApi = {
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get the menu QR for one gastronomy listing (HOS-1044 §6.2). Mints the
+     * code on first call and reuses it afterwards — the SAME `qr_codes` row
+     * every time, even across a slug rename (the target is repointed
+     * server-side, not the code itself).
+     *
+     * Premium-only: a caller on gastronomy basic/pro gets a `403`, which the
+     * panel renders as a locked upsell state, never a generic error.
+     *
+     * @param params - `{ gastronomyId }`
+     * @returns The QR's SVG markup, the scan URL it encodes, its target URL,
+     *   and both slugs.
+     */
+    getMenuQr({ gastronomyId }: { readonly gastronomyId: string }): Promise<
+        ApiResult<{
+            readonly svg: string;
+            readonly url: string;
+            readonly targetUrl: string;
+            readonly slug: string;
+            readonly qrSlug: string;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr`
+        });
+    },
+
+    /**
+     * Get the scan aggregate for one gastronomy listing's menu QR (HOS-1044
+     * §6.4): total, a gap-filled daily series, and device/OS/language
+     * breakdowns over a rolling window. A venue with no menu QR minted yet
+     * gets an all-zero aggregate — this endpoint never mints a code.
+     *
+     * Same gate as {@link getMenuQr}: a `403` means the panel should render
+     * the locked upsell state.
+     *
+     * @param params - `{ gastronomyId, window }`
+     * @returns The scan aggregate for the requested window.
+     */
+    getMenuQrScans({
+        gastronomyId,
+        window: windowParam
+    }: {
+        readonly gastronomyId: string;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: AnalyticsWindow;
+            readonly total: number;
+            readonly dailySeries: readonly { readonly date: string; readonly total: number }[];
+            readonly byDeviceType: Readonly<Record<string, number>>;
+            readonly byOs: Readonly<Record<string, number>>;
+            readonly byBrowserLanguage: Readonly<Record<string, number>>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr/scans`,
             params: { window: windowParam }
         });
     }

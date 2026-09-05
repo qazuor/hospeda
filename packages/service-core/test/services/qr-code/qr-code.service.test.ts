@@ -15,7 +15,7 @@ import {
     QrScanOsEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
 import { createActor } from '../../factories/actorFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
@@ -62,7 +62,7 @@ describe('QrCodeService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createModelMock(['findOne', 'create', 'count', 'findAll']);
-        scanModelMock = createModelMock(['create']);
+        scanModelMock = createModelMock(['create', 'getScanAggregateForCode']);
         loggerMock = createLoggerMock();
         service = new QrCodeService(
             { logger: loggerMock },
@@ -583,6 +583,137 @@ describe('QrCodeService', () => {
 
             expect(columns).toStrictEqual(['label', 'slug', 'targetUrl']);
             expect(columns).not.toContain('name');
+        });
+    });
+
+    /**
+     * The aggregate read behind the owner's scan panel (HOS-1044 §6.4).
+     *
+     * The timezone-safe date math and the null→'unknown' breakdown mapping
+     * are pinned as PURE functions in `qr-code.scan-stats.test.ts` — this
+     * suite only checks that the service wires the model's raw aggregate
+     * through those functions correctly, and defaults the window and
+     * `windowStart` the way the route expects.
+     */
+    describe('getScanStatsForCode', () => {
+        // Pinned so the gap-filled daily series is deterministic: the
+        // service defaults `now` to the real clock, and the mocked model
+        // rows below must land inside whatever window that clock produces.
+        const FAKE_NOW = new Date('2026-01-08T12:00:00.000Z');
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.setSystemTime(FAKE_NOW);
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('defaults the window to 30d and computes a windowStart from it', async () => {
+            (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
+                total: 0,
+                dailySeries: [],
+                byDeviceType: [],
+                byOs: [],
+                byBrowserLanguage: []
+            });
+
+            const result = await service.getScanStatsForCode({ actor, qrCodeId: QR_ID });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.window).toBe('30d');
+            expect(result.data?.dailySeries).toHaveLength(30);
+            expect(scanModelMock.getScanAggregateForCode as Mock).toHaveBeenCalledWith(
+                { qrCodeId: QR_ID, windowStart: expect.any(Date) },
+                undefined
+            );
+        });
+
+        it('passes the requested window straight through to the response', async () => {
+            (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
+                total: 0,
+                dailySeries: [],
+                byDeviceType: [],
+                byOs: [],
+                byBrowserLanguage: []
+            });
+
+            const result = await service.getScanStatsForCode({
+                actor,
+                qrCodeId: QR_ID,
+                window: '7d'
+            });
+
+            expect(result.data?.window).toBe('7d');
+            expect(result.data?.dailySeries).toHaveLength(7);
+        });
+
+        /**
+         * AC-6: the model's raw total and daily row pass through untouched —
+         * "one scan" reaches the response as `total: 1` with the series entry
+         * on the same day the model reported.
+         */
+        it('surfaces the model total and daily series unchanged (AC-6)', async () => {
+            (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
+                total: 1,
+                dailySeries: [{ date: '2026-01-05', total: 1 }],
+                byDeviceType: [],
+                byOs: [],
+                byBrowserLanguage: []
+            });
+
+            const result = await service.getScanStatsForCode({
+                actor,
+                qrCodeId: QR_ID,
+                window: '7d'
+            });
+
+            expect(result.data?.total).toBe(1);
+            expect(result.data?.dailySeries.find((d) => d.date === '2026-01-05')?.total).toBe(1);
+        });
+
+        /**
+         * AC-7: a breakdown row with a null key (garbage/absent User-Agent)
+         * still counts — the service folds it into 'unknown' rather than
+         * dropping it, and the total is untouched by the fold.
+         */
+        it('folds null breakdown keys into "unknown" without changing the total (AC-7)', async () => {
+            (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
+                total: 2,
+                dailySeries: [{ date: '2026-01-05', total: 2 }],
+                byDeviceType: [{ key: null, total: 2 }],
+                byOs: [
+                    { key: null, total: 1 },
+                    { key: 'IOS', total: 1 }
+                ],
+                byBrowserLanguage: [{ key: null, total: 2 }]
+            });
+
+            const result = await service.getScanStatsForCode({ actor, qrCodeId: QR_ID });
+
+            expect(result.data?.total).toBe(2);
+            expect(result.data?.byDeviceType).toEqual({ unknown: 2 });
+            expect(result.data?.byOs).toEqual({ unknown: 1, IOS: 1 });
+            expect(result.data?.byBrowserLanguage).toEqual({ unknown: 2 });
+        });
+
+        it('forwards the transaction client from ctx to the model call', async () => {
+            const tx = { fakeTx: true } as never;
+            (scanModelMock.getScanAggregateForCode as Mock).mockResolvedValue({
+                total: 0,
+                dailySeries: [],
+                byDeviceType: [],
+                byOs: [],
+                byBrowserLanguage: []
+            });
+
+            await service.getScanStatsForCode({ actor, qrCodeId: QR_ID, ctx: { tx } });
+
+            expect(scanModelMock.getScanAggregateForCode as Mock).toHaveBeenCalledWith(
+                { qrCodeId: QR_ID, windowStart: expect.any(Date) },
+                tx
+            );
         });
     });
 });
