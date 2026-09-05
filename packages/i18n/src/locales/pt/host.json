@@ -362,7 +362,6 @@
                 "photographerTooLong": "O crédito não pode ter mais de {{max}} caracteres",
                 "promoteFailed": "Não foi possível usar esta foto como capa",
                 "promoteToFeaturedAria": "Usar foto {{index}} como capa",
-                "promoteToFeaturedShort": "Capa",
                 "remove": "Remover",
                 "removeFailed": "Não foi possível remover a imagem",
                 "reorderFailed": "Não foi possível salvar a nova ordem",

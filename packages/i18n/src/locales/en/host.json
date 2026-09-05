@@ -362,7 +362,6 @@
                 "photographerTooLong": "The credit can't be longer than {{max}} characters",
                 "promoteFailed": "This photo could not be set as the cover",
                 "promoteToFeaturedAria": "Use photo {{index}} as the cover",
-                "promoteToFeaturedShort": "Cover",
                 "remove": "Remove",
                 "removeFailed": "The photo could not be removed",
                 "reorderFailed": "The new order could not be saved",

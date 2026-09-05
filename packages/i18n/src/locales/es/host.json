@@ -362,7 +362,6 @@
                 "photographerTooLong": "El crédito no puede superar {{max}} caracteres",
                 "promoteFailed": "No se pudo usar esta foto como portada",
                 "promoteToFeaturedAria": "Usar foto {{index}} como portada",
-                "promoteToFeaturedShort": "Portada",
                 "remove": "Eliminar",
                 "removeFailed": "No se pudo eliminar la imagen",
                 "reorderFailed": "No se pudo guardar el nuevo orden",
