@@ -1,0 +1,55 @@
+---
+/**
+ * @file mi-cuenta/canjear/[code].astro
+ * @description The SHAREABLE form of the redeem page (HOS-1171): the code rides
+ * in the path, so it survives the sign-in redirect that `/mi-cuenta/*` triggers
+ * for a visitor who is not signed in yet.
+ *
+ * That redirect is `buildLoginRedirect({ locale, currentUrl: path })`, which
+ * carries the pathname and drops the query string — see the note in
+ * `middleware.ts`. `/canjear/?codigo=X` therefore arrives at sign-up with the
+ * code already gone, and the person who received the link by WhatsApp (the case
+ * this page was built for, and the one most likely to have no account yet) lands
+ * on an empty field. `/canjear/X/` comes back intact.
+ *
+ * @route     /[lang]/mi-cuenta/canjear/[code]/
+ * @rendering SSR (prerender = false — requires an authenticated user)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import RedeemCodeSection from '@/components/account/RedeemCodeSection.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { normalizePromoCodeParam } from '@/lib/billing/promo-code-param';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+if (!user) {
+	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.redeem.title');
+const description = t('account.pages.redeem.description');
+
+// A segment that does not look like a promo code pre-fills nothing rather than
+// 404-ing: the field is still usable, which is a better landing than an error
+// page for someone who mistyped a link.
+const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="suscripcion">
+	<AccountPageHeader title={title} />
+	<RedeemCodeSection
+		locale={locale}
+		userId={user.id}
+		roles={user.roles}
+		initialCode={initialCode}
+	/>
+</AccountLayout>

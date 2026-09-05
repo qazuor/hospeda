@@ -1193,20 +1193,36 @@ export function SubscriptionDashboard({
             />
 
             {/* ── Trial extension (HOS-1012 T-039) ──
-               The only self-service surface where a host can spend a
-               trial-extension code (FREEMONTH / LANZAMIENTO60) while the trial
-               is still running — the plan purchase button is the PAID path,
-               reached after the trial is over. Rendered only for a live trial:
-               the endpoint refuses (422, code unburnt) in every other state,
-               so offering the field there would only produce a dead end. */}
-            {status === 'trial' && !isComplimentary && (
+               Where a host spends a trial-extension code (FREEMONTH /
+               LANZAMIENTO60) while the trial is still running — the plan
+               purchase button is the PAID path, reached after the trial is
+               over. Rendered only for a live trial: the endpoint refuses (422,
+               code unburnt) in every other state, so offering the field here
+               would only produce a dead end.
+
+               HOS-1171: it is no longer the ONLY such surface. The standalone
+               redeem page (linked below) mounts this same component and is
+               reachable whatever the subscription's state — which is what makes
+               a code shareable by link. */}
+            {status === 'trial' && !isComplimentary ? (
                 <TrialExtensionForm
                     locale={locale}
+                    userId={user.id}
                     subscriptionId={subscription.id}
+                    plansHref={plansHref}
                     onApplied={() => {
                         void refreshSilently();
                     }}
                 />
+            ) : (
+                /* HOS-1171: the entry point for every OTHER state — an active
+                   subscriber, or someone with no trial at all, who was handed a
+                   code and would otherwise have nowhere to type it. */
+                <p className={styles.redeemLink}>
+                    <a href={buildUrl({ locale, path: 'mi-cuenta/canjear' })}>
+                        {t('account.pages.redeem.dashboardLink', '¿Tenés un código promocional?')}
+                    </a>
+                </p>
             )}
 
             {/* ── Actions card ── */}

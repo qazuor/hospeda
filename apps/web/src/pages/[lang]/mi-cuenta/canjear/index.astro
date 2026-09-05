@@ -1,0 +1,48 @@
+---
+/**
+ * @file mi-cuenta/canjear/index.astro
+ * @description Redeem a promo code at any moment, not only while choosing a
+ * plan (HOS-1171). Accepts `?codigo=LANZAMIENTO60` to pre-fill the field.
+ *
+ * See `RedeemCodeSection.astro` for why a shared link should use the sibling
+ * `/canjear/<CODE>/` route instead of `?codigo=` — the query string does not
+ * survive the sign-in redirect, the path does.
+ *
+ * @route     /[lang]/mi-cuenta/canjear/
+ * @rendering SSR (prerender = false — requires an authenticated user)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import RedeemCodeSection from '@/components/account/RedeemCodeSection.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { normalizePromoCodeParam } from '@/lib/billing/promo-code-param';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+if (!user) {
+	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.redeem.title');
+const description = t('account.pages.redeem.description');
+
+const initialCode = normalizePromoCodeParam(Astro.url.searchParams.get('codigo'));
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="suscripcion">
+	<AccountPageHeader title={title} />
+	<RedeemCodeSection
+		locale={locale}
+		userId={user.id}
+		roles={user.roles}
+		initialCode={initialCode}
+	/>
+</AccountLayout>
