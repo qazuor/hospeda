@@ -141,14 +141,17 @@ export function getUtcInstantForLocalMidnight({
     date,
     timeZone = MARKET_TIMEZONE
 }: GetUtcInstantForLocalMidnightInput): Date {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-    if (!match) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         throw new Error(`getUtcInstantForLocalMidnight: invalid date "${date}"`);
     }
-    const [, yearStr, monthStr, dayStr] = match as unknown as [string, string, string, string];
-    const year = Number(yearStr);
-    const month = Number(monthStr);
-    const day = Number(dayStr);
+
+    // Read the parts by position rather than through capture groups. The test
+    // above already fixed the shape, so the offsets are exact — and this avoids
+    // casting `RegExpExecArray` (typed as possibly-sparse) into a fixed-length
+    // tuple just to convince the compiler of something the regex guarantees.
+    const year = Number(date.slice(0, 4));
+    const month = Number(date.slice(5, 7));
+    const day = Number(date.slice(8, 10));
 
     // First guess: this calendar date at UTC midnight. The real local
     // midnight is this guess shifted by the zone's offset at that instant.
