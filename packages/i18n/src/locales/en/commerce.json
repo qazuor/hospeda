@@ -461,9 +461,30 @@
                 "404": "We couldn't find an active subscription to change plans.",
                 "409": "You have a pending cancellation — you can't change plans until it is resolved.",
                 "410": "That plan is no longer available.",
-                "422": "You can't move to that plan from your current one.",
+                "422": "That plan costs the same as your current one, so there is nothing to change.",
                 "503": "The payment service is unavailable right now. Please try again later.",
-                "generic": "We couldn't change your plan. Please try again later."
+                "generic": "We couldn't change your plan. Please try again later.",
+                "previewUnavailable": "We couldn't work out which listings would fall outside that plan. Please try again later."
+            },
+            "note": {
+                "upgrade": "You pay the prorated difference now and it takes effect right away.",
+                "downgrade": "No charge. It takes effect on {date}.",
+                "downgradeNoDate": "No charge. It takes effect at the end of the period you already paid for."
+            },
+            "scheduled": {
+                "title": "Change scheduled",
+                "body": "Your plan moves to {plan} on {date}. Nothing changes until then: you stay on {current} with all your listings visible."
+            },
+            "keepPanel": {
+                "title": "Choose which listings stay visible",
+                "intro": "The {plan} plan includes {cap} of your {active} listings. The ones you do not pick will stop being shown.",
+                "when": "The change applies on {date}. Until then you stay on your current plan with all your listings visible.",
+                "whenNoDate": "The change applies at the end of the period you already paid for. Nothing changes until then.",
+                "quotaNote": "A hidden listing still takes up a slot in your quota: you will not be able to create another one in its place. It becomes visible again if you move up a plan.",
+                "overCap": "You picked {selected} and the plan allows {cap}. Uncheck {extra}.",
+                "listLabel": "Your listings in this category",
+                "suggested": "Suggested",
+                "confirm": "Schedule the change"
             }
         },
         "entitlements": {

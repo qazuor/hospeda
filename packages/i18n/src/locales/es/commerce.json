@@ -461,9 +461,30 @@
                 "404": "No encontramos una suscripción activa para cambiar de plan.",
                 "409": "Tenés una cancelación pendiente — no podés cambiar de plan hasta que se resuelva.",
                 "410": "Ese plan ya no está disponible.",
-                "422": "No podés cambiarte a ese plan desde el actual.",
+                "422": "Ese plan cuesta lo mismo que el actual, así que no hay nada que cambiar.",
                 "503": "El servicio de pagos no está disponible en este momento. Probá de nuevo más tarde.",
-                "generic": "No pudimos cambiar tu plan. Probá de nuevo más tarde."
+                "generic": "No pudimos cambiar tu plan. Probá de nuevo más tarde.",
+                "previewUnavailable": "No pudimos calcular qué fichas quedarían fuera de ese plan. Probá de nuevo más tarde."
+            },
+            "note": {
+                "upgrade": "Pagás la diferencia proporcional ahora y empieza a regir enseguida.",
+                "downgrade": "Sin cargo. Empieza a regir el {date}.",
+                "downgradeNoDate": "Sin cargo. Empieza a regir al final del período que ya pagaste."
+            },
+            "scheduled": {
+                "title": "Cambio programado",
+                "body": "Tu plan pasa a {plan} el {date}. Hasta entonces no cambia nada: seguís con {current} y todas tus fichas visibles."
+            },
+            "keepPanel": {
+                "title": "Elegí qué fichas seguís mostrando",
+                "intro": "El plan {plan} incluye {cap} de tus {active} fichas. Las que no elijas van a dejar de verse.",
+                "when": "El cambio se aplica el {date}. Hasta entonces seguís con tu plan actual y todas tus fichas visibles.",
+                "whenNoDate": "El cambio se aplica al final del período que ya pagaste. Hasta entonces no cambia nada.",
+                "quotaNote": "Una ficha oculta sigue ocupando lugar en tu cupo: no vas a poder crear otra en su lugar. Vuelve a verse si subís de plan.",
+                "overCap": "Elegiste {selected} y el plan permite {cap}. Desmarcá {extra}.",
+                "listLabel": "Tus fichas de este rubro",
+                "suggested": "Sugerida",
+                "confirm": "Programar el cambio"
             }
         },
         "entitlements": {

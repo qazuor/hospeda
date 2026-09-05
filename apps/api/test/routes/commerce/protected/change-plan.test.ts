@@ -15,10 +15,14 @@
  *    the first live subscription with no domain predicate at all, which is why
  *    this route exists; a version of it that reused that selection would send an
  *    owner's gastronomy tier change to their accommodation subscription.
- * 2. **A cheaper or equal target is REFUSED.** Not a UI nicety — the
- *    scheduled-downgrade path it would otherwise take runs
- *    `applyDowngradeRestrictions` against the target plan's slug, i.e.
- *    accommodation and promotion caps a commerce tier does not declare.
+ * 2. **A cheaper target is SCHEDULED, an equal one is refused** (HOS-1122).
+ *    The cheaper case is the regression: it answered 422 until the cron learned
+ *    to dispatch a downgrade on its target plan's own domain, because the path
+ *    it would have taken ran `applyDowngradeRestrictions` — accommodation and
+ *    promotion caps a commerce tier does not declare — against a gastronomy
+ *    slug. Asserting only the 200 proves nothing here: the assertions below pin
+ *    WHICH tier was scheduled, that the owner's keep selection survived, and
+ *    that the excess was measured against the vertical's own cap key.
  * 3. **The upgrade is initiated against the TARGET plan**, not the vertical's
  *    default. A mutation that dropped the requested slug would still produce a
  *    200 with a MercadoPago URL.
@@ -114,6 +118,33 @@ vi.mock('../../../../src/services/billing/trialing-plan-upgrade.service', () => 
     applyTrialingPlanUpgrade: mockApplyTrialingPlanUpgrade
 }));
 
+const { mockScheduleSubscriptionDowngrade } = vi.hoisted(() => ({
+    mockScheduleSubscriptionDowngrade: vi.fn()
+}));
+// `importOriginal` for the same reason the checkout service uses it:
+// `SubscriptionDowngradeError` must stay the REAL class or the handler's
+// `instanceof` never matches and the 404/409 mapping is dead code the tests
+// cannot see.
+vi.mock('../../../../src/services/subscription-downgrade.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<
+            typeof import('../../../../src/services/subscription-downgrade.service')
+        >();
+    return { ...actual, scheduleSubscriptionDowngrade: mockScheduleSubscriptionDowngrade };
+});
+
+const { mockComputeCommerceDowngradeExcess } = vi.hoisted(() => ({
+    mockComputeCommerceDowngradeExcess: vi.fn()
+}));
+vi.mock('../../../../src/services/commerce-downgrade-remediation.service', () => ({
+    computeCommerceDowngradeExcess: mockComputeCommerceDowngradeExcess
+}));
+
+const { mockSendNotification } = vi.hoisted(() => ({ mockSendNotification: vi.fn() }));
+vi.mock('../../../../src/utils/notification-helper', () => ({
+    sendNotification: mockSendNotification
+}));
+
 // ──────────────────────────────────────────────────────────────────────────
 // Imports (after mocks).
 // ──────────────────────────────────────────────────────────────────────────
@@ -145,6 +176,39 @@ const PRO_PLAN_ROW = {
     active: true,
     prices: [monthlyPrice('price-pro', 4_500_000)]
 };
+
+/** When a scheduled downgrade would take effect. */
+const PERIOD_END = '2026-10-01T00:00:00.000Z';
+
+/** A commerce preview with nothing over the cap. */
+function noExcessPreview() {
+    return {
+        vertical: 'gastronomy' as const,
+        cap: 1,
+        activeCount: 1,
+        excessCount: 0,
+        items: [],
+        hasExcess: false
+    };
+}
+
+/** A commerce preview with `excessCount` listings over the cap. */
+function excessPreview(cap: number, activeCount: number) {
+    return {
+        vertical: 'gastronomy' as const,
+        cap,
+        activeCount,
+        excessCount: activeCount - cap,
+        items: Array.from({ length: activeCount }, (_, index) => ({
+            id: `00000000-0000-4000-8000-00000000000${index}`,
+            name: `Listing ${index}`,
+            updatedAt: new Date(2026, 0, activeCount - index).toISOString(),
+            viewCount: null,
+            keepByDefault: index < cap
+        })),
+        hasExcess: activeCount > cap
+    };
+}
 
 /** A subscription record as `billing.subscriptions.get` returns it. */
 function makeSubscription(overrides: Record<string, unknown> = {}) {
@@ -212,6 +276,15 @@ describe('handleCommerceChangePlan (HOS-1119)', () => {
             newPlanId: PRO_PLAN_ID,
             deltaCentavos: 3_000_000
         });
+        mockScheduleSubscriptionDowngrade.mockResolvedValue({
+            subscriptionId: SUB_ID,
+            previousPlanId: PRO_PLAN_ID,
+            newPlanId: BASICO_PLAN_ID,
+            applyAt: PERIOD_END,
+            replacedPriorSchedule: false
+        });
+        mockComputeCommerceDowngradeExcess.mockResolvedValue(noExcessPreview());
+        mockSendNotification.mockResolvedValue(undefined);
     });
 
     // ── The happy path ────────────────────────────────────────────────────
@@ -294,6 +367,130 @@ describe('handleCommerceChangePlan (HOS-1119)', () => {
         );
     });
 
+    // ── Downgrade: scheduled for period end (HOS-1122) ────────────────────
+
+    /** Points the fixtures at "currently on pro, asking for básico". */
+    function arrangeDowngrade() {
+        BILLING.subscriptions.get.mockResolvedValue(makeSubscription({ planId: PRO_PLAN_ID }));
+        BILLING.plans.get.mockResolvedValue(PRO_PLAN_ROW);
+        mockResolvePlanBySlug.mockResolvedValue(BASICO_PLAN_ROW);
+    }
+
+    it('SCHEDULES a cheaper target for period end instead of answering 422', async () => {
+        // The regression this issue is about. Until HOS-1122 this exact request
+        // answered 422 — a commerce owner could climb tiers and never come back
+        // down — because the cron that would have committed it ran
+        // ACCOMMODATION restriction logic against a gastronomy plan slug.
+        arrangeDowngrade();
+
+        const result = (await handleCommerceChangePlan(
+            makeCtx({ planSlug: GASTRONOMY_BASICO_PLAN.slug }),
+            { entityType: 'gastronomy' }
+        )) as { status: string; effectiveAt: string; newPlanId: string };
+
+        expect(result.status).toBe('scheduled');
+        expect(result.effectiveAt).toBe(PERIOD_END);
+        expect(result.newPlanId).toBe(BASICO_PLAN_ID);
+        // Not charged, and not applied now: the owner paid for this month.
+        expect(mockInitiatePaidPlanUpgrade).not.toHaveBeenCalled();
+        expect(mockApplyTrialingPlanUpgrade).not.toHaveBeenCalled();
+    });
+
+    it('schedules against the REQUESTED target plan and forwards the keep selection', async () => {
+        // Asserting `status: 'scheduled'` alone proves nothing about WHICH tier
+        // was scheduled or whether the owner's choice survived the trip: a
+        // mutation dropping either still produces the same 200.
+        arrangeDowngrade();
+        const keepId = '00000000-0000-4000-8000-0000000000aa';
+
+        await handleCommerceChangePlan(
+            makeCtx({
+                planSlug: GASTRONOMY_BASICO_PLAN.slug,
+                keepSelections: { listingIds: [keepId] }
+            }),
+            { entityType: 'gastronomy' }
+        );
+
+        expect(mockScheduleSubscriptionDowngrade).toHaveBeenCalledWith(
+            expect.objectContaining({
+                currentSubscriptionId: SUB_ID,
+                newPlanId: BASICO_PLAN_ID,
+                billingInterval: 'month',
+                intervalCount: 1,
+                requestedBy: OWNER_ID,
+                keepSelections: { listingIds: [keepId] }
+            })
+        );
+    });
+
+    it('previews the excess against the TARGET tier and returns it on the response', async () => {
+        arrangeDowngrade();
+        mockComputeCommerceDowngradeExcess.mockResolvedValue(excessPreview(1, 3));
+
+        const result = (await handleCommerceChangePlan(
+            makeCtx({ planSlug: GASTRONOMY_BASICO_PLAN.slug }),
+            { entityType: 'gastronomy' }
+        )) as { commerceRestrictionPreview?: { cap: number; excessCount: number } };
+
+        expect(mockComputeCommerceDowngradeExcess).toHaveBeenCalledWith({
+            subscriptionId: SUB_ID,
+            vertical: 'gastronomy',
+            targetPlanSlug: GASTRONOMY_BASICO_PLAN.slug
+        });
+        expect(result.commerceRestrictionPreview?.cap).toBe(1);
+        expect(result.commerceRestrictionPreview?.excessCount).toBe(2);
+    });
+
+    it('warns the owner by email when listings will be restricted', async () => {
+        arrangeDowngrade();
+        mockComputeCommerceDowngradeExcess.mockResolvedValue(excessPreview(1, 3));
+
+        await handleCommerceChangePlan(makeCtx({ planSlug: GASTRONOMY_BASICO_PLAN.slug }), {
+            entityType: 'gastronomy'
+        });
+
+        expect(mockSendNotification).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'plan_downgrade_limit_warning',
+                recipientEmail: 'owner@local.test',
+                // The vertical's OWN cap key. A mutation naming the other
+                // vertical's, or an accommodation one, still sends a mail.
+                limitKey: 'max_gastronomies',
+                newLimit: 1,
+                currentUsage: 3
+            })
+        );
+    });
+
+    it('sends no warning when nothing exceeds the new cap', async () => {
+        arrangeDowngrade();
+        // Default fixture: cap 1, one listing.
+
+        await handleCommerceChangePlan(makeCtx({ planSlug: GASTRONOMY_BASICO_PLAN.slug }), {
+            entityType: 'gastronomy'
+        });
+
+        expect(mockSendNotification).not.toHaveBeenCalled();
+    });
+
+    it('still schedules when the preview fails, and omits the preview field', async () => {
+        // Soft-fail: the schedule is what the owner asked for. Turning a failed
+        // preview into an error would refuse a downgrade over a read.
+        arrangeDowngrade();
+        mockComputeCommerceDowngradeExcess.mockRejectedValue(new Error('catalog unavailable'));
+
+        const result = (await handleCommerceChangePlan(
+            makeCtx({ planSlug: GASTRONOMY_BASICO_PLAN.slug }),
+            { entityType: 'gastronomy' }
+        )) as { status: string; commerceRestrictionPreview?: unknown };
+
+        expect(result.status).toBe('scheduled');
+        // Absent, never a zeroed preview: "we did not look" must not be
+        // reported as "nothing is over the cap".
+        expect(result.commerceRestrictionPreview).toBeUndefined();
+        expect(mockSendNotification).not.toHaveBeenCalled();
+    });
+
     // ── Refusals, in error-contract order ─────────────────────────────────
 
     it('refuses a malformed body with 400', async () => {
@@ -347,25 +544,10 @@ describe('handleCommerceChangePlan (HOS-1119)', () => {
         expect((await captureRefusal({ planSlug: GASTRONOMY_PRO_PLAN.slug })).status).toBe(422);
     });
 
-    it('refuses a CHEAPER target with 422 and touches no upgrade service', async () => {
-        // The load-bearing refusal. Scheduling it instead would hand the
-        // apply-scheduled-plan-changes cron a commerce plan slug, against which
-        // it runs accommodation and promotion restriction logic.
-        BILLING.subscriptions.get.mockResolvedValue(makeSubscription({ planId: PRO_PLAN_ID }));
-        BILLING.plans.get.mockResolvedValue(PRO_PLAN_ROW);
-        mockResolvePlanBySlug.mockResolvedValue(BASICO_PLAN_ROW);
-
-        const refusal = await captureRefusal({ planSlug: GASTRONOMY_BASICO_PLAN.slug });
-
-        expect(refusal.status).toBe(422);
-        expect(mockInitiatePaidPlanUpgrade).not.toHaveBeenCalled();
-        expect(mockApplyTrialingPlanUpgrade).not.toHaveBeenCalled();
-    });
-
     it('refuses an EQUALLY priced target with 422', async () => {
-        // Equal, not just cheaper: a same-price tier swap has no delta to
-        // charge, so the upgrade service would throw NOT_AN_UPGRADE anyway —
-        // this refuses it before MercadoPago is involved at all.
+        // Equal is neither direction: no delta to charge, no cap to give back.
+        // The upgrade service would throw NOT_AN_UPGRADE and the downgrade
+        // service NOT_A_DOWNGRADE; this refuses it before either is involved.
         mockResolvePlanBySlug.mockResolvedValue({
             ...PRO_PLAN_ROW,
             prices: [monthlyPrice('price-pro', 1_500_000)]
@@ -373,6 +555,7 @@ describe('handleCommerceChangePlan (HOS-1119)', () => {
 
         expect((await captureRefusal({ planSlug: GASTRONOMY_PRO_PLAN.slug })).status).toBe(422);
         expect(mockInitiatePaidPlanUpgrade).not.toHaveBeenCalled();
+        expect(mockScheduleSubscriptionDowngrade).not.toHaveBeenCalled();
     });
 
     it('refuses with 503 when billing is unavailable', async () => {
