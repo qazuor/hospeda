@@ -159,15 +159,36 @@ export function CommercePlanChange({
         setErrorMessage(null);
     }
 
-    /** Maps an API failure onto the owner-facing copy for its status. */
-    function showApiError(status: number | undefined): void {
+    /**
+     * Maps an API failure onto the owner-facing copy for its status.
+     *
+     * `scope` matters because the two endpoints in this flow answer 422 for
+     * DIFFERENT reasons, and the copy for one is a lie about the other. On
+     * change-plan it means "that tier costs the same as yours"; on the preview
+     * it means "the target tier's listing cap could not be resolved". The route
+     * raises that second 422 rather than returning an empty preview precisely
+     * so nobody reads it as "nothing is at stake" — rendering it as a
+     * same-price message would put the lie back one layer up.
+     */
+    function showApiError(status: number | undefined, scope: 'preview' | 'change'): void {
         const generic = t(
             'commerce.owner.planChange.error.generic',
             'No pudimos cambiar tu plan. Probá de nuevo más tarde.'
         );
-        setErrorMessage(
-            status === undefined ? generic : t(`commerce.owner.planChange.error.${status}`, generic)
-        );
+        if (status === undefined) {
+            setErrorMessage(generic);
+            return;
+        }
+        if (scope === 'preview' && status === 422) {
+            setErrorMessage(
+                t(
+                    'commerce.owner.planChange.error.previewUnavailable',
+                    'No pudimos calcular qué fichas quedarían fuera de ese plan. Probá de nuevo más tarde.'
+                )
+            );
+            return;
+        }
+        setErrorMessage(t(`commerce.owner.planChange.error.${status}`, generic));
     }
 
     /** Step 1 → 2, or straight to the POST when there is nothing to choose. */
@@ -189,7 +210,7 @@ export function CommercePlanChange({
                 // cap is unresolvable. Falling through to "nothing is over the
                 // cap" here would restrict the owner's listings by the default
                 // order having told them nothing was at stake.
-                showApiError(result.error.status);
+                showApiError(result.error.status, 'preview');
                 return;
             }
 
@@ -202,7 +223,7 @@ export function CommercePlanChange({
             setPreview(result.data);
             setStep('keep');
         } catch {
-            showApiError(undefined);
+            showApiError(undefined, 'preview');
         } finally {
             setIsSubmitting(false);
         }
@@ -227,7 +248,7 @@ export function CommercePlanChange({
             const result = await changeCommercePlan({ vertical, planSlug, keepSelections });
 
             if (!result.ok) {
-                showApiError(result.error.status);
+                showApiError(result.error.status, 'change');
                 return;
             }
 
@@ -250,7 +271,7 @@ export function CommercePlanChange({
             // charge. Reload so the page re-fetches the new current plan.
             window.location.reload();
         } catch {
-            showApiError(undefined);
+            showApiError(undefined, 'change');
         } finally {
             setIsSubmitting(false);
         }

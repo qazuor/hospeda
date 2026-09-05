@@ -292,6 +292,22 @@ describe('CommercePlanChange — the downgrade flow (HOS-1122)', () => {
         expect(window.location.href).toBe('');
     });
 
+    it('does not describe the preview`s 422 as "that plan costs the same"', async () => {
+        // The two endpoints answer 422 for different reasons. On change-plan it
+        // means the tier is identically priced; on the preview it means the
+        // target tier's listing cap could not be resolved — which the route
+        // raises DELIBERATELY rather than returning an empty preview, so that
+        // nobody reads it as "nothing is at stake". Rendering the same-price
+        // copy for it would put that lie back one layer up.
+        mockFetchPreview.mockResolvedValue({ ok: false, error: { status: 422 } });
+        renderFlow();
+        await pickBasico();
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent(/No pudimos calcular qué fichas quedarían fuera/);
+        expect(alert).not.toHaveTextContent(/cuesta lo mismo/);
+    });
+
     it('surfaces a preview failure instead of falling through to "nothing to lose"', async () => {
         // The 422 the preview raises when the target tier's cap cannot be
         // resolved. Treating it as zero excess would restrict listings by the

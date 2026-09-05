@@ -463,7 +463,8 @@
                 "410": "That plan is no longer available.",
                 "422": "That plan costs the same as your current one, so there is nothing to change.",
                 "503": "The payment service is unavailable right now. Please try again later.",
-                "generic": "We couldn't change your plan. Please try again later."
+                "generic": "We couldn't change your plan. Please try again later.",
+                "previewUnavailable": "We couldn't work out which listings would fall outside that plan. Please try again later."
             },
             "note": {
                 "upgrade": "You pay the prorated difference now and it takes effect right away.",

@@ -463,7 +463,8 @@
                 "410": "Ese plan ya no está disponible.",
                 "422": "Ese plan cuesta lo mismo que el actual, así que no hay nada que cambiar.",
                 "503": "El servicio de pagos no está disponible en este momento. Probá de nuevo más tarde.",
-                "generic": "No pudimos cambiar tu plan. Probá de nuevo más tarde."
+                "generic": "No pudimos cambiar tu plan. Probá de nuevo más tarde.",
+                "previewUnavailable": "No pudimos calcular qué fichas quedarían fuera de ese plan. Probá de nuevo más tarde."
             },
             "note": {
                 "upgrade": "Pagás la diferencia proporcional ahora y empieza a regir enseguida.",
