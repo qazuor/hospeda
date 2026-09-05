@@ -101,6 +101,19 @@ returns `undefined` for a slug the catalogue does not know, and
 `addon-catalog.mapper.ts` propagates that `undefined` rather than guessing.
 **Every future caller must fail CLOSED on it.**
 
+### H-4 — An active add-on for a feature that does not exist means the buyer pays for nothing
+
+`ai-support-monthly` sets the precedent and states the reason. The three packs
+ship `isActive: false` and are activated by the phase that ships the gallery
+itself, alongside the prices the owner confirms (OQ-4, OQ-5).
+
+### H-5 — Photos of identifiable people
+
+The access is restricted and scoped to whoever was actually there, which makes
+this far more manageable than a public gallery, but it does not make it
+disappear. D-4/D-5/D-6 bound the exposure in time; OQ-1 and OQ-2 bound it in
+rights, and they must be answered before phase 3 ships.
+
 ### H-6 — A DERIVED add-on domain already exists, and it is not this one
 
 Measured during phase 1, and worth recording because the issue's own framing
@@ -123,19 +136,6 @@ The declared field is named `productDomainForAddonSlug` (mirroring
 `productDomainForLimitKey`) precisely so the two cannot be confused. Folding the
 derivation into the declaration, and mounting the API-side refusal, are follow-up
 work — see §9.
-
-### H-4 — An active add-on for a feature that does not exist means the buyer pays for nothing
-
-`ai-support-monthly` sets the precedent and states the reason. The three packs
-ship `isActive: false` and are activated by the phase that ships the gallery
-itself, alongside the prices the owner confirms (OQ-4, OQ-5).
-
-### H-5 — Photos of identifiable people
-
-The access is restricted and scoped to whoever was actually there, which makes
-this far more manageable than a public gallery, but it does not make it
-disappear. D-4/D-5/D-6 bound the exposure in time; OQ-1 and OQ-2 bound it in
-rights, and they must be answered before phase 3 ships.
 
 ## 5. Phases
 
