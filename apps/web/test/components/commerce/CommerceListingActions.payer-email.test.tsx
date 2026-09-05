@@ -16,12 +16,18 @@
  * 1. `ownPreapprovalEnabled` — with the flag off (production today) the hosted
  *    share-link checkout discards `payer_email` entirely, so the dialog would
  *    be a pure extra click in a flow that bills.
- * 2. `!hasVerticalSubscription` — with a subscription already held for this
- *    vertical the backend ATTACHES the listing and publishes it synchronously
- *    (HOS-688 §6.8 branch 2). No payment is opened, so asking the owner to
- *    confirm a payer would be asking about a charge that never happens.
+ * 2. `trialVerdict === 'payment_required'` — the only state that opens a
+ *    payment. Under `has_active_sub` the backend ATTACHES the listing and
+ *    publishes it synchronously (HOS-688 §6.8 branch 2); under
+ *    `trial_available` it grants a local trial and never tells MercadoPago the
+ *    subscription exists (HOS-1184). In both cases asking the owner to confirm
+ *    a payer would be asking about a charge that never happens.
+ *
+ *    This gate was `!hasVerticalSubscription` until HOS-1184, which was correct
+ *    only while "not already paying" meant "about to pay".
  */
 
+import type { CommerceTrialVerdictKind } from '@repo/schemas';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -45,7 +51,11 @@ vi.mock('../../../src/lib/auth-client', () => ({
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
+        // `(key, count, params?)` — the real `PluralTranslationFn` takes NO
+        // fallback. The old stub here declared one, which would let a call site
+        // pass a default string and look correct in this file while the real
+        // function treated it as `params` and rendered the raw key.
+        tPlural: (key: string, count: number) => `${key} [${count}]`
     })
 }));
 
@@ -69,7 +79,11 @@ const PUBLISH_BUTTON = 'commerce-publish-button';
 
 function renderActions(overrides: {
     ownPreapprovalEnabled?: boolean;
-    hasVerticalSubscription?: boolean;
+    // HOS-1184: was `hasVerticalSubscription?: boolean`. The dialog now gates on
+    // one of three states rather than on "not already paying", because that used
+    // to include the trial — and a free publish must not be stopped behind a
+    // payment-email screen.
+    trialVerdict?: CommerceTrialVerdictKind;
 }) {
     render(
         <CommerceListingActions
@@ -77,7 +91,7 @@ function renderActions(overrides: {
             // to be; the fields it actually reads are all present.
             listing={COMPLETE_DRAFT as never}
             locale="es"
-            hasVerticalSubscription={overrides.hasVerticalSubscription ?? false}
+            trialVerdict={overrides.trialVerdict ?? 'payment_required'}
             {...(overrides.ownPreapprovalEnabled === undefined
                 ? {}
                 : { ownPreapprovalEnabled: overrides.ownPreapprovalEnabled })}
@@ -182,7 +196,7 @@ describe('CommerceListingActions — payer-email confirmation (HOS-1008)', () =>
         // synchronously, opening no payment. Asking the owner to confirm a
         // payer here would be asking about a charge that never happens.
         const user = userEvent.setup();
-        renderActions({ ownPreapprovalEnabled: true, hasVerticalSubscription: true });
+        renderActions({ ownPreapprovalEnabled: true, trialVerdict: 'has_active_sub' });
 
         await user.click(screen.getByTestId(PUBLISH_BUTTON));
 
@@ -190,5 +204,46 @@ describe('CommerceListingActions — payer-email confirmation (HOS-1008)', () =>
             expect(startOwnerListingCheckoutMock).toHaveBeenCalledTimes(1);
         });
         expect(screen.queryByRole('button', { name: DIALOG_CONFIRM })).toBeNull();
+    });
+
+    it('skips the dialog when a trial is available (HOS-1184)', async () => {
+        // The state this gate did NOT have until HOS-1184, and the one where a
+        // stale `!hasVerticalSubscription` would have been worst: the owner is
+        // about to publish free for thirty days, and the old condition would
+        // have stopped them at a screen asking who is paying.
+        const user = userEvent.setup();
+        renderActions({ ownPreapprovalEnabled: true, trialVerdict: 'trial_available' });
+
+        await user.click(screen.getByTestId(PUBLISH_BUTTON));
+
+        await waitFor(() => {
+            expect(startOwnerListingCheckoutMock).toHaveBeenCalledTimes(1);
+        });
+        expect(screen.queryByRole('button', { name: DIALOG_CONFIRM })).toBeNull();
+    });
+
+    it('reloads instead of redirecting when the publish granted a trial', async () => {
+        // `appliedEffect: 'trial'` carries an IN-APP sentinel in `checkoutUrl`,
+        // exactly as `'attached'` does. Following it would send an owner who
+        // just published for free to the payment-method page — a redirect that
+        // does not fail, it just lies about what happened.
+        startOwnerListingCheckoutMock.mockResolvedValue({
+            ok: true,
+            data: {
+                checkoutUrl: 'https://hospeda.test/mi-cuenta/pago',
+                localSubscriptionId: 'sub-trial-1',
+                expiresAt: '2026-10-05T00:00:00.000Z',
+                appliedEffect: 'trial'
+            }
+        });
+        const user = userEvent.setup();
+        renderActions({ trialVerdict: 'trial_available' });
+
+        await user.click(screen.getByTestId(PUBLISH_BUTTON));
+
+        await waitFor(() => {
+            expect(window.location.reload).toHaveBeenCalledTimes(1);
+        });
+        expect(window.location.href).toBe('');
     });
 });
