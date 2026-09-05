@@ -403,6 +403,44 @@ describe('plan.crud', () => {
             expect(result.sortOrder).toBe(0);
             expect(result.monthlyPriceUsdRef).toBe(0);
         });
+
+        // HOS-1062 F1 — the public-catalogue mark travels ON the DTO. The public
+        // endpoint filters on it and nothing else, so a mapper that stops
+        // emitting it is the one way an unlisted plan reaches a public response
+        // without anybody touching the route.
+        it('should carry publicListing from metadata', () => {
+            // Arrange
+            const planRow = makePlanRow({ metadata: { publicListing: 'unlisted' } });
+
+            // Act
+            const result = mapDbToPlan(planRow as unknown as Parameters<typeof mapDbToPlan>[0], []);
+
+            // Assert
+            expect(result.publicListing).toBe('unlisted');
+        });
+
+        it('should report an unmarked plan as listed', () => {
+            // Arrange — every plan in production is this case.
+            const planRow = makePlanRow({ metadata: {} });
+
+            // Act
+            const result = mapDbToPlan(planRow as unknown as Parameters<typeof mapDbToPlan>[0], []);
+
+            // Assert
+            expect(result.publicListing).toBe('listed');
+        });
+
+        it('should withhold a plan whose mark is present but unreadable', () => {
+            // Arrange — a typo in the operator's UPDATE. The mark exists and
+            // cannot be read: withhold, never publish by default.
+            const planRow = makePlanRow({ metadata: { publicListing: 'unlited' } });
+
+            // Act
+            const result = mapDbToPlan(planRow as unknown as Parameters<typeof mapDbToPlan>[0], []);
+
+            // Assert
+            expect(result.publicListing).toBe('unlisted');
+        });
     });
 
     // ── listPlans ───────────────────────────────────────────────────────────

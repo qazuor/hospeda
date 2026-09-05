@@ -182,6 +182,7 @@ describe('BillingPlanResponseSchema', () => {
         entitlements: ['publish_accommodations'],
         limits: { max_accommodations: 1 },
         isActive: true,
+        publicListing: 'listed',
         createdAt: '2026-05-30T00:00:00.000Z',
         updatedAt: '2026-05-30T00:00:00.000Z'
     };
@@ -221,6 +222,9 @@ describe('AdminBillingPlanUpdateResponseSchema (HOS-176)', () => {
         entitlements: ['publish_accommodations'],
         limits: { max_accommodations: 1 },
         isActive: true,
+        // HOS-1062 F1: required with no default, so every response carries the
+        // public-catalogue mark explicitly.
+        publicListing: 'listed' as const,
         createdAt: '2026-05-30T00:00:00.000Z',
         updatedAt: '2026-05-30T00:00:00.000Z'
     };

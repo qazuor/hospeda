@@ -75,6 +75,9 @@ const STUB_PLAN = {
     entitlements: [],
     limits: {},
     isActive: true,
+    // HOS-1062 F1: the DTO carries the plan's public-catalogue visibility,
+    // resolved from `metadata.publicListing`.
+    publicListing: 'listed' as const,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     // HOS-176: updatePlan's success DTO now carries the price-change effects (empty here).

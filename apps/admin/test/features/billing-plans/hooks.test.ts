@@ -36,6 +36,10 @@ const validPlanRecord = {
     entitlements: ['can_list_accommodation', 'can_contact_tourists'],
     limits: { max_accommodations: 5, max_photos: 20 },
     isActive: true,
+    // HOS-1062 F1: required, no default — a payload without the mark is refused,
+    // which is the deploy-window cost the owner accepted in exchange for every
+    // response carrying it explicitly.
+    publicListing: 'listed' as const,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-15T00:00:00.000Z',
     // Admin list-only fields (SPEC-168)
@@ -85,6 +89,28 @@ describe('billing-plans/hooks — T-012 (transformPlanRecord aligned to DB shape
             expect(item?.isActive).toBe(true);
             expect(item?.category).toBe('owner');
             expect(item?.entitlements).toEqual(validPlanRecord.entitlements);
+        });
+
+        it('should carry publicListing through to the row (HOS-1062 F1)', async () => {
+            // The field was parsed and then DROPPED, which is why the admin had
+            // no way to see that a plan had been marked. Asserted on the UNLISTED
+            // value on purpose: 'listed' is also what a dropped-then-defaulted
+            // field would look like, so it could not tell the two apart.
+            server.use(
+                http.get(`${API_BASE}/api/v1/admin/billing/plans`, () => {
+                    return HttpResponse.json(
+                        makePlanListResponse([{ ...validPlanRecord, publicListing: 'unlisted' }])
+                    );
+                })
+            );
+
+            const { result } = renderHook(() => usePlansQuery(), {
+                wrapper: createTestWrapper()
+            });
+
+            await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+            expect(result.current.data?.items[0]?.publicListing).toBe('unlisted');
         });
 
         it('should convert limits Record<string, number> to { key, value }[] array', async () => {
