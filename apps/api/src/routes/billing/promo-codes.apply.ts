@@ -237,6 +237,14 @@ export const handleApplyPromoCode = async (
     // Admin callers keep the full behaviour below (the T-007 discount seam and
     // `service.apply`), which is what `POST /apply` was built for in SPEC-262
     // and what its ops tooling still targets.
+    //
+    // On the 403 for `comp` rather than the contract's usual 404-for-anything-
+    // you-may-not-have: the rule that a 403 must not confirm an id exists is
+    // about resources whose ids are guessable and private. It buys nothing
+    // here, because `POST /validate` — unchanged, and the pre-flight the web
+    // form already runs — hands back `effectPreview.effectKind` for any code
+    // the caller can name. A 404 would only make the honest holder of a comp
+    // code read "that code does not exist".
     // ------------------------------------------------------------------
     if (peekedEffectKind === PromoEffectKindEnum.COMP) {
         throw new HTTPException(403, {

@@ -697,6 +697,29 @@ Apply a promo code to a checkout session.
 - Updates checkout session with discount
 - Increments redemption count
 
+**Which effect kinds this endpoint accepts (HOS-1195 / HOS-1171):**
+
+| `effect_kind`     | Non-admin caller                                    | Admin (`ACCESS_API_ADMIN`) |
+|-------------------|-----------------------------------------------------|----------------------------|
+| `trial_extension` | ✅ applied to the caller's running trial             | ✅                          |
+| `discount`        | ❌ `422` `reason: PROMO_CODE_DISCOUNT_AT_CHECKOUT`   | ✅ (T-007 seam)             |
+| `comp`            | ❌ `403` `reason: PROMO_CODE_COMP_NOT_SELF_SERVICE`  | ❌ (same 403)               |
+| untyped (legacy)  | ❌ `422`, same reason as `discount`                  | ✅                          |
+
+A refusal happens BEFORE any redemption: the code is not spent, `used_count`
+is not incremented, and no usage row is written. That is the point of refusing
+a discount rather than applying it — the customer keeps it for checkout.
+
+`comp` is refused for everyone, admins included. The one path that grants a
+complimentary subscription is `services/subscription-comp-create.service.ts`,
+which inserts the row directly with no MercadoPago preapproval.
+
+Refusals carry a machine-readable `error.reason` (whitelisted in
+`utils/entitlement-cause.ts`) because a 422's status-derived `error.code`
+collapses every rejection into `VALIDATION_ERROR`. `NO_ACTIVE_TRIAL` — a valid
+trial-extension code with no trial to extend — is forwarded the same way, and
+also leaves the code unspent.
+
 **Status:** ⚠️ Partially implemented (returns placeholder data)
 
 ---
