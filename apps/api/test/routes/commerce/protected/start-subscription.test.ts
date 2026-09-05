@@ -796,6 +796,13 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
             entityId: ENTITY_ID
         });
 
+        // Narrowed with a throw rather than `expect(...).not.toBeInstanceOf`,
+        // which asserts at runtime but leaves the union intact for TypeScript —
+        // reading the payload's fields after it does not compile.
+        if (result instanceof Response) {
+            throw new Error(`expected a checkout payload, got a ${result.status} Response`);
+        }
+
         // `expiresAt` is the trial's end, not a checkout's expiry — the field is
         // reused, so a test that only checked `localSubscriptionId` would not
         // notice it still carrying a payment deadline.
