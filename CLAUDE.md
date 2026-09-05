@@ -273,8 +273,19 @@ accommodation entitlement engine:
   reads asymmetrically by design: **`accommodation` fails open** (a missing object,
   or a `null`/`undefined` column, counts as accommodation, because the column
   post-dates most rows), while **every other domain fails closed**. To test
-  membership across all commerce verticals at once use `isCommerceSubscription()`
-  instead of re-deriving that union at the call site.
+  membership across all commerce verticals at once, call it once per domain —
+  there is no union helper, and there deliberately is not one: `HOS-1081`
+  (`ebfd413e0`) deleted `isCommerceSubscription()` because it had zero callers
+  outside its own file and tests. Do not reintroduce it without a consumer, and
+  do not reach for `isAccommodationSubscription()` as a substitute — it answers
+  a different question and, unlike the rest, fails OPEN.
+- **Hydrate before you compare.** `getByCustomerId()` does not populate
+  `productDomain` (QZPay's mapper drops it — HOS-934), so
+  `subscriptionMatchesDomain` over a raw result reads `undefined` and fails
+  closed for every non-accommodation domain: every listing goes dark and nothing
+  errors. Call `hydrateSubscriptionProductDomains()` first, or read the column
+  straight from Drizzle. `scripts/check-subscription-domain-hydration.sh` (HOS-1176)
+  fails CI on a comparison whose file does neither.
 - The commerce-vertical plans in `billing_plans` carry their own
   `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
   accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
@@ -850,6 +861,26 @@ treat any bare `HOS-N` mention in a PR **title** as a live risk: after merging s
 a PR, spot-check `mcp__linear__get_issue` on every issue named in that title before
 trusting its state, and prefer NOT putting an HOS-N in a PR title unless that PR is
 genuinely the completing work for that issue.
+
+**The same automation also fires on PR OPEN, not only on merge** (measured
+2026-09-05). Opening PR #3237 — a docs-only PR publishing a spec, carrying no magic
+word — with `[HOS-1183]` in its title moved that issue straight from `Backlog` to
+`In Progress` on its own. So the spot-check above is needed at BOTH ends: once when
+the PR is opened, and again after it merges. This matters most for the Phase 1
+docs PR, whose title the `Validate PR Title` check REQUIRES to carry the tag — the
+tag is not optional, so the state drift is not avoidable by naming, only by
+correcting it afterwards. A spec whose implementation has not started belongs in
+`Backlog`; move it back by hand.
+
+**When a merge does NOT move the issue, suspect the automation, not the labels.**
+The `smoke-gate-sync` Action calls the Linear API over `curl`, and a degraded API
+that answers 5xx with an HTML body used to abort that job with a bare
+`Process completed with exit code 5`, leaving the issue in its pre-merge state with
+its `status-needs-smoke-*` labels intact — invisible from Linear's side, where the
+issue simply looks untouched. The job now validates the response and exits naming
+every issue it could not move, but the check that catches this in one step is the
+same either way: compare the issue's `updatedAt` against the merge time. If it is
+older, no automation touched it, and the state has to be set by hand.
 
 ### Legacy system (`.qtm/`) — do not use for new work
 
