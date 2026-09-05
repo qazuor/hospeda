@@ -89,6 +89,14 @@ export {
 } from './gastronomy.review.service';
 // Main service
 export { GastronomyService } from './gastronomy.service';
-
 // Types
 export type { GastronomyHookState } from './gastronomy.types';
+// Menu QR helpers (HOS-1044) — the target-URL builder and its inverse, shared
+// between the provisioning route and the slug-change repointing hook.
+export {
+    buildGastronomyMenuQrLabel,
+    buildGastronomyMenuQrTargetUrl,
+    GASTRONOMY_MENU_QR_ENTITY_TYPE,
+    GASTRONOMY_MENU_QR_PURPOSE,
+    resolveGastronomyMenuQrLangFromTargetUrl
+} from './gastronomy-qr';

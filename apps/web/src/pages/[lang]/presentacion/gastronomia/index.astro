@@ -292,6 +292,7 @@ const preciosUrl = buildUrl({ locale, path: 'planes/gastronomia/precios' });
           <tr><td>Una foto por cada plato</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>La carta en inglés y en portugués</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
+          <tr><td>El QR de la mesa, con el panel de escaneos</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>Chat con inteligencia artificial en tu ficha <span class="mono">(1250 consultas por mes)</span></td><td>—</td><td>—</td><td>sí</td></tr>
         </tbody>
       </table>
@@ -352,6 +353,24 @@ const preciosUrl = buildUrl({ locale, path: 'planes/gastronomia/precios' });
         que ese día no vino. Nadie tiene que entrar a apagar nada.
       </p>
       <p>Que es justamente lo que hoy no pasa, y por eso las fichas terminan anunciando el pescado del martes pasado.</p>
+    </div>
+    <div class="notice">
+      <h3>Y a la mesa llega con un QR.</h3>
+      <p>
+        Imprimís un código, lo ponés en la mesa, y el que se sienta abre tu carta en el teléfono. Hasta acá lo hace
+        cualquier generador gratis. Lo que no te da ninguno es el otro lado: <strong>cuántos lo escanearon, qué día y a
+        qué hora</strong>, con qué aparato y en qué idioma. Saber que el martes a las nueve lo abrieron cuarenta personas
+        es un dato de tu propio local que hoy no tenés de ninguna forma.
+      </p>
+      <p>
+        El idioma es el que más dice: te avisa si te está entrando turismo, que es la pregunta de fondo. <strong>De dónde
+        venía cada uno no lo registramos</strong> &mdash; se escanea sentado en tu salón, así que diría «Argentina» casi
+        siempre, incluso para el brasileño que querés contar. Preferimos no dártelo antes que dártelo mal.
+      </p>
+      <p>
+        Y si algún día cambiás a dónde lleva el código, <strong>el que ya imprimiste sigue sirviendo</strong>: no hay que
+        volver a pegar nada en ninguna mesa.
+      </p>
     </div>
   </section>
 
@@ -427,7 +446,8 @@ const preciosUrl = buildUrl({ locale, path: 'planes/gastronomia/precios' });
       <li><span class="tick">&check;</span><span>Cuántas veces vieron tu página, día por día.</span></li>
       <li><span class="tick">&check;</span><span>Cuánta gente distinta llegó, en la semana y en el mes.</span></li>
       <li><span class="tick">&check;</span><span>Cada local por separado, si tenés más de uno.</span></li>
-      <li><span class="tick tick--no">&times;</span><span><strong>Lo más fino todavía no está</strong>: qué plato mira más la gente, cuántos escanean tu QR, de qué destino venía el que entró. Está en la lista, pero hoy no existe y preferimos decírtelo.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Cuántos escanearon el QR de tu mesa</strong>, día por día, con qué aparato y en qué idioma. Es la única estadística que no sale de tu página sino del salón.</span></li>
+      <li><span class="tick tick--no">&times;</span><span><strong>Lo más fino todavía no está</strong>: qué plato mira más la gente, de qué destino venía el que entró. Está en la lista, pero hoy no existe y preferimos decírtelo.</span></li>
     </ul>
   </section>
 
@@ -438,7 +458,6 @@ const preciosUrl = buildUrl({ locale, path: 'planes/gastronomia/precios' });
     </div>
     <p>Sin fechas, porque no las prometemos. Es en lo que estamos trabajando.</p>
     <ul class="plain">
-      <li><span class="tick">&rarr;</span><span><strong>El QR de tu carta, para la mesa.</strong> Un cartelito por mesa que abre tu carta en el celular del comensal &mdash; y que te dice cuántos lo escanearon, que es el número que hoy no tenés.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Responder las reseñas.</strong> Que tu respuesta se vea abajo de la reseña, en tu página, con tu nombre.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Aparecer destacado.</strong> Que tu local se muestre resaltado en el listado, para el fin de semana largo o el arranque de temporada.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Estadísticas más finas.</strong> Qué sección de la carta se mira más, qué plato, y de qué parte del sitio venía el que llegó.</span></li>

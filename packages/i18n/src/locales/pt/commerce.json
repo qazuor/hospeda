@@ -122,6 +122,21 @@
                 "unique": "únicos",
                 "total": "totais",
                 "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde."
+            },
+            "menuQr": {
+                "title": "QR do cardápio",
+                "scans": "leituras",
+                "device": "Dispositivo",
+                "os": "Sistema operacional",
+                "language": "Idioma",
+                "unknown": "Desconhecido",
+                "download": "Baixar QR (PNG)",
+                "downloaded": "Pronto, baixamos.",
+                "qrAlt": "Código QR que leva ao cardápio de {{name}}",
+                "encodes": "Leva a: {{url}}",
+                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de gastronomia.",
+                "error": "Não foi possível carregar as leituras do QR. Tente novamente mais tarde.",
+                "empty": "Ainda não houve leituras neste período."
             }
         },
         "editor": {
@@ -496,6 +511,7 @@
             "manageGastronomyDailySpecial": "Menu do dia",
             "manageGastronomyEvents": "Agenda de eventos",
             "multilingualGastronomyMenu": "Cardápio em vários idiomas",
+            "menuQrScanMetrics": "QR do cardápio com painel de escaneamentos",
             "manageExperiencePrivateGalleries": "Galerias privadas por cliente",
             "aiChat": "Chat com IA na sua ficha",
             "downloadListingPdf": "Ficha em PDF para imprimir"

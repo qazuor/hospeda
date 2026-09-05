@@ -381,6 +381,12 @@ export const GASTRONOMY_MENU_ROWS: readonly RowConfig[] = [
         labelKey: 'billing.comparison.row.multilingualMenu',
         cell: { kind: 'entitlement', key: EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU },
         status: 'available'
+    },
+    {
+        id: 'menuQrScanMetrics',
+        labelKey: 'billing.comparison.row.menuQrScanMetrics',
+        cell: { kind: 'entitlement', key: EntitlementKey.MENU_QR_SCAN_METRICS },
+        status: 'available'
     }
 ];
 

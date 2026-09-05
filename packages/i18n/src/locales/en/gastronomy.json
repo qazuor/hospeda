@@ -62,7 +62,9 @@
             "viewPdf": "View menu PDF",
             "consultPrice": "Ask staff",
             "unavailable": "Unavailable",
-            "switchLanguage": "View menu in:"
+            "switchLanguage": "View menu in:",
+            "seoDescription": "{{name}}'s menu",
+            "backToListing": "← Back to the listing"
         },
         "dailySpecials": {
             "title": "Today's menu",

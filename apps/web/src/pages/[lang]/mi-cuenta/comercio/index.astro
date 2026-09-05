@@ -19,6 +19,7 @@ import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
 import { CommercePlanChange } from '@/components/commerce/CommercePlanChange.client';
 import { CommerceViewsWidget } from '@/components/commerce/CommerceViewsWidget.client';
+import { GastronomyMenuQrWidget } from '@/components/commerce/GastronomyMenuQrWidget.client';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
@@ -205,6 +206,14 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
             vertical: listing.vertical,
             name: listing.name
         }))}
+    />
+
+    <GastronomyMenuQrWidget
+        client:visible
+        locale={locale}
+        listings={listings
+            .filter((listing) => listing.vertical === 'gastronomy')
+            .map((listing) => ({ id: listing.id, name: listing.name }))}
     />
 
     <AccountSectionCard>
