@@ -21,12 +21,19 @@
  * `COALESCE(existing,'{}') || patch` SQL fragment rather than the plain patch
  * object — mirroring `test/models/user.model.settings-merge.test.ts`.
  *
- * Mutation check: removing `contactInfo` from
- * `ExperienceModel.mergeableJsonbColumns` turns 7 of the 8 tests in this file red
- * (measured). The eighth is the negative control — "still replaces a
- * non-mergeable column" — which asserts the UNCHANGED replacement path and is
- * green by design; a header claiming "every test" would be claiming more than
- * the file delivers.
+ * Mutation checks, both measured against this file:
+ *   - removing `contactInfo` from `ExperienceModel.mergeableJsonbColumns` turns
+ *     8 of the 9 tests red. The ninth is the negative control — "still
+ *     replaces a non-mergeable column" — which asserts the UNCHANGED
+ *     replacement path and is green by design; a header claiming "every
+ *     test" would be claiming more than the file delivers.
+ *   - narrowing `BaseModelImpl.update()`'s merge trigger from
+ *     `Object.keys(data).some(...)` to `.every(...)` turns exactly ONE test
+ *     red: "takes the merge path for the MIXED payload production actually
+ *     sends". That mutation reinstates the original bug for 100% of real
+ *     traffic — every update reaching this model from a service carries
+ *     `updatedById` alongside the patch — and it survived 124 tests across 9
+ *     files until that one test existed.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,6 +46,9 @@ import { buildMergeSetClause } from '../../../src/utils/jsonb-merge';
 
 /** The exact shape a "save my phone" PATCH sends. */
 const PHONE_PATCH = { mobilePhone: '+541112345678' } as const;
+
+/** The actor id `BaseCrudService` staples onto every update payload. */
+const ACTOR_ID = '00000000-0000-4000-8000-000000000001';
 
 /**
  * Minimal transaction-client stub supporting the two calls the merge path
@@ -139,6 +149,39 @@ describe('ExperienceModel — `contactInfo` is a mergeable JSONB column', () => 
         expect(withTransaction).toHaveBeenCalledOnce();
         expect(innerTx.execute).toHaveBeenCalledOnce();
         expect(innerTx.update).toHaveBeenCalledOnce();
+    });
+
+    it('takes the merge path for the MIXED payload production actually sends', async () => {
+        // Arrange — nothing ever reaches this model with `{ contactInfo }`
+        // alone. `BaseCrudService` staples the actor onto every update
+        // (`packages/service-core/src/base/base.crud.write.ts`: `const payload
+        // = { ...mergedUpdateData, updatedById: validActor.id }`), so EVERY
+        // update arriving from a service is MIXED. Narrowing the merge trigger
+        // in `BaseModelImpl.update()` from `.some()` to `.every()` therefore
+        // sends 100% of real traffic back down the replacement path — the
+        // original bug, whole — while every single-key test in this file stays
+        // green. That mutation survived 124 tests across 9 files before this
+        // one existed.
+        const innerTx = buildMockInnerTx();
+        const withTransaction = vi
+            .spyOn(clientModule, 'withTransaction')
+            .mockImplementation(async (callback) => callback(innerTx as unknown as DrizzleClient));
+        setDb({} as unknown as DrizzleClient);
+
+        // Act
+        await new ExperienceModel().update({ id: 'experience-1' }, {
+            contactInfo: PHONE_PATCH,
+            updatedById: ACTOR_ID
+        } as unknown as Parameters<ExperienceModel['update']>[1]);
+
+        // Assert — the merge path, not the replacement path.
+        expect(withTransaction).toHaveBeenCalledOnce();
+        const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(
+            Array.isArray((setPayload?.contactInfo as { queryChunks?: unknown[] })?.queryChunks)
+        ).toBe(true);
+        // ...and the sibling key rides along as a plain replacement.
+        expect(setPayload?.updatedById).toBe(ACTOR_ID);
     });
 
     it('writes `contactInfo` as a merge fragment, never as the bare patch object', async () => {
