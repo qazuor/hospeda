@@ -207,7 +207,7 @@ Exposed as a protected route under the gastronomy owner tier, gated as in §6.5.
 
 ### 6.5 The gate
 
-One new key, `EntitlementKey.MENU_QR_ANALYTICS = 'menu_qr_analytics'`, covering
+One new key, `EntitlementKey.MENU_QR_SCAN_METRICS = 'menu_qr_scan_metrics'`, covering
 the QR and the panel together. Splitting them would sell a code and its
 measurement separately, and neither is worth anything alone.
 
@@ -222,7 +222,7 @@ Route wiring follows `uploadMenuItemPhoto.ts:206-220`:
 middlewares: [
     createSlidingWindowPerUserRateLimit({ ... }),
     commerceVerticalEntitlementMiddleware('gastronomy'),
-    requireEntitlement(EntitlementKey.MENU_QR_ANALYTICS)
+    requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
 ]
 ```
 
@@ -243,7 +243,7 @@ such.
 ### 6.7 Seed dual write
 
 Baseline (`entitlements.config.ts`, `plans.config.ts`) **and** data-migration
-`0098-hos-1044-menu-qr-analytics-entitlement.ts`, in the same PR, copying
+`0098-hos-1044-menu-qr-scan-metrics-entitlement.ts`, in the same PR, copying
 `0091-hos-1043-multilingual-gastronomy-menu-entitlement.ts` verbatim in shape:
 
 - frozen literal for the new entitlement (the migration must not import
@@ -265,8 +265,8 @@ is data, not schema.
 
 | Field | Value |
 | -- | -- |
-| Enum member | `MENU_QR_ANALYTICS` in `packages/billing/src/types/entitlement.types.ts` (before line 341, `/** Complex entitlements`) |
-| Value | `'menu_qr_analytics'` |
+| Enum member | `MENU_QR_SCAN_METRICS` in `packages/billing/src/types/entitlement.types.ts` (before line 341, `/** Complex entitlements`) |
+| Value | `'menu_qr_scan_metrics'` |
 | Definition | `ENTITLEMENT_DEFINITIONS` in `entitlements.config.ts` |
 | Granted to | `gastronomy-premium` only |
 
@@ -274,8 +274,8 @@ is data, not schema.
 
 | Route | Gate | Returns |
 | -- | -- | -- |
-| `GET /api/v1/protected/gastronomies/{id}/menu-qr` | `MENU_QR_ANALYTICS` | the code (minting it if absent) + its image |
-| `GET /api/v1/protected/gastronomies/{id}/menu-qr/scans` | `MENU_QR_ANALYTICS` | total, daily series, device/os/language breakdowns for a window |
+| `GET /api/v1/protected/gastronomies/{id}/menu-qr` | `MENU_QR_SCAN_METRICS` | the code (minting it if absent) + its image |
+| `GET /api/v1/protected/gastronomies/{id}/menu-qr/scans` | `MENU_QR_SCAN_METRICS` | total, daily series, device/os/language breakdowns for a window |
 
 Both need a row in `docs/billing/endpoint-gate-matrix.md` (format at line 803),
 enforced by `apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`.
@@ -382,7 +382,7 @@ unguarded**: today `gastronomyMenu`, `multilingualMenu` and `menuItemPhotos`
 have `row.<id>` and no `rowDesc.<id>` in any locale, and CI is green. A missing
 translation on a commerce row reaches production silently.
 
-This spec still adds `row.menuQrAnalytics` **and** `rowDesc.menuQrAnalytics` in
+This spec still adds `row.menuQrScanMetrics` **and** `rowDesc.menuQrScanMetrics` in
 es/en/pt — matching the guarded rows rather than the unguarded neighbours — but
 widening the guard to the commerce groups is a separate concern and is **not**
 done here.
