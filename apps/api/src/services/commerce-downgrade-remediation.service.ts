@@ -257,12 +257,33 @@ export const defaultCommerceDowngradeDeps: CommerceDowngradeDeps = {
         const rows = (await listingModelFor(vertical).then((model) =>
             model.findByIds([...ids])
         )) as Array<Record<string, unknown>>;
-        return rows.map((row) => ({
-            id: row.id as string,
-            name: (row.name as string | undefined) ?? (row.slug as string | undefined) ?? '',
-            updatedAt: (row.updatedAt as Date | undefined) ?? new Date(0),
-            slug: (row.slug as string | undefined) ?? null
-        }));
+        return (
+            rows
+                // `findByIds` applies NO soft-delete filtering — its own docblock
+                // says so and tells callers to filter the result themselves. This
+                // caller did not, and three things turned that into lost revenue:
+                // `softDelete` writes `updatedAt` alongside `deletedAt`, so a
+                // deleted listing becomes the owner's most-recently-updated one;
+                // `compareByRecency` sorts `updatedAt` DESC and marks the first
+                // `cap` entries `keepByDefault`; and nothing removes the
+                // `entity_subscriptions` row when a commerce listing is deleted
+                // (the orphan-pruning cron is scoped to `entityType =
+                // 'accommodation'`). Deleted listings therefore entered the keep
+                // band FIRST and pushed live, paid ones out of it.
+                //
+                // Filtering here rather than in the query keeps this ONE
+                // `SELECT ... WHERE id IN (…)` and puts the exclusion where the
+                // contract says it belongs, in sight of the sort that depends on
+                // it.
+                .filter((row) => row.deletedAt === null || row.deletedAt === undefined)
+                .map((row) => ({
+                    id: row.id as string,
+                    name:
+                        (row.name as string | undefined) ?? (row.slug as string | undefined) ?? '',
+                    updatedAt: (row.updatedAt as Date | undefined) ?? new Date(0),
+                    slug: (row.slug as string | undefined) ?? null
+                }))
+        );
     },
 
     async setPlanRestricted({ subscriptionId, vertical, entityIds, planRestricted, db }) {
