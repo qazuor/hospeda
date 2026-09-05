@@ -477,7 +477,8 @@
             },
             "keepPanel": {
                 "title": "Escolha quais fichas continuam visíveis",
-                "intro": "O plano {plan} inclui {cap} das suas {active} fichas. As que você não escolher deixarão de aparecer.",
+                "intro_one": "O plano {plan} inclui {cap} da sua {active} ficha. Se você não a escolher, deixará de aparecer.",
+                "intro_other": "O plano {plan} inclui {cap} das suas {active} fichas. As que você não escolher deixarão de aparecer.",
                 "when": "A mudança se aplica em {date}. Até lá você continua no seu plano atual e com todas as suas fichas visíveis.",
                 "whenNoDate": "A mudança se aplica no fim do período que você já pagou. Até lá nada muda.",
                 "quotaNote": "Uma ficha oculta continua ocupando espaço na sua cota: você não poderá criar outra no lugar dela. Ela volta a aparecer se você subir de plano.",
