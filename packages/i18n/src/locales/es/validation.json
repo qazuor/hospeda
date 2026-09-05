@@ -2572,6 +2572,9 @@
         },
         "visibility": {
             "invalid": "El visibility no es válido"
+        },
+        "partnerLogoClickDestination": {
+            "invalid": "El destino del clic en el logo no es válido"
         }
     },
     "event": {
@@ -5065,5 +5068,16 @@
             "failed": "La validación del esquema ha fallado"
         }
     },
-    "formHasErrors": "Revisá los campos marcados"
+    "formHasErrors": "Revisá los campos marcados",
+    "partnerLogoClick": {
+        "partnerId": {
+            "invalidUuid": "El ID del aliado debe ser un UUID válido",
+            "required": "El ID del aliado es obligatorio"
+        }
+    },
+    "partnerStats": {
+        "windowDays": {
+            "unsupported": "La ventana de días solicitada no está disponible"
+        }
+    }
 }

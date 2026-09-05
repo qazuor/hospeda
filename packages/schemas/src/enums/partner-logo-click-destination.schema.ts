@@ -8,7 +8,7 @@ import { PartnerLogoClickDestinationEnum } from './partner-logo-click-destinatio
  * destination never has to be spelled twice.
  */
 export const PartnerLogoClickDestinationEnumSchema = z.nativeEnum(PartnerLogoClickDestinationEnum, {
-    message: 'zodError.enum.partnerLogoClickDestination.invalid'
+    message: 'zodError.enums.partnerLogoClickDestination.invalid'
 });
 
 /** TypeScript type inferred from {@link PartnerLogoClickDestinationEnumSchema}. */
