@@ -77,8 +77,17 @@ export const PLAN_PUBLIC_LISTING_METADATA_KEY = 'publicListing';
  *
  * - `'listed'` — ordinary catalogue plan. The default for every plan that has
  *   never been marked, which is every plan that exists today.
- * - `'unlisted'` — reachable by id (checkout resolves a plan by UUID, see
- *   `subscription-checkout.service.ts`), never enumerated by a public endpoint.
+ * - `'unlisted'` — never ENUMERATED by an endpoint that lists plans: neither
+ *   `GET /api/v1/public/plans` nor `GET /api/v1/protected/plans`.
+ *
+ * What `'unlisted'` does NOT mean today, written down because a promise stated
+ * more strongly than the code is what stops anyone from checking again: the plan
+ * stays reachable BY ID. Checkout resolves a plan by UUID on purpose
+ * (`subscription-checkout.service.ts`) — that is what makes an exclusive plan
+ * payable at all — and `GET /api/v1/protected/billing/plans/:id` answers one in
+ * full to any authenticated caller. That single-plan read is a known gap,
+ * deliberately left outside HOS-1062 F1 and tracked in its own issue. This mark
+ * does not close it.
  */
 export const BillingPlanPublicListingSchema = z.enum(['listed', 'unlisted']);
 
