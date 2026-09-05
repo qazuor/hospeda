@@ -1,15 +1,22 @@
 /**
- * HOS-755 — the "mi plan" widget on `/mi-cuenta/` must not report a
- * soft-deleted subscription.
+ * HOS-1066 — the "mi suscripción" widget on `/mi-cuenta/` must not surface a
+ * subscription from an arbitrary product domain when the account holds more
+ * than one.
+ *
+ * Before this fix, `resolveUserPlanSummary` picked the single most-recently
+ * created entitlement-granting subscription regardless of vertical
+ * (`orderBy(desc(createdAt)).limit(1)`), while `GET /users/me/subscription`
+ * (the "Ver mi suscripción" link on the same card) filters by
+ * `subscriptionMatchesDomain`. A host who ALSO holds a gastronomy/experience/
+ * partner subscription could therefore see one vertical's plan on the card
+ * while the link took them to a different vertical's subscription page.
  *
  * The global `apps/api` setup replaces `@repo/db` with a stub whose `eq`/`and`/
- * `isNull` are inert, so asserting on the query object there proves nothing
- * (`toHaveBeenCalledWith(table)` collapses to `toHaveBeenCalledWith(undefined)`).
- * This file therefore installs its OWN `@repo/db` mock whose operators are real
- * predicates and whose `select()` genuinely filters an in-memory dataset. A
- * missing `deleted_at IS NULL` really does let the soft-deleted row through,
- * so the assertions below fail against the pre-fix code rather than passing
- * vacuously.
+ * `isNull` are inert, so asserting on the query object there proves nothing.
+ * This file installs its OWN `@repo/db` mock (mirroring
+ * `stats-plan-soft-delete.test.ts`) whose operators are real predicates and
+ * whose `select()` genuinely filters/orders an in-memory dataset — including
+ * a real `productDomain` column, unlike the HOS-755 file's fixtures.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,8 +33,6 @@ const fixtures = vi.hoisted(() => ({
 }));
 
 vi.mock('@repo/db', async () => {
-    // Start from the shared stub so every OTHER `@repo/db` export the import
-    // graph needs still resolves; only the handful this test drives is replaced.
     const { createDbMock } = await import('../../helpers/mocks/db-mock');
     const base = createDbMock() as Record<string, unknown>;
 
@@ -43,6 +48,7 @@ vi.mock('@repo/db', async () => {
         customerId: 'customerId',
         status: 'status',
         planId: 'planId',
+        productDomain: 'productDomain',
         createdAt: 'createdAt',
         deletedAt: 'deletedAt'
     } as const;
@@ -72,9 +78,9 @@ vi.mock('@repo/db', async () => {
     /**
      * Minimal Drizzle-shaped builder: `.from().where().orderBy().limit()`,
      * AND directly awaitable after `.orderBy()` (real Drizzle query builders
-     * are thenable) since HOS-1066 made `resolveUserPlanSummary` read every
-     * live subscription (grouped by product domain) rather than
-     * `.limit()`-ing the subscriptions query to the single newest row.
+     * are thenable) since `resolveUserPlanSummary` no longer calls `.limit()`
+     * on the subscriptions query — it needs every domain's subscription, not
+     * just the newest one overall.
      */
     const createBuilder = () => {
         let rows: Row[] = [];
@@ -136,8 +142,8 @@ vi.mock('../../../src/services/plan.service.js', () => ({
 
 const { resolveUserPlanSummary } = await import('../../../src/routes/user/protected/stats.js');
 
-const USER_ID = 'user-hos-755';
-const CUSTOMER_ID = 'cus-hos-755';
+const USER_ID = 'user-hos-1066';
+const CUSTOMER_ID = 'cus-hos-1066';
 
 /** A live billing customer for {@link USER_ID}. */
 const liveCustomer: Row = {
@@ -146,20 +152,21 @@ const liveCustomer: Row = {
     deletedAt: null
 };
 
-describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows', () => {
+describe('HOS-1066 — resolveUserPlanSummary groups active subscriptions by product domain', () => {
     beforeEach(() => {
         fixtures.customers = [];
         fixtures.subscriptions = [];
     });
 
-    it('returns the plan for a live entitlement-granting subscription (control)', async () => {
+    it('reports a single plan when only one domain (accommodation, legacy null productDomain) is active (control)', async () => {
         fixtures.customers = [liveCustomer];
         fixtures.subscriptions = [
             {
-                id: 'sub-live',
+                id: 'sub-accommodation',
                 customerId: CUSTOMER_ID,
                 status: 'active',
                 planId: 'plan-owner-premium',
+                productDomain: null,
                 createdAt: '2026-08-01T00:00:00.000Z',
                 deletedAt: null
             }
@@ -173,122 +180,118 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
         });
     });
 
-    it('returns no plan when the only subscription is soft-deleted', async () => {
+    it('distinguishes two active subscriptions in different domains instead of surfacing only the newest one', async () => {
         fixtures.customers = [liveCustomer];
         fixtures.subscriptions = [
             {
-                id: 'sub-soft-deleted',
+                // Older, accommodation.
+                id: 'sub-accommodation',
                 customerId: CUSTOMER_ID,
-                // A soft-deleted row keeps its status forever — the status
-                // filter alone never excludes it.
                 status: 'active',
                 planId: 'plan-owner-premium',
+                productDomain: null,
+                createdAt: '2026-07-01T00:00:00.000Z',
+                deletedAt: null
+            },
+            {
+                // Newer, gastronomy. Pre-fix `orderBy(desc(createdAt)).limit(1)`
+                // would have picked THIS one and reported it as "the" plan,
+                // hiding the accommodation subscription entirely.
+                id: 'sub-gastronomy',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-gastronomy-premium',
+                productDomain: 'gastronomy',
                 createdAt: '2026-08-01T00:00:00.000Z',
-                deletedAt: '2026-08-16T12:00:00.000Z'
+                deletedAt: null
             }
         ];
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
+        // The response must distinguish "two active verticals" from "one
+        // plan" — it must NOT silently report the gastronomy plan (or any
+        // single plan) as if it were the account's only subscription.
+        expect(result.activeSubscriptionsCount).toBe(2);
+        expect(result.plan).toBeNull();
     });
 
-    it('returns no plan when a comped subscription is soft-deleted', async () => {
+    it('counts three domains independently (accommodation + gastronomy + experience)', async () => {
         fixtures.customers = [liveCustomer];
         fixtures.subscriptions = [
             {
-                id: 'sub-comp-deleted',
+                id: 'sub-accommodation',
+                customerId: CUSTOMER_ID,
+                status: 'trialing',
+                planId: 'plan-owner-basico',
+                productDomain: 'accommodation',
+                createdAt: '2026-06-01T00:00:00.000Z',
+                deletedAt: null
+            },
+            {
+                id: 'sub-gastronomy',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-gastronomy-premium',
+                productDomain: 'gastronomy',
+                createdAt: '2026-07-01T00:00:00.000Z',
+                deletedAt: null
+            },
+            {
+                id: 'sub-experience',
                 customerId: CUSTOMER_ID,
                 status: 'comp',
-                planId: 'plan-owner-premium',
+                planId: 'plan-experience-basico',
+                productDomain: 'experience',
                 createdAt: '2026-08-01T00:00:00.000Z',
-                deletedAt: '2026-08-16T12:00:00.000Z'
+                deletedAt: null
             }
         ];
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
+        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 3 });
     });
 
-    it('picks the live subscription over a newer soft-deleted one', async () => {
+    it('ignores a dark legacy-`commerce`-domain subscription so a single accommodation subscription still resolves to one plan', async () => {
         fixtures.customers = [liveCustomer];
         fixtures.subscriptions = [
             {
-                id: 'sub-live-older',
-                customerId: CUSTOMER_ID,
-                status: 'active',
-                planId: 'plan-owner-basico',
-                createdAt: '2026-07-01T00:00:00.000Z',
-                deletedAt: null
-            },
-            {
-                id: 'sub-deleted-newer',
+                id: 'sub-accommodation',
                 customerId: CUSTOMER_ID,
                 status: 'active',
                 planId: 'plan-owner-premium',
+                productDomain: 'accommodation',
                 createdAt: '2026-08-01T00:00:00.000Z',
-                deletedAt: '2026-08-16T12:00:00.000Z'
+                deletedAt: null
+            },
+            {
+                // Retired vocabulary value (HOS-695): matches neither
+                // 'gastronomy' nor 'experience' — must not be counted.
+                id: 'sub-commerce-legacy',
+                customerId: CUSTOMER_ID,
+                status: 'active',
+                planId: 'plan-commerce-legacy',
+                productDomain: 'commerce',
+                createdAt: '2026-08-02T00:00:00.000Z',
+                deletedAt: null
             }
         ];
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
         expect(result).toEqual({
-            plan: { name: 'plan-owner-basico', status: 'active' },
+            plan: { name: 'plan-owner-premium', status: 'active' },
             activeSubscriptionsCount: 1
         });
     });
 
-    it('returns no plan when the billing customer itself is soft-deleted', async () => {
-        fixtures.customers = [
-            { id: CUSTOMER_ID, externalId: USER_ID, deletedAt: '2026-08-16T12:00:00.000Z' }
-        ];
-        fixtures.subscriptions = [
-            {
-                id: 'sub-orphaned',
-                customerId: CUSTOMER_ID,
-                status: 'active',
-                planId: 'plan-owner-premium',
-                createdAt: '2026-08-01T00:00:00.000Z',
-                deletedAt: null
-            }
-        ];
+    it('reports no plan and a zero count when the customer has no live subscription', async () => {
+        fixtures.customers = [liveCustomer];
+        fixtures.subscriptions = [];
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
         expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
-    });
-
-    it('prefers the live customer row over a soft-deleted duplicate (external_id is not UNIQUE)', async () => {
-        fixtures.customers = [
-            { id: 'cus-stale', externalId: USER_ID, deletedAt: '2026-08-16T12:00:00.000Z' },
-            liveCustomer
-        ];
-        fixtures.subscriptions = [
-            {
-                id: 'sub-stale',
-                customerId: 'cus-stale',
-                status: 'active',
-                planId: 'plan-owner-premium',
-                createdAt: '2026-08-01T00:00:00.000Z',
-                deletedAt: null
-            },
-            {
-                id: 'sub-live',
-                customerId: CUSTOMER_ID,
-                status: 'active',
-                planId: 'plan-owner-basico',
-                createdAt: '2026-07-01T00:00:00.000Z',
-                deletedAt: null
-            }
-        ];
-
-        const result = await resolveUserPlanSummary({ userId: USER_ID });
-
-        expect(result).toEqual({
-            plan: { name: 'plan-owner-basico', status: 'active' },
-            activeSubscriptionsCount: 1
-        });
     });
 });
