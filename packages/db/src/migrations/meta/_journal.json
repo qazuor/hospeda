@@ -834,6 +834,13 @@
       "when": 1788580994762,
       "tag": "0118_fantastic_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1788581388906,
+      "tag": "0119_spotty_emma_frost",
+      "breakpoints": true
     }
   ]
 }

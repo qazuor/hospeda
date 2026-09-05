@@ -903,6 +903,82 @@ export class EntityViewModel {
     }
 
     /**
+     * Aggregates one calendar month of views into `entity_view_monthly_rollups`
+     * (HOS-1063 A-6), for EVERY trackable entity type present in that month.
+     *
+     * Written as a single `INSERT … SELECT … ON CONFLICT DO UPDATE`, so the
+     * whole month is one statement: no rows travel to the application, and a
+     * re-run over a month whose source rows still exist CORRECTS the stored
+     * totals rather than duplicating them. That idempotency is load-bearing —
+     * repairing a failed cron run is the normal reason this runs twice, and
+     * without the unique key behind it a retry would double every number.
+     *
+     * **No entity-type filter, on purpose.** A rollup that covered only PARTNER
+     * would be a table that silently returns zeros the first time anyone reads
+     * it for accommodations, and filtering to one type costs strictly more code
+     * than not filtering (OQ-1). AC-17 asserts this with two entity types,
+     * because a rollup covering one is indistinguishable from a correct one when
+     * only that one is tested.
+     *
+     * The month is bucketed in `MARKET_TIMEZONE` like every other date-bucketed
+     * query here (HOS-1169), and `total` uses the same 30-minute dedup bucket
+     * the live window uses, so a rolled-up month and a live month are the same
+     * measurement rather than two that happen to share a name.
+     *
+     * @param input.month - Any date inside the calendar month to roll up.
+     * @param tx - Optional transaction client.
+     * @returns The number of rollup rows written or updated.
+     * @throws {DbError} If the database operation fails.
+     */
+    async rollUpMonth(input: { readonly month: Date }, tx?: DrizzleClient): Promise<number> {
+        const db = this.getClient(tx);
+        const logContext = { month: input.month.toISOString() };
+
+        try {
+            const rows = await db.execute(sql`
+                INSERT INTO entity_view_monthly_rollups
+                    (entity_type, entity_id, month, total, unique_visitors)
+                SELECT
+                    entity_type,
+                    entity_id,
+                    DATE_TRUNC('month', viewed_at AT TIME ZONE ${MARKET_TIMEZONE})::date,
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
+                    ))::int,
+                    COUNT(DISTINCT visitor_hash)::int
+                FROM entity_views
+                WHERE DATE_TRUNC('month', viewed_at AT TIME ZONE ${MARKET_TIMEZONE})
+                    = DATE_TRUNC('month', ${input.month}::timestamptz AT TIME ZONE ${MARKET_TIMEZONE})
+                GROUP BY
+                    entity_type,
+                    entity_id,
+                    DATE_TRUNC('month', viewed_at AT TIME ZONE ${MARKET_TIMEZONE})
+                ON CONFLICT (entity_type, entity_id, month) DO UPDATE SET
+                    total = EXCLUDED.total,
+                    unique_visitors = EXCLUDED.unique_visitors
+                RETURNING id
+            `);
+
+            const written = Array.isArray(rows)
+                ? rows.length
+                : ((rows as { rows?: unknown[] }).rows?.length ?? 0);
+
+            try {
+                logQuery('entityViews', 'rollUpMonth', logContext, { written });
+            } catch {}
+
+            return written;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'rollUpMonth', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'rollUpMonth', logContext, err.message);
+        }
+    }
+
+    /**
      * Hard-deletes all rows with `viewed_at < NOW() - interval '<days> days'`.
      *
      * Intended for the TTL retention cron (SPEC-159 T-011, 95-day horizon).
