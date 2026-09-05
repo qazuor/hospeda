@@ -1195,6 +1195,18 @@
             "extra-experiences-1": {
                 "name": "Extra Experience Listing (+1)",
                 "description": "Adds 1 additional experience listing to your plan. Renews monthly."
+            },
+            "private-galleries-5": {
+                "name": "Private Galleries Pack (+5)",
+                "description": "Adds 5 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
+            },
+            "private-galleries-10": {
+                "name": "Private Galleries Pack (+10)",
+                "description": "Adds 10 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
+            },
+            "private-galleries-20": {
+                "name": "Private Galleries Pack (+20)",
+                "description": "Adds 20 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
             }
         }
     },
