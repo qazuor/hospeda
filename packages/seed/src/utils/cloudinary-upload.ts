@@ -356,6 +356,26 @@ export async function uploadSeedImage(
         return { status: 'failed', cloudinaryUrl: originalUrl, errorMessage: message };
     }
 
+    // TODO(HOS-1163): 468 of the ~2.242 fixture images are ALREADY hosted on our
+    // own Cloudinary account (`hospeda/seed/required/destinations/...` — the 22
+    // destination photo sets). For those, the download below and the upload that
+    // follows it move the same bytes out of the account and straight back into
+    // it, under a different public ID.
+    //
+    // This is not a design decision anyone made. When this uploader was written
+    // (93309ac06, 2026-04-14) every fixture URL pointed at Pexels or Unsplash,
+    // and pulling a third-party photo into our own account is exactly the right
+    // thing to do. The curated destination photos moved to Cloudinary a month
+    // later (ddb4a526b, 2026-05-19) and the assumption was never revisited. The
+    // branch that turned redundant is indistinguishable from the one that is
+    // still correct, which is why it went unnoticed for months.
+    //
+    // The fix is small — skip both hops when the host is `res.cloudinary.com`
+    // AND the cloud name is ours — and it only affects future seeds: URLs already
+    // written to a database keep pointing wherever they point. It stays a TODO
+    // rather than a fix because the cost is now marginal: the on-disk cache
+    // absorbs the repeat everywhere except CI, and CI no longer reaches this line
+    // at all. Worth doing if you are already editing this function.
     try {
         // Fetch the original image
         const response = await fetch(originalUrl);
