@@ -37,7 +37,7 @@ import type {
 } from '../../schemas/entity-view/entity_view.dbschema.ts';
 import { entityViews } from '../../schemas/entity-view/entity_view.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { MARKET_TIMEZONE_SQL } from '../../utils/drizzle-helpers.ts';
+import { marketTimezoneSql } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -599,7 +599,7 @@ export class EntityViewModel {
              */
             const rows = await db.execute<RawDailySeriesRow>(sql`
                 SELECT
-                    to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE_SQL}), 'YYYY-MM-DD') AS "date",
+                    to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE ${marketTimezoneSql()}), 'YYYY-MM-DD') AS "date",
                     entity_type                                          AS "entityType",
                     COUNT(DISTINCT (
                         visitor_hash,
@@ -607,7 +607,7 @@ export class EntityViewModel {
                     ))::int                                              AS "total"
                 FROM entity_views
                 WHERE viewed_at >= ${windowStart}
-                GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE_SQL}), entity_type
+                GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${marketTimezoneSql()}), entity_type
                 ORDER BY "date" ASC, entity_type ASC
             `);
 
@@ -699,7 +699,7 @@ export class EntityViewModel {
              */
             const rows = await db.execute<RawHostDailySeriesRow>(sql`
                 SELECT
-                    to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE_SQL}), 'YYYY-MM-DD') AS "date",
+                    to_char(DATE_TRUNC('day', viewed_at AT TIME ZONE ${marketTimezoneSql()}), 'YYYY-MM-DD') AS "date",
                     COUNT(DISTINCT (
                         visitor_hash,
                         FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
@@ -708,7 +708,7 @@ export class EntityViewModel {
                 WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
                   AND entity_id IN (${entityIdList})
                   AND viewed_at >= ${windowStart}
-                GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${MARKET_TIMEZONE_SQL})
+                GROUP BY DATE_TRUNC('day', viewed_at AT TIME ZONE ${marketTimezoneSql()})
                 ORDER BY "date" ASC
             `);
 

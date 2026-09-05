@@ -336,5 +336,25 @@ export function buildSearchCondition(
  *
  * Found the hard way (HOS-1169): unit tests that mock `execute` assert the SQL
  * that gets BUILT, never the SQL Postgres ACCEPTS, so this shipped green.
+ *
+ * ## Why a function and not a `const`
+ *
+ * A module-level `const` would call `sql.raw()` at IMPORT time. Several suites
+ * in `apps/api` replace the whole `drizzle-orm` module with `vi.mock`, and that
+ * mock does not export `sql` — so merely importing anything from
+ * `@repo/db/utils` threw before a single test ran:
+ *
+ * ```
+ * [vitest] No "sql" export is defined on the "drizzle-orm" mock
+ * ```
+ *
+ * Deferring the call into a function means an importer that never builds a
+ * query never touches `sql`. Calling it twice in one statement is fine, and is
+ * in fact the normal case: the two `SQL` objects differ by identity but carry
+ * identical raw text, which is what Postgres compares.
+ *
+ * @returns The market timezone as a raw SQL literal, e.g. `'America/Argentina/Buenos_Aires'`.
  */
-export const MARKET_TIMEZONE_SQL: SQL = sql.raw(`'${MARKET_TIMEZONE}'`);
+export function marketTimezoneSql(): SQL {
+    return sql.raw(`'${MARKET_TIMEZONE}'`);
+}
