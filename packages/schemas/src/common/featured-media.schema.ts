@@ -9,47 +9,37 @@
  * who most wanted to. The dedicated endpoints create the row already featured,
  * in one transaction.
  *
- * A cover replacement therefore has TWO outcomes to report, not one: the row
- * that was created, and what became of the row it replaced. The second half is
- * not cosmetic. The client renders the previous cover differently depending on
- * whether it joined the gallery or left it, so a response that omitted it would
- * leave a photo on screen that the server has archived.
+ * A cover replacement therefore touches TWO rows: the one created, and the one
+ * it replaced, which is soft-deleted in the same transaction. The response names
+ * both — the second so a client holding the old row learns it is gone rather
+ * than keeping it on screen.
  */
 
 import { z } from 'zod';
 
 /**
- * What happened to the cover that a new one replaced.
- *
- * - `demoted`  — kept, and moved into the gallery as an ordinary photo. This is
- *   the common case and matches what promoting a row has always done.
- * - `archived` — moved out of the VISIBLE gallery, because the gallery had no
- *   slot left to receive it. Nothing is deleted: the row and its stored asset
- *   survive and the existing restore endpoint brings the photo back once a slot
- *   frees up.
- *
- * The choice is the server's, and it is what keeps the gallery quota honest.
- * Always demoting would add one gallery row per replacement, so repeating the
- * swap would carry a host past their cap a photo at a time.
- */
-export const PreviousFeaturedDispositionSchema = z.enum(['demoted', 'archived'], {
-    message: 'zodError.common.media.featured.disposition.invalid'
-});
-
-/** Inferred type for {@link PreviousFeaturedDispositionSchema}. */
-export type PreviousFeaturedDispositionType = z.infer<typeof PreviousFeaturedDispositionSchema>;
-
-/**
- * The cover that was replaced, and its fate.
+ * The cover that was replaced by a newly uploaded one.
  *
  * `null` at the call site when the entity had no cover at all — the first cover
  * an entity ever gets replaces nothing.
+ *
+ * Carries only the id. There is no `disposition` field: what happens to the old
+ * cover is not a variable. Uploading a NEW photo into the cover slot always
+ * soft-deletes the one it replaces, whether or not the gallery has room, which
+ * is what makes the swap quota-neutral — one row into the featured slot, one out
+ * of the table, gallery untouched.
+ *
+ * The id is still reported because the deletion is a destructive side effect the
+ * caller did not ask for by id, and a response that performed it silently would
+ * leave any consumer holding that row — a cached list, a log, an optimistic
+ * client — with no way to learn which one went.
+ *
+ * Note this describes the UPLOAD path only. Promoting a photo already in the
+ * gallery still demotes the old cover into it and deletes nothing.
  */
 export const PreviousFeaturedOutcomeSchema = z.object({
-    /** Id of the media row that used to be the cover. */
-    id: z.string().uuid({ message: 'zodError.common.media.featured.previousId.invalid' }),
-    /** Whether it was kept in the gallery or archived out of it. */
-    disposition: PreviousFeaturedDispositionSchema
+    /** Id of the media row that used to be the cover, now soft-deleted. */
+    id: z.string().uuid({ message: 'zodError.common.media.featured.previousId.invalid' })
 });
 
 /** Inferred type for {@link PreviousFeaturedOutcomeSchema}. */

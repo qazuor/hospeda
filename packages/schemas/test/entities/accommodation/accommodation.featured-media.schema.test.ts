@@ -110,14 +110,15 @@ describe('the cover response reports the replaced photo (HOS-803)', () => {
         expect(result.success).toBe(false);
     });
 
-    it('accepts only the two dispositions the server can produce', () => {
-        const outcome = { id: MEDIA_ID, disposition: 'deleted' };
+    it('reports the replaced cover by id alone', () => {
+        const result = AccommodationFeaturedMediaAddOutputSchema.shape.previousFeatured.safeParse({
+            id: MEDIA_ID
+        });
 
-        const result =
-            AccommodationFeaturedMediaAddOutputSchema.shape.previousFeatured.safeParse(outcome);
-
-        // 'deleted' is deliberately not one of them — the old cover is never
-        // destroyed, only demoted or archived.
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
+        // No `disposition`: what happens to the old cover is not a variable.
+        // Uploading a new cover always soft-deletes the one it replaces, which
+        // is what makes the swap quota-neutral.
+        expect(result.success && result.data).toEqual({ id: MEDIA_ID });
     });
 });

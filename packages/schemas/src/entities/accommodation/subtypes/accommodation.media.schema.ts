@@ -275,16 +275,14 @@ export type AccommodationFeaturedMediaAddInput = z.infer<
  * Response shape for the born-featured cover endpoint.
  *
  * Carries `previousFeatured` alongside the created row because a cover upload
- * changes TWO rows. The client cannot infer the second from the first: whether
- * the old cover joined the gallery or was archived out of it depends on how
- * much room the gallery had, which only the server knows. A response that
- * omitted it would leave the replaced photo rendered in a gallery it is no
- * longer part of.
+ * changes TWO rows: the one created, and the one it replaced, which is
+ * soft-deleted in the same transaction. Naming the deleted id is what lets a
+ * client holding that row learn it is gone instead of keeping it on screen.
  */
 export const AccommodationFeaturedMediaAddOutputSchema = z.object({
     /** The newly created row, already featured. */
     media: AccommodationMediaSchema,
-    /** The cover this one replaced, or `null` when there was none. */
+    /** The cover this one replaced and deleted, or `null` when there was none. */
     previousFeatured: PreviousFeaturedOutcomeSchema.nullable()
 });
 

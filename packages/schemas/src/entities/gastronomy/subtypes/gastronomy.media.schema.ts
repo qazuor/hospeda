@@ -165,15 +165,15 @@ export type GastronomyFeaturedMediaAddInput = z.infer<typeof GastronomyFeaturedM
 /**
  * Response shape for the born-featured cover endpoint.
  *
- * Carries `previousFeatured` because a cover upload changes TWO rows, and the
- * client cannot infer the second from the first: whether the old cover joined
- * the gallery or was archived out of it depends on how much room the gallery
- * had, which only the server knows.
+ * Carries `previousFeatured` because a cover upload changes TWO rows: the one
+ * created, and the one it replaced, which is soft-deleted in the same
+ * transaction. Naming the deleted id is what lets a client holding that row
+ * learn it is gone instead of keeping it on screen.
  */
 export const GastronomyFeaturedMediaAddOutputSchema = z.object({
     /** The newly created row, already featured. */
     media: GastronomyMediaSchema,
-    /** The cover this one replaced, or `null` when there was none. */
+    /** The cover this one replaced and deleted, or `null` when there was none. */
     previousFeatured: PreviousFeaturedOutcomeSchema.nullable()
 });
 
