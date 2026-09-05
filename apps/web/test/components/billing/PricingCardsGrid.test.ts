@@ -362,6 +362,31 @@ describe('PricingCardsGrid.astro', () => {
         });
     });
 
+    describe('promo-code entry point above the grid (HOS-984)', () => {
+        it('gates the entry point on a checkout grid with a real amount to discount', () => {
+            // `'link'` grids (commerce, partner) never mount PlanPurchaseButton at
+            // all, and `'consult'` cards (aliados) show no amount — an anchor to a
+            // field that is not there would be a dead link either way.
+            expect(src).toContain(
+                "const showPromoEntry = hasPlans && ctaMode === 'checkout' && priceMode === 'amount';"
+            );
+        });
+
+        it('only renders the anchor when showPromoEntry is true', () => {
+            expect(src).toMatch(/\{showPromoEntry && \(\s*<a href="#pricing-cards-grid"/);
+        });
+
+        it('points at the grid container, which carries the matching id', () => {
+            expect(src).toContain('href="#pricing-cards-grid"');
+            expect(src).toContain('id="pricing-cards-grid"');
+        });
+
+        it('renders the promoEntryLabel copy, not a hardcoded string', () => {
+            expect(src).toMatch(/<a href="#pricing-cards-grid"[^>]*>\s*\{promoEntryLabel\}/);
+            expect(src).toContain("const promoEntryLabel = t(\n\t'pricing.promoEntry.label',");
+        });
+    });
+
     describe('card-first trial copy (AC-15, AC-16)', () => {
         it('never claims a no-card trial', () => {
             // Swept over every file that now contributes card copy, not just
