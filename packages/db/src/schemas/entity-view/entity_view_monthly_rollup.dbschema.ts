@@ -30,6 +30,27 @@
  * month)` is what makes the writer idempotent via `ON CONFLICT DO UPDATE`.
  * Without it a retried run doubles every number in that month.
  *
+ * ## Why this table has NO foreign key while its partner-side sibling cascades
+ *
+ * `partner_logo_click_monthly_rollups.partner_id` carries an `ON DELETE CASCADE`
+ * to `partners` and this table carries nothing, which reads like an oversight
+ * and is not one. `entity_id` here is POLYMORPHIC — it addresses an
+ * accommodation, a post, an event or a partner depending on `entity_type` — and
+ * Postgres has no polymorphic foreign key to declare. The sibling is
+ * monomorphic, so it can and does.
+ *
+ * Read per family rather than across them and the treatment is consistent:
+ * `entity_views` (the source) has no FK either, and `partner_logo_clicks` (the
+ * other source) cascades exactly like its own rollup.
+ *
+ * The consequence is real and worth stating: deleting a partner removes its
+ * `partner_logo_click_monthly_rollups` rows and LEAVES its `entity_type =
+ * 'PARTNER'` rows here. They are counts against a uuid that no longer resolves —
+ * harmless to read, since every read is keyed by an id the caller already holds,
+ * but they do not disappear on their own. Making them disappear takes a sweep,
+ * not a constraint.
+ *
+ * @see packages/db/src/schemas/partner/partner_logo_click_monthly_rollup.dbschema.ts
  * @see packages/db/src/schemas/entity-view/entity_view.dbschema.ts — the source.
  * @see .specs/HOS-1063-estadisticas-del-aliado/spec.md §6.1 A-6, OQ-1, R-4.
  */
