@@ -1,0 +1,157 @@
+/**
+ * CommerceDowngradeKeepPanel styles (HOS-1122).
+ * Plain CSS module per web conventions — no Tailwind.
+ */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    font-family: var(--font-sans);
+}
+
+.title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+}
+
+.intro {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.when {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/*
+ * The cap consequence. Toned like a notice rather than an error: it is a fact
+ * about the plan, not a mistake the owner made.
+ */
+.quotaNote {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-left: 3px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-sm, 0.25rem);
+    background: var(--core-muted, oklch(0.96 0 0));
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.overCap {
+    margin: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border-radius: var(--radius-sm, 0.25rem);
+    background: color-mix(in oklch, var(--destructive, #b91c1c) 10%, transparent);
+    color: var(--destructive, #b91c1c);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    max-height: 20rem;
+    overflow-y: auto;
+}
+
+.row {
+    margin: 0;
+}
+
+.rowLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-md, 0.5rem);
+    cursor: pointer;
+}
+
+.rowLabel:hover {
+    background: var(--core-muted, oklch(0.96 0 0));
+}
+
+.checkbox {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--brand-primary, oklch(0.5 0.18 260));
+    cursor: pointer;
+}
+
+.rowName {
+    flex: 1 1 auto;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.badge {
+    flex: none;
+    padding: 0.125rem var(--space-2, 0.5rem);
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--core-muted, oklch(0.96 0 0));
+    color: var(--core-muted-foreground);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.btnBack,
+.btnConfirm {
+    padding: 0.5rem var(--space-4, 1rem);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+        background-color 150ms ease-out,
+        color 150ms ease-out,
+        opacity 150ms ease-out;
+}
+
+.btnBack {
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    background: transparent;
+    color: var(--core-muted-foreground);
+}
+
+.btnBack:hover:not(:disabled) {
+    background: var(--core-muted, oklch(0.96 0 0));
+}
+
+.btnConfirm {
+    border: 1px solid var(--brand-primary, oklch(0.5 0.18 260));
+    background: var(--brand-primary, oklch(0.5 0.18 260));
+    color: var(--primary-foreground, #fff);
+}
+
+.btnConfirm:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.btnBack:disabled,
+.btnConfirm:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

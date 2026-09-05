@@ -12,6 +12,8 @@
  * are still returned rather than failing the whole page.
  */
 import type {
+    CommerceDowngradePreview,
+    CommerceKeepSelections,
     CommerceListingCompletenessListing,
     CommerceOwnerListingSummary,
     ExperienceOwnerCreateInput,
@@ -289,14 +291,54 @@ const COMMERCE_SUBSCRIPTIONS_PATH = '/api/v1/protected/commerce/subscriptions';
  */
 export function changeCommercePlan({
     vertical,
-    planSlug
+    planSlug,
+    keepSelections
 }: {
     readonly vertical: CommerceVertical;
     readonly planSlug: string;
+    /**
+     * Which listings to keep public when this is a DOWNGRADE (HOS-1122).
+     * Omitted for an upgrade — the API ignores it there, and sending it would
+     * suggest a choice was made where none exists.
+     */
+    readonly keepSelections?: CommerceKeepSelections;
 }): Promise<ApiResult<PlanChangeResponse>> {
     return apiClient.postProtected<PlanChangeResponse>({
         path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/change-plan`,
         headers: { 'X-Idempotency-Key': crypto.randomUUID() },
-        body: { planSlug }
+        body: { planSlug, ...(keepSelections === undefined ? {} : { keepSelections }) }
+    });
+}
+
+/**
+ * Reads which listings a cheaper tier would stop covering — WITHOUT scheduling
+ * anything (HOS-1122).
+ *
+ * `GET /api/v1/protected/commerce/subscriptions/{vertical}/downgrade-preview`.
+ *
+ * The read that has to happen BEFORE {@link changeCommercePlan} on a
+ * downgrade, so the owner picks what to keep while nothing is written yet.
+ * Mirrors `billingApi.previewDowngrade`, which plays the same part in the
+ * accommodation flow.
+ *
+ * `422` here is not "no excess": it means the target tier's listing cap could
+ * not be resolved, and the caller must NOT fall through to a zero-excess
+ * assumption — that is precisely the reading the whole feature is built to
+ * avoid. `404` means the caller holds no subscription for this vertical.
+ *
+ * @param params - Vertical to preview, and the target tier's slug.
+ * @returns The preview: the cap, how many listings exceed it, and every
+ *   covered listing ordered by default-keep priority.
+ */
+export function fetchCommerceDowngradePreview({
+    vertical,
+    planSlug
+}: {
+    readonly vertical: CommerceVertical;
+    readonly planSlug: string;
+}): Promise<ApiResult<CommerceDowngradePreview>> {
+    return apiClient.getProtected<CommerceDowngradePreview>({
+        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/downgrade-preview`,
+        params: { targetPlan: planSlug }
     });
 }
