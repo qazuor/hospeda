@@ -254,32 +254,38 @@ export function startOwnerListingCheckout({
 }
 
 // ---------------------------------------------------------------------------
-// HOS-1119 — owner self-service tier upgrade
+// HOS-1119 — owner self-service tier change
 // ---------------------------------------------------------------------------
 
 const COMMERCE_SUBSCRIPTIONS_PATH = '/api/v1/protected/commerce/subscriptions';
 
 /**
- * Moves the caller's own commerce subscription for one vertical to a dearer
- * tier (HOS-1119).
+ * Moves the caller's own commerce subscription for one vertical to another
+ * tier (HOS-1119, both directions since HOS-1122).
  *
  * `POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`.
  * Mirrors {@link startOwnerListingCheckout}'s idempotency-key pattern — a
  * fresh `X-Idempotency-Key` per call, so a retried click cannot open two
- * upgrades.
+ * changes.
  *
- * Upgrades only: the backend answers `422` for a target that is equal to or
- * cheaper than the caller's current tier (commerce has no downgrade path —
- * see `apps/api/src/routes/commerce/protected/change-plan.ts`'s module doc).
+ * Only `422` is now reserved for a target priced IDENTICALLY to the current
+ * tier: it is neither direction. This docblock said "upgrades only" until
+ * HOS-1122 gave commerce a downgrade, and the caller that acts on it —
+ * `CommercePlanChange.client.tsx` — still offers dearer tiers only. That is a
+ * UI gap, not a contract one: a cheaper target answers `scheduled` here.
+ *
  * Other error codes: `400` (malformed/foreign-vertical slug), `404` (no live
  * subscription for this vertical, or the target plan does not exist), `409`
- * (a cancellation is already pending), `410` (target plan retired), `503`
- * (billing unavailable).
+ * (a cancellation is already pending, or the subscription moved mid-request),
+ * `410` (target plan retired), `503` (billing unavailable).
  *
  * @param params - Vertical to act on, and the target tier's slug.
  * @returns A discriminated `PlanChangeResponse`: `pending_payment` (redirect
- *   to `checkoutUrl` to pay the prorated delta) or `active` (applied at once,
- *   no charge — the subscription was still trialing).
+ *   to `checkoutUrl` to pay the prorated delta), `active` (applied at once,
+ *   no charge — the subscription was still trialing), or `scheduled` (a
+ *   downgrade, effective at period end, carrying a
+ *   `commerceRestrictionPreview` of the listings the smaller cap stops
+ *   covering).
  */
 export function changeCommercePlan({
     vertical,
