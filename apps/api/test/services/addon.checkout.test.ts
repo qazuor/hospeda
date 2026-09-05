@@ -190,9 +190,27 @@ vi.mock('@repo/db', async (importOriginal) => {
         getDb: vi.fn(() => ({
             insert: vi.fn(() => ({ values: mockGrantInsertValues })),
             update: vi.fn(() => ({ set: mockDbUpdateSet })),
+            // HOS-847: `where(...)` must serve TWO distinct real callers now.
+            // The ledger dedupe lookup chains `.limit(1)` off it (existing,
+            // `mockLedgerSelectLimit`). `hydrateSubscriptionProductDomains`
+            // (called by createAddonCheckout/confirmAddonPurchase's HOS-847
+            // domain-isolation fix) awaits `.where(...)` directly with NO
+            // `.limit()` call, expecting an array of `{id, productDomain}` rows.
+            // Resolving to `[]` here is the safe default for every PRE-EXISTING
+            // test in this file (none of whose fixture subscriptions carry a
+            // productDomain): an unmatched id hydrates to `productDomain: null`,
+            // which every domain predicate treats as "not an add-on" — the same
+            // effective behavior these tests asserted before HOS-847.
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
-                    where: vi.fn(() => ({ limit: mockLedgerSelectLimit }))
+                    where: vi.fn(() =>
+                        Object.assign(
+                            Promise.resolve(
+                                [] as Array<{ id: string; productDomain: string | null }>
+                            ),
+                            { limit: mockLedgerSelectLimit }
+                        )
+                    )
                 }))
             }))
         }))
@@ -389,7 +407,13 @@ function createMockEntitlementService(): AddonEntitlementService {
  * used by confirmAddonPurchase.
  */
 function createMockBilling(
-    subscriptions: Array<{ id: string; status: string; planId: string }>
+    subscriptions: Array<{
+        id: string;
+        status: string;
+        planId: string;
+        /** HOS-847: set to 'addon' to simulate a recurring add-on's own row. */
+        productDomain?: string;
+    }>
 ): QZPayBilling {
     return {
         subscriptions: {
@@ -722,6 +746,34 @@ describe('confirmAddonPurchase', () => {
             // Arrange
             mockBilling = createMockBilling([
                 { id: 'sub_001', status: 'canceled', planId: 'plan_basico' }
+            ]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NO_ACTIVE_SUBSCRIPTION');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+        });
+
+        // HOS-847: same isolation as createAddonCheckout's "subscription
+        // eligibility gate" suite — a recurring add-on's own preapproval row
+        // (product_domain = 'addon') must never be selected as "the active
+        // subscription" that confirms a DIFFERENT add-on purchase.
+        it('returns NO_ACTIVE_SUBSCRIPTION when the only active "subscription" is a recurring add-on\'s own row', async () => {
+            // Arrange
+            mockBilling = createMockBilling([
+                {
+                    id: 'sub_addon_extra_accommodations',
+                    status: 'active',
+                    planId: 'plan-addon-extra-accommodations-5',
+                    productDomain: 'addon'
+                }
             ]);
 
             // Act
@@ -1360,6 +1412,53 @@ describe('confirmAddonPurchase', () => {
             expect(mockDbTransaction).not.toHaveBeenCalled();
         });
 
+        // HOS-847: the third sweep found beyond the two the plan named
+        // explicitly — this re-verification must not treat an unrelated
+        // recurring add-on's own preapproval row as proof the customer's real
+        // subscription is "still active". Without the domain filter here, a
+        // customer whose real plan was cancelled between checkout and
+        // confirmation — but who still has an active add-on preapproval from a
+        // DIFFERENT purchase — would have this add-on purchase confirmed
+        // against a subscription that no longer exists.
+        it("returns SUBSCRIPTION_CANCELLED when re-check only finds a recurring add-on's own row", async () => {
+            // Arrange: initial check returns the real plan active, re-check
+            // (second call) shows the plan gone and only an unrelated add-on
+            // preapproval row remaining.
+            const billingWithAddonOnlyRecheck = {
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+                        ])
+                        .mockResolvedValueOnce([
+                            {
+                                id: 'sub_addon_extra_accommodations',
+                                status: 'active',
+                                planId: 'plan-addon-extra-accommodations-5',
+                                productDomain: 'addon'
+                            }
+                        ])
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ id: 'plan_basico' })
+                }
+            } as unknown as import('@qazuor/qzpay-core').QZPayBilling;
+
+            // Act
+            const result = await confirmAddonPurchase(
+                billingWithAddonOnlyRecheck,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert: rejected — the add-on row was correctly excluded from
+            // "still active", so this reads as the real subscription being gone.
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SUBSCRIPTION_CANCELLED');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+        });
+
         it('should succeed when re-check still shows an active subscription', async () => {
             // Arrange: both the initial check and re-check return active
             // (default mockBilling returns the same active subscription both times)
@@ -1581,21 +1680,24 @@ describe('confirmAddonPurchase', () => {
  */
 function createBillingForCheckout({
     customer,
-    subscription = { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+    subscription = { id: 'sub_001', status: 'active', planId: 'plan_basico' },
+    subscriptions
 }: {
     customer: {
         id: string;
         email: string;
         metadata?: Record<string, unknown> | null;
     };
-    subscription?: { id: string; status: string; planId: string };
+    subscription?: { id: string; status: string; planId: string; productDomain?: string };
+    /** HOS-847: pass multiple subscriptions directly (overrides `subscription`). */
+    subscriptions?: Array<{ id: string; status: string; planId: string; productDomain?: string }>;
 }): QZPayBilling {
     return {
         customers: {
             get: vi.fn().mockResolvedValue(customer)
         },
         subscriptions: {
-            getByCustomerId: vi.fn().mockResolvedValue([subscription])
+            getByCustomerId: vi.fn().mockResolvedValue(subscriptions ?? [subscription])
         },
         checkout: {
             create: mockBillingCheckoutCreate
@@ -1767,6 +1869,36 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                     metadata: { name: 'Canceled User' }
                 },
                 subscription: { id: 'sub_canceled', status: 'canceled', planId: 'plan_basico' }
+            });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NO_ACTIVE_SUBSCRIPTION');
+            expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
+        });
+
+        // HOS-847: a recurring add-on's own MercadoPago preapproval is stored as
+        // its OWN billing_subscriptions row (product_domain = 'addon'). Before
+        // domain isolation, `.find(isEntitlementGrantingStatus)` took the FIRST
+        // entitlement-granting row with no domain check — an active add-on row
+        // would be picked as "the" subscription, letting a customer with no real
+        // plan buy a second add-on against the first one's (irrelevant) planId.
+        it('rejects checkout when the only active "subscription" is a recurring add-on\'s own row', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'addon-only-user@example.com',
+                    metadata: { name: 'Addon Only User' }
+                },
+                subscriptions: [
+                    {
+                        id: 'sub_addon_extra_accommodations',
+                        status: 'active',
+                        planId: 'plan-addon-extra-accommodations-5',
+                        productDomain: 'addon'
+                    }
+                ]
             });
 
             const result = await createAddonCheckout(billing, defaultInput);
