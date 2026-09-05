@@ -49,7 +49,15 @@ describe('HOS-1063 — the partner stats subtree exists in every locale', () => 
         expect(stats.title).toBeTruthy();
         expect(stats.subtitle).toBeTruthy();
         expect(stats.scopeNote).toBeTruthy();
-        expect(stats.window).toBeTruthy();
+
+        // §7.4 — both windows render at once, so both labels must exist. A
+        // missing one leaves a bare numeral with nothing saying which period it
+        // covers, sitting beside another numeral that does say: the precise
+        // confusion that showing two figures was supposed to avoid.
+        const windows = stats.windows as Record<string, unknown>;
+        expect(windows).toBeDefined();
+        expect(windows.last30).toBeTruthy();
+        expect(windows.last7).toBeTruthy();
 
         const views = stats.views as Record<string, unknown>;
         expect(views.label).toBeTruthy();
@@ -62,6 +70,25 @@ describe('HOS-1063 — the partner stats subtree exists in every locale', () => 
         const clicks = stats.clicks as Record<string, unknown>;
         expect(clicks.label).toBeTruthy();
         expect(clicks.help).toBeTruthy();
+    });
+
+    /**
+     * The two window labels must be DISTINGUISHABLE, and each must name its own
+     * period. Two figures under two labels that read alike is the same failure
+     * as two figures under no labels at all — the reader still cannot tell which
+     * is which. Asserted by the digit each label carries, which survives
+     * translation where a phrase would not.
+     */
+    it.each(['es', 'en', 'pt'] as const)('%s names 30 and 7 in their own labels', (locale) => {
+        const windows = statsSubtree(locale).windows as Record<string, string>;
+
+        expect(windows.last30).toContain('30');
+        expect(windows.last7).toContain('7');
+        expect(windows.last30).not.toBe(windows.last7);
+        // The 30-day label must not also claim 7, and vice versa — a copy-paste
+        // that left "7" in the 30-day string is exactly how the two swap.
+        expect(windows.last30).not.toMatch(/\b7\b/);
+        expect(windows.last7).not.toMatch(/\b30\b/);
     });
 });
 

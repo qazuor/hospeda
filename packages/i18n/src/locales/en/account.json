@@ -1562,7 +1562,10 @@
             "label": "Clicks on your logo",
             "help": "Times someone came in through your logo on the home page."
         },
-        "window": "Last 30 days.",
+        "windows": {
+            "last30": "in the last 30 days",
+            "last7": "in the last 7 days"
+        },
         "scopeNote": "Every statistic we show you is about what happens inside Hospeda — our pages and our newsletter. For what we publish elsewhere we give you a record, not a measurement."
     },
     "partnerMentions": {
