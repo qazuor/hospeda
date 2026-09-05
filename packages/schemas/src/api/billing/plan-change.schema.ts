@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { BillingIntervalEnum } from '../../enums/billing-interval.enum.js';
-import { DowngradePreviewSchema, KeepSelectionsSchema } from './downgrade-preview.schema.js';
+import {
+    CommerceDowngradePreviewSchema,
+    CommerceKeepSelectionsSchema,
+    DowngradePreviewSchema,
+    KeepSelectionsSchema
+} from './downgrade-preview.schema.js';
 
 /**
  * Plan change status enum
@@ -89,9 +94,14 @@ export type PlanChangeRequest = z.infer<typeof PlanChangeRequestSchema>;
  * - **No `billingInterval`.** Every commerce plan is monthly and only monthly;
  *   `commerceVerticalTier` hardcodes `annualPriceArs: null` for all six tiers.
  *   An interval field would be a choice with exactly one legal value.
- * - **No `keepSelections`.** That field steers which accommodations and
- *   promotions survive a downgrade. Commerce has no downgrade path (see the
- *   route's docblock), and its verticals have neither of those resources.
+ * - **A NARROWER `keepSelections`.** The accommodation field steers three
+ *   dimensions — accommodations, promotions and per-accommodation photos — and
+ *   a commerce vertical has none of them. HOS-1122 gave commerce a downgrade,
+ *   so the field exists here now, restricted to the one dimension commerce
+ *   actually restricts: {@link CommerceKeepSelectionsSchema}'s `listingIds`.
+ *   Accepting the full shape would let a caller submit `photoKeepMap` against a
+ *   restaurant and have it silently ignored, which reads as "the server took my
+ *   choice" and is the failure mode this whole flow exists to avoid.
  */
 export const CommercePlanChangeRequestSchema = z.object({
     /**
@@ -107,7 +117,16 @@ export const CommercePlanChangeRequestSchema = z.object({
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message: 'zodError.billing.planChange.planSlug.invalid'
         })
-        .max(100, { message: 'zodError.billing.planChange.planSlug.max' })
+        .max(100, { message: 'zodError.billing.planChange.planSlug.max' }),
+    /**
+     * Optional owner selection of which LISTINGS to keep public when the tier
+     * change is a DOWNGRADE (HOS-1122). Ignored for upgrades — an upgrade only
+     * ever raises the cap, so there is nothing to choose between.
+     *
+     * Absent, or an empty array, means "use the default keep order"
+     * (most-recently-updated first), exactly as on the accommodation route.
+     */
+    keepSelections: CommerceKeepSelectionsSchema.optional()
 });
 
 /** TypeScript type inferred from CommercePlanChangeRequestSchema */
@@ -185,7 +204,21 @@ export const PlanChangeAppliedResponseSchema = z.object({
      * and may differ from the apply-time result if the host changes usage
      * between request and period end.
      */
-    restrictionPreview: DowngradePreviewSchema.optional()
+    restrictionPreview: DowngradePreviewSchema.optional(),
+    /**
+     * Request-time restriction preview for a COMMERCE downgrade (HOS-1122).
+     *
+     * A SEPARATE field from `restrictionPreview`, never a variant of it: the two
+     * describe different dimensions and exactly one of them is ever present. A
+     * commerce response carries this one; an accommodation response carries the
+     * other. Folding commerce into `restrictionPreview` would mean emitting
+     * `accommodations: { activeCount: 0 }` for a restaurant owner, which reads
+     * as a measurement and is not one.
+     *
+     * Same soft-fail and apply-time-recompute semantics as its sibling: absent
+     * means "preview unavailable", and the apply step recomputes fresh.
+     */
+    commerceRestrictionPreview: CommerceDowngradePreviewSchema.optional()
 });
 
 /**
