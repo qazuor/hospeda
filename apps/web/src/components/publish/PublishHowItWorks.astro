@@ -1,0 +1,215 @@
+---
+/**
+ * @file PublishHowItWorks.astro
+ * @description "Cómo funciona" plus the condensed benefits (HOS-1156 §6
+ * point 3) — the argument, placed BELOW the form on purpose.
+ *
+ * A visitor who already decided should not have to scroll past three sections
+ * of persuasion to reach the field where they type their venue's name. A
+ * visitor who has not decided reads this and then scrolls back up. The sales
+ * pages at `/planes/*` carry the long version; this is the condensed one.
+ *
+ * Every string arrives resolved. The steps are numbered here rather than in the
+ * copy, so a translation cannot renumber them.
+ */
+
+import type { IconProps } from '@repo/icons';
+import type { ComponentType } from 'react';
+
+/** Any `@repo/icons` component, as the nav/door configs already type them. */
+type IconComponent = ComponentType<IconProps>;
+
+interface Props {
+    /** Handwritten eyebrow above the steps. */
+    readonly stepsTagline: string;
+    /** The steps section's heading. */
+    readonly stepsTitle: string;
+    /** Exactly three steps, in order. */
+    readonly steps: readonly [
+        { readonly title: string; readonly desc: string },
+        { readonly title: string; readonly desc: string },
+        { readonly title: string; readonly desc: string }
+    ];
+    /** Handwritten eyebrow above the benefits. */
+    readonly benefitsTagline: string;
+    /** The benefits section's heading. */
+    readonly benefitsTitle: string;
+    /** Exactly three benefits, each with its own icon. */
+    readonly benefits: readonly [
+        { readonly title: string; readonly desc: string; readonly Icon: IconComponent },
+        { readonly title: string; readonly desc: string; readonly Icon: IconComponent },
+        { readonly title: string; readonly desc: string; readonly Icon: IconComponent }
+    ];
+}
+
+const { stepsTagline, stepsTitle, steps, benefitsTagline, benefitsTitle, benefits } = Astro.props;
+---
+
+<section class="publish-steps section section--warm">
+    <div class="publish-steps__container">
+        <p class="publish-steps__tagline" data-reveal="up">{stepsTagline}</p>
+        <h2 class="publish-steps__title" data-reveal="up">{stepsTitle}</h2>
+
+        <div class="publish-steps__grid">
+            {steps.map((step, index) => (
+                <div
+                    class="publish-step"
+                    data-reveal="up"
+                    data-stagger-index={index}
+                    data-stagger-step="100"
+                >
+                    <span class="publish-step__num">{`0${index + 1}`}</span>
+                    <h3 class="publish-step__title">{step.title}</h3>
+                    <p class="publish-step__desc">{step.desc}</p>
+                </div>
+            ))}
+        </div>
+    </div>
+</section>
+
+<section class="publish-benefits section">
+    <div class="publish-benefits__container">
+        <p class="publish-benefits__tagline" data-reveal="up">{benefitsTagline}</p>
+        <h2 class="publish-benefits__title" data-reveal="up">{benefitsTitle}</h2>
+
+        <div class="publish-benefits__grid">
+            {benefits.map((benefit, index) => {
+                const Icon = benefit.Icon;
+                return (
+                    <div
+                        class="publish-benefit-card"
+                        data-reveal="up"
+                        data-stagger-index={index}
+                        data-stagger-step="100"
+                    >
+                        <span class="publish-benefit-card__icon" aria-hidden="true">
+                            <Icon size="lg" weight="duotone" />
+                        </span>
+                        <h3 class="publish-benefit-card__title">{benefit.title}</h3>
+                        <p class="publish-benefit-card__desc">{benefit.desc}</p>
+                    </div>
+                );
+            })}
+        </div>
+    </div>
+</section>
+
+<style>
+    .publish-steps__container,
+    .publish-benefits__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+        text-align: center;
+    }
+
+    .publish-steps__tagline,
+    .publish-benefits__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: var(--text-tagline);
+        color: var(--brand-accent);
+        margin: 0 0 var(--space-2);
+    }
+
+    .publish-steps__title,
+    .publish-benefits__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h2);
+        color: var(--core-foreground);
+        text-wrap: balance;
+        line-height: 1.1;
+        margin: 0 0 var(--space-8);
+    }
+
+    .publish-steps__grid,
+    .publish-benefits__grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-card-gap);
+    }
+
+    .publish-benefits__grid {
+        text-align: left;
+    }
+
+    .publish-step__num {
+        font-family: var(--font-heading);
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 700;
+        color: var(--brand-primary-a20);
+        display: block;
+        margin-bottom: var(--space-3);
+    }
+
+    .publish-step__title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .publish-step__desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .publish-benefit-card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        padding: var(--space-6);
+        box-shadow: var(--shadow-card);
+    }
+
+    .publish-benefit-card__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md);
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
+        margin-bottom: var(--space-4);
+    }
+
+    .publish-benefit-card:nth-child(2) .publish-benefit-card__icon {
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+    }
+
+    .publish-benefit-card:nth-child(3) .publish-benefit-card__icon {
+        background-color: oklch(0.65 0.18 145 / 0.12);
+        color: oklch(0.55 0.18 145);
+    }
+
+    .publish-benefit-card__title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .publish-benefit-card__desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .publish-steps__grid { grid-template-columns: repeat(2, 1fr); }
+        .publish-benefits__grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+        .publish-steps__grid { grid-template-columns: 1fr; }
+    }
+</style>

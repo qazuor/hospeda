@@ -29,6 +29,11 @@
                 "min": "El tamaño debe ser de al menos {{min}} píxeles para que una cámara pueda leer el código"
             }
         },
+        "scan": {
+            "window": {
+                "invalid": "La ventana de tiempo debe ser 7d o 30d"
+            }
+        },
         "slug": {
             "invalidPattern": "El código sólo puede usar caracteres inequívocos: sin 0, O, 1, l ni I",
             "max": "El código no puede superar los {{max}} caracteres",

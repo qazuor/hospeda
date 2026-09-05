@@ -1,0 +1,91 @@
+---
+/**
+ * @file PublishFormSlot.astro
+ * @description The middle section of every publish page: the form, or what
+ * stands in for it (HOS-1156 T-017, §6 point 2).
+ *
+ * One component, three pages, three states — signed-out CTA, the create form,
+ * the precheck panel. The decision itself is NOT made here: it arrives resolved
+ * from `resolvePublishPageSlot`, which owns the D-5 fail-open and the
+ * per-vertical URLs. This component renders it.
+ *
+ * ## The form arrives as a slot, deliberately
+ *
+ * The three verticals mount genuinely different islands with different props —
+ * `CreatePropertyMiniForm` needs a trial length, `CommerceCreateForm` needs the
+ * destination catalog and a load-failure flag. A prop union over those would put
+ * three pages' worth of unrelated data through one interface for no gain, so the
+ * page passes its own island as the default slot and this component decides
+ * WHETHER it renders.
+ *
+ * Astro renders slot content only where `<slot />` appears, so on the two
+ * non-form states the island is never emitted — no hydration, no payload.
+ */
+
+import PublishPrecheckPanel from '@/components/host/PublishPrecheckPanel.astro';
+import PublishSignupCta from '@/components/publish/PublishSignupCta.astro';
+import type {
+    HostOnboardingPrecheckDecision,
+    PublishVerticalSlug
+} from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { PublishPageSlot } from '@/lib/publish/publish-page-slot';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** Which vertical this page publishes — decides the panel's cap and copy. */
+    readonly vertical: PublishVerticalSlug;
+    /** The resolved slot, from `resolvePublishPageSlot`. */
+    readonly resolution: PublishPageSlot;
+}
+
+const { locale, vertical, resolution } = Astro.props;
+---
+
+<section class="publish-slot section">
+    <div class="publish-slot__container">
+        {resolution.state === 'signup_cta' && (
+            <PublishSignupCta
+                locale={locale}
+                signupUrl={resolution.signupUrl}
+                signinUrl={resolution.signinUrl}
+            />
+        )}
+
+        {resolution.state === 'form' && <slot />}
+
+        {resolution.state === 'precheck_panel' && (
+            <PublishPrecheckPanel
+                locale={locale}
+                vertical={vertical}
+                decision={resolution.decision as Exclude<HostOnboardingPrecheckDecision, 'create_direct'>}
+                currentCount={resolution.currentCount}
+                maxAllowed={resolution.maxAllowed}
+                drafts={resolution.drafts}
+                editUrl={resolution.editUrl}
+                createUrl={resolution.createUrl}
+                accountPropertiesUrl={resolution.accountListingsUrl}
+                subscriptionUrl={resolution.subscriptionUrl}
+            />
+        )}
+    </div>
+</section>
+
+<style>
+    /*
+     * Form-first: the hero above is context, not the headline, so the slot keeps
+     * a tighter top than `.section`'s default while leaving generous clearance
+     * at the bottom — a form flush against the footer reads as cut off. Mirrors
+     * the window `/publicar/nueva/` used before this page absorbed it.
+     */
+    .publish-slot {
+        padding-top: clamp(var(--space-6), 5vw, var(--space-10));
+        padding-bottom: 4rem;
+    }
+
+    .publish-slot__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+    }
+</style>

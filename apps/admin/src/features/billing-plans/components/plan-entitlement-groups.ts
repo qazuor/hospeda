@@ -127,6 +127,10 @@ export const ENTITLEMENT_GROUP_KEYS: {
             // and same tier as `MENU_ITEM_PHOTOS` above: gastronomy PREMIUM
             // only, layered on top of the carta key rather than replacing it.
             EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU,
+            // HOS-1044 — the table QR and its scan-analytics panel. Same
+            // shape and tier as the translated carta right above it:
+            // gastronomy PREMIUM only.
+            EntitlementKey.MENU_QR_SCAN_METRICS,
             // HOS-1060 — private per-tourist galleries. Experience-only and
             // tier-dependent (`experience-premium`), with the same flat-checklist
             // caveat as its neighbours. Unlike them it is ALSO granted by the

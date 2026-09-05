@@ -12,6 +12,8 @@ import type {
     QrCodeCreateInput,
     QrCodePurposeEnum,
     QrCodeScan,
+    QrCodeScanStats,
+    QrCodeScanWindow,
     QrCodeSearchInput
 } from '@repo/schemas';
 import {
@@ -24,6 +26,7 @@ import {
     QrCodeCreateInputSchema,
     QrCodePurposeEnumSchema,
     QrCodeRenderOptionsSchema,
+    QrCodeScanWindowSchema,
     QrCodeSearchInputSchema,
     QrCodeSourceEnum,
     QrCodeUpdateInputSchema,
@@ -51,6 +54,12 @@ import {
     checkCanUpdateQrCode,
     checkCanViewQrCode
 } from './qr-code.permissions';
+import {
+    buildQrScanBreakdown,
+    computeScanWindowStart,
+    gapFillQrScanDailySeries,
+    QR_SCAN_WINDOW_DAYS
+} from './qr-code.scan-stats';
 
 /** How many times a fresh slug is attempted before the create gives up. */
 const SLUG_MINT_ATTEMPTS = 5;
@@ -131,6 +140,12 @@ const GetOrCreateForEntityInputSchema = EntityRefInputSchema.extend({
 
 const SetEntityTargetUrlInputSchema = EntityRefInputSchema.extend({
     targetUrl: z.string().url().max(QR_CODE_TARGET_URL_MAX_LENGTH)
+});
+
+/** What {@link QrCodeService.getScanStatsForCode} accepts. */
+const GetScanStatsForCodeInputSchema = z.object({
+    qrCodeId: z.string().uuid(),
+    window: QrCodeScanWindowSchema.default('30d')
 });
 
 /**
@@ -694,6 +709,69 @@ export class QrCodeService extends BaseCrudService<
                 );
 
                 return { updated: true };
+            }
+        });
+    }
+
+    /**
+     * Aggregate read of `qr_code_scans` for ONE code over a rolling window
+     * (HOS-1044 §6.4): a total, a gap-filled daily series, and breakdowns by
+     * `deviceType`, `os` and `browserLanguage`.
+     *
+     * Generic by `qrCodeId` on purpose (§11 OQ-4) — nothing here is
+     * gastronomy-specific, so the same method serves the ficha QR (HOS-982)
+     * and any future `purpose`. Counting is by `qrCodeId`, never by the
+     * entity behind it: a code's target can change (a slug rename) and the
+     * scan history must survive that split, which counting by entity would
+     * not.
+     *
+     * ## No permission check
+     *
+     * Same reasoning as {@link registerScan} / {@link getOrCreateForEntity}:
+     * the caller is a route that has ALREADY resolved `qrCodeId` from an
+     * entity it verified the actor owns (404, never 403, on a foreign
+     * listing) — this method never receives a client-supplied `qrCodeId` for
+     * a code the caller does not own. A venue with no code yet has no
+     * `qrCodeId` to pass here at all; the route answers with
+     * `buildEmptyQrCodeScanStats` instead of calling this method (§6.4, AC-4:
+     * minting never happens as a side effect of a read).
+     *
+     * @param input - Input parameters.
+     * @param input.actor - Actor performing the action.
+     * @param input.qrCodeId - The code whose scans are being read.
+     * @param input.window - Rolling window, `'7d'` or `'30d'` (default `'30d'`).
+     * @returns Service output carrying the aggregate.
+     */
+    public async getScanStatsForCode(input: {
+        actor: Actor;
+        qrCodeId: string;
+        window?: QrCodeScanWindow;
+        ctx?: ServiceContext;
+    }): Promise<ServiceOutput<QrCodeScanStats>> {
+        const { actor, qrCodeId, window, ctx } = input;
+
+        return this.runWithLoggingAndValidation({
+            methodName: 'getScanStatsForCode',
+            input: { actor, qrCodeId, window },
+            schema: GetScanStatsForCodeInputSchema.extend({ actor: z.any() }),
+            ctx,
+            execute: async (validated) => {
+                const windowDays = QR_SCAN_WINDOW_DAYS[validated.window];
+                const windowStart = computeScanWindowStart(windowDays);
+
+                const aggregate = await this.scanModel.getScanAggregateForCode(
+                    { qrCodeId: validated.qrCodeId, windowStart },
+                    ctx?.tx
+                );
+
+                return {
+                    window: validated.window,
+                    total: aggregate.total,
+                    dailySeries: gapFillQrScanDailySeries(aggregate.dailySeries, windowDays),
+                    byDeviceType: buildQrScanBreakdown(aggregate.byDeviceType),
+                    byOs: buildQrScanBreakdown(aggregate.byOs),
+                    byBrowserLanguage: buildQrScanBreakdown(aggregate.byBrowserLanguage)
+                };
             }
         });
     }

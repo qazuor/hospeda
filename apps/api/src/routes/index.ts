@@ -159,6 +159,7 @@ import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+import { protectedPublishRoutes } from './publish';
 // Redirectable QR codes (HOS-981): public resolution + admin CRUD
 import { adminQrCodeRoutes, publicQrCodeRoutes } from './qr-code';
 import { protectedRecommendationsRoutes } from './recommendations';
@@ -503,6 +504,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
+        // HOS-1156: the vertical-parameterised publish precheck, which
+        // generalises /host-onboarding/precheck to gastronomy and experiences.
+        app.route('/api/v1/protected/publish', protectedPublishRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
         app.route('/api/v1/protected/posts', protectedPostRoutes);

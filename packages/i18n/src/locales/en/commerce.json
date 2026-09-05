@@ -122,6 +122,21 @@
                 "unique": "unique",
                 "total": "total",
                 "error": "We couldn't load your views. Please try again later."
+            },
+            "menuQr": {
+                "title": "Menu QR",
+                "scans": "scans",
+                "device": "Device",
+                "os": "Operating system",
+                "language": "Language",
+                "unknown": "Unknown",
+                "download": "Download QR (PNG)",
+                "downloaded": "Done, downloaded.",
+                "qrAlt": "QR code linking to {{name}}'s menu",
+                "encodes": "Links to: {{url}}",
+                "locked": "The menu QR and its scan analytics are available on the gastronomy Premium plan.",
+                "error": "We couldn't load the QR scans. Please try again later.",
+                "empty": "No scans yet in this period."
             }
         },
         "editor": {
@@ -496,22 +511,12 @@
             "manageGastronomyDailySpecial": "Today's menu",
             "manageGastronomyEvents": "Venue schedule",
             "multilingualGastronomyMenu": "Multi-language menu",
+            "menuQrScanMetrics": "Menu QR with scan analytics",
             "manageExperiencePrivateGalleries": "Private galleries per customer",
             "aiChat": "AI chat on your listing",
             "downloadListingPdf": "Printable PDF listing sheet"
         },
         "create": {
-            "pickVertical": {
-                "title": "Create new business",
-                "subtitle": "Choose which type of business you want to publish.",
-                "gastronomyDescription": "Restaurants, bars, cafés, and other dining venues.",
-                "experienceDescription": "Tours, excursions, rentals, and other experiences."
-            },
-            "title": {
-                "gastronomy": "Create dining listing",
-                "experience": "Create experience listing"
-            },
-            "subtitle": "Fill in the basics now — you'll be able to add photos, hours, and more details afterward.",
             "fields": {
                 "name": {
                     "gastronomy": "Business name",

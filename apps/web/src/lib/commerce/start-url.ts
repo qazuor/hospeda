@@ -1,8 +1,7 @@
 /**
  * @file start-url.ts
  * @description Destination of the "Empezar ahora" CTA on the two commerce
- * vertical landings (`/publicar-restaurante/`, `/publicar-experiencia/`) —
- * HOS-810.
+ * sales pages (`/planes/gastronomia/`, `/planes/experiencias/`) — HOS-810.
  *
  * ## The loop this closes
  *
@@ -54,17 +53,22 @@
  */
 
 import type { SupportedLocale } from '../i18n';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '../publish/publish-page-paths';
 import { buildUrl } from '../urls';
 import type { CommerceVertical } from './owner-listings';
 
 /**
- * Path of the owner self-service create form for one vertical, locale-prefixed.
+ * The vertical's publish page, locale-prefixed.
  *
- * This is the page HOS-687 unlocked; it requires a session and nothing else.
+ * HOS-1156 moved this off `/mi-cuenta/comercio/nuevo/{vertical}/`, which is now
+ * a 301 to the same destination. The value this returns travels through sign-up
+ * as a `returnUrl` (see below), and a `returnUrl` that points at a redirect is a
+ * destination somebody else can move — the exact mechanism that produced
+ * HOS-1156 in the first place.
  *
  * @param params.locale - Locale prefix.
  * @param params.vertical - `gastronomy` or `experience`.
- * @returns e.g. `/es/mi-cuenta/comercio/nuevo/experience/`.
+ * @returns e.g. `/es/publicar/experiencias/`.
  */
 export function buildCommerceCreateUrl({
     locale,
@@ -73,7 +77,7 @@ export function buildCommerceCreateUrl({
     readonly locale: SupportedLocale;
     readonly vertical: CommerceVertical;
 }): string {
-    return buildUrl({ locale, path: `mi-cuenta/comercio/nuevo/${vertical}` });
+    return buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL[vertical] });
 }
 
 /**
@@ -86,8 +90,7 @@ export function buildCommerceCreateUrl({
  *
  * @param params.locale - Locale prefix.
  * @param params.vertical - `gastronomy` or `experience`.
- * @returns e.g.
- *   `/es/auth/signup/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercio%2Fnuevo%2Fexperience%2F`.
+ * @returns e.g. `/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F`.
  */
 export function buildCommerceStartUrl({
     locale,
