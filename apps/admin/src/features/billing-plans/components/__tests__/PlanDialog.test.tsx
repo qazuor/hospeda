@@ -40,6 +40,11 @@ function basePlan(overrides: Partial<ParsedPlanRecord> = {}): ParsedPlanRecord {
         isDefault: false,
         sortOrder: 1,
         isActive: true,
+        // The `as` below suppresses TS2741, so a required field missing here is
+        // `undefined` at runtime with a green typecheck. The five fixtures that
+        // annotate their type directly were caught by the compiler; this one had
+        // to be found by reading.
+        publicListing: 'listed',
         ...overrides
     } as ParsedPlanRecord;
 }
