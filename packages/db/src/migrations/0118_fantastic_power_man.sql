@@ -1,0 +1,1 @@
+ALTER TYPE "public"."entity_type_enum" ADD VALUE 'PARTNER';

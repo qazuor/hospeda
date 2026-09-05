@@ -93,7 +93,8 @@ export const createUserBookmarkByEntityType = (entityType: EntityTypeEnum): User
         [EntityTypeEnum.PAYMENT]: '6ba7b810-9dad-11d1-80b4-00c04fd430d0' as AccommodationId,
         [EntityTypeEnum.EXPERIENCE]: '6ba7b810-9dad-11d1-80b4-00c04fd430d1' as AccommodationId,
         [EntityTypeEnum.GASTRONOMY]: '6ba7b810-9dad-11d1-80b4-00c04fd430d2' as AccommodationId,
-        [EntityTypeEnum.HOST_TRADE]: '6ba7b810-9dad-11d1-80b4-00c04fd430d3' as AccommodationId
+        [EntityTypeEnum.HOST_TRADE]: '6ba7b810-9dad-11d1-80b4-00c04fd430d3' as AccommodationId,
+        [EntityTypeEnum.PARTNER]: '6ba7b810-9dad-11d1-80b4-00c04fd430d4' as AccommodationId
     };
 
     const names: Record<EntityTypeEnum, string> = {
@@ -108,7 +109,8 @@ export const createUserBookmarkByEntityType = (entityType: EntityTypeEnum): User
         [EntityTypeEnum.PAYMENT]: 'Recent Payment',
         [EntityTypeEnum.EXPERIENCE]: 'Memorable Experience',
         [EntityTypeEnum.GASTRONOMY]: 'Tasty Spot',
-        [EntityTypeEnum.HOST_TRADE]: 'Trusted Provider'
+        [EntityTypeEnum.HOST_TRADE]: 'Trusted Provider',
+        [EntityTypeEnum.PARTNER]: 'Allied Partner'
     };
 
     return createUserBookmarkFixture({
