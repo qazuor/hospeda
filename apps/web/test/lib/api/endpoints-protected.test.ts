@@ -21,6 +21,7 @@ vi.mock('../../../src/lib/api/client', () => ({
 import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
+    publishApi,
     userApi
 } from '../../../src/lib/api/endpoints-protected';
 
@@ -182,5 +183,37 @@ describe('accommodationFaqApi routing (HOS-393)', () => {
                 ]
             }
         });
+    });
+});
+
+describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
+    beforeEach(() => {
+        getProtected.mockReset();
+        getProtected.mockResolvedValue({ ok: true, data: {} });
+    });
+
+    it.each([
+        ['accommodation', '/api/v1/protected/publish/precheck/accommodation'],
+        ['gastronomy', '/api/v1/protected/publish/precheck/gastronomy'],
+        ['experience', '/api/v1/protected/publish/precheck/experience']
+    ] as const)('builds the %s path', async (vertical, expectedPath) => {
+        await publishApi.precheck({ vertical });
+
+        expect(getProtected).toHaveBeenCalledWith(expect.objectContaining({ path: expectedPath }));
+    });
+
+    it('forwards the SSR cookie header so the session resolves', async () => {
+        // Without this the endpoint sees an anonymous caller and the page would
+        // fail open to create_direct for a signed-in owner at their cap.
+        await publishApi.precheck({ vertical: 'gastronomy', cookieHeader: 'session=abc' });
+
+        expect(getProtected).toHaveBeenCalledWith(
+            expect.objectContaining({ cookieHeader: 'session=abc' })
+        );
+    });
+
+    it('uses the credentialed getProtected, never a bare get', async () => {
+        await publishApi.precheck({ vertical: 'experience' });
+        expect(getProtected).toHaveBeenCalledTimes(1);
     });
 });

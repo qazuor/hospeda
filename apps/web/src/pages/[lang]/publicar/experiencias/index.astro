@@ -1,0 +1,154 @@
+---
+/**
+ * @file publicar/experiencias/index.astro
+ * @description The experiences publish page (HOS-1156 T-021) — funnel and
+ * create form on one URL.
+ *
+ * Same shape as `/publicar/gastronomia/`, other vertical: see that page's
+ * docblock for what this replaces and why the form left `AccountLayout` (D-2).
+ * The two pages share their mould and none of their words (§1).
+ *
+ * @route     /{lang}/publicar/experiencias/
+ * @rendering SSR (prerender = false — reads the session to resolve the form
+ *            slot; consequently absent from every cacheable-route list, AC-8).
+ */
+
+import { CalendarIcon, CheckCircleIcon, CompassIcon, EyeIcon, ImageIcon, ReceiptIcon, SettingsIcon } from '@repo/icons';
+import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
+import PublishFormSlot from '@/components/publish/PublishFormSlot.astro';
+import PublishHero from '@/components/publish/PublishHero.astro';
+import PublishHowItWorks from '@/components/publish/PublishHowItWorks.astro';
+import PublishPlanLinks from '@/components/publish/PublishPlanLinks.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import {
+    PLANS_PAGE_PATH_BY_VERTICAL,
+    PRICING_PAGE_PATH_BY_VERTICAL
+} from '@/lib/publish/publish-page-paths';
+import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const VERTICAL = 'experience' as const;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const slot = await resolvePublishPageSlot({
+    locale,
+    vertical: VERTICAL,
+    isAuthenticated: Boolean(Astro.locals.user),
+    cookieHeader: Astro.request.headers.get('cookie'),
+    pathname: Astro.url.pathname,
+    wantsCreate: Astro.url.searchParams.get('create') === '1'
+});
+
+// Only fetched when the form is what renders — see the gastronomy page.
+const destinationsResult =
+    slot.state === 'form'
+        ? await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 })
+        : null;
+const destinations = destinationsResult?.ok
+    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+const destinationsLoadFailed = destinationsResult !== null && !destinationsResult.ok;
+
+const steps = [
+    {
+        title: t('publish.experience.steps.step1.title', 'Contá qué ofrecés'),
+        desc: t(
+            'publish.experience.steps.step1.desc',
+            'Nombre, tipo de experiencia y destino. Con eso creamos tu ficha en el momento.'
+        )
+    },
+    {
+        title: t('publish.experience.steps.step2.title', 'Completá tu ficha'),
+        desc: t(
+            'publish.experience.steps.step2.desc',
+            'Sumá fotos, punto de encuentro, duración y horarios desde el panel, a tu ritmo.'
+        )
+    },
+    {
+        title: t('publish.experience.steps.step3.title', 'Salís publicado'),
+        desc: t(
+            'publish.experience.steps.step3.desc',
+            'Tu experiencia aparece en el catálogo y los viajeros que ya están en la zona te encuentran.'
+        )
+    }
+] as const;
+
+const benefits = [
+    {
+        Icon: EyeIcon,
+        title: t('publish.experience.benefits.item1.title', 'Te ven los que ya viajaron'),
+        desc: t(
+            'publish.experience.benefits.item1.desc',
+            'Quienes reservan alojamiento en el litoral buscan después qué hacer, y ahí es donde aparecés.'
+        )
+    },
+    {
+        Icon: SettingsIcon,
+        title: t('publish.experience.benefits.item2.title', 'La ficha es tuya'),
+        desc: t(
+            'publish.experience.benefits.item2.desc',
+            'Cambiás fotos, horarios y precios cuando quieras, sin pedirle permiso a nadie.'
+        )
+    },
+    {
+        Icon: ReceiptIcon,
+        title: t('publish.experience.benefits.item3.title', 'Sin comisión por reserva'),
+        desc: t(
+            'publish.experience.benefits.item3.desc',
+            'Pagás tu plan y listo. Ninguna reserva ni consulta te suma un cargo aparte.'
+        )
+    }
+] as const;
+---
+
+<MarketingLayout
+    locale={locale}
+    title={t('publish.experience.meta.title', 'Publicá tu experiencia')}
+    description={t(
+        'publish.experience.meta.description',
+        'Cargá tu excursión, paseo o taller en Hospeda y llegá a los viajeros que ya están buscando qué hacer en el litoral.'
+    )}
+>
+    <PublishHero
+        tagline={t('publish.experience.hero.tagline', 'Para quienes ofrecen experiencias')}
+        title={t('publish.experience.hero.title', 'Publicá tu experiencia y llenala')}
+        body={t(
+            'publish.experience.hero.body',
+            'Empezá acá con lo básico: qué ofrecés, de qué tipo es y desde qué destino salís. Las fotos, el punto de encuentro y los horarios los cargás después, desde tu panel.'
+        )}
+        Icon={CompassIcon}
+        floatingIcons={[ImageIcon, CalendarIcon, CheckCircleIcon]}
+    />
+
+    <PublishFormSlot locale={locale} vertical={VERTICAL} resolution={slot}>
+        <CommerceCreateForm
+            client:load
+            vertical={VERTICAL}
+            locale={locale}
+            destinations={destinations}
+            destinationsLoadFailed={destinationsLoadFailed}
+        />
+    </PublishFormSlot>
+
+    <PublishHowItWorks
+        stepsTagline={t('publish.steps.tagline', 'Es así de fácil')}
+        stepsTitle={t('publish.steps.title', '¿Cómo funciona?')}
+        steps={steps}
+        benefitsTagline={t('publish.benefits.tagline', '¿Por qué Hospeda?')}
+        benefitsTitle={t('publish.experience.benefits.title', 'Lo que te llevás')}
+        benefits={benefits}
+    />
+
+    <PublishPlanLinks
+        locale={locale}
+        plansUrl={buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
+        pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
+    />
+</MarketingLayout>

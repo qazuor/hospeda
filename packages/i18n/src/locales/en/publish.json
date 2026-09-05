@@ -1,0 +1,166 @@
+{
+    "signedOut": {
+        "tagline": "First step",
+        "title": "Create your account and publish",
+        "body": "You need an account to fill in your listing. It takes less than two minutes, and you land back on this same page to finish it.",
+        "signupCta": "Create my account",
+        "signinPrompt": "Already have an account?",
+        "signinCta": "Sign in"
+    },
+    "benefits": {
+        "tagline": "Why Hospeda?"
+    },
+    "steps": {
+        "tagline": "It's this simple",
+        "title": "How does it work?"
+    },
+    "plans": {
+        "tagline": "Before you decide",
+        "title": "Want to see the plans first?",
+        "body": "Check what each plan includes and what it costs. You can come back to this page whenever you want.",
+        "plansCta": "See plans",
+        "pricingCta": "See pricing"
+    },
+    "gastronomy": {
+        "meta": {
+            "title": "Publish your food and drink venue",
+            "description": "List your restaurant, bar, grill or food truck on Hospeda and reach the travellers looking for somewhere to eat in the Litoral region."
+        },
+        "hero": {
+            "tagline": "For food and drink venues",
+            "title": "List your venue and let people find it",
+            "body": "Start here with the basics: your venue's name, what kind it is and which destination it's in. Photos, menu and opening hours come later, from your dashboard."
+        },
+        "steps": {
+            "step1": {
+                "title": "Fill in the basics",
+                "desc": "Name, venue type and destination. That's all we need to create your listing right away."
+            },
+            "step2": {
+                "title": "Complete your listing",
+                "desc": "Add photos, menu, opening hours and contact details from the dashboard, at your own pace."
+            },
+            "step3": {
+                "title": "You go live",
+                "desc": "Your venue shows up in the gastronomy catalogue and diners in the area find you."
+            }
+        },
+        "benefits": {
+            "title": "What you get",
+            "item1": {
+                "title": "Seen by people already here",
+                "desc": "Thousands of travellers look for somewhere to eat in Concepción del Uruguay and the Litoral region every month."
+            },
+            "item2": {
+                "title": "The listing is yours",
+                "desc": "Change the menu, the photos and the opening hours whenever you want, without asking anyone."
+            },
+            "item3": {
+                "title": "No fee per enquiry",
+                "desc": "You pay your plan and that's it. No booking or enquiry adds a separate charge."
+            }
+        }
+    },
+    "experience": {
+        "meta": {
+            "title": "Publish your experience",
+            "description": "List your tour, outing or workshop on Hospeda and reach the travellers already looking for things to do in the Litoral region."
+        },
+        "hero": {
+            "tagline": "For experience providers",
+            "title": "List your experience and fill it up",
+            "body": "Start here with the basics: what you offer, what kind it is and which destination you set off from. Photos, meeting point and schedules come later, from your dashboard."
+        },
+        "steps": {
+            "step1": {
+                "title": "Tell us what you offer",
+                "desc": "Name, experience type and destination. That's all we need to create your listing right away."
+            },
+            "step2": {
+                "title": "Complete your listing",
+                "desc": "Add photos, meeting point, duration and schedules from the dashboard, at your own pace."
+            },
+            "step3": {
+                "title": "You go live",
+                "desc": "Your experience shows up in the catalogue and travellers already in the area find you."
+            }
+        },
+        "benefits": {
+            "title": "What you get",
+            "item1": {
+                "title": "Seen by people who already travelled",
+                "desc": "Whoever books a place to stay in the Litoral region then looks for things to do, and that's where you show up."
+            },
+            "item2": {
+                "title": "The listing is yours",
+                "desc": "Change photos, schedules and prices whenever you want, without asking anyone."
+            },
+            "item3": {
+                "title": "No fee per booking",
+                "desc": "You pay your plan and that's it. No booking or enquiry adds a separate charge."
+            }
+        }
+    },
+    "precheck": {
+        "gastronomy": {
+            "resumeOrCreate": {
+                "title": "You already have a listing in progress",
+                "body": "You have an unpublished gastronomy listing. You can pick it up where you left off or start a new one from scratch.",
+                "resumeCta": "Resume the listing",
+                "createCta": "Create a new one"
+            },
+            "resumeDeleteOrUpgrade": {
+                "title": "You have a listing in progress, but you've reached your plan's limit",
+                "body_one": "You're using {{currentCount}} listing and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
+                "body_other": "You're using {{currentCount}} listings and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
+                "resumeCta": "Resume the listing",
+                "deleteCta": "Delete the listing",
+                "deleteConfirm": "Delete this unpublished listing? You'll be able to create a new one.",
+                "upgradeCta": "Upgrade plan"
+            },
+            "pickDraftOrCreate": {
+                "title": "You have several unpublished listings",
+                "body": "Pick one of the listings you already started to carry on, or start a new one from scratch.",
+                "createCta": "Create a new one",
+                "pickCta": "Edit a listing in progress"
+            },
+            "pickDraftDeleteOrUpgrade": {
+                "title": "You have several listings in progress, but you've reached your plan's limit",
+                "body_one": "You're using {{currentCount}} listing and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
+                "body_other": "You're using {{currentCount}} listings and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
+                "pickCta": "Edit a listing in progress",
+                "upgradeCta": "Upgrade plan"
+            }
+        },
+        "experience": {
+            "resumeOrCreate": {
+                "title": "You already have an experience in progress",
+                "body": "You have an unpublished experience. You can pick it up where you left off or start a new one from scratch.",
+                "resumeCta": "Resume the experience",
+                "createCta": "Create a new one"
+            },
+            "resumeDeleteOrUpgrade": {
+                "title": "You have an experience in progress, but you've reached your plan's limit",
+                "body_one": "You're using {{currentCount}} experience and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
+                "body_other": "You're using {{currentCount}} experiences and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
+                "resumeCta": "Resume the experience",
+                "deleteCta": "Delete the experience",
+                "deleteConfirm": "Delete this unpublished experience? You'll be able to create a new one.",
+                "upgradeCta": "Upgrade plan"
+            },
+            "pickDraftOrCreate": {
+                "title": "You have several unpublished experiences",
+                "body": "Pick one of the experiences you already started to carry on, or start a new one from scratch.",
+                "createCta": "Create a new one",
+                "pickCta": "Edit an experience in progress"
+            },
+            "pickDraftDeleteOrUpgrade": {
+                "title": "You have several experiences in progress, but you've reached your plan's limit",
+                "body_one": "You're using {{currentCount}} experience and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
+                "body_other": "You're using {{currentCount}} experiences and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
+                "pickCta": "Edit an experience in progress",
+                "upgradeCta": "Upgrade plan"
+            }
+        }
+    }
+}

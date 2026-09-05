@@ -117,16 +117,42 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(experience?.manageHref).toBe('mi-cuenta/comercio');
     });
 
-    it('routes gastronomy and experience options to their own lead forms, not a self-service publish flow (HOS-134)', () => {
+    it('routes every listing-door option at ITS OWN publish page (HOS-1156 AC-1)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const accommodation = listing?.options.find((option) => option.id === 'accommodation');
         const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
-        // HOS-1032 retired `publicar-restaurante` / `publicar-experiencia` into
-        // 301s; the doors point at their successors. What the case still cares
-        // about is unchanged and is the reason it exists: each vertical goes to
-        // ITS OWN page, and neither goes to a self-service publish flow.
-        expect(gastronomy?.href).toBe('planes/gastronomia');
-        expect(experience?.href).toBe('planes/experiencias');
+
+        // This case used to assert the opposite — that the two commerce options
+        // led AWAY from a self-service publish flow — and that reading survived
+        // one URL rename too many. HOS-1032 repointed both at the 301 target of
+        // the URL they used to name, and the target was a SALES page, so the
+        // "Publicar" button stopped leading to publishing. That is the defect
+        // HOS-1156 fixes; this is the same case, inverted.
+        expect(accommodation?.href).toBe('publicar');
+        expect(gastronomy?.href).toBe('publicar/gastronomia');
+        expect(experience?.href).toBe('publicar/experiencias');
+
+        // Each vertical still goes to its OWN page — the property the previous
+        // version of this case was really protecting.
+        const hrefs = [accommodation?.href, gastronomy?.href, experience?.href];
+        expect(new Set(hrefs).size).toBe(3);
+    });
+
+    it('leaves manageHref and acquiredPermission untouched by the repoint (AC-3)', () => {
+        // The repoint moved `href` and nothing else: `manageHref` is where an
+        // owner goes once they HAVE a listing, which this spec did not change.
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const accommodation = listing?.options.find((option) => option.id === 'accommodation');
+        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const experience = listing?.options.find((option) => option.id === 'experience');
+
+        expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
+        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(experience?.manageHref).toBe('mi-cuenta/comercio');
+        expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
+        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(experience?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
     });
 
     it('gives the partner door four options: sponsor, partner, serviceProvider, editor (HOS-134)', () => {

@@ -501,17 +501,6 @@
             "downloadListingPdf": "Ficha em PDF para imprimir"
         },
         "create": {
-            "pickVertical": {
-                "title": "Criar novo comércio",
-                "subtitle": "Escolha que tipo de comércio você quer publicar.",
-                "gastronomyDescription": "Restaurantes, bares, cafés e outros locais gastronômicos.",
-                "experienceDescription": "Passeios, excursões, aluguéis e outras experiências."
-            },
-            "title": {
-                "gastronomy": "Criar ficha de gastronomia",
-                "experience": "Criar ficha de experiência"
-            },
-            "subtitle": "Preencha o básico agora — você vai poder adicionar fotos, horários e mais detalhes depois.",
             "fields": {
                 "name": {
                     "gastronomy": "Nome do comércio",
