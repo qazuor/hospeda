@@ -1107,6 +1107,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Tu alojamiento no está destacado. Con este complemento lo está automáticamente, sin ningún paso extra.",
             "title": "Destacá este alojamiento",
             "body": "Un impulso de visibilidad hace que este alojamiento aparezca destacado en los listados y en los resultados de búsqueda mientras dure el complemento.",
             "scope": "Ojo: el impulso se aplica solo a esta ficha. Si tenés más de un alojamiento, cada uno necesita su propio complemento.",

@@ -135,6 +135,68 @@ describe('AccommodationAdminSchema — archivedGallery preserved (SPEC-167)', ()
 });
 
 // ---------------------------------------------------------------------------
+// HOS-929 PIN: featuredByEntitlement must never leak to public consumers
+// ---------------------------------------------------------------------------
+
+/**
+ * Same base fixture, with `featuredByEntitlement: true` set explicitly.
+ * `entityPayload` leaves it at the Zod default (`false`), which cannot tell
+ * "stripped" apart from "just false" — this fixture can.
+ */
+const entityPayloadFeaturedByEntitlement = {
+    ...entityPayload,
+    featuredByEntitlement: true
+};
+
+describe('AccommodationPublicSchema — featuredByEntitlement strip (HOS-929)', () => {
+    it('strips featuredByEntitlement from the parsed public payload', () => {
+        const result = AccommodationPublicSchema.safeParse(entityPayloadFeaturedByEntitlement);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('featuredByEntitlement');
+        }
+    });
+});
+
+describe('AccommodationProtectedSchema — featuredByEntitlement retained (HOS-929)', () => {
+    it('keeps featuredByEntitlement on the owner-facing payload', () => {
+        const result = AccommodationProtectedSchema.safeParse(entityPayloadFeaturedByEntitlement);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).toHaveProperty('featuredByEntitlement', true);
+        }
+    });
+});
+
+describe('AccommodationAdminSchema — featuredByEntitlement retained (HOS-929)', () => {
+    it('keeps featuredByEntitlement on the admin payload', () => {
+        const result = AccommodationAdminSchema.safeParse(entityPayloadFeaturedByEntitlement);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).toHaveProperty('featuredByEntitlement', true);
+        }
+    });
+});
+
+describe('AccommodationProtectedCardSchema — featuredByEntitlement strip (HOS-929)', () => {
+    it('the nested CARD variant omits featuredByEntitlement, so embeds are fail-closed', () => {
+        // Same hazard as the rich-description pair: this schema is embedded as
+        // a relation by post (`relatedAccommodation`, eager-loaded by
+        // `PostService.getDefaultListRelations()` with no column allowlist,
+        // and gated only by `authorId === actor.id` — not by ownership of the
+        // referenced accommodation) and no data-level strip ever reaches an
+        // accommodation nested inside another entity's payload.
+        const result = AccommodationProtectedCardSchema.safeParse(
+            entityPayloadFeaturedByEntitlement
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('featuredByEntitlement');
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // socialNetworks inclusion in access schemas
 // ---------------------------------------------------------------------------
 

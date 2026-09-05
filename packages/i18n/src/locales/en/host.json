@@ -258,7 +258,6 @@
                 "photosDescription_other": "Upload up to {{cap}} photos of your property to attract more guests",
                 "photosDescriptionLoading": "Loading your photo limit…",
                 "externalReputation": "External reputation",
-                "featuredToggle": "Destacado",
                 "calendar": "Calendar",
                 "capacityPricing": "Capacity and price",
                 "contactSocial": "Contact and social",
@@ -538,11 +537,6 @@
                 "textUnavailable": "Just generated. Refresh the page to read it.",
                 "expandText": "Show full text",
                 "collapseText": "Show less"
-            },
-            "featuredToggle": {
-                "label": "Destacar mi alojamiento",
-                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Occupancy calendar",

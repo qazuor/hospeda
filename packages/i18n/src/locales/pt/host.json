@@ -258,7 +258,6 @@
                 "photosDescription_other": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
                 "photosDescriptionLoading": "Carregando seu limite de fotos…",
                 "externalReputation": "Reputação externa",
-                "featuredToggle": "Destacado",
                 "calendar": "Calendário",
                 "capacityPricing": "Capacidade e preço",
                 "contactSocial": "Contato e redes",
@@ -538,11 +537,6 @@
                 "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
                 "expandText": "Ver completo",
                 "collapseText": "Ver menos"
-            },
-            "featuredToggle": {
-                "label": "Destacar mi alojamiento",
-                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Calendário de ocupação",
