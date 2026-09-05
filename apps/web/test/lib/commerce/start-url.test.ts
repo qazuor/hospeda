@@ -46,18 +46,23 @@ function readReturnUrl(startUrl: string): string {
 }
 
 describe('buildCommerceCreateUrl', () => {
-    it('points at the vertical create form HOS-687 unlocked', () => {
+    it("points at the vertical's PUBLISH page, not at the 301 that replaced its old URL", () => {
+        // HOS-1156 moved the create form to `/publicar/{vertical}/` and left
+        // `/mi-cuenta/comercio/nuevo/{vertical}/` as a 301 to it. This value
+        // travels through sign-up as a `returnUrl`, so pointing it at the
+        // redirect would make a brand-new account's destination a URL somebody
+        // else can move — the exact mechanism that produced HOS-1156.
         expect(buildCommerceCreateUrl({ locale: 'es', vertical: 'experience' })).toBe(
-            '/es/mi-cuenta/comercio/nuevo/experience/'
+            '/es/publicar/experiencias/'
         );
         expect(buildCommerceCreateUrl({ locale: 'es', vertical: 'gastronomy' })).toBe(
-            '/es/mi-cuenta/comercio/nuevo/gastronomy/'
+            '/es/publicar/gastronomia/'
         );
     });
 
     it('keeps the caller locale in the prefix', () => {
         expect(buildCommerceCreateUrl({ locale: 'pt', vertical: 'experience' })).toBe(
-            '/pt/mi-cuenta/comercio/nuevo/experience/'
+            '/pt/publicar/experiencias/'
         );
     });
 });
@@ -81,18 +86,14 @@ describe('buildCommerceStartUrl', () => {
     });
 
     describe('session present — the CTA resolves to the create form', () => {
-        it('carries the vertical create form as returnUrl (experience)', () => {
+        it('carries the vertical publish page as returnUrl (experience)', () => {
             const url = buildCommerceStartUrl({ locale: 'es', vertical: 'experience' });
-            expect(url).toBe(
-                '/es/auth/signup/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercio%2Fnuevo%2Fexperience%2F'
-            );
+            expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F');
         });
 
-        it('carries the vertical create form as returnUrl (gastronomy)', () => {
+        it('carries the vertical publish page as returnUrl (gastronomy)', () => {
             const url = buildCommerceStartUrl({ locale: 'es', vertical: 'gastronomy' });
-            expect(url).toBe(
-                '/es/auth/signup/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercio%2Fnuevo%2Fgastronomy%2F'
-            );
+            expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F');
         });
 
         it('survives signup.astro s open-redirect guard, per locale and vertical', () => {

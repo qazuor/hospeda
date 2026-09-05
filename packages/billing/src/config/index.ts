@@ -8,4 +8,5 @@ export * from './partner-tier-plans.config.js';
 export * from './plan-domains.config.js';
 export * from './plans.config.js';
 export * from './promo-codes.config.js';
+export * from './publish-verticals.config.js';
 export * from './trial-plans.config.js';

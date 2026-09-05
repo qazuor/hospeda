@@ -114,7 +114,15 @@ const subscriptionByVertical = new Map(
     )
 );
 
-const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
+// HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
+// button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
+// which lists all three verticals with their own CTAs and already knows which
+// ones this account has acquired — the picker's job, done by a page that exists.
+//
+// The retired URL's own 301 goes to `/publicar/` per D-6; that is the right
+// landing for an old inbound link and the wrong one for this button, which a
+// commerce owner presses expecting to choose a commerce vertical.
+const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 const addonsUrl = buildUrl({ locale, path: 'mi-cuenta/addons' });
 
 /** Usage badges to render — pre-filtered so the template stays a plain `.map()`. */

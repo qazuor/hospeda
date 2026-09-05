@@ -919,15 +919,33 @@
             "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo.",
             "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel.",
             "precheck": {
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
+                    "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
+                    "pickCta": "Editar um rascunho existente",
+                    "title": "Você tem vários rascunhos, mas atingiu o limite do seu plano",
+                    "upgradeCta": "Fazer upgrade do plano"
+                },
+                "pickDraftOrCreate": {
+                    "body": "Escolha um dos rascunhos que já tem para continuar, ou comece uma nova propriedade do zero.",
+                    "createCta": "Criar uma nova",
+                    "pickCta": "Editar um rascunho existente",
+                    "title": "Você tem vários rascunhos sem publicar"
+                },
                 "resumeDeleteOrUpgrade": {
                     "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Você pode retomar seu rascunho, excluí-lo para liberar espaço ou fazer upgrade do plano.",
                     "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Você pode retomar seu rascunho, excluí-lo para liberar espaço ou fazer upgrade do plano.",
                     "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador"
+                    "deleteCta": "Borrar borrador",
+                    "resumeCta": "Retomar rascunho",
+                    "title": "Você tem um rascunho, mas atingiu o limite do seu plano",
+                    "upgradeCta": "Fazer upgrade do plano"
                 },
-                "pickDraftDeleteOrUpgrade": {
-                    "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
-                    "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo."
+                "resumeOrCreate": {
+                    "body": "Você tem uma propriedade sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",
+                    "createCta": "Criar uma nova",
+                    "resumeCta": "Retomar rascunho",
+                    "title": "Você já tem um rascunho em andamento"
                 }
             }
         }

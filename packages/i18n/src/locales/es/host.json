@@ -919,15 +919,33 @@
             "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
+                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
+                    "pickCta": "Editar un borrador existente",
+                    "title": "Tenés varios borradores, pero llegaste al límite de tu plan",
+                    "upgradeCta": "Subir de plan"
+                },
+                "pickDraftOrCreate": {
+                    "body": "Elegí uno de tus borradores existentes para continuar, o empezá una propiedad nueva desde cero.",
+                    "createCta": "Crear uno nuevo",
+                    "pickCta": "Editar un borrador existente",
+                    "title": "Tenés varios borradores sin publicar"
+                },
                 "resumeDeleteOrUpgrade": {
                     "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
                     "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
                     "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador"
+                    "deleteCta": "Borrar borrador",
+                    "resumeCta": "Retomar borrador",
+                    "title": "Tenés un borrador, pero llegaste al límite de tu plan",
+                    "upgradeCta": "Subir de plan"
                 },
-                "pickDraftDeleteOrUpgrade": {
-                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
-                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo."
+                "resumeOrCreate": {
+                    "body": "Tenés una propiedad sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.",
+                    "createCta": "Crear uno nuevo",
+                    "resumeCta": "Retomar borrador",
+                    "title": "Ya tenés un borrador en curso"
                 }
             }
         }
