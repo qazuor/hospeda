@@ -28,7 +28,7 @@
  */
 
 import { EntityTypeEnum, type EntityViewStats, type TrackableEntityType } from '@repo/schemas';
-import { getLocalDayWindow } from '@repo/utils';
+import { getLocalDayWindow, getLocalMonthWindow } from '@repo/utils';
 import { lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import type {
@@ -900,6 +900,111 @@ export class EntityViewModel {
                 logError('entityViews', 'getRecentlyViewedByUser', logContext, err);
             } catch {}
             throw new DbError('entityViews', 'getRecentlyViewedByUser', logContext, err.message);
+        }
+    }
+
+    /**
+     * Aggregates one calendar month of views into `entity_view_monthly_rollups`
+     * (HOS-1063 A-6), for EVERY trackable entity type present in that month.
+     *
+     * Written as a single `INSERT … SELECT … ON CONFLICT DO UPDATE`, so the
+     * whole month is one statement: no rows travel to the application, and a
+     * re-run over a month whose source rows still exist CORRECTS the stored
+     * totals rather than duplicating them. That idempotency is load-bearing —
+     * repairing a failed cron run is the normal reason this runs twice, and
+     * without the unique key behind it a retry would double every number.
+     *
+     * **No entity-type filter, on purpose.** A rollup that covered only PARTNER
+     * would be a table that silently returns zeros the first time anyone reads
+     * it for accommodations, and filtering to one type costs strictly more code
+     * than not filtering (OQ-1). AC-17 asserts this with two entity types,
+     * because a rollup covering one is indistinguishable from a correct one when
+     * only that one is tested.
+     *
+     * `total` uses the same 30-minute dedup bucket the live window uses, so a
+     * rolled-up month and a live month are the same measurement rather than two
+     * that happen to share a name.
+     *
+     * ## The month boundaries are resolved in TypeScript, not in SQL
+     *
+     * `getLocalMonthWindow` turns the requested month into a half-open
+     * `[monthStart, nextMonthStart)` pair of UTC instants plus a `'YYYY-MM-01'`
+     * label, and the statement below carries no time zone at all. Two reasons,
+     * and the first one is not a preference:
+     *
+     * 1. **The `DATE_TRUNC(... AT TIME ZONE $tz)` form could not execute.**
+     *    `MARKET_TIMEZONE` is a plain string, so each interpolation emitted a
+     *    DISTINCT placeholder — `$1` in the SELECT, `$5` in the GROUP BY — and
+     *    Postgres compares `GROUP BY` expressions by node identity, not by
+     *    bound value. It rejected the statement at parse time, every time:
+     *    `column "entity_views.viewed_at" must appear in the GROUP BY clause`.
+     *    The cron would have run daily, logged a `DbError`, written zero rows,
+     *    and the 95-day purge would then have destroyed the only data this job
+     *    exists to preserve — silently, because nobody reads a rollup table.
+     *    (`marketTimezoneSql()` in `../../utils/drizzle-helpers.ts` is the fix
+     *    for statements that genuinely need the zone inside SQL; this one does
+     *    not need it at all, which is strictly better.)
+     * 2. **`WHERE DATE_TRUNC(...)` is not sargable.** It wraps the indexed
+     *    column in a function, so `idx_entity_views_time` cannot be used and the
+     *    whole table is scanned — twice a day, forever. `viewed_at >= $start AND
+     *    viewed_at < $end` uses the index.
+     *
+     * @param input.month - Any date inside the calendar month to roll up.
+     * @param tx - Optional transaction client.
+     * @returns The number of rollup rows written or updated.
+     * @throws {DbError} If the database operation fails.
+     */
+    async rollUpMonth(input: { readonly month: Date }, tx?: DrizzleClient): Promise<number> {
+        const db = this.getClient(tx);
+        const { monthStart, nextMonthStart, monthLabel } = getLocalMonthWindow({
+            instant: input.month
+        });
+        const logContext = { month: monthLabel };
+
+        try {
+            /*
+             * No RETURNING clause: the previous version returned one row per
+             * rolled-up entity, which on `entity_views` is every accommodation,
+             * post and event with traffic that month — dragged into the process
+             * twice a day to be counted and discarded. `rowCount` is what the
+             * caller actually wants and it costs nothing.
+             */
+            const result = await db.execute(sql`
+                INSERT INTO entity_view_monthly_rollups
+                    (entity_type, entity_id, month, total, unique_visitors)
+                SELECT
+                    entity_type,
+                    entity_id,
+                    ${monthLabel}::date,
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
+                    ))::int,
+                    COUNT(DISTINCT visitor_hash)::int
+                FROM entity_views
+                WHERE viewed_at >= ${monthStart}
+                  AND viewed_at < ${nextMonthStart}
+                GROUP BY
+                    entity_type,
+                    entity_id
+                ON CONFLICT (entity_type, entity_id, month) DO UPDATE SET
+                    total = EXCLUDED.total,
+                    unique_visitors = EXCLUDED.unique_visitors
+            `);
+
+            const written = (result as { rowCount?: number | null }).rowCount ?? 0;
+
+            try {
+                logQuery('entityViews', 'rollUpMonth', logContext, { written });
+            } catch {}
+
+            return written;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'rollUpMonth', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'rollUpMonth', logContext, err.message);
         }
     }
 

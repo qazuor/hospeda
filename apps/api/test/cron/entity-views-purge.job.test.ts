@@ -14,15 +14,21 @@ import type { CronJobContext } from '../../src/cron/types';
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
-const { mockPurgeOlderThan } = vi.hoisted(() => ({
-    mockPurgeOlderThan: vi.fn()
+const { mockPurgeOlderThan, mockPurgeClicks } = vi.hoisted(() => ({
+    mockPurgeOlderThan: vi.fn(),
+    mockPurgeClicks: vi.fn()
 }));
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
     return {
         ...actual,
-        entityViewModel: { purgeOlderThan: mockPurgeOlderThan }
+        entityViewModel: { purgeOlderThan: mockPurgeOlderThan },
+        // `partner_logo_clicks` is purged by this same job on the same horizon
+        // (HOS-1063 A-3). Leaving it out of the mock does not skip it: the job
+        // reaches the REAL singleton through `...actual` and the run fails with
+        // no database, which is how this test broke.
+        partnerLogoClickModel: { purgeOlderThan: mockPurgeClicks }
     };
 });
 
@@ -64,28 +70,40 @@ describe('entityViewsPurgeJob', () => {
         expect(result.success).toBe(true);
         expect(result.processed).toBe(0);
         expect(mockPurgeOlderThan).not.toHaveBeenCalled();
+        expect(mockPurgeClicks).not.toHaveBeenCalled();
     });
 
     // ── Normal path ───────────────────────────────────────────────────────────
 
     it('calls purgeOlderThan with days: 95 and reports the deleted count', async () => {
         mockPurgeOlderThan.mockResolvedValue(42);
+        mockPurgeClicks.mockResolvedValue(7);
 
         const result = await entityViewsPurgeJob.handler(makeCronContext());
 
         expect(mockPurgeOlderThan).toHaveBeenCalledOnce();
         expect(mockPurgeOlderThan).toHaveBeenCalledWith({ days: 95 });
+        // Both tables carry `visitor_hash`, so both are purged on the same
+        // horizon by the same job — asserted with DIFFERENT counts so a
+        // `processed` that dropped one of them cannot still add up.
+        expect(mockPurgeClicks).toHaveBeenCalledOnce();
+        expect(mockPurgeClicks).toHaveBeenCalledWith({ days: 95 });
 
         expect(result.success).toBe(true);
-        expect(result.processed).toBe(42);
+        expect(result.processed).toBe(49);
         expect(result.errors).toBe(0);
-        expect(result.details).toMatchObject({ deleted: 42, retentionDays: 95 });
+        expect(result.details).toMatchObject({
+            deleted: 42,
+            deletedClicks: 7,
+            retentionDays: 95
+        });
     });
 
     // ── Zero-deletion (no-op) ─────────────────────────────────────────────────
 
     it('records a successful result when 0 rows are deleted (no-op run)', async () => {
         mockPurgeOlderThan.mockResolvedValue(0);
+        mockPurgeClicks.mockResolvedValue(0);
 
         const result = await entityViewsPurgeJob.handler(makeCronContext());
 
@@ -93,12 +111,14 @@ describe('entityViewsPurgeJob', () => {
         expect(result.processed).toBe(0);
         expect(result.errors).toBe(0);
         expect(mockPurgeOlderThan).toHaveBeenCalledWith({ days: 95 });
+        expect(mockPurgeClicks).toHaveBeenCalledWith({ days: 95 });
     });
 
     // ── Error path ────────────────────────────────────────────────────────────
 
     it('returns a failed result (no unhandled rejection) when the model throws', async () => {
         mockPurgeOlderThan.mockRejectedValue(new Error('connection refused'));
+        mockPurgeClicks.mockResolvedValue(0);
 
         const result = await entityViewsPurgeJob.handler(makeCronContext());
 
@@ -110,6 +130,7 @@ describe('entityViewsPurgeJob', () => {
 
     it('logs the error when the model throws', async () => {
         mockPurgeOlderThan.mockRejectedValue(new Error('timeout'));
+        mockPurgeClicks.mockResolvedValue(0);
 
         const ctx = makeCronContext();
         await entityViewsPurgeJob.handler(ctx);

@@ -3147,6 +3147,39 @@ export interface MyPartnerMentionsResponse {
     readonly batches: readonly MyPartnerMentionBatch[];
 }
 
+/** One metric's deduplicated counts over the requested window (HOS-1063). */
+export interface MyPartnerStatsCounts {
+    readonly unique: number;
+    readonly total: number;
+}
+
+/**
+ * Response envelope for `GET /protected/partners/mine/stats` (HOS-1063 A-4).
+ *
+ * `available: false` with nothing else is the answer for a caller who owns no
+ * partner — never a 403/404, for the same reason the mentions log is not.
+ *
+ * `views` and `clicks` are present whenever `available` is true, INCLUDING for a
+ * partner whose logo links nowhere and who therefore cannot receive clicks. That
+ * is deliberate: the honest count of a thing that did not happen is zero, and it
+ * is the SECTION that must omit a card whose surface does not exist. The API
+ * deciding it instead would be a second source of truth about what the home
+ * carousel renders.
+ */
+export interface MyPartnerStats {
+    readonly available: boolean;
+    readonly partner?: {
+        readonly id: string;
+        readonly name: string;
+        readonly slug?: string;
+        readonly tier?: string;
+        readonly websiteUrl?: string;
+    };
+    readonly windowDays?: number;
+    readonly views?: MyPartnerStatsCounts;
+    readonly clicks?: MyPartnerStatsCounts;
+}
+
 /** What a partner may PATCH onto their own listing. */
 export interface MyPartnerUpdate {
     readonly logoUrl?: string | null;
@@ -3215,6 +3248,34 @@ export const partnersApi = {
     } = {}): Promise<ApiResult<MyPartnerMentionsResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/partners/mine/mentions`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * The caller's own in-platform statistics over a 7- or 30-day window
+     * (HOS-1063 A-4).
+     *
+     * Answers `{ available: false }` rather than an error when the caller owns
+     * no partner — the same fail-closed shape as {@link partnersApi.mineMentions},
+     * and for the same reason: a 403 would confirm a partner exists.
+     *
+     * The payload carries the NUMBERS plus `tier`/`slug`/`websiteUrl`, and says
+     * nothing about which cards to render. That is `resolvePartnerLogoLink`'s
+     * job — see `PartnerStatsSection.astro`.
+     *
+     * @param params - `{ windowDays }`, and `{ cookieHeader }` when calling from SSR.
+     * @returns The caller's statistics, or an error the page degrades from.
+     */
+    mineStats({
+        cookieHeader,
+        windowDays = 30
+    }: {
+        cookieHeader?: string;
+        windowDays?: 7 | 30;
+    } = {}): Promise<ApiResult<MyPartnerStats>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/partners/mine/stats?windowDays=${windowDays}`,
             cookieHeader
         });
     }

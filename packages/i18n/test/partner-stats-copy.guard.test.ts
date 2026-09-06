@@ -1,0 +1,218 @@
+/**
+ * HOS-1063 AC-10 / §7.3 / G-2 — the copy of the partner statistics panel.
+ *
+ * Two things are asserted, and neither is about wording taste.
+ *
+ * 1. **The scope sentence exists in all three locales.** The partner read that
+ *    exact sentence on `/presentacion/aliados/` BEFORE signing — it is the line
+ *    that draws the platform/social boundary — and a panel that omits it invites
+ *    precisely the question it was written to pre-empt: "and the Instagram
+ *    numbers?". The i18n guards elsewhere in this repo check STRUCTURE, never
+ *    content, so "the key exists" is not the same as "the promise is kept"; this
+ *    file checks the content.
+ *
+ * 2. **The two subtrees stay separate and stay honest.**
+ *    `account.partnerStats.*` and `account.partnerMentions.*` must not overlap
+ *    (AC-8), and the mentions log must not acquire measurement vocabulary now
+ *    that a measurement block sits beside it (NG-6, G-8, R-8). The log is
+ *    *constancia*; the panel is *medición*, and the presentation sold those as
+ *    different things.
+ */
+
+import { describe, expect, it } from 'vitest';
+import enAccount from '../src/locales/en/account.json';
+import esAccount from '../src/locales/es/account.json';
+import ptAccount from '../src/locales/pt/account.json';
+
+const LOCALES = {
+    es: esAccount as Record<string, unknown>,
+    en: enAccount as Record<string, unknown>,
+    pt: ptAccount as Record<string, unknown>
+};
+
+const statsSubtree = (locale: keyof typeof LOCALES): Record<string, unknown> =>
+    LOCALES[locale].partnerStats as Record<string, unknown>;
+
+/** Every leaf string under a subtree, flattened. */
+const leaves = (node: unknown): string[] => {
+    if (typeof node === 'string') return [node];
+    if (node && typeof node === 'object') {
+        return Object.values(node as Record<string, unknown>).flatMap(leaves);
+    }
+    return [];
+};
+
+describe('HOS-1063 — the partner stats subtree exists in every locale', () => {
+    it.each(['es', 'en', 'pt'] as const)('%s has the full card structure', (locale) => {
+        const stats = statsSubtree(locale);
+        expect(stats).toBeDefined();
+        expect(stats.title).toBeTruthy();
+        expect(stats.subtitle).toBeTruthy();
+        expect(stats.scopeNote).toBeTruthy();
+
+        // §7.4 — both windows render at once, so both labels must exist. A
+        // missing one leaves a bare numeral with nothing saying which period it
+        // covers, sitting beside another numeral that does say: the precise
+        // confusion that showing two figures was supposed to avoid.
+        const windows = stats.windows as Record<string, unknown>;
+        expect(windows).toBeDefined();
+        expect(windows.last30).toBeTruthy();
+        expect(windows.last7).toBeTruthy();
+
+        const views = stats.views as Record<string, unknown>;
+        expect(views.label).toBeTruthy();
+        expect(views.help).toBeTruthy();
+        // The not-applicable line is what replaces a numeral for a partner with
+        // no page of their own (AC-9). Without it that branch renders empty and
+        // the card reads as broken rather than as inapplicable.
+        expect(views.notApplicable).toBeTruthy();
+
+        const clicks = stats.clicks as Record<string, unknown>;
+        expect(clicks.label).toBeTruthy();
+        expect(clicks.help).toBeTruthy();
+    });
+
+    /**
+     * The two window labels must be DISTINGUISHABLE, and each must name its own
+     * period. Two figures under two labels that read alike is the same failure
+     * as two figures under no labels at all — the reader still cannot tell which
+     * is which. Asserted by the digit each label carries, which survives
+     * translation where a phrase would not.
+     */
+    it.each(['es', 'en', 'pt'] as const)('%s names 30 and 7 in their own labels', (locale) => {
+        const windows = statsSubtree(locale).windows as Record<string, string>;
+
+        expect(windows.last30).toContain('30');
+        expect(windows.last7).toContain('7');
+        expect(windows.last30).not.toBe(windows.last7);
+        // The 30-day label must not also claim 7, and vice versa — a copy-paste
+        // that left "7" in the 30-day string is exactly how the two swap.
+        expect(windows.last30).not.toMatch(/\b7\b/);
+        expect(windows.last7).not.toMatch(/\b30\b/);
+    });
+});
+
+describe('HOS-1063 AC-10 / §7.3 — the scope sentence keeps its promise', () => {
+    /**
+     * Asserted on MEANING, not on an exact string: the three locales say the
+     * same thing in three languages, so an exact-match test could only ever
+     * cover one of them. Each locale is checked for the two halves the sentence
+     * must carry — "inside Hospeda" and "not a measurement of what is outside".
+     */
+    it('the Spanish note names Hospeda and refuses to promise measurement', () => {
+        const note = statsSubtree('es').scopeNote as string;
+        expect(note).toMatch(/dentro de Hospeda/i);
+        expect(note).toMatch(/constancia, no medición/i);
+    });
+
+    it('the English note carries both halves', () => {
+        const note = statsSubtree('en').scopeNote as string;
+        expect(note).toMatch(/inside Hospeda/i);
+        expect(note).toMatch(/a record, not a measurement/i);
+    });
+
+    it('the Portuguese note carries both halves', () => {
+        const note = statsSubtree('pt').scopeNote as string;
+        expect(note).toMatch(/dentro da Hospeda/i);
+        expect(note).toMatch(/registro, n[ãa]o medi[çc][ãa]o/i);
+    });
+});
+
+describe('HOS-1063 AC-8 / NG-6 — the two subtrees stay separate and honest', () => {
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('%s keeps partnerStats and partnerMentions as disjoint subtrees', (locale) => {
+        const stats = statsSubtree(locale);
+        const mentions = LOCALES[locale].partnerMentions as Record<string, unknown>;
+
+        expect(stats).toBeDefined();
+        expect(mentions).toBeDefined();
+        // Neither is nested inside the other — the structural half of AC-8.
+        expect(Object.keys(stats)).not.toContain('partnerMentions');
+        expect(Object.keys(mentions)).not.toContain('partnerStats');
+    });
+
+    /**
+     * NG-6 / G-8 / R-8. The appearance log is a record of facts and must never
+     * speak like a performance report — no reach, no impressions, no clicks —
+     * and the moment a statistics block lands beside it is exactly when someone
+     * proposes "while we are here, add the numbers to the log too".
+     *
+     * Deliberately scoped to the mentions subtree: the STATS subtree is allowed
+     * to say "clics", because it has a real click number behind it.
+     */
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('%s keeps measurement vocabulary out of the mentions log', (locale) => {
+        const mentionsCopy = leaves(LOCALES[locale].partnerMentions).join(' ').toLowerCase();
+
+        for (const forbidden of [
+            'alcance',
+            'impresion',
+            'impression',
+            'reach',
+            'estadística',
+            'estatística',
+            'statistic'
+        ]) {
+            expect(mentionsCopy).not.toContain(forbidden);
+        }
+    });
+});
+
+describe('HOS-1063 — the panel copy is as tier-blind as the gating is', () => {
+    /**
+     * Every gate in this feature is deliberately blind to the partner's tier:
+     * a card is shown or withheld by `resolvePartnerLogoLink`, by what the
+     * partner's logo actually DOES, never by comparing `tier === 'gold'`. That
+     * is what lets HOS-1159 change which plans include a page of their own
+     * without touching a single gate.
+     *
+     * The copy had to be held to the same rule and was not. `views.notApplicable`
+     * — the ONE line in this panel a partner actually reads when a number is
+     * missing — said "Con el nivel oro tenés tu propia página" in all three
+     * locales. So the single tier-dependent statement in the feature was the one
+     * addressed to the customer, and the day the tiers move it becomes a false
+     * promise shown to the partner it is wrong about, while every gate around it
+     * keeps working.
+     *
+     * The guard watches the WHOLE subtree, not that one key: the next sentence
+     * to name a tier will not be the one already fixed.
+     */
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('%s names no partner tier anywhere in partnerStats', (locale) => {
+        const statsCopy = leaves(statsSubtree(locale)).join(' ').toLowerCase();
+
+        // Both tiers in all three languages. `plata`/`prata` are also ordinary
+        // words, but neither has any business in a statistics panel, so a hit is
+        // worth reading either way.
+        for (const tier of ['oro', 'gold', 'ouro', 'plata', 'silver', 'prata']) {
+            expect(statsCopy).not.toContain(tier);
+        }
+    });
+
+    /**
+     * The positive half: having removed the tier, the sentence still has to
+     * explain the absence, and it explains it by naming the SURFACE — that the
+     * logo goes somewhere other than a page on Hospeda. A guard that only
+     * forbade the tier word would be satisfied by deleting the sentence.
+     */
+    it.each([
+        ['es', /p[áa]gina/i],
+        ['en', /page/i],
+        ['pt', /p[áa]gina/i]
+    ] as const)('%s explains the absence in terms of the surface', (locale, surface) => {
+        const notApplicable = (statsSubtree(locale).views as Record<string, unknown>)
+            .notApplicable as string;
+
+        expect(notApplicable).toMatch(surface);
+        expect(notApplicable).toMatch(/hospeda/i);
+    });
+});

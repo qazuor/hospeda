@@ -94,6 +94,9 @@ export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';
 export * from './partner-content-review-state.enum.js';
 export * from './partner-content-review-state.schema.js';
+// Partner logo click destinations (HOS-1063)
+export * from './partner-logo-click-destination.enum.js';
+export * from './partner-logo-click-destination.schema.js';
 // Partner mention channels (HOS-377)
 export * from './partner-mention-channel.enum.js';
 export * from './partner-mention-channel.schema.js';

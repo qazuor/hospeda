@@ -36,7 +36,39 @@ export interface PartnerLogoLink {
     readonly rel?: string;
     /** `target` attribute — set only for outbound links. */
     readonly target?: string;
+    /**
+     * WHICH branch produced the link, or `undefined` when there is none
+     * (HOS-1063).
+     *
+     * Returned rather than re-derived by callers, because three separate places
+     * need to know and each one deriving it independently is three chances to
+     * disagree with what the carousel actually renders:
+     *
+     *  1. the carousel tags its anchors with it, so the click beacon can report
+     *     the right `destination` without re-resolving anything;
+     *  2. the partner's statistics panel renders the CLICKS card only when a
+     *     link exists at all, and the VIEWS card only when that link is
+     *     `OWN_PAGE`;
+     *  3. that same panel therefore cannot contradict the home page, whichever
+     *     way HOS-1159 resolves silver's clickability.
+     *
+     * Point 2 is the load-bearing one. The alternative — the panel testing
+     * `tier === 'gold' && slug` for itself — is a SECOND source of truth about
+     * what this function decides, and it drifts the moment this function does.
+     */
+    readonly destination?: PartnerLogoDestination;
 }
+
+/**
+ * The two destinations a clickable partner logo can lead to.
+ *
+ * Mirrors `PartnerLogoClickDestinationEnum` in `@repo/schemas`, which is what
+ * the capture endpoint validates against. Declared here as a plain union rather
+ * than imported so this module stays free of a runtime dependency: it is
+ * imported by an inline `<script>` path on the home page, whose JS budget is the
+ * subject of HOS-160 and HOS-168.
+ */
+export type PartnerLogoDestination = 'OWN_PAGE' | 'EXTERNAL';
 
 /**
  * Resolves the link for one partner logo.
@@ -77,12 +109,20 @@ export function resolvePartnerLogoLink({
     readonly locale: SupportedLocale;
 }): PartnerLogoLink {
     if (partner.tier === GOLD_TIER && partner.slug) {
-        return { href: buildUrl({ locale, path: `partners/${partner.slug}` }) };
+        return {
+            href: buildUrl({ locale, path: `partners/${partner.slug}` }),
+            destination: 'OWN_PAGE'
+        };
     }
 
     const websiteHref = resolveSafeExternalUrl(partner.url);
     if (websiteHref) {
-        return { href: websiteHref, rel: EXTERNAL_REL, target: '_blank' };
+        return {
+            href: websiteHref,
+            rel: EXTERNAL_REL,
+            target: '_blank',
+            destination: 'EXTERNAL'
+        };
     }
 
     return {};

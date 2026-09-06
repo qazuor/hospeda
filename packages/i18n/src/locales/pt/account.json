@@ -1563,6 +1563,24 @@
             }
         }
     },
+    "partnerStats": {
+        "title": "Seus números",
+        "subtitle": "O que aconteceu com a sua ficha dentro da Hospeda.",
+        "views": {
+            "label": "Visitas à sua página",
+            "help": "Pessoas que entraram na sua página de parceiro.",
+            "notApplicable": "O seu logo leva direto ao seu site, então não há visitas a uma página no Hospeda para contar. Se o seu plano passar a incluir uma, as visitas aparecem aqui."
+        },
+        "clicks": {
+            "label": "Cliques no seu logo",
+            "help": "Vezes que alguém entrou pelo seu logo na página inicial."
+        },
+        "windows": {
+            "last30": "nos últimos 30 dias",
+            "last7": "nos últimos 7 dias"
+        },
+        "scopeNote": "Todas as estatísticas que mostramos são do que acontece dentro da Hospeda — as nossas páginas e a nossa newsletter. Do que publicamos fora damos registro, não medição."
+    },
     "partnerMentions": {
         "title": "Registro de menções",
         "subtitle": "Tudo o que divulgamos sobre você, com o link de cada publicação para que possa verificar.",

@@ -13,3 +13,5 @@ export * from './partner-mention.admin-search.schema.js';
 export * from './partner-mention.create.schema.js';
 export * from './partner-mention.schema.js';
 export * from './partner-mention.update.schema.js';
+// Partner in-platform statistics (HOS-1063)
+export * from './partner-stats.schema.js';

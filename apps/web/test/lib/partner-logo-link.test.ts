@@ -57,6 +57,43 @@ describe('resolvePartnerLogoLink', () => {
         expect(link.target).toBe('_blank');
     });
 
+    /**
+     * HOS-1063: the resolver also reports WHICH branch it took, so three
+     * consumers — the carousel's `data-partner-destination`, the click beacon's
+     * payload and the statistics panel's card gating — read one answer instead
+     * of re-deriving it three times and disagreeing.
+     */
+    it('tags a gold internal link as OWN_PAGE', () => {
+        expect(resolvePartnerLogoLink({ partner: gold, locale: 'es' }).destination).toBe(
+            'OWN_PAGE'
+        );
+    });
+
+    it('tags an outbound website link as EXTERNAL', () => {
+        expect(resolvePartnerLogoLink({ partner: silver, locale: 'es' }).destination).toBe(
+            'EXTERNAL'
+        );
+    });
+
+    it('reports NO destination when there is no link, so nothing can be recorded', () => {
+        const link = resolvePartnerLogoLink({
+            partner: { ...silver, url: undefined },
+            locale: 'es'
+        });
+
+        expect(link.href).toBeUndefined();
+        expect(link.destination).toBeUndefined();
+    });
+
+    it('reports no destination for a gold partner missing its slug', () => {
+        const link = resolvePartnerLogoLink({
+            partner: { ...gold, slug: undefined },
+            locale: 'es'
+        });
+
+        expect(link.destination).toBeUndefined();
+    });
+
     it('gives a silver partner with no website no link at all', () => {
         // Arrange — AC-6. Every newly provisioned partner starts with a null
         // websiteUrl (spec R-1), so this is the common case on day one, not an

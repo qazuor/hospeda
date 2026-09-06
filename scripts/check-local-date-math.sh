@@ -115,10 +115,72 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Check 3: the timezone inside a Drizzle sql template is never a plain string
+#
+# `MARKET_TIMEZONE` is a plain string, so every `${MARKET_TIMEZONE}` inside a
+# Drizzle `sql` template emits a DISTINCT placeholder — $1 in the SELECT, $5 in
+# the GROUP BY. Postgres compares GROUP BY expressions by node identity, not by
+# bound value, so it rejects the statement at PARSE TIME:
+#
+#     ERROR: column "entity_views.viewed_at" must appear in the GROUP BY clause
+#
+# This has now shipped twice. HOS-1169 hit it in getDailySeries and answered it
+# with `marketTimezoneSql()` in packages/db/src/utils/drizzle-helpers.ts, whose
+# docblock says it was "found the hard way". HOS-1063 hit it again in both
+# rollUpMonth writers, and every unit test stayed green through it: those suites
+# mock @repo/db wholesale and assert with toContain over the SQL that gets BUILT,
+# never the SQL Postgres ACCEPTS. A statement that cannot execute is invisible to
+# a test that never executes it, which is why this is a static check and not
+# another test.
+#
+# Two forms are safe and neither is matched here: `marketTimezoneSql()` (one
+# shared node, reused), and resolving the bounds in TypeScript so the statement
+# carries no zone at all (getLocalMonthWindow / getLocalDayWindow).
+# ---------------------------------------------------------------------------
+echo ""
+echo "3. Scanning for a bare timezone string inside a Drizzle sql template..."
+
+TZ_MATCHES=""
+for dir in $SCAN_DIRS; do
+    if [ -d "$dir" ]; then
+        FOUND=$(grep -rn --include="*.ts" \
+            'AT TIME ZONE ${MARKET_TIMEZONE}' \
+            "$dir" \
+            --exclude-dir=dist \
+            2>/dev/null \
+            | grep -v "check-local-date-math: ignore" \
+            | grep -vE "^[^:]+:[0-9]+: *(\*|//|/\*)" \
+            || true)
+        if [ -n "$FOUND" ]; then
+            TZ_MATCHES="${TZ_MATCHES}${FOUND}"$'\n'
+        fi
+    fi
+done
+TZ_MATCHES=$(echo "$TZ_MATCHES" | sed '/^$/d')
+
+if [ -n "$TZ_MATCHES" ]; then
+    echo "ERROR: a plain timezone string is interpolated into a sql template:"
+    echo "$TZ_MATCHES"
+    echo ""
+    echo "  Each interpolation emits its own placeholder, so a GROUP BY that"
+    echo "  repeats the expression will not match the SELECT and Postgres rejects"
+    echo "  the whole statement at parse time — on every execution, silently, into"
+    echo "  a cron's error log."
+    echo ""
+    echo "  Use marketTimezoneSql() from @repo/db when the zone must be inside the"
+    echo "  statement, or resolve the bounds in TypeScript (getLocalMonthWindow,"
+    echo "  getLocalDayWindow) so the statement needs no zone at all."
+    FAIL=1
+else
+    echo "  OK — no bare timezone string reaches a sql template."
+    PASS_COUNT=$((PASS_COUNT + 1))
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Results: $PASS_COUNT/2 checks passed ==="
+echo "=== Results: $PASS_COUNT/3 checks passed ==="
 
 if [ "$FAIL" -eq 1 ]; then
     echo "FAILED — Fix the issues above before merging."

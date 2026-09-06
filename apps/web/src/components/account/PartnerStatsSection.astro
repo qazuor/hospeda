@@ -1,0 +1,320 @@
+---
+/**
+ * @file PartnerStatsSection.astro
+ * @description The partner's own in-platform numbers (HOS-1063 A-5).
+ *
+ * ## A SIBLING of the mentions log, never part of it (AC-8)
+ *
+ * `PartnerMentionsSection.astro:16-21` asked for exactly this, by name:
+ *
+ * > that block must NOT share a heading, a container or a component with this
+ * > one, and its copy must live under a DIFFERENT i18n subtree than
+ * > `account.partnerMentions`. The two answer different questions ("what did you
+ * > do for me?" vs "how did it perform?") and blurring them is exactly how this
+ * > section starts implying a measurement it does not have.
+ *
+ * So: its own `<section>`, its own heading, and every key under
+ * `account.partnerStats.*`. The log is *constancia*; this is *medición*, and the
+ * commercial presentation sold those as different things.
+ *
+ * ## Which cards render is derived from `resolvePartnerLogoLink` — never from tier
+ *
+ * This is the load-bearing decision of the whole section (§7.2, OQ-7 (2)), and
+ * it is easy to "simplify" into a bug:
+ *
+ *  - the VIEWS card renders when the resolver returns an `OWN_PAGE` link, i.e.
+ *    when the partner actually has a page at `/partners/<slug>/`;
+ *  - the CLICKS card renders when the resolver returns ANY link, since a logo
+ *    that links nowhere cannot be clicked.
+ *
+ * Both read the SAME function the home carousel reads, on the same inputs, so
+ * this panel is structurally incapable of contradicting what the home page
+ * renders. A `tier === 'gold'` test here would be a second source of truth about
+ * that, and it would drift the moment HOS-1159 makes a silver logo stop being
+ * clickable — at which point the clicks card simply stops rendering for silver,
+ * with no change to this file.
+ *
+ * ## A card that does not apply is ABSENT, never zero (G-3, AC-9)
+ *
+ * "0 visitas" reads as *nobody came to see you*. The true statement for a
+ * partner with no page is *this metric does not exist at your level*. So the
+ * views card is replaced by an explanatory line carrying NO numeral at all —
+ * asserted by a negative match on digits, because asserting the absence of the
+ * string "0" passes on a card that renders "cero" in another locale.
+ *
+ * ## Why a pure Astro component and not an island
+ *
+ * Read-only, zero interactivity, zero JavaScript — the same as its sibling. That
+ * also keeps every key it uses out of `CLIENT_I18N_KEY_PREFIXES`; adding one
+ * would FAIL the guard test, which recomputes that list from the real import
+ * graph and rejects entries in both directions.
+ *
+ * `/mi-cuenta/*` is never edge-cached, so reading the session server-side is
+ * correct here — the same note the mentions component carries.
+ */
+
+import type { MyPartnerStats } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { resolvePartnerStatsView } from '@/lib/partner-stats-cards';
+
+interface Props {
+    /** Active locale for i18n. */
+    readonly locale: SupportedLocale;
+    /**
+     * The 30-day payload. Load-bearing: it decides whether the panel renders at
+     * all, which cards apply, and the headline figure.
+     */
+    readonly stats30: MyPartnerStats | null;
+    /**
+     * The 7-day payload, or null when that read failed. Secondary — its absence
+     * drops one line, never the panel.
+     */
+    readonly stats7: MyPartnerStats | null;
+}
+
+const { locale, stats30, stats7 } = Astro.props;
+const { t } = createTranslations(locale);
+
+/**
+ * Card visibility AND both figures live in `resolvePartnerStatsView`, not here.
+ *
+ * Deliberately extracted: a test over the SOURCE of an `.astro` file cannot
+ * tell what is declared from what is rendered, so the two rules that must never
+ * silently invert — which cards apply, and which window each number belongs to
+ * — would otherwise have had no honest test. They are a pure function there,
+ * with real inputs and mutations that turn tests red.
+ */
+const {
+    visible,
+    showViews: showViewsCard,
+    showClicks: showClicksCard,
+    views,
+    clicks
+} = resolvePartnerStatsView({ stats30, stats7, locale });
+
+const numberFormatter = new Intl.NumberFormat(locale);
+---
+
+{
+    visible && (
+        <section class="partner-stats">
+            <header class="partner-stats__header">
+                <h2 class="partner-stats__title">{t('account.partnerStats.title')}</h2>
+                <p class="partner-stats__subtitle">
+                    {t('account.partnerStats.subtitle')}
+                </p>
+            </header>
+
+            <div class="partner-stats__cards">
+                {showViewsCard ? (
+                    <article class="partner-stats__card" data-card="views">
+                        <p class="partner-stats__card-label">
+                            {t('account.partnerStats.views.label')}
+                        </p>
+                        {/*
+                          Both windows, side by side and static (§7.4). A selector
+                          would be the obvious shape and would put JavaScript on a
+                          section that ships none, plus an interaction to maintain
+                          on a read-only panel. Two figures in markup answer the
+                          same requirement for zero bytes.
+
+                          30 days is the primary figure — it is what the partner
+                          looks at and what the commercial promise is scaled to —
+                          so it gets the size and the 7-day line sits under it as
+                          context. Each number carries its own window label
+                          adjacent to it, because two bare numerals beside each
+                          other is exactly how one gets read as the other.
+                        */}
+                        <p class="partner-stats__card-value">
+                            {numberFormatter.format(views.last30)}
+                        </p>
+                        <p class="partner-stats__card-window">
+                            {t('account.partnerStats.windows.last30')}
+                        </p>
+                        {views.last7 !== null && (
+                            <p class="partner-stats__card-secondary">
+                                <span class="partner-stats__card-secondary-value">
+                                    {numberFormatter.format(views.last7)}
+                                </span>
+                                <span class="partner-stats__card-secondary-window">
+                                    {t('account.partnerStats.windows.last7')}
+                                </span>
+                            </p>
+                        )}
+                        <p class="partner-stats__card-help">
+                            {t('account.partnerStats.views.help')}
+                        </p>
+                    </article>
+                ) : (
+                    /*
+                      No numeral anywhere in this branch — that is the assertion
+                      AC-9 makes. A partner with no page of their own did not get
+                      zero visits; the metric does not exist for them.
+                    */
+                    <article class="partner-stats__card partner-stats__card--na" data-card="views-na">
+                        <p class="partner-stats__card-label">
+                            {t('account.partnerStats.views.label')}
+                        </p>
+                        <p class="partner-stats__card-na">
+                            {t('account.partnerStats.views.notApplicable')}
+                        </p>
+                    </article>
+                )}
+
+                {showClicksCard && (
+                    <article class="partner-stats__card" data-card="clicks">
+                        <p class="partner-stats__card-label">
+                            {t('account.partnerStats.clicks.label')}
+                        </p>
+                        <p class="partner-stats__card-value">
+                            {numberFormatter.format(clicks.last30)}
+                        </p>
+                        <p class="partner-stats__card-window">
+                            {t('account.partnerStats.windows.last30')}
+                        </p>
+                        {clicks.last7 !== null && (
+                            <p class="partner-stats__card-secondary">
+                                <span class="partner-stats__card-secondary-value">
+                                    {numberFormatter.format(clicks.last7)}
+                                </span>
+                                <span class="partner-stats__card-secondary-window">
+                                    {t('account.partnerStats.windows.last7')}
+                                </span>
+                            </p>
+                        )}
+                        <p class="partner-stats__card-help">
+                            {t('account.partnerStats.clicks.help')}
+                        </p>
+                    </article>
+                )}
+            </div>
+
+            {/*
+              The presentation's own sentence, not a paraphrase (§7.3). The
+              partner read it before signing, and a panel that omits it invites
+              the very question it was written to pre-empt — which is also why
+              this block sits next to the appearance log rather than inside it.
+            */}
+            <p class="partner-stats__scope">
+                {t('account.partnerStats.scopeNote')}
+            </p>
+        </section>
+    )
+}
+
+<style>
+    .partner-stats {
+        margin-block: 2rem;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg, 12px);
+        background-color: var(--core-card);
+    }
+
+    .partner-stats__header {
+        margin-bottom: 1.25rem;
+    }
+
+    .partner-stats__title {
+        font-family: var(--font-heading);
+        font-size: var(--text-h3, 1.25rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0 0 0.35rem;
+    }
+
+    .partner-stats__subtitle {
+        margin: 0;
+        color: var(--core-muted-foreground, #6b7280);
+        font-size: 0.95rem;
+    }
+
+    .partner-stats__cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+        gap: 1rem;
+    }
+
+    .partner-stats__card {
+        padding: 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 8px);
+        background-color: var(--core-background, #fafafa);
+    }
+
+    .partner-stats__card--na {
+        background-color: transparent;
+        border-style: dashed;
+    }
+
+    .partner-stats__card-label {
+        margin: 0 0 0.35rem;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--core-muted-foreground, #6b7280);
+    }
+
+    .partner-stats__card-value {
+        margin: 0 0 0.35rem;
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--core-foreground);
+    }
+
+    /*
+      The window label under the headline figure. Deliberately adjacent to the
+      number rather than a single caption for the whole panel: with two figures
+      in one card, a caption that sits apart from them is a caption that gets
+      attached to the wrong one by the reader.
+    */
+    .partner-stats__card-window {
+        margin: 0 0 0.6rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--core-muted-foreground, #6b7280);
+    }
+
+    /*
+      The 7-day line: context, not a peer of the headline. Same colour as the
+      helper text and roughly half the size of the primary figure, so the
+      hierarchy is visible before either number is read.
+    */
+    .partner-stats__card-secondary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.35rem;
+        margin: 0 0 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground, #6b7280);
+    }
+
+    .partner-stats__card-secondary-value {
+        font-family: var(--font-heading);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .partner-stats__card-help,
+    .partner-stats__card-na {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground, #6b7280);
+    }
+
+    .partner-stats__scope {
+        margin: 0.75rem 0 0;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground, #6b7280);
+    }
+</style>

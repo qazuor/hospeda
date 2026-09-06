@@ -56,4 +56,5 @@ export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
 export { subscriptionPollJob } from './subscription-poll.job.js';
 export { trialExpiryJob } from './trial-expiry.js';
+export { viewMonthlyRollupJob } from './view-monthly-rollup.job.js';
 export { webhookRetryJob } from './webhook-retry.job.js';
