@@ -302,6 +302,10 @@ jobs:
       # plans endpoint and the protected one.
       - name: Check unlisted plans cannot reach either plan listing (HOS-1062 AC-14)
         run: bash scripts/check-unlisted-plan-filter.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above).
+      - name: Check every contact_info column declares mergeableJsonbColumns
+        run: pnpm check:mergeable-contact-info
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

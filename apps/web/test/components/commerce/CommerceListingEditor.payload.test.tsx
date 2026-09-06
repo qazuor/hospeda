@@ -14,9 +14,14 @@
  *  - experience `priceFrom` REJECTS `null` (T-021) and must omit the key
  *    entirely when cleared; `priceUnit` no longer does — H-156 made the column
  *    nullable, so it clears to an explicit `null` like the gastronomy fields;
- *  - `contactInfo`/`socialNetworks`/the four i18n fields are replaced WHOLESALE,
- *    so the payload must carry the untouched members too — the JSONB block is
- *    overwritten server-side, not merged;
+ *  - `socialNetworks` and the four i18n fields are replaced WHOLESALE, so the
+ *    payload must carry the untouched members too — the block is overwritten
+ *    server-side, not merged;
+ *  - `contactInfo` also ships whole, but it is MERGED server-side since
+ *    HOS-1190 (`GastronomyModel`/`ExperienceModel` declare it in
+ *    `mergeableJsonbColumns`), so the contract that matters there is the
+ *    opposite one: an emptied member must travel as an explicit `null`,
+ *    because an omitted key now means "keep the stored value";
  *  - `media` is never sent at all since HOS-372: photos are persisted per
  *    operation by `MediaSection` against the relational media endpoints.
  *
@@ -455,11 +460,44 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            // The server REPLACES the contactInfo JSONB block. Sending only the
-            // changed leaf would wipe workEmail.
-            expect(body.contactInfo).toEqual({
+            // The block travels whole. `toStrictEqual`, not `toEqual`: the
+            // latter treats a key explicitly set to `undefined` as absent,
+            // which is precisely the distinction HOS-1190 turned into a bug
+            // class (an omitted key is now "keep the stored value").
+            expect(body.contactInfo).toStrictEqual({
                 mobilePhone: '+54 91199999999',
                 workEmail: 'dueno@test.com'
+            });
+        });
+
+        it('sends an emptied contact field as an explicit null, never by omitting the key', async () => {
+            // HOS-1190 regression: `contactInfo` is a MERGED JSONB column now,
+            // so expressing the clear by omission (the old `nonEmpty` mapping to
+            // `undefined`) made an emptied field silently un-saveable — the
+            // request succeeded and the stale value stayed on the row.
+            renderEditor(
+                'gastronomy',
+                buildListing({
+                    contactInfo: {
+                        mobilePhone: '+5491100000000',
+                        workEmail: 'dueno@test.com'
+                    }
+                }),
+                'contact'
+            );
+
+            fireEvent.change(screen.getByLabelText('Email'), { target: { value: '' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            // `wireBody` is a JSON round-trip, so an `undefined` member would
+            // have vanished from the body entirely — this assertion is what
+            // separates "cleared" from "not part of the patch".
+            expect(body.contactInfo).toStrictEqual({
+                // Untouched, so it travels verbatim (the phone field only
+                // recomposes `"<dialCode> <number>"` when it is edited).
+                mobilePhone: '+5491100000000',
+                workEmail: null
             });
         });
 

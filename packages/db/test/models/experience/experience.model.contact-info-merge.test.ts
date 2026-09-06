@@ -1,0 +1,325 @@
+/**
+ * @file experience.model.contact-info-merge.test.ts
+ * @description A partial `contactInfo` PATCH on `experiences` must NOT wipe
+ * the column.
+ *
+ * `experiences.contact_info` is one JSONB column that can hold several
+ * contact fields at once (see `ContactInfoSchema` in `@repo/schemas`).
+ * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
+ * opts the column into merge semantics via `mergeableJsonbColumns` — before
+ * this fix `ExperienceModel` never did, so a patch of
+ * `{ contactInfo: { mobilePhone: '...' } }` would have silently deleted every
+ * other stored contact field. The table held ZERO rows in production when this
+ * shipped — soft-deleted ones included — so there was nothing to backfill
+ * (owner's measurement, 2026-09-05, HOS-1190). That is a dated observation,
+ * not a standing property: re-measure before reusing it to justify skipping a
+ * migration.
+ *
+ * These assertions are about the SQL the model emits, so they need no
+ * database: the merge path is observable as (a) a transaction being opened,
+ * and (b) the `SET` value for `contactInfo` being a
+ * `COALESCE(existing,'{}') || patch` SQL fragment rather than the plain patch
+ * object — mirroring `test/models/user.model.settings-merge.test.ts`.
+ *
+ * Mutation checks, both measured against this file:
+ *   - removing `contactInfo` from `ExperienceModel.mergeableJsonbColumns` turns
+ *     8 of the 9 tests red. The ninth is the negative control — "still
+ *     replaces a non-mergeable column" — which asserts the UNCHANGED
+ *     replacement path and is green by design; a header claiming "every
+ *     test" would be claiming more than the file delivers.
+ *   - narrowing `BaseModelImpl.update()`'s merge trigger from
+ *     `Object.keys(data).some(...)` to `.every(...)` turns exactly ONE test in
+ *     this file red: "takes the merge path for the MIXED payload production
+ *     actually sends". That mutation reinstates the original bug for 100% of
+ *     real traffic — every update reaching this model from a service carries
+ *     `updatedById` alongside the patch. Its blast radius was re-measured on
+ *     2026-09-05 across the eight files under `packages/db/test/**` that
+ *     mention `mergeableJsonbColumns` or `buildMergeSetClause` (101 tests, 98
+ *     of them executing): it reddens FOUR and nothing else — this file's
+ *     mixed-payload test and the identical test in its three sibling
+ *     `*.contact-info-merge.test.ts` files. The other 94 stay green.
+ *
+ * An earlier revision of this header said that mutation "survived 124 tests
+ * across 9 files". That number is not reproducible: it named neither the files
+ * nor a date, and no plausible set of nine yields it. It was removed rather
+ * than rounded to something equally unauditable. Both counts above are stated
+ * with the set they were measured over and the day they were measured, which
+ * is the only form in which such a number is worth reading.
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as clientModule from '../../../src/client';
+import { setDb } from '../../../src/client';
+import { ExperienceModel } from '../../../src/models/experience/experience.model';
+import { experiences } from '../../../src/schemas/experience/experiences.dbschema';
+import type { DrizzleClient } from '../../../src/types';
+import { buildMergeSetClause } from '../../../src/utils/jsonb-merge';
+
+/** The exact shape a "save my phone" PATCH sends. */
+const PHONE_PATCH = { mobilePhone: '+541112345678' } as const;
+
+/** The actor id `BaseCrudService` staples onto every update payload. */
+const ACTOR_ID = '00000000-0000-4000-8000-000000000001';
+
+/**
+ * Minimal transaction-client stub supporting the two calls the merge path
+ * makes: `execute()` for the `SELECT ... FOR UPDATE` lock and
+ * `update().set().where().returning()` for the write itself.
+ */
+function buildMockInnerTx() {
+    const returning = vi.fn().mockResolvedValue([{ id: 'experience-1' }]);
+    const where = vi.fn(() => ({ returning }));
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
+    const execute = vi.fn().mockResolvedValue({ rows: [{ id: 'experience-1' }] });
+
+    return { execute, update, set, where, returning };
+}
+
+/** Minimal non-transactional client for the plain-replacement path. */
+function buildMockPlainDb() {
+    const returning = vi.fn().mockResolvedValue([{ id: 'experience-1' }]);
+    const where = vi.fn(() => ({ returning }));
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
+
+    return { update, set };
+}
+
+/** Every string chunk of a Drizzle SQL fragment, flattened. */
+function sqlStringChunks(fragment: unknown): string[] {
+    const chunks = (fragment as { queryChunks?: unknown[] })?.queryChunks ?? [];
+    const out: string[] = [];
+    for (const chunk of chunks) {
+        if (typeof chunk === 'string') {
+            out.push(chunk);
+            continue;
+        }
+        const value = (chunk as { value?: unknown })?.value;
+        if (typeof value === 'string') out.push(value);
+        if (Array.isArray(value)) {
+            for (const v of value) if (typeof v === 'string') out.push(v);
+        }
+    }
+    return out;
+}
+
+/**
+ * The fragment's chunks as an ORDER-BEARING token list.
+ *
+ * {@link sqlStringChunks} silently DROPS the column chunk — a Drizzle column
+ * carries no `.value` — so a shape derived from it cannot tell
+ * `COALESCE(column, '{}')` from `COALESCE('{}', column)`, nor the left
+ * operand of `||` from the right. Both of those mutations make every PATCH
+ * discard the stored siblings, which is the exact bug this file exists to
+ * prevent, and both sailed past `toContain('||')` / `toContain('COALESCE')`.
+ */
+function sqlShape(fragment: unknown): string[] {
+    const chunks = (fragment as { queryChunks?: unknown[] })?.queryChunks ?? [];
+    return chunks.map((chunk) => {
+        if (typeof chunk === 'string') return `<value:${chunk}>`;
+        const value = (chunk as { value?: unknown })?.value;
+        if (Array.isArray(value)) return value.join('');
+        if (typeof value === 'string') return value;
+        const name = (chunk as { name?: unknown })?.name;
+        if (typeof name === 'string') return `<column:${name}>`;
+        return '<unknown>';
+    });
+}
+
+describe('ExperienceModel — `contactInfo` is a mergeable JSONB column', () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        setDb(null as unknown as DrizzleClient);
+    });
+
+    it('declares `contactInfo` as mergeable', () => {
+        // Non-vacuity: contains, not strict-equal — this model already
+        // declares `validRelationKeys` separately, and `mergeableJsonbColumns`
+        // may legitimately grow (owner decision) without this test needing to
+        // be touched. What must never regress is `contactInfo`'s presence.
+        const mergeable = (
+            new ExperienceModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+        ).mergeableJsonbColumns;
+
+        expect([...mergeable]).toContain('contactInfo');
+    });
+
+    it('opens a transaction for a partial `contactInfo` patch instead of replacing the column', async () => {
+        // Arrange
+        const innerTx = buildMockInnerTx();
+        const withTransaction = vi
+            .spyOn(clientModule, 'withTransaction')
+            .mockImplementation(async (callback) => callback(innerTx as unknown as DrizzleClient));
+        setDb({} as unknown as DrizzleClient);
+
+        // Act
+        await new ExperienceModel().update({ id: 'experience-1' }, { contactInfo: PHONE_PATCH });
+
+        // Assert — the merge path is the one that locks the row first.
+        expect(withTransaction).toHaveBeenCalledOnce();
+        expect(innerTx.execute).toHaveBeenCalledOnce();
+        expect(innerTx.update).toHaveBeenCalledOnce();
+    });
+
+    it('takes the merge path for the MIXED payload production actually sends', async () => {
+        // Arrange — nothing ever reaches this model with `{ contactInfo }`
+        // alone. `BaseCrudService` staples the actor onto every update
+        // (`packages/service-core/src/base/base.crud.write.ts`: `const payload
+        // = { ...mergedUpdateData, updatedById: validActor.id }`), so EVERY
+        // update arriving from a service is MIXED. Narrowing the merge trigger
+        // in `BaseModelImpl.update()` from `.some()` to `.every()` therefore
+        // sends 100% of real traffic back down the replacement path — the
+        // original bug, whole — while every single-key test in this file stays
+        // green. Re-measured 2026-09-05 across the eight `packages/db/test/**`
+        // files that mention `mergeableJsonbColumns` or `buildMergeSetClause`:
+        // the mutation reddens this test and its three siblings, and leaves
+        // the other 94 executing tests green.
+        const innerTx = buildMockInnerTx();
+        const withTransaction = vi
+            .spyOn(clientModule, 'withTransaction')
+            .mockImplementation(async (callback) => callback(innerTx as unknown as DrizzleClient));
+        // A WORKING plain client, not `{}`. Under that mutation this test takes
+        // the REPLACEMENT path, and an empty object made the red read
+        // `DbError: db.update is not a function`, thrown from the Act. The kill
+        // was genuine but the message named the stub instead of the defect.
+        // With a usable client the failure is the assertion below — the merge
+        // path was never entered — which is the thing that actually broke.
+        setDb(buildMockPlainDb() as unknown as DrizzleClient);
+
+        // Act
+        await new ExperienceModel().update({ id: 'experience-1' }, {
+            contactInfo: PHONE_PATCH,
+            updatedById: ACTOR_ID
+        } as unknown as Parameters<ExperienceModel['update']>[1]);
+
+        // Assert — the merge path, not the replacement path.
+        expect(withTransaction).toHaveBeenCalledOnce();
+        const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(
+            Array.isArray((setPayload?.contactInfo as { queryChunks?: unknown[] })?.queryChunks)
+        ).toBe(true);
+        // ...and the sibling key rides along as a plain replacement.
+        expect(setPayload?.updatedById).toBe(ACTOR_ID);
+    });
+
+    it('writes `contactInfo` as a merge fragment, never as the bare patch object', async () => {
+        // Arrange
+        const innerTx = buildMockInnerTx();
+        vi.spyOn(clientModule, 'withTransaction').mockImplementation(async (callback) =>
+            callback(innerTx as unknown as DrizzleClient)
+        );
+        setDb({} as unknown as DrizzleClient);
+
+        // Act
+        await new ExperienceModel().update({ id: 'experience-1' }, { contactInfo: PHONE_PATCH });
+
+        // Assert — a plain object here would wipe every other contact field.
+        const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
+        const contactValue = setPayload?.contactInfo as { queryChunks?: unknown[] };
+
+        expect(Array.isArray(contactValue?.queryChunks)).toBe(true);
+
+        const emitted = sqlStringChunks(contactValue).join(' ');
+        expect(emitted).toContain('||');
+        expect(emitted).toContain('COALESCE');
+    });
+
+    it('serialises ONLY the sent key — sibling contact fields are never named, so they survive the `||` merge', () => {
+        // Arrange: the real `experiences` table and the real mergeable list.
+        const mergeable = (
+            new ExperienceModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+        ).mergeableJsonbColumns;
+
+        // Act
+        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, experiences, mergeable);
+
+        // Assert — the patch travels verbatim; any sibling field already
+        // stored under a key absent from it is left to `||` to preserve.
+        const chunks = sqlStringChunks(result.contactInfo);
+        expect(chunks).toStrictEqual(expect.arrayContaining([JSON.stringify(PHONE_PATCH)]));
+        const emitted = chunks.join(' ');
+        expect(emitted).not.toContain('personalEmail');
+        expect(emitted).not.toContain('preferredPhone');
+        expect(emitted).not.toContain('whatsapp');
+    });
+
+    it('puts COALESCE(column, {}) on the LEFT of `||` and the patch on the RIGHT', () => {
+        // The ORDER is the whole contract, and the two ways to get it wrong
+        // break DIFFERENT things. Both still contain a `COALESCE` and a `||`,
+        // so only a token-by-token shape tells them apart — but they are not
+        // the same defect, and a comment that says they are claims more than
+        // its predicate. Measured against PostgreSQL 17 on a stored
+        // `{whatsapp, workEmail, mobilePhone: OLD}` with a
+        // `{mobilePhone: NEW}` patch:
+        //   - `COALESCE('{}'::jsonb, column) || patch` reads the stored row
+        //     as an empty object, so the write is the patch ALONE:
+        //     `{"mobilePhone": "NEW"}`. Every stored sibling is thrown away —
+        //     this is the original defect, exactly.
+        //   - `patch || COALESCE(column, '{}')` keeps every sibling, but `||`
+        //     lets the RIGHT operand win a shared key, so the STORED value
+        //     survives and the user's edit is the thing discarded:
+        //     `{..., "mobilePhone": "OLD"}`. The PATCH silently does nothing.
+        // The assertion below kills both; only this comment was wrong.
+        const mergeable = (
+            new ExperienceModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+        ).mergeableJsonbColumns;
+
+        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, experiences, mergeable);
+
+        expect(sqlShape(result.contactInfo)).toStrictEqual([
+            'COALESCE(',
+            '<column:contact_info>',
+            ", '{}'::jsonb) || ",
+            `<value:${JSON.stringify(PHONE_PATCH)}>`,
+            '::jsonb'
+        ]);
+    });
+
+    it('carries an explicit per-key `null` through, so a contact field stays clearable', () => {
+        const mergeable = (
+            new ExperienceModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+        ).mergeableJsonbColumns;
+
+        const result = buildMergeSetClause(
+            { contactInfo: { mobilePhone: null } },
+            experiences,
+            mergeable
+        );
+
+        const chunks = sqlStringChunks(result.contactInfo);
+        expect(chunks).toStrictEqual(expect.arrayContaining(['{"mobilePhone":null}']));
+    });
+
+    it('still clears the WHOLE column when the patch value itself is null', async () => {
+        const innerTx = buildMockInnerTx();
+        vi.spyOn(clientModule, 'withTransaction').mockImplementation(async (callback) =>
+            callback(innerTx as unknown as DrizzleClient)
+        );
+        setDb({} as unknown as DrizzleClient);
+
+        await new ExperienceModel().update({ id: 'experience-1' }, {
+            contactInfo: null
+        } as unknown as Parameters<ExperienceModel['update']>[1]);
+
+        const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(setPayload?.contactInfo).toBeNull();
+    });
+
+    it('still replaces a non-mergeable column, so this did not become a blanket merge', async () => {
+        // Arrange
+        const plainDb = buildMockPlainDb();
+        const withTransaction = vi.spyOn(clientModule, 'withTransaction');
+        setDb(plainDb as unknown as DrizzleClient);
+
+        // Act — `socialNetworks` is NOT declared mergeable on this model.
+        await new ExperienceModel().update({ id: 'experience-1' }, {
+            socialNetworks: { facebook: 'https://facebook.com/x' }
+        } as unknown as Parameters<ExperienceModel['update']>[1]);
+
+        // Assert
+        expect(withTransaction).not.toHaveBeenCalled();
+        const setPayload = plainDb.set.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(setPayload?.socialNetworks).toStrictEqual({ facebook: 'https://facebook.com/x' });
+    });
+});
