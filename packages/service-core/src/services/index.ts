@@ -86,6 +86,8 @@ export * from './newsletter';
 export * from './owner-promotion';
 export * from './partner/partner.service';
 export * from './partner/partner-mention.service';
+// Partner in-platform statistics (HOS-1063)
+export * from './partner/partner-stats.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';

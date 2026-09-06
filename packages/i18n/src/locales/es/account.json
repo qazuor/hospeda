@@ -1563,6 +1563,24 @@
             }
         }
     },
+    "partnerStats": {
+        "title": "Tus números",
+        "subtitle": "Lo que pasó dentro de Hospeda con tu ficha.",
+        "views": {
+            "label": "Visitas a tu página",
+            "help": "Personas que entraron a tu página de aliado.",
+            "notApplicable": "Tu logo enlaza directo a tu sitio, así que no hay visitas a una página en Hospeda para contar. Si tu plan pasa a incluir una, sus visitas aparecen acá."
+        },
+        "clicks": {
+            "label": "Clics en tu logo",
+            "help": "Veces que alguien entró desde tu logo en la portada."
+        },
+        "windows": {
+            "last30": "en los últimos 30 días",
+            "last7": "en los últimos 7 días"
+        },
+        "scopeNote": "Todas las estadísticas que te mostramos son de lo que pasa dentro de Hospeda — nuestras páginas y nuestro newsletter. De lo que publicamos afuera te damos constancia, no medición."
+    },
     "partnerMentions": {
         "title": "Bitácora de menciones",
         "subtitle": "Todo lo que difundimos sobre vos, con el enlace a cada publicación para que puedas verificarlo.",

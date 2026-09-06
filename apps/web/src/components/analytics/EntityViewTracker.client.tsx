@@ -44,10 +44,16 @@ import type { SupportedLocale } from '@/lib/i18n';
 /**
  * The entity types this tracker currently supports.
  * POST and EVENT each have a corresponding PostHog event in the catalog.
- * GASTRONOMY and EXPERIENCE (HOS-734) capture the view beacon only — see the
- * file header for why no PostHog event is fired for them yet.
+ * GASTRONOMY and EXPERIENCE (HOS-734) and PARTNER (HOS-1063) capture the view
+ * beacon only — see the file header for why no PostHog event is fired for them.
+ *
+ * This list had DRIFTED from the server's `TRACKABLE_ENTITY_TYPES`, which has
+ * carried ACCOMMODATION all along while this one never did. The drift is
+ * harmless in that direction (the client offers fewer types than the server
+ * accepts, and accommodations are tracked by their own dedicated island), but it
+ * is worth knowing about before assuming the two lists mirror each other.
  */
-type SupportedEntityType = 'POST' | 'EVENT' | 'GASTRONOMY' | 'EXPERIENCE';
+type SupportedEntityType = 'POST' | 'EVENT' | 'GASTRONOMY' | 'EXPERIENCE' | 'PARTNER';
 
 /**
  * Props for {@link EntityViewTracker}.
@@ -72,7 +78,8 @@ const ENTITY_TYPE_ENUM_MAP = {
     POST: EntityTypeEnum.POST,
     EVENT: EntityTypeEnum.EVENT,
     GASTRONOMY: EntityTypeEnum.GASTRONOMY,
-    EXPERIENCE: EntityTypeEnum.EXPERIENCE
+    EXPERIENCE: EntityTypeEnum.EXPERIENCE,
+    PARTNER: EntityTypeEnum.PARTNER
 } as const satisfies Record<SupportedEntityType, (typeof EntityTypeEnum)[SupportedEntityType]>;
 
 /**

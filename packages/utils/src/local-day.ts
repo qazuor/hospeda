@@ -239,3 +239,89 @@ export function getLocalDayWindow({
 
     return { windowStart, dates };
 }
+
+/** Input for {@link getLocalMonthWindow}. */
+export interface GetLocalMonthWindowInput {
+    /** Any instant inside the wanted calendar month. */
+    readonly instant: Date;
+    /** IANA time zone. Defaults to {@link MARKET_TIMEZONE}. */
+    readonly timeZone?: string;
+}
+
+/** Result of {@link getLocalMonthWindow}. */
+export interface LocalMonthWindow {
+    /** UTC instant of local midnight on the FIRST day of the month. Inclusive bound. */
+    readonly monthStart: Date;
+    /** UTC instant of local midnight on the first day of the NEXT month. EXCLUSIVE bound. */
+    readonly nextMonthStart: Date;
+    /** The month's first day as `'YYYY-MM-01'`, for a `date` column. */
+    readonly monthLabel: string;
+}
+
+/**
+ * Returns the half-open UTC window `[monthStart, nextMonthStart)` covering the
+ * local calendar month that `instant` falls in, plus that month's label.
+ *
+ * The month sibling of {@link getLocalDayWindow}, and it exists for the same
+ * reason: a "month" is a local calendar concept, but the column being filtered
+ * is a `timestamptz`, so the boundaries have to be resolved to UTC instants once
+ * — here — instead of being re-derived inside SQL on every row.
+ *
+ * ## Why callers should filter on these bounds rather than on `DATE_TRUNC`
+ *
+ * `WHERE DATE_TRUNC('month', col AT TIME ZONE $tz) = …` is not sargable: it
+ * wraps the indexed column in a function, so Postgres cannot use the index and
+ * scans the whole table. `WHERE col >= $start AND col < $end` uses it.
+ *
+ * It also removes the time zone from the statement altogether, which sidesteps
+ * a sharper trap: a plain string interpolated into a Drizzle `sql` template
+ * emits a distinct PLACEHOLDER at each site, and Postgres compares `GROUP BY`
+ * expressions by node identity, so `DATE_TRUNC(..., $1)` in the SELECT does not
+ * match `DATE_TRUNC(..., $5)` in the GROUP BY and the statement is rejected at
+ * parse time. `marketTimezoneSql()` in `@repo/db` exists for the cases that
+ * genuinely need the zone inside SQL; this helper is for the cases that can
+ * avoid needing it at all.
+ *
+ * The bound is HALF-OPEN on purpose. A closed `<=` bound would need the last
+ * microsecond of the month and would either include or exclude an event landing
+ * exactly on the boundary depending on the column's precision.
+ *
+ * @param input - {@link GetLocalMonthWindowInput}.
+ * @returns {@link LocalMonthWindow}.
+ *
+ * @example
+ * ```ts
+ * // Any instant in September 2026, Buenos Aires:
+ * getLocalMonthWindow({ instant: new Date('2026-09-14T12:00:00.000Z') });
+ * // monthStart      2026-09-01T03:00:00.000Z
+ * // nextMonthStart  2026-10-01T03:00:00.000Z
+ * // monthLabel      '2026-09-01'
+ * ```
+ */
+export function getLocalMonthWindow({
+    instant,
+    timeZone = MARKET_TIMEZONE
+}: GetLocalMonthWindowInput): LocalMonthWindow {
+    const localDate = getLocalDateString({ instant, timeZone });
+    const year = Number(localDate.slice(0, 4));
+    const month = Number(localDate.slice(5, 7));
+
+    // Integer arithmetic on an already-localised date, NOT `Date.setMonth`:
+    // that mutator reads and writes in the process's own zone, and on the 31st
+    // it rolls forward into the following month (31 March minus one month is
+    // 3 March). `scripts/check-local-date-math.sh` rejects it for that reason.
+    const nextYear = month === 12 ? year + 1 : year;
+    const nextMonth = month === 12 ? 1 : month + 1;
+
+    const pad = (n: number): string => String(n).padStart(2, '0');
+    const monthLabel = `${year}-${pad(month)}-01`;
+
+    return {
+        monthStart: getUtcInstantForLocalMidnight({ date: monthLabel, timeZone }),
+        nextMonthStart: getUtcInstantForLocalMidnight({
+            date: `${nextYear}-${pad(nextMonth)}-01`,
+            timeZone
+        }),
+        monthLabel
+    };
+}

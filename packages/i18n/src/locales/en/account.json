@@ -1563,6 +1563,24 @@
             }
         }
     },
+    "partnerStats": {
+        "title": "Your numbers",
+        "subtitle": "What happened with your listing inside Hospeda.",
+        "views": {
+            "label": "Visits to your page",
+            "help": "People who opened your partner page.",
+            "notApplicable": "Your logo links straight to your own site, so there are no visits to a page on Hospeda to count. If your plan comes to include one, its visits appear here."
+        },
+        "clicks": {
+            "label": "Clicks on your logo",
+            "help": "Times someone came in through your logo on the home page."
+        },
+        "windows": {
+            "last30": "in the last 30 days",
+            "last7": "in the last 7 days"
+        },
+        "scopeNote": "Every statistic we show you is about what happens inside Hospeda — our pages and our newsletter. For what we publish elsewhere we give you a record, not a measurement."
+    },
     "partnerMentions": {
         "title": "Mentions log",
         "subtitle": "Everything we published about you, with a link to each one so you can check it yourself.",

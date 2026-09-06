@@ -38,6 +38,7 @@ import {
     OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
     PartnerContentReviewStateEnum,
+    PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
@@ -437,6 +438,18 @@ export const PartnerSubscriptionStatusPgEnum = pgEnum(
 export const PartnerMentionChannelPgEnum = pgEnum(
     'partner_mention_channel_enum',
     enumToTuple(PartnerMentionChannelEnum)
+);
+
+/**
+ * Where a click on a partner's carousel logo took the visitor (HOS-1063).
+ *
+ * Mirrors the three-branch resolution in `resolvePartnerLogoLink`, minus the
+ * branch that produces no link — that one produces no click either, so it needs
+ * no value here.
+ */
+export const PartnerLogoClickDestinationPgEnum = pgEnum(
+    'partner_logo_click_destination_enum',
+    enumToTuple(PartnerLogoClickDestinationEnum)
 );
 
 /**

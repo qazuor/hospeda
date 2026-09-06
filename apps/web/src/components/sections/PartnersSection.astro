@@ -70,6 +70,8 @@ const items = partners.map((partner) => ({
             rel={link.rel}
             class="partner-logo-link"
             aria-label={partner.name}
+            data-partner-id={partner.id}
+            data-partner-destination={link.destination}
           >
             <img
               src={partner.logoPath}
@@ -95,7 +97,15 @@ const items = partners.map((partner) => ({
           </div>
         )
       ))}
-      <!-- Duplicate set for seamless infinite loop (decorative, hidden from AT) -->
+      <!--
+        Duplicate set for seamless infinite loop (decorative, hidden from AT).
+
+        It deliberately carries NO `data-partner-id` (HOS-1063 AC-4). The click
+        listener selects on that attribute, so a click on a decorative clone
+        matches nothing and records nothing — by construction rather than by a
+        filter someone has to remember. Filtering on `aria-hidden` instead would
+        work today and break the first time this markup is refactored.
+      -->
       {items.map(({ partner, link, logoWidth, aspectStyle }) => (
         link.href ? (
           <a
@@ -134,6 +144,105 @@ const items = partners.map((partner) => ({
   </div>
 </section>
 )}
+
+<script>
+  /**
+   * Logo-click capture (HOS-1063 A-3).
+   *
+   * A single DELEGATED listener in a plain script, NOT a React island. That is a
+   * hard constraint, not a preference: this carousel lives on the home page,
+   * whose JS budget is the subject of HOS-160 and HOS-168, and hydrating a
+   * component to attach one `click` handler would be a regression against both.
+   * AC-16 fails the build if a `client:` directive ever appears in this file.
+   *
+   * Four properties worth stating, because each is a bug the obvious
+   * implementation has:
+   *
+   * 1. **It never calls `preventDefault` and never awaits anything.** The
+   *    navigation proceeds exactly as it would without this listener;
+   *    `sendBeacon` is the API that survives the unload (AC-5). Delaying a
+   *    visitor's navigation to record a metric is not a trade worth making.
+   *
+   * 2. **It selects on `data-partner-id`, which only the VISIBLE track carries.**
+   *    The marquee renders its logos twice — the second copy is `aria-hidden`
+   *    and exists only to make the loop seamless — so a naive listener on
+   *    `.partner-logo-link` would count a click on a decorative clone. Matching
+   *    the attribute means the clone is excluded by construction rather than by
+   *    a filter someone has to remember (AC-4).
+   *
+   * 3. **The listeners are (re)attached on `astro:page-load` and torn down on
+   *    `astro:before-swap`, never registered once at module scope.** This
+   *    `<script>` contains an `import`, which makes it a MODULE script, and
+   *    `BaseLayout.astro` renders `<ClientRouter />` unconditionally, so EVERY
+   *    navigation on this site goes through View Transitions. A module script
+   *    is fetched, evaluated and run exactly ONCE per browsing session — not
+   *    once per page render — so top-level code here only ever sees the FIRST
+   *    home page's `.partners-track` node. Navigate away and back and the DOM
+   *    is swapped for a new `.partners-track` that this already-finished module
+   *    never touches: zero listeners, zero clicks recorded, zero console
+   *    errors (measured). Hooking `astro:page-load`/`astro:before-swap` re-binds
+   *    the listeners to the fresh node on every navigation and detaches them
+   *    from the old one first, so nothing leaks and nothing goes silently dead.
+   *
+   * 4. **It also listens for `auxclick`**, filtered to the middle mouse button
+   *    (`event.button === 1`). Opening a partner link in a new tab via the
+   *    middle button fires `auxclick`, not `click`, so without this the most
+   *    common "open in background tab" gesture is a silent undercount. The two
+   *    listeners share one handler; `auxclick` gates on the middle button so a
+   *    left click is never counted twice.
+   */
+  import { sendPartnerLogoClickBeacon } from '@/lib/analytics/view-capture';
+
+  function resolveTrackedAnchor(event: Event): HTMLElement | null {
+      return (
+          (event.target as Element | null)?.closest<HTMLElement>(
+              'a.partner-logo-link[data-partner-id]'
+          ) ?? null
+      );
+  }
+
+  function handlePartnerLogoClick(event: Event) {
+      const anchor = resolveTrackedAnchor(event);
+      if (!anchor) return;
+
+      const partnerId = anchor.dataset.partnerId;
+      const destination = anchor.dataset.partnerDestination;
+      if (!partnerId) return;
+      if (destination !== 'OWN_PAGE' && destination !== 'EXTERNAL') return;
+
+      sendPartnerLogoClickBeacon({ partnerId, destination });
+      // Deliberately no preventDefault, no return false, no await.
+  }
+
+  function handlePartnerLogoAuxClick(event: Event) {
+      // Only the middle button opens a background tab; a right-click also
+      // fires auxclick and must not be counted here. `auxclick` is not in
+      // TypeScript's `ElementEventMap`, so the listener is typed as `Event`
+      // and narrowed here rather than at the `addEventListener` call site.
+      if ((event as MouseEvent).button !== 1) return;
+      handlePartnerLogoClick(event);
+  }
+
+  let track: Element | null = null;
+
+  function setupPartnerLogoClickTracking() {
+      track = document.querySelector('.partners-track');
+      track?.addEventListener('click', handlePartnerLogoClick);
+      track?.addEventListener('auxclick', handlePartnerLogoAuxClick);
+  }
+
+  function teardownPartnerLogoClickTracking() {
+      track?.removeEventListener('click', handlePartnerLogoClick);
+      track?.removeEventListener('auxclick', handlePartnerLogoAuxClick);
+      track = null;
+  }
+
+  // Runs on initial page load AND after every client-side (View Transitions)
+  // navigation — see property 3 above for why this cannot be top-level code.
+  document.addEventListener('astro:page-load', setupPartnerLogoClickTracking);
+  // Detach before the DOM is swapped out, so nothing leaks across navigations.
+  document.addEventListener('astro:before-swap', teardownPartnerLogoClickTracking);
+</script>
 
 <style>
   .partners {
