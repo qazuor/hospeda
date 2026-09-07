@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TourController } from '@/components/account/TourController.client';
 import { WhatsNewModal } from '@/components/account/WhatsNewModal.client';
-import { getWelcomeTourForRoles } from '@/config/tours';
+import { getWelcomeToursForRoles } from '@/config/tours';
 import { useTourState } from '@/hooks/use-tour-state';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
 import { useWhatsNew } from '@/hooks/use-whats-new';
@@ -24,10 +24,13 @@ export function DashboardController({ locale, userRoles }: DashboardControllerPr
     const [hasAutoOpenedWhatsNew, setHasAutoOpenedWhatsNew] = useState(false);
 
     const welcomeTourPending = useMemo(() => {
-        const tour = getWelcomeTourForRoles({ roles: userRoles });
-        if (!tour) return false;
+        // HOS-788: an account can now have SEVERAL applicable tours at once
+        // (e.g. tourist + host), so "pending" means "at least one of them is
+        // still unseen" — not just whether the highest-priority one is.
+        const tours = getWelcomeToursForRoles({ roles: userRoles });
+        if (tours.length === 0) return false;
         if (tourLoading) return true;
-        return !hasSeen({ tourId: tour.id, version: tour.version });
+        return tours.some((tour) => !hasSeen({ tourId: tour.id, version: tour.version }));
     }, [userRoles, tourLoading, hasSeen]);
 
     const shouldShowWhatsNew = useMemo(() => {
