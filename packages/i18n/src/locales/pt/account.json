@@ -469,6 +469,7 @@
             "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
             "deleteError": "Não foi possível excluir a coleção. Tente novamente.",
+            "createSuccess": "Coleção \"{{name}}\" criada",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",

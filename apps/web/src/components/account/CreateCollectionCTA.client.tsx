@@ -12,8 +12,10 @@
 import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { addToast } from '@/store/toast-store';
 import styles from './CreateCollectionCTA.module.css';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
+import { COLLECTION_CREATED_EVENT } from './collection-created-event';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -97,12 +99,29 @@ export function CreateCollectionCTA({
     function handleSaved(collection: { id: string; name: string }): void {
         setIsModalOpen(false);
         onCreated?.(collection);
+
         // The collection list (UserFavoritesList) and the "X / max" usage
-        // counter live in separate islands / SSR markup outside this island,
-        // so they don't observe the create. A full reload is the simplest,
-        // robust way to reflect the new collection in both at once (same
-        // reload-after-mutation pattern used by other account mutations).
-        window.location.reload();
+        // counter (CollectionUsageMeter) live in separate islands outside
+        // this one, so they don't observe the create on their own. Broadcast
+        // it instead of the previous `window.location.reload()` — a reload
+        // lost scroll position and the active tab, and killed the toast
+        // below before it could ever render (HOS-999).
+        window.dispatchEvent(
+            new CustomEvent(COLLECTION_CREATED_EVENT, {
+                detail: { id: collection.id, name: collection.name }
+            })
+        );
+
+        addToast({
+            type: 'success',
+            message: t(
+                'account.favorites.collections.createSuccess',
+                'Colección "{{name}}" creada',
+                {
+                    name: collection.name
+                }
+            )
+        });
     }
 
     return (

@@ -469,6 +469,7 @@
             "deleting": "Deleting…",
             "deleteSuccess": "Collection deleted successfully",
             "deleteError": "Could not delete the collection. Please try again.",
+            "createSuccess": "Collection \"{{name}}\" created",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",

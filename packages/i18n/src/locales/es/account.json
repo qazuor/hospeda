@@ -469,6 +469,7 @@
             "deleting": "Borrando…",
             "deleteSuccess": "Colección borrada correctamente",
             "deleteError": "No se pudo borrar la colección. Intentá de nuevo.",
+            "createSuccess": "Colección \"{{name}}\" creada",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",
