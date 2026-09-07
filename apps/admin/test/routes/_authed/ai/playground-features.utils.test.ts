@@ -1,3 +1,4 @@
+import { AiFeatureSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { AiFeatureId } from '@/features/ai-settings';
 import {
@@ -6,15 +7,15 @@ import {
     PLAYGROUND_UNSUPPORTED_REASON
 } from '../../../../src/routes/_authed/ai/-components/playground-features.utils';
 
-const ALL_FEATURES: AiFeatureId[] = [
-    'text_improve',
-    'chat',
-    'search',
-    'support',
-    'translate',
-    'accommodation_import',
-    'post_generate'
-];
+/**
+ * Derived from the enum, never hand-listed.
+ *
+ * This array used to be a literal seven, which silently stopped covering
+ * `chat_gastronomy` and `chat_experience` when HOS-400 widened the enum — the
+ * "every unsupported feature has a reason" test below kept passing while both
+ * new features rendered with no reason at all (HOS-1220).
+ */
+const ALL_FEATURES: AiFeatureId[] = [...AiFeatureSchema.options];
 
 describe('playground-features.utils', () => {
     describe('PLAYGROUND_SUPPORTED_FEATURES', () => {
