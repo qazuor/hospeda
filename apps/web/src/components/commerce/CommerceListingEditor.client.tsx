@@ -677,7 +677,12 @@ export function CommerceListingEditor({
         setStatus({ kind: 'idle' });
     }, []);
 
-    /** Handle i18n panel changes — the four i18n fields travel as one unit. */
+    /**
+     * Handle i18n panel changes. The callback always carries the FULL
+     * `CommerceI18nValues` shape (that is the panel's state), but the PATCH
+     * diff (`buildPatchPayload`) still compares and sends each of the four
+     * fields independently — see its JSDoc (HOS-902).
+     */
     const handleI18nChange = useCallback((updated: CommerceI18nValues) => {
         setFormData((prev) => ({ ...prev, i18nValues: updated }));
         setStatus({ kind: 'idle' });
