@@ -33,6 +33,7 @@ import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedPatchExperienceRoute } from './patch';
+import { protectedGetExperienceQrSheetRoute } from './qrSheet';
 import { protectedRemoveExperienceFaqRoute } from './removeFaq';
 import { protectedRemoveExperienceMediaRoute } from './removeMedia';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
@@ -64,6 +65,11 @@ app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 // static segment ahead of a param at the same position regardless of insertion
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetExperienceBrochureRoute);
+
+// GET /{id}/qr-sheet — Printable QR sheet for the door (HOS-982). A third,
+// distinct code for the same experience: `purpose: LISTING`, alongside the
+// brochure's and the certificate's. NO entitlement gate (owner decision).
+app.route('/', protectedGetExperienceQrSheetRoute);
 
 // POST/GET /{id}/certificates and GET /{id}/certificates/{certificateId}/pdf —
 // The certificate a provider issues to whoever did the experience (HOS-1057).
