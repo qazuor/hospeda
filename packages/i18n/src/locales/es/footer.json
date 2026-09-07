@@ -95,6 +95,8 @@
         "guestLockLabel": "Iniciá sesión para suscribirte",
         "invalidEmail": "Ingresá un email válido.",
         "unsubscribeConfirm": "¿Confirmás que querés desuscribirte del newsletter?",
+        "unsubscribeConfirmTitle": "Desuscribirte del newsletter",
+        "unsubscribeConfirmButton": "Desuscribirme",
         "unsubscribeSuccess": "Te desuscribiste del newsletter.",
         "unsubscribeError": "No pudimos desuscribirte. Probá de nuevo en unos minutos.",
         "unsubscribeBusy": "Desuscribiendo...",

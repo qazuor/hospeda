@@ -451,6 +451,8 @@
             "removing": "Removing...",
             "removeError": "Error removing favorite from collection",
             "removeConfirm": "Remove this favorite from the collection? It will stay in your saved items.",
+            "removeConfirmTitle": "Remove from collection",
+            "removeConfirmButton": "Remove",
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
             "backToList": "Back to my favorites",
@@ -469,6 +471,8 @@
             "deleting": "Deleting…",
             "deleteSuccess": "Collection deleted successfully",
             "deleteError": "Could not delete the collection. Please try again.",
+            "deleteDialogTitle": "Delete collection",
+            "deleteConfirmButton": "Delete collection",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",

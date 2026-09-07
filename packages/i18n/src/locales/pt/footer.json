@@ -95,6 +95,8 @@
         "guestLockLabel": "Entre para se inscrever",
         "invalidEmail": "Por favor, insira um endereço de e-mail válido.",
         "unsubscribeConfirm": "Tem certeza de que deseja cancelar a assinatura da newsletter?",
+        "unsubscribeConfirmTitle": "Cancelar a assinatura da newsletter",
+        "unsubscribeConfirmButton": "Cancelar assinatura",
         "unsubscribeSuccess": "Você cancelou a assinatura da newsletter.",
         "unsubscribeError": "Não conseguimos cancelar sua assinatura. Tente novamente em alguns minutos.",
         "unsubscribeBusy": "Cancelando inscrição...",
