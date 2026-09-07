@@ -157,4 +157,39 @@ describe('PostCreateForm', () => {
         });
         expect(window.location.href).toBe('');
     });
+
+    // HOS-816 regression (HOS-837): `handleApiError` only ever SETS the banner.
+    // Without a `setFormError(null)` opening the submit, the first attempt's
+    // API message outlived every later attempt — so a second submit that only
+    // failed CLIENT-side validation still showed the server's rejection, and a
+    // second submit that SUCCEEDED showed it alongside the redirect.
+    it('retires the previous attempt’s API banner when the next submit starts', async () => {
+        mockCreate.mockResolvedValue({
+            ok: false,
+            error: { code: 'INTERNAL_ERROR', message: 'boom' }
+        });
+
+        render(<PostCreateForm locale="es" />);
+        fillValidForm();
+        fireEvent.click(screen.getByTestId('post-create-submit'));
+
+        const banner = await screen.findByRole('alert');
+        const bannerText = banner.textContent ?? '';
+        expect(bannerText.length).toBeGreaterThan(0);
+
+        // Second attempt: fails client-side validation, so it never reaches the
+        // API and nothing can overwrite the banner — only the clear can remove it.
+        fireEvent.change(screen.getByLabelText('Contenido'), {
+            target: { value: 'Demasiado corto.' }
+        });
+        fireEvent.click(screen.getByTestId('post-create-submit'));
+
+        await waitFor(() => {
+            expect(screen.getByText(/mínimo 100 caracteres/i)).toBeInTheDocument();
+        });
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        expect(screen.queryAllByRole('alert').map((el) => el.textContent)).not.toContain(
+            bannerText
+        );
+    });
 });
