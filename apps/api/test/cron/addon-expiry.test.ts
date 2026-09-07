@@ -1508,6 +1508,111 @@ describe('Add-on Expiry Cron Job', () => {
             expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
         });
 
+        it('HOS-847 PR 7a: does NOT revoke an orphan still inside the period it was charged for', async () => {
+            // Arrange: the PLAN is cancelled (that is what this sweep's JOIN
+            // proves), but this add-on bills on a cycle of its own and its
+            // current period runs for another fifteen days. Revoking it here —
+            // which is what this phase used to do on the plan's status alone —
+            // takes back fifteen days the customer already paid for, and undoes
+            // the deferral the webhook and the finalize cron made on purpose.
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+
+            const accessUntil = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+            const purchase = {
+                id: 'purchase-orphan-still-paid',
+                customerId: 'cust-orphan-paid',
+                addonSlug: 'extra-accommodations-20',
+                metadata: null,
+                mpSubscriptionId: 'preapproval-orphan-paid',
+                currentPeriodEnd: accessUntil,
+                cancelAtPeriodEnd: false
+            };
+
+            const { db, spies } = buildMockDb([purchase]);
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: true,
+                kind: 'cancelled'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert: the benefit survives...
+            expect(result.success).toBe(true);
+            expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+            expect(result.details?.revocationRetried).toBe(0);
+            expect(result.details?.revocationDeferred).toBe(1);
+
+            // ...the provider side is still closed (charging stops today)...
+            expect(closeAddonPreapproval).toHaveBeenCalledWith(
+                expect.objectContaining({ source: 'orphan-retry' })
+            );
+
+            // ...and the row is FLAGGED rather than merely skipped, so
+            // `findExpiredAddons` ends it on its own date instead of nothing
+            // ever coming back for it.
+            const writes = spies.updateSet.mock.calls.map(
+                ([payload]) => payload as Record<string, unknown>
+            );
+            expect(writes).toContainEqual(expect.objectContaining({ cancelAtPeriodEnd: true }));
+            expect(writes.filter((payload) => payload?.status === 'canceled')).toEqual([]);
+        });
+
+        it('HOS-847 PR 7a CONTROL: the same orphan IS revoked once its own period elapsed', async () => {
+            // Pairs with the test above: without it, a phase that deferred every
+            // orphan unconditionally would satisfy those assertions.
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+
+            const purchase = {
+                id: 'purchase-orphan-period-over',
+                customerId: 'cust-orphan-over',
+                addonSlug: 'extra-accommodations-20',
+                metadata: null,
+                mpSubscriptionId: 'preapproval-orphan-over',
+                currentPeriodEnd: new Date(Date.now() - 24 * 60 * 60 * 1000),
+                cancelAtPeriodEnd: true
+            };
+
+            const { db } = buildMockDb([purchase]);
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: true,
+                kind: 'cancelled'
+            });
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: purchase.id,
+                addonSlug: purchase.addonSlug,
+                addonType: 'limit',
+                outcome: 'success'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationDeferred).toBe(0);
+            expect(result.details?.revocationRetried).toBe(1);
+            expect(revokeAddonForSubscriptionCancellation).toHaveBeenCalledTimes(1);
+        });
+
         it('should revoke an orphaned active addon and set status to canceled', async () => {
             // Arrange
             const ctx = createMockContext();
