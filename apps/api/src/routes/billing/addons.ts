@@ -229,16 +229,30 @@ export const purchaseAddonRoute = createProtectedRoute({
                 ADDON_NOT_AVAILABLE_FOR_PLAN: 422,
                 ADDON_NOT_AVAILABLE_FOR_DOMAIN: 422,
                 ADDON_DOMAIN_UNKNOWN: 422,
+                // HOS-847 PR 4: a recurring add-on is charged through its own
+                // MercadoPago preapproval, whose plan carries no discount
+                // dimension — so a promo code is REFUSED rather than accepted
+                // and silently ignored (which would authorize a recurring
+                // charge at an amount the buyer was never shown). Same 422
+                // family as the three above: well-formed, allowed to exist,
+                // just not processable in this combination.
+                RECURRING_ADDON_PROMO_UNSUPPORTED: 422,
                 CUSTOMER_NOT_FOUND: 404,
                 INVALID_PROMO_CODE: 422,
                 ADDON_ALREADY_ACTIVE: 409,
                 PAYMENT_NOT_CONFIGURED: 503,
+                // HOS-847 PR 4: MercadoPago (or its plan registry) refused the
+                // recurring set-up. An upstream failure, not ours and not the
+                // caller's — 502, matching how `mapSubscriptionCheckoutErrorToHttp`
+                // maps `MP_PLAN_PROVISIONING_FAILED` for the plan checkout, and
+                // retryable.
+                ADDON_PROVIDER_ERROR: 502,
                 CHECKOUT_ERROR: 500,
                 SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 503, {
+            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 502 | 503, {
                 message: result.error?.message ?? 'Unknown error',
                 // HOS-602: the status-derived `error.code` the client receives
                 // for a 422 collapses NO_SUBSCRIPTION / NO_ACTIVE_SUBSCRIPTION /
