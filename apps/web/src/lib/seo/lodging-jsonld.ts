@@ -133,3 +133,50 @@ export function buildLodgingAmenityNames({
     }
     return amenities.map((amenity) => translateAmenityName({ t, name: amenity.name }));
 }
+
+/** The price shape the detail transform produces (`AccommodationDetailData['price']`). */
+export interface LodgingPriceInput {
+    readonly price: number | null;
+    readonly currency: string | null;
+}
+
+/**
+ * Builds the JSON-LD `priceRange` value from the accommodation's price.
+ *
+ * HOS-878: schema.org's `priceRange` field is free text and accepts a single
+ * formatted value as well as an actual min-max range. This repo only stores a
+ * single POINT price per accommodation (`AccommodationDetailData['price']`) —
+ * there is no `priceFrom`/`priceTo` in the payload or the table — so this
+ * deliberately emits the point price rather than fabricating a range from data
+ * that doesn't exist. Two other candidates were considered and rejected by
+ * product decision: the `$`/`$$`/`$$$` indicator (it needs price-band
+ * thresholds that don't exist in the repo and that inflation would
+ * de-calibrate over time) and a real min-max range (the underlying min/max
+ * data doesn't exist and modeling it is out of scope for this fix).
+ *
+ * Formatting: emits `"<currency> <price>"` (e.g. `"ARS 15000"`) rather than
+ * `PricingSidebar`'s `Intl.NumberFormat({style:'currency'})` helper, because
+ * that helper is locale-dependent (it renders the ARS symbol as `$`, which is
+ * ambiguous with USD, and applies locale-specific thousands separators).
+ * Structured data is machine-read and locale-independent by convention, so an
+ * unambiguous ISO-ish currency code plus the raw number is the correct target
+ * here even though it looks plainer than the on-page price.
+ *
+ * @param input.price - The accommodation's price block, when present.
+ * @returns The formatted price string, or `undefined` when there is no price
+ *          to publish (`null` or `<= 0`) — the JSON-LD component omits the
+ *          `priceRange` key entirely in that case, never emitting `"ARS 0"`
+ *          or `"ARS null"`.
+ */
+export function buildLodgingPriceRange({
+    price
+}: {
+    readonly price?: LodgingPriceInput | null;
+}): string | undefined {
+    const amount = price?.price;
+    if (amount == null || amount <= 0) {
+        return undefined;
+    }
+    const currency = price?.currency ?? 'ARS';
+    return `${currency} ${amount}`;
+}
