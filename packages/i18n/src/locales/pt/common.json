@@ -221,5 +221,10 @@
     "back": "Voltar",
     "close": "Fechar",
     "deleting": "Excluindo...",
-    "anonymous": "Usuário"
+    "anonymous": "Usuário",
+    "qrSheet": {
+        "headline": "Escaneie o código",
+        "invite": "Aponte a câmera do seu telefone para o código e veja a página completa: fotos, contato e como chegar.",
+        "brandTagline": "Hospedagens, gastronomia e experiências do Litoral"
+    }
 }
