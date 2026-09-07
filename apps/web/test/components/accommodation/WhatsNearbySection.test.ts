@@ -66,14 +66,23 @@ describe('WhatsNearbySection.astro (source-based)', () => {
         );
     });
 
-    it('HOS-327: does NOT re-sort — the API order is a relevance ranking', () => {
+    it('HOS-327: does NOT re-order — the API order is a relevance ranking', () => {
         // Before HOS-327 the component re-sorted by ascending distance
         // "defensively". The API now ranks by relevance (editorial weight
-        // decayed by distance), so that sort would silently restore the exact
-        // distance-only ordering HOS-327 removed. Any `.sort(` on the POI list
-        // in this component is a regression.
-        expect(sectionSrc).not.toContain('.sort((a, b) => a.distanceKm - b.distanceKm)');
-        expect(sectionSrc).not.toContain('.sort(');
+        // decayed by distance), so any reordering here silently restores the
+        // exact distance-only ordering HOS-327 removed.
+        //
+        // The first version of this guard only banned `.sort(`, and a reviewer
+        // walked straight past it with `.toSorted(...)` — same regression, 20
+        // green tests. So the ban covers the whole family.
+        //
+        // KNOWN LIMITATION, stated rather than papered over: this reads the
+        // component source, so a reordering performed inside an imported
+        // helper (`@/lib/...`) is invisible to it. The guard catches the
+        // plausible accident, not a determined author.
+        const REORDERING_CALL = /\.(sort|toSorted|reverse|toReversed)\s*\(/;
+
+        expect(sectionSrc).not.toMatch(REORDERING_CALL);
     });
 
     it('formats distance via formatDistanceKm', () => {
@@ -164,21 +173,13 @@ describe('WhatsNearbySection.astro (source-based)', () => {
 });
 
 describe('WhatsNearbySection logic (helpers exercised by the component frontmatter)', () => {
-    it('HOS-327: preserves the API order verbatim, however unsorted by distance it looks', () => {
-        // The API hands these over ranked by relevance; a weight-100 landmark
-        // 4.2km away legitimately precedes a weak POI 300m away. The component
-        // maps over the list without reordering, so the rendered order is the
-        // input order.
-        const pois: NearbyPoi[] = [
-            buildPoi({ id: 'far', slug: 'far_poi', distanceKm: 4.2 }),
-            buildPoi({ id: 'near', slug: 'near_poi', distanceKm: 0.3 }),
-            buildPoi({ id: 'mid', slug: 'mid_poi', distanceKm: 1.8 })
-        ];
-
-        const rendered = pois.map((poi) => ({ ...poi }));
-
-        expect(rendered.map((p) => p.id)).toEqual(['far', 'near', 'mid']);
-    });
+    // NOTE: order preservation is NOT asserted here. Any such test would have
+    // to build its own array and map over it, asserting `Array.prototype.map`
+    // rather than anything this component does — it could not fail. The
+    // component's order is pinned by the source-level "does NOT re-order"
+    // guard above, and the ordering itself is covered end-to-end by
+    // `service-core/.../getNearbyRanked.test.ts` and by the API integration
+    // suite against a real database.
 
     it('HOS-327: resolves the description multilang-first, degrading to the plain field', () => {
         const withI18n = buildPoi({
