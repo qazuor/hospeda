@@ -1,9 +1,10 @@
 /**
  * @file listing-qr-sheet-no-entitlement-gate.guard.test.ts
- * @description Freezes the owner decision that the printable QR sheet is
- * UNGATED, in all three verticals (HOS-982).
+ * @description Freezes the owner decision that a listing's QR is UNGATED, in
+ * all three verticals and on both surfaces that hand it over (HOS-982): the
+ * printable sheet (`qrSheet.ts`) and the dashboard image (`qrCode.ts`, PR 2).
  *
- * The three sheet routes sit beside two documents that ARE gated — the brochure
+ * The six routes sit beside two documents that ARE gated — the brochure
  * (`DOWNLOAD_LISTING_PDF`) and the gastronomy menu writes
  * (`MANAGE_GASTRONOMY_MENU`) — and they were written by copying those files.
  * The obvious "consistency" fix is to add `requireEntitlement` here too, and it
@@ -21,10 +22,10 @@
  * The absence of a middleware is not observable from a passing request: an
  * entitled caller gets the file either way, and the seeded fixtures are entitled.
  * Proving the negative behaviourally would mean standing up billing and an
- * unentitled subscriber for each of three verticals to assert three 200s — a lot
+ * unentitled subscriber for each of three verticals to assert six 200s — a lot
  * of machinery to assert that nothing happened.
  *
- * The predicate is the SOURCE TEXT of one file per vertical. Its limit, said out
+ * The predicate is the SOURCE TEXT of one file per vertical per surface. Its limit, said out
  * loud: a gate added through a helper that spells neither `requireEntitlement`
  * nor `EntitlementKey` walks past this. The counter-assertion below is what
  * keeps the check honest — it proves both tokens are still the spelling the
@@ -39,11 +40,50 @@ import { describe, expect, it } from 'vitest';
 
 const ROUTES = join(__dirname, '../../src/routes');
 
-/** The three sheet routes, one per vertical. */
-const SHEET_ROUTES: readonly { readonly vertical: string; readonly path: string }[] = [
-    { vertical: 'accommodation', path: join(ROUTES, 'accommodation/protected/qrSheet.ts') },
-    { vertical: 'gastronomy', path: join(ROUTES, 'gastronomy/protected/qrSheet.ts') },
-    { vertical: 'experience', path: join(ROUTES, 'experience/protected/qrSheet.ts') }
+/**
+ * Every route that hands an owner their listing code, by vertical and surface.
+ *
+ * Six since HOS-982 PR 2, not three: `qrCode.ts` returns the SAME code as its
+ * `qrSheet.ts` twin, as SVG, so the owner can see on screen what the printed
+ * page will carry. Gating one half of a pair would be worse than gating both —
+ * the panel would show a code the sheet then refused to print, or the reverse —
+ * so the decision is frozen across the pair rather than per file.
+ */
+const SHEET_ROUTES: readonly {
+    readonly vertical: string;
+    readonly surface: string;
+    readonly path: string;
+}[] = [
+    {
+        vertical: 'accommodation',
+        surface: 'sheet',
+        path: join(ROUTES, 'accommodation/protected/qrSheet.ts')
+    },
+    {
+        vertical: 'gastronomy',
+        surface: 'sheet',
+        path: join(ROUTES, 'gastronomy/protected/qrSheet.ts')
+    },
+    {
+        vertical: 'experience',
+        surface: 'sheet',
+        path: join(ROUTES, 'experience/protected/qrSheet.ts')
+    },
+    {
+        vertical: 'accommodation',
+        surface: 'image',
+        path: join(ROUTES, 'accommodation/protected/qrCode.ts')
+    },
+    {
+        vertical: 'gastronomy',
+        surface: 'image',
+        path: join(ROUTES, 'gastronomy/protected/qrCode.ts')
+    },
+    {
+        vertical: 'experience',
+        surface: 'image',
+        path: join(ROUTES, 'experience/protected/qrCode.ts')
+    }
 ];
 
 /** A route that IS entitlement-gated, so the tokens can be proven to be live. */
@@ -70,17 +110,17 @@ function readCode(path: string): string {
         .replace(/^[ \t]*\/\/.*$/gm, '');
 }
 
-describe('the printable QR sheet is ungated, in all three verticals (HOS-982)', () => {
-    it('has a route file per vertical — a missing one would pass every check below', () => {
+describe('the listing QR is ungated, on both surfaces of all three verticals (HOS-982)', () => {
+    it('has a route file per vertical per surface — a missing one would pass every check below', () => {
         for (const route of SHEET_ROUTES) {
             expect(
                 read(route.path).length,
-                `${route.vertical} sheet route is empty`
+                `${route.vertical} ${route.surface} route is empty`
             ).toBeGreaterThan(500);
         }
     });
 
-    it.each(SHEET_ROUTES)('$vertical: declares no entitlement gate', ({ path }) => {
+    it.each(SHEET_ROUTES)('$vertical $surface: declares no entitlement gate', ({ path }) => {
         const source = readCode(path);
         expect(source).not.toContain('requireEntitlement');
         expect(source).not.toContain('EntitlementKey');
@@ -94,7 +134,9 @@ describe('the printable QR sheet is ungated, in all three verticals (HOS-982)', 
         expect(gated).toContain('EntitlementKey');
     });
 
-    it.each(SHEET_ROUTES)('$vertical: still refuses a listing that is not PUBLIC', ({ path }) => {
+    it.each(SHEET_ROUTES)('$vertical $surface: still refuses a listing that is not PUBLIC', ({
+        path
+    }) => {
         // The gate that DOES survive: no public ficha, no code. Asserted here so
         // that "ungated" can never be read as "unchecked".
         const source = readCode(path);
@@ -102,7 +144,9 @@ describe('the printable QR sheet is ungated, in all three verticals (HOS-982)', 
         expect(source).toContain('entityNotFoundError');
     });
 
-    it.each(SHEET_ROUTES)('$vertical: also refuses a listing that is not ACTIVE', ({ path }) => {
+    it.each(SHEET_ROUTES)('$vertical $surface: also refuses a listing that is not ACTIVE', ({
+        path
+    }) => {
         // BOTH halves of "published", in all three verticals. The commerce two
         // checked visibility alone until this was found: their services answer
         // NOT_FOUND to every non-owner on a non-ACTIVE row, so a listing PATCHed
@@ -116,7 +160,7 @@ describe('the printable QR sheet is ungated, in all three verticals (HOS-982)', 
         expect(source).toContain('LifecycleStatusEnum.ACTIVE');
     });
 
-    it.each(SHEET_ROUTES)('$vertical: mints through the central QR point', ({ path }) => {
+    it.each(SHEET_ROUTES)('$vertical $surface: mints through the central QR point', ({ path }) => {
         const source = readCode(path);
         // `resolveEntityQrScanUrl` is the ONE authorised way to turn an entity
         // plus a purpose into a printable code; `LISTING` is what keeps this

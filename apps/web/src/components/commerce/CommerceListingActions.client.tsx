@@ -25,6 +25,7 @@ import type { CommerceTrialVerdictKind } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { PayerEmailConfirmDialog } from '@/components/billing/PayerEmailConfirmDialog.client';
+import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import { Dialog } from '@/components/shared/ui/Dialog.client';
 import { useSession } from '@/lib/auth-client';
 import { storePendingCheckoutSubId } from '@/lib/billing/checkout-pending';
@@ -380,6 +381,36 @@ export function CommerceListingActions({
                     listingId={listing.id}
                     slug={listing.slug}
                     locale={locale}
+                />
+                {/*
+                 * HOS-982. Sibling of the brochure and NOT the same document: the
+                 * brochure is handed to a person and carries the photo, the hours
+                 * and the contact block; this is a code taped to a door, meant to
+                 * be scanned from across a room. It also has NO entitlement gate
+                 * (owner decision) — a QR on a door brings people to the platform,
+                 * so restricting it would cost us rather than the subscriber.
+                 *
+                 * `isPublished` is `hasPublicPage` and NOT `isPublic`, even though
+                 * this branch only renders when `isPublic` is true. They answer
+                 * different questions: `isPublic` is visibility alone, while the
+                 * API also requires `lifecycleState === ACTIVE`, and a staff PATCH
+                 * to INACTIVE that leaves visibility standing produces a row where
+                 * the two disagree. Passing `isPublic` here put three contradictory
+                 * sentences on one card for that row — the panel mounted, asked for
+                 * the code, got the anti-enumeration 404, said "we could not show
+                 * the code but you can download the sheet anyway", and the download
+                 * then said "check that your listing is still published". None of
+                 * the three was actionable.
+                 *
+                 * Absent (an older API answer) is treated as NOT published rather
+                 * than falling back to `isPublic`, which would restore exactly that.
+                 */}
+                <ListingQrSheet
+                    vertical={listing.vertical}
+                    listingId={listing.id}
+                    slug={listing.slug}
+                    locale={locale}
+                    isPublished={listing.hasPublicPage ?? false}
                 />
                 {/*
                  * HOS-1057. Experiences only — a restaurant has nothing to

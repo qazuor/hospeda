@@ -225,6 +225,19 @@
     "qrSheet": {
         "headline": "Escaneie o código",
         "invite": "Aponte a câmera do seu telefone para o código e veja a página completa: fotos, contato e como chegar.",
-        "brandTagline": "Hospedagens, gastronomia e experiências do Litoral"
+        "brandTagline": "Hospedagens, gastronomia e experiências do Litoral",
+        "help": "Uma folha A4 com o código da sua página, pronta para imprimir e colar na porta ou deixar no balcão.",
+        "download": "Baixar a folha QR (PDF)",
+        "working": "Gerando a folha…",
+        "ready": "Pronto, baixamos a sua folha QR.",
+        "unpublished": "Você vai poder baixar a folha QR quando a sua página estiver publicada.",
+        "errorNotFound": "Não conseguimos gerar a folha. Confira se a sua página continua publicada.",
+        "errorRateLimited": "Você pediu a folha várias vezes seguidas. Espere um minuto e tente de novo.",
+        "errorSignedOut": "Sua sessão expirou. Entre de novo para baixar a folha.",
+        "error": "Não conseguimos gerar a folha. Tente de novo em um instante.",
+        "codeAlt": "Código QR da sua página",
+        "codeLoading": "Carregando o código…",
+        "codeError": "Não conseguimos mostrar o código aqui, mas você pode baixar a folha assim mesmo.",
+        "encodes": "O código leva a: {{url}}"
     }
 }

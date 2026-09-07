@@ -37,6 +37,7 @@ import { protectedPatchGastronomyRoute } from './patch';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
+import { protectedGetGastronomyQrCodeRoute } from './qrCode';
 import { protectedGetGastronomyQrSheetRoute } from './qrSheet';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
@@ -77,6 +78,7 @@ app.route('/', protectedGetGastronomyBrochureRoute);
 // `purpose: LISTING` and carries NO entitlement gate (owner decision). Same
 // defensive ordering rationale as the brochure.
 app.route('/', protectedGetGastronomyQrSheetRoute);
+app.route('/', protectedGetGastronomyQrCodeRoute);
 
 // Menu (HOS-895) — the carta and its photo/PDF alternative. Registered
 // before /{id} for the same DEFENSIVE reason as the media and brochure

@@ -97,3 +97,45 @@ describe('PropertyCard.astro — HOS-637 thumbnail transform', () => {
         expect(transformedUrl).toContain('dpr_auto');
     });
 });
+
+/**
+ * HOS-982 — the printable QR sheet on the accommodation card.
+ *
+ * `.astro` files cannot be rendered by vitest in this repo, so these read the
+ * SOURCE, the same documented pattern the HOS-637 block above uses. A source
+ * check goes vacuous the moment it only asks whether a NAME appears, so each
+ * assertion below isolates the ONE expression it is about and asserts its
+ * operands — the island's own behaviour (request, states, a11y) is covered for
+ * real in `test/components/shared/ListingQrSheet.test.tsx`.
+ */
+describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
+    /** The `<ListingQrSheet …/>` element only, so a match cannot come from elsewhere. */
+    const qrElement = /<ListingQrSheet\b[\s\S]*?\/>/.exec(propertyCardSource)?.[0] ?? '';
+
+    it('renders the shared QR-sheet island for the accommodation vertical', () => {
+        expect(propertyCardSource).toContain(
+            "import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client'"
+        );
+        expect(qrElement).not.toBe('');
+        expect(qrElement).toContain('vertical="accommodation"');
+        expect(qrElement).toContain('listingId={property.id}');
+        expect(qrElement).toContain('slug={property.slug}');
+    });
+
+    it('hydrates it lazily — one card in a grid, and the panel idles until clicked', () => {
+        expect(qrElement).toContain('client:visible');
+        expect(qrElement).not.toContain('client:load');
+    });
+
+    it('feeds it BOTH clauses of "published", never just the lifecycle state', () => {
+        // A DRAFT row can carry PUBLIC visibility and still have no page, so
+        // `visibility === PUBLIC` alone would offer a download that can only
+        // answer 404 — which is the same 404 the route answers for "not yours".
+        const canPrint =
+            /const canPrintQrSheet =([\s\S]*?);/.exec(propertyCardSource)?.[1]?.trim() ?? '';
+        expect(canPrint).toContain('isActive');
+        expect(canPrint).toContain('property.visibility === VisibilityEnum.PUBLIC');
+        expect(canPrint).toContain('&&');
+        expect(qrElement).toContain('isPublished={canPrintQrSheet}');
+    });
+});
