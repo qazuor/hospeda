@@ -316,12 +316,21 @@ shared class on source order (identical specificity), and five modules each
 holding their own opinion is exactly how six dialogs ended up with no cap at
 all.
 
+The same goes for the scroll region: `dialog-panel-scroll` owns the
+`overflow-y`, and a module re-declaring `overflow` on that element breaks the
+body's scrolling while the panel still obeys its cap — which reaches the user
+as the identical bug, buttons unreachable at the bottom.
+
 `pnpm check:dialog-panel` enforces both halves in CI: it fails on a `<dialog>`
 carrying none of the three markers, **and** on a CSS Module that declares
 `max-height` / `max-block-size` / `overflow` / `overflow-y` on a class applied
-to a marked element. Only those classes are inspected — a `max-height` on a
+to an element carrying `dialog-panel`, `dialog-viewport` or
+`dialog-panel-scroll`. Only those classes are inspected — a `max-height` on a
 popover, a drawer or a thumbnail is never looked at — and `--dialog-max-height`
 stays legal, because tuning the cap is the point and competing with it is not.
+A `className` expression it cannot resolve without guessing (a conditional, or
+more than one `styles.X`) is skipped **and counted** in the guard's success
+line, so the size of that blind spot is always on screen.
 
 ### Adding a New Theme
 
