@@ -106,13 +106,19 @@ const AdminGrantCompResponseSchema = z.object({
  * Maps the service's typed failures onto HTTP status codes.
  *
  * `PROVIDER_ERROR` is a **502**, matching `grant-courtesy`: the request was
- * fine and so was the plan — MercadoPago refused, and the operator's remedy is
- * to cancel the preapproval by hand and retry, not to change the request.
+ * fine and so was the plan — MercadoPago refused, or could not be reached at
+ * all, and the remedy is to retry rather than to change the request.
+ *
+ * `ALREADY_COMPED` is a **409**, not a 422: the request is perfectly valid and
+ * would have been accepted a moment earlier. What refuses it is the current
+ * state of the resource, which is exactly what 409 means.
  */
-function mapErrorToStatus(code: GrantCompErrorCode): 404 | 422 | 502 {
+function mapErrorToStatus(code: GrantCompErrorCode): 404 | 409 | 422 | 502 {
     switch (code) {
         case 'NOT_FOUND':
             return 404;
+        case 'ALREADY_COMPED':
+            return 409;
         case 'PROVIDER_ERROR':
             return 502;
         default:
@@ -129,11 +135,14 @@ export const adminGrantCompRoute = createAdminRoute({
     summary: 'Grant a permanently-complimentary subscription (admin)',
     description:
         'Creates a status=comp subscription for a customer on the named plan: full entitlements, ' +
-        'no MercadoPago preapproval, never charged. Any subscription the customer already has is ' +
-        'cancelled first and its MercadoPago preapproval hard-cancelled; if MercadoPago refuses, ' +
-        'the grant is aborted (502) rather than leaving a comped customer still being charged. ' +
-        'Only accommodation-domain plans can be comped. This is the ONLY way to produce a comp ' +
-        'subscription — no promo code grants one. Requires BILLING_MANAGE.',
+        'no MercadoPago preapproval, never charged. Every subscription of theirs that could still ' +
+        'be charged is cancelled first and its MercadoPago preapproval hard-cancelled; if ' +
+        'MercadoPago refuses, or cannot be reached, the grant is aborted (502) rather than ' +
+        'leaving a comped customer still being billed — retry, it resumes and skips whatever was ' +
+        'already closed. A customer who already has a comp is refused (409): cancel the existing ' +
+        'one first if the plan must change. Only accommodation-domain plans can be comped. This ' +
+        'is the ONLY way to produce a comp subscription — no promo code grants one. Requires ' +
+        'BILLING_MANAGE.',
     tags: ['Billing', 'Subscriptions'],
     requiredPermissions: [PermissionEnum.BILLING_MANAGE],
     requestBody: AdminGrantCompBodySchema,

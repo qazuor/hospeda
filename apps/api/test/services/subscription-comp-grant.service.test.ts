@@ -15,8 +15,14 @@
  * HOS-751 failure mode, which has happened in this repo already.
  *
  * These tests are what make ignoring the outcome fail. Mutating the
- * `outcome.kind === 'failed'` branch away turns the two `PROVIDER_ERROR` cases
- * below red.
+ * `providerRefused` predicate away turns the `PROVIDER_ERROR` cases below red —
+ * including the `adapter-unavailable` pair, which is the half that branching on
+ * the outcome's `kind` alone silently gets wrong.
+ *
+ * The second suite covers the other way this service can leave a preapproval
+ * charging: `billing_subscriptions.status` holds two vocabularies, and deciding
+ * what to supersede by matching the raw column against Hospeda's enum misses
+ * `incomplete` and `unpaid` entirely.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,8 +32,10 @@ const notifyMock = vi.fn();
 const reconcileMock = vi.fn();
 const updateMock = vi.fn();
 const insertMock = vi.fn();
+const clearCacheMock = vi.fn();
 
-let supersedableRows: Array<Record<string, unknown>> = [];
+/** Every non-deleted subscription row the customer has, statuses RAW. */
+let allRows: Array<Record<string, unknown>> = [];
 const callOrder: string[] = [];
 
 vi.mock('../../src/services/billing/preapproval-hard-cancel.js', () => ({
@@ -58,6 +66,45 @@ vi.mock('../../src/services/subscription-linked-entities.service.js', () => ({
     }
 }));
 
+/**
+ * One fake client, used both as `getDb()` and as the `tx` handed to the
+ * `withTransaction` callbacks. The service's atomicity boundaries are per-row
+ * and per-comp rather than global (ADR-019: no transaction may be held across
+ * the MercadoPago call), and this stub deliberately does NOT simulate rollback —
+ * what these tests check is call ORDER and what was written, which is what the
+ * `@repo/db` global mock leaves observable.
+ */
+function makeFakeDb() {
+    return {
+        select: () => ({
+            from: () => ({
+                where: async () => allRows
+            })
+        }),
+        update: () => ({
+            set: (values: unknown) => ({
+                where: async () => {
+                    callOrder.push('local-write');
+                    return updateMock(values);
+                }
+            })
+        }),
+        insert: () => ({
+            values: async (values: unknown) => {
+                callOrder.push('audit');
+                return insertMock(values);
+            }
+        })
+    };
+}
+
+vi.mock('../../src/middlewares/entitlement.js', () => ({
+    clearEntitlementCache: (...args: unknown[]) => {
+        callOrder.push('cache-clear');
+        return clearCacheMock(...args);
+    }
+}));
+
 vi.mock('@repo/db', async () => {
     const actual = await vi.importActual<Record<string, unknown>>('@repo/db');
     return {
@@ -66,33 +113,15 @@ vi.mock('@repo/db', async () => {
             id: 'id',
             customerId: 'customer_id',
             status: 'status',
+            deletedAt: 'deleted_at',
             mpSubscriptionId: 'mp_subscription_id'
         },
         billingSubscriptionEvents: { subscriptionId: 'subscription_id' },
         and: vi.fn(() => 'and'),
         eq: vi.fn(() => 'eq'),
-        inArray: vi.fn(() => 'inArray'),
-        getDb: () => ({
-            select: () => ({
-                from: () => ({
-                    where: async () => supersedableRows
-                })
-            }),
-            update: () => ({
-                set: (values: unknown) => ({
-                    where: async () => {
-                        callOrder.push('local-write');
-                        return updateMock(values);
-                    }
-                })
-            }),
-            insert: () => ({
-                values: async (values: unknown) => {
-                    callOrder.push('audit');
-                    return insertMock(values);
-                }
-            })
-        })
+        isNull: vi.fn(() => 'isNull'),
+        withTransaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(makeFakeDb()),
+        getDb: () => makeFakeDb()
     };
 });
 
@@ -121,7 +150,7 @@ function payingSubscription(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
     vi.clearAllMocks();
     callOrder.length = 0;
-    supersedableRows = [];
+    allRows = [];
     hardCancelMock.mockResolvedValue({ kind: 'cancelled' });
     createCompMock.mockResolvedValue({ localSubscriptionId: 'comp-sub-1' });
     notifyMock.mockResolvedValue(undefined);
@@ -132,7 +161,7 @@ beforeEach(() => {
 
 describe('grantCompSubscription — the preapproval is closed before the comp exists', () => {
     it('hard-cancels the live preapproval BEFORE creating the comp subscription', async () => {
-        supersedableRows = [payingSubscription()];
+        allRows = [payingSubscription()];
 
         const result = await grantCompSubscription(GRANT);
 
@@ -150,7 +179,7 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
     });
 
     it('nulls mp_subscription_id on the superseded row', async () => {
-        supersedableRows = [payingSubscription()];
+        allRows = [payingSubscription()];
 
         await grantCompSubscription(GRANT);
 
@@ -165,7 +194,7 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
         // `hardCancelPreapprovalBestEffort` returns rather than throwing — the
         // customer would end up comped with `mp-preapproval-2` still authorized
         // and still charging.
-        supersedableRows = [
+        allRows = [
             payingSubscription({ id: 'sub-1', mpSubscriptionId: 'mp-preapproval-1' }),
             payingSubscription({ id: 'sub-2', mpSubscriptionId: 'mp-preapproval-2' })
         ];
@@ -177,17 +206,26 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
 
         expect(result.success).toBe(false);
         expect(result.success === false && result.error.code).toBe('PROVIDER_ERROR');
-        // Nothing downstream ran. `create-comp` absent from the call order is the
-        // assertion that "no comp subscription points at a live preapproval" is
-        // true by construction rather than by luck.
+        // `create-comp` absent from the call order is the assertion that "no comp
+        // subscription coexists with a live preapproval" is true by construction
+        // rather than by luck.
         expect(callOrder).not.toContain('create-comp');
         expect(createCompMock).not.toHaveBeenCalled();
-        expect(callOrder).not.toContain('local-write');
         expect(callOrder).not.toContain('notify');
+        // sub-1's retirement DID land, and that is intended, not a leak. Each row
+        // is closed at MercadoPago and retired locally before the next is touched,
+        // so every write that exists has its preapproval already closed. Batching
+        // the writes until the end would leave a crash in between with
+        // preapprovals cancelled at the provider and rows still `active` here —
+        // the unresumable arrangement.
+        expect(updateMock).toHaveBeenCalledTimes(1);
+        expect(updateMock).toHaveBeenCalledWith(
+            expect.objectContaining({ status: 'cancelled', mpSubscriptionId: null })
+        );
     });
 
-    it('a refusal on the ONLY subscription also aborts, and writes nothing', async () => {
-        supersedableRows = [payingSubscription()];
+    it('a refusal on the ONLY subscription aborts, and writes nothing', async () => {
+        allRows = [payingSubscription()];
         hardCancelMock.mockResolvedValue({ kind: 'failed', error: 'MP 500' });
 
         const result = await grantCompSubscription(GRANT);
@@ -199,11 +237,10 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
         expect(insertMock).not.toHaveBeenCalled();
     });
 
-    it('proceeds on `skipped`, which is a clean no-op and not a failure', async () => {
-        // A row with no preapproval at all — the `no-preapproval` reason. Treating
-        // it like `failed` would make a comp ungrantable for the most ordinary
-        // customer there is: one who never subscribed.
-        supersedableRows = [payingSubscription({ mpSubscriptionId: null })];
+    it("proceeds on skipped:'no-preapproval', which is a clean no-op", async () => {
+        // Treating it like `failed` would make a comp ungrantable for the most
+        // ordinary customer there is: one who never subscribed.
+        allRows = [payingSubscription({ mpSubscriptionId: null })];
         hardCancelMock.mockResolvedValue({ kind: 'skipped', reason: 'no-preapproval' });
 
         const result = await grantCompSubscription(GRANT);
@@ -211,11 +248,124 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
         expect(result.success).toBe(true);
         expect(createCompMock).toHaveBeenCalledOnce();
     });
+
+    it("ABORTS on skipped:'adapter-unavailable' — it is not a no-op", async () => {
+        // The two `skipped` reasons are not the same event, and branching on the
+        // `kind` alone silently equates them. `no-preapproval` means there is
+        // nothing to cancel; `adapter-unavailable` means we never reached
+        // MercadoPago, so the preapproval named on the row may be very much alive.
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'skipped', reason: 'adapter-unavailable' });
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(false);
+        expect(result.success === false && result.error.code).toBe('PROVIDER_ERROR');
+        expect(createCompMock).not.toHaveBeenCalled();
+    });
+
+    it('does NOT null mp_subscription_id when the adapter was unavailable', async () => {
+        // The sharper half of the same bug. Proceeding would run the supersede
+        // write, and that write nulls `mp_subscription_id` — the only pointer
+        // anyone has to find the orphaned preapproval afterwards. A live
+        // preapproval with no local reference to it is the worst reachable state.
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'skipped', reason: 'adapter-unavailable' });
+
+        await grantCompSubscription(GRANT);
+
+        expect(updateMock).not.toHaveBeenCalled();
+        expect(callOrder).not.toContain('local-write');
+    });
+});
+
+describe('grantCompSubscription — the status column holds two vocabularies', () => {
+    // `billing_subscriptions.status` carries Hospeda's enum AND qzpay's, and
+    // `incomplete`/`unpaid` are not members of the Hospeda enum at all. Matching
+    // the raw column against enum values — which is what an `inArray(...)` in SQL
+    // does — skips exactly those rows, and a skipped row is a preapproval left
+    // charging a customer we just declared free.
+    it.each([
+        ['incomplete', 'qzpay writes this at creation of every recurring subscription'],
+        ['unpaid', 'qzpay writes this when a recurring charge fails'],
+        ['past_due', 'Hospeda vocabulary, shares a normalized value with `unpaid`'],
+        ['pending_provider', 'Hospeda-only value, outside qzpay entirely'],
+        ['courtesy', 'a PAUSED preapproval a cron is expected to resume at full price'],
+        ['paused', 'a pause is not a cancel: the preapproval is intact']
+    ])('supersedes a subscription stored as %s (%s)', async (status) => {
+        allRows = [payingSubscription({ status })];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(hardCancelMock).toHaveBeenCalledWith(
+            expect.objectContaining({ mpSubscriptionId: 'mp-preapproval-1' })
+        );
+        expect(result.success === true && result.data.supersededSubscriptionIds).toEqual(['sub-1']);
+    });
+
+    it.each([
+        ['cancelled', 'Hospeda spelling, terminal'],
+        ['canceled', 'qzpay spelling with one L, same terminal state'],
+        ['expired', 'terminal'],
+        ['abandoned', 'terminal'],
+        ['incomplete_expired', 'qzpay vocabulary, normalizes to abandoned']
+    ])('leaves a subscription stored as %s alone (%s)', async (status) => {
+        allRows = [payingSubscription({ status })];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(hardCancelMock).not.toHaveBeenCalled();
+        expect(result.success === true && result.data.supersededSubscriptionIds).toEqual([]);
+    });
+
+    it('supersedes a status nobody recognises, rather than skipping it', async () => {
+        // Fail-closed on the unknown. Of the two ways to be wrong, cancelling a
+        // preapproval we did not fully understand is recoverable; leaving one
+        // charging is the bug this service exists to prevent. This also covers the
+        // status somebody adds to the enum next year without reading this file.
+        allRows = [payingSubscription({ status: 'some_future_status' })];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(hardCancelMock).toHaveBeenCalledOnce();
+    });
+});
+
+describe('grantCompSubscription — one comp per customer', () => {
+    it('refuses a second grant instead of creating a duplicate', async () => {
+        // Two comp rows leave `loadEntitlements`'s `.find()` picking whichever the
+        // driver returns first, so a duplicate does not merely waste a row — it
+        // decides the customer's plan by accident.
+        allRows = [{ id: 'comp-existing', status: 'comp', mpSubscriptionId: null }];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(false);
+        expect(result.success === false && result.error.code).toBe('ALREADY_COMPED');
+        expect(result.success === false && result.error.message).toContain('comp-existing');
+        expect(createCompMock).not.toHaveBeenCalled();
+        expect(hardCancelMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses before touching MercadoPago, so a double click cancels nothing twice', async () => {
+        allRows = [
+            { id: 'comp-existing', status: 'comp', mpSubscriptionId: null },
+            payingSubscription({ id: 'sub-1' })
+        ];
+
+        await grantCompSubscription(GRANT);
+
+        expect(hardCancelMock).not.toHaveBeenCalled();
+        expect(updateMock).not.toHaveBeenCalled();
+    });
 });
 
 describe('grantCompSubscription — what the customer is told', () => {
     it('reports hadActiveBilling only when a preapproval was really cancelled', async () => {
-        supersedableRows = [payingSubscription()];
+        allRows = [payingSubscription()];
 
         const result = await grantCompSubscription(GRANT);
 
@@ -227,7 +377,7 @@ describe('grantCompSubscription — what the customer is told', () => {
     });
 
     it('reports hadActiveBilling false for a customer who was never subscribed', async () => {
-        supersedableRows = [];
+        allRows = [];
 
         const result = await grantCompSubscription(GRANT);
 
@@ -242,13 +392,48 @@ describe('grantCompSubscription — what the customer is told', () => {
         // The opposite criterion from the hard-cancel above, on purpose: a mail
         // failure must not reverse something MercadoPago and the database have
         // both already accepted.
-        supersedableRows = [];
+        allRows = [];
         notifyMock.mockRejectedValue(new Error('brevo down'));
 
         const result = await grantCompSubscription(GRANT);
 
         expect(result.success).toBe(true);
         expect(result.success === true && result.data.subscriptionId).toBe('comp-sub-1');
+    });
+});
+
+describe('grantCompSubscription — the entitlement cache is cleared here, and last', () => {
+    it('clears the cache for the customer after the comp is created', async () => {
+        // INV-1: a comp fires no webhook, so nothing else will ever invalidate.
+        // `createCompSubscription` clears too, but it is now handed THIS
+        // transaction, so its clear runs before the outer commit — early enough
+        // to repopulate from the pre-commit picture and pin the stale answer for
+        // the full TTL. This call is the one that happens after.
+        allRows = [payingSubscription()];
+
+        await grantCompSubscription(GRANT);
+
+        expect(clearCacheMock).toHaveBeenCalledWith('cus-1');
+        expect(callOrder.indexOf('create-comp')).toBeLessThan(callOrder.indexOf('cache-clear'));
+    });
+
+    it('clears the cache after the supersede writes too, not only the insert', async () => {
+        // The superseded rows change status from entitlement-granting to
+        // `cancelled`, and `createCompSubscription` knows nothing about them.
+        allRows = [payingSubscription()];
+
+        await grantCompSubscription(GRANT);
+
+        expect(callOrder.lastIndexOf('local-write')).toBeLessThan(callOrder.indexOf('cache-clear'));
+    });
+
+    it('does not clear the cache when the grant was refused', async () => {
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'failed', error: 'MP 500' });
+
+        await grantCompSubscription(GRANT);
+
+        expect(clearCacheMock).not.toHaveBeenCalled();
     });
 });
 

@@ -29,20 +29,54 @@
  * this module exists to prevent: the provider says no, nothing throws, and the
  * comp is granted on top of a live preapproval.
  *
- * So this is fail-CLOSED. `cancelled` and `skipped` proceed; `failed` aborts
- * with `PROVIDER_ERROR` and nothing is written. An operator seeing that error
- * still has a customer who pays, which is recoverable; the other direction is a
- * customer being charged for something we told them was free.
+ * So this is fail-CLOSED, and on THREE of the four outcomes rather than one.
+ * `cancelled` proceeds. `skipped: 'no-preapproval'` proceeds, because there was
+ * nothing to cancel. `failed` aborts. And `skipped: 'adapter-unavailable'`
+ * aborts too, which is the one that reads like a false positive and is not:
+ * branching on the `kind` alone lumps it in with "nothing to cancel", when it
+ * actually means we never reached MercadoPago at all. Proceeding there is
+ * fail-open on the case that matters most, and it is made worse by what happens
+ * next — the supersede write NULLS `mp_subscription_id`, which is the only
+ * pointer any recovery has to the orphaned preapproval. A live preapproval with
+ * nothing local referencing it is the worst state this module can produce.
  *
- * ## Ordering, and why it is not the other way round
+ * ## Two vocabularies in one column
  *
- * Provider first, local writes second — the same order `courtesy-grant.service`
+ * `billing_subscriptions.status` stores Hospeda's `SubscriptionStatusEnum` AND
+ * qzpay's vocabulary, depending on which layer last wrote the row. `incomplete`
+ * and `unpaid` are not members of the Hospeda enum at all. Deciding what to
+ * supersede by matching the raw column against enum values — worse, in SQL —
+ * therefore skips exactly those rows, and a skipped row is a preapproval left
+ * charging. Everything here normalizes first
+ * (`normalizeStoredSubscriptionStatus`) and compares in TypeScript.
+ *
+ * ## Ordering, transactions, and resumability
+ *
+ * Provider first, local write second — the same order `courtesy-grant.service`
  * uses, for the same reason. There is no transaction spanning MercadoPago and
  * Postgres, so one of the two has to go first, and the recoverable failure is
- * the one where the provider side succeeded and the local side did not: that
- * leaves a cancelled preapproval and a customer who is simply not comped yet,
- * visible to the operator as an error they can retry. The inverse leaves a comp
- * row over a preapproval nobody knows is still live.
+ * the one where the provider side succeeded and the local side did not.
+ *
+ * ADR-019 forbids holding a transaction across that HTTP call, so the unit of
+ * atomicity is deliberately small: ONE transaction per superseded row (its
+ * status change plus its audit event), and ONE transaction for the comp insert
+ * plus its audit event. Between those units the operation is resumable rather
+ * than atomic, and it is written so that resuming converges — a retry re-reads
+ * the rows, finds the already-retired ones no longer supersedable, and finishes
+ * whatever is left. A single big transaction would have to either wrap the
+ * MercadoPago calls (forbidden) or batch every write after every call, which
+ * turns any crash in between into preapprovals cancelled at the provider with
+ * rows still `active` locally — unresumable, because the retry then re-attempts
+ * cancels MercadoPago has no reason to accept a second time.
+ *
+ * ## One comp per customer
+ *
+ * A second grant is refused (`ALREADY_COMPED`) rather than created. Two comp
+ * rows for one customer leave `loadEntitlements`'s `.find()` picking whichever
+ * the driver returns first, so a duplicate is not merely redundant — it decides
+ * the customer's plan by accident. An operator who meant a different plan needs
+ * to hear that, which is why this is an error and not a silent no-op returning
+ * the existing grant.
  *
  * ## The asymmetry with courtesy is deliberate
  *
@@ -54,9 +88,18 @@
  * @module services/subscription-comp-grant
  */
 
-import { and, billingSubscriptionEvents, billingSubscriptions, eq, getDb, inArray } from '@repo/db';
+import {
+    and,
+    billingSubscriptionEvents,
+    billingSubscriptions,
+    eq,
+    getDb,
+    isNull,
+    withTransaction
+} from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { BILLING_EVENT_TYPES } from '@repo/service-core';
+import { BILLING_EVENT_TYPES, normalizeStoredSubscriptionStatus } from '@repo/service-core';
+import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
 import { hardCancelPreapprovalBestEffort } from './billing/preapproval-hard-cancel.js';
 import { sendCompGrantedNotification } from './comp-notifications.service.js';
@@ -67,25 +110,60 @@ import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entit
 const TRIGGER_SOURCE = 'admin-comp-grant' as const;
 
 /**
- * Statuses whose rows must be retired before a comp is granted.
+ * Statuses that need no action, expressed in Hospeda vocabulary.
  *
- * Defined as "everything MercadoPago could still charge", not as a list of the
- * statuses seen in practice. `cancelled`, `expired` and `abandoned` are already
- * terminal; `comp` has no preapproval by construction. Everything else — including
- * `paused` and `courtesy`, which are pauses that a cron is expected to UNDO — can
- * still turn into a charge, so all of them are superseded.
+ * Written as the COMPLEMENT of what gets superseded, and that polarity is the
+ * whole point. An earlier version listed the six statuses to supersede and
+ * matched them in SQL; anything it had not thought of — including a status
+ * added to the enum next year — was silently skipped, which here means "left
+ * charging". Listing the four that are safe to ignore makes every other value,
+ * known or not, supersedable by default.
+ *
+ * - `cancelled` / `expired` / `abandoned` are terminal: whatever preapproval
+ *   they had is already closed by the path that made them terminal.
+ * - `comp` has no preapproval by construction, and a live one is caught by the
+ *   idempotency guard before this set is ever consulted.
  */
-const SUPERSEDABLE_STATUSES: readonly string[] = [
-    SubscriptionStatusEnum.ACTIVE,
-    SubscriptionStatusEnum.TRIALING,
-    SubscriptionStatusEnum.PAST_DUE,
-    SubscriptionStatusEnum.PAUSED,
-    SubscriptionStatusEnum.PENDING_PROVIDER,
-    SubscriptionStatusEnum.COURTESY
-];
+const NO_ACTION_STATUSES: ReadonlySet<SubscriptionStatusEnum> = new Set([
+    SubscriptionStatusEnum.CANCELLED,
+    SubscriptionStatusEnum.EXPIRED,
+    SubscriptionStatusEnum.ABANDONED,
+    SubscriptionStatusEnum.COMP
+]);
+
+/**
+ * Whether a stored status leaves the customer exposed to a MercadoPago charge.
+ *
+ * `billing_subscriptions.status` holds TWO vocabularies — Hospeda's
+ * {@link SubscriptionStatusEnum} and qzpay's, which has `incomplete`, `unpaid`,
+ * `incomplete_expired` and the American `canceled` (one L). `incomplete` and
+ * `unpaid` are not members of the Hospeda enum at all, so comparing the raw
+ * column against enum values (which is what this used to do, in SQL) misses
+ * them entirely: the row is not superseded, its preapproval is not cancelled,
+ * and it goes on charging a customer we just declared free. That is precisely
+ * the failure this service exists to prevent, reintroduced by a spelling.
+ *
+ * So the comparison happens in TypeScript, on the value
+ * `normalizeStoredSubscriptionStatus` returns, and never in SQL.
+ *
+ * An UNKNOWN status (normalizer returns `null`) counts as supersedable. It is a
+ * data-integrity signal, and of the two ways to be wrong about it, cancelling a
+ * preapproval we did not fully understand is recoverable and leaving one
+ * charging is not.
+ *
+ * @param rawStatus - The status exactly as stored on the row.
+ * @returns `true` when the row must be retired before the comp is granted.
+ */
+function isSupersedableStatus(rawStatus: unknown): boolean {
+    const normalized = normalizeStoredSubscriptionStatus(rawStatus);
+    if (normalized === null) {
+        return true;
+    }
+    return !NO_ACTION_STATUSES.has(normalized);
+}
 
 /** Typed failures a comp grant can report. */
-export type GrantCompErrorCode = 'NOT_FOUND' | 'INVALID_PLAN' | 'PROVIDER_ERROR';
+export type GrantCompErrorCode = 'NOT_FOUND' | 'INVALID_PLAN' | 'PROVIDER_ERROR' | 'ALREADY_COMPED';
 
 /** What a successful grant produces. */
 export interface GrantCompResult {
@@ -138,8 +216,11 @@ export async function grantCompSubscription(input: {
     const { customerId, planId, interval, livemode, actorId } = input;
     const db = getDb();
 
-    // 1. Everything MercadoPago could still charge this customer for.
-    const supersedable = await db
+    // 1. Read the customer's whole subscription set, statuses RAW. The
+    //    supersedable filter runs in TypeScript, never in SQL — see
+    //    `isSupersedableStatus` for why a SQL `IN (…)` over enum values is the
+    //    bug and not the shortcut.
+    const allRows = await db
         .select({
             id: billingSubscriptions.id,
             status: billingSubscriptions.status,
@@ -149,13 +230,45 @@ export async function grantCompSubscription(input: {
         .where(
             and(
                 eq(billingSubscriptions.customerId, customerId),
-                inArray(billingSubscriptions.status, SUPERSEDABLE_STATUSES)
+                isNull(billingSubscriptions.deletedAt)
             )
         );
 
-    // 2. Provider first. The outcome is INSPECTED — see this module's header on
-    //    why calling `hardCancelPreapprovalBestEffort` and moving on is the bug
-    //    rather than the fix.
+    // 2. Idempotency. Two clicks on the admin button used to produce two comp
+    //    rows, after which `loadEntitlements`'s `.find()` picked one of them at
+    //    random — including, potentially, the one on the wrong plan. Refusing is
+    //    better than returning the existing grant: an operator who meant a
+    //    DIFFERENT plan needs to hear that the customer already has one.
+    const existingComp = allRows.find(
+        (row) => normalizeStoredSubscriptionStatus(row.status) === SubscriptionStatusEnum.COMP
+    );
+    if (existingComp) {
+        return {
+            success: false,
+            error: {
+                code: 'ALREADY_COMPED',
+                message:
+                    `Customer ${customerId} already has a complimentary subscription ` +
+                    `(${existingComp.id}). Cancel it first if the plan needs to change; ` +
+                    'granting a second one would leave the entitlement engine choosing ' +
+                    'between them.'
+            }
+        };
+    }
+
+    const supersedable = allRows.filter((row) => isSupersedableStatus(row.status));
+
+    // 3. Provider first, and OUTSIDE any transaction (ADR-019: never hold one
+    //    across an HTTP call to MercadoPago).
+    //
+    //    Each row is closed at the provider and retired locally BEFORE the next
+    //    one is touched, rather than cancelling all of them and then writing all
+    //    of them. That is what makes a partial failure resumable: every write
+    //    that lands has its preapproval already closed, and a retry re-reads the
+    //    rows and simply finds fewer of them supersedable. Batching the writes
+    //    would mean a crash between the two loops leaves preapprovals cancelled
+    //    at MercadoPago and rows still `active` locally, and the retry would
+    //    then re-attempt a cancel MercadoPago has no reason to accept twice.
     let hadActiveBilling = false;
 
     for (const row of supersedable) {
@@ -165,7 +278,24 @@ export async function grantCompSubscription(input: {
             source: 'admin-comp-grant'
         });
 
-        if (outcome.kind === 'failed') {
+        // `skipped` is TWO different situations and only one of them is safe.
+        // `no-preapproval` means there is nothing to cancel — proceed. But
+        // `adapter-unavailable` means we could not even ASK MercadoPago, and
+        // treating that as success is fail-open on the exact case that matters:
+        // the write below nulls `mp_subscription_id`, which is the only pointer
+        // anyone would have to find the orphaned preapproval afterwards. A live
+        // preapproval plus no local reference to it is the worst state this
+        // service can produce, so it aborts like a refusal.
+        const providerRefused =
+            outcome.kind === 'failed' ||
+            (outcome.kind === 'skipped' && outcome.reason === 'adapter-unavailable');
+
+        if (providerRefused) {
+            const detail =
+                outcome.kind === 'failed'
+                    ? `MercadoPago refused to cancel preapproval ${row.mpSubscriptionId}: ${outcome.error}`
+                    : `the MercadoPago adapter is unavailable, so preapproval ${row.mpSubscriptionId} could not be cancelled`;
+
             apiLogger.error(
                 {
                     customerId,
@@ -173,19 +303,21 @@ export async function grantCompSubscription(input: {
                     actorId,
                     subscriptionId: row.id,
                     mpSubscriptionId: row.mpSubscriptionId,
-                    error: outcome.error
+                    outcome
                 },
-                'Comp grant aborted: MercadoPago refused the preapproval hard-cancel'
+                'Comp grant aborted: the MercadoPago preapproval was not closed'
             );
+
             return {
                 success: false,
                 error: {
                     code: 'PROVIDER_ERROR',
                     message:
-                        `MercadoPago refused to cancel preapproval ${row.mpSubscriptionId} ` +
-                        `for subscription ${row.id}; no comp was granted. Cancel it by hand ` +
-                        'and retry, otherwise the customer would keep being charged for a ' +
-                        'subscription we had declared free.'
+                        `${detail}. No comp was granted and subscription ${row.id} is still ` +
+                        'billing. Retry — the grant resumes and skips whatever was already ' +
+                        'closed. If MercadoPago keeps refusing, cancel that subscription from ' +
+                        'the admin panel first: a cancelled row is not superseded, so the ' +
+                        'grant stops trying to close its preapproval.'
                 }
             };
         }
@@ -193,40 +325,71 @@ export async function grantCompSubscription(input: {
         if (outcome.kind === 'cancelled') {
             hadActiveBilling = true;
         }
-    }
 
-    // 3. Retire the superseded rows. `mp_subscription_id` is nulled along with
-    //    the status: the preapproval is gone at the provider, and a dangling id
-    //    would let a later sweep try to act on something that no longer exists.
-    for (const row of supersedable) {
-        await db
-            .update(billingSubscriptions)
-            .set({
-                status: SubscriptionStatusEnum.CANCELLED,
-                mpSubscriptionId: null,
-                canceledAt: new Date()
-            })
-            .where(eq(billingSubscriptions.id, row.id));
+        // Retire the row and its event together. `mp_subscription_id` is nulled
+        // only now, once the preapproval is provably closed (or provably absent)
+        // — never on a path where we failed to reach MercadoPago.
+        await withTransaction(async (tx) => {
+            await tx
+                .update(billingSubscriptions)
+                .set({
+                    status: SubscriptionStatusEnum.CANCELLED,
+                    mpSubscriptionId: null,
+                    canceledAt: new Date()
+                })
+                .where(eq(billingSubscriptions.id, row.id));
 
-        await db.insert(billingSubscriptionEvents).values({
-            subscriptionId: row.id,
-            eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED,
-            previousStatus: row.status,
-            newStatus: SubscriptionStatusEnum.CANCELLED,
-            triggerSource: TRIGGER_SOURCE,
-            metadata: {
-                actorId,
-                reason: 'superseded-by-comp-grant',
-                mpSubscriptionId: row.mpSubscriptionId
-            }
+            await tx.insert(billingSubscriptionEvents).values({
+                subscriptionId: row.id,
+                eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED,
+                previousStatus: row.status,
+                newStatus: SubscriptionStatusEnum.CANCELLED,
+                triggerSource: TRIGGER_SOURCE,
+                metadata: {
+                    actorId,
+                    reason: 'superseded-by-comp-grant',
+                    mpSubscriptionId: row.mpSubscriptionId
+                }
+            });
         });
     }
 
-    // 4. The comp row itself. Throws on an unknown or non-accommodation plan —
-    //    those are caller mistakes and the route maps them to 404/422.
-    let created: { localSubscriptionId: string };
+    // 4. The comp row and its audit event, atomically. `createCompSubscription`
+    //    is handed this transaction so its insert, its promo stamp and the event
+    //    row below either all land or none do.
+    //
+    //    It throws on an unknown or non-accommodation plan; those are caller
+    //    mistakes the route maps to 404/422. Reaching them means the supersede
+    //    loop above already ran, which is fine and is why the operation is
+    //    written to be resumable: the customer is not comped, is no longer
+    //    billed, and a corrected retry finishes the job.
+    let localSubscriptionId: string;
     try {
-        created = await createCompSubscription({ customerId, planId, interval, livemode });
+        localSubscriptionId = await withTransaction(async (tx) => {
+            const created = await createCompSubscription({
+                customerId,
+                planId,
+                interval,
+                livemode,
+                db: tx
+            });
+
+            await tx.insert(billingSubscriptionEvents).values({
+                subscriptionId: created.localSubscriptionId,
+                eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COMP_GRANTED,
+                newStatus: SubscriptionStatusEnum.COMP,
+                triggerSource: TRIGGER_SOURCE,
+                metadata: {
+                    actorId,
+                    planId,
+                    interval,
+                    supersededSubscriptionIds: supersedable.map((r) => r.id),
+                    hadActiveBilling
+                }
+            });
+
+            return created.localSubscriptionId;
+        });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         apiLogger.error({ customerId, planId, actorId, error: message }, 'Comp grant failed');
@@ -240,48 +403,43 @@ export async function grantCompSubscription(input: {
         throw error;
     }
 
-    await db.insert(billingSubscriptionEvents).values({
-        subscriptionId: created.localSubscriptionId,
-        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COMP_GRANTED,
-        newStatus: SubscriptionStatusEnum.COMP,
-        triggerSource: TRIGGER_SOURCE,
-        metadata: {
-            actorId,
-            planId,
-            interval,
-            supersededSubscriptionIds: supersedable.map((r) => r.id),
-            hadActiveBilling
-        }
-    });
+    // 5. Cache clear, POST-commit and from here rather than from
+    //    `createCompSubscription`. That helper clears at the end of its own
+    //    `withTransaction`, which — now that it is handed this transaction —
+    //    runs BEFORE the outer commit, and a clear before a commit repopulates
+    //    the cache from the pre-commit picture and pins the stale answer for the
+    //    full TTL. This call is also what covers the supersede writes in step 3,
+    //    which the helper knows nothing about.
+    clearEntitlementCache(customerId);
 
-    // 5. INV-1: a comp never goes through MercadoPago, so no webhook will ever
+    // 6. INV-1: a comp never goes through MercadoPago, so no webhook will ever
     //    fire for it — the one reconciler that every other lifecycle site is
     //    called FROM the webhook has to be called here by hand instead, or the
     //    owner's accommodations keep serving the superseded subscription's
     //    cached status.
     await reconcileSubscriptionLinkedEntities({
-        subscriptionId: created.localSubscriptionId,
+        subscriptionId: localSubscriptionId,
         subscriptionStatus: SubscriptionStatusEnum.COMP,
         source: TRIGGER_SOURCE
     });
 
-    // 6. Fire-and-forget, and the OPPOSITE criterion from step 2 on purpose: a
+    // 7. Fire-and-forget, and the OPPOSITE criterion from step 3 on purpose: a
     //    mail failure must not undo a grant that MercadoPago and the database
     //    have both already accepted, whereas a provider failure must stop the
     //    grant before either of them does anything.
     await sendCompGrantedNotification({
-        subscriptionId: created.localSubscriptionId,
+        subscriptionId: localSubscriptionId,
         hadActiveBilling
     }).catch((err) => {
         apiLogger.warn(
-            { subscriptionId: created.localSubscriptionId, error: String(err) },
+            { subscriptionId: localSubscriptionId, error: String(err) },
             'Comp granted notification failed'
         );
     });
 
     apiLogger.info(
         {
-            subscriptionId: created.localSubscriptionId,
+            subscriptionId: localSubscriptionId,
             customerId,
             planId,
             actorId,
@@ -294,7 +452,7 @@ export async function grantCompSubscription(input: {
     return {
         success: true,
         data: {
-            subscriptionId: created.localSubscriptionId,
+            subscriptionId: localSubscriptionId,
             supersededSubscriptionIds: supersedable.map((r) => r.id),
             hadActiveBilling
         }
