@@ -43,6 +43,31 @@
  *    the buttons are unreachable again. Expressions that branch are skipped and
  *    COUNTED in the success line, never skipped silently.
  *
+ * 7. Every `<dialog>` in a workspace package `apps/web` depends on is bounded
+ *    to the viewport and has something inside it that scrolls. `@repo/feedback`
+ *    puts one on every page of the site and it lives outside `apps/web/src`,
+ *    where assertions 1-6 cannot see it. The rule is deliberately weaker there
+ *    — see below.
+ * 8. Every `dialog-panel-scroll` region sits inside a flex or grid parent.
+ *    `.dialog-panel` does not declare `display`, so a `<dialog>` is `block`
+ *    unless its module says otherwise, and `flex: 1 1 auto; min-height: 0` on a
+ *    child of a block parent does exactly nothing: the region does not scroll,
+ *    the whole panel does, and the header the arrangement exists to pin scrolls
+ *    away with it. Nothing about that is visible in a diff, a type, or a test.
+ *
+ * ## Why assertion 7 asks for less
+ *
+ * A shared package cannot compose `.dialog-panel`: the class lives in
+ * `apps/web`'s global stylesheet and would not exist in another host, so
+ * demanding it would be demanding a bug. What assertion 7 asks instead is true
+ * of any usable dialog anywhere and needs no shared vocabulary: a height bound
+ * (a `max-height` that is not `none`, or a viewport-relative `height`) and an
+ * `overflow-y: auto|scroll` somewhere in the package's stylesheet. It will not
+ * accept a dialog bounded by nothing, which is the state six of this app's own
+ * dialogs were in. It deliberately does NOT try to prove the scrolling element
+ * is inside the dialog — that would need cross-file structure the package does
+ * not expose — so it is a floor, not a proof.
+ *
  * ## Scope of rule 6, and why it does not block a legitimate `max-height`
  *
  * It never looks at a file, a directory, or a property name in isolation. It
@@ -113,6 +138,59 @@ const FORBIDDEN_ON_MARKED = new Set(['max-height', 'max-block-size', 'overflow',
 /** Matches a class token exactly, so `dialog-panel-scroll` never counts as `dialog-panel`. */
 function hasClassToken(haystack: string, token: string): boolean {
     return new RegExp(`(?<![\\w-])${token}(?![\\w-])`).test(haystack);
+}
+
+/**
+ * Workspace packages that `apps/web` depends on, as absolute directories.
+ *
+ * Read from the app's own `package.json` rather than hard-coded: a `<dialog>`
+ * reaching the page from a shared package is outside `apps/web/src` and so
+ * outside every other assertion here, and the set of such packages is a thing
+ * that changes without anyone thinking about dialogs.
+ */
+function webWorkspacePackages(): readonly string[] {
+    const manifest = readFileSync(resolve(REPO_ROOT, 'apps/web/package.json'), 'utf8');
+    const wanted = new Set(
+        [...manifest.matchAll(/"(@repo\/[a-z0-9-]+)"\s*:\s*"workspace:/g)].map((m) => m[1])
+    );
+    const dirs: string[] = [];
+
+    for (const pkgJson of globSync('packages/*/package.json', { cwd: REPO_ROOT, absolute: true })) {
+        const name = /"name"\s*:\s*"([^"]+)"/.exec(readFileSync(pkgJson, 'utf8'))?.[1];
+        if (name !== undefined && wanted.has(name)) dirs.push(dirname(pkgJson));
+    }
+    return dirs.sort();
+}
+
+/** Literal class tokens written directly in a `className` expression. */
+function literalClassTokens(expression: string): readonly string[] {
+    const tokens = new Set<string>();
+    for (const [, quoted] of expression.matchAll(/['"`]([^'"`]*)['"`]/g)) {
+        for (const token of (quoted ?? '').split(/\s+/)) {
+            if (/^[A-Za-z][\w-]*$/.test(token)) tokens.add(token);
+        }
+    }
+    return [...tokens];
+}
+
+/**
+ * True when every class in the selector's subject compound is one of `tokens`,
+ * and at least one is — i.e. the rule styles THIS element rather than one of
+ * its descendants. `.feedback-root.dialog` matches; `.feedback-root.dialog
+ * .content` does not, because its subject is the child.
+ */
+function compoundMatchesTokens(selector: string, tokens: readonly string[]): boolean {
+    for (const part of selector.split(',')) {
+        const cleaned = part.replace(/\([^()]*\)/g, '');
+        const compounds = cleaned
+            .trim()
+            .split(/\s*[>+~]\s*|\s+/)
+            .filter(Boolean);
+        const subject = compounds.at(-1) ?? '';
+        const classes = [...subject.matchAll(/\.([A-Za-z][\w-]*)/g)].map((m) => m[1] ?? '');
+        if (classes.length > 0 && classes.every((cls) => tokens.includes(cls))) return true;
+    }
+    return false;
 }
 
 /** Escapes a string for literal use inside a RegExp. */
@@ -195,9 +273,14 @@ interface ModuleClassRef {
     readonly className: string;
 }
 
+/** A scroll region, plus where its element starts so its parent can be found. */
+interface ScrollRef extends ModuleClassRef {
+    readonly tagStart: number;
+}
+
 interface MarkedScan {
     readonly panel: readonly ModuleClassRef[];
-    readonly scroll: readonly ModuleClassRef[];
+    readonly scroll: readonly ScrollRef[];
     readonly ambiguous: number;
 }
 
@@ -226,6 +309,15 @@ function isConditionalExpression(expression: string): boolean {
     return /\?[^.]|&&|\|\|/.test(expression);
 }
 
+/** The `className={...}` expression of one opening tag, braces included. */
+function classNameExpression(tagText: string): string | undefined {
+    const at = tagText.indexOf('className=');
+    if (at < 0) return undefined;
+    const open = tagText.indexOf('{', at);
+    if (open < 0) return undefined;
+    return tagText.slice(open, matchBrace(tagText, open));
+}
+
 function markedModuleClasses(source: string, file: string): MarkedScan {
     const anyMarker =
         hasClassToken(source, 'dialog-panel') ||
@@ -237,15 +329,15 @@ function markedModuleClasses(source: string, file: string): MarkedScan {
     if (bindings.size === 0) return EMPTY_SCAN;
 
     const panel: ModuleClassRef[] = [];
-    const scroll: ModuleClassRef[] = [];
+    const scroll: ScrollRef[] = [];
     let ambiguous = 0;
-    const attrRe = /className=\{/g;
-    let match = attrRe.exec(source);
 
-    while (match !== null) {
-        const open = source.indexOf('{', match.index);
-        const expression = source.slice(open, matchBrace(source, open));
-        attrRe.lastIndex = open + expression.length;
+    for (const tag of scanJsxTags(source)) {
+        if (tag.kind === 'close') continue;
+        // The className expression, not the whole tag: a conditional in some
+        // unrelated attribute (`onClick={() => a && b}`) must not make the
+        // class assignment look ambiguous.
+        const expression = classNameExpression(tag.text) ?? tag.text;
 
         if (
             hasClassToken(expression, 'dialog-panel') ||
@@ -254,13 +346,13 @@ function markedModuleClasses(source: string, file: string): MarkedScan {
             panel.push(...styleRefsIn(expression, bindings));
         } else if (hasClassToken(expression, 'dialog-panel-scroll')) {
             const refs = styleRefsIn(expression, bindings);
-            if (refs.length === 1 && !isConditionalExpression(expression)) {
-                scroll.push(...refs);
+            const only = refs[0];
+            if (refs.length === 1 && only !== undefined && !isConditionalExpression(expression)) {
+                scroll.push({ ...only, tagStart: tag.start });
             } else {
                 ambiguous += 1;
             }
         }
-        match = attrRe.exec(source);
     }
 
     return { panel, scroll, ambiguous };
@@ -292,11 +384,26 @@ function selectorTargetsClass(selector: string, className: string): boolean {
  * MobileDrawer declares its entire panel inside `@media (max-width: 767px)`,
  * so a scanner that only looked at top-level rules would report it clean.
  */
-function forbiddenDeclarations(
+interface CssDeclaration {
+    readonly property: string;
+    readonly value: string;
+    readonly line: number;
+    readonly text: string;
+}
+
+/**
+ * Every declaration in every rule whose subject compound satisfies `targets`,
+ * with 1-based line numbers.
+ *
+ * `targets` receives the raw selector prelude, so callers decide what "this
+ * rule styles my element" means: one CSS-Module class inside `apps/web`, or a
+ * whole compound of literal classes for a package's global stylesheet.
+ */
+function declarationsIn(
     css: string,
-    className: string
-): readonly { readonly property: string; readonly line: number; readonly text: string }[] {
-    const found: { property: string; line: number; text: string }[] = [];
+    targets: (selector: string) => boolean
+): readonly CssDeclaration[] {
+    const found: CssDeclaration[] = [];
     const source = css.replace(/\/\*[\s\S]*?\*\//g, blank);
     const openers: number[] = [];
 
@@ -312,17 +419,18 @@ function forbiddenDeclarations(
         );
         const prelude = source.slice(preludeStart + 1, open).trim();
         if (prelude.length === 0 || prelude.startsWith('@')) continue;
-        if (!selectorTargetsClass(prelude, className)) continue;
+        if (!targets(prelude)) continue;
 
         const body = source.slice(open + 1, matchBrace(source, open) - 1);
         let cursor = open + 1;
         for (const rawDecl of body.split(';')) {
             const decl = rawDecl.trim();
-            const property = /^([-a-zA-Z]+)\s*:/.exec(decl)?.[1];
-            if (property !== undefined && FORBIDDEN_ON_MARKED.has(property)) {
+            const parsed = /^([-a-zA-Z]+)\s*:\s*([\s\S]*)$/.exec(decl);
+            if (parsed?.[1] !== undefined) {
                 const at = cursor + rawDecl.indexOf(decl);
                 found.push({
-                    property,
+                    property: parsed[1],
+                    value: (parsed[2] ?? '').trim(),
                     line: source.slice(0, at).split('\n').length,
                     text: decl.replace(/\s+/g, ' ')
                 });
@@ -332,6 +440,27 @@ function forbiddenDeclarations(
     }
 
     return found;
+}
+
+/**
+ * Declarations of a forbidden property on rules whose subject compound includes
+ * `className`.
+ *
+ * Walks the whole stylesheet, including rules nested inside `@media` — the
+ * MobileDrawer declares its entire panel inside `@media (max-width: 767px)`,
+ * so a scanner that only looked at top-level rules would report it clean.
+ */
+function forbiddenDeclarations(css: string, className: string): readonly CssDeclaration[] {
+    return declarationsIn(css, (selector) => selectorTargetsClass(selector, className)).filter(
+        (decl) => FORBIDDEN_ON_MARKED.has(decl.property)
+    );
+}
+
+/** True when the class is given a flex or grid formatting context by its module. */
+function establishesFlexContext(css: string, className: string): boolean {
+    return declarationsIn(css, (selector) => selectorTargetsClass(selector, className)).some(
+        (decl) => decl.property === 'display' && /^(inline-)?(flex|grid)$/.test(decl.value)
+    );
 }
 
 /** Blanks a run of source to spaces, keeping newlines so line numbers survive. */
@@ -368,19 +497,48 @@ function stripComments(source: string): string {
  * declared after it.
  */
 function extractDialogOpenTags(source: string): readonly { tag: string; line: number }[] {
-    const found: { tag: string; line: number }[] = [];
-    const opener = /<dialog(?=[\s>/])/g;
-    let match = opener.exec(source);
+    return scanJsxTags(source)
+        .filter((tag) => tag.name === 'dialog' && tag.kind !== 'close')
+        .map((tag) => ({
+            tag: tag.text,
+            line: source.slice(0, tag.start).split('\n').length
+        }));
+}
 
-    while (match !== null) {
-        const start = match.index;
-        let index = start + '<dialog'.length;
+interface JsxTag {
+    readonly name: string;
+    readonly kind: 'open' | 'close' | 'self';
+    readonly start: number;
+    readonly text: string;
+}
+
+/**
+ * Every JSX tag in `source`, in order.
+ *
+ * Ends each tag with the same brace/quote-aware walk `<dialog>` always needed:
+ * `onClick={(event) => …}` puts a `>` inside the attribute list, and stopping
+ * at the first one would cut the tag in half. Fragments (`<>` / `</>`) are
+ * emitted with an empty name so the nesting stack stays balanced around them.
+ */
+function scanJsxTags(source: string): readonly JsxTag[] {
+    const tags: JsxTag[] = [];
+
+    for (let i = 0; i < source.length; i += 1) {
+        if (source[i] !== '<') continue;
+        const isClose = source[i + 1] === '/';
+        const nameStart = i + (isClose ? 2 : 1);
+        const nameMatch = /^[A-Za-z][\w.]*/.exec(source.slice(nameStart, nameStart + 64));
+        const name = nameMatch?.[0] ?? '';
+        // A `<` that begins neither a named tag nor a fragment is not JSX
+        // (a comparison, a generic, a stray character in a string).
+        if (name === '' && source[nameStart] !== '>') continue;
+
+        let index = nameStart + name.length;
         let depth = 0;
         let quote: string | null = null;
 
         while (index < source.length) {
             const char = source[index];
-
             if (quote !== null) {
                 if (char === '\\') index += 1;
                 else if (char === quote) quote = null;
@@ -393,22 +551,55 @@ function extractDialogOpenTags(source: string): readonly { tag: string; line: nu
             } else if (char === '>' && depth === 0) {
                 break;
             }
-
             index += 1;
         }
 
-        found.push({
-            tag: source.slice(start, index + 1),
-            line: source.slice(0, start).split('\n').length
-        });
-        match = opener.exec(source);
+        const text = source.slice(i, index + 1);
+        const kind = isClose ? 'close' : /\/\s*>$/.test(text) ? 'self' : 'open';
+        tags.push({ name, kind, start: i, text });
+        i = index;
     }
 
-    return found;
+    return tags;
+}
+
+/**
+ * The opening tag that directly encloses the tag starting at `start`, or
+ * `undefined` when it has none in this file.
+ *
+ * Replays the file's tag stream and returns whatever is on top of the nesting
+ * stack when it reaches the target. Exact, not inferred — no indentation
+ * heuristic, which would go quietly wrong the first time Biome reformats a
+ * file. Components defined side by side in one file each balance their own
+ * `return (...)`, so `ListView`'s body resolves to `ListView`'s root and not to
+ * the exported component's.
+ */
+function jsxParentTag(source: string, start: number): JsxTag | undefined {
+    const stack: JsxTag[] = [];
+
+    for (const tag of scanJsxTags(source)) {
+        if (tag.start === start) return stack.at(-1);
+        if (tag.kind === 'open') stack.push(tag);
+        else if (tag.kind === 'close') stack.pop();
+    }
+    return undefined;
 }
 
 function main(): void {
     const errors: string[] = [];
+    const cssCache = new Map<string, string>();
+    const readCss = (cssFile: string): string => {
+        let css = cssCache.get(cssFile);
+        if (css === undefined) {
+            try {
+                css = readFileSync(cssFile, 'utf8');
+            } catch {
+                css = '';
+            }
+            cssCache.set(cssFile, css);
+        }
+        return css;
+    };
 
     // ── 3. The mechanism itself still exists ────────────────────────────────
     const css = readFileSync(COMPONENTS_CSS, 'utf8');
@@ -444,6 +635,8 @@ function main(): void {
     const scrollPairs = new Map<string, ModuleClassRef>();
     let ambiguousExpressions = 0;
     let dialogCount = 0;
+    let scrollParentsChecked = 0;
+    let unresolvedParents = 0;
 
     for (const file of files) {
         const rel = relative(REPO_ROOT, file);
@@ -454,6 +647,40 @@ function main(): void {
         for (const pair of scan.panel) panelPairs.set(`${pair.cssFile}::${pair.className}`, pair);
         for (const pair of scan.scroll) scrollPairs.set(`${pair.cssFile}::${pair.className}`, pair);
         ambiguousExpressions += scan.ambiguous;
+
+        // ── 8. A scroll region only works inside a flex/grid parent ─────────
+        for (const region of scan.scroll) {
+            const bindings = resolveStyleImports(stripped, file);
+            const parent = jsxParentTag(stripped, region.tagStart);
+            const parentExpr =
+                parent === undefined
+                    ? undefined
+                    : (classNameExpression(parent.text) ?? parent.text);
+            const parentRefs = parentExpr === undefined ? [] : styleRefsIn(parentExpr, bindings);
+            const parentClass = parentRefs.length === 1 ? parentRefs[0] : undefined;
+
+            if (parentClass === undefined) {
+                unresolvedParents += 1;
+                continue;
+            }
+
+            scrollParentsChecked += 1;
+            const parentCss = readCss(parentClass.cssFile);
+            if (!establishesFlexContext(parentCss, parentClass.className)) {
+                const line = stripped.slice(0, region.tagStart).split('\n').length;
+                errors.push(
+                    `${rel}:${line} — this 'dialog-panel-scroll' region sits inside ` +
+                        `'.${parentClass.className}', which is not a flex or grid container.\n` +
+                        `  ${relative(REPO_ROOT, parentClass.cssFile)} does not give it ` +
+                        "'display: flex' (or grid), and `flex: 1 1 auto; min-height: 0` on a\n" +
+                        '  child of a BLOCK parent does nothing at all: the region does not\n' +
+                        '  scroll, the whole panel scrolls instead, and the header this\n' +
+                        '  arrangement exists to keep in place scrolls away with it.\n' +
+                        '  Either declare `display: flex; flex-direction: column` on the parent,\n' +
+                        "  or drop 'dialog-panel-scroll' and let the panel scroll as one flow."
+                );
+            }
+        }
 
         if (!raw.includes('<dialog')) continue;
         const source = stripped;
@@ -510,20 +737,6 @@ function main(): void {
     }
 
     // ── 6. No module re-declares what the shared class declares ─────────────
-    const cssCache = new Map<string, string>();
-    const readCss = (cssFile: string): string => {
-        let css = cssCache.get(cssFile);
-        if (css === undefined) {
-            try {
-                css = readFileSync(cssFile, 'utf8');
-            } catch {
-                css = '';
-            }
-            cssCache.set(cssFile, css);
-        }
-        return css;
-    };
-
     for (const { cssFile, className } of panelPairs.values()) {
         for (const { property, line, text } of forbiddenDeclarations(readCss(cssFile), className)) {
             errors.push(
@@ -561,6 +774,101 @@ function main(): void {
         }
     }
 
+    // ── 7. Dialogs that reach the page from a workspace package ────────────
+    //
+    // A shared package cannot compose `.dialog-panel`: the class lives in
+    // `apps/web`'s global stylesheet and would simply not exist in another
+    // host. So the assertion here is weaker on purpose, and states only what
+    // is true of ANY usable dialog anywhere — it is bounded to the viewport,
+    // and something inside it scrolls. What it will not accept is a dialog
+    // that is bounded by nothing at all, which is the state six of this app's
+    // own dialogs were in.
+    let packageDialogs = 0;
+
+    for (const pkgDir of webWorkspacePackages()) {
+        const pkgRel = relative(REPO_ROOT, pkgDir);
+        const sources = globSync('src/**/*.{tsx,astro}', { cwd: pkgDir, absolute: true }).sort();
+        const styles = globSync('src/**/*.css', { cwd: pkgDir, absolute: true }).sort();
+        const allCss = styles.map(readCss).join('\n');
+        const packageScrolls = /overflow(-y)?\s*:\s*(auto|scroll)/.test(allCss);
+
+        for (const file of sources) {
+            const source = stripComments(readFileSync(file, 'utf8'));
+            for (const tag of scanJsxTags(source)) {
+                if (tag.name !== 'dialog' || tag.kind === 'close') continue;
+                packageDialogs += 1;
+
+                const rel = relative(REPO_ROOT, file);
+                const line = source.slice(0, tag.start).split('\n').length;
+                const tokens = literalClassTokens(classNameExpression(tag.text) ?? tag.text);
+
+                if (tokens.length === 0) {
+                    errors.push(
+                        `${rel}:${line} — <dialog> in workspace package '${pkgRel}' carries no ` +
+                            'literal class,\n' +
+                            '  so nothing here can tell whether its height is bounded. Give it a\n' +
+                            '  class this guard can follow into the package stylesheet.'
+                    );
+                    continue;
+                }
+
+                const rules = declarationsIn(allCss, (sel) => compoundMatchesTokens(sel, tokens));
+                if (rules.length === 0) {
+                    errors.push(
+                        `${rel}:${line} — <dialog> in workspace package '${pkgRel}' has classes ` +
+                            `[${tokens.join(', ')}]\n` +
+                            '  but no rule in the package stylesheet targets them, so its height\n' +
+                            '  is whatever the user agent decides. Unverifiable is not the same\n' +
+                            '  as fine.'
+                    );
+                    continue;
+                }
+
+                const bounded = rules.some(
+                    (decl) =>
+                        (decl.property === 'max-height' && decl.value !== 'none') ||
+                        (decl.property === 'max-block-size' && decl.value !== 'none') ||
+                        (decl.property === 'height' && /\d\s*(dvh|svh|lvh|vh|%)/.test(decl.value))
+                );
+
+                if (!bounded) {
+                    errors.push(
+                        `${rel}:${line} — <dialog> in workspace package '${pkgRel}' is not bounded ` +
+                            'to the viewport.\n' +
+                            `  Its rules (classes [${tokens.join(', ')}]) declare no 'max-height' ` +
+                            "other than 'none',\n" +
+                            "  and no viewport-relative 'height'. It grows with its content, and " +
+                            'past the\n' +
+                            '  bottom of the window there is nothing to scroll.\n' +
+                            "  A package cannot use apps/web's '.dialog-panel', so it has to bound " +
+                            'itself.'
+                    );
+                }
+
+                if (!packageScrolls) {
+                    errors.push(
+                        `${rel}:${line} — <dialog> in workspace package '${pkgRel}' is bounded but ` +
+                            'nothing inside it scrolls.\n' +
+                            "  No rule in the package stylesheet declares 'overflow-y: auto|scroll'," +
+                            ' so content\n' +
+                            '  taller than the cap is clipped rather than reachable — the worse ' +
+                            'half of the\n' +
+                            '  bug this guard exists for.'
+                    );
+                }
+            }
+        }
+    }
+
+    if (packageDialogs === 0) {
+        errors.push(
+            'No <dialog> found in any workspace package apps/web depends on.\n' +
+                '  @repo/feedback ships one onto every page, so zero means the package scan\n' +
+                '  is broken — a moved directory, a renamed extension — not that the packages\n' +
+                '  are clean.'
+        );
+    }
+
     // ── 5. The scan actually scanned something ──────────────────────────────
     if (dialogCount === 0) {
         errors.push(
@@ -588,6 +896,15 @@ function main(): void {
         );
     }
 
+    if (scrollParentsChecked === 0) {
+        errors.push(
+            'No scroll region had a resolvable JSX parent.\n' +
+                '  Assertion 8 has nothing to check. Every scroll region in the app is nested\n' +
+                '  inside an element with a CSS-Module class, so zero means the parent\n' +
+                '  resolution broke — not that the parents are flex.'
+        );
+    }
+
     if (errors.length > 0) {
         console.error('\n[check-dialog-panel] FAILED\n');
         for (const error of errors) console.error(`  ✗ ${error}\n`);
@@ -601,8 +918,10 @@ function main(): void {
         `[check-dialog-panel] OK — ${dialogCount} <dialog> element(s) checked, ` +
             `${[...viewportSeen.values()].reduce((a, b) => a + b, 0)} viewport exemption(s) within budget, ` +
             `${panelPairs.size} panel + ${scrollPairs.size} scroll CSS-Module class(es) free of ` +
-            `competing declarations, ${ambiguousExpressions} ambiguous className ` +
-            `expression${ambiguousExpressions === 1 ? '' : 's'} NOT verified.`
+            `competing declarations, ${scrollParentsChecked} scroll parent(s) confirmed flex, ` +
+            `${packageDialogs} package dialog(s) bounded, ${ambiguousExpressions} ambiguous ` +
+            `className expression${ambiguousExpressions === 1 ? '' : 's'} and ` +
+            `${unresolvedParents} unresolvable parent(s) NOT verified.`
     );
 }
 
