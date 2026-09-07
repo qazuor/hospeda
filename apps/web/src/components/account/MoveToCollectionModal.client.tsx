@@ -28,6 +28,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
+import { COLLECTION_CREATED_EVENT } from './collection-created-event';
 import styles from './MoveToCollectionModal.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -250,6 +251,20 @@ export function MoveToCollectionModal({
             // Close the create sub-modal first so the user sees the move land.
             setIsCreateModalOpen(false);
             setSelectedValue(collection.id);
+
+            // The collection row exists in the DB the instant this callback
+            // fires, independent of whether the move below succeeds — so
+            // broadcast right away rather than after `moveBookmarkTo`
+            // resolves. Otherwise a failed move (network blip, the bookmark
+            // deleted concurrently) would silently swallow the create too:
+            // CollectionUsageMeter's counter and UserFavoritesList's "Mis
+            // colecciones" section would never learn the collection exists
+            // (HOS-999).
+            window.dispatchEvent(
+                new CustomEvent(COLLECTION_CREATED_EVENT, {
+                    detail: { id: collection.id, name: collection.name }
+                })
+            );
 
             setIsSubmitting(true);
             try {
