@@ -149,3 +149,73 @@ describe('the sheet copy (HOS-982)', () => {
         );
     });
 });
+
+/**
+ * The finding this describe exists for: the FIRST downloader's language was
+ * being minted into `qr_codes.targetUrl`, which is a creation-only column — so
+ * a host browsing in English would have pinned every future scanner of that
+ * door to the English page, permanently, and re-downloading in Spanish would
+ * not have undone it.
+ */
+describe('the downloader’s language never reaches the minted destination (HOS-982)', () => {
+    function urlFor(locale: 'es' | 'en' | 'pt'): string {
+        return buildListingQrSheetContent({
+            listingName: 'Cabaña del Río',
+            slug: 'cabana-del-rio',
+            vertical: 'accommodation',
+            locale,
+            siteUrl: SITE
+        }).url;
+    }
+
+    it('mints the market’s locale whatever language the sheet is printed in', () => {
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            expect(urlFor(locale)).toBe('https://hospeda.com.ar/es/alojamientos/cabana-del-rio/');
+        }
+    });
+
+    it('is not vacuous: the same locales DO change the copy', () => {
+        // Without this the assertion above would also pass if `locale` had been
+        // dropped from the builder entirely, or if the fixture happened to
+        // resolve to Spanish for every value.
+        const headlines = (['es', 'en', 'pt'] as const).map(
+            (locale) =>
+                buildListingQrSheetContent({
+                    listingName: 'Cabaña del Río',
+                    slug: 'cabana-del-rio',
+                    vertical: 'accommodation',
+                    locale,
+                    siteUrl: SITE
+                }).headline
+        );
+        expect(new Set(headlines).size).toBe(3);
+    });
+
+    it('pins the destination in all three verticals, not just the one that was measured', () => {
+        for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+            const english = buildListingQrSheetContent({
+                listingName: 'El Fogón',
+                slug: 'el-fogon',
+                vertical,
+                locale: 'en',
+                siteUrl: SITE
+            }).url;
+            expect(english).toContain('/es/');
+            expect(english).not.toContain('/en/');
+        }
+    });
+
+    it('agrees with the builder called with the market locale by hand', () => {
+        // Ties the pinned value to `buildListingPublicUrl` rather than to a
+        // literal, so a change to the path shape cannot make one of the two
+        // drift while this stays green.
+        expect(urlFor('pt')).toBe(
+            buildListingPublicUrl({
+                vertical: 'accommodation',
+                slug: 'cabana-del-rio',
+                locale: 'es',
+                siteUrl: SITE
+            })
+        );
+    });
+});
