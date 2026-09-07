@@ -14,16 +14,30 @@
  *   (or is absent/empty) are returned.
  * - Seen computation: an entry is seen if its id is in `seenIds` OR its
  *   `publishedAt <= baselineAt`.
- * - Locale resolution: uses `actor.settings.languageAdmin ?? 'es'`, falling
- *   back to `'es'` when the requested locale is missing from an entry.
+ * - Locale resolution (HOS-964 follow-up, 2026-09-07): this endpoint is
+ *   shared by `apps/admin` AND `apps/web`, but only the CLIENT knows which
+ *   language it is actually rendering — the web app knows it from the `/en/`
+ *   URL prefix, the admin panel from its own preference. Resolving locale
+ *   from `actor.settings.languageAdmin` alone (the OLD behaviour) meant a
+ *   host browsing `/en/mi-cuenta/` still got Spanish copy, because a web
+ *   account has no `languageAdmin` at all. The optional `?locale=` query
+ *   param now takes precedence when present and valid; `languageAdmin` is
+ *   still tried first among the settings fallbacks so ADMIN'S behaviour is
+ *   UNCHANGED when it omits the param. Resolution order:
+ *   `?locale= (if valid) ?? actor.settings.languageAdmin ?? actor.settings.languageWeb ?? 'es'`.
+ *   An invalid/unsupported `?locale=` value is silently ignored (falls
+ *   through to the settings-based fallback) rather than rejecting the
+ *   request — see `getWhatsNewHandler` for why it reads the raw query value
+ *   instead of the OpenAPI-validated one.
  * - Sort: newest-first by `publishedAt`.
  *
  * @see SPEC-175 §6.5, §6.7, §10
  */
 import type { WhatsNewGetResponse, WhatsNewItem } from '@repo/schemas';
-import { WhatsNewGetResponseSchema } from '@repo/schemas';
+import { LanguageEnumSchema, WhatsNewGetResponseSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { whatsNewEntries } from '../../../data/whats-new/whats-new';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -101,9 +115,25 @@ export const getWhatsNewHandler = async (
     const baselineAt = whatsNewState.baselineAt ?? new Date().toISOString();
     const seenIds: readonly string[] = whatsNewState.seenIds ?? [];
 
-    // Resolve locale from actor settings (languageAdmin field).
+    // Resolve locale (HOS-964 follow-up): an explicit, valid `?locale=` query
+    // param wins — the CLIENT is the only party that actually knows which
+    // language it is rendering. Read the RAW query value and validate it
+    // manually (rather than relying on the OpenAPI-validated `query` object)
+    // so an unsupported value degrades to the settings fallback instead of
+    // rejecting the request with a 400 — same pattern as
+    // `getMedia.ts`'s `state` query param.
+    const rawLocale = ctx.req.query('locale');
+    const localeParseResult = rawLocale
+        ? LanguageEnumSchema.safeParse(rawLocale)
+        : { success: false as const };
+    const requestedLocale = localeParseResult.success ? localeParseResult.data : undefined;
+
     const actorSettings = (user.settings as Record<string, unknown>) ?? {};
-    const locale = (actorSettings.languageAdmin as string | undefined) ?? 'es';
+    const locale =
+        requestedLocale ??
+        (actorSettings.languageAdmin as string | undefined) ??
+        (actorSettings.languageWeb as string | undefined) ??
+        'es';
 
     // Filter by audience role (D4 — content routing, not authorization).
     const applicable = filterEntriesByRole({ entries: whatsNewEntries, roles: actor.roles });
@@ -143,8 +173,20 @@ export const protectedGetWhatsNewRoute = createProtectedRoute({
     summary: "Get What's New entries",
     description:
         "Returns curated What's New / release-notes entries applicable to the actor's role, " +
-        'with seen state and locale resolution. Lazy-initializes the baseline on first call.',
+        'with seen state and locale resolution. Lazy-initializes the baseline on first call. ' +
+        'Accepts an optional `?locale=` query param (es/en/pt) that takes precedence over the ' +
+        "actor's saved language settings; an unsupported value is ignored, not rejected.",
     tags: ["What's New"],
+    // Deliberately `z.string()`, NOT `LanguageEnumSchema` — this must stay
+    // PERMISSIVE at the OpenAPI validation layer so an unsupported value
+    // never fails schema validation and 400s the request (the framework's
+    // `defaultHook` in `create-app.ts` returns 400 on any validation
+    // failure). The actual `es`/`en`/`pt` enum check happens manually inside
+    // `getWhatsNewHandler`, which degrades to the settings-based fallback
+    // instead of rejecting.
+    requestQuery: {
+        locale: z.string().optional()
+    },
     responseSchema: WhatsNewGetResponseSchema,
     handler: (ctx: Context) => getWhatsNewHandler(ctx),
     options: {
