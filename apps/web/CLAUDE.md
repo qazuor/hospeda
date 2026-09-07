@@ -314,8 +314,14 @@ Need a different cap for one panel? Set `--dialog-max-height` on it. Do **not**
 re-declare `max-height`: a second declaration of the same property races the
 shared class on source order (identical specificity), and five modules each
 holding their own opinion is exactly how six dialogs ended up with no cap at
-all. `pnpm check:dialog-panel` fails CI on a `<dialog>` that carries none of
-the three markers.
+all.
+
+`pnpm check:dialog-panel` enforces both halves in CI: it fails on a `<dialog>`
+carrying none of the three markers, **and** on a CSS Module that declares
+`max-height` / `max-block-size` / `overflow` / `overflow-y` on a class applied
+to a marked element. Only those classes are inspected — a `max-height` on a
+popover, a drawer or a thumbnail is never looked at — and `--dialog-max-height`
+stays legal, because tuning the cap is the point and competing with it is not.
 
 ### Adding a New Theme
 
