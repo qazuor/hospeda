@@ -371,28 +371,29 @@ export const getUserAddonsRoute = createProtectedRoute({
  * Ownership is verified in the handler before calling the service,
  * matching the defense-in-depth pattern used by other billing routes.
  *
- * ## The copy used to describe a flow that does not exist (HOS-847 PR 6)
+ * ## The copy described a flow that did not exist (HOS-847 PR 6)
  *
- * The summary said "recurring add-on" and the description promised the add-on
- * "will remain active until the end of the current billing period", while
- * `cancelUserAddon` has always revoked the entitlement and the limit
- * IMMEDIATELY. The `cancel_at_period_end` column exists on
- * `billing_addon_purchases` but nothing reads it.
+ * The description promised the add-on "will remain active until the end of the
+ * current billing period" while `cancelUserAddon` revoked it immediately, and
+ * the `cancel_at_period_end` column existed with nothing reading it.
  *
- * While every add-on was a one-time purchase that mismatch was cosmetic. Once a
- * recurring add-on carries a real MercadoPago preapproval, telling a customer
- * they keep it until the period ends — and then cutting it the same second, with
- * no refund of the period they already paid — is a support ticket at best. So
- * the copy now states what the code does. Whether the BEHAVIOUR should instead
- * become cancel-at-period-end is an owner decision, deliberately left open
- * rather than decided here.
+ * The owner's decision closed the gap from the other side: a RECURRING add-on
+ * now really is kept until `current_period_end`, matching the soft-cancel grace
+ * the plan-side already gives (`docs/billing/grace-period-source-of-truth.md`).
+ * Charging still stops in the same instant — the MercadoPago preapproval is
+ * hard-cancelled before anything local is written — so "keep it" costs nothing
+ * beyond the period the customer had already paid for.
+ *
+ * A ONE-TIME add-on has no period and no preapproval, and is still revoked
+ * immediately. Hence "an add-on" rather than "a recurring add-on" in the summary:
+ * the endpoint serves both, and they end differently.
  */
 export const cancelAddonRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/cancel',
     summary: 'Cancel an add-on',
     description:
-        "Cancels an add-on immediately. For a recurring add-on the MercadoPago subscription is cancelled first, so no further charges are made; if the payment provider cannot be reached the request fails with 503 and nothing is changed. The add-on's benefits are then removed right away — the remainder of the current billing period is not kept and is not refunded.",
+        'Cancels an add-on. For a recurring add-on: the MercadoPago subscription is cancelled right away, so you are never charged again, and you keep using the add-on until the end of the period you already paid for; nothing is refunded because nothing further is charged. If the payment provider cannot be reached the request fails with 503 and nothing is changed. A one-time add-on has no billing period and its benefits are removed immediately.',
     tags: ['Billing - Add-ons'],
     requestParams: {
         id: z.string().uuid('Invalid add-on ID')
