@@ -8,7 +8,9 @@
 
 import { PermissionEnum, QrCodeFormatEnum } from '@repo/schemas';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +37,7 @@ function QrCodeDetailPage() {
     const { data: preview } = useQrCodePreview(id);
     const downloadMutation = useDownloadQrCode();
     const deleteMutation = useDeleteQrCode();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     /**
      * Fetches the image and hands it to the browser as a file.
@@ -57,8 +60,12 @@ function QrCodeDetailPage() {
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm(t('admin-qr-codes.messages.deleteConfirm'))) return;
+    const handleDelete = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        setDeleteDialogOpen(false);
         try {
             await deleteMutation.mutateAsync(id);
             addToast({ message: t('admin-qr-codes.messages.deleted'), variant: 'success' });
@@ -198,6 +205,16 @@ function QrCodeDetailPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                <DeleteConfirmDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                    title={t('admin-qr-codes.actions.delete')}
+                    description={t('admin-qr-codes.messages.deleteConfirm')}
+                    cancelLabel={t('admin-qr-codes.actions.cancel')}
+                    confirmLabel={t('admin-qr-codes.actions.delete')}
+                    onConfirm={confirmDelete}
+                />
             </div>
         </RoutePermissionGuard>
     );

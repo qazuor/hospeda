@@ -23,6 +23,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TiptapDocument } from '@/components/newsletter/RichTextEditor';
 import { RichTextEditor } from '@/components/newsletter/RichTextEditor';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -193,6 +194,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
 
     // ── Local state ──────────────────────────────────────────────────────────
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
+    const [cancelSendDialogOpen, setCancelSendDialogOpen] = useState(false);
     const [showPreviewMobile, setShowPreviewMobile] = useState(false);
     const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
     // Debounced preview HTML (300ms)
@@ -358,14 +360,13 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
         }
     }
 
-    async function handleCancelSend() {
+    function handleCancelSend() {
         if (!campaign?.id) return;
-        if (
-            !window.confirm(
-                '¿Cancelar el envío de esta campaña? Los emails en vuelo pueden completarse.'
-            )
-        )
-            return;
+        setCancelSendDialogOpen(true);
+    }
+
+    async function confirmCancelSend() {
+        setCancelSendDialogOpen(false);
         try {
             await cancelMutation.mutateAsync();
             addToast({ message: 'Envío cancelado.', variant: 'success' });
@@ -783,6 +784,17 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                     campaign={campaign}
                 />
             )}
+
+            {/* Cancel-send confirmation dialog */}
+            <DeleteConfirmDialog
+                open={cancelSendDialogOpen}
+                onOpenChange={setCancelSendDialogOpen}
+                title={t('admin-newsletter.campaigns.cancelSend')}
+                description={t('admin-newsletter.campaigns.cancelSendConfirmDescription')}
+                cancelLabel={t('admin-newsletter.campaigns.cancelSendDialogDismiss')}
+                confirmLabel={t('admin-newsletter.campaigns.cancelSend')}
+                onConfirm={confirmCancelSend}
+            />
         </div>
     );
 }

@@ -30,6 +30,8 @@
         "ignoreSoftCap": "Ignorar límite de frecuencia",
         "noEligibleSubscribers": "No hay suscriptores elegibles para esta campaña.",
         "cancelSend": "Cancelar envío",
+        "cancelSendConfirmDescription": "Cancel this campaign's send? Emails already in flight may still complete.",
+        "cancelSendDialogDismiss": "Go back",
         "metrics": {
             "totalRecipients": "Destinatarios",
             "totalSoftcapped": "Excluidos (frecuencia)",

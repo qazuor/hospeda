@@ -11,6 +11,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DataTable } from '@/components/table/DataTable';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type {
@@ -47,6 +57,8 @@ function ExchangeRatesPage() {
     const { t, tPlural } = useTranslations();
     const [activeTab, setActiveTab] = useState<TabId>('current');
     const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
+    // Manual-override id pending a delete confirmation.
+    const [overrideToDelete, setOverrideToDelete] = useState<string | null>(null);
 
     // Queries
     const { data: rates, isLoading: isLoadingRates } = useExchangeRatesQuery();
@@ -63,9 +75,13 @@ function ExchangeRatesPage() {
     };
 
     const handleDelete = (id: string) => {
-        if (confirm(t('admin-pages.exchangeRates.confirmDelete'))) {
-            deleteOverrideMutation.mutate(id);
-        }
+        setOverrideToDelete(id);
+    };
+
+    const confirmDeleteOverride = () => {
+        if (!overrideToDelete) return;
+        deleteOverrideMutation.mutate(overrideToDelete);
+        setOverrideToDelete(null);
     };
 
     const handleFetchNow = async () => {
@@ -199,6 +215,36 @@ function ExchangeRatesPage() {
                             onSubmit={handleSubmitOverride}
                             isSubmitting={createOverrideMutation.isPending}
                         />
+
+                        {/* Delete override confirmation */}
+                        <AlertDialog
+                            open={overrideToDelete != null}
+                            onOpenChange={(open) => {
+                                if (!open) setOverrideToDelete(null);
+                            }}
+                        >
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        {t('admin-billing.exchangeRates.deleteButton')}
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        {t('admin-pages.exchangeRates.confirmDelete')}
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setOverrideToDelete(null)}>
+                                        {t('admin-billing.common.cancel')}
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={confirmDeleteOverride}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                        {t('admin-billing.exchangeRates.deleteButton')}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 )}
 

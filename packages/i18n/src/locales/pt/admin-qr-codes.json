@@ -74,6 +74,7 @@
         "view": "Ver",
         "edit": "Editar",
         "delete": "Excluir",
+        "cancel": "Cancelar",
         "backToList": "Voltar à lista"
     },
     "messages": {
