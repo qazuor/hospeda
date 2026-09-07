@@ -481,7 +481,12 @@
             },
             "assignFailed": "No se pudo asignar a la colección",
             "assignPrompt": "Asignar a una colección",
-            "assignSuccess": "Movido a {{name}}"
+            "assignSuccess": "Movido a {{name}}",
+            "upgrade": {
+                "title": "Coleções",
+                "message": "As coleções estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+                "cta": "Ver planos"
+            }
         },
         "filter": {
             "all": "Todos",

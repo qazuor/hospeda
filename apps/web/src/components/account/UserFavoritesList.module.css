@@ -302,6 +302,52 @@
     font-weight: 600;
 }
 
+/* ── Collections upgrade (plan-gate) state ──────────────────────────────── */
+
+.collectionsUpgrade {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-5);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-card);
+    background-color: var(--brand-primary-a05);
+    text-align: center;
+    align-items: center;
+}
+
+.collectionsUpgradeTitle {
+    font-family: var(--font-heading);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.collectionsUpgradeMessage {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+    max-width: 40ch;
+    margin: 0;
+}
+
+.collectionsUpgradeCta {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary-foreground);
+    background-color: var(--brand-primary);
+    border-radius: var(--radius-button);
+    padding: var(--space-2) var(--space-4);
+    text-decoration: none;
+    transition: opacity var(--duration-fast) ease;
+}
+
+.collectionsUpgradeCta:hover {
+    opacity: 0.85;
+}
+
 /* ── Collections grid ──────────────────────────────────────────────────── */
 
 .collectionsGrid {
