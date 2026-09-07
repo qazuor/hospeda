@@ -105,6 +105,30 @@ export const PENDING_TRIAL_EXTENSION_METADATA_KEY = 'pendingTrialExtensionJson';
  * client override for tests and the two deferred-redemption promo snapshots.
  */
 export interface CreateOwnPreapprovalSubscriptionInput extends CreatePaidSubscriptionInput {
+    /**
+     * REQUIRED here, unlike on {@link CreatePaidSubscriptionInput} where it is
+     * optional (HOS-1221 D3). This is the LOCAL trial window in days — nothing
+     * about it is ever sent to MercadoPago.
+     *
+     * Omitting it does not mean "no trial": qzpay-core falls back to the
+     * resolved PRICE's own `trialDays` (`billing.ts`: `if (input.trialDays !==
+     * undefined) ... else if (price?.trialDays != null)`), and the storage
+     * adapter then writes `trial_start = now`, `trial_end = now + N`. Every
+     * `owner-*` and `tourist-*` monthly price row carries 30 (measured on
+     * staging, 5 of 5), so a checkout that omitted this was born claiming a
+     * month of free days while MercadoPago charged the card on day 1 — and the
+     * webhook's `deriveTrialingStatus` then reported that paying customer as
+     * `trialing` until the trial "elapsed" thirty days later.
+     *
+     * Requiring it is the guard, and deliberately instead of a static one: the
+     * compiler checks EVERY call site, including files a scan's scope
+     * derivation would miss, it cannot be defeated by a rename, and it fails at
+     * the call rather than at file granularity. A new checkout branch that
+     * forgets the field does not compile. Pass `0` for a paid checkout — the
+     * four plan checkouts and the retry recovery all do — or the borrowed-price
+     * override the recurring add-on needs.
+     */
+    readonly trialDays: number;
     /** Drizzle client override for tests. Defaults to {@link getDb}. */
     readonly db?: DrizzleClient;
     /**

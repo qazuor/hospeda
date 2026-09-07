@@ -377,6 +377,14 @@ export async function mintRetryPreapprovalAttempt({
         // MercadoPago answers with "card_token_id is required" — the retry
         // reproduced the checkout's own 500 for the same reason.
         mpPreapprovalPlanId,
+        // ZERO, stated (HOS-1221 D3). This retry is accommodation-only
+        // (`RETRY_SUPPORTED_PRODUCT_DOMAINS`), i.e. exactly the domain whose
+        // monthly price rows carry `trial_days = 30`. Omitted, qzpay-core
+        // inherits that 30 and the fresh row is born claiming a month of free
+        // days on a card MercadoPago charges on day 1 — the same phantom trial
+        // the four checkouts had. A retry re-opens a PAID checkout; it never
+        // re-opens a trial.
+        trialDays: 0,
         ...(pendingDiscount ? { pendingDiscount } : {}),
         ...(pendingTrialExtension ? { pendingTrialExtension } : {}),
         ...(db ? { db } : {})

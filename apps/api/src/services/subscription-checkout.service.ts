@@ -630,6 +630,34 @@ export async function initiatePaidMonthlySubscription(
     // checkout behind this flag answer 500 with
     // "Create subscription - card_token_id is required".
     //
+    // ── `trialDays: 0` is stated, never omitted (HOS-1221 D3) ──────────────
+    // Omitted, qzpay-core falls back to the resolved PRICE's own `trialDays`
+    // (`billing.ts`: `if (input.trialDays !== undefined) ... else if
+    // (price?.trialDays != null)`), and its storage adapter then writes
+    // `trial_start = now`, `trial_end = now + N`. Every owner-* and tourist-*
+    // monthly price row carries 30 (measured on staging, 5 of 5). Nothing here
+    // normalizes `trial_end` afterwards, so the webhook's
+    // `deriveTrialingStatus` reads that future date and turns MercadoPago's
+    // `authorized` into a LOCAL `trialing` — a customer whose card was charged
+    // on day 1 is told they are on a free trial for a month, and the trial
+    // reconcile cron only looks at ELAPSED trials, so nothing corrects it until
+    // day 30.
+    //
+    // This is NOT `freeTrialDays`: nothing here is asked of MercadoPago
+    // (HOS-1012's ban is untouched). It is the LOCAL window, and stating zero
+    // is what makes this branch write the same hard NULLs Path C writes
+    // explicitly (`pending-provider-subscription-create.ts`). HOS-847 already
+    // states the same zero for the same reason on the recurring add-on, which
+    // borrows a price row carrying 30.
+    //
+    // It does not collide with Hospeda's own trial (HOS-1012). That trial is a
+    // SEPARATE row — `status='trialing'`, `mp_subscription_id = NULL`, opened at
+    // the owner's first publish — and when this paid row activates,
+    // `supersedeLocalTrialsOnActivation` ends it inside the activation's own
+    // transaction ("supersede, do not mutate: the trial dies, the new row
+    // lives"). So there is nothing of an in-flight trial to carry onto the paid
+    // row; a trial window here could only ever be a second, invented one.
+    //
     // Deferred-redemption bookkeeping (`pendingDiscount` / trial-extension
     // stamping) is wired into this path too, same snapshot-now / redeem-later
     // shape as the old flow — just relocated: there is no
@@ -653,6 +681,11 @@ export async function initiatePaidMonthlySubscription(
             // note above this branch — `providerPriceId` here is what made
             // MercadoPago answer "card_token_id is required" on every checkout.
             mpPreapprovalPlanId: providerPriceId,
+            // ZERO, stated. See the note above this branch: omitted, qzpay-core
+            // inherits `billing_prices.trial_days` — 30 on every owner-* and
+            // tourist-* monthly row (measured on staging) — and the row is born
+            // claiming a month of free days on a card MercadoPago charges today.
+            trialDays: 0,
             // HOS-937 step 2: bind the preapproval to the resolved payer
             // email. Forwarded to qzpay-core's `billing.subscriptions.create`
             // (see `paid-subscription-create.ts`), which uses it in place of
@@ -972,6 +1005,14 @@ export async function initiateCommerceMonthlySubscription(
             // MercadoPago — see the accommodation monthly branch.
             mpPreapprovalPlanId: providerPriceId,
             payerEmail,
+            // ZERO, stated — the same explicit zero as the accommodation
+            // monthly branch. The commerce price rows carry no `trial_days`
+            // today (measured on staging: 6 of 6 NULL), so nothing is inherited
+            // right now; the zero is what keeps that true if one is ever
+            // loaded, since the commerce PLANS do declare `trialDays: 30` in
+            // their metadata and the price is the obvious next place someone
+            // mirrors it to.
+            trialDays: 0,
             // HOS-1012: no `freeTrialDays` — this preapproval carries no trial.
             // D3: HOS-695 — the listing's own vertical, never the retired
             // 'commerce' umbrella. `loadEntitlements()` filters strictly to
@@ -1249,6 +1290,10 @@ export async function initiatePartnerMonthlySubscription(
             // HOS-1221: recorded for the §6.6-B reuse check above, not sent to
             // MercadoPago — see the accommodation monthly branch.
             mpPreapprovalPlanId: providerPriceId,
+            // ZERO, stated — same explicit zero as the other three. Partner
+            // price rows carry no `trial_days` today (measured on staging: 5 of
+            // 5 NULL); the zero is what stops an inherited one tomorrow.
+            trialDays: 0,
             productDomain: ProductDomainEnum.PARTNER,
             domainMetadata: { partnerId },
             writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
@@ -1579,11 +1624,21 @@ export async function initiatePaidAnnualSubscription(
             paymentMethodReturnUrl: urls.successUrl,
             notificationUrl: urls.notificationUrl,
             // HOS-1221: recorded, not sent — see the monthly branch. The annual
-            // cadence comes from `billingInterval: 'annual'` above, which
-            // `createPaidSubscription` maps to MercadoPago's
-            // `frequency: 12, frequency_type: 'months'`; it never depended on
-            // the MP plan.
+            // cadence does NOT come from this line and does not come from
+            // `billingInterval: 'annual'` either: the adapter derives MP's
+            // `frequency: 12, frequency_type: 'months'` from the resolved PRICE
+            // ROW (`billing_prices.billing_interval = 'year'`, via
+            // `toMercadoPagoInterval`). `input.billingInterval` only labels the
+            // local row and the plan `reason`. The two agree today because
+            // `findAnnualPrice` resolved a `'year'` price — which is the
+            // coupling to keep in mind if a caller ever passes an interval the
+            // price row does not back.
             mpPreapprovalPlanId: providerPriceId,
+            // ZERO, stated — same explicit zero as the other three. The annual
+            // price rows carry no `trial_days` today (measured on staging: 5 of
+            // 5 NULL, since `ensurePrice` only ever attaches a trial to a
+            // MONTHLY price); the zero is what stops an inherited one tomorrow.
+            trialDays: 0,
             // HOS-937 step 2: bind the preapproval to the resolved payer
             // email, same as the monthly own-preapproval branch.
             payerEmail,
