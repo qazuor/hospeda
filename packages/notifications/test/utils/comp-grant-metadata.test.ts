@@ -65,6 +65,27 @@ describe('buildCompGrantMetadata', () => {
         expect(buildCompGrantMetadata(unrelated)).toStrictEqual({});
     });
 
+    it.each([
+        NotificationType.TRIAL_ENDING_REMINDER,
+        NotificationType.PAYMENT_FAILURE,
+        NotificationType.RENEWAL_REMINDER
+    ])('does not persist planName for %s, which carries one of its own', (type) => {
+        // The three types this would otherwise have changed. Each reads
+        // `metadata.planName` back on retry with a 'Plan' fallback, and each has
+        // always hit that fallback because nothing ever persisted it. Matching
+        // on SHAPE rather than on type is what would silently start rewording
+        // three production emails, in a change about comps — so the assertion
+        // names them instead of settling for "some other payload".
+        const payload = {
+            type,
+            recipientEmail: 'x@example.com',
+            recipientName: 'X',
+            planName: 'Plan Premium'
+        } as NotificationPayload;
+
+        expect(buildCompGrantMetadata(payload)).toStrictEqual({});
+    });
+
     it('omits an empty plan name instead of persisting a blank', () => {
         const metadata = buildCompGrantMetadata(compPayload({ planName: '' }));
 

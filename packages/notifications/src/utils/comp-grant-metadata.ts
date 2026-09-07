@@ -34,7 +34,7 @@
  * @module utils/comp-grant-metadata
  */
 
-import type { NotificationPayload } from '../types/notification.types.js';
+import { type NotificationPayload, NotificationType } from '../types/notification.types.js';
 
 /**
  * Subset of `billing_notification_log.metadata` that carries the comp-grant
@@ -48,19 +48,33 @@ export interface CompGrantMetadata {
 }
 
 /**
- * Extracts the comp-grant fields from any notification payload.
+ * Extracts the comp-grant fields, and ONLY from a `COMP_GRANTED` payload.
  *
- * Returns an empty object for payloads that carry neither field, so the result
- * can always be spread into the metadata literal without adding `undefined`
- * keys for unrelated notification types.
+ * Returns an empty object for every other type, so the result can always be
+ * spread into the metadata literal without adding keys for notifications that
+ * have nothing to do with a comp.
+ *
+ * The type check is not a micro-optimisation. This is spread into EVERY log
+ * row, and `planName` is a field several unrelated payloads also carry —
+ * `TRIAL_ENDING_REMINDER`, `PAYMENT_FAILURE` and `RENEWAL_REMINDER` among them.
+ * All three read `metadata.planName` back on retry with a `'Plan'` fallback, and
+ * all three have always hit that fallback because nothing ever persisted it.
+ * A shape-based copy would start persisting it for them too and quietly change
+ * the wording of three production emails, in a change about comps, with nobody
+ * having asked. That may be an improvement worth making; it is not this one's to
+ * make, and a smoke run is the wrong place to find out.
  *
  * `hadActiveBilling` is copied whenever it is a boolean — including `false`,
  * which is a real answer and not an absent one.
  *
  * @param payload - The notification being logged.
- * @returns `{ planName?, hadActiveBilling? }` — only the fields actually present.
+ * @returns `{ planName?, hadActiveBilling? }` for a comp grant; `{}` otherwise.
  */
 export function buildCompGrantMetadata(payload: NotificationPayload): CompGrantMetadata {
+    if (payload.type !== NotificationType.COMP_GRANTED) {
+        return {};
+    }
+
     const fields = payload as { planName?: unknown; hadActiveBilling?: unknown };
     const metadata: { planName?: string; hadActiveBilling?: boolean } = {};
 
