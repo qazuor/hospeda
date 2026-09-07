@@ -771,6 +771,75 @@
 }
 
 /* ==========================================================================
+   Dialog panel — the height cap + scroll every dialog gets for free
+   --------------------------------------------------------------------------
+   THE one place this app decides how tall a dialog may grow and what happens
+   when its content is taller than that. Before HOS-958 each dialog decided
+   for itself — `90vh` here, `min(90vh, 48rem)` there, `70vh` somewhere else,
+   and nothing at all in six modules. The ones that decided nothing were fine
+   with the test account and unusable with a real one: no cap, no scrollbar,
+   the confirm button below the fold with no way to reach it.
+
+   Compose the class onto the surface, exactly like `.overlay-surface`:
+
+       <dialog className={cn(styles.dialog, 'dialog-panel')}>
+
+   Three classes, and which one you need follows from the markup:
+
+   - `.dialog-panel` — the surface that holds the content. Caps its height and
+     scrolls itself. This is the default: a dialog whose body is one flow of
+     content needs this and nothing else.
+   - `.dialog-panel-scroll` — the region that scrolls INSIDE a panel that
+     keeps a fixed header and/or footer. The panel stays capped by
+     `.dialog-panel`; this child takes the scrolling, so the header does not
+     scroll away with the body.
+   - `.dialog-viewport` — for a `<dialog>` that is not the panel at all: a
+     full-viewport overlay wrapping a centered card, or an edge-anchored
+     drawer. It fills the screen and hands the cap to a `.dialog-panel` child.
+
+   Retune ONE panel with `--dialog-max-height` (a drawer that must be exactly
+   full height sets `100%`), never by re-declaring `max-height` in the module.
+   A second declaration of the same property is how the cap drifted apart in
+   the first place, and it races the shared class on source order because both
+   selectors have identical specificity — whoever the bundler emits last wins,
+   which is not something a component should be betting on.
+
+   `scripts/check-dialog-max-height.sh` fails CI on a `<dialog>` that carries
+   none of these markers, and pins how many may use `.dialog-viewport` — that
+   is the one shape where the `<dialog>` itself carries no cap, so a new one
+   has to be argued for rather than typed.
+   ========================================================================== */
+
+.dialog-panel {
+    /* `dvh`, not `vh`: on mobile `vh` resolves against the LARGEST viewport,
+       so a panel sized in `vh` still runs under the address bar on the very
+       screens where the overflow bites hardest. */
+    max-height: var(--dialog-max-height, calc(100dvh - 2rem));
+    overflow-y: auto;
+    /* A scroll gesture that reaches the end of the panel must not hand the
+       remaining momentum to the page behind it. */
+    overscroll-behavior: contain;
+}
+
+.dialog-panel-scroll {
+    flex: 1 1 auto;
+    /* Without this a flex child refuses to shrink below its content height:
+       the panel overflows instead of the child scrolling, and the header the
+       whole arrangement exists to keep in place scrolls away anyway. */
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.dialog-viewport {
+    max-height: 100dvh;
+    /* Overrides the user-agent `dialog { max-width: calc(100% - 6px - 2em) }`,
+       which would otherwise inset a full-bleed overlay by a few pixels. */
+    max-width: 100vw;
+    overflow: hidden;
+}
+
+/* ==========================================================================
    Frosted surfaces
    --------------------------------------------------------------------------
    Translucent backgrounds with a backdrop blur for floating UI (toggles,
