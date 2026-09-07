@@ -102,6 +102,20 @@ describe('the printable QR sheet is ungated, in all three verticals (HOS-982)', 
         expect(source).toContain('entityNotFoundError');
     });
 
+    it.each(SHEET_ROUTES)('$vertical: also refuses a listing that is not ACTIVE', ({ path }) => {
+        // BOTH halves of "published", in all three verticals. The commerce two
+        // checked visibility alone until this was found: their services answer
+        // NOT_FOUND to every non-owner on a non-ACTIVE row, so a listing PATCHed
+        // to INACTIVE with PUBLIC visibility left standing would have minted a
+        // code and been printed — and every scan of that paper 404s forever.
+        //
+        // Static as well as behavioural (`test/routes/listing-qr-sheet.test.ts`
+        // exercises the branch) because the failure mode is a clause being
+        // DROPPED while every other assertion about the route stays green.
+        const source = readCode(path);
+        expect(source).toContain('LifecycleStatusEnum.ACTIVE');
+    });
+
     it.each(SHEET_ROUTES)('$vertical: mints through the central QR point', ({ path }) => {
         const source = readCode(path);
         // `resolveEntityQrScanUrl` is the ONE authorised way to turn an entity

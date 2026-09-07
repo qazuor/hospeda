@@ -18,6 +18,24 @@
  *    error contract's anti-enumeration rule wants one spelling of a 404, and two
  *    would let a caller tell "not yours" from "not published".
  *
+ * ## Two answers this route re-throws that are NOT that 404
+ *
+ * Step 2 begins by re-throwing whatever `getById` produced, and
+ * `AccommodationService`'s `checkCanView` has two branches that do not answer
+ * NOT_FOUND. Both are deliberate and neither is this module's to change:
+ *
+ * - **403** for a RESTRICTED listing the caller does not hold
+ *   `ACCOMMODATION_VIEW_PRIVATE` for. A declared, documented exception to the
+ *   anti-enumeration rule (`apps/api/docs/error-contract.md`) — the VIP tier is
+ *   meant to be discoverable-but-refused.
+ * - **410 GONE** for a soft-deleted listing that was PUBLIC, so crawlers
+ *   deindex it fast. That branch runs BEFORE any owner exemption, so even the
+ *   legitimate owner of a deleted listing gets 410 here rather than the 404 the
+ *   three branches above promise.
+ *
+ * Said out loud because the list above reads like an exhaustive one and is not:
+ * three paths answer the canonical 404, and these two answer something else.
+ *
  * ## There is NO entitlement gate here, and that is the decision
  *
  * The brochure requires `DOWNLOAD_LISTING_PDF`; this sheet requires nothing but
@@ -27,13 +45,25 @@
  * documents exist for opposite reasons, one is a premium marketing asset handed
  * to a customer and the other is an acquisition channel we WANT on every door.
  *
- * ## Why the accommodation check has two clauses where commerce has one
+ * ## Both clauses of "published", in all three verticals
  *
- * `visibility === PUBLIC` alone is not "published" for an accommodation: a DRAFT
- * row can carry PUBLIC visibility and has no page. `AccommodationService`'s own
- * predicate is `lifecycleState === ACTIVE && visibility === PUBLIC`, and that is
- * what decides whether the public page exists, so it is what decides whether a
- * code may be printed for it.
+ * `visibility === PUBLIC` alone is not "published": a DRAFT row can carry PUBLIC
+ * visibility and has no page. `AccommodationService`'s own predicate is
+ * `lifecycleState === ACTIVE && visibility === PUBLIC`, and that is what decides
+ * whether the public page exists, so it is what decides whether a code may be
+ * printed for it. The gastronomy and experience twins check the same pair, for
+ * the same reason — their services' `_canView` answers NOT_FOUND to every
+ * non-owner on a non-ACTIVE row too.
+ *
+ * ## The sheet's language and the code's destination are two decisions
+ *
+ * `resolveReturnUrlLocale(ctx)` decides what language the HOST reads the paper
+ * in. It deliberately does NOT decide where the code lands: the minted
+ * `targetUrl` is pinned to the market's locale, because `qr_codes.targetUrl` is
+ * creation-only and the first downloader would otherwise choose, permanently,
+ * what language every future SCANNER of that door reads the site in. The
+ * argument is in `services/listing-qr-sheet/qr-sheet-content.ts`
+ * (`MINTED_TARGET_LOCALE`).
  *
  * @module routes/accommodation/protected/qrSheet
  */

@@ -7,9 +7,17 @@
  *
  * The accommodation twin (`routes/accommodation/protected/qrSheet.ts`) carries
  * the full reasoning for the order of the checks, for why there is NO
- * entitlement gate, and for why the code is minted once and reused. As in
- * gastronomy, the publicity check here is `visibility === PUBLIC` alone and the
+ * entitlement gate, for why the code is minted once and reused, and for why the
+ * minted destination ignores the downloader's language. As in gastronomy, the
  * staff bypass is `COMMERCE_VIEW_ALL`.
+ *
+ * ## The publicity check is BOTH clauses, as in accommodation
+ *
+ * `ExperienceService._canView` answers NOT_FOUND to every non-owner on a
+ * `lifecycleState !== ACTIVE` row, so `visibility === PUBLIC` alone is not
+ * "published". A listing PATCHed to INACTIVE with its visibility untouched would
+ * otherwise mint a code and be printed, and every scan of that paper would 404
+ * permanently. The gastronomy twin carries the same clause and the same reason.
  *
  * An experience now carries three codes at once, and none of them is a
  * duplicate: `CERTIFICATE` (printed on the certificate), `BROCHURE` (printed on
@@ -22,6 +30,7 @@
 
 import {
     EntityTypeEnum,
+    LifecycleStatusEnum,
     PermissionEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
@@ -64,7 +73,12 @@ export async function handleGetExperienceQrSheet(
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
 
-    if (entity.visibility !== VisibilityEnum.PUBLIC) {
+    // BOTH clauses — see the docblock. A row that is PUBLIC but not ACTIVE has
+    // no public page, and a code printed for it 404s on every scan, forever.
+    if (
+        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
+        entity.visibility !== VisibilityEnum.PUBLIC
+    ) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }

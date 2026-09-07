@@ -7,12 +7,21 @@
  *
  * The accommodation twin (`routes/accommodation/protected/qrSheet.ts`) carries
  * the full reasoning for the order of the checks, for why there is NO
- * entitlement gate, and for why the code is minted once and reused. Two things
- * differ here, both inherited from how commerce listings publish:
+ * entitlement gate, for why the code is minted once and reused, and for why the
+ * minted destination ignores the downloader's language. One thing differs here:
+ * the staff bypass is `COMMERCE_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
  *
- * - The publicity check is `visibility === PUBLIC` alone, matching
- *   `protected/brochure.ts` and the rest of the vertical's protected routes.
- * - The staff bypass is `COMMERCE_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
+ * ## The publicity check is BOTH clauses, as in accommodation
+ *
+ * `visibility === PUBLIC` alone is not "published". `GastronomyService._canView`
+ * answers NOT_FOUND to every non-owner on a `lifecycleState !== ACTIVE` row, and
+ * `public/list.ts` states the public contract as
+ * `lifecycleState=ACTIVE AND visibility=PUBLIC`. The normal publish path writes
+ * the two columns together (`reconcileCommerceListingVisibility`), but the admin
+ * schemas accept `lifecycleState` on its own — so a listing PATCHed to INACTIVE
+ * with its visibility untouched would otherwise pass this route, mint a code and
+ * be printed, and every scan of that paper would 404 permanently. Paper is not
+ * correctable; this check is cheap.
  *
  * Not to be confused with `menuQr.ts`, which is the code printed on a TABLE and
  * opens the menu (`purpose: MENU`). This one goes on the door and opens the
@@ -25,6 +34,7 @@
 
 import {
     EntityTypeEnum,
+    LifecycleStatusEnum,
     PermissionEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
@@ -67,7 +77,12 @@ export async function handleGetGastronomyQrSheet(
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
-    if (entity.visibility !== VisibilityEnum.PUBLIC) {
+    // BOTH clauses — see the docblock. A row that is PUBLIC but not ACTIVE has
+    // no public page, and a code printed for it 404s on every scan, forever.
+    if (
+        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
+        entity.visibility !== VisibilityEnum.PUBLIC
+    ) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
