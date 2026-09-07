@@ -20,13 +20,16 @@
  * ACTIVE purchase of the same add-on by the same customer is rejected by
  * Postgres, and this module reports it rather than crashing the webhook.
  *
- * ## What it deliberately does not do
+ * ## The receipt is NOT `ADDON_PURCHASE`
  *
- * No `ADDON_PURCHASE` receipt is sent. The copy for a recurring add-on has to
- * say "this renews and you will be charged again", which is PR 8's job; sending
- * the one-time purchase template here would tell a subscriber the opposite of
- * the truth. See `addon-notification-deep-link.guard.test.ts` — adding a
- * dispatch means adding this file to its list and bumping its count.
+ * `confirmAddonPurchase` sends `ADDON_PURCHASE`, whose copy says a purchase
+ * "has been processed" — true of a one-time add-on and misleading for someone
+ * who has just authorised a MercadoPago preapproval that will charge their card
+ * again next month. So this path sends `ADDON_SUBSCRIPTION_STARTED` instead,
+ * which names the amount, the cadence, the next charge date and how to cancel,
+ * in the recipient's own locale (es/en/pt). See
+ * `addon-notification-deep-link.guard.test.ts` — this file is on its
+ * `DISPATCH_FILES` list and counted in `EXPECTED_DISPATCH_COUNT`.
  *
  * @module services/addon-recurring-activation.service
  */
@@ -223,6 +226,100 @@ async function linkFeaturedGrantBestEffort(params: {
                 error: error instanceof Error ? error.message : String(error)
             },
             'HOS-847: failed to write featured_listing_addon_grants row for a recurring add-on activation'
+        );
+    }
+}
+
+/**
+ * Send the recurring add-on's subscription notice (HOS-847 PR 5).
+ *
+ * Not `ADDON_PURCHASE`: see this module's own JSDoc. Everything a SUBSCRIBER
+ * has to be told and a one-time buyer does not — the cadence, the next charge
+ * date, and how to cancel — is required on
+ * `AddonSubscriptionStartedPayload`, so a dispatch cannot silently degrade into
+ * the one-time message by omitting a field.
+ *
+ * Best-effort and non-blocking, matching `confirmAddonPurchase`: the money is
+ * taken and the benefit granted before this runs, so a mail failure must never
+ * turn a successful activation into a webhook retry. Everything is inside a
+ * `try` — including the customer lookup, which is a network call.
+ *
+ * @param params.billing - Resolved qzpay billing facade.
+ * @param params.purchase - The just-activated purchase row.
+ * @param params.addon - The catalog entry, for the fallback name/description.
+ * @param params.amountInCents - Amount charged now and on every renewal.
+ * @param params.nextChargeAt - End of the period this activation opened.
+ * @param params.triggerSource - For log correlation.
+ */
+async function sendSubscriptionStartedNotice(params: {
+    readonly billing: QZPayBilling;
+    readonly purchase: RecurringAddonPurchaseRow;
+    readonly addon: { readonly name: string; readonly description: string; readonly slug: string };
+    readonly amountInCents: number;
+    readonly nextChargeAt: Date;
+    readonly triggerSource: string;
+}): Promise<void> {
+    const { billing, purchase, addon, amountInCents, nextChargeAt, triggerSource } = params;
+
+    try {
+        const customer = await billing.customers.get(purchase.customerId);
+        if (!customer?.email) {
+            apiLogger.warn(
+                { purchaseId: purchase.id, customerId: purchase.customerId, triggerSource },
+                'HOS-847: recurring add-on activated but the customer has no email — subscription notice not sent'
+            );
+            return;
+        }
+
+        const { NotificationType } = await import('@repo/notifications');
+        const { sendNotification } = await import('../utils/notification-helper.js');
+        const { resolveRecipientLocale } = await import('./notification-recipient-locale.js');
+        const { resolveAddonCheckoutDescription, resolveAddonCheckoutName } = await import(
+            './addon-checkout-locale.js'
+        );
+
+        const userId =
+            typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
+        const customerName =
+            typeof customer.metadata?.name === 'string' ? customer.metadata.name : customer.email;
+        const recipientLocale = await resolveRecipientLocale({ userId });
+
+        await sendNotification({
+            type: NotificationType.ADDON_SUBSCRIPTION_STARTED,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: purchase.customerId,
+            // HOS-830: name the add-on with the SAME string the buyer read on
+            // screen, resolved by slug, rather than the English config literal.
+            addonName: resolveAddonCheckoutName({
+                locale: recipientLocale,
+                slug: purchase.addonSlug,
+                fallback: addon.name
+            }),
+            addonDescription: resolveAddonCheckoutDescription({
+                locale: recipientLocale,
+                slug: purchase.addonSlug,
+                fallback: addon.description
+            }),
+            amount: amountInCents,
+            currency: 'ARS',
+            billingInterval: normalizeAddonBillingInterval(purchase.billingInterval),
+            nextChargeAt: nextChargeAt.toISOString(),
+            addonSlug: purchase.addonSlug,
+            locale: recipientLocale
+        });
+    } catch (error) {
+        apiLogger.error(
+            {
+                purchaseId: purchase.id,
+                customerId: purchase.customerId,
+                addonSlug: purchase.addonSlug,
+                triggerSource,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-847: could not send the recurring add-on subscription notice — the customer is subscribed and has not been told when they will be charged again',
+            { capture: true }
         );
     }
 }
@@ -434,6 +531,27 @@ export async function activateRecurringAddonPurchase(
     await syncAddonSubscriptionRowToActive({
         mpSubscriptionId: purchase.mpSubscriptionId,
         purchaseId: purchase.id
+    });
+
+    // Reached only by the caller that WON the conditional UPDATE, so the notice
+    // goes out exactly once per purchase — a redelivery finds zero rows above
+    // and returns long before here.
+    await sendSubscriptionStartedNotice({
+        billing,
+        purchase,
+        addon: {
+            name: addon.name,
+            description: addon.description ?? '',
+            slug: purchase.addonSlug
+        },
+        // `AddonDefinition.priceArs` is ALREADY centavos ("Monthly price in ARS
+        // cents", `addon.types.ts`) — the same field `confirmAddonPurchase`
+        // hands straight to `ADDON_PURCHASE.amount`, which the template divides
+        // by 100. Multiplying here would mail a 100× charge (HOS-713/HOS-839
+        // is that class of bug in the other direction).
+        amountInCents: addon.priceArs,
+        nextChargeAt: period.currentPeriodEnd,
+        triggerSource
     });
 
     apiLogger.info(

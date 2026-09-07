@@ -22,7 +22,9 @@ const {
     mockUpdateSet,
     mockUpdateReturning,
     mockPlanSubRows,
-    mockInsertValues
+    mockInsertValues,
+    mockSendNotification,
+    mockCustomerGet
 } = vi.hoisted(() => ({
     mockGetBySlug: vi.fn(),
     mockPlanGetById: vi.fn(),
@@ -32,6 +34,8 @@ const {
     mockUpdateSet: vi.fn(),
     /** Every `insert(...).values(payload)` — today only the featured-grant link. */
     mockInsertValues: vi.fn(),
+    mockSendNotification: vi.fn(),
+    mockCustomerGet: vi.fn(),
     /** Rows the conditional activating UPDATE's `.returning()` answers with. */
     mockUpdateReturning: { rows: [] as Array<{ id: string }>, error: null as Error | null },
     mockPlanSubRows: { rows: [] as Array<{ planId: string | null }> }
@@ -43,6 +47,23 @@ vi.mock('../../src/utils/logger', () => ({
 
 vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: mockClearEntitlementCache
+}));
+
+vi.mock('@repo/notifications', () => ({
+    NotificationType: { ADDON_SUBSCRIPTION_STARTED: 'addon_subscription_started' }
+}));
+
+vi.mock('../../src/utils/notification-helper', () => ({
+    sendNotification: mockSendNotification
+}));
+
+vi.mock('../../src/services/notification-recipient-locale', () => ({
+    resolveRecipientLocale: vi.fn(async () => 'pt')
+}));
+
+vi.mock('../../src/services/addon-checkout-locale', () => ({
+    resolveAddonCheckoutName: ({ fallback }: { fallback: string }) => `${fallback} (pt)`,
+    resolveAddonCheckoutDescription: ({ fallback }: { fallback: string }) => fallback
 }));
 
 vi.mock('../../src/services/addon-entitlement.service', () => ({
@@ -149,7 +170,7 @@ function purchase(overrides: Partial<RecurringAddonPurchaseRow> = {}): Recurring
     };
 }
 
-const billing = {} as never;
+const billing = { customers: { get: mockCustomerGet } } as never;
 
 /**
  * Wraps a pg driver error the way Drizzle wraps it before a `catch` block ever
@@ -186,6 +207,11 @@ beforeEach(() => {
             id: 'addon-uuid-1',
             slug: 'extra-accommodations-5',
             name: 'Extra accommodations',
+            description: 'Five more accommodations',
+            // `AddonDefinition.priceArs` is CENTAVOS ("Monthly price in ARS
+            // cents"), i.e. ARS 5.000 here — pinned so the notification's
+            // amount assertion below is meaningful rather than a tautology.
+            priceArs: 500_000,
             billingType: 'recurring',
             affectsLimitKey: 'maxAccommodations',
             limitIncrease: 5,
@@ -199,6 +225,12 @@ beforeEach(() => {
         data: { id: 'plan-uuid-1', limits: { maxAccommodations: 3 } }
     });
     mockApplyAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
+    mockSendNotification.mockResolvedValue(undefined);
+    mockCustomerGet.mockResolvedValue({
+        id: 'cust-1',
+        email: 'host@example.com',
+        metadata: { name: 'Ana', userId: 'user-1' }
+    });
 });
 
 describe('activateRecurringAddonPurchase', () => {
@@ -434,6 +466,71 @@ describe('activateRecurringAddonPurchase', () => {
         const linkOrder = mockInsertValues.mock.invocationCallOrder[0] as number;
         const grantOrder = mockApplyAddonEntitlements.mock.invocationCallOrder[0] as number;
         expect(linkOrder).toBeLessThan(grantOrder);
+    });
+
+    it('tells the subscriber the cadence and the next charge date, not "you bought this once"', async () => {
+        // Act
+        await activateRecurringAddonPurchase({
+            billing,
+            purchase: purchase(),
+            activatedAt: ACTIVATED_AT,
+            triggerSource: 'test'
+        });
+
+        // Assert: ADDON_SUBSCRIPTION_STARTED, never ADDON_PURCHASE — whose copy
+        // says a purchase "has been processed", which is the opposite of what
+        // somebody whose card will be charged again next month needs to read.
+        // The amount is the catalog's centavo value passed through unchanged
+        // (multiplying it would mail a 100x charge), and `nextChargeAt` is the
+        // end of the window this activation just opened.
+        expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        expect(mockSendNotification.mock.calls[0]?.[0]).toMatchObject({
+            type: 'addon_subscription_started',
+            recipientEmail: 'host@example.com',
+            recipientName: 'Ana',
+            customerId: 'cust-1',
+            amount: 500_000,
+            currency: 'ARS',
+            billingInterval: 'monthly',
+            nextChargeAt: '2026-06-10T12:00:00.000Z',
+            addonSlug: 'extra-accommodations-5',
+            locale: 'pt'
+        });
+    });
+
+    it('sends NOTHING when the conditional UPDATE claimed no row', async () => {
+        // Arrange: a MercadoPago redelivery. The notice must go out once per
+        // purchase, and the claiming UPDATE is what makes that true.
+        mockUpdateReturning.rows = [];
+
+        // Act
+        await activateRecurringAddonPurchase({
+            billing,
+            purchase: purchase(),
+            activatedAt: ACTIVATED_AT,
+            triggerSource: 'test'
+        });
+
+        // Assert
+        expect(mockSendNotification).not.toHaveBeenCalled();
+    });
+
+    it('still reports the activation when the notice cannot be sent', async () => {
+        // Arrange: the benefit is granted and the money taken before the mail is
+        // attempted, so a transport failure must not turn a successful
+        // activation into a webhook retry.
+        mockSendNotification.mockRejectedValue(new Error('transport down'));
+
+        // Act
+        const outcome = await activateRecurringAddonPurchase({
+            billing,
+            purchase: purchase(),
+            activatedAt: ACTIVATED_AT,
+            triggerSource: 'test'
+        });
+
+        // Assert
+        expect(outcome).toEqual({ activated: true });
     });
 
     it('opens a twelve-month window for an annual add-on', async () => {
