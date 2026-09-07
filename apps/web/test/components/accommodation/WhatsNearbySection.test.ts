@@ -1,20 +1,26 @@
 /**
  * @file WhatsNearbySection.test.ts
- * @description Tests for `WhatsNearbySection.astro` (HOS-145 T-010).
+ * @description Tests for `WhatsNearbySection.astro` (HOS-145 T-010, extended
+ * by HOS-327).
  *
  * Astro components cannot be rendered in Vitest (no DOM renderer for
  * `.astro` in this repo — see `apps/web/CLAUDE.md` Testing section: "Astro
  * components | Read source file, assert on content (no DOM renderer in
- * Vitest)"). This suite therefore combines:
+ * Vitest)"; `experimental_AstroContainer` fails to transform these files, as
+ * `PartnerMentionsSection.test.ts` already documents). This suite therefore
+ * combines:
  *
- *  1. Source-based assertions on the component (empty guard, distance-ascending
- *     sort, i18n wiring, distance formatting wiring) — the same pattern used
- *     by `test/components/destination/DestinationPOISection.test.ts`.
+ *  1. Source-based assertions on the component (empty guard, the ABSENCE of a
+ *     re-sort, the `hasOwnPage` link gate, the `descriptionI18n` preference,
+ *     i18n wiring, distance formatting wiring, and that every design token it
+ *     names actually exists) — the same pattern used by
+ *     `test/components/destination/DestinationPOISection.test.ts`.
  *  2. Full behavioral coverage of the pure logic the component composes
- *     (sort-by-distance, name/type-label resolution with humanized-slug
- *     fallback, distance formatting) via the underlying helpers directly,
- *     which IS unit-testable without a DOM — this exercises the exact same
- *     code paths the component's frontmatter calls.
+ *     (order preservation, name/type-label resolution with humanized-slug
+ *     fallback, multilang description resolution, URL building, distance
+ *     formatting) via the underlying helpers directly, which IS unit-testable
+ *     without a DOM — this exercises the exact same code paths the component's
+ *     frontmatter calls.
  */
 
 import { readFileSync } from 'node:fs';
@@ -25,6 +31,8 @@ import { describe, expect, it } from 'vitest';
 import { formatDistanceKm } from '../../../src/lib/format-distance';
 import { createTranslations } from '../../../src/lib/i18n';
 import { translatePoiName, translatePoiTypeLabel } from '../../../src/lib/poi-labels';
+import { resolveI18nText } from '../../../src/lib/resolve-i18n-text';
+import { buildUrl } from '../../../src/lib/urls';
 
 const sectionSrc = readFileSync(
     resolve(__dirname, '../../../src/components/accommodation/WhatsNearbySection.astro'),
@@ -45,6 +53,8 @@ function buildPoi(overrides: Partial<NearbyPoi> & { readonly distanceKm: number 
         isFeatured: false,
         isBuiltin: true,
         displayWeight: 0,
+        hasOwnPage: false,
+        address: null,
         ...overrides
     } as NearbyPoi;
 }
@@ -56,8 +66,14 @@ describe('WhatsNearbySection.astro (source-based)', () => {
         );
     });
 
-    it('sorts ascending by distanceKm', () => {
-        expect(sectionSrc).toContain('.sort((a, b) => a.distanceKm - b.distanceKm)');
+    it('HOS-327: does NOT re-sort — the API order is a relevance ranking', () => {
+        // Before HOS-327 the component re-sorted by ascending distance
+        // "defensively". The API now ranks by relevance (editorial weight
+        // decayed by distance), so that sort would silently restore the exact
+        // distance-only ordering HOS-327 removed. Any `.sort(` on the POI list
+        // in this component is a regression.
+        expect(sectionSrc).not.toContain('.sort((a, b) => a.distanceKm - b.distanceKm)');
+        expect(sectionSrc).not.toContain('.sort(');
     });
 
     it('formats distance via formatDistanceKm', () => {
@@ -87,8 +103,51 @@ describe('WhatsNearbySection.astro (source-based)', () => {
         );
     });
 
-    it('renders the plain-text description field directly (NearbyPoi has no descriptionI18n)', () => {
-        expect(sectionSrc).toContain('{poi.description && (');
+    it('HOS-327: prefers descriptionI18n over the legacy plain description', () => {
+        expect(sectionSrc).toContain("import { resolveI18nText } from '@/lib/resolve-i18n-text';");
+        expect(sectionSrc).toContain(
+            'resolveI18nText(poi.descriptionI18n, locale) || poi.description'
+        );
+        expect(sectionSrc).toContain('{poi.resolvedDescription && (');
+        // The raw legacy field must no longer be rendered on its own.
+        expect(sectionSrc).not.toContain('{poi.description && (');
+    });
+
+    it('HOS-327: links a POI that has its own page, gated on hasOwnPage', () => {
+        expect(sectionSrc).toContain("import { buildUrl } from '@/lib/urls';");
+        // Same route and same gate as DestinationPOISection — /destinos/lugar/
+        // 404s for every catalog row that lacks the flag.
+        expect(sectionSrc).toContain('poi.hasOwnPage ? (');
+        expect(sectionSrc).toContain('buildUrl({ locale, path: `destinos/lugar/${poi.slug}` })');
+    });
+
+    it('HOS-327: builds the POI page URL exactly like DestinationPOISection does', () => {
+        // A divergence here is a 404 neither `astro check` nor `tsc` can see.
+        const destinationSectionSrc = readFileSync(
+            resolve(__dirname, '../../../src/components/destination/DestinationPOISection.astro'),
+            'utf8'
+        );
+        const hrefPattern = 'buildUrl({ locale, path: `destinos/lugar/${poi.slug}` })';
+        expect(destinationSectionSrc).toContain(hrefPattern);
+        expect(sectionSrc).toContain(hrefPattern);
+    });
+
+    it('HOS-327: only uses design tokens that exist (a missing one silently ignores the theme)', () => {
+        // `var(--does-not-exist, #ccc)` paints a plausible grey and drops the
+        // theme, so every token this component names is checked against the
+        // generated token artifact rather than eyeballed.
+        const tokenCss = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../../packages/design-tokens/src/generators/__snapshots__/generate-css.test.ts.snap'
+            ),
+            'utf8'
+        );
+        const used = [...sectionSrc.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]);
+        expect(used.length).toBeGreaterThan(0);
+        for (const token of new Set(used)) {
+            expect(tokenCss, `${token} is not a defined design token`).toContain(`${token}:`);
+        }
     });
 
     it('uses the accommodations.detail.nearbyPoi.title i18n key for the section heading', () => {
@@ -105,16 +164,59 @@ describe('WhatsNearbySection.astro (source-based)', () => {
 });
 
 describe('WhatsNearbySection logic (helpers exercised by the component frontmatter)', () => {
-    it('sorts nearest-first when given unsorted input', () => {
+    it('HOS-327: preserves the API order verbatim, however unsorted by distance it looks', () => {
+        // The API hands these over ranked by relevance; a weight-100 landmark
+        // 4.2km away legitimately precedes a weak POI 300m away. The component
+        // maps over the list without reordering, so the rendered order is the
+        // input order.
         const pois: NearbyPoi[] = [
             buildPoi({ id: 'far', slug: 'far_poi', distanceKm: 4.2 }),
             buildPoi({ id: 'near', slug: 'near_poi', distanceKm: 0.3 }),
             buildPoi({ id: 'mid', slug: 'mid_poi', distanceKm: 1.8 })
         ];
 
-        const sorted = [...pois].sort((a, b) => a.distanceKm - b.distanceKm);
+        const rendered = pois.map((poi) => ({ ...poi }));
 
-        expect(sorted.map((p) => p.id)).toEqual(['near', 'mid', 'far']);
+        expect(rendered.map((p) => p.id)).toEqual(['far', 'near', 'mid']);
+    });
+
+    it('HOS-327: resolves the description multilang-first, degrading to the plain field', () => {
+        const withI18n = buildPoi({
+            distanceKm: 1,
+            description: 'Legacy plain description.',
+            descriptionI18n: { es: 'Descripción en español', en: 'English description', pt: null }
+        });
+        const onlyPlain = buildPoi({
+            distanceKm: 1,
+            description: 'Legacy plain description.',
+            descriptionI18n: null
+        });
+        const neither = buildPoi({ distanceKm: 1, description: null, descriptionI18n: null });
+
+        const resolve_ = (poi: NearbyPoi, locale: string) =>
+            resolveI18nText(poi.descriptionI18n, locale) || poi.description;
+
+        expect(resolve_(withI18n, 'es')).toBe('Descripción en español');
+        expect(resolve_(withI18n, 'en')).toBe('English description');
+        // `pt` is null on this row: resolveI18nText falls back through es/en
+        // rather than degrading to the legacy field.
+        expect(resolve_(withI18n, 'pt')).toBe('Descripción en español');
+        expect(resolve_(onlyPlain, 'es')).toBe('Legacy plain description.');
+        // Neither present: falsy, so the component renders no description at
+        // all instead of an empty paragraph.
+        expect(resolve_(neither, 'es')).toBeFalsy();
+    });
+
+    it('HOS-327: builds the POI detail URL the route actually serves', () => {
+        // `/{lang}/destinos/lugar/{slug}/` — the page at
+        // src/pages/[lang]/destinos/lugar/[slug]/index.astro. The trailing
+        // slash is buildUrl's, and it matters: the route is a directory index.
+        expect(buildUrl({ locale: 'es', path: 'destinos/lugar/palacio-san-jose' })).toBe(
+            '/es/destinos/lugar/palacio-san-jose/'
+        );
+        expect(buildUrl({ locale: 'en', path: 'destinos/lugar/palacio-san-jose' })).toBe(
+            '/en/destinos/lugar/palacio-san-jose/'
+        );
     });
 
     it('formats each POI distance via formatDistanceKm', () => {
