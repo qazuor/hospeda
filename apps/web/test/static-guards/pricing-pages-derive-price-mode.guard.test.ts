@@ -59,11 +59,38 @@ const PRICING_PAGES = readdirSync(resolve(WEB_ROOT, PLANES_DIR), { withFileTypes
     .filter((page) => existsSync(resolve(WEB_ROOT, page)))
     .sort();
 
-/** `priceMode` passed as a string literal, in either quote style. */
-const LITERAL_PRICE_MODE = /priceMode\s*=\s*["'][^"']*["']/;
+/**
+ * `priceMode` handed a string literal, in any spelling a human would write.
+ *
+ * The braces are OPTIONAL in this pattern and that is the whole point: an
+ * earlier version required a quote immediately after the `=`, so it rejected
+ * `priceMode="consult"` and waved through `priceMode={'consult'}` and
+ * `priceMode={`consult`}` — the same hardcoding, one brace away. A guard that
+ * forbids one syntactic form and accepts its variants is a guard whose next
+ * violation is written by autocomplete.
+ */
+const LITERAL_PRICE_MODE = /priceMode\s*=\s*\{?\s*['"`]/;
 
 /** `priceMode` passed as an expression — the only accepted form. */
 const DERIVED_PRICE_MODE = /priceMode\s*=\s*\{/;
+
+/**
+ * The destructuring that binds `priceMode`, whatever order its keys are in.
+ *
+ * Captures the whole brace group instead of anchoring on `priceMode }` — that
+ * anchor demanded `priceMode` be the LAST key, so adding a sixth field to
+ * `PricingPageContent`, or simply reordering, would have failed the guard on
+ * five correct pages. A guard that breaks under a legitimate refactor gets
+ * loosened rather than obeyed.
+ */
+const RESOLVER_DESTRUCTURING = /const\s*\{([^}]*)\}\s*=\s*resolvePricingPageContent\s*\(/;
+
+/** The keys a page destructures off `resolvePricingPageContent`, in any order. */
+const destructuredKeys = (src: string): readonly string[] =>
+    (RESOLVER_DESTRUCTURING.exec(src)?.[1] ?? '')
+        .split(',')
+        .map((key) => key.trim())
+        .filter(Boolean);
 
 /**
  * Drop block comments before matching.
@@ -107,7 +134,7 @@ describe('pricing pages derive their price mode (HOS-1212)', () => {
         // The prop being an expression is not enough on its own — a page could
         // compute its own `const priceMode = 'consult'` and satisfy the rule
         // above while still holding a private opinion.
-        expect(src).toMatch(/priceMode\s*\}\s*=\s*resolvePricingPageContent\(/);
+        expect(destructuredKeys(src)).toContain('priceMode');
     });
 });
 
@@ -115,15 +142,44 @@ describe('the guard detects the shapes it forbids', () => {
     // Mutation coverage, inline: the patterns are asserted against the exact
     // strings they exist to reject, so a regex broken by an edit fails here
     // rather than passing everything.
-    it('rejects both literal quote styles', () => {
-        expect(LITERAL_PRICE_MODE.test('priceMode="consult"')).toBe(true);
-        expect(LITERAL_PRICE_MODE.test("priceMode='amount'")).toBe(true);
-        expect(LITERAL_PRICE_MODE.test('priceMode = "consult"')).toBe(true);
+    it('rejects a literal in every spelling, braced or bare', () => {
+        // The braced three are the ones an earlier version of this guard let
+        // through: it required a quote directly after the `=`, so one brace was
+        // the whole bypass. Listed explicitly so the escape cannot reopen.
+        for (const bypass of [
+            'priceMode="consult"',
+            "priceMode='amount'",
+            'priceMode = "consult"',
+            "priceMode={'consult'}",
+            'priceMode={"amount"}',
+            'priceMode={`consult`}'
+        ]) {
+            expect(LITERAL_PRICE_MODE.test(bypass)).toBe(true);
+        }
     });
 
-    it('accepts only an expression as derived', () => {
+    it('accepts a real binding', () => {
+        expect(LITERAL_PRICE_MODE.test('priceMode={priceMode}')).toBe(false);
         expect(DERIVED_PRICE_MODE.test('priceMode={priceMode}')).toBe(true);
         expect(DERIVED_PRICE_MODE.test('priceMode="consult"')).toBe(false);
+    });
+
+    it('reads the destructured keys in any order', () => {
+        // The refactor that used to break this guard on five correct pages: a
+        // sixth field, or simply a different order.
+        const orders = [
+            'const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({',
+            'const { priceMode, copyRoot, faqs } = resolvePricingPageContent({',
+            'const { copyRoot, priceMode, trialDays, faqs } = resolvePricingPageContent({'
+        ];
+        for (const src of orders) {
+            expect(destructuredKeys(src)).toContain('priceMode');
+        }
+
+        expect(destructuredKeys('const { copyRoot } = resolvePricingPageContent({')).not.toContain(
+            'priceMode'
+        );
+        expect(destructuredKeys('const { priceMode } = somethingElse({')).toEqual([]);
     });
 
     it('strips a prop out of prose but leaves a real one standing', () => {

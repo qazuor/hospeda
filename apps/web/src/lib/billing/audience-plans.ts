@@ -209,7 +209,13 @@ export async function fetchAudiencePlans({
 /**
  * The entry price an audience card advertises.
  *
- * `null` (absent, modelled outside this union) means "could not be determined";
+ * `null` (absent, modelled outside this union) means "print no price line", and
+ * since HOS-1212 it carries TWO meanings that callers must not try to separate:
+ * the catalogue could not be read, and the audience publishes no amount at all
+ * (aliados). Do not key a "we could not load prices right now" notice off it —
+ * that message would sit on the aliados card permanently, describing a failure
+ * that is not happening.
+ *
  * `free` means the cheapest sellable plan for that audience really is free, and
  * is rendered as the free label rather than as "from $0".
  */
@@ -217,7 +223,10 @@ export type AudienceStartingPrice =
     | { readonly kind: 'free' }
     | { readonly kind: 'from'; readonly monthlyPriceArs: number };
 
-/** Starting price per audience; `null` for an audience whose plans did not load. */
+/**
+ * Starting price per audience; `null` where no price line is rendered — see
+ * {@link AudienceStartingPrice} for the two unrelated reasons that produces.
+ */
 export type AudienceStartingPrices = Readonly<Record<AudienceCardId, AudienceStartingPrice | null>>;
 
 /**
@@ -242,6 +251,16 @@ const SELLABLE_PARTNER_PLAN_SLUGS: ReadonlySet<string> = new Set(
  * artefact. The rule is uniform across audiences on purpose: it reports what the
  * catalogue says instead of special-casing which audience is allowed a free
  * tier.
+ *
+ * ## It reports the catalogue, so its answer is not publishable on its own
+ *
+ * Handed partner's plans it returns ARS 15.000 — true, and the exact figure no
+ * public surface may print (HOS-1212). The suppression lives one level up, in
+ * {@link resolveAudienceStartingPrices}, because that is where an AUDIENCE is
+ * known; this function only ever sees a list of plans. Anything rendering a
+ * price to a visitor must come through that function or consult
+ * `isPriceOnRequestAudience` itself. Calling this one directly and printing the
+ * result is how a fourth spelling of the same decision gets written.
  *
  * @param params.plans - Candidate plans (any mix of active and inactive).
  * @returns The starting price, or `null` when no active plan is present.

@@ -372,9 +372,11 @@ describe('plan index — the trial line is read, never written (R-2)', () => {
     });
 
     it('guards the trial line independently of the price line', () => {
-        // Partner has a price and no trial. Nesting the trial inside the price
-        // conditional would couple them; asserted by nesting DEPTH, since the
-        // two blocks are siblings at the same indent under the card.
+        // Gastronomy has a price and no trial; partner has NEITHER since
+        // HOS-1212, and host has both. Nesting the trial inside the price
+        // conditional would couple two lines that vary independently across the
+        // five cards; asserted by nesting DEPTH, since the two blocks are
+        // siblings at the same indent under the card.
         const lines = indexSrc.split('\n');
         const indentOf = (marker: string): number => {
             const line = lines.find((candidate) => candidate.includes(marker));
@@ -627,12 +629,15 @@ describe('plan index — prices and trial lines land on the same line (adjustmen
 
     it('names a row for every block, which is what survives the two odd cards', () => {
         // The whole requirement turns on this. Two of the seven blocks are
-        // OPTIONAL: every partner tier is `hasTrial: false` so partner renders
-        // NO trial line, and a card whose catalogue fetch failed renders no
-        // price. Under source-order auto-placement partner's CTA would slide up
-        // into the trial row and stop lining up with the other four. Named rows
-        // leave the missing block's track empty in that one card, and
-        // everything after it stays on its line.
+        // OPTIONAL, and partner is now missing BOTH: every partner tier is
+        // `hasTrial: false` so it renders no trial line, and it publishes no
+        // amount either (HOS-1212) so it renders no price. A card whose
+        // catalogue fetch failed also renders no price. Under source-order
+        // auto-placement partner's CTA would slide up TWO rows — not one — and
+        // stop lining up with the other four. Named rows leave each missing
+        // block's track empty in that one card, and everything after it stays on
+        // its line, which is what lets a card skip both and still land its CTA
+        // on the shared line.
         //
         // The tourist card's "Gratis" needs nothing special for the same
         // reason: it is still a price, in the price row, without a `/mes`.

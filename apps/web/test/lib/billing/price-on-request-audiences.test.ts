@@ -6,8 +6,15 @@
  * The bug this module exists to close was not a wrong value anywhere — it was
  * the SAME decision expressed three times in three vocabularies, one of which
  * (the plan index) never got written. So these tests assert the predicate's
- * value literally, and `pricing-page-content` / `audience-plans` assert that
- * their own surface reads it.
+ * value literally, and each surface's own suite asserts that it READS the
+ * predicate — `audience-plans.test.ts` for the plan index,
+ * `pricing-page-content.test.ts` for the five pricing pages.
+ *
+ * That second file was added by the review of this very commit: the first draft
+ * of this docblock claimed both surfaces were covered while
+ * `resolvePricingPageContent` had no importer in any test in the repo. A
+ * docblock is an assertion; this one was false, and it named the gap it was
+ * hiding.
  */
 
 import { describe, expect, it } from 'vitest';
