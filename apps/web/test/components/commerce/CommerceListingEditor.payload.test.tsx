@@ -34,26 +34,18 @@ import { ExperiencePriceUnitEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
+import type { CommerceI18nValues } from '../../../src/components/commerce/CommerceTranslationPanel.client';
 import type { CommerceEditorFormSectionId } from '../../../src/components/commerce/editor/commerce-section-payload';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
 
-const { I18N_INITIAL, I18N_EDITED } = vi.hoisted(() => {
-    const blank = () => ({ es: '', en: '', pt: '' });
-    return {
-        I18N_INITIAL: {
-            nameI18n: blank(),
-            summaryI18n: blank(),
-            descriptionI18n: blank(),
-            richDescriptionI18n: blank()
-        },
-        I18N_EDITED: {
-            nameI18n: { es: 'Nombre ES', en: 'Name EN', pt: '' },
-            summaryI18n: { es: 'Resumen ES', en: '', pt: '' },
-            descriptionI18n: { es: 'Descripción ES', en: '', pt: '' },
-            richDescriptionI18n: { es: 'Ampliada ES', en: '', pt: '' }
-        }
-    };
-});
+const { I18N_EDITED } = vi.hoisted(() => ({
+    I18N_EDITED: {
+        nameI18n: { es: 'Nombre ES', en: 'Name EN', pt: '' },
+        summaryI18n: { es: 'Resumen ES', en: '', pt: '' },
+        descriptionI18n: { es: 'Descripción ES', en: '', pt: '' },
+        richDescriptionI18n: { es: 'Ampliada ES', en: '', pt: '' }
+    }
+}));
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
@@ -61,21 +53,63 @@ vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () 
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-// Shallow-stub the translation panel: its own behaviour is covered by
-// CommerceTranslationPanel.test.tsx. Here it only needs to be able to FIRE an
-// i18n change, so the editor's four-keys-at-once payload rule can be asserted.
-vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () => ({
-    CommerceTranslationPanel: ({ onChange }: { onChange: (next: unknown) => void }) => (
-        <button
-            type="button"
-            data-testid="i18n-trigger"
-            onClick={() => onChange(I18N_EDITED)}
-        >
-            i18n
-        </button>
-    ),
-    parseCommerceI18nValues: () => I18N_INITIAL
-}));
+// Shallow-stub the translation panel's UI (its own rendering behaviour is
+// covered by CommerceTranslationPanel.test.tsx) but keep `parseCommerceI18nValues`
+// REAL — not stubbed. HOS-902's ES fallback lives inside that function, and the
+// interaction between "an untouched field can display fallback text" and "the
+// PATCH diff must not re-send it" is exactly what this suite's HOS-902 case
+// needs to exercise against the real implementation, not a canned stand-in.
+//
+// Two triggers: `i18n-trigger` replaces the WHOLE i18n state at once (used by
+// the pre-existing "all four fields together" test below); `i18n-summary-en-trigger`
+// changes ONLY `summaryI18n.en`, built from whatever `initialValues` the editor
+// actually passed in — this is what lets the HOS-902 test prove a sibling field
+// (`nameI18n`, carrying nothing but ES-fallback display text) never reaches the
+// wire.
+vi.mock(
+    '../../../src/components/commerce/CommerceTranslationPanel.client',
+    async (importOriginal) => {
+        const actual =
+            await importOriginal<
+                typeof import('../../../src/components/commerce/CommerceTranslationPanel.client')
+            >();
+        return {
+            ...actual,
+            CommerceTranslationPanel: ({
+                initialValues,
+                onChange
+            }: {
+                initialValues: CommerceI18nValues;
+                onChange: (next: CommerceI18nValues) => void;
+            }) => (
+                <>
+                    <button
+                        type="button"
+                        data-testid="i18n-trigger"
+                        onClick={() => onChange(I18N_EDITED)}
+                    >
+                        i18n
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="i18n-summary-en-trigger"
+                        onClick={() =>
+                            onChange({
+                                ...initialValues,
+                                summaryI18n: {
+                                    ...initialValues.summaryI18n,
+                                    en: 'Nuevo resumen EN'
+                                }
+                            })
+                        }
+                    >
+                        edit summary en only
+                    </button>
+                </>
+            )
+        };
+    }
+);
 
 // HOS-371: `richDescription` is a TipTap editor now. This suite pins PATCH body
 // shapes, so booting a real editor per render would only add runtime — the
@@ -525,7 +559,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             });
         });
 
-        it('sends all four i18n fields together when any locale is edited', async () => {
+        it('sends all four i18n fields together when EVERY one of them was actually edited', async () => {
             renderEditor('gastronomy', buildListing(), 'translations');
 
             fireEvent.click(screen.getByTestId('i18n-trigger'));
@@ -538,6 +572,56 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                 descriptionI18n: I18N_EDITED.descriptionI18n,
                 richDescriptionI18n: I18N_EDITED.richDescriptionI18n
             });
+        });
+
+        // HOS-902 — the key regression test: showing must never become writing.
+        //
+        // `parseCommerceI18nValues` shows the plain `name` column in the ES tab
+        // when `nameI18n` is empty (the panel-empties-on-ES bug this spec
+        // fixes). Before HOS-902, the four i18n fields were diffed and sent as
+        // ONE blob: editing only `summaryI18n.en` would re-send the WHOLE
+        // `i18nValues` object, including a `nameI18n` that carried nothing but
+        // that ES-fallback display text — silently writing "La Parrilla
+        // Original" into `nameI18n.es` even though the owner never touched the
+        // name tab. The per-field diff (HOS-902) must keep `nameI18n` (and the
+        // other two untouched fields) out of the payload entirely.
+        it('does not send an untouched i18n field, even when its ES tab shows fallback text (HOS-902)', async () => {
+            renderEditor(
+                'gastronomy',
+                buildListing({ name: 'La Parrilla Original' }),
+                'translations'
+            );
+
+            fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toStrictEqual({
+                summaryI18n: { es: '', en: 'Nuevo resumen EN', pt: '' }
+            });
+            expect(body).not.toHaveProperty('nameI18n');
+            expect(body).not.toHaveProperty('descriptionI18n');
+            expect(body).not.toHaveProperty('richDescriptionI18n');
+        });
+
+        // Same trap, `experience` vertical (HOS-902 scope explicitly covers
+        // both — `CommerceListingEditor` serves gastronomy and experience
+        // through the same `buildPatchPayload`/i18n code path, which is
+        // vertical-agnostic; the price/practical-info branches are the only
+        // ones that fork on `vertical`).
+        it('does not send an untouched i18n field for the experience vertical either (HOS-902)', async () => {
+            renderEditor('experience', buildListing({ name: 'Paseo Original' }), 'translations');
+
+            fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toStrictEqual({
+                summaryI18n: { es: '', en: 'Nuevo resumen EN', pt: '' }
+            });
+            expect(body).not.toHaveProperty('nameI18n');
+            expect(body).not.toHaveProperty('descriptionI18n');
+            expect(body).not.toHaveProperty('richDescriptionI18n');
         });
     });
 

@@ -228,6 +228,18 @@ function nullWhenEmpty(value: string): string | null {
  * cannot be produced by key reordering, only by equal content. Every value
  * compared here is rebuilt by spreading the previous object, so ordering is
  * stable in practice anyway.
+ *
+ * `i18nValues`'s four members are diffed and sent ONE AT A TIME (HOS-902), not
+ * as the single blob this used to be. `parseCommerceI18nValues` bakes an ES
+ * fallback into an untouched field (it shows the plain `name`/`summary`/
+ * `description`/`richDescription` column when the i18n twin is empty — see
+ * its JSDoc); a whole-object diff would then re-send that untouched, merely
+ * DISPLAYED field the moment any sibling field changed, silently writing the
+ * fallback text into a column the owner never actually translated. Per-field
+ * comparison is what keeps "showing" from becoming "writing": a field that
+ * only carries the fallback is identical between `current` and `baseline`
+ * (both are parsed the same way from the same load-time record), so it never
+ * shows up as dirty on its own.
  */
 function sameValue(a: unknown, b: unknown): boolean {
     return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -252,8 +264,14 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *    because it is what makes the clear explicit: every member is sent, and an
  *    emptied one is sent as `null` via `nullWhenEmpty`, because under merge an
  *    omitted key means "keep the stored value".
- *  - The four i18n fields travel together, as the translation panel edits them
- *    as one unit.
+ *  - The four i18n fields are diffed and sent INDEPENDENTLY (HOS-902; they used
+ *    to travel together as one unit, on the theory that "the translation panel
+ *    edits them together"). That theory broke once `parseCommerceI18nValues`
+ *    started filling an empty `es` sub-field with the plain-column fallback
+ *    (see its JSDoc): a whole-object diff would re-send an untouched sibling —
+ *    fallback text included — the moment ANY of the four changed, writing text
+ *    the owner never typed into a column they never touched. See `sameValue`'s
+ *    JSDoc above for the full trap.
  *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
  *    and clear to an explicit `null`. `priceUnit` now joins them (H-156 made the
  *    column nullable), so clearing it sends `null` rather than omitting the key
@@ -309,10 +327,22 @@ function buildPatchPayload({
         payload.richDescription = current.richDescription;
     }
 
-    if (!sameValue(current.i18nValues, baseline.i18nValues)) {
+    // HOS-902: per-field, NOT the whole `i18nValues` object at once — see the
+    // JSDoc above `buildPatchPayload` and above `sameValue` for why a
+    // whole-object diff is unsafe here (it can re-send an untouched sibling's
+    // ES-fallback display text as if the owner had typed it).
+    if (!sameValue(current.i18nValues.nameI18n, baseline.i18nValues.nameI18n)) {
         payload.nameI18n = current.i18nValues.nameI18n;
+    }
+    if (!sameValue(current.i18nValues.summaryI18n, baseline.i18nValues.summaryI18n)) {
         payload.summaryI18n = current.i18nValues.summaryI18n;
+    }
+    if (!sameValue(current.i18nValues.descriptionI18n, baseline.i18nValues.descriptionI18n)) {
         payload.descriptionI18n = current.i18nValues.descriptionI18n;
+    }
+    if (
+        !sameValue(current.i18nValues.richDescriptionI18n, baseline.i18nValues.richDescriptionI18n)
+    ) {
         payload.richDescriptionI18n = current.i18nValues.richDescriptionI18n;
     }
 
