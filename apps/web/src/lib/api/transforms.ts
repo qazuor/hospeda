@@ -45,7 +45,11 @@ import {
     type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
-import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
+import {
+    type I18nTextLike,
+    resolveI18nText,
+    resolveI18nTextWithLegacyFallback
+} from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
 import { SEO_SOURCE_LOCALE } from '../seo';
 
@@ -329,11 +333,16 @@ export function toAccommodationCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         type: String(item.type || item.accommodationType || ''),
         featuredImage,
         photoCount,
@@ -421,7 +430,11 @@ export function toAccommodationDetailedProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale
+        }),
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
@@ -490,14 +503,17 @@ export function toDestinationCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name ?? 'Sin nombre',
+        name:
+            resolveI18nTextWithLegacyFallback({
+                i18n: item.nameI18n as I18nTextLike | string | undefined,
+                legacy: item.name,
+                locale
+            }) || 'Sin nombre',
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
             locale
-        ),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
-            locale
-        ),
+        }),
         featuredImage,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
@@ -674,11 +690,16 @@ export function toEventCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         category: String(item.category || ''),
         date: {
@@ -771,11 +792,16 @@ export function toArticleCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        title: resolveI18nText((item.titleI18n as I18nTextLike | string) ?? item.title, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.content,
+        title: resolveI18nTextWithLegacyFallback({
+            i18n: item.titleI18n as I18nTextLike | string | undefined,
+            legacy: item.title,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.content,
+            locale
+        }),
         featuredImage,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
@@ -923,15 +949,21 @@ export function toAccommodationDetailPageProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
-        description: resolveI18nText(
-            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary,
             locale
-        ),
+        }),
+        description: resolveI18nTextWithLegacyFallback({
+            i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+            legacy: item.description,
+            locale
+        }),
         richDescription:
             item.richDescriptionI18n != null || item.richDescription != null
                 ? resolveI18nText(
@@ -2654,14 +2686,20 @@ export function toGastronomyCardProps({
         // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
         // while `name` holds the real value; without this guard the card and
         // detail headings render empty (a11y empty-heading violation, SPEC-308).
-        name:
-            resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale) ||
-            String(item.name ?? ''),
-        type: String(item.type || ''),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        // HOS-802: this used to be an inline `||` guard duplicated at every
+        // other i18n call site — now centralized in
+        // `resolveI18nTextWithLegacyFallback`.
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        type: String(item.type || ''),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
@@ -3044,12 +3082,17 @@ export function toExperienceCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        type: String(item.type || ''),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        type: String(item.type || ''),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
@@ -3231,15 +3274,20 @@ export function toPartnerDetailProps({
 }): PartnerDetailData {
     return {
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale
+        }),
         type: String(item.type || ''),
         description:
             item.description == null
                 ? null
-                : resolveI18nText(
-                      (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+                : resolveI18nTextWithLegacyFallback({
+                      i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+                      legacy: item.description,
                       locale
-                  ),
+                  }),
         logoUrl: item.logoUrl == null ? null : String(item.logoUrl),
         websiteUrl: item.websiteUrl == null ? null : String(item.websiteUrl),
         contactInfo:

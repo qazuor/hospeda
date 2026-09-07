@@ -697,6 +697,32 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.reviewsCount).toBe(23);
         });
 
+        // HOS-802: `nameI18n`/`summaryI18n`/`descriptionI18n` can be present but
+        // populated with every key empty (e.g. an interrupted ai-translate.service.ts
+        // run). Being truthy, the object used to defeat the `?? item.name` fallback
+        // in the caller and resolveI18nText's own es→en→pt walk found nothing either,
+        // so the field rendered as an empty string — an empty <title> on the
+        // accommodation detail page. resolveI18nTextWithLegacyFallback closes that
+        // gap by falling back to the legacy plain field when the i18n object
+        // resolves empty.
+        it('falls back to the legacy name/summary/description when the i18n object has every key empty', () => {
+            const item = {
+                ...makeFullItem(),
+                name: 'Casa del Sol',
+                summary: 'Legacy summary text',
+                description: 'Legacy description text',
+                nameI18n: { es: '', en: '', pt: '' },
+                summaryI18n: { es: '', en: '', pt: '' },
+                descriptionI18n: { es: '', en: '', pt: '' }
+            };
+
+            const result = toAccommodationDetailPageProps({ item, locale: 'es' });
+
+            expect(result.name).toBe('Casa del Sol');
+            expect(result.summary).toBe('Legacy summary text');
+            expect(result.description).toBe('Legacy description text');
+        });
+
         it('should map media images, and exclude a legacy bare-string video (no moderationState)', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
             expect(result.media.images).toEqual(['/img/a.jpg', '/img/b.jpg']);

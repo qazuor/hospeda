@@ -77,3 +77,84 @@ export function resolveI18nText(
 
     return '';
 }
+
+/**
+ * Resolves a localized text value the same way {@link resolveI18nText} does,
+ * but additionally falls back to a legacy plain-string field when the i18n
+ * object resolves to an empty string.
+ *
+ * ## Why this exists (HOS-802)
+ *
+ * `resolveI18nText` treats an i18n object as present as soon as it is
+ * truthy, so a nullish-coalescing chain like
+ * `resolveI18nText(item.nameI18n ?? item.name, locale)` never falls through
+ * to `item.name` when `nameI18n` exists but is populated with only empty
+ * strings (`{ es: '', en: '', pt: '' }`). That shape is reachable in
+ * production: `apps/api/src/services/ai-translate.service.ts` writes these
+ * i18n columns via an automated translation job, and a partial/failed run
+ * can leave the object present with every key empty. The caller's `??` never
+ * fires (the object is truthy), `resolveI18nText` walks its own `es → en →
+ * pt` fallback order and still finds nothing, and the field renders as an
+ * empty string — most visibly as an empty `<title>` on the accommodation
+ * detail page, which Google then indexes empty.
+ *
+ * This helper closes that gap by checking the RESULT of
+ * `resolveI18nText`, not just the truthiness of the i18n object: if that
+ * result is empty, it falls back to the stringified legacy value (and to
+ * the empty string only if both are empty). Callers that already carry an
+ * explicit last-resort literal (e.g. `'Sin nombre'`) can still layer it on
+ * top of this helper's `??`/`||` chain — this helper does not swallow that
+ * usage, it only fixes the truthy-but-empty-object case underneath it.
+ *
+ * ## Product decision — cross-locale fallback is UNCHANGED (HOS-802 AC-2)
+ *
+ * This helper delegates to `resolveI18nText`, which cross-falls through
+ * `es → en → pt` regardless of the requested locale — e.g. an accommodation
+ * whose `nameI18n` only has `en` populated will publish that English name
+ * on `/es/...` pages. The alternative (matching the FAQ resolution pattern,
+ * which never cross-falls) was raised as HOS-802's acceptance criterion 2
+ * and deliberately deferred: `resolveI18nText` is a generic resolver with
+ * many consumers, and changing its fallback policy is a broad behavior
+ * change that deserves its own issue and its own measurement of impact.
+ * Bundling it into this bug fix would turn a safe, narrow fix into an
+ * unreviewed policy change. **The cross-fall behavior stays as-is in this
+ * change** — this note exists so the decision is explicit and does not get
+ * re-litigated by someone reading the code in isolation.
+ *
+ * @param params - The i18n value, the legacy plain value, and the locale.
+ * @param params.i18n - An `I18nText` object (or partial), a plain string, null, or undefined.
+ * @param params.legacy - The legacy plain value to fall back to when `i18n` resolves empty. Stringified via `String()`; `null`/`undefined` become `''`.
+ * @param params.locale - The desired locale (`es`, `en`, or `pt`).
+ * @returns The resolved display string (never null/undefined).
+ *
+ * @example
+ * resolveI18nTextWithLegacyFallback({
+ *     i18n: { es: '', en: '', pt: '' },
+ *     legacy: 'Casa del Sol',
+ *     locale: 'es'
+ * }); // → 'Casa del Sol'
+ *
+ * @example
+ * resolveI18nTextWithLegacyFallback({
+ *     i18n: { es: 'Wifi', en: 'Wifi', pt: 'Wifi' },
+ *     legacy: 'wifi (legacy)',
+ *     locale: 'es'
+ * }); // → 'Wifi'
+ *
+ * @example
+ * resolveI18nTextWithLegacyFallback({ i18n: null, legacy: null, locale: 'es' }); // → ''
+ */
+export function resolveI18nTextWithLegacyFallback({
+    i18n,
+    legacy,
+    locale
+}: {
+    readonly i18n: I18nText | I18nTextLike | string | null | undefined;
+    readonly legacy: unknown;
+    readonly locale: string;
+}): string {
+    const resolved = resolveI18nText(i18n, locale);
+    if (resolved) return resolved;
+
+    return legacy == null ? '' : String(legacy);
+}
