@@ -36,10 +36,8 @@ import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
-import {
-    createRecurringAddonCheckout,
-    shouldUseRecurringAddonCheckout
-} from './addon.checkout.recurring';
+import { createRecurringAddonCheckout } from './addon.checkout.recurring';
+import { shouldUseRecurringAddonCheckout } from './addon.checkout.recurring-resolve';
 import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recordOrphanPayment } from './billing/orphan-payment-queue.service';
@@ -521,9 +519,14 @@ export async function createAddonCheckout(
         // Off (the production default, and the only value any environment has
         // today) this is `false` and everything below is the one-time
         // `Preference` path byte for byte.
-        const useRecurringCheckout = shouldUseRecurringAddonCheckout({
+        // Asynchronous because the third condition is a POSITIVE read of the
+        // catalog row's real `billing_interval` — `billingType` is derived by
+        // exclusion in `addon-catalog.mapper.ts`, so a NULL, an empty string or
+        // an operator's typo all present as `'recurring'`. With the flag off the
+        // function returns on its first line and issues no query.
+        const useRecurringCheckout = await shouldUseRecurringAddonCheckout({
             recurringAddonsEnabled: env.HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED === true,
-            billingType: addon.billingType
+            addon
         });
 
         // A promo code cannot be honoured on the recurring path, and refusing is
@@ -648,6 +651,9 @@ export async function createAddonCheckout(
                 billing,
                 addon,
                 customerId: input.customerId,
+                // Last tier of the payer-email precedence; the cached
+                // `mp_payer_email` that outranks it is read inside.
+                customerEmail: customer.email,
                 userId: input.userId,
                 planSubscription: {
                     id: activeSubscription.id,

@@ -237,6 +237,31 @@ export const purchaseAddonRoute = createProtectedRoute({
                 // family as the three above: well-formed, allowed to exist,
                 // just not processable in this combination.
                 RECURRING_ADDON_PROMO_UNSUPPORTED: 422,
+                // HOS-847 PR 4: the same 422 family, for the two ways a
+                // recurring sale can be impossible for reasons that are neither
+                // transient nor our runtime failing. Both used to answer
+                // `CHECKOUT_ERROR` → 500 `INTERNAL_ERROR`, which paged on-call
+                // for a data condition and hid the cause from the operator —
+                // exactly what rule R1 of `docs/error-contract.md` forbids: a
+                // 4xx is never `INTERNAL_ERROR`.
+                //
+                //  - NOT_SELLABLE: the catalog row carries no primary key, so
+                //    no `billing_mp_addon_plans` entry can be keyed for it.
+                //  - PLAN_UNRESOLVED: the customer's own subscription does not
+                //    resolve to a plan + price, which is what qzpay requires to
+                //    open a preapproval at all.
+                RECURRING_ADDON_NOT_SELLABLE: 422,
+                RECURRING_ADDON_PLAN_UNRESOLVED: 422,
+                // The resolved MercadoPago payer email cannot be used (it
+                // contains a `+`, which MP rejects outright). A caller-side
+                // input problem they can act on, mapped 400 exactly as
+                // `PAYER_EMAIL_UNSUPPORTED_CHARACTER` is on the plan checkout.
+                ADDON_PAYER_EMAIL_UNSUPPORTED: 400,
+                // A previous checkout for the same add-on is still in flight and
+                // could not be settled. Transient and retryable — and the
+                // alternative to answering it is opening a SECOND chargeable
+                // preapproval on top of the first.
+                ADDON_CHECKOUT_IN_FLIGHT: 409,
                 CUSTOMER_NOT_FOUND: 404,
                 INVALID_PROMO_CODE: 422,
                 ADDON_ALREADY_ACTIVE: 409,

@@ -8,6 +8,12 @@
  * and because the whole branch is dark: nothing here runs unless
  * `HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED` is the literal string `'true'`.
  *
+ * Two siblings carry the halves that are not creation:
+ * `addon.checkout.recurring-resolve.ts` (may this be sold recurringly, at which
+ * plan/price, bound to which email) and
+ * `addon.checkout.recurring-idempotency.ts` (what to do about a checkout the
+ * same buyer already has in flight).
+ *
  * ## Why a second preapproval and not a line item
  *
  * A MercadoPago preapproval carries exactly ONE
@@ -44,70 +50,20 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { AddonDefinition } from '@repo/billing';
 import { ProductDomainEnum } from '@repo/schemas';
 import type { ServiceResult } from '@repo/service-core';
+import { isBillingProviderError } from '../lib/billing-provider-error.js';
 import { apiLogger } from '../utils/logger.js';
-import type { AddonBillingIntervalLabel } from './billing/mp-addon-plan-provisioning.service.js';
+import { resolveRecurringAddonCheckoutIdempotency } from './addon.checkout.recurring-idempotency.js';
+import {
+    RECURRING_ADDON_BILLING_INTERVAL,
+    RECURRING_ADDON_CHECKOUT_TTL_MS,
+    RECURRING_ADDON_LOCAL_TRIAL_DAYS,
+    RECURRING_ADDON_PENDING_STATUS,
+    resolveAddonPayerEmail,
+    resolveSubscriptionPlanReference
+} from './addon.checkout.recurring-resolve.js';
 import { resolveCheckoutMpAddonPlanId } from './billing/mp-addon-plan-provisioning.service.js';
 import { createOwnPreapprovalSubscription } from './billing/own-preapproval-subscription-create.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
-
-/**
- * Cadence every recurring add-on preapproval is created on.
- *
- * A module constant, not an input, because nothing upstream can express the
- * other value: `PurchaseAddonInput` carries no interval, no route accepts one,
- * and no surface offers the annual price the catalog declares
- * (`AddonDefinition.annualPriceArs`). Making the annual cadence buyable is a
- * product change — a price to show, a control to pick it, and the cancellation
- * arithmetic that goes with a twelve-month commitment — not something this
- * checkout may infer. Until that exists, one cadence is the honest answer;
- * {@link AddonBillingIntervalLabel} already carries the other for the day it
- * lands.
- */
-const RECURRING_ADDON_BILLING_INTERVAL: AddonBillingIntervalLabel = 'monthly';
-
-/**
- * Status a recurring add-on purchase row is born in.
- *
- * `'pending'` is one of the four values the `billing_addon_purchases` CHECK
- * constraint already allows, so this needs no migration. It means exactly
- * "preapproval created, not yet authorized"; the webhook (PR 5) is what moves
- * it to `'active'` and applies the benefit.
- */
-export const RECURRING_ADDON_PENDING_STATUS = 'pending' as const;
-
-/**
- * How long the returned checkout window is advertised for.
- *
- * Mirrors `PENDING_PROVIDER_TTL_MS` in `subscription-checkout.service.ts`,
- * re-declared locally for the reason `abandoned-pending-subs.job.ts` re-declares
- * it too: importing that module pulls the whole subscription-checkout surface in
- * for one integer. There is no correlation row with a real TTL in the
- * own-preapproval flow, so this is a synthesized window, exactly as the
- * accommodation own-preapproval branch synthesizes its own.
- */
-const RECURRING_ADDON_CHECKOUT_TTL_MS = 30 * 60 * 1000;
-
-/**
- * Decide whether a checkout should take the recurring (preapproval) path.
- *
- * Both halves matter and neither is redundant: the flag is what keeps the
- * branch dark in production, and `billingType` is what keeps the two one-time
- * add-ons (`visibility-boost-7d` / `-30d`, which are genuinely single charges
- * with a `durationDays` window) on the `Preference` path even once the flag is
- * flipped.
- *
- * @param input.recurringAddonsEnabled - The resolved
- *   `HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED` boolean (already coerced from
- *   the literal `'true'` by the env schema).
- * @param input.billingType - The add-on's catalog billing type.
- * @returns `true` when the recurring preapproval path applies.
- */
-export function shouldUseRecurringAddonCheckout(input: {
-    readonly recurringAddonsEnabled: boolean;
-    readonly billingType: AddonDefinition['billingType'];
-}): boolean {
-    return input.recurringAddonsEnabled === true && input.billingType === 'recurring';
-}
 
 /**
  * Input for {@link createRecurringAddonCheckout}.
@@ -119,6 +75,11 @@ export interface CreateRecurringAddonCheckoutInput {
     readonly addon: AddonDefinition;
     /** Hospeda billing customer id (the qzpay customer id). */
     readonly customerId: string;
+    /**
+     * `billing_customers.email` — the signup address, and the last tier of the
+     * payer-email precedence (see {@link resolveAddonPayerEmail}).
+     */
+    readonly customerEmail: string;
     /** Buyer's user id, carried for tracing and for the webhook's context. */
     readonly userId: string;
     /**
@@ -126,9 +87,12 @@ export interface CreateRecurringAddonCheckoutInput {
      * `createAddonCheckout` already resolved for this add-on's product domain,
      * never another add-on's preapproval row.
      *
-     * Its `planId` is borrowed as the local `plan_id` of the add-on's own
-     * subscription row. See {@link resolveSubscriptionPlanReference} for why
-     * that borrowing is safe and why there is no alternative.
+     * BOTH halves are load-bearing and they go to different places:
+     *  - `planId` is borrowed as the local `plan_id` of the add-on's own
+     *    subscription row (see {@link resolveSubscriptionPlanReference});
+     *  - `id` is written to `billing_addon_purchases.subscription_id`, which is
+     *    the column every downstream reader interprets as "the plan
+     *    subscription this add-on runs on top of".
      */
     readonly planSubscription: { readonly id: string; readonly planId: string };
     /** Human-traceable order id, already minted by the caller. */
@@ -155,87 +119,20 @@ export interface RecurringAddonCheckoutResult {
 }
 
 /**
- * Resolve the `(planId, priceId)` pair qzpay-core requires to create a
- * `mode: 'paid'` subscription, from the customer's existing plan subscription.
- *
- * ## Why the add-on borrows the customer's plan
- *
- * `billing.subscriptions.create({ mode: 'paid' })` looks the plan up (config
- * map first, then `billing_plans`) and throws `QZPayValidationError` when
- * neither the plan nor a price resolves. An add-on has no `billing_plans` row
- * and must not get one: those rows are the public plan catalog
- * (`GET /api/v1/public/plans`, `ALL_PLANS`, the grant-matrix snapshots), and a
- * synthetic add-on plan would surface in all three.
- *
- * Borrowing is safe because the plan contributes NOTHING to what is charged.
- * With `providerPriceId` set — which this flow always sets, to the add-on's own
- * `preapproval_plan` — the MercadoPago adapter emits
- * `{ payer_email, external_reference, reason, back_url, notification_url,
- * preapproval_plan_id }` and returns early, never reading the price's amount,
- * currency or interval. The amount comes from the add-on's MP plan and only
- * from there.
- *
- * The one thing the borrowed plan DOES reach is the preapproval's `reason`,
- * which the adapter builds as `` `${plan.name} - Mensual` ``. For a plan-based
- * preapproval MercadoPago is expected to display the plan's own reason (the
- * add-on's, built by `buildAddonPlanReason`), but that is expectation, not
- * measurement — it is on the PR 8 staging smoke to confirm what the buyer
- * actually reads.
- *
- * @param input.billing - Resolved qzpay billing instance.
- * @param input.planIdOrSlug - `billing_subscriptions.plan_id`, which is a UUID
- *   on modern rows and a legacy slug on older ones (SPEC-168), so both are
- *   tried — matching `resolvePlanByIdOrSlug`'s dual-resolve in
- *   `addon.checkout.ts`.
- * @returns The ids to hand qzpay, or `null` when the plan or its prices cannot
- *   be resolved.
- */
-async function resolveSubscriptionPlanReference(input: {
-    readonly billing: QZPayBilling;
-    readonly planIdOrSlug: string;
-}): Promise<{ readonly planId: string; readonly priceId: string } | null> {
-    const plans = await input.billing.plans.listAll();
-    const plan =
-        plans.find((candidate) => candidate.id === input.planIdOrSlug) ??
-        plans.find((candidate) => candidate.name === input.planIdOrSlug);
-
-    if (!plan) {
-        return null;
-    }
-
-    const prices = plan.prices ?? [];
-    // Prefer the plain monthly price for the same reason `findMonthlyPrice`
-    // exists in the subscription checkout: the multi-month variants share the
-    // `'month'` interval with a different `intervalCount` and belong to
-    // plan-change flows. Falls back to any active price and then to the first
-    // one, because qzpay itself falls back to `prices[0]` when the id misses —
-    // and the price is never read once `providerPriceId` is set anyway.
-    const price =
-        prices.find((p) => p.active && p.billingInterval === 'month' && p.intervalCount === 1) ??
-        prices.find((p) => p.active) ??
-        prices[0];
-
-    if (!price) {
-        return null;
-    }
-
-    return { planId: plan.id, priceId: price.id };
-}
-
-/**
  * Insert the `billing_addon_purchases` row backing a recurring add-on, in
  * `'pending'`.
  *
  * Deliberately a plain INSERT with no entitlement work and no `'active'`
  * status: the partial unique index `idx_addon_purchases_active_unique` only
- * covers `status = 'active'`, so a pending row collides with nothing, and
- * nothing downstream reads a pending row as a granted benefit.
+ * covers `status = 'active'`, so nothing downstream reads a pending row as a
+ * granted benefit. That the index also does not stop a SECOND pending row is
+ * exactly why `resolveRecurringAddonCheckoutIdempotency` runs before this.
  *
  * @returns The new row's id.
  */
 async function insertPendingRecurringPurchase(input: {
     readonly customerId: string;
-    readonly subscriptionId: string;
+    readonly planSubscriptionId: string;
     readonly addon: AddonDefinition;
     readonly mpSubscriptionId: string;
     readonly orderId: string;
@@ -249,7 +146,20 @@ async function insertPendingRecurringPurchase(input: {
         .insert(billingAddonPurchases)
         .values({
             customerId: input.customerId,
-            subscriptionId: input.subscriptionId,
+            // The customer's PLAN subscription, NOT the add-on's own
+            // preapproval row. This column means "the subscription this add-on
+            // runs on top of", and four readers depend on that meaning:
+            // `addon-lifecycle-cancellation.service.ts` (revoke every add-on
+            // when the plan is cancelled), `billing/admin/qzpay-admin-hooks.ts`
+            // (twice), and the orphan phase of `cron/jobs/addon-expiry.job.ts`,
+            // which INNER JOINs on it. Writing the add-on's own subscription id
+            // here makes all four find zero rows: the plan gets cancelled, the
+            // limit stays granted forever, and — once PR 6 hangs the MercadoPago
+            // hard-cancel off that same query — the add-on's preapproval is
+            // never cancelled and keeps charging. That is risk R1 / HOS-751.
+            // The add-on's own preapproval is reachable through
+            // `mp_subscription_id` below, which is its proper home.
+            subscriptionId: input.planSubscriptionId,
             addonSlug: input.addon.slug,
             addonId: input.addon.id ?? null,
             status: RECURRING_ADDON_PENDING_STATUS,
@@ -288,15 +198,22 @@ async function insertPendingRecurringPurchase(input: {
  * Sequence, and why it is ordered this way:
  *  1. Resolve (provisioning on first use) the add-on's own
  *     `preapproval_plan` — at the catalog LIST price, never a discounted one.
- *  2. Resolve the `(planId, priceId)` qzpay needs, from the customer's plan.
- *  3. Create the preapproval via {@link createOwnPreapprovalSubscription},
+ *  2. Settle anything already in flight for this buyer + add-on: hand back the
+ *     SAME checkout when it is still live, or close it before opening another.
+ *  3. Resolve the `(planId, priceId)` qzpay needs, plus the binding payer email.
+ *  4. Create the preapproval via {@link createOwnPreapprovalSubscription},
  *     stamping `product_domain = 'addon'` so every sweep that assumes one
  *     subscription row per customer skips it, plus `metadata.addonSlug` so the
  *     webhook can tell what was bought.
- *  4. Insert the `'pending'` purchase row carrying `mp_subscription_id`.
+ *  5. Insert the `'pending'` purchase row carrying `mp_subscription_id`.
  *
- * Step 4 is fail-closed: if the local insert fails, the preapproval created in
- * step 3 is cancelled best-effort before the error is returned. A live
+ * Step 1 precedes step 2 because the idempotency check needs the resolved
+ * MercadoPago plan to tell a reusable checkout from one whose price has since
+ * drifted; the resolver is cached and idempotent (PR 3), so calling it first
+ * costs nothing.
+ *
+ * Step 5 is fail-closed: if the local insert fails, the preapproval created in
+ * step 4 is cancelled best-effort before the error is returned. A live
  * preapproval with no local row is the HOS-751 failure mode (a provider that
  * keeps charging for something nobody can see), and it is worse here than for a
  * plan, because PR 2 deliberately excluded add-on-domain rows from
@@ -317,6 +234,11 @@ export async function createRecurringAddonCheckout(
     // add-on's MP plan), but that refusal arrives as a 502-shaped provider
     // error. Catching it here says the true thing instead: this catalog row has
     // no primary key, so it cannot be sold recurringly at all.
+    //
+    // Unreachable through `createAddonCheckout`, on purpose:
+    // `shouldUseRecurringAddonCheckout` also fails closed on a missing id,
+    // because it cannot read the row's real `billing_interval` without one. This
+    // stays as the backstop for any other caller of this exported function.
     if (!addon.id) {
         apiLogger.error(
             { customerId, addonSlug: addon.slug },
@@ -325,27 +247,8 @@ export async function createRecurringAddonCheckout(
         return {
             success: false,
             error: {
-                code: 'CHECKOUT_ERROR',
+                code: 'RECURRING_ADDON_NOT_SELLABLE',
                 message: `Add-on '${addon.slug}' cannot be purchased on a recurring basis`
-            }
-        };
-    }
-
-    const planReference = await resolveSubscriptionPlanReference({
-        billing,
-        planIdOrSlug: planSubscription.planId
-    });
-
-    if (!planReference) {
-        apiLogger.error(
-            { customerId, addonSlug: addon.slug, planId: planSubscription.planId },
-            'HOS-847: recurring add-on checkout refused — could not resolve the plan/price pair qzpay needs from the customer subscription'
-        );
-        return {
-            success: false,
-            error: {
-                code: 'CHECKOUT_ERROR',
-                message: 'Could not resolve the billing plan backing your subscription'
             }
         };
     }
@@ -367,6 +270,13 @@ export async function createRecurringAddonCheckout(
             backUrl: input.successUrl
         });
     } catch (error) {
+        // A genuine MercadoPago failure is re-thrown so `createAddonCheckout`'s
+        // own catch maps it (502/503/504) and captures it to Sentry through
+        // `captureBillingError`, exactly as the one-time path does. Swallowing
+        // it into a typed result here is what kept these failures out of Sentry.
+        if (isBillingProviderError(error)) {
+            throw error;
+        }
         const message = error instanceof Error ? error.message : String(error);
         apiLogger.error(
             { customerId, addonSlug: addon.slug, error: message },
@@ -377,6 +287,76 @@ export async function createRecurringAddonCheckout(
             error: {
                 code: 'ADDON_PROVIDER_ERROR',
                 message: 'Could not prepare the recurring charge with the payment provider'
+            }
+        };
+    }
+
+    // Idempotency, before anything chargeable is created. See
+    // `addon.checkout.recurring-idempotency.ts` for why a double click would
+    // otherwise buy two preapprovals that both charge forever.
+    const idempotency = await resolveRecurringAddonCheckoutIdempotency({
+        billing,
+        customerId,
+        addonSlug: addon.slug,
+        mpPreapprovalPlanId
+    });
+
+    if (idempotency.kind === 'reuse') {
+        return {
+            success: true,
+            data: {
+                checkoutUrl: idempotency.checkout.checkoutUrl,
+                orderId,
+                addonId: addon.slug,
+                amount: addon.priceArs,
+                currency: 'ARS',
+                expiresAt: idempotency.checkout.expiresAt
+            }
+        };
+    }
+
+    if (idempotency.kind === 'blocked') {
+        return {
+            success: false,
+            error: {
+                code: 'ADDON_CHECKOUT_IN_FLIGHT',
+                message:
+                    'A previous add-on checkout is still being settled. Please try again in a few minutes.'
+            }
+        };
+    }
+
+    const planReference = await resolveSubscriptionPlanReference({
+        billing,
+        planIdOrSlug: planSubscription.planId
+    });
+
+    if (!planReference) {
+        apiLogger.error(
+            { customerId, addonSlug: addon.slug, planId: planSubscription.planId },
+            'HOS-847: recurring add-on checkout refused — could not resolve the plan/price pair qzpay needs from the customer subscription'
+        );
+        return {
+            success: false,
+            error: {
+                code: 'RECURRING_ADDON_PLAN_UNRESOLVED',
+                message: 'Could not resolve the billing plan backing your subscription'
+            }
+        };
+    }
+
+    const payerEmail = await resolveAddonPayerEmail({
+        customerId,
+        customerEmail: input.customerEmail
+    });
+
+    if (!payerEmail) {
+        return {
+            success: false,
+            error: {
+                code: 'ADDON_PAYER_EMAIL_UNSUPPORTED',
+                message:
+                    "The email on your billing account contains a '+', which MercadoPago does not accept as a payer email. Please contact support to change it."
             }
         };
     }
@@ -394,9 +374,24 @@ export async function createRecurringAddonCheckout(
             billingInterval: RECURRING_ADDON_BILLING_INTERVAL,
             paymentMethodReturnUrl: input.successUrl,
             notificationUrl: input.notificationUrl,
+            // HOS-937 step 2: `payer_email` is BINDING on a preapproval — only
+            // whoever uses that exact address can authorize the charge, and
+            // MercadoPago never says which one it expected. The four plan
+            // checkouts all resolve it; this path used to fall through to
+            // `customer.email`, which is the wrong address for anyone whose
+            // MercadoPago account lives under another one (HOS-208).
+            payerEmail,
+            // ZERO, stated. Omitted, qzpay-core inherits the BORROWED price's
+            // `trialDays` — 30, on the owner monthly price, since data-migration
+            // 0055 — and `@qazuor/qzpay-drizzle` would write a 30-day
+            // `trial_start`/`trial_end` onto this row for a trial MercadoPago
+            // was never asked for and never granted. See
+            // {@link RECURRING_ADDON_LOCAL_TRIAL_DAYS}. This is the LOCAL trial
+            // field; `freeTrialDays` (the one guard G-1 bans) does not exist on
+            // this path at all.
+            trialDays: RECURRING_ADDON_LOCAL_TRIAL_DAYS,
             // The add-on's OWN MercadoPago plan. This is what makes the
-            // preapproval charge the add-on's amount on the add-on's cadence,
-            // and what makes the borrowed `planReference` above inert.
+            // preapproval charge the add-on's amount on the add-on's cadence.
             providerPriceId: mpPreapprovalPlanId,
             // HOS-847 PR 2: without this the row defaults to
             // `'accommodation'`, which `subscriptionMatchesDomain` fails OPEN
@@ -420,6 +415,12 @@ export async function createRecurringAddonCheckout(
         mpSubscriptionId = created.subscription.providerSubscriptionIds?.mercadopago;
         checkoutUrl = created.checkoutUrl;
     } catch (error) {
+        // Same rule as the plan-resolution catch above: a real provider failure
+        // goes to Sentry through the caller's `captureBillingError`, not into a
+        // log line nobody is paged for.
+        if (isBillingProviderError(error)) {
+            throw error;
+        }
         const message = error instanceof Error ? error.message : String(error);
         apiLogger.error(
             { customerId, addonSlug: addon.slug, mpPreapprovalPlanId, error: message },
@@ -456,7 +457,7 @@ export async function createRecurringAddonCheckout(
     try {
         purchaseId = await insertPendingRecurringPurchase({
             customerId,
-            subscriptionId,
+            planSubscriptionId: planSubscription.id,
             addon,
             mpSubscriptionId,
             orderId,
@@ -491,6 +492,7 @@ export async function createRecurringAddonCheckout(
             addonSlug: addon.slug,
             addonId: addon.id,
             purchaseId,
+            planSubscriptionId: planSubscription.id,
             subscriptionId,
             mpSubscriptionId,
             mpPreapprovalPlanId,
