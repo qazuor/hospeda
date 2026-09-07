@@ -20,7 +20,12 @@
  * 3. **The mount has a fallback.** If the `react-dom/client` chunk never
  *    arrives, the promise would never settle and the caller's guard would
  *    swallow every subsequent link click in silence. Degrading to the native
- *    confirm keeps the user asked.
+ *    confirm keeps the user asked. That single `window.confirm()` below is the
+ *    ONE native dialog left in `apps/web`, and it is the reason
+ *    `scripts/check-no-native-dialogs.ts` (HOS-957) carries an exemption for
+ *    this file: the last-resort fallback of the thing that replaces the native
+ *    dialog cannot itself be replaced by it. The exemption is count-pinned at
+ *    exactly one, so a second call here fails CI just like a call anywhere else.
  *
  * @module lib/forms/show-confirmation-dialog
  */

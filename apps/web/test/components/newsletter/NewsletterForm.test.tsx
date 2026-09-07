@@ -28,6 +28,20 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+/**
+ * HOS-957: the inline unsubscribe asks through the product-styled
+ * `showConfirmationDialog()` instead of `window.confirm()`. Mocked rather than
+ * rendered — what these tests assert is the DELETE and the state machine
+ * either side of the answer, and `show-confirmation-dialog.test.tsx` owns the
+ * dialog itself. Rendering it here would also put a second "Desuscribirme"
+ * button on screen, which is the trigger these tests query by name.
+ */
+const showConfirmationDialogMock = vi.fn(async () => true);
+
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: (...args: readonly unknown[]) => showConfirmationDialogMock(...args)
+}));
+
 // Mock CSS modules — identity proxy so className lookups never throw
 vi.mock('../../../src/components/newsletter/NewsletterForm.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
@@ -131,6 +145,7 @@ describe('NewsletterForm', () => {
         // re-seed the cache to match the prop shape.
         vi.stubGlobal('fetch', vi.fn());
         sessionStorage.clear();
+        showConfirmationDialogMock.mockResolvedValue(true);
     });
 
     // =========================================================================
@@ -762,7 +777,7 @@ describe('NewsletterForm', () => {
                 })
             });
             vi.stubGlobal('fetch', fetchMock);
-            vi.spyOn(window, 'confirm').mockReturnValue(false);
+            showConfirmationDialogMock.mockResolvedValue(false);
 
             renderAuth();
             await waitFor(() => {
@@ -770,6 +785,14 @@ describe('NewsletterForm', () => {
             });
 
             fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            // The answer arrives on a microtask now (HOS-957: the dialog is a
+            // promise, not a blocking native call), so let it settle before
+            // asserting — otherwise this passes even when the user CONFIRMS,
+            // simply because the handler has not resumed yet.
+            await waitFor(() => {
+                expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);
+            });
 
             // Only the initial /status call should have happened — no DELETE.
             expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -792,7 +815,6 @@ describe('NewsletterForm', () => {
                     json: async () => ({ status: 'unsubscribed' })
                 });
             vi.stubGlobal('fetch', fetchMock);
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
 
             renderAuth();
             await waitFor(() => {
@@ -831,7 +853,6 @@ describe('NewsletterForm', () => {
                 })
                 .mockResolvedValueOnce({ ok: false, status: 500 });
             vi.stubGlobal('fetch', fetchMock);
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
 
             renderAuth();
             await waitFor(() => {

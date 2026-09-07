@@ -38,6 +38,18 @@ vi.mock('../../../src/lib/i18n', () => ({
     createT: (_locale: string) => (key: string, fallback?: string) => fallback ?? key
 }));
 
+/**
+ * HOS-957: the delete asks through the product-styled `showConfirmationDialog()`
+ * instead of `window.confirm()`. Mocked rather than rendered, because what these
+ * tests are about is the LoadingButton's busy state after the answer, not the
+ * dialog — `show-confirmation-dialog.test.tsx` owns the dialog itself.
+ */
+const showConfirmationDialogMock = vi.fn(async () => true);
+
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: (...args: readonly unknown[]) => showConfirmationDialogMock(...args)
+}));
+
 vi.mock('../../../src/store/toast-store', () => ({
     addToast: vi.fn()
 }));
@@ -77,8 +89,9 @@ function renderActions() {
 describe('CollectionDetailActions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Reset window.confirm to return true by default
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        // `clearAllMocks` wipes the implementation too, so re-arm the default
+        // answer: confirmed.
+        showConfirmationDialogMock.mockResolvedValue(true);
     });
 
     it('renders the Edit button', () => {
