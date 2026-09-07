@@ -149,6 +149,14 @@ vi.mock('../../../../../src/services/addon-lifecycle.service', () => ({
     revokeAddonForSubscriptionCancellation: vi.fn()
 }));
 
+// HOS-847 PR 6: the add-on's own MercadoPago preapproval. Defaults to
+// `no-preapproval`, which is what every one-time add-on resolves to — i.e. every
+// fixture in this file bar the recurring one added below — so the rest of the
+// suite is unaffected.
+vi.mock('../../../../../src/services/addon-preapproval-cancel', () => ({
+    closeAddonPreapproval: vi.fn()
+}));
+
 // SPEC-194 T-006/T-007: refund lifecycle service — mocked so hook tests can
 // verify delegation. The service itself is unit-tested in refund-lifecycle.service.test.ts.
 vi.mock('../../../../../src/services/refund-lifecycle.service', () => ({
@@ -196,6 +204,7 @@ import { getQZPayBilling } from '../../../../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../../../../src/middlewares/entitlement';
 import { adminBillingHooks } from '../../../../../src/routes/billing/admin/qzpay-admin-hooks';
 import { revokeAddonForSubscriptionCancellation } from '../../../../../src/services/addon-lifecycle.service';
+import { closeAddonPreapproval } from '../../../../../src/services/addon-preapproval-cancel';
 import { applyDowngradeRestrictionsOrWarn } from '../../../../../src/services/plan-downgrade-remediation.service';
 import { applyUpgradeRestorationsOrWarn } from '../../../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../../../src/services/refund-lifecycle.service';
@@ -381,6 +390,81 @@ function buildBillingMockWithPlans(planMap: Record<string, MockPlan>) {
 describe('adminBillingHooks.onBeforeSubscriptionCancel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // `clearAllMocks` wipes implementations set at declaration time, so the
+        // default is re-established here rather than in the vi.mock factory.
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({
+            closed: true,
+            kind: 'no-preapproval'
+        });
+    });
+
+    it('HOS-847: aborts the whole cancel when an add-on preapproval will not close', async () => {
+        // The BEFORE hook is the last point at which anything can refuse. Let
+        // the cancel through and qzpay commits it, the after-hook writes
+        // `canceled` onto the purchases, and MercadoPago keeps charging a
+        // preapproval no local row explains any more (HOS-751).
+        const { db } = buildDbMock({
+            activePurchases: [
+                {
+                    id: 'purchase-recurring',
+                    addonSlug: 'extra-accommodations-20',
+                    customerId: CUSTOMER_ID
+                }
+            ]
+        });
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({
+            closed: false,
+            reason: 'MP 502'
+        });
+
+        const result = await adminBillingHooks.onBeforeSubscriptionCancel!({
+            subscriptionId: SUBSCRIPTION_ID,
+            immediate: false,
+            ctx: buildContext()
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.reason).toContain('extra-accommodations-20');
+        }
+        // And the entitlement is left alone: removing it while the customer is
+        // still being charged is the worst of both.
+        expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+    });
+
+    it('HOS-847 CONTROL: the same add-on is revoked once the preapproval closes', async () => {
+        // Pairs with the assertion above — without it, a hook that had stopped
+        // revoking anything at all would satisfy the "not called" expectation.
+        const { db } = buildDbMock({
+            activePurchases: [
+                {
+                    id: 'purchase-recurring',
+                    addonSlug: 'extra-accommodations-20',
+                    customerId: CUSTOMER_ID
+                }
+            ]
+        });
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({ closed: true, kind: 'cancelled' });
+
+        const result = await adminBillingHooks.onBeforeSubscriptionCancel!({
+            subscriptionId: SUBSCRIPTION_ID,
+            immediate: false,
+            ctx: buildContext()
+        });
+
+        expect(result).toEqual({ ok: true });
+        expect(revokeAddonForSubscriptionCancellation).toHaveBeenCalledTimes(1);
+        expect(closeAddonPreapproval).toHaveBeenCalledWith(
+            expect.objectContaining({ source: 'admin-subscription-cancel' })
+        );
     });
 
     it('returns { ok: true } when no active addons exist (no DB writes)', async () => {

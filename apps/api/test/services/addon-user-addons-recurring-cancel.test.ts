@@ -33,7 +33,8 @@ const {
     mockAddonCatalogGetBySlug,
     mockRemoveAddonEntitlements,
     mockTxUpdateSet,
-    mockDbSelectRows
+    mockDbSelectRows,
+    mockLockedRows
 } = vi.hoisted(() => ({
     mockCloseAddonPreapproval: vi.fn(),
     mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
@@ -41,8 +42,10 @@ const {
     mockRemoveAddonEntitlements: vi.fn().mockResolvedValue({ success: true }),
     /** Captures every `update(...).set(payload)` inside the transaction. */
     mockTxUpdateSet: vi.fn(),
-    /** Row the purchase lookup answers with. */
-    mockDbSelectRows: { rows: [] as Array<Record<string, unknown>> }
+    /** Rows the purchase lookup (and the bulk pre-lock read) answer with. */
+    mockDbSelectRows: { rows: [] as Array<Record<string, unknown>> },
+    /** Rows the bulk revoke's `SELECT ... FOR UPDATE` answers with. */
+    mockLockedRows: { rows: [] as Array<Record<string, unknown>> }
 }));
 
 vi.mock('../../src/services/addon-preapproval-cancel', () => ({
@@ -86,11 +89,22 @@ vi.mock('@repo/db/schemas/billing', () => ({
     }
 }));
 
+/**
+ * A `where(...)` result that BOTH awaits to the rows (the bulk pre-read, which
+ * has no `.limit()`) and offers `.limit()` (the single-purchase lookup).
+ */
+const awaitableQuery = (rows: unknown[]) => {
+    const settled = Promise.resolve(rows) as Promise<unknown[]> & {
+        limit: () => Promise<unknown[]>;
+    };
+    settled.limit = () => Promise.resolve(rows);
+    return settled;
+};
+
 const dbStub = () => {
     const selectChain = {
         from: vi.fn(() => selectChain),
-        where: vi.fn(() => selectChain),
-        limit: vi.fn(() => Promise.resolve(mockDbSelectRows.rows))
+        where: vi.fn(() => awaitableQuery(mockDbSelectRows.rows))
     };
     return { select: vi.fn(() => selectChain) };
 };
@@ -112,7 +126,14 @@ vi.mock('@repo/db/client', () => ({
 vi.mock('@repo/db', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/db')>()),
     getDb: vi.fn(() => dbStub()),
-    withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({}))
+    withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
+        // The bulk revoke's `SELECT ... FOR UPDATE` goes through `tx.execute`,
+        // and answers with the SAME rows as the pre-lock read unless a test
+        // makes them diverge.
+        callback({
+            execute: vi.fn(async () => ({ rows: mockLockedRows.rows }))
+        })
+    )
 }));
 
 vi.mock('@repo/service-core', () => ({
@@ -128,7 +149,10 @@ vi.mock('@repo/service-core', () => ({
     })
 }));
 
-import { cancelUserAddon } from '../../src/services/addon.user-addons.js';
+import {
+    cancelUserAddon,
+    revokeAllAddonsForCustomer
+} from '../../src/services/addon.user-addons.js';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -274,5 +298,77 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         expect(mockTxUpdateSet).toHaveBeenCalledWith(
             expect.objectContaining({ status: 'canceled' })
         );
+    });
+});
+
+describe('revokeAllAddonsForCustomer — the close runs outside the row lock', () => {
+    /** One recurring purchase, as both the pre-lock read and the locked read see it. */
+    const RECURRING_ROW = {
+        id: PURCHASE_ID,
+        addonSlug: LIMIT_ADDON_DEF.slug,
+        mpSubscriptionId: PREAPPROVAL_ID
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockCancelAddonPurchaseRecord.mockResolvedValue(1);
+        mockDbSelectRows.rows = [RECURRING_ROW];
+        mockLockedRows.rows = [RECURRING_ROW];
+    });
+
+    it('cancels the purchase once its preapproval is closed', async () => {
+        mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'cancelled' });
+
+        const result = await revokeAllAddonsForCustomer({ customerId: CUSTOMER_ID });
+
+        expect(result).toEqual({ revokedCount: 1, failedIds: [] });
+        expect(mockCancelAddonPurchaseRecord).toHaveBeenCalledTimes(1);
+        // Outside the lock, before it: ADR-019 forbids holding row locks across
+        // third-party latency, so the ordering here is a constraint, not taste.
+        const closeOrder = mockCloseAddonPreapproval.mock.invocationCallOrder[0] ?? 0;
+        const cancelOrder = mockCancelAddonPurchaseRecord.mock.invocationCallOrder[0] ?? 0;
+        expect(closeOrder).toBeGreaterThan(0);
+        expect(cancelOrder).toBeGreaterThan(closeOrder);
+    });
+
+    it('reports the purchase as FAILED rather than cancelling it when the close is refused', async () => {
+        mockCloseAddonPreapproval.mockResolvedValue({ closed: false, reason: 'MP 502' });
+
+        const result = await revokeAllAddonsForCustomer({ customerId: CUSTOMER_ID });
+
+        expect(result.revokedCount).toBe(0);
+        expect(result.failedIds).toEqual([PURCHASE_ID]);
+        expect(mockCancelAddonPurchaseRecord).not.toHaveBeenCalled();
+    });
+
+    it('skips a purchase that appeared only inside the lock, since nobody closed it', async () => {
+        // The pre-lock read and the locked read can disagree: a purchase
+        // activated in between exists only in the second. Cancelling it would
+        // write the forbidden state — a terminal row over a preapproval no code
+        // path ever called MercadoPago about.
+        mockDbSelectRows.rows = [];
+        mockLockedRows.rows = [RECURRING_ROW];
+        mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'cancelled' });
+
+        const result = await revokeAllAddonsForCustomer({ customerId: CUSTOMER_ID });
+
+        expect(mockCloseAddonPreapproval).not.toHaveBeenCalled();
+        expect(result.failedIds).toEqual([PURCHASE_ID]);
+        expect(mockCancelAddonPurchaseRecord).not.toHaveBeenCalled();
+    });
+
+    it('CONTROL: a one-time purchase seen only inside the lock is still cancelled', async () => {
+        // The skip above keys on `mp_subscription_id`, not on membership of the
+        // pre-read. Without this case the rule would read as "anything the
+        // pre-read missed is dropped", which would silently break the ordinary
+        // account-deletion path for every one-time add-on.
+        const oneTimeRow = { ...RECURRING_ROW, mpSubscriptionId: null };
+        mockDbSelectRows.rows = [];
+        mockLockedRows.rows = [oneTimeRow];
+
+        const result = await revokeAllAddonsForCustomer({ customerId: CUSTOMER_ID });
+
+        expect(result).toEqual({ revokedCount: 1, failedIds: [] });
+        expect(mockCancelAddonPurchaseRecord).toHaveBeenCalledTimes(1);
     });
 });
