@@ -6,7 +6,7 @@
 |----------|-------|-------------|
 | `OWNER_TRIAL_DAYS` | `30` | Trial period in days for owner plans (owner-basico/pro/premium; raised from 14, owner decision 2026-08-15) |
 | `COMPLEX_TRIAL_DAYS` | `14` | Trial period in days for complex plans |
-| `TOURIST_TRIAL_DAYS` | `30` | Trial period in days for self-service tourist plans (tourist-plus / tourist-vip). A literal, independent of `OWNER_TRIAL_DAYS` since HOS-301 D1 (no longer aliased) |
+| `TOURIST_TRIAL_DAYS` | `30` | Trial period in days for self-service tourist plans (tourist-vip; tourist-plus retired by HOS-1224). A literal, independent of `OWNER_TRIAL_DAYS` since HOS-301 D1 (no longer aliased) |
 | `PAYMENT_GRACE_PERIOD_DAYS` | `3` | Reference constant for the initial-payment grace window; NOT enforced at runtime (qzpay-core uses `DUNNING_GRACE_PERIOD_DAYS` for both) |
 | `DUNNING_GRACE_PERIOD_DAYS` | `7` | Days of dunning process before subscription cancellation |
 | `DUNNING_RETRY_INTERVALS` | `[1, 3, 5, 7]` | Days after failure when retry attempts occur |
@@ -51,7 +51,6 @@
 | Slug | Export Name | Default |
 |------|-----------|---------|
 | `tourist-free` | `TOURIST_FREE_PLAN` | Yes |
-| `tourist-plus` | `TOURIST_PLUS_PLAN` | No |
 | `tourist-vip` | `TOURIST_VIP_PLAN` | No |
 
 ## EntitlementKey Enum

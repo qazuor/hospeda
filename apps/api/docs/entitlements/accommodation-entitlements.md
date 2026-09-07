@@ -60,7 +60,8 @@ free owner tier — Basic is the entry paid plan (with a 14-day trial):
 ### 5. `gateWhatsAppDisplay()`
 
 **Entitlement**: `CAN_CONTACT_WHATSAPP_DISPLAY`
-**Audience/tier**: This is a **tourist**-tier entitlement (granted starting at
+**Audience/tier**: This is a **tourist**-tier entitlement (granted by
+`tourist-vip`, the only paid tourist tier since HOS-1224 retired
 `tourist-plus`), not an owner-plan feature — it is not gated by owner tier at
 all. Every owner/complex plan also carries it, including Basic, because every
 owner/complex plan spreads the full tourist-VIP entitlement set (SPEC-216: an

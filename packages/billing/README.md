@@ -180,9 +180,12 @@ Each plan includes:
 
 ### Tourist Plans
 
-1. **tourist-free** - Free - 3 favorites, basic features
-2. **tourist-plus** - ARS $5,000/month - 20 favorites, no ads, price alerts
-3. **tourist-vip** - ARS $15,000/month - Unlimited favorites, concierge service
+1. **tourist-free** - Free - 5 favorites, basic features
+2. **tourist-vip** - ARS $15,000/month - Unlimited favorites, concierge service
+
+`tourist-plus` sat between these two until HOS-1224 retired it (cancelled as a
+product by HOS-301 D1, zero subscriptions in production). `tourist-vip` is the
+only paid tourist tier.
 
 ## Entitlements
 
