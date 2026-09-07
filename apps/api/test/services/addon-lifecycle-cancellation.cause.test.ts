@@ -32,29 +32,42 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockCatalogGetBySlug, mockClose, mockRevoke, mockSoftCancel, envStub } = vi.hoisted(() => ({
-    mockCatalogGetBySlug: vi.fn(),
-    mockClose: vi.fn(),
-    mockRevoke: vi.fn(),
-    mockSoftCancel: vi.fn(),
-    envStub: { HOSPEDA_ADDON_LIFECYCLE_ENABLED: true }
-}));
+const { mockCatalogGetBySlug, mockClose, mockRevoke, mockSoftCancel, mockLoggerError, envStub } =
+    vi.hoisted(() => ({
+        mockCatalogGetBySlug: vi.fn(),
+        mockClose: vi.fn(),
+        mockRevoke: vi.fn(),
+        mockSoftCancel: vi.fn(),
+        mockLoggerError: vi.fn(),
+        envStub: { HOSPEDA_ADDON_LIFECYCLE_ENABLED: true }
+    }));
 
-vi.mock('@repo/service-core', () => ({
+// HOS-702: PARTIAL mocks throughout. A whole-module literal leaves every export
+// it does not name as `undefined`, and the handler under test does most of its
+// work inside a try/catch — so a symbol added to one of these modules later
+// would not fail with "not a function", it would be swallowed and the assertion
+// below would keep passing over a code path that never ran. The three modules
+// mocked here are exactly the three the handler imports from, which is why they
+// are the three that can go dark this way.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
     AddonCatalogService: vi.fn().mockImplementation(function () {
         return { getBySlug: mockCatalogGetBySlug, list: vi.fn() };
     }),
     PlanService: vi.fn().mockImplementation(function () {
         return { getById: vi.fn(), getBySlug: vi.fn() };
-    }),
-    BILLING_EVENT_TYPES: { ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED' }
+    })
 }));
 
-vi.mock('@repo/db', () => ({
+vi.mock('@repo/db', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db')>()),
     withTransaction: vi.fn(
         async (callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) =>
             callback(existingTx)
     ),
+    // NOT covered by the spread: `@repo/db`'s barrel re-exports the schema
+    // tables through `./schemas/index.ts`, which `test/setup.ts` mocks globally
+    // down to two tables. This one has to be named.
     billingSubscriptionEvents: {
         subscriptionId: 'subscription_id',
         eventType: 'event_type',
@@ -63,7 +76,8 @@ vi.mock('@repo/db', () => ({
     }
 }));
 
-vi.mock('@repo/db/schemas/billing', () => ({
+vi.mock('@repo/db/schemas/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db/schemas/billing')>()),
     billingAddonPurchases: {
         id: 'id',
         customerId: 'customer_id',
@@ -83,7 +97,7 @@ vi.mock('@repo/db/schemas/billing', () => ({
 vi.mock('../../src/middlewares/entitlement', () => ({ clearEntitlementCache: vi.fn() }));
 
 vi.mock('../../src/utils/logger', () => ({
-    apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: mockLoggerError }
 }));
 
 vi.mock('../../src/utils/env', () => ({ env: envStub }));
@@ -314,6 +328,68 @@ describe('handleSubscriptionCancellationAddons — the cancellation cause (HOS-8
 
             // Left `active`, never written terminal — the next redelivery retries it.
             expect(terminalWrites(db)).toEqual([]);
+        });
+    });
+
+    describe('the anomaly: a recurring add-on with no period recorded', () => {
+        it('revokes it and REPORTS the anomaly to Sentry rather than guessing an end date', async () => {
+            // A row with a MercadoPago preapproval but no `current_period_end`
+            // is the same anomaly `cancelUserAddon` refuses outright on. Here
+            // refusing is not an option — the plan is already gone — so the
+            // branch revokes and reports. It had no coverage at all: the shared
+            // fixture ties `mpSubscriptionId` to a non-null period, so the
+            // combination that reaches it could not be built.
+            const anomalous = {
+                ...recurringPurchase(null),
+                // The pair the fixture cannot express: preapproval present,
+                // period absent.
+                mpSubscriptionId: PREAPPROVAL_ID
+            };
+            const db = createMockDb([anomalous]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            // Revoked, not deferred — there is no paid period to honour.
+            expect(mockSoftCancel).not.toHaveBeenCalled();
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(result.deferred).toEqual([]);
+
+            // And reported. `{ capture: true }` is not implicit: without that
+            // third argument the anomaly never reaches Sentry, and this branch
+            // exists for no other reason than to surface it.
+            expect(mockLoggerError).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    purchaseId: anomalous.id,
+                    mpSubscriptionId: PREAPPROVAL_ID,
+                    cause: 'voluntary'
+                }),
+                expect.stringContaining('no current_period_end'),
+                { capture: true }
+            );
+        });
+
+        it('CONTROL: a one-time add-on (no preapproval, no period) is NOT reported', async () => {
+            // Pairs with the test above. Every one-time add-on has a null
+            // period; reporting those would bury the real anomaly in noise, so
+            // the branch is gated on the preapproval being present.
+            const db = createMockDb([recurringPurchase(null)]);
+
+            await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(mockLoggerError).not.toHaveBeenCalled();
         });
     });
 
