@@ -16,6 +16,16 @@ import {
     DataTable,
     type DataTableColumn
 } from '@/components/table/DataTable';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -51,6 +61,10 @@ function BillingOwnerPromotionsPage() {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+    // Promotion pending a delete confirmation. Kept separate from
+    // `selectedPromotion` (shared by the edit/detail dialogs) so a delete
+    // request can't be clobbered by an edit/view click on another row.
+    const [promotionToDelete, setPromotionToDelete] = useState<OwnerPromotion | null>(null);
     const { count: activePromotionCount } = useActiveOwnerPromotionCount();
 
     const { data, isLoading, error } = useOwnerPromotionsQuery({
@@ -78,9 +92,13 @@ function BillingOwnerPromotionsPage() {
     };
 
     const handleDelete = (promotion: OwnerPromotion) => {
-        if (confirm(`${t('admin-billing.ownerPromotions.confirmDelete')} "${promotion.title}"?`)) {
-            deleteMutation.mutate(promotion.id);
-        }
+        setPromotionToDelete(promotion);
+    };
+
+    const confirmDeletePromotion = () => {
+        if (!promotionToDelete) return;
+        deleteMutation.mutate(promotionToDelete.id);
+        setPromotionToDelete(null);
     };
 
     const handleViewDetails = (promotion: OwnerPromotion) => {
@@ -413,6 +431,36 @@ function BillingOwnerPromotionsPage() {
                     onOpenChange={setDetailDialogOpen}
                     promotion={selectedPromotion}
                 />
+
+                <AlertDialog
+                    open={promotionToDelete != null}
+                    onOpenChange={(open) => {
+                        if (!open) setPromotionToDelete(null);
+                    }}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                {t('admin-billing.ownerPromotions.actions.delete')}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {t('admin-billing.ownerPromotions.confirmDelete')}{' '}
+                                <strong>{promotionToDelete?.title}</strong>
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setPromotionToDelete(null)}>
+                                {t('admin-billing.common.cancel')}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={confirmDeletePromotion}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                                {t('admin-billing.ownerPromotions.actions.delete')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </SidebarPageLayout>
     );

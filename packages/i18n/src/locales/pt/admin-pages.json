@@ -1307,6 +1307,7 @@
             "newAnnouncement": "Novo comunicado",
             "editAction": "Editar",
             "deleteAction": "Excluir",
+            "cancelAction": "Cancelar",
             "deleteConfirm": "Excluir este comunicado? Esta ação não pode ser desfeita.",
             "deleteError": "Não foi possível excluir o comunicado. Tente novamente.",
             "deleteSuccess": "Comunicado excluído"

@@ -1307,6 +1307,7 @@
             "newAnnouncement": "Nuevo anuncio",
             "editAction": "Editar",
             "deleteAction": "Eliminar",
+            "cancelAction": "Cancelar",
             "deleteConfirm": "¿Eliminar este anuncio? No se puede deshacer.",
             "deleteError": "No pudimos eliminar el anuncio. Intentá de nuevo.",
             "deleteSuccess": "Anuncio eliminado"

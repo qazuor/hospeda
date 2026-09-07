@@ -313,6 +313,8 @@
         "confirmActivateDesc": "You will force the activation of the add-on",
         "confirmActivateDescSuffix": "for the customer",
         "confirmActivateDescEnd": "This action will immediately change the status to \"active\".",
+        "confirmToggleActivate": "Activate this add-on?",
+        "confirmToggleDeactivate": "Deactivate this add-on?",
         "forceExpire": "Force expiration",
         "forceActivate": "Force activation",
         "toastExpiredTitle": "Add-on expired",

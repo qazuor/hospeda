@@ -21,6 +21,8 @@
 import { AddIcon, DeleteIcon, EditIcon } from '@repo/icons';
 import { type AnnouncementItem, type AnnouncementsValue, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { useState } from 'react';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,12 +57,18 @@ function AnnouncementsListPage() {
 
     const query = usePlatformSetting({ key: 'announcements.global' });
     const mutation = useUpdatePlatformSetting({ key: 'announcements.global' });
+    // Announcement id pending a delete confirmation.
+    const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
     const items: AnnouncementsValue = query.data?.row?.value ?? [];
 
     const handleDelete = (id: string): void => {
-        if (!window.confirm(t('admin-pages.announcements.list.deleteConfirm'))) return;
-        const next = items.filter((item) => item.id !== id);
+        setIdToDelete(id);
+    };
+
+    const confirmDelete = (): void => {
+        if (!idToDelete) return;
+        const next = items.filter((item) => item.id !== idToDelete);
         mutation.mutate(next, {
             onSuccess: () => {
                 toastSuccess(t('admin-pages.announcements.list.deleteSuccess'));
@@ -69,6 +77,7 @@ function AnnouncementsListPage() {
                 toastError(t('admin-pages.announcements.list.deleteError'));
             }
         });
+        setIdToDelete(null);
     };
 
     return (
@@ -148,6 +157,18 @@ function AnnouncementsListPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <DeleteConfirmDialog
+                open={idToDelete != null}
+                onOpenChange={(open) => {
+                    if (!open) setIdToDelete(null);
+                }}
+                title={t('admin-pages.announcements.list.deleteAction')}
+                description={t('admin-pages.announcements.list.deleteConfirm')}
+                cancelLabel={t('admin-pages.announcements.list.cancelAction')}
+                confirmLabel={t('admin-pages.announcements.list.deleteAction')}
+                onConfirm={confirmDelete}
+            />
         </div>
     );
 }
