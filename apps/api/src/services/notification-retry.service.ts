@@ -410,6 +410,30 @@ function reconstructPayload(record: FailedNotificationRecord): NotificationPaylo
                 renewalDate: (metadata.renewalDate as string) || ''
             } as NotificationPayload;
 
+        // HOS-1171: the same shape of bug as ADDON_EXPIRED above, with a worse
+        // payload. `CompGranted` branches on `hadActiveBilling`: TRUE says we
+        // cancelled the customer's automatic debit, that their card will not be
+        // charged again, and to write to us if a charge appears anyway. Falling
+        // through to `default` dropped both fields, so a retry sent the "you
+        // never gave us a card" variant to someone whose preapproval we had just
+        // hard-cancelled, and rendered `planName` as `undefined` beside it.
+        // `buildCompGrantMetadata` persists both on the way in; this reads them
+        // back out.
+        //
+        // `??` and NOT `||`: a persisted `false` is a real answer, and `||`
+        // would rewrite it to `true`, reintroducing the same lie from the other
+        // direction. The fallback for a genuinely absent value is `true`
+        // deliberately — of the two ways to be wrong, telling a never-subscribed
+        // customer about a debit they did not have is merely confusing, while
+        // withholding the cancellation notice from someone who WAS being charged
+        // is the harm this branch exists to prevent.
+        case NotificationType.COMP_GRANTED:
+            return {
+                ...basePayload,
+                planName: (metadata.planName as string) || 'tu plan',
+                hadActiveBilling: (metadata.hadActiveBilling as boolean | undefined) ?? true
+            } as NotificationPayload;
+
         default:
             // For other types, return base payload
             // May not have all required fields

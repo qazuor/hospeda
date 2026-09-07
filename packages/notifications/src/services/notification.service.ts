@@ -101,6 +101,7 @@ import type {
     TrialSeriesPayload
 } from '../types/notification.types.js';
 import { buildAddonLinkMetadata } from '../utils/addon-link-metadata.js';
+import { buildCompGrantMetadata } from '../utils/comp-grant-metadata.js';
 import {
     findUnresolvedPlaceholders,
     getSubject,
@@ -1037,7 +1038,12 @@ export class NotificationService {
                     messageId: messageId || null,
                     category: NOTIFICATION_CATEGORY_MAP[payload.type],
                     idempotencyKey: payload.idempotencyKey || null,
-                    ...buildAddonLinkMetadata(payload)
+                    ...buildAddonLinkMetadata(payload),
+                    // HOS-1171: same reason as the add-on fields above. A comp
+                    // email rebuilt on retry without `hadActiveBilling` reverts
+                    // to the "you never gave us a card" variant and drops the
+                    // only notice that we cancelled the customer's preapproval.
+                    ...buildCompGrantMetadata(payload)
                 }
             });
 
