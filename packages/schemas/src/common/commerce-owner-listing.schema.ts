@@ -56,6 +56,31 @@ export const CommerceOwnerListingSummarySchema = z.object({
     isPublic: z.boolean(),
 
     /**
+     * Whether the listing has a public page RIGHT NOW — BOTH clauses.
+     *
+     * `lifecycleState === ACTIVE && visibility === PUBLIC`, which is the
+     * predicate the public read and every protected route that prints something
+     * for a listing actually use. {@link isPublic} above is only the second half
+     * of it, and the two are not the same question: the admin schemas accept
+     * `lifecycleState` on its own, so a staff PATCH to INACTIVE that leaves
+     * `visibility` standing produces a row `isPublic` calls published and the API
+     * answers 404 for.
+     *
+     * Added by HOS-982 PR 2 rather than by widening `isPublic`, deliberately.
+     * `isPublic` drives `resolveCommerceListingCardState`, so changing its
+     * meaning would reclassify those rows as drafts and offer their owners a
+     * "Publicar y pagar" CTA — a billing path, on a listing staff deactivated on
+     * purpose. That is a product decision; this field is the narrow one, and it
+     * exists so a surface that must match the API's answer can ask the API's
+     * question.
+     *
+     * Optional, so a client parsing an older response still validates. A consumer
+     * that finds it absent MUST treat it as not published: falling back to
+     * `isPublic` would silently restore the single-clause bug it exists to remove.
+     */
+    hasPublicPage: z.boolean().optional(),
+
+    /**
      * The listing's current commerce subscription status, or `null`/absent
      * when it has never had one (still a `DRAFT` never taken to checkout).
      *

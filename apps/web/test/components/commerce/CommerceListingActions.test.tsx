@@ -57,6 +57,16 @@ vi.mock('../../../src/lib/commerce/owner-listings', () => ({
     startOwnerListingCheckout: vi.fn()
 }));
 
+// HOS-982 PR 2. The published branch mounts `ListingQrSheet`, which fetches its
+// symbol on mount. Without these two the suite made REAL network calls: the
+// vitest env sets `PUBLIC_API_URL` to `http://localhost:3001`, so a machine with
+// the dev API running had these tests talking to it, and they passed either way
+// because the panel swallows a failed image on purpose. A test that is green
+// whether or not it reached a live server is not testing anything about it.
+vi.mock('../../../src/lib/env', () => ({
+    getApiUrl: () => 'https://api.test'
+}));
+
 import { storePendingCheckoutSubId } from '../../../src/lib/billing/checkout-pending';
 import { startOwnerListingCheckout } from '../../../src/lib/commerce/owner-listings';
 
@@ -79,6 +89,15 @@ function buildListing(
 }
 
 beforeEach(() => {
+    // Nothing in this suite asserts on the QR panel's own request; the stub is
+    // here so it never leaves the process. `vi.stubGlobal` is reset per test by
+    // the shared setup, so it is installed for each one.
+    vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+            throw new Error('network disabled in this suite');
+        })
+    );
     mockStartCheckout.mockReset();
     mockStorePending.mockReset();
     Object.defineProperty(window, 'location', {
@@ -120,13 +139,62 @@ describe('CommerceListingActions', () => {
         it('offers the printable QR sheet on a published listing', () => {
             render(
                 <CommerceListingActions
-                    listing={buildListing({ isPublic: true, completeness: null })}
+                    listing={buildListing({
+                        isPublic: true,
+                        hasPublicPage: true,
+                        completeness: null
+                    })}
                     locale="es"
                 />
             );
 
             expect(screen.getByTestId('listing-qr-sheet')).toBeInTheDocument();
             expect(screen.getByTestId('listing-qr-sheet-download')).toBeInTheDocument();
+        });
+
+        /*
+         * HOS-982 PR 2. `isPublic` is visibility ALONE; the API also requires
+         * `lifecycleState === ACTIVE`. A staff PATCH to INACTIVE that leaves
+         * visibility standing produces this row, and it renders the published
+         * badge and the public link (both pre-existing, both out of this change's
+         * scope) — but the QR panel must not join them, because every request it
+         * would make answers 404. Before this fix the card carried three
+         * contradictory sentences and no possible action.
+         */
+        it('does NOT offer it when the listing is PUBLIC but not ACTIVE', () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(
+                <CommerceListingActions
+                    listing={buildListing({
+                        isPublic: true,
+                        hasPublicPage: false,
+                        completeness: null
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.getByTestId('listing-qr-sheet-unpublished')).toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+            // And nothing was asked of the API: the panel does not learn this
+            // from a 404, it is told.
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('treats an older answer with no hasPublicPage as NOT published', () => {
+            // Fail closed. Falling back to `isPublic` is precisely the
+            // single-clause bug the field was added to remove.
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ isPublic: true, completeness: null })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.getByTestId('listing-qr-sheet-unpublished')).toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
         });
     });
 

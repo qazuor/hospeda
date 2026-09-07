@@ -390,18 +390,27 @@ export function CommerceListingActions({
                  * (owner decision) — a QR on a door brings people to the platform,
                  * so restricting it would cost us rather than the subscriber.
                  *
-                 * `isPublished` is passed rather than assumed even though this
-                 * branch only renders for a published listing: the component's
-                 * unpublished copy must come from the card's own state, never from
-                 * the route's 404, which is deliberately identical for "not
-                 * yours", "does not exist" and "not published".
+                 * `isPublished` is `hasPublicPage` and NOT `isPublic`, even though
+                 * this branch only renders when `isPublic` is true. They answer
+                 * different questions: `isPublic` is visibility alone, while the
+                 * API also requires `lifecycleState === ACTIVE`, and a staff PATCH
+                 * to INACTIVE that leaves visibility standing produces a row where
+                 * the two disagree. Passing `isPublic` here put three contradictory
+                 * sentences on one card for that row — the panel mounted, asked for
+                 * the code, got the anti-enumeration 404, said "we could not show
+                 * the code but you can download the sheet anyway", and the download
+                 * then said "check that your listing is still published". None of
+                 * the three was actionable.
+                 *
+                 * Absent (an older API answer) is treated as NOT published rather
+                 * than falling back to `isPublic`, which would restore exactly that.
                  */}
                 <ListingQrSheet
                     vertical={listing.vertical}
                     listingId={listing.id}
                     slug={listing.slug}
                     locale={locale}
-                    isPublished={listing.isPublic}
+                    isPublished={listing.hasPublicPage ?? false}
                 />
                 {/*
                  * HOS-1057. Experiences only — a restaurant has nothing to

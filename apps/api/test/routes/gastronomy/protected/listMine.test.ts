@@ -8,7 +8,7 @@
  *   result is mapped to owner-listing summaries (vertical = 'gastronomy',
  *   isPublic derived from visibility)
  */
-import { CommerceEntityTypeEnum, VisibilityEnum } from '@repo/schemas';
+import { CommerceEntityTypeEnum, LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
@@ -21,6 +21,7 @@ const MOCK_LISTINGS = [
         name: 'La Parrilla',
         slug: 'la-parrilla',
         type: 'PARRILLA',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         visibility: VisibilityEnum.PUBLIC
     },
     {
@@ -28,7 +29,21 @@ const MOCK_LISTINGS = [
         name: 'Cafe Oculto',
         slug: 'cafe-oculto',
         type: 'CAFE',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         visibility: VisibilityEnum.PRIVATE
+    },
+    // HOS-982 PR 2: the row where the two clauses disagree. Reachable via
+    // a staff PATCH to INACTIVE that leaves `visibility` standing — the
+    // admin schemas accept `lifecycleState` on its own. It is PUBLIC, so
+    // `isPublic` calls it published; it has no public page, so every
+    // protected route that prints something for it answers 404.
+    {
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        name: 'Bodegon Pausado',
+        slug: 'bodegon-pausado',
+        type: 'BODEGON',
+        lifecycleState: LifecycleStatusEnum.INACTIVE,
+        visibility: VisibilityEnum.PUBLIC
     }
 ];
 
@@ -132,12 +147,22 @@ describe('GET /api/v1/protected/gastronomies/mine', () => {
                 data: { listings: Array<Record<string, unknown>> };
             };
             const listings = body.data.listings;
-            expect(listings).toHaveLength(2);
+            expect(listings).toHaveLength(3);
             expect(listings[0]?.vertical).toBe(CommerceEntityTypeEnum.GASTRONOMY);
             expect(listings[0]?.id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
             expect(listings[0]?.slug).toBe('la-parrilla');
             expect(listings[0]?.isPublic).toBe(true);
             expect(listings[1]?.isPublic).toBe(false);
+            // HOS-982 PR 2: `hasPublicPage` is BOTH clauses, and the third
+            // fixture is what tells it apart from `isPublic` — visibility
+            // says published, lifecycle says otherwise, and every protected
+            // route that prints something for that row answers 404. A card
+            // that asked only `isPublic` would offer its owner downloads
+            // that cannot work and render a code that cannot scan.
+            expect(listings[0]?.hasPublicPage).toBe(true);
+            expect(listings[1]?.hasPublicPage).toBe(false);
+            expect(listings[2]?.isPublic).toBe(true);
+            expect(listings[2]?.hasPublicPage).toBe(false);
             // HOS-166 W1: subscriptionStatus is resolved per listing (present
             // when a link row exists, null when the listing was never subscribed).
             expect(listings[0]?.subscriptionStatus).toBe('past_due');

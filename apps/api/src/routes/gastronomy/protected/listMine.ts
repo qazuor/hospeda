@@ -12,6 +12,7 @@
 import {
     CommerceEntityTypeEnum,
     CommerceOwnerListingListSchema,
+    LifecycleStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import {
@@ -62,6 +63,15 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
             slug: listing.slug,
             type: listing.type,
             isPublic: listing.visibility === VisibilityEnum.PUBLIC,
+            // HOS-982 PR 2. BOTH clauses, and a second field rather than a
+            // widening of `isPublic` above — see the schema for why. A row
+            // that is PUBLIC but not ACTIVE has no public page, and every
+            // protected route that prints something for a listing answers
+            // 404 for it; a card that asked only `isPublic` would offer
+            // downloads that cannot work and render a code that cannot scan.
+            hasPublicPage:
+                listing.lifecycleState === LifecycleStatusEnum.ACTIVE &&
+                listing.visibility === VisibilityEnum.PUBLIC,
             subscriptionStatus: subscriptionStatuses.get(listing.id) ?? null
         }));
 
