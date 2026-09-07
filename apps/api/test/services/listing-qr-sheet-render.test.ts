@@ -29,7 +29,7 @@
  */
 
 import { inflateSync } from 'node:zlib';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, type PDFFont, StandardFonts } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
 import type { ListingQrSheetContent } from '../../src/services/listing-qr-sheet/qr-sheet-content.js';
 import {
@@ -172,6 +172,115 @@ function drawnRects(bytes: Uint8Array): DrawnRect[] {
         });
     }
     return rects;
+}
+
+/**
+ * Vertical extent of a line of type, as a fraction of the font size.
+ *
+ * ---
+ * THE BLINDNESS THIS EXISTS TO REMOVE
+ *
+ * `drawnRects` above only ever sees FILLS — it keeps blocks containing `\nh\nf\n`
+ * — and pdf-lib writes text as `BT`/`Tf`/`Tm`/`Tj`/`ET`, which matches nothing
+ * there. So "nothing may enter the quiet zone" and "nothing is drawn inside the
+ * margin" both used to mean "no RECTANGLE does", while the renderer's own
+ * docblock claims the reserve exists so that no headline or invitation can creep
+ * in. Text is precisely what those two assertions were not looking at.
+ *
+ * A quiet zone is about INK, so the box below is the glyph box and not the
+ * typeset line box: 0.75em above the baseline and 0.25em below it. Both numbers
+ * are deliberately larger than the faces this sheet uses (Helvetica and
+ * Helvetica-Bold reach 0.718 and 0.207), so the box over-states what is drawn
+ * and the check errs toward complaining. Written as literals rather than read
+ * off the font for the same reason `GOLDEN_DARK_RUNS` is a literal: an
+ * assertion that re-derives its expectation from the thing under test moves
+ * with it.
+ */
+const GLYPH_ASCENT = 0.75;
+const GLYPH_DESCENT = 0.25;
+
+/** One drawn line of type, in PDF (bottom-left origin) page coordinates. */
+interface DrawnText {
+    readonly text: string;
+    readonly size: number;
+    readonly bold: boolean;
+    /** Left edge of the drawn line. */
+    readonly x: number;
+    /** Baseline, from the bottom of the page. */
+    readonly baseline: number;
+}
+
+/**
+ * Reads every line of type back out of the page's own text operators.
+ *
+ * pdf-lib emits one `q … BT … ET … Q` group per line: a fill colour, a
+ * `/<face> <size> Tf`, a `1 0 0 1 x y Tm` placing the baseline, and the string
+ * as a hex-encoded WinAnsi literal. All read from the file — nothing here asks
+ * the renderer where it thinks it drew anything.
+ */
+function drawnTexts(bytes: Uint8Array): DrawnText[] {
+    const stream = inflatedStreams(bytes).toString('latin1');
+    const texts: DrawnText[] = [];
+
+    for (const block of stream.split('BT\n')) {
+        const face = block.match(/\/(\S+?) ([\d.]+) Tf/);
+        const tm = block.match(/1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm/);
+        const shown = block.match(/<([0-9A-Fa-f]*)> Tj/);
+        if (!face || !tm || !shown) continue;
+
+        texts.push({
+            text: Buffer.from(shown[1] as string, 'hex').toString('latin1'),
+            size: Number(face[2]),
+            bold: (face[1] as string).includes('Bold'),
+            x: Number(tm[1]),
+            baseline: Number(tm[2])
+        });
+    }
+    return texts;
+}
+
+/**
+ * The two standard faces, embedded in a THROWAWAY document.
+ *
+ * Only their metrics are wanted, and taking them from a document this file
+ * creates keeps the width measurement independent of the renderer's own
+ * centring arithmetic: the test computes where the line reaches from the
+ * baseline it read out of the file, not from anything the layout told it.
+ */
+async function faces(): Promise<{ regular: PDFFont; bold: PDFFont }> {
+    const doc = await PDFDocument.create();
+    return {
+        regular: await doc.embedFont(StandardFonts.Helvetica),
+        bold: await doc.embedFont(StandardFonts.HelveticaBold)
+    };
+}
+
+/** Every drawn line of type as a box, in the same shape as {@link DrawnRect}. */
+async function textBoxes(bytes: Uint8Array): Promise<DrawnRect[]> {
+    const { regular, bold } = await faces();
+    return drawnTexts(bytes).map((run) => {
+        const font = run.bold ? bold : regular;
+        return {
+            // Ink, not paper: every line on this sheet is drawn in a grey, and
+            // the fill is only used to exclude the white ground.
+            fill: [0, 0, 0] as const,
+            x: run.x,
+            y: run.baseline - run.size * GLYPH_DESCENT,
+            width: font.widthOfTextAtSize(run.text, run.size),
+            height: run.size * (GLYPH_ASCENT + GLYPH_DESCENT)
+        };
+    });
+}
+
+/**
+ * EVERYTHING drawn on the page: filled rectangles and lines of type alike.
+ *
+ * This is what the two geometric guarantees below have to be stated over. A
+ * check that reads only one of the two families is not a weaker check, it is a
+ * different one — and the one it turned out to be was not the one advertised.
+ */
+async function drawnBoxes(bytes: Uint8Array): Promise<DrawnRect[]> {
+    return [...drawnRects(bytes), ...(await textBoxes(bytes))];
 }
 
 /** The dark modules — the only pure-black filled rectangles on the page. */
@@ -342,14 +451,22 @@ describe('the sheet has to survive a home printer (HOS-982)', () => {
         expect(QR_ERROR_CORRECTION).toBe('Q');
     });
 
-    it('draws nothing inside the margin a home printer cannot reach', async () => {
+    it('draws nothing — rectangle OR line of type — inside the printer’s margin', async () => {
         const bytes = await renderListingQrSheetPdf({ content: content(), qrUrl: QR_URL });
+        const boxes = await drawnBoxes(bytes);
 
-        for (const rect of drawnRects(bytes)) {
-            expect(rect.x).toBeGreaterThanOrEqual(MARGIN);
-            expect(rect.y).toBeGreaterThanOrEqual(MARGIN);
-            expect(rect.x + rect.width).toBeLessThanOrEqual(A4_WIDTH - MARGIN);
-            expect(rect.y + rect.height).toBeLessThanOrEqual(A4_HEIGHT - MARGIN);
+        // Vacuity check: the sheet draws six lines of type (a one-line name,
+        // the headline, one line of invitation for this fixture, the brand, the
+        // tagline and the domain). If the text parser stops matching, this says
+        // so rather than letting the loop pass over rectangles alone — which is
+        // exactly how this assertion read for its first four commits.
+        expect(drawnTexts(bytes).length).toBeGreaterThanOrEqual(6);
+
+        for (const box of boxes) {
+            expect(box.x).toBeGreaterThanOrEqual(MARGIN);
+            expect(box.y).toBeGreaterThanOrEqual(MARGIN);
+            expect(box.x + box.width).toBeLessThanOrEqual(A4_WIDTH - MARGIN);
+            expect(box.y + box.height).toBeLessThanOrEqual(A4_HEIGHT - MARGIN);
         }
     });
 
@@ -361,8 +478,10 @@ describe('the sheet has to survive a home printer (HOS-982)', () => {
 
         // Nothing else drawn on the page may enter the quiet zone — a code
         // without one is a code many scanners simply refuse. The white ground
-        // itself is excluded: it IS the quiet zone.
-        const intruders = drawnRects(bytes).filter((rect) => {
+        // itself is excluded: it IS the quiet zone. TEXT is in scope here and
+        // was not: the renderer reserves this space so that "no headline or
+        // invitation can creep into it", and a headline is not a rectangle.
+        const intruders = (await drawnBoxes(bytes)).filter((rect) => {
             const isWhiteGround = rect.fill[0] === 1 && rect.fill[1] === 1 && rect.fill[2] === 1;
             if (isWhiteGround) return false;
             const overlapsX =
@@ -378,6 +497,32 @@ describe('the sheet has to survive a home printer (HOS-982)', () => {
         });
 
         expect(intruders).toEqual([]);
+    });
+
+    /**
+     * What the assertion above is worth, in points.
+     *
+     * A pass proves nothing intrudes TODAY; it does not say by how much, and a
+     * clearance of a tenth of a point would read exactly the same. So the gap
+     * between the code's silence and the nearest ink above it is measured and
+     * pinned to a floor — which is also what makes the check above demonstrably
+     * non-vacuous, since the number it produces moves with the layout.
+     */
+    it('keeps the nearest line of type a real distance clear of the silence', async () => {
+        const bytes = await renderListingQrSheetPdf({ content: content(), qrUrl: QR_URL });
+        const box = symbolBox(bytes);
+        const module = Math.min(...darkModuleRects(bytes).map((rect) => rect.width));
+        const quietTop = box.y + box.height + module * 4;
+
+        const above = (await textBoxes(bytes)).filter((run) => run.y >= quietTop);
+        expect(above.length).toBeGreaterThan(0);
+        const clearance = Math.min(...above.map((run) => run.y - quietTop));
+
+        // The headline's descenders stop here. `GAP_HEADLINE_TO_QR` is what
+        // buys this, so shrinking that constant shrinks this number one for
+        // one — and taking it below zero is what actually pushes ink into the
+        // silence, which the assertion above then catches.
+        expect(clearance).toBeGreaterThan(1);
     });
 
     it('is printed entirely in greys, so a black-and-white printer loses nothing', async () => {
