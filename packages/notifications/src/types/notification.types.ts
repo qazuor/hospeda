@@ -87,6 +87,15 @@ export enum NotificationType {
     COURTESY_STARTED = 'courtesy_started',
     /** The gifted window closed and normal billing resumed. */
     COURTESY_ENDED = 'courtesy_ended',
+    /**
+     * An operator granted a permanently-complimentary subscription (HOS-1171).
+     *
+     * Deliberately NOT a fourth `COURTESY_*` member. A courtesy is finite and
+     * keeps the preapproval; a comp destroys it and never ends. "Billing
+     * resumes when the gift ends" is false for a comp, and sharing the type
+     * with courtesy is the shortest path to that sentence being mailed.
+     */
+    COMP_GRANTED = 'comp_granted',
     PLAN_DOWNGRADE_LIMIT_WARNING = 'plan_downgrade_limit_warning',
     PAYMENT_RETRY_WARNING = 'payment_retry_warning',
     ADDON_CANCELLATION = 'addon_cancellation',
@@ -623,6 +632,22 @@ export interface CourtesyPayload extends BaseNotificationPayload {
     readonly endsAt?: string;
     /** Localised date of the next charge. Only meaningful on COURTESY_ENDED. */
     readonly nextBillingDate?: string;
+}
+
+/**
+ * Payload for the complimentary-subscription grant email (HOS-1171).
+ *
+ * One field beyond the plan name, and it is the one that matters: whether the
+ * customer had a live MercadoPago preapproval that this grant cancelled. A
+ * paying customer needs to be told their card will not be charged again — a
+ * customer who never had one must not read a sentence about a card they never
+ * gave us.
+ */
+export interface CompGrantedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.COMP_GRANTED;
+    readonly planName: string;
+    /** True when a live preapproval was hard-cancelled as part of this grant. */
+    readonly hadActiveBilling: boolean;
 }
 
 /** Payload for subscription lifecycle notifications (cancellation, pause, reactivation) */
@@ -1337,6 +1362,7 @@ export type NotificationPayload =
     | SubscriptionEventPayload
     | SubscriptionLifecyclePayload
     | CourtesyPayload
+    | CompGrantedPayload
     | AddonEventPayload
     | TrialEventPayload
     | TrialSeriesPayload

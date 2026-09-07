@@ -17,6 +17,7 @@ import {
     AiCostThresholdAlert,
     AllianceClaimInvite,
     AllianceLeadDecision,
+    CompGranted,
     ContactSubmissionEmail,
     CourtesyEnded,
     CourtesyGranted,
@@ -70,6 +71,7 @@ import type {
     AiCostThresholdAlertPayload,
     AllianceClaimInvitePayload,
     AllianceLeadDecisionPayload,
+    CompGrantedPayload,
     ContactSubmissionPayload,
     CourtesyPayload,
     FeedbackReportPayload,
@@ -705,6 +707,19 @@ export class NotificationService {
                     recipientName: payload.recipientName,
                     planName: p.planName,
                     endsAt: p.endsAt ?? '',
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            // HOS-1171. Same warning as the courtesy block above: a type with a
+            // template but no case here renders nothing and the email is
+            // silently never sent.
+            case 'comp_granted': {
+                const p = payload as CompGrantedPayload;
+                return CompGranted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    hadActiveBilling: p.hadActiveBilling,
                     baseUrl: this.deps.siteUrl
                 });
             }

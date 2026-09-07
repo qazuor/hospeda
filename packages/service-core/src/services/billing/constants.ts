@@ -293,6 +293,20 @@ export const BILLING_EVENT_TYPES = {
      */
     ADMIN_SUBSCRIPTION_COURTESY_GRANTED: 'ADMIN_SUBSCRIPTION_COURTESY_GRANTED',
     /**
+     * Fired when an admin grants a permanently-complimentary subscription
+     * (HOS-1171). Distinct from
+     * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COURTESY_GRANTED} because
+     * the two do opposite things to the preapproval: a courtesy PAUSES it and a
+     * cron resumes it at full price, a comp HARD-CANCELS it and nothing brings
+     * it back. Reading a comp as a courtesy in the audit trail would mean
+     * waiting for a resume that can never happen.
+     *
+     * Written on the NEW comp row. A subscription superseded by the grant gets
+     * its own {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED} row, so
+     * both halves of the swap are visible.
+     */
+    ADMIN_SUBSCRIPTION_COMP_GRANTED: 'ADMIN_SUBSCRIPTION_COMP_GRANTED',
+    /**
      * Fired by the expiry cron when a courtesy window closes and the
      * preapproval is resumed (HOS-180). Distinct from
      * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED} for the same

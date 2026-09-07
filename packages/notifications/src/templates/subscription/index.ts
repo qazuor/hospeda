@@ -1,3 +1,5 @@
+export type { CompGrantedProps } from './comp-granted.js';
+export { CompGranted } from './comp-granted.js';
 export type { CourtesyEndedProps } from './courtesy-ended.js';
 export { CourtesyEnded } from './courtesy-ended.js';
 export type { CourtesyGrantedProps } from './courtesy-granted.js';
