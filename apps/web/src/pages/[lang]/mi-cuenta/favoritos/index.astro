@@ -11,6 +11,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { UserFavoritesList } from '@/components/account/UserFavoritesList.client';
 import { CreateCollectionCTA } from '@/components/account/CreateCollectionCTA.client';
+import { CollectionUsageMeter } from '@/components/account/CollectionUsageMeter.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -98,25 +99,11 @@ const isAtLimit =
 // and are passed to `CreateCollectionCTA` as separate props so it can render
 // the right message for each.
 
-const usageLabel =
-	collectionUsage !== null
-		? t('account.favorites.collections.usage', '{{current}} / {{max}}', {
-				current: collectionUsage.current,
-				max: collectionUsage.max
-			})
-		: null;
-
-const limitReachedLabel =
-	isAtLimit && collectionUsage
-		? t('account.favorites.collections.limit_reached', 'Límite alcanzado ({{max}})', {
-				max: collectionUsage.max
-			})
-		: null;
-
-const usageRatio =
-	collectionUsage !== null && collectionUsage.max > 0
-		? Math.min(collectionUsage.current / collectionUsage.max, 1)
-		: 0;
+// The "X / max" counter + progress bar used to be rendered inline here.
+// HOS-999 moved it to the CollectionUsageMeter island so it can react to a
+// `hospeda:collection-created` broadcast (see collection-created-event.ts)
+// without a full page reload — `collectionUsage` below is passed as its
+// SSR-seeded `initial` prop (SSR-first principle, apps/web/CLAUDE.md).
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="favoritos">
@@ -126,33 +113,11 @@ const usageRatio =
 				<AccountPageHeader title={title} />
 			</div>
 
-			{
-				usageLabel !== null && collectionUsage !== null && (
-					<div
-						class:list={[
-							'collection-usage',
-							{ 'collection-usage--warning': isAtLimit }
-						]}
-						aria-label={limitReachedLabel ?? usageLabel}
-						title={limitReachedLabel ?? usageLabel}
-					>
-						<span class="collection-usage__text">{usageLabel}</span>
-
-						<div
-							class="collection-usage__bar-track"
-							role="progressbar"
-							aria-valuenow={collectionUsage.current}
-							aria-valuemin={0}
-							aria-valuemax={collectionUsage.max}
-						>
-							<div
-								class="collection-usage__bar-fill"
-								style={`width: ${(usageRatio * 100).toFixed(1)}%`}
-							/>
-						</div>
-					</div>
-				)
-			}
+			<CollectionUsageMeter
+				client:load
+				locale={locale}
+				initial={collectionUsage}
+			/>
 
 			<CreateCollectionCTA
 				client:load
@@ -179,44 +144,10 @@ const usageRatio =
 		flex: 1 1 auto;
 	}
 
-	/* Collection usage counter */
-	.collection-usage {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		flex-shrink: 0;
-	}
-
-	.collection-usage__text {
-		font-family: var(--font-sans);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--core-muted-foreground);
-		white-space: nowrap;
-	}
-
-	.collection-usage--warning .collection-usage__text {
-		color: var(--warning, oklch(0.72 0.15 60));
-	}
-
-	.collection-usage__bar-track {
-		width: 80px;
-		height: 6px;
-		background-color: var(--core-muted-foreground-a15);
-		border-radius: var(--radius-pill);
-		overflow: hidden;
-	}
-
-	.collection-usage__bar-fill {
-		height: 100%;
-		background-color: var(--brand-primary);
-		border-radius: var(--radius-pill);
-		transition: width 0.3s ease;
-	}
-
-	.collection-usage--warning .collection-usage__bar-fill {
-		background-color: var(--warning, oklch(0.72 0.15 60));
-	}
+	/* Collection usage counter styling now lives in
+	   CollectionUsageMeter.module.css — the markup moved to that island
+	   (HOS-999) and Astro's scoped CSS only reaches markup literally in this
+	   file, not a React island's rendered output. */
 
 	@media (max-width: 480px) {
 		.favoritos-header {
