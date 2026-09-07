@@ -243,6 +243,13 @@ vi.mock('../../src/services/addon-lifecycle.service', () => ({
     revokeAddonForSubscriptionCancellation: vi.fn()
 }));
 
+// HOS-847 PR 6: the orphan sweep writes a terminal status, so it must close the
+// add-on's own MercadoPago preapproval first. Defaults to `no-preapproval` —
+// every one-time add-on, i.e. every fixture here bar the recurring one.
+vi.mock('../../src/services/addon-preapproval-cancel', () => ({
+    closeAddonPreapproval: vi.fn()
+}));
+
 // Mock getAddonBySlug (billing config resolver).
 // SPEC-309 T-016 (T-026 regression tests): also provides EntitlementKey — the
 // job's grantedFeaturedListing check does
@@ -295,6 +302,7 @@ import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { AddonExpirationService } from '../../src/services/addon-expiration.service';
 import { revokeAddonForSubscriptionCancellation } from '../../src/services/addon-lifecycle.service';
+import { closeAddonPreapproval } from '../../src/services/addon-preapproval-cancel';
 import { lookupCustomerDetails } from '../../src/utils/customer-lookup';
 import { sendNotification } from '../../src/utils/notification-helper';
 
@@ -318,6 +326,13 @@ function createMockContext(overrides?: Partial<CronJobContext>): CronJobContext 
 describe('Add-on Expiry Cron Job', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // HOS-847 PR 6: re-established after clearAllMocks, which wipes the
+        // implementation set in the vi.mock factory.
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({
+            closed: true,
+            kind: 'no-preapproval'
+        });
 
         // Restore getDb to the shared mock object so tests that do NOT call
         // vi.mocked(getDb).mockReturnValue(...) still get a usable DB instance.
@@ -1453,6 +1468,45 @@ describe('Add-on Expiry Cron Job', () => {
                 }
             };
         }
+
+        it('HOS-847: skips an orphaned recurring addon whose preapproval will not close', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+
+            const purchase = {
+                id: 'purchase-orphan-recurring',
+                customerId: 'cust-orphan',
+                addonSlug: 'extra-accommodations-20',
+                metadata: null,
+                mpSubscriptionId: 'preapproval-orphan'
+            };
+
+            const { db } = buildMockDb([purchase]);
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: false,
+                reason: 'MP 502'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert: this sweep's own filter is `status = 'active'`, so writing
+            // the row terminal would remove it from the only query that would
+            // ever come back for it — the structural reason HOS-751 could not be
+            // recovered. Skipping leaves it exactly where the next tick looks.
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationRetried).toBe(0);
+            expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+        });
 
         it('should revoke an orphaned active addon and set status to canceled', async () => {
             // Arrange

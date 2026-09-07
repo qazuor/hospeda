@@ -47,6 +47,10 @@ import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { activateRecurringAddonPurchase } from '../../../services/addon-recurring-activation.service.js';
 import { findRecurringAddonPurchaseByPreapprovalId } from '../../../services/addon-recurring-period.js';
 import { settleRecurringAddonCharge } from '../../../services/addon-recurring-renewal.service.js';
+import {
+    isTerminalProviderStatus,
+    revokeRecurringAddonForProviderTerminal
+} from '../../../services/addon-recurring-revoke.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import type { MPAuthorizedPaymentDetails } from '../../../utils/mp-authorized-payment.js';
 import { mapMpStatusToQZPayStatus } from '../../../utils/mp-payment-status.js';
@@ -79,16 +83,19 @@ export type AddonRoutingOutcome =
  * MercadoPago or looks at `billing_subscriptions`.
  *
  * On an authorized preapproval, activates the pending purchase — idempotently;
- * see `addon-recurring-activation.service.ts`. Every other provider status is
+ * see `addon-recurring-activation.service.ts`. On a TERMINAL one it revokes what
+ * the add-on granted (PR 6, `addon-recurring-revoke.service.ts`). The rest are
  * recognised, logged and left alone:
  *
- *  - `paused` / `canceled` / `finished` — revoking what the customer bought is
- *    PR 6's (cancellation) and PR 7's (reconciler) job, and doing half of it
- *    here would leave the QZPay entitlement granted while the purchase row said
- *    otherwise. `loadEntitlements` reads QZPay's tables, not this one, so a row
- *    marked `canceled` without a `revokeBySource` call keeps the benefit alive.
- *    **Obligation left for PR 7**: its reconciler is currently the only thing
- *    that will ever notice one of these.
+ *  - `canceled` / `finished` — MercadoPago will never charge this preapproval
+ *    again, so the benefit goes with it. The revocation calls
+ *    `revokeBySource` and only then writes the row: `loadEntitlements` reads
+ *    QZPay's tables and not this one, so marking the row without revoking would
+ *    leave the customer's feature alive forever while every admin view showed it
+ *    cancelled.
+ *  - `paused` — MercadoPago's pause is REVERSIBLE and the buyer can resume it in
+ *    one tap; revoking here would be harsher than anything the plan flow does.
+ *    Left for PR 7's reconciler to age out.
  *  - `past_due` — kept out of subscription dunning by design (plan OQ-3).
  *  - `pending` — the buyer has not authorized yet; nothing to do.
  *
@@ -132,6 +139,18 @@ export async function routeAddonPreapprovalEvent(params: {
                 billing,
                 purchase,
                 activatedAt: new Date(),
+                triggerSource
+            });
+        } else if (isTerminalProviderStatus(mpSubscription.status)) {
+            // HOS-847 PR 6: MercadoPago ended this preapproval — the buyer
+            // cancelled it on MP's own site, or MP finished it. Revoke what the
+            // add-on granted. NOT a hard-cancel call back at the provider: it is
+            // already terminal there, and this is the "mirroring a status we
+            // just read" case the HOS-753 guard exempts by design.
+            await revokeRecurringAddonForProviderTerminal({
+                billing,
+                purchase,
+                providerStatus: mpSubscription.status,
                 triggerSource
             });
         } else {
