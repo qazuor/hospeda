@@ -76,7 +76,10 @@ const CUSTOMER_FIXTURE = {
 function createPlan() {
     return {
         id: PLAN_ID,
+        // `name` IS the slug on a qzpay plan; `metadata.displayName` is what
+        // every seeded plan carries and what the buyer must read (HOS-1221 D4).
         name: 'owner-premium',
+        metadata: { displayName: 'Anfitrión Premium' },
         prices: [ANNUAL_PRICE]
     };
 }
@@ -170,6 +173,10 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
         // like `expect.objectContaining`, is blind to a field that should not
         // be there.
         expect(call).not.toHaveProperty('providerPriceId');
+        // HOS-1221 D4: the buyer-visible name, not the slug. The adapter
+        // appends " - Anual" to it.
+        expect(call.planDisplayName).toBe('Anfitrión Premium');
+        expect(call.planDisplayName).not.toBe('owner-premium');
         // Accommodation annual, like monthly, relies on the column's own DB
         // default ('accommodation') — no override, no domain link row.
         expect(call).not.toHaveProperty('externalReference');

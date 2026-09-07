@@ -209,6 +209,9 @@ describe('initiatePartnerMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_EN
         // `toMatchObject` cannot see a field that should not be there.
         expect(call).not.toHaveProperty('providerPriceId');
         expect(call).not.toHaveProperty('externalReference');
+        // HOS-1221 D4: the buyer-visible name, not `plan.name` (the slug).
+        expect(call.planDisplayName).toBe('Partner Gold');
+        expect(call.planDisplayName).not.toBe('partner-listing');
     });
 
     it('writeDomainLinkRow inserts into partnerSubscriptions with the SAME transaction client', async () => {

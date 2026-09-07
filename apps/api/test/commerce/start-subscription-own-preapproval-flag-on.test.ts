@@ -221,6 +221,11 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
         // `toMatchObject` cannot see a field that should not be there.
         expect(call).not.toHaveProperty('providerPriceId');
         expect(call).not.toHaveProperty('externalReference');
+        // HOS-1221 D4: what the buyer reads on MercadoPago's page. Without it
+        // the adapter builds the reason from `plan.name`, which here is the
+        // slug — the buyer saw "gastronomy-basico - Mensual".
+        expect(call.planDisplayName).toBe('Comercios');
+        expect(call.planDisplayName).not.toBe('gastronomy-basico');
     });
 
     it('writeDomainLinkRow inserts into entitySubscriptions with the SAME transaction client', async () => {
