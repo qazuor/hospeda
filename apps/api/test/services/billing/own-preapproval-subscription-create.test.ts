@@ -126,6 +126,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -145,6 +148,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -187,6 +193,9 @@ describe('createOwnPreapprovalSubscription', () => {
             billingInterval: 'annual',
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -211,6 +220,9 @@ describe('createOwnPreapprovalSubscription', () => {
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl,
+                // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+                // the price row's own trialDays and mint a phantom local trial.
+                trialDays: 0,
                 db: db as any
             })
         ).rejects.toThrow('connection reset');
@@ -232,6 +244,9 @@ describe('createOwnPreapprovalSubscription', () => {
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl,
+                // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+                // the price row's own trialDays and mint a phantom local trial.
+                trialDays: 0,
                 db: db as any
             })
         ).rejects.toThrow('connection reset');
@@ -255,6 +270,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             pendingDiscount,
             db: db as any
         });
@@ -277,6 +295,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             pendingTrialExtension,
             db: db as any
         });
@@ -300,6 +321,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -318,6 +342,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -341,6 +368,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             productDomain: 'gastronomy',
             db: db as any
         });
@@ -367,6 +397,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             productDomain: 'partner',
             domainMetadata: { partnerId: 'partner-123' },
             writeDomainLinkRow,
@@ -401,6 +434,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             mpPreapprovalPlanId: 'mp_plan_recorded_only',
             db: db as any
         });
@@ -442,6 +478,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             providerPriceId: 'mp_plan_gastronomy',
             productDomain: 'gastronomy',
             domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'ent-1' },
@@ -475,6 +514,9 @@ describe('createOwnPreapprovalSubscription', () => {
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl,
+                // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+                // the price row's own trialDays and mint a phantom local trial.
+                trialDays: 0,
                 productDomain: 'partner',
                 domainMetadata: { partnerId: 'partner-123' },
                 writeDomainLinkRow,

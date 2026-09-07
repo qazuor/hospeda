@@ -45,7 +45,10 @@ import {
 } from '@qazuor/qzpay-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RECURRING_ADDON_LOCAL_TRIAL_DAYS } from '../../src/services/addon.checkout.recurring-resolve';
-import { createOwnPreapprovalSubscription } from '../../src/services/billing/own-preapproval-subscription-create';
+import {
+    type CreateOwnPreapprovalSubscriptionInput,
+    createOwnPreapprovalSubscription
+} from '../../src/services/billing/own-preapproval-subscription-create';
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -244,7 +247,17 @@ describe("HOS-847 — the add-on row does not inherit the borrowed price's trial
         const { billing, persisted } = buildBilling();
 
         // Act — the pre-fix call shape.
-        await createOwnPreapprovalSubscription(addonPreapprovalInput(billing));
+        //
+        // HOS-1221 D3 made `trialDays` REQUIRED on this input precisely so that
+        // shape can no longer be written by accident: the four plan checkouts
+        // and the retry recovery had all omitted it and were minting the same
+        // phantom trial this suite documents for the add-on. The cast is what
+        // lets the control still reproduce the pre-fix call — it is the ONLY
+        // place in the repo that may do it, and it is a negative control, not a
+        // call path.
+        await createOwnPreapprovalSubscription(
+            addonPreapprovalInput(billing) as unknown as CreateOwnPreapprovalSubscriptionInput
+        );
 
         // Assert — this is the defect, reproduced. Without this control a green
         // subject below could mean the fixture simply never writes a trial.

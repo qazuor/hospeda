@@ -26,7 +26,22 @@
  *     travelled nested inside `auto_recurring` or `metadata` would satisfy a
  *     shallow check and still reach MercadoPago.
  *
- * ## The same body also pins HOS-1221
+ * ## The same body also pins two HOS-1221 invariants
+ *
+ * Both are about the same create body and the same four call paths, so they
+ * live here rather than in 200 duplicated lines of scaffolding elsewhere.
+ *
+ * The second one is a LOCAL trial, not a provider one, and the distinction is
+ * the whole point: omitting `trialDays` makes qzpay-core inherit the resolved
+ * price's own value (30 on every owner-* / tourist-* monthly row in staging)
+ * and the storage adapter then writes a `trial_end` a month out. Nothing asks
+ * MercadoPago for anything — MP charges on day 1 — but the webhook's
+ * `deriveTrialingStatus` reads that future date and reports the paying
+ * customer as `trialing` for thirty days. The banned-key scan below cannot see
+ * it: `trialDays` is deliberately NOT a banned key (it never reaches the
+ * provider), which is exactly why it needed its own assertion.
+ *
+ * ## The plan id (HOS-1221 D1)
  *
  * Payload 2 is the only place in the suite tree where the REAL preapproval body
  * can be read for all four verticals at once, so it also asserts the absence of
@@ -184,7 +199,14 @@ const TRIAL_DECLARING_PLAN = {
             intervalCount: 1,
             active: true,
             unitAmount: 10000,
-            currency: 'ARS'
+            currency: 'ARS',
+            // HOS-1221 D3: the LOCAL trial length carried by the price row —
+            // 30 on every owner-* and tourist-* monthly row in staging
+            // (measured 2026-09-07, 5 of 5). It is what qzpay-core inherits
+            // when a caller omits `trialDays`, and it is the reason the
+            // phantom-trial assertions below are load-bearing rather than
+            // trivially true.
+            trialDays: 30
         },
         {
             id: 'price-y',
@@ -196,6 +218,11 @@ const TRIAL_DECLARING_PLAN = {
         }
     ]
 };
+
+/** The monthly price the accommodation/commerce/partner checkouts resolve. */
+const MONTHLY_PRICE_FIXTURE = TRIAL_DECLARING_PLAN.prices[0] as { readonly trialDays?: number };
+/** The annual price `initiatePaidAnnualSubscription` resolves — no trial, like staging. */
+const ANNUAL_PRICE_FIXTURE = TRIAL_DECLARING_PLAN.prices[1] as { readonly trialDays?: number };
 
 const MONTHLY_URLS = {
     paymentMethodReturnUrl: 'https://hospeda.test/es/suscriptores/checkout/success/',
@@ -301,6 +328,59 @@ function preapprovalCreateBody(): Record<string, unknown> {
 function expectNoPlanIdAnywhere(payload: Record<string, unknown>): void {
     expect(payload).not.toHaveProperty('providerPriceId');
     expect(payload).not.toHaveProperty('preapproval_plan_id');
+}
+
+/**
+ * qzpay-core's trial inheritance, replicated (`packages/core/src/billing.ts`):
+ *
+ *   if (input.trialDays !== undefined) createInput.trialDays = input.trialDays;
+ *   else if (price?.trialDays != null)  createInput.trialDays = price.trialDays;
+ *
+ * Replicated rather than asserted through, because the fallback happens INSIDE
+ * qzpay, below the `billing.subscriptions.create` boundary this suite stubs.
+ * The model is itself under test ("the trial-window model" describe below), so
+ * a model that always answered "no trial" cannot make these assertions vacuous.
+ */
+function inheritedTrialDays(
+    body: Record<string, unknown>,
+    price: { readonly trialDays?: number }
+): number | undefined {
+    if (body.trialDays !== undefined) {
+        return body.trialDays as number;
+    }
+    return price.trialDays ?? undefined;
+}
+
+/**
+ * The storage adapter's window write (`@qazuor/qzpay-drizzle`,
+ * `drizzle-storage.adapter.ts`):
+ *
+ *   const hasTrial = input.trialDays !== undefined && input.trialDays > 0;
+ *   trialStart: hasTrial ? now : null
+ *   trialEnd:   hasTrial ? now + trialDays : null
+ *
+ * A window is what `deriveTrialingStatus` later reads to turn MercadoPago's
+ * `authorized` into a local `trialing`.
+ */
+function trialWindowDays(trialDays: number | undefined): number | null {
+    return trialDays !== undefined && trialDays > 0 ? trialDays : null;
+}
+
+/**
+ * HOS-1221 D3: the row this checkout creates must be born with NO local trial
+ * window, on a card MercadoPago charges on day 1.
+ *
+ * Asserted on the create body plus the price the checkout resolved, because
+ * that pair is exactly what decides `trial_start`/`trial_end`. Path C makes the
+ * same promise by writing hard NULLs
+ * (`pending-provider-subscription-create.ts`); this branch has to make it by
+ * stating the zero, since omission inherits the price's 30.
+ */
+function expectNoPhantomTrialWindow(
+    body: Record<string, unknown>,
+    price: { readonly trialDays?: number }
+): void {
+    expect(trialWindowDays(inheritedTrialDays(body, price))).toBeNull();
 }
 
 // --- Suite ----------------------------------------------------------------
@@ -423,6 +503,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             expect(body.priceId).toBe('price-m');
             expectNoTrialAnywhere(body);
             expectNoPlanIdAnywhere(body);
+            expectNoPhantomTrialWindow(body, MONTHLY_PRICE_FIXTURE);
         });
 
         it('commerce monthly builds a preapproval body with no trial field anywhere', async () => {
@@ -442,6 +523,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             expect(body.mode).toBe('paid');
             expectNoTrialAnywhere(body);
             expectNoPlanIdAnywhere(body);
+            expectNoPhantomTrialWindow(body, MONTHLY_PRICE_FIXTURE);
         });
 
         it('partner monthly builds a preapproval body with no trial field anywhere', async () => {
@@ -460,6 +542,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             expect(body.mode).toBe('paid');
             expectNoTrialAnywhere(body);
             expectNoPlanIdAnywhere(body);
+            expectNoPhantomTrialWindow(body, MONTHLY_PRICE_FIXTURE);
         });
 
         it('accommodation annual builds a preapproval body with no trial field anywhere', async () => {
@@ -481,6 +564,58 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             expect(body.billingInterval).toBe('annual');
             expectNoTrialAnywhere(body);
             expectNoPlanIdAnywhere(body);
+            expectNoPhantomTrialWindow(body, ANNUAL_PRICE_FIXTURE);
+        });
+
+        /**
+         * The four assertions above would all pass with a checkout that simply
+         * never mentioned `trialDays` — as long as the price it resolved
+         * carried none. This one says the stronger thing for the branch that is
+         * actually exposed: the accommodation monthly price DOES carry 30, and
+         * the checkout still has to state its own zero.
+         */
+        it('states trialDays: 0 explicitly on a price that carries 30 (HOS-1221 D3)', async () => {
+            const billing = makeBilling();
+
+            await initiatePaidMonthlySubscription({
+                customerId: CUSTOMER_ID,
+                userId: 'user-1',
+                planSlug: 'owner-premium',
+                // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+                billing: billing as any,
+                urls: MONTHLY_URLS,
+                // biome-ignore lint/suspicious/noExplicitAny: drizzle client stub
+                db: DB_STUB as any
+            });
+
+            const body = preapprovalCreateBody();
+            expect(MONTHLY_PRICE_FIXTURE.trialDays).toBe(30);
+            expect(body.trialDays).toBe(0);
+        });
+    });
+
+    /**
+     * The model the phantom-trial assertions run on. Without these, a helper
+     * that always answered "no window" would make all four of them vacuous —
+     * the same reason "the detector itself" exists for the banned-key scan.
+     */
+    describe('the trial-window model', () => {
+        it('inherits the price trial when the caller omits trialDays — the bug', () => {
+            expect(trialWindowDays(inheritedTrialDays({}, { trialDays: 30 }))).toBe(30);
+        });
+
+        it('yields no window when the caller states zero, even on a 30-day price', () => {
+            expect(
+                trialWindowDays(inheritedTrialDays({ trialDays: 0 }, { trialDays: 30 }))
+            ).toBeNull();
+        });
+
+        it('an explicit non-zero still opens a window — the model is not hardwired to null', () => {
+            expect(trialWindowDays(inheritedTrialDays({ trialDays: 14 }, {}))).toBe(14);
+        });
+
+        it('yields no window when neither side carries a trial', () => {
+            expect(trialWindowDays(inheritedTrialDays({}, {}))).toBeNull();
         });
     });
 
