@@ -1,28 +1,34 @@
 /**
  * GUEST-06 — Exclusive deals & VIP promotions (HOS-21).
  *
- * Actors: tourist USER on the free / Plus / VIP tiers; a HOST owner.
+ * Actors: tourist USER on the free / VIP tiers; a HOST owner.
  * Tags: @p1 @guest @billing
  *
  * Preconditions:
- *   - Suite seed has the tourist billing plans (`tourist-plus`, `tourist-vip`)
- *     and the `owner-pro` plan in `billing_plans` with `name = slug` and
- *     livemode = false. Seeded by packages/seed/src/required/billingPlans.seed.ts.
+ *   - Suite seed has the `tourist-vip` and `owner-pro` billing plans in
+ *     `billing_plans` with `name = slug` and livemode = false. Seeded by
+ *     packages/seed/src/required/billingPlans.seed.ts.
  *   - Suite seed has at least 1 ACTIVE, publicly-visible (destination-linked)
  *     accommodation available via getAnyCityDestinationId().
  *
  * Validates (HOS-21 T-016 subtasks):
  *   - Free tourist: GET /exclusive-deals → 403 ENTITLEMENT_REQUIRED (API), and
  *     the account page shows the upgrade CTA with no deal items rendered (UI).
- *   - Tourist-plus: sees the plus-tier deal on a visible accommodation, does
- *     NOT see the vip-only deal, and never sees the deal on a
- *     visibility-restricted accommodation.
  *   - Tourist-vip: sees BOTH the plus-tier and vip-only deals (visible
  *     accommodation), the vip-only one carries the "Solo VIP" badge, and the
- *     restricted-accommodation deal is still excluded for this tier too.
+ *     restricted-accommodation deal is still excluded for this tier too. The
+ *     "plus-tier" deal here is an `owner_promotions.tourist_audience = 'plus'`
+ *     row, not a subscription on the `tourist-plus` billing plan — that enum
+ *     value is untouched by HOS-1224, which only retired the billing plan.
  *   - Owner (HOST, owner-pro): can mark a new promotion VIP-only via the
  *     "Exclusiva para plan VIP" toggle on the create form, and the created
  *     row persists with tourist_audience = 'vip'.
+ *
+ * HOS-1224 retired the `tourist-plus` billing plan this spec used to also
+ * cover — a subscriber-facing test asserting that a `tourist-plus` subscriber
+ * sees only the plus-tier deal. tourist-vip is now the only paid tourist
+ * tier, so that test is gone; the vip test above still exercises the
+ * plus-vs-vip audience layering on its own.
  *
  * @see HOS-21 spec.md T-016
  */
@@ -98,7 +104,6 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', () => {
     const userIds: string[] = [];
-    let plusPlanId: string | null = null;
     let vipPlanId: string | null = null;
     let ownerProPlanId: string | null = null;
 
@@ -109,7 +114,6 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     const promoIds: string[] = [];
 
     test.beforeAll(async () => {
-        plusPlanId = await resolvePlanIdBySlug('tourist-plus');
         vipPlanId = await resolvePlanIdBySlug('tourist-vip');
         ownerProPlanId = await resolvePlanIdBySlug('owner-pro');
 
@@ -243,31 +247,6 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
             timeout: 10_000
         });
         await expect(page.getByText('HOS-21 E2E Plus Deal (visible)')).not.toBeVisible();
-    });
-
-    test('tourist-plus: sees only the plus-tier deal, never the restricted one', async ({
-        page
-    }) => {
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
-
-        const plus = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
-        userIds.push(plus.id);
-        await createSubscription({ userId: plus.id, planId: plusPlanId, status: 'active' });
-        await markProfileCompleted({ userId: plus.id });
-
-        await attachSession(page, plus.sessionCookie);
-        await page.goto(EXCLUSIVE_DEALS_PAGE, { waitUntil: 'domcontentloaded' });
-        await page.waitForResponse(
-            (r) => r.url().includes(EXCLUSIVE_DEALS_PATH) && r.status() === 200,
-            { timeout: 15_000 }
-        );
-
-        await expect(page.getByText('HOS-21 E2E Plus Deal (visible)')).toBeVisible({
-            timeout: 10_000
-        });
-        await expect(page.getByText('HOS-21 E2E Vip Deal (visible)')).not.toBeVisible();
-        await expect(page.getByText('HOS-21 E2E Plus Deal (restricted)')).not.toBeVisible();
     });
 
     test('tourist-vip: sees plus + vip deals with the VIP badge, restricted deal still excluded', async ({

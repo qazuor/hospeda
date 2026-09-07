@@ -63,10 +63,10 @@ interface UpdatedBookmarkResponse {
 
 test.describe('E2E-04: move bookmark between collections @p1 @favorites @collections @move @spec-098', () => {
     const userIds: string[] = [];
-    let plusPlanId: string | null = null;
+    let vipPlanId: string | null = null;
 
     test.beforeAll(async () => {
-        ({ planId: plusPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-plus' }));
+        ({ planId: vipPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-vip' }));
     });
 
     test.afterEach(async () => {
@@ -98,12 +98,12 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
             return;
         }
 
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Create collection
@@ -164,12 +164,12 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
             return;
         }
 
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         const colRes = await page.request.post(
@@ -226,8 +226,8 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
 
     test('AC-13.3 — other user cannot access collection (403)', async ({ page }) => {
         // Arrange: user A creates a collection, user B tries to read it
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const userA = await createUser({ role: 'USER' });
         const userB = await createUser({ role: 'USER' });
         userIds.push(userA.id, userB.id);
@@ -235,8 +235,8 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
         // tourist-free tier, gateCollections() would reject it with 403 before the
         // ownership check ever ran — the assertion below would pass for the wrong
         // reason and stop testing ownership at all.
-        await createSubscription({ userId: userA.id, planId: plusPlanId, status: 'active' });
-        await createSubscription({ userId: userB.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: userA.id, planId: vipPlanId, status: 'active' });
+        await createSubscription({ userId: userB.id, planId: vipPlanId, status: 'active' });
 
         const colRes = await page.request.post(
             `${API_URL}/api/v1/protected/user-bookmark-collections`,
