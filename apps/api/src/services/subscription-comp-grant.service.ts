@@ -66,8 +66,26 @@
  * whatever is left. A single big transaction would have to either wrap the
  * MercadoPago calls (forbidden) or batch every write after every call, which
  * turns any crash in between into preapprovals cancelled at the provider with
- * rows still `active` locally — unresumable, because the retry then re-attempts
- * cancels MercadoPago has no reason to accept a second time.
+ * rows still `active` locally.
+ *
+ * Resumability is NOT free, and the gap is precise: the IN-FLIGHT row. If the
+ * process dies — or MercadoPago times out on a cancel it actually processed —
+ * between one row's hard-cancel and its local write, that row stays `active`
+ * with its `mp_subscription_id` set. The retry then asks MercadoPago to cancel
+ * an already-cancelled preapproval, which it treats as terminal and rejects,
+ * which `hardCancelPreapprovalBestEffort` swallows into `failed`, which aborts.
+ * Left there, the grant would be permanently unretriable through the API for
+ * exactly the customer whose preapproval is already closed.
+ *
+ * `isPreapprovalConfirmedTerminal` closes it, by asking the PROVIDER what the
+ * preapproval is before treating a refusal as a refusal — the same answer
+ * `billing/reactivation-supersession-complete.ts` reached at the same wall, with
+ * its ALLOW-list imported rather than re-declared so the two cannot drift.
+ *
+ * Two consequences of resuming that are easy to miss, and are handled:
+ * `hadActiveBilling` and the superseded-id list are seeded from the audit rows
+ * of earlier attempts (`readPriorSupersessions`), because on a retry the loop
+ * that would otherwise set them does not run at all.
  *
  * ## One comp per customer
  *
@@ -94,20 +112,26 @@ import {
     billingSubscriptions,
     eq,
     getDb,
+    inArray,
     isNull,
     withTransaction
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { BILLING_EVENT_TYPES, normalizeStoredSubscriptionStatus } from '@repo/service-core';
+import { getQZPayBilling } from '../middlewares/billing.js';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
 import { hardCancelPreapprovalBestEffort } from './billing/preapproval-hard-cancel.js';
+import { CONFIRMED_TERMINAL_STATUSES } from './billing/reactivation-supersession-complete.js';
 import { sendCompGrantedNotification } from './comp-notifications.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
 import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service.js';
 
 /** Trigger source recorded on both event rows this grant writes. */
 const TRIGGER_SOURCE = 'admin-comp-grant' as const;
+
+/** `metadata.reason` stamped on the audit row of a subscription this grant retired. */
+const SUPERSEDE_REASON = 'superseded-by-comp-grant' as const;
 
 /**
  * Statuses that need no action, expressed in Hospeda vocabulary.
@@ -160,6 +184,121 @@ function isSupersedableStatus(rawStatus: unknown): boolean {
         return true;
     }
     return !NO_ACTION_STATUSES.has(normalized);
+}
+
+/** What an earlier, partially-completed run of this grant already did. */
+interface PriorSupersessions {
+    /** Subscriptions a previous attempt retired for this same customer. */
+    readonly subscriptionIds: readonly string[];
+    /** Whether any of them had a live preapproval that was actually cancelled. */
+    readonly anyPreapprovalCancelled: boolean;
+}
+
+/**
+ * Reads what a previous attempt at this grant already retired.
+ *
+ * This exists because the grant is RESUMABLE, and resuming loses information
+ * the customer's email depends on. On a retry the rows a previous attempt
+ * retired are `cancelled`, so they are no longer supersedable, so the loop that
+ * sets `hadActiveBilling` never runs — and the customer gets the "you never gave
+ * us a card" variant of the email even though this very grant cancelled their
+ * preapproval minutes earlier. That is the same harm the `??` in
+ * `notification-retry.service.ts` exists to prevent, arriving from the other
+ * side.
+ *
+ * The audit rows are the record. Each retirement writes one with
+ * `reason: 'superseded-by-comp-grant'` and an explicit `preapprovalCancelled`
+ * boolean, so "did we cancel a live preapproval for this customer" survives
+ * across attempts without inferring it from the rows' current state.
+ *
+ * The `metadata` predicates are applied in TypeScript rather than as JSONB SQL:
+ * the row set is already narrowed to one customer's events for one trigger
+ * source, so it is tiny, and a JSONB comparison here would buy nothing but a
+ * way to be wrong.
+ *
+ * @param subscriptionIds - Every subscription id belonging to the customer.
+ * @returns What the previous attempts retired, empty when there were none.
+ */
+async function readPriorSupersessions(
+    subscriptionIds: readonly string[]
+): Promise<PriorSupersessions> {
+    if (subscriptionIds.length === 0) {
+        return { subscriptionIds: [], anyPreapprovalCancelled: false };
+    }
+
+    const rows = await getDb()
+        .select({
+            subscriptionId: billingSubscriptionEvents.subscriptionId,
+            metadata: billingSubscriptionEvents.metadata
+        })
+        .from(billingSubscriptionEvents)
+        .where(
+            and(
+                inArray(billingSubscriptionEvents.subscriptionId, [...subscriptionIds]),
+                eq(
+                    billingSubscriptionEvents.eventType,
+                    BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED
+                ),
+                eq(billingSubscriptionEvents.triggerSource, TRIGGER_SOURCE)
+            )
+        );
+
+    const mine = rows.filter((row) => row.metadata?.reason === SUPERSEDE_REASON);
+
+    return {
+        subscriptionIds: [...new Set(mine.map((row) => row.subscriptionId))],
+        anyPreapprovalCancelled: mine.some((row) => row.metadata?.preapprovalCancelled === true)
+    };
+}
+
+/**
+ * Asks MercadoPago whether a preapproval is already terminal.
+ *
+ * Called only after `hardCancelPreapprovalBestEffort` reported `failed`, and it
+ * is what keeps a resumed grant from dead-ending. If a previous attempt died
+ * between cancelling a preapproval and writing that fact locally — or
+ * MercadoPago timed out on a cancel it actually processed — the retry asks it to
+ * cancel an ALREADY-cancelled preapproval. MercadoPago treats `cancelled` as
+ * terminal and rejects the transition (`packages/mercadopago/.../subscription.adapter.ts`
+ * documents this for the inverse verb), the helper swallows that into `failed`,
+ * and a `failed` aborts the grant. Without this check the grant would be
+ * permanently unretriable through the API for exactly the customer whose
+ * preapproval is already closed.
+ *
+ * The pattern and the ALLOW-list are lifted from
+ * `billing/reactivation-supersession-complete.ts`, which hit this same wall and
+ * solved it by re-verifying against the PROVIDER rather than local storage.
+ * `CONFIRMED_TERMINAL_STATUSES` is imported from there rather than re-declared,
+ * precisely so the two provider-verify paths cannot drift — note `paused` is
+ * deliberately absent from it, because a paused preapproval can still resume
+ * charging.
+ *
+ * Conservative in both failure directions: a retrieve that throws, or a status
+ * outside the ALLOW-list, answers `false` and the grant still aborts.
+ *
+ * @param mpSubscriptionId - The preapproval MercadoPago refused to cancel.
+ * @returns `true` only when the provider confirms a terminal status.
+ */
+async function isPreapprovalConfirmedTerminal(mpSubscriptionId: string): Promise<boolean> {
+    const paymentAdapter = getQZPayBilling()?.getPaymentAdapter();
+    if (!paymentAdapter) {
+        return false;
+    }
+
+    try {
+        const live = await paymentAdapter.subscriptions.retrieve(mpSubscriptionId);
+        const status = live?.status;
+        return status !== undefined && CONFIRMED_TERMINAL_STATUSES.has(status);
+    } catch (error) {
+        apiLogger.warn(
+            {
+                mpSubscriptionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Comp grant: could not read the preapproval back from MercadoPago — treating as unresolved'
+        );
+        return false;
+    }
 }
 
 /** Typed failures a comp grant can report. */
@@ -269,7 +408,17 @@ export async function grantCompSubscription(input: {
     //    would mean a crash between the two loops leaves preapprovals cancelled
     //    at MercadoPago and rows still `active` locally, and the retry would
     //    then re-attempt a cancel MercadoPago has no reason to accept twice.
-    let hadActiveBilling = false;
+    //
+    //    `hadActiveBilling` is SEEDED from what earlier attempts already did,
+    //    not started at false. On a resume the rows a previous attempt retired
+    //    are `cancelled` and therefore not supersedable, so this loop does not
+    //    run at all — and a flag derived only from this run would tell a
+    //    customer whose preapproval this grant cancelled minutes ago that they
+    //    never gave us a card. Same for the id list the audit row and the 201
+    //    report.
+    const prior = await readPriorSupersessions(allRows.map((row) => row.id));
+    let hadActiveBilling = prior.anyPreapprovalCancelled;
+    const supersededIds = new Set<string>(prior.subscriptionIds);
 
     for (const row of supersedable) {
         const outcome = await hardCancelPreapprovalBestEffort({
@@ -286,14 +435,50 @@ export async function grantCompSubscription(input: {
         // anyone would have to find the orphaned preapproval afterwards. A live
         // preapproval plus no local reference to it is the worst state this
         // service can produce, so it aborts like a refusal.
-        const providerRefused =
+        let providerRefused =
             outcome.kind === 'failed' ||
             (outcome.kind === 'skipped' && outcome.reason === 'adapter-unavailable');
+
+        /** Did THIS row have a live preapproval that is now closed? */
+        let hadCancelledThisRow = outcome.kind === 'cancelled';
+
+        // A `failed` is not proof the preapproval is open. The one gap this
+        // grant's resumability really has is the in-flight row: if the process
+        // dies — or MercadoPago times out on a cancel it actually processed —
+        // between the hard-cancel and the local write, the row stays `active`
+        // with its `mp_subscription_id` set, and the retry asks MercadoPago to
+        // cancel an ALREADY-cancelled preapproval. MP treats `cancelled` as
+        // terminal and rejects the transition, the helper swallows that into
+        // `failed`, and the grant would abort forever for that customer.
+        //
+        // So ask the provider what the preapproval actually IS before deciding.
+        // Same answer `billing/reactivation-supersession-complete.ts` reached
+        // for the same wall, and it re-verifies against the PROVIDER rather than
+        // local storage for the reason that module spells out: a local read
+        // reflects the write that may not have happened.
+        //
+        // `adapter-unavailable` is deliberately NOT re-verified: without an
+        // adapter there is nothing to ask, and inventing an affirmative answer
+        // there is the fail-open this whole branch exists to prevent.
+        if (outcome.kind === 'failed' && row.mpSubscriptionId) {
+            const alreadyTerminal = await isPreapprovalConfirmedTerminal(row.mpSubscriptionId);
+            if (alreadyTerminal) {
+                apiLogger.info(
+                    { customerId, subscriptionId: row.id, mpSubscriptionId: row.mpSubscriptionId },
+                    'Comp grant: MercadoPago refused the cancel because the preapproval is already terminal — resuming'
+                );
+                providerRefused = false;
+                // It WAS a live preapproval this grant closed, on an earlier
+                // attempt. The customer needs the email that says so.
+                hadActiveBilling = true;
+                hadCancelledThisRow = true;
+            }
+        }
 
         if (providerRefused) {
             const detail =
                 outcome.kind === 'failed'
-                    ? `MercadoPago refused to cancel preapproval ${row.mpSubscriptionId}: ${outcome.error}`
+                    ? `MercadoPago refused to cancel preapproval ${row.mpSubscriptionId} and does not report it as terminal: ${outcome.error}`
                     : `the MercadoPago adapter is unavailable, so preapproval ${row.mpSubscriptionId} could not be cancelled`;
 
             apiLogger.error(
@@ -314,10 +499,11 @@ export async function grantCompSubscription(input: {
                     code: 'PROVIDER_ERROR',
                     message:
                         `${detail}. No comp was granted and subscription ${row.id} is still ` +
-                        'billing. Retry — the grant resumes and skips whatever was already ' +
-                        'closed. If MercadoPago keeps refusing, cancel that subscription from ' +
-                        'the admin panel first: a cancelled row is not superseded, so the ' +
-                        'grant stops trying to close its preapproval.'
+                        'billing. Retry — the grant resumes, skips whatever is already closed, ' +
+                        'and accepts a preapproval MercadoPago confirms as terminal. If it keeps ' +
+                        'refusing without confirming, cancel that subscription from the admin ' +
+                        'panel first: a cancelled row is not superseded, so the grant stops ' +
+                        'trying to close its preapproval.'
                 }
             };
         }
@@ -347,11 +533,19 @@ export async function grantCompSubscription(input: {
                 triggerSource: TRIGGER_SOURCE,
                 metadata: {
                     actorId,
-                    reason: 'superseded-by-comp-grant',
-                    mpSubscriptionId: row.mpSubscriptionId
+                    reason: SUPERSEDE_REASON,
+                    mpSubscriptionId: row.mpSubscriptionId,
+                    // Recorded EXPLICITLY rather than left to be inferred from
+                    // `mpSubscriptionId` being non-null: this is the field a
+                    // resumed attempt reads back to decide what the customer's
+                    // email may claim, and an inference is one refactor away
+                    // from meaning something else.
+                    preapprovalCancelled: hadCancelledThisRow
                 }
             });
         });
+
+        supersededIds.add(row.id);
     }
 
     // 4. The comp row and its audit event, atomically. `createCompSubscription`
@@ -383,7 +577,7 @@ export async function grantCompSubscription(input: {
                     actorId,
                     planId,
                     interval,
-                    supersededSubscriptionIds: supersedable.map((r) => r.id),
+                    supersededSubscriptionIds: [...supersededIds],
                     hadActiveBilling
                 }
             });
@@ -406,10 +600,12 @@ export async function grantCompSubscription(input: {
     // 5. Cache clear, POST-commit and from here rather than from
     //    `createCompSubscription`. That helper clears at the end of its own
     //    `withTransaction`, which — now that it is handed this transaction —
-    //    runs BEFORE the outer commit, and a clear before a commit repopulates
-    //    the cache from the pre-commit picture and pins the stale answer for the
-    //    full TTL. This call is also what covers the supersede writes in step 3,
-    //    which the helper knows nothing about.
+    //    runs BEFORE the outer commit. `clearEntitlementCache` is pure in-memory
+    //    eviction and repopulates nothing itself, but a CONCURRENT reader between
+    //    that clear and the commit would repopulate from the pre-commit picture
+    //    and pin the stale answer for the full TTL. This call evicts that. It is
+    //    also what covers the supersede writes in step 3, which the helper knows
+    //    nothing about.
     clearEntitlementCache(customerId);
 
     // 6. INV-1: a comp never goes through MercadoPago, so no webhook will ever
@@ -443,7 +639,7 @@ export async function grantCompSubscription(input: {
             customerId,
             planId,
             actorId,
-            supersededSubscriptionIds: supersedable.map((r) => r.id),
+            supersededSubscriptionIds: [...supersededIds],
             hadActiveBilling
         },
         'Comp subscription granted'
@@ -453,7 +649,7 @@ export async function grantCompSubscription(input: {
         success: true,
         data: {
             subscriptionId: localSubscriptionId,
-            supersededSubscriptionIds: supersedable.map((r) => r.id),
+            supersededSubscriptionIds: [...supersededIds],
             hadActiveBilling
         }
     };

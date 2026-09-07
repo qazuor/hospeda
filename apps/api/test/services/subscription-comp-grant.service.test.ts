@@ -33,9 +33,12 @@ const reconcileMock = vi.fn();
 const updateMock = vi.fn();
 const insertMock = vi.fn();
 const clearCacheMock = vi.fn();
+const retrieveMock = vi.fn();
 
 /** Every non-deleted subscription row the customer has, statuses RAW. */
 let allRows: Array<Record<string, unknown>> = [];
+/** `billing_subscription_events` rows an EARLIER attempt of this grant wrote. */
+let priorEvents: Array<Record<string, unknown>> = [];
 const callOrder: string[] = [];
 
 vi.mock('../../src/services/billing/preapproval-hard-cancel.js', () => ({
@@ -76,9 +79,14 @@ vi.mock('../../src/services/subscription-linked-entities.service.js', () => ({
  */
 function makeFakeDb() {
     return {
-        select: () => ({
+        // Two different SELECTs run through here: the customer's subscriptions
+        // and the audit events an earlier attempt wrote. They are told apart by
+        // the projection — only the events query asks for `metadata` — because
+        // the table objects are themselves stubs and comparing them by identity
+        // would couple this to the shape of the `@repo/db` mock below.
+        select: (projection?: Record<string, unknown>) => ({
             from: () => ({
-                where: async () => allRows
+                where: async () => (projection && 'metadata' in projection ? priorEvents : allRows)
             })
         }),
         update: () => ({
@@ -98,6 +106,14 @@ function makeFakeDb() {
     };
 }
 
+vi.mock('../../src/middlewares/billing.js', () => ({
+    getQZPayBilling: () => ({
+        getPaymentAdapter: () => ({
+            subscriptions: { retrieve: (...args: unknown[]) => retrieveMock(...args) }
+        })
+    })
+}));
+
 vi.mock('../../src/middlewares/entitlement.js', () => ({
     clearEntitlementCache: (...args: unknown[]) => {
         callOrder.push('cache-clear');
@@ -116,9 +132,15 @@ vi.mock('@repo/db', async () => {
             deletedAt: 'deleted_at',
             mpSubscriptionId: 'mp_subscription_id'
         },
-        billingSubscriptionEvents: { subscriptionId: 'subscription_id' },
+        billingSubscriptionEvents: {
+            subscriptionId: 'subscription_id',
+            eventType: 'event_type',
+            triggerSource: 'trigger_source',
+            metadata: 'metadata'
+        },
         and: vi.fn(() => 'and'),
         eq: vi.fn(() => 'eq'),
+        inArray: vi.fn(() => 'inArray'),
         isNull: vi.fn(() => 'isNull'),
         withTransaction: async (cb: (tx: unknown) => Promise<unknown>) => cb(makeFakeDb()),
         getDb: () => makeFakeDb()
@@ -151,6 +173,8 @@ beforeEach(() => {
     vi.clearAllMocks();
     callOrder.length = 0;
     allRows = [];
+    priorEvents = [];
+    retrieveMock.mockResolvedValue({ status: 'authorized' });
     hardCancelMock.mockResolvedValue({ kind: 'cancelled' });
     createCompMock.mockResolvedValue({ localSubscriptionId: 'comp-sub-1' });
     notifyMock.mockResolvedValue(undefined);
@@ -276,6 +300,202 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
 
         expect(updateMock).not.toHaveBeenCalled();
         expect(callOrder).not.toContain('local-write');
+    });
+});
+
+/**
+ * A subscription an earlier attempt already retired: `cancelled`, its
+ * `mp_subscription_id` nulled. Not supersedable any more, which is the whole
+ * point — the loop that sets `hadActiveBilling` will not run for it.
+ */
+function retiredSubscription(overrides: Record<string, unknown> = {}) {
+    return { id: 'sub-1', status: 'cancelled', mpSubscriptionId: null, ...overrides };
+}
+
+/** The audit row that retirement wrote. */
+function supersessionEvent(overrides: Record<string, unknown> = {}) {
+    return {
+        subscriptionId: 'sub-1',
+        metadata: {
+            actorId: 'admin-1',
+            reason: 'superseded-by-comp-grant',
+            mpSubscriptionId: 'mp-preapproval-1',
+            preapprovalCancelled: true
+        },
+        ...overrides
+    };
+}
+
+describe('grantCompSubscription — resuming after a partial failure', () => {
+    // The sequence: a customer with a live subscription, an operator who names
+    // the wrong plan. Attempt 1 hard-cancels the preapproval AND retires the
+    // row, then `createCompSubscription` throws INVALID_PLAN. The operator
+    // corrects the plan and retries — and now nothing is supersedable, so a
+    // `hadActiveBilling` derived only from this run reports `false` for a
+    // customer whose preapproval THIS grant cancelled minutes ago. That is the
+    // "you never gave us a card" email again, arriving from the opposite side
+    // of the `??` that was supposed to prevent it.
+
+    it('reports hadActiveBilling from the earlier attempt, not from this empty loop', async () => {
+        allRows = [retiredSubscription()];
+        priorEvents = [supersessionEvent()];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        // The loop genuinely did not run — that is the premise, not a bug.
+        expect(hardCancelMock).not.toHaveBeenCalled();
+        expect(result.success === true && result.data.hadActiveBilling).toBe(true);
+        expect(notifyMock).toHaveBeenCalledWith({
+            subscriptionId: 'comp-sub-1',
+            hadActiveBilling: true
+        });
+    });
+
+    it('reports what the earlier attempt superseded, so the audit row is not empty', async () => {
+        allRows = [retiredSubscription()];
+        priorEvents = [supersessionEvent()];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success === true && result.data.supersededSubscriptionIds).toEqual(['sub-1']);
+        expect(insertMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    supersededSubscriptionIds: ['sub-1'],
+                    hadActiveBilling: true
+                })
+            })
+        );
+    });
+
+    it('still says false when the earlier attempt cancelled no preapproval', async () => {
+        // A row retired without a preapproval behind it. The seed must carry the
+        // real answer across attempts, not merely default to `true` because a
+        // supersession happened at all.
+        allRows = [retiredSubscription()];
+        priorEvents = [
+            supersessionEvent({
+                metadata: {
+                    reason: 'superseded-by-comp-grant',
+                    mpSubscriptionId: null,
+                    preapprovalCancelled: false
+                }
+            })
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success === true && result.data.hadActiveBilling).toBe(false);
+    });
+
+    it('ignores audit rows from other flows that cancelled the same subscription', async () => {
+        // `ADMIN_SUBSCRIPTION_CANCELLED` is written by more than this service.
+        // Only rows carrying THIS grant's reason may seed the flag; anything
+        // else would let an ordinary admin cancellation claim a comp cancelled
+        // the customer's card.
+        allRows = [retiredSubscription()];
+        priorEvents = [
+            supersessionEvent({ metadata: { reason: 'admin-cancel', preapprovalCancelled: true } })
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success === true && result.data.hadActiveBilling).toBe(false);
+        expect(result.success === true && result.data.supersededSubscriptionIds).toEqual([]);
+    });
+
+    it('records preapprovalCancelled on the audit row it writes, for the NEXT attempt', async () => {
+        // The write side of the same contract. Without this field the read above
+        // has nothing to recover.
+        allRows = [payingSubscription()];
+
+        await grantCompSubscription(GRANT);
+
+        expect(insertMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({
+                    reason: 'superseded-by-comp-grant',
+                    preapprovalCancelled: true
+                })
+            })
+        );
+    });
+});
+
+describe('grantCompSubscription — a refusal is not proof the preapproval is open', () => {
+    // The in-flight row: a previous attempt cancelled the preapproval at
+    // MercadoPago and died before writing that locally. The retry asks MP to
+    // cancel an already-cancelled preapproval; MP treats `cancelled` as terminal
+    // and rejects the transition, the helper swallows it into `failed`, and a
+    // `failed` aborts. Without re-verification the grant dead-ends for exactly
+    // the customer whose preapproval is already closed.
+
+    it('proceeds when MercadoPago confirms the preapproval is already terminal', async () => {
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'failed', error: 'preapproval is terminal' });
+        retrieveMock.mockResolvedValue({ status: 'cancelled' });
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(retrieveMock).toHaveBeenCalledWith('mp-preapproval-1');
+        expect(result.success).toBe(true);
+        expect(createCompMock).toHaveBeenCalledOnce();
+        // It WAS a live preapproval this grant closed, one attempt earlier.
+        expect(result.success === true && result.data.hadActiveBilling).toBe(true);
+    });
+
+    it('accepts every status on the shared ALLOW-list', async () => {
+        // Imported from `reactivation-supersession-complete.ts` rather than
+        // re-declared, so the two provider-verify paths cannot drift.
+        for (const status of ['canceled', 'cancelled', 'finished', 'expired']) {
+            vi.clearAllMocks();
+            allRows = [payingSubscription()];
+            createCompMock.mockResolvedValue({ localSubscriptionId: 'comp-sub-1' });
+            hardCancelMock.mockResolvedValue({ kind: 'failed', error: 'terminal' });
+            retrieveMock.mockResolvedValue({ status });
+
+            const result = await grantCompSubscription(GRANT);
+
+            expect(result.success, `status ${status} should be accepted`).toBe(true);
+        }
+    });
+
+    it('still aborts when MercadoPago reports the preapproval as merely paused', async () => {
+        // `paused` is deliberately absent from the ALLOW-list: a paused
+        // preapproval can still resume charging.
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'failed', error: 'refused' });
+        retrieveMock.mockResolvedValue({ status: 'paused' });
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(false);
+        expect(result.success === false && result.error.code).toBe('PROVIDER_ERROR');
+        expect(createCompMock).not.toHaveBeenCalled();
+    });
+
+    it('still aborts when the provider read itself fails', async () => {
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'failed', error: 'refused' });
+        retrieveMock.mockRejectedValue(new Error('MP 503'));
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(false);
+        expect(createCompMock).not.toHaveBeenCalled();
+    });
+
+    it("does NOT re-verify on skipped:'adapter-unavailable'", async () => {
+        // There is no adapter to ask, and inventing an affirmative answer there
+        // is the fail-open the whole branch exists to prevent.
+        allRows = [payingSubscription()];
+        hardCancelMock.mockResolvedValue({ kind: 'skipped', reason: 'adapter-unavailable' });
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(retrieveMock).not.toHaveBeenCalled();
+        expect(result.success).toBe(false);
     });
 });
 
