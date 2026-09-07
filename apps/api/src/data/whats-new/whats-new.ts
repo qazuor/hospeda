@@ -100,10 +100,25 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
  * // }
  * ```
  */
+// HOS-964 follow-up (owner finding, 2026-09-07): a brand-new visit to
+// `/mi-cuenta/` lazily writes `baselineAt = now` on first read
+// (`getWhatsNew.ts`'s `initWhatsNewBaseline` call), and `computeSeen`
+// (`whats-new.helpers.ts`) treats any entry with `publishedAt <= baselineAt`
+// as already seen. The four entries below were originally dated in the past
+// (Sept 3-5), which meant anyone who had NEVER visited the dashboard before
+// this batch shipped would baseline past all four and permanently lose them —
+// only accounts with a pre-existing baseline would ever see them. `publishedAt`
+// was moved to 2026-09-07 (the actual release day) for that reason, spread
+// across distinct hours to preserve the original newest-first ordering (the
+// GET handler sorts by `publishedAt` descending). The `id`s were DELIBERATELY
+// left unchanged — they are the seen-state key and must stay stable, and they
+// still honestly record when each change was made, which is real information
+// distinct from when the batch was published. Do not "fix" this mismatch by
+// renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     {
         id: '2026-09-05-commerce-publish-free-trial',
-        publishedAt: '2026-09-05T00:00:00Z',
+        publishedAt: '2026-09-07T12:00:00Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -119,7 +134,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-04-accommodation-videos',
-        publishedAt: '2026-09-04T00:00:00Z',
+        publishedAt: '2026-09-07T09:00:00Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -135,7 +150,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-03-ai-chat-gastronomy-experience',
-        publishedAt: '2026-09-03T00:00:00Z',
+        publishedAt: '2026-09-07T06:00:00Z',
         highlight: true,
         roles: ['USER'],
         title: {
@@ -151,7 +166,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     },
     {
         id: '2026-09-03-gastronomy-daily-menu',
-        publishedAt: '2026-09-03T00:00:00Z',
+        publishedAt: '2026-09-07T03:00:00Z',
         highlight: false,
         roles: ['GASTRONOMY_OWNER'],
         title: {
