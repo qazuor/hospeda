@@ -70,6 +70,27 @@ export const APPROVED_IMAGE_ORIGINS: ReadonlySet<string> = new Set<string>([
 ]);
 
 /**
+ * Ids of What's New entries that have been retired — removed from
+ * {@link whatsNewEntries} under the ~6-month archival policy (HOS-1214 F-4).
+ *
+ * **This ledger is APPEND-ONLY.** Once an id is added here, it must never be
+ * reused for a new entry. `seenIds`, stored per-user in the settings JSONB
+ * column, is keyed by entry id: reusing a retired id would silently mark a
+ * brand-new entry as "already seen" for anyone who had previously dismissed
+ * the old one carrying that id. That failure is invisible — the affected
+ * user simply never sees the new notification, and nothing in the API
+ * response or logs suggests why.
+ *
+ * `scripts/check-whats-new-catalog.sh` fails the build (and CI, via its step
+ * in `ci.yml`'s `guards` job) when a live entry's `id` also appears here.
+ *
+ * Starts empty. When an entry is archived: move its `id` string into this
+ * set, then delete the entry object from {@link whatsNewEntries}. Never
+ * remove an id that is already here.
+ */
+export const RETIRED_WHATS_NEW_IDS: ReadonlySet<string> = new Set<string>([]);
+
+/**
  * Array schema for the curated catalog. Minimum 0 entries (empty is valid).
  * Parsed at module import time — a validation failure aborts API startup.
  */

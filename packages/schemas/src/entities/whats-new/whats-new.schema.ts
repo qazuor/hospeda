@@ -102,15 +102,34 @@ export const WhatsNewEntrySchema = z.object({
         .regex(/^[a-z0-9-]+$/, 'id must be kebab-case'),
 
     /**
-     * ISO 8601 datetime string for when this entry was published.
+     * When this entry becomes visible, expressed one of two ways (HOS-1214 D-1,
+     * §7.1):
      *
-     * Used for:
-     * - Sorting entries newest-first in the response.
-     * - The `baselineAt` comparison: entries with `publishedAt <= baselineAt`
-     *   are automatically treated as seen for that user (prevents flooding
-     *   pre-existing users on feature deploy).
+     * - An **ISO 8601 datetime string** — the entry is visible once this instant
+     *   has passed (`filterEntriesByPublishedAt`), and it is also used to sort
+     *   entries newest-first and to compute the `baselineAt` auto-seen
+     *   comparison (`publishedAt <= baselineAt` ⇒ already seen).
+     * - The literal marker **`'on-promotion'`** — an **unresolved** value
+     *   written by the smoke sign-off flow. The writer never picks a date:
+     *   dating to the expected promotion forces a guess whose failure is
+     *   invisible (a wrong guess silently destroys the entry for new accounts,
+     *   HOS-1214 F-3b), and dating to the day the entry was written turns the
+     *   past-date safety net into the primary mechanism instead of a backstop.
+     *   The staging → main promotion gate resolves the marker to the real
+     *   merge timestamp once the change actually reaches production (AC-14).
+     *
+     * **Until resolved, an entry carrying the marker is invisible, never
+     * malformed.** `new Date('on-promotion').getTime()` is `NaN`, and every
+     * comparison against `NaN` is `false` — so `filterEntriesByPublishedAt`
+     * excludes it and `computeSeen` never auto-marks it seen (HOS-1214 F-3c).
+     *
+     * This union widens the schema by **exactly this one literal**. Do NOT
+     * read it as a typo-tolerance hole and do not delete it as dead code:
+     * without it, an entry authored through the automated sign-off flow
+     * throws at API boot (the whole catalog is parsed at module import) instead
+     * of merely being hidden until its date is resolved.
      */
-    publishedAt: z.string().datetime(),
+    publishedAt: z.union([z.string().datetime(), z.literal('on-promotion')]),
 
     /**
      * Optional audience targeting by role.
@@ -163,7 +182,39 @@ export const WhatsNewEntrySchema = z.object({
      * TBD-2: The exact approved CDN origin is not yet decided — it must be
      * resolved before the first image-bearing entry goes live.
      */
-    image: z.string().url().optional()
+    image: z.string().url().optional(),
+
+    /**
+     * Per-language review state for the machine-produced `en`/`pt` translations
+     * (HOS-1214 D-4, §6.3).
+     *
+     * The smoke sign-off writes `es` by hand and produces `en`/`pt` by machine
+     * translation at the same moment. A language absent from this map is
+     * either absent from the entry entirely, or was authored by a human
+     * directly rather than machine-translated — this map only records the
+     * review state of a **machine-produced** translation, never every
+     * language the entry carries.
+     *
+     * - `'machine'` — produced by translation and **NOT yet accepted by a
+     *   person**. This is the only value that blocks the staging → main
+     *   promotion gate once the entry's `publishedAt` is due (AC-10): a
+     *   promotion may not ship an unreviewed machine translation to users.
+     * - `'reviewed'` — a person who reads the language checked it.
+     * - `'declared'` — nobody who reads the language checked it, but the
+     *   machine output is accepted deliberately and that fact is on the
+     *   record. This unblocks the gate on purpose (OQ-3) — the alternative is
+     *   a gate nobody can satisfy honestly, which then gets satisfied
+     *   dishonestly instead.
+     *
+     * Optional, so every existing entry (including the four HOS-964 wrote by
+     * hand in all three languages) stays valid with no migration.
+     */
+    translations: z
+        .object({
+            en: z.enum(['machine', 'reviewed', 'declared']).optional(),
+            pt: z.enum(['machine', 'reviewed', 'declared']).optional()
+        })
+        .optional()
 });
 
 /** Inferred TypeScript type for a single What's New entry. */

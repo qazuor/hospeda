@@ -161,6 +161,40 @@ describe('filterEntriesByPublishedAt', () => {
         const result = filterEntriesByPublishedAt({ entries: [], now });
         expect(result).toHaveLength(0);
     });
+
+    // -------------------------------------------------------------------------
+    // Unresolved 'on-promotion' marker (HOS-1214 AC-15, F-3c/F-3d)
+    //
+    // This is a REGRESSION test, not a coverage test. `new Date('on-promotion')`
+    // is `Invalid Date`, so `.getTime()` is `NaN`, and the CURRENT predicate
+    // (`publishedAt <= now`) happens to exclude it because every comparison
+    // against `NaN` is `false`. A logically-equivalent-looking rewrite —
+    // `!(publishedAt > now)` — is a no-op for every REAL date, but flips this
+    // one case: `NaN > now` is also `false`, so `!false` is `true`, and the
+    // unresolved marker becomes VISIBLE to every user. This test exists
+    // specifically to catch that rewrite. It was verified to go RED under the
+    // rewrite (mutating `filterEntriesByPublishedAt` to use `!(... > nowMs)`)
+    // and to pass again once reverted — see the HOS-1214 implementation report.
+    // -------------------------------------------------------------------------
+    it('should exclude an entry carrying the unresolved on-promotion marker (HOS-1214 AC-15)', () => {
+        const marker = makeEntry({ id: 'unresolved', publishedAt: 'on-promotion' });
+        const result = filterEntriesByPublishedAt({ entries: [marker], now });
+        expect(result).toHaveLength(0);
+    });
+
+    it('should exclude the marker even when it is the ONLY entry and no real date is present', () => {
+        const marker = makeEntry({ id: 'only-marker', publishedAt: 'on-promotion' });
+        const result = filterEntriesByPublishedAt({ entries: [marker] });
+        expect(result).toHaveLength(0);
+    });
+
+    it('should exclude the marker while keeping real past/boundary entries visible in a mixed catalog', () => {
+        const marker = makeEntry({ id: 'unresolved', publishedAt: 'on-promotion' });
+        const past = makeEntry({ id: 'past', publishedAt: '2026-01-01T00:00:00Z' });
+        const future = makeEntry({ id: 'future', publishedAt: '2030-01-01T00:00:00Z' });
+        const result = filterEntriesByPublishedAt({ entries: [marker, past, future], now });
+        expect(result.map((e) => e.id)).toEqual(['past']);
+    });
 });
 
 // ---------------------------------------------------------------------------

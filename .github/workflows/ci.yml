@@ -337,6 +337,13 @@ jobs:
       # app depends on too, which is the blind spot HOS-958's guard had.
       - name: Check apps/web raises no native browser dialog (HOS-957)
         run: pnpm check:no-native-dialogs
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above, F-6).
+      # Fails naming the id on a duplicate live id, a live id that reuses a
+      # RETIRED_WHATS_NEW_IDS entry, or a catalog not declared newest-first
+      # (HOS-1214 AC-11).
+      - name: Check What's New catalog integrity (HOS-1214 AC-11)
+        run: pnpm check:whats-new-catalog
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
