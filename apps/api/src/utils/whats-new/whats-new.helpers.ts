@@ -59,6 +59,66 @@ export function filterEntriesByRole({ entries, roles }: FilterEntriesByRoleInput
 }
 
 // ---------------------------------------------------------------------------
+// Published-at (future) filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link filterEntriesByPublishedAt}.
+ */
+export interface FilterEntriesByPublishedAtInput {
+    /** Catalog of curated entries (or an already role-filtered subset). */
+    readonly entries: readonly WhatsNewEntry[];
+    /**
+     * ISO 8601 datetime string representing "now". Defaults to the current
+     * instant (`new Date().toISOString()`). Accepting it as a parameter —
+     * rather than reading the clock internally with no way to override it —
+     * keeps this function testable without mocking the global clock.
+     */
+    readonly now?: string;
+}
+
+/**
+ * Filters out entries scheduled for the future — a `publishedAt` that has
+ * not arrived yet.
+ *
+ * Hospeda's What's New catalog supports scheduled publication on purpose
+ * (HOS-964): an entry with a future `publishedAt` is deliberately authored
+ * ahead of its release day. Before HOS-1216 nothing hid such an entry, so it
+ * would appear today, count toward `unseenCount`, and (when `highlight: true`)
+ * trigger the auto-modal — the opposite of "scheduled". This is NOT a
+ * validation rule: authoring a future `publishedAt` stays legal, this only
+ * controls whether the entry is currently visible.
+ *
+ * An entry is visible once `publishedAt <= now` (inclusive boundary — an
+ * entry dated exactly `now` is already published).
+ *
+ * @param input - `{ entries, now }`
+ * @returns The subset of `entries` whose `publishedAt` is not in the future.
+ *
+ * @example
+ * ```ts
+ * filterEntriesByPublishedAt({
+ *   entries: [{ id: 'a', publishedAt: '2030-01-01T00:00:00Z', ... }],
+ *   now: '2026-01-01T00:00:00Z'
+ * })
+ * // [] — the entry is scheduled for the future
+ *
+ * filterEntriesByPublishedAt({
+ *   entries: [{ id: 'b', publishedAt: '2026-01-01T00:00:00Z', ... }],
+ *   now: '2026-01-01T00:00:00Z'
+ * })
+ * // [{ id: 'b', ... }] — publishedAt equals now, so it is visible
+ * ```
+ */
+export function filterEntriesByPublishedAt({
+    entries,
+    now = new Date().toISOString()
+}: FilterEntriesByPublishedAtInput): WhatsNewEntry[] {
+    const nowMs = new Date(now).getTime();
+    return entries.filter((entry) => new Date(entry.publishedAt).getTime() <= nowMs);
+}
+
+// ---------------------------------------------------------------------------
 // Seen computation
 // ---------------------------------------------------------------------------
 
