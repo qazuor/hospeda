@@ -539,8 +539,31 @@ export class QrCodeService extends BaseCrudService<
      *
      * A code is minted the first time somebody asks to see it, not when the
      * entity is created. That covers the rows that already exist in production
-     * with no backfill, and it means an entity nobody ever prints a code for
-     * never occupies a slug.
+     * with no backfill.
+     *
+     * ## "…and an entity nobody prints a code for never occupies a slug"
+     *
+     * That WAS the second half of this argument, and HOS-982 PR 2 ended it. The
+     * clause held only while every caller was a deliberate act — a download, a
+     * provider opening their sticker tab. Since the owner dashboard renders the
+     * listing QR on the card itself, and `host-trade/protected/mine-qr.ts` does
+     * the same in its panel, a slug is now taken for every published listing the
+     * moment its owner scrolls past it, printed or not. Nobody decided that; it
+     * followed from putting the image on a page. Said out loud rather than
+     * quietly deleted, because the sentence reads like a property of the design
+     * and is now only a description of one caller.
+     *
+     * Two consequences worth carrying:
+     *
+     * - **Slug consumption is driven by page views, not by intent.** The space
+     *   is large and this is not urgent, but any future reasoning about how many
+     *   codes exist should count published listings, not printed documents.
+     * - **A READ permission now writes.** The image routes let staff holding
+     *   `ACCOMMODATION_UPDATE_ANY` / `COMMERCE_VIEW_ALL` mint a permanent row
+     *   against a third party's listing with a single `GET`, fixing that code's
+     *   `targetUrl` and `label` — both creation-only — without the owner ever
+     *   having asked for a code. Nothing here refuses that today; it is recorded
+     *   so the next person to touch the staff bypass knows it is a write.
      *
      * ## The race, and how the two halves divide the work
      *

@@ -306,8 +306,11 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
              for. Rendered in EVERY lifecycle state on purpose: a draft's owner
              reads what publishing unlocks instead of finding nothing at all.
              `client:visible` (not `client:load` like the row's confirm-dialog
-             islands) because this is one card in a grid and the panel does no
-             work until it is clicked. -->
+             islands) because this is one card in a grid AND the panel fetches
+             its QR image on mount: hydrating eagerly would fire one request per
+             card in the whole grid on page load, most of them for cards nobody
+             scrolls to. Deferring to visibility is what keeps that proportional
+             to what is actually looked at. -->
         <div class="prop-card__qr">
             <ListingQrSheet
                 client:visible

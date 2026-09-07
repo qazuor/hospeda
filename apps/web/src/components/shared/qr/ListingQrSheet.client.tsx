@@ -38,10 +38,12 @@
  *
  * A button that downloads a PDF blind tells nobody what they got, so the panel
  * shows the symbol first (owner decision). It cannot show it out of the PDF: the
- * app's own CSP sends `object-src 'none'` and a `frame-src` carrying neither
- * `'self'` nor `blob:` (`lib/middleware-helpers.ts`), so an embedded file renders
- * nothing and reports nothing. Nor can it draw one: that would be a second QR
- * generator, which `scripts/check-qrcode-engine-isolation.sh` exists to forbid.
+ * app's own CSP sends `object-src 'none'`, and no branch of its `frame-src`
+ * carries `blob:` (`lib/middleware-helpers.ts` — dev does add `'self'`, for
+ * Astro's ClientRouter, but `'self'` does not authorise a blob URL), so an
+ * embedded file renders nothing and reports nothing. Nor can it draw one: that
+ * would be a second QR generator, which
+ * `scripts/check-qrcode-engine-isolation.sh` exists to forbid.
  *
  * What the CSP DOES allow is `img-src … data:`, so `GET …/{id}/qr` returns the
  * markup and it is inlined as a `data:image/svg+xml` image — the same shape
@@ -296,6 +298,11 @@ export function ListingQrSheet({
     }, [isPublished, listingId, vertical]);
 
     const handleDownload = useCallback(async (): Promise<void> => {
+        // A second line, and unreachable from the UI: `LoadingButton` disables
+        // itself while `loading`, so the button cannot dispatch a second click.
+        // No test covers this branch and none can through the rendered control —
+        // said out loud because a test named after it WOULD pass with it deleted,
+        // which is what an adversarial review found here.
         if (state.status === 'working') {
             return;
         }
@@ -392,6 +399,17 @@ export function ListingQrSheet({
                         data-testid="listing-qr-sheet-code"
                         src={buildSvgDataUrl(code.svg)}
                     />
+                    {/*
+                     * What the symbol ENCODES, so it can be checked by eye. It is
+                     * not a health check and must not be read as one: an operator
+                     * can retire a code (`isActive: false`) without deleting it,
+                     * and `QrCodeService._findLiveCodeForEntity` filters only on
+                     * `deletedAt` while the public redirect also refuses inactive
+                     * rows — so this line would name a URL that 404s on every
+                     * scan. The predicate belongs to the QR engine (HOS-981) and
+                     * reaches all four purposes; it is recorded here and in
+                     * `services/listing-qr-sheet/listing-qr-code.ts`, not fixed.
+                     */}
                     <p className={styles.codeUrl}>
                         {t('common.qrSheet.encodes', 'El código lleva a: {{url}}', {
                             url: code.url

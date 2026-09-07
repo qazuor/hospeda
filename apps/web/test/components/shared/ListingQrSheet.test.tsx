@@ -306,7 +306,19 @@ describe('ListingQrSheet (HOS-982)', () => {
             expect(init.headers).toBeUndefined();
         });
 
-        it('ignores a second click while the first is still running', async () => {
+        /*
+         * Named for the MECHANISM, not for the intent, after an adversarial
+         * review pointed out the difference. The button is `disabled` while
+         * busy, so a second `fireEvent.click` on it dispatches nothing at all —
+         * which means a test called "ignores a second click" would stay green
+         * with the in-handler re-entrancy guard deleted. What is actually
+         * assertable from the outside is that the control refuses the second
+         * click, and that is what this asserts. The guard inside `handleDownload`
+         * is a second line that `disabled` makes unreachable from the UI; it is
+         * kept for a caller that renders the button some other way, and nothing
+         * here claims to cover it.
+         */
+        it('disables the button while working, so no second request can start', async () => {
             const { fetchMock, release } = stubFetchWithPendingSheet();
 
             renderPanel();
@@ -315,6 +327,8 @@ describe('ListingQrSheet (HOS-982)', () => {
             // up again by the idle name would fail before the assertion runs.
             const button = downloadButton();
             fireEvent.click(button);
+
+            expect(button.disabled).toBe(true);
             fireEvent.click(button);
 
             expect(

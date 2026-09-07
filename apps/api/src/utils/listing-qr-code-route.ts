@@ -40,14 +40,26 @@ export const ListingQrCodeResponseSchema = z.object({
 });
 
 /**
- * Per-user budget for the three listing-QR routes.
+ * Rate budget for the three listing-QR routes.
  *
- * Higher than the sheet's 20/min, and the difference is the access pattern, not
- * generosity. A sheet is one deliberate download; this route is read
- * AUTOMATICALLY, once per published listing card, by an owner index that renders
- * many cards — a host with twenty properties scrolling their dashboard would
- * exhaust a budget of twenty without doing anything unusual. The panel hydrates
- * on `client:visible`, so the requests arrive as the owner scrolls rather than
- * all at once, and 60 leaves room for a re-render or a reload on top of that.
+ * ## What this actually limits — read before tuning it
+ *
+ * `createPerRouteRateLimitMiddleware` builds its key as
+ * `route:{METHOD}:{path}:{ip}` (`middlewares/rate-limit.ts`), where `path` is
+ * `c.req.path` — the CONCRETE path, with the listing id already in it. So the
+ * bucket is **per listing per IP**, not per user and not per route family: an
+ * owner with twenty listings gets twenty independent buckets of 60/min, and two
+ * owners behind one NAT share each of theirs.
+ *
+ * That is worth spelling out because the obvious reading of "60/min on a route
+ * an index calls once per card" is that a big enough index exhausts it. It
+ * cannot — not here and not on the sheet's 20 either. The number therefore
+ * bounds repeated requests for ONE listing (a reload loop, a hot component, a
+ * script), which is the thing worth bounding, since the first call MINTS a row.
+ *
+ * Higher than the sheet's 20 all the same, and the difference is the access
+ * pattern: a sheet is one deliberate download, while this is read automatically
+ * whenever the owner's card comes into view, so a few reloads of the same page
+ * are ordinary rather than suspicious.
  */
 export const LISTING_QR_CODE_RATE_LIMIT = { requests: 60, windowMs: 60_000 } as const;
