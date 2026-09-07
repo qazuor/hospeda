@@ -53,16 +53,18 @@ export interface ResolveAuthTabsRedirectConfigArgs {
 /**
  * Resolves the origin every absolute URL in this module is anchored on.
  *
- * Returns the origin of the configured `siteUrl`. Both env vars behind it
- * (`PUBLIC_SITE_URL` / `HOSPEDA_SITE_URL`) are `z.url()`-validated at startup,
- * so a real deployment always takes that branch.
+ * Returns the origin of the configured `siteUrl`.
  *
- * The `astroUrl.origin` branch exists only because this function is pure and
- * its `siteUrl` is an ordinary argument: a caller could hand it a malformed
- * string. It is NOT a safe default — it is precisely the value HOS-1207 is
- * about, and a build that reaches it has the sign-up 403 back. It is kept
- * because throwing here would 500 the whole signin/signup page, which is worse
- * than the behaviour that shipped before this fix.
+ * The `astroUrl.origin` branch is UNREACHABLE from the two real call sites and
+ * is not a fallback anyone should count on. Both pages pass `getSiteUrl()`,
+ * which resolves through `validateWebEnv()` — a `z.url()` `safeParse` that
+ * THROWS on a malformed value, so a bad `siteUrl` has already failed the page
+ * before this function runs. It is kept only because this function is pure and
+ * its `siteUrl` is an ordinary argument a future caller could get wrong;
+ * returning something beats throwing from a helper that promises an origin.
+ *
+ * If a build ever does reach it, that is not a graceful degradation: it is
+ * precisely the value HOS-1207 is about, and the sign-up 403 is back.
  *
  * @param params.siteUrl - The configured site base URL.
  * @param params.astroUrl - The request URL, used only as a last resort.

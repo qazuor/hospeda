@@ -459,10 +459,10 @@ describe('resolveAuthTabsRedirectConfig', () => {
         });
 
         it('falls back to the request origin when siteUrl cannot be parsed at all', () => {
-            // Documents the last-resort branch rather than endorsing it: both
-            // env vars behind `siteUrl` are `z.url()`-validated, so a real
-            // deployment never lands here. Reaching it means the 403 is back —
-            // but a 500 on the whole auth page would be worse.
+            // Pins the branch's behaviour; it does NOT endorse it. Both real
+            // call sites pass `getSiteUrl()`, which throws on a value that
+            // fails `z.url()`, so this input cannot occur outside this test.
+            // Reaching it in a build means the 403 is back.
             // Arrange / Act
             const result = resolveAuthTabsRedirectConfig({
                 astroUrl: new URL('/es/auth/signup/', PROXIED_URL),
