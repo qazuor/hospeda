@@ -830,7 +830,7 @@
         "redeem": {
             "title": "Canjear un código",
             "description": "Ingresá un código promocional y aplicalo al instante a tu cuenta.",
-            "help": "Escribí el código tal cual te lo pasamos. Si suma días de prueba, los aplicamos al toque.",
+            "help": "Escribí el código tal cual te lo pasamos y lo aplicamos al instante.",
             "dashboardLink": "¿Tenés un código promocional?",
             "backToSubscription": "Volver a mi suscripción",
             "plansCta": "Ver planes",
@@ -842,9 +842,9 @@
             "errorPlanRestriction": "Este código no es válido para tu plan.",
             "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
             "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código.",
-            "errorNoActiveTrial": "No tenés una prueba gratis en curso, así que no hay nada para extender. El código no se usó: guardalo.",
             "discountNotice": "Este código es un descuento. No lo usamos: vas a poder aplicarlo cuando contrates un plan.",
-            "compNotice": "Este código no se puede canjear desde acá. Escribinos si te lo dieron y no te funciona."
+            "compNotice": "Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.",
+            "successDiscount": "Listo. Aplicamos el descuento a tu suscripción."
         }
     },
     "newsletter": {

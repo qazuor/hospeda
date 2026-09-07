@@ -106,8 +106,7 @@
         "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar.",
         "SUBSCRIPTION_CANCEL_PENDING": "Sua assinatura está programada para ser cancelada no fim do período. Você não pode mudar de plano até o período atual terminar.",
         "NO_ACTIVE_TRIAL": "Você não tem um período de teste grátis em andamento, então não há nada para estender. O código não foi usado — guarde-o.",
-        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "Este código não pode ser resgatado aqui. Fale com a gente se você recebeu um e ele não funciona.",
-        "PROMO_CODE_DISCOUNT_AT_CHECKOUT": "Este é um código de desconto. Não o usamos — você poderá aplicá-lo ao contratar um plano."
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "Este código não pode ser resgatado. Uma assinatura de cortesia é concedida pela equipe — fale com a gente se prometeram uma a você."
     },
     "filters": "Filtros",
     "filterChips": {

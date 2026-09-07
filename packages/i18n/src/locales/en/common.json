@@ -106,8 +106,7 @@
         "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue.",
         "SUBSCRIPTION_CANCEL_PENDING": "Your subscription is scheduled to cancel at the end of the period. You can't change plans until the current period ends.",
         "NO_ACTIVE_TRIAL": "You have no free trial running, so there is nothing to extend. The code was not used — keep it.",
-        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "This code cannot be redeemed here. Get in touch if you were given one and it does not work.",
-        "PROMO_CODE_DISCOUNT_AT_CHECKOUT": "This is a discount code. We did not use it — you can apply it when you subscribe to a plan."
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "This code cannot be redeemed. A complimentary subscription is granted by the team — get in touch if you were promised one."
     },
     "filters": "Filters",
     "filterChips": {

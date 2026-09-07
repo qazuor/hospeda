@@ -830,7 +830,7 @@
         "redeem": {
             "title": "Resgatar um código",
             "description": "Digite um código promocional e aplique-o na hora à sua conta.",
-            "help": "Escreva o código exatamente como o enviamos. Se ele soma dias de teste, aplicamos na hora.",
+            "help": "Escreva o código exatamente como o enviamos e aplicamos na hora.",
             "dashboardLink": "Tem um código promocional?",
             "backToSubscription": "Voltar para minha assinatura",
             "plansCta": "Ver planos",
@@ -842,9 +842,9 @@
             "errorPlanRestriction": "Este código não é válido para o seu plano.",
             "errorNewUsersOnly": "Este código é apenas para clientes novos.",
             "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código.",
-            "errorNoActiveTrial": "Você não tem um período de teste grátis em andamento, então não há nada para estender. O código não foi usado — guarde-o.",
             "discountNotice": "Este é um código de desconto. Não o usamos — você poderá aplicá-lo ao contratar um plano.",
-            "compNotice": "Este código não pode ser resgatado aqui. Fale com a gente se você recebeu um e ele não funciona."
+            "compNotice": "Este código não pode ser resgatado. Fale com a gente se prometeram uma assinatura de cortesia a você.",
+            "successDiscount": "Pronto. Aplicamos o desconto à sua assinatura."
         }
     },
     "newsletter": {

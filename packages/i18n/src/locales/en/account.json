@@ -830,7 +830,7 @@
         "redeem": {
             "title": "Redeem a code",
             "description": "Enter a promo code and apply it to your account right away.",
-            "help": "Type the code exactly as we sent it. If it adds trial days, we apply them on the spot.",
+            "help": "Type the code exactly as we sent it and we apply it right away.",
             "dashboardLink": "Have a promo code?",
             "backToSubscription": "Back to my subscription",
             "plansCta": "See plans",
@@ -842,9 +842,9 @@
             "errorPlanRestriction": "This code is not valid for your plan.",
             "errorNewUsersOnly": "This code is for new customers only.",
             "errorMinAmount": "Your purchase does not reach the minimum required for this code.",
-            "errorNoActiveTrial": "You have no free trial running, so there is nothing to extend. The code was not used — keep it.",
             "discountNotice": "This is a discount code. We did not use it — you can apply it when you subscribe to a plan.",
-            "compNotice": "This code cannot be redeemed here. Get in touch if you were given one and it does not work."
+            "compNotice": "This code cannot be redeemed. Get in touch if you were promised a complimentary subscription.",
+            "successDiscount": "Done. The discount is applied to your subscription."
         }
     },
     "newsletter": {

@@ -124,6 +124,7 @@ export function TrialExtensionForm({
     const [message, setMessage] = useState<string | null>(null);
     const [showPlansCta, setShowPlansCta] = useState(false);
     const [newTrialEnd, setNewTrialEnd] = useState<string | null>(null);
+    const [appliedEffectKind, setAppliedEffectKind] = useState<string | null>(null);
 
     const trimmed = code.trim();
     const isBusy = status === 'checking' || status === 'applying';
@@ -188,6 +189,34 @@ export function TrialExtensionForm({
         }
     }
 
+    /**
+     * Success copy for the effect that was actually applied.
+     *
+     * A trial extension names the new end date, which is the value the server
+     * PERSISTED (never one recomputed from `extraDays`). A discount has no such
+     * date, so it gets its own line — reusing the trial copy there would tell a
+     * paying subscriber their free trial was extended.
+     */
+    function resolveSuccessMessage(): string {
+        if (appliedEffectKind === 'discount') {
+            return t(
+                'account.pages.redeem.successDiscount',
+                'Listo. Aplicamos el descuento a tu suscripción.'
+            );
+        }
+        if (newTrialEnd !== null) {
+            return t(
+                'account.pages.subscription.trialExtension.successWithDate',
+                'Listo. Tu prueba gratis ahora termina el {{date}}.',
+                { date: formatDate({ date: newTrialEnd, locale }) }
+            );
+        }
+        return t(
+            'account.pages.subscription.trialExtension.success',
+            'Listo. Extendimos tu prueba gratis.'
+        );
+    }
+
     /** Shows a non-error notice and stops — the code was NOT sent to `/apply`. */
     function showNotice(text: string, withPlansCta: boolean) {
         setStatus('info');
@@ -218,24 +247,35 @@ export function TrialExtensionForm({
 
         const effectKind = validation.data.effectPreview?.effectKind;
 
-        // A complimentary code is never self-service — an operator grants it.
-        // The copy stays vague on purpose: confirming "yes, this is a courtesy
-        // code" to whoever typed it is not information this surface owes.
+        // A `comp` code is not redeemable anywhere: a complimentary subscription
+        // is an operator's grant, not a redemption (HOS-1171). The API refuses it
+        // too (403); stopping here just makes the message better. The copy stays
+        // vague on purpose — confirming "yes, that is a comp code" to whoever
+        // typed it is not information this surface owes.
         if (effectKind === 'comp') {
             showNotice(
                 t(
                     'account.pages.redeem.compNotice',
-                    'Este código no se puede canjear desde acá. Escribinos si te lo dieron y no te funciona.'
+                    'Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.'
                 ),
                 false
             );
             return;
         }
 
-        // Anything that is not a trial extension is a discount as far as the
-        // customer is concerned — including an untyped legacy code, which the
-        // API also refuses. Not sent, therefore not spent.
-        if (effectKind !== 'trial_extension') {
+        // A discount needs a subscription to apply to. With one, `/apply` routes
+        // through the fail-closed T-007 seam and really does lower the price of
+        // the subscription being paid for — that is the whole point of letting a
+        // subscribed customer redeem here.
+        //
+        // WITHOUT one there is nothing to discount, and sending it anyway would
+        // spend the code for no effect. So this stops and says "keep it for
+        // checkout" instead — an `undefined` effect lands here too, because a
+        // legacy row whose `value_kind` was never backfilled is a discount the
+        // server could not type, and guessing permissively is how a code gets
+        // burnt for nothing.
+        const isDiscountLike = effectKind !== 'trial_extension';
+        if (isDiscountLike && subscriptionId === undefined) {
             showNotice(
                 t(
                     'account.pages.redeem.discountNotice',
@@ -262,8 +302,11 @@ export function TrialExtensionForm({
             return;
         }
 
-        // `trialEnd` is the value the server PERSISTED — render it as-is.
+        // `trialEnd` is the value the server PERSISTED — render it as-is. It is
+        // absent for a discount, and the success copy falls back to a generic
+        // line rather than claiming a trial that was not extended.
         setNewTrialEnd(result.data.trialEnd ?? null);
+        setAppliedEffectKind(result.data.effectKind);
         setStatus('applied');
         onApplied?.();
     }
@@ -278,16 +321,7 @@ export function TrialExtensionForm({
                     className={styles.success}
                     role="status"
                 >
-                    {newTrialEnd
-                        ? t(
-                              'account.pages.subscription.trialExtension.successWithDate',
-                              'Listo. Tu prueba gratis ahora termina el {{date}}.',
-                              { date: formatDate({ date: newTrialEnd, locale }) }
-                          )
-                        : t(
-                              'account.pages.subscription.trialExtension.success',
-                              'Listo. Extendimos tu prueba gratis.'
-                          )}
+                    {resolveSuccessMessage()}
                 </p>
             </section>
         );
