@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWelcomeTourForRoles } from '@/config/tours';
+import { getNextPendingWelcomeTour } from '@/config/tours';
 import { useTourState } from '@/hooks/use-tour-state';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 
@@ -22,13 +22,16 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
     const [shouldStart, setShouldStart] = useState(false);
     const driverRef = useRef<DriverInstance | null>(null);
 
-    const tour = getWelcomeTourForRoles({ roles: userRoles });
+    // HOS-788: already filtered to "not yet seen" — see `getNextPendingWelcomeTour`.
+    // Recomputed every render, so once `markSeen` (below) flips `hasSeen`'s
+    // identity, this naturally advances to the NEXT pending tour, chaining
+    // them one at a time instead of requiring a fresh page load.
+    const tour = getNextPendingWelcomeTour({ roles: userRoles, hasSeen });
 
     useEffect(() => {
         if (isLoading || !tour) return;
-        if (hasSeen({ tourId: tour.id, version: tour.version })) return;
         setShouldStart(true);
-    }, [isLoading, tour, hasSeen]);
+    }, [isLoading, tour]);
 
     const handleComplete = useCallback(() => {
         if (!tour) return;

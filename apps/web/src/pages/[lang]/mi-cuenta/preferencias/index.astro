@@ -97,6 +97,32 @@ const apiUrl = getApiUrl();
 		color: var(--core-muted-foreground);
 	}
 
+	/* HOS-788: a role set can match several welcome tours now (e.g. tourist +
+	   host), so RestartTour renders one row per tour instead of a single
+	   button. */
+	:global(.restart-tour__list) {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	:global(.restart-tour__item) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	:global(.restart-tour__item-name) {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
 	:global(.restart-tour__button) {
 		align-self: flex-start;
 		padding: var(--space-3) var(--space-4);

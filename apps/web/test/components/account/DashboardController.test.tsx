@@ -5,7 +5,7 @@ import { DashboardController } from '@/components/account/DashboardController.cl
 
 const mockUseTourState = vi.fn();
 const mockUseWhatsNew = vi.fn();
-const mockGetWelcomeTourForRoles = vi.fn();
+const mockGetWelcomeToursForRoles = vi.fn();
 
 vi.mock('@/hooks/use-tour-state', () => ({
     useTourState: () => mockUseTourState()
@@ -16,8 +16,8 @@ vi.mock('@/hooks/use-whats-new', () => ({
 }));
 
 vi.mock('@/config/tours', () => ({
-    getWelcomeTourForRoles: ({ roles }: { roles: readonly string[] | null }) =>
-        mockGetWelcomeTourForRoles(roles)
+    getWelcomeToursForRoles: ({ roles }: { roles: readonly string[] | null }) =>
+        mockGetWelcomeToursForRoles(roles)
 }));
 
 vi.mock('@/components/account/TourController.client', () => ({
@@ -36,7 +36,7 @@ vi.mock('@/components/account/WhatsNewModal.client', () => ({
 describe('DashboardController D12 gate', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetWelcomeTourForRoles.mockReturnValue({ id: 'web.host.welcome', version: '1.0' });
+        mockGetWelcomeToursForRoles.mockReturnValue([{ id: 'web.host.welcome', version: 1 }]);
     });
 
     it('does not auto-open whats-new when welcome tour is pending', () => {
@@ -118,7 +118,7 @@ describe('DashboardController D12 gate', () => {
     });
 
     it('skips tour gate when no tour exists for role', () => {
-        mockGetWelcomeTourForRoles.mockReturnValue(null);
+        mockGetWelcomeToursForRoles.mockReturnValue([]);
         mockUseTourState.mockReturnValue({ isLoading: false, hasSeen: () => true });
         mockUseWhatsNew.mockReturnValue({
             items: [
