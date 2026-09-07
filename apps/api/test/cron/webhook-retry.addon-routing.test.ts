@@ -58,7 +58,12 @@ vi.mock('../../src/utils/env', () => ({
 
 vi.mock('@sentry/node', () => ({ captureMessage: vi.fn() }));
 
-vi.mock('@repo/billing', () => ({
+// Partial, not a whole-module replacement: an object literal here leaves every
+// other export undefined, and an export missing inside a try/catch fails
+// SILENTLY — the phase does nothing while every assertion still passes
+// (HOS-702). `check` guard: billing-mock-must-be-partial.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     asMajor: (value: number) => value,
     toMajor: (value: number) => value / 100,
     asCentavos: (value: number) => value,
