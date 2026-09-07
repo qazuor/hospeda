@@ -11,9 +11,12 @@
  * module. Kept separate from the flag-ON twin because `env` is read at module
  * scope.
  *
- * `shouldUseRecurringAddonCheckout` is deliberately NOT mocked: the decision
- * itself is what is under test, so the real predicate runs against the real
- * (absent) flag.
+ * `shouldUseRecurringAddonCheckout` (in `addon.checkout.recurring-resolve.ts`)
+ * is deliberately NOT mocked: the decision itself is what is under test, so the
+ * real predicate runs against the real (absent) flag. That also proves the
+ * ordering inside it — the flag is checked FIRST, so with it off the gate never
+ * reaches the catalog read, and the `getDb()` stub below (which has no
+ * `select`) would throw if it did.
  *
  * @module test/services/addon.checkout.recurring-flag-off
  */
