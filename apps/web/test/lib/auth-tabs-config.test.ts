@@ -319,4 +319,163 @@ describe('resolveAuthTabsRedirectConfig', () => {
             );
         });
     });
+
+    // HOS-1207. Every other case in this file builds `astroUrl` with
+    // `urlFor()`, i.e. on SITE_URL — so `astroUrl.origin === siteUrl` in all
+    // of them and the suite is structurally blind to which of the two the
+    // implementation reads. That is exactly the difference that broke
+    // password sign-up in staging, so these cases pull the two apart.
+    describe('HOS-1207: the request origin is not the configured site origin', () => {
+        // What the VPS actually hands Astro: TLS ends at Cloudflare and the
+        // internal proxy request is plain HTTP, which Astro reports verbatim.
+        const PROXIED_URL = 'http://staging.hospeda.com.ar';
+        const CONFIGURED_SITE = 'https://staging.hospeda.com.ar';
+
+        it('emits an https verificationCallbackUrl even though the request arrived over http', () => {
+            // Arrange: the exact shape that returned 403 and created no account.
+            const astroUrl = new URL('/es/auth/signup/', PROXIED_URL);
+
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl,
+                locale: 'es',
+                siteUrl: CONFIGURED_SITE,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert: this is the value Better Auth checks against
+            // `trustedOrigins`; an http:// one rejects the whole sign-up.
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://staging.hospeda.com.ar/es/mi-cuenta/'
+            );
+        });
+
+        it('carries a requested returnUrl on the configured origin, not the proxied one', () => {
+            // Arrange
+            const astroUrl = new URL(
+                '/es/auth/signup/?returnUrl=/es/publicar/experiencias/',
+                PROXIED_URL
+            );
+
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl,
+                locale: 'es',
+                siteUrl: CONFIGURED_SITE,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://staging.hospeda.com.ar/es/publicar/experiencias/'
+            );
+        });
+
+        it('anchors the sign-in redirect on the configured origin too', () => {
+            // Arrange
+            const astroUrl = new URL(
+                '/es/auth/signin/?returnUrl=/es/mi-cuenta/favoritos/',
+                PROXIED_URL
+            );
+
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl,
+                locale: 'es',
+                siteUrl: CONFIGURED_SITE,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signInConfig.redirectTo).toBe(
+                'https://staging.hospeda.com.ar/es/mi-cuenta/favoritos/'
+            );
+        });
+
+        it('anchors the verify-email-sent browser destination on the configured origin too', () => {
+            // Arrange
+            const astroUrl = new URL('/es/auth/signup/', PROXIED_URL);
+
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl,
+                locale: 'es',
+                siteUrl: CONFIGURED_SITE,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.redirectTo).toBe(
+                'https://staging.hospeda.com.ar/es/auth/verify-email-sent/'
+            );
+        });
+
+        it('ignores a request host that is not the configured site at all', () => {
+            // A scheme mismatch is what shipped, but the same anchor has to
+            // hold for any alias the app is reachable on — every one of them
+            // is an origin Better Auth was never told to trust.
+            // Arrange
+            const astroUrl = new URL(
+                '/es/auth/signup/?returnUrl=/es/mi-cuenta/',
+                'https://hospeda-web-staging.internal:4321'
+            );
+
+            // Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl,
+                locale: 'es',
+                siteUrl: CONFIGURED_SITE,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://staging.hospeda.com.ar/es/mi-cuenta/'
+            );
+            expect(result.signInConfig.redirectTo).not.toContain('internal');
+        });
+
+        it('normalizes a configured siteUrl carrying a path or trailing slash', () => {
+            // `getSiteUrl()` does not strip a trailing slash the way
+            // `getApiUrl()` does, so the anchor has to normalize it itself.
+            // Arrange / Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: new URL('/es/auth/signup/', PROXIED_URL),
+                locale: 'es',
+                siteUrl: 'https://staging.hospeda.com.ar/',
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://staging.hospeda.com.ar/es/mi-cuenta/'
+            );
+        });
+
+        it('falls back to the request origin when siteUrl cannot be parsed at all', () => {
+            // Documents the last-resort branch rather than endorsing it: both
+            // env vars behind `siteUrl` are `z.url()`-validated, so a real
+            // deployment never lands here. Reaching it means the 403 is back —
+            // but a 500 on the whole auth page would be worse.
+            // Arrange / Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: new URL('/es/auth/signup/', PROXIED_URL),
+                locale: 'es',
+                siteUrl: 'not-a-url',
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'http://staging.hospeda.com.ar/es/mi-cuenta/'
+            );
+        });
+    });
 });

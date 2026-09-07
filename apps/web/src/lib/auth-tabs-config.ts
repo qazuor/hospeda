@@ -23,6 +23,11 @@
  * stamps into the verification link. Because `autoSignInAfterVerification` is
  * enabled, following that link creates the session, so the callback can point
  * at a protected page directly.
+ *
+ * Every absolute URL this helper returns is built on the CONFIGURED site
+ * origin (`siteUrl`), never on the request's own origin — see
+ * {@link resolveSiteOrigin} for why that distinction is load-bearing rather
+ * than cosmetic (HOS-1207).
  */
 
 import type { AuthTabsSignInConfig, AuthTabsSignUpConfig } from '@/components/auth/AuthTabs.client';
@@ -43,6 +48,38 @@ export interface ResolveAuthTabsRedirectConfigArgs {
     readonly adminUrl: string | undefined;
     /** Whether the app is running in production (gates dev-only hosts in the allowlist). */
     readonly isProduction: boolean;
+}
+
+/**
+ * Resolves the origin every absolute URL in this module is anchored on.
+ *
+ * Returns the origin of the configured `siteUrl`. Both env vars behind it
+ * (`PUBLIC_SITE_URL` / `HOSPEDA_SITE_URL`) are `z.url()`-validated at startup,
+ * so a real deployment always takes that branch.
+ *
+ * The `astroUrl.origin` branch exists only because this function is pure and
+ * its `siteUrl` is an ordinary argument: a caller could hand it a malformed
+ * string. It is NOT a safe default — it is precisely the value HOS-1207 is
+ * about, and a build that reaches it has the sign-up 403 back. It is kept
+ * because throwing here would 500 the whole signin/signup page, which is worse
+ * than the behaviour that shipped before this fix.
+ *
+ * @param params.siteUrl - The configured site base URL.
+ * @param params.astroUrl - The request URL, used only as a last resort.
+ * @returns An absolute origin (`scheme://host[:port]`).
+ */
+function resolveSiteOrigin({
+    siteUrl,
+    astroUrl
+}: {
+    readonly siteUrl: string;
+    readonly astroUrl: URL;
+}): string {
+    try {
+        return new URL(siteUrl).origin;
+    } catch {
+        return astroUrl.origin;
+    }
 }
 
 /** Result of {@link resolveAuthTabsRedirectConfig}. */
@@ -86,14 +123,29 @@ export function resolveAuthTabsRedirectConfig({
         ? validateCallbackUrl({ url: rawCallbackUrl, siteUrl, adminUrl, isProduction })
         : null;
 
-    const origin = astroUrl.origin;
+    // Every absolute URL built here is anchored on the CONFIGURED site
+    // origin, never on `astroUrl.origin` (HOS-1207).
+    //
+    // TLS terminates at Cloudflare, so the request Astro actually receives
+    // through the internal proxy is plain HTTP, and Astro does not honour
+    // `x-forwarded-proto` — `astroUrl.origin` resolves to
+    // `http://staging.hospeda.com.ar` on the VPS. That was harmless while
+    // these values only drove browser redirects, which resolve either way.
+    // It stopped being harmless when HOS-838 started sending one of them to
+    // the API: Better Auth checks `callbackURL` against `trustedOrigins`
+    // (derived from `HOSPEDA_SITE_URL`, an `https://` origin), and a scheme
+    // mismatch rejects the WHOLE sign-up request with a 403 — no account is
+    // created. `siteUrl` is that same configured value, so anchoring on it
+    // is what makes the check pass by construction rather than by
+    // environment coincidence.
+    const siteOrigin = resolveSiteOrigin({ siteUrl, astroUrl });
 
     // The destination for anyone who ends up authenticated in THIS
     // browser session — via sign-in credentials, or via OAuth from either
     // tab. A valid callbackUrl is already absolute+allowlisted and is used
     // verbatim; otherwise the relative returnPath is anchored on the
-    // request origin.
-    const authenticatedTargetHref = validatedCallbackUrl ?? new URL(returnPath, origin).href;
+    // site origin.
+    const authenticatedTargetHref = validatedCallbackUrl ?? new URL(returnPath, siteOrigin).href;
 
     const signInConfig: AuthTabsSignInConfig = {
         redirectTo: authenticatedTargetHref,
@@ -105,11 +157,12 @@ export function resolveAuthTabsRedirectConfig({
         // still goes to the "check your inbox" page. The destination is not
         // lost any more, though: it travels in the verification email as
         // `verificationCallbackUrl` (HOS-838).
-        redirectTo: new URL(buildUrl({ locale, path: 'auth/verify-email-sent' }), origin).href,
+        redirectTo: new URL(buildUrl({ locale, path: 'auth/verify-email-sent' }), siteOrigin).href,
         // Where the verification link should land the user. Absolute on
         // purpose: Better Auth resolves a relative callback against the API
         // origin, which serves no pages. The API forwards this verbatim after
-        // Better Auth has validated it against `trustedOrigins`.
+        // Better Auth has validated it against `trustedOrigins` — which is
+        // why it must be built on `siteOrigin`, see above (HOS-1207).
         verificationCallbackUrl: authenticatedTargetHref,
         // OAuth registration DOES authenticate immediately, so — as of
         // HOS-959 — it shares the exact same destination as sign-in,
