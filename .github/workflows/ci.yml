@@ -306,6 +306,13 @@ jobs:
       # is NOT what makes a guard run in this job (see the note above).
       - name: Check every contact_info column declares mergeableJsonbColumns
         run: pnpm check:mergeable-contact-info
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above). This one
+      # fails on a <dialog> in apps/web that carries no height cap — the state
+      # six of them were in, which looks fine with a test account and puts the
+      # confirm button off-screen with a real one.
+      - name: Check every web dialog has a height cap and scroll (HOS-958)
+        run: pnpm check:dialog-panel
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
