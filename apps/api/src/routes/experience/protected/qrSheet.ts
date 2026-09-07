@@ -54,7 +54,17 @@ import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
-/** Builds the PDF. Exported standalone so the route test can call it directly. */
+/**
+ * Builds the PDF.
+ *
+ * A named export rather than an inline lambda, so the handler carries a name in
+ * a stack trace. What EXERCISES it is `test/routes/listing-qr-sheet.test.ts`,
+ * which mounts the route rather than calling this: the factory, its error
+ * formatter and the `ServiceError` class identity are half of what those tests
+ * assert, and calling the function directly would skip all three. The
+ * anti-enumeration half lives in
+ * `test/routes/existence-disclosure.paired-probe.test.ts`.
+ */
 export async function handleGetExperienceQrSheet(
     ctx: Context,
     params: Record<string, unknown>
