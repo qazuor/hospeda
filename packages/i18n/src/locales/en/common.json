@@ -230,5 +230,23 @@
     "back": "Back",
     "close": "Close",
     "deleting": "Deleting...",
-    "anonymous": "User"
+    "anonymous": "User",
+    "qrSheet": {
+        "headline": "Scan the code",
+        "invite": "Point your phone camera at the code to see the full listing: photos, contact details and directions.",
+        "brandTagline": "Places to stay, eat and explore across the Litoral",
+        "help": "An A4 sheet carrying your listing's code, ready to print and tape to the door or leave on the counter.",
+        "download": "Download the QR sheet (PDF)",
+        "working": "Generating the sheet…",
+        "ready": "Done, your QR sheet was downloaded.",
+        "unpublished": "You'll be able to download the QR sheet once your listing is published.",
+        "errorNotFound": "We couldn't generate the sheet. Check that your listing is still published.",
+        "errorRateLimited": "You asked for the sheet several times in a row. Wait a minute and try again.",
+        "errorSignedOut": "Your session expired. Sign in again to download the sheet.",
+        "error": "We couldn't generate the sheet. Please try again in a moment.",
+        "codeAlt": "QR code of your listing",
+        "codeLoading": "Loading the code…",
+        "codeError": "We couldn't show the code here, but you can still download the sheet.",
+        "encodes": "The code leads to: {{url}}"
+    }
 }

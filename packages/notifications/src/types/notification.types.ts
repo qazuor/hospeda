@@ -12,6 +12,17 @@ export enum NotificationType {
     ADDON_EXPIRED = 'addon_expired',
     ADDON_RENEWAL_CONFIRMATION = 'addon_renewal_confirmation',
     /**
+     * The FIRST charge of a recurring add-on subscription (HOS-847 PR 5).
+     *
+     * Distinct from {@link NotificationType.ADDON_PURCHASE}, which says "you
+     * bought this once" — the wrong thing to tell someone who has just
+     * authorised a MercadoPago preapproval that will charge their card again
+     * next month. This one names the cadence, the next charge date and how to
+     * stop it. Distinct from {@link NotificationType.ADDON_RENEWAL_CONFIRMATION}
+     * too: that one is the second charge onwards.
+     */
+    ADDON_SUBSCRIPTION_STARTED = 'addon_subscription_started',
+    /**
      * @deprecated HOS-1012 T-016 replaces this with the three offset-specific
      * types below. Kept until that task retires the cron path that still emits
      * it, so this addition does not break a live sender.
@@ -437,6 +448,54 @@ export interface AddonPurchaseConfirmationPayload extends BaseNotificationPayloa
     /** Add-on catalog slug, used to deep-link the CTA to this add-on (HOS-722). */
     readonly addonSlug?: string;
     /** Recipient's preferred locale for the CTA link (HOS-722). Falls back to `'es'`. */
+    readonly locale?: AddonLinkLocale;
+}
+
+/**
+ * The first charge of a recurring add-on subscription (HOS-847 PR 5).
+ *
+ * Its own payload rather than a reuse of {@link AddonPurchaseConfirmationPayload}
+ * because the two say opposite things. A one-time receipt names an amount and,
+ * at most, an expiry; a subscription notice has to name the CADENCE and the
+ * NEXT CHARGE DATE, and both are required here rather than optional — an email
+ * that omits them is the "you bought this once" message the buyer must not
+ * receive.
+ *
+ * @example
+ * ```ts
+ * const payload: AddonSubscriptionStartedPayload = {
+ *   type: NotificationType.ADDON_SUBSCRIPTION_STARTED,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   addonName: 'Alojamientos extra',
+ *   amount: 500000,
+ *   currency: 'ARS',
+ *   billingInterval: 'monthly',
+ *   nextChargeAt: '2026-06-10T12:00:00.000Z',
+ *   addonSlug: 'extra-accommodations-5',
+ *   locale: 'es'
+ * };
+ * ```
+ */
+export interface AddonSubscriptionStartedPayload extends BaseNotificationPayload {
+    type: NotificationType.ADDON_SUBSCRIPTION_STARTED;
+    /** Human-readable add-on name, in the recipient's own locale. */
+    readonly addonName: string;
+    /** Short description of what the add-on provides. Empty string when unknown. */
+    readonly addonDescription?: string;
+    /** Amount charged now, in centavos. Also the amount of each future charge. */
+    readonly amount: number;
+    /** ISO 4217 currency code. Defaults to `'ARS'` at render time. */
+    readonly currency?: string;
+    /** How often the card will be charged. */
+    readonly billingInterval: 'monthly' | 'annual';
+    /** ISO 8601 timestamp of the NEXT charge. Required — see the type's doc. */
+    readonly nextChargeAt: string;
+    /** Add-on catalog slug, used to deep-link the CTA to this add-on (HOS-722). */
+    readonly addonSlug?: string;
+    /** Recipient's preferred locale. Falls back to `'es'`. */
     readonly locale?: AddonLinkLocale;
 }
 
@@ -1358,6 +1417,7 @@ export type NotificationPayload =
     | AdminLeadReceivedPayload
     | PurchaseConfirmationPayload
     | AddonPurchaseConfirmationPayload
+    | AddonSubscriptionStartedPayload
     | PaymentNotificationPayload
     | SubscriptionEventPayload
     | SubscriptionLifecyclePayload

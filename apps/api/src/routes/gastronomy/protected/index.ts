@@ -37,6 +37,8 @@ import { protectedPatchGastronomyRoute } from './patch';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
+import { protectedGetGastronomyQrCodeRoute } from './qrCode';
+import { protectedGetGastronomyQrSheetRoute } from './qrSheet';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
@@ -70,6 +72,13 @@ app.route('/', protectedGastronomyViewStatsDailySeriesRoute);
 // static segment ahead of a param at the same position regardless of insertion
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetGastronomyBrochureRoute);
+
+// GET /{id}/qr-sheet — Printable QR sheet for the door (HOS-982). A different
+// document from the brochure above and from the table's menu code: this one is
+// `purpose: LISTING` and carries NO entitlement gate (owner decision). Same
+// defensive ordering rationale as the brochure.
+app.route('/', protectedGetGastronomyQrSheetRoute);
+app.route('/', protectedGetGastronomyQrCodeRoute);
 
 // Menu (HOS-895) — the carta and its photo/PDF alternative. Registered
 // before /{id} for the same DEFENSIVE reason as the media and brochure

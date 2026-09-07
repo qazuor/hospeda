@@ -115,6 +115,25 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
         });
     });
 
+    // ── HOS-899: entitlement-gate detection on the SSR usage fetch ─────────────
+    describe('collections entitlement gate (HOS-899)', () => {
+        it('declares a collectionsAccessDenied flag, initialised false', () => {
+            expect(src).toContain('let collectionsAccessDenied = false;');
+        });
+
+        it('branches on a 403 response before falling back to a generic warn', () => {
+            expect(src).toContain('response.status === 403');
+        });
+
+        it('checks the error code for ENTITLEMENT_REQUIRED on a 403', () => {
+            expect(src).toContain("errorBody.error?.code === 'ENTITLEMENT_REQUIRED'");
+        });
+
+        it('passes accessDenied to CreateCollectionCTA instead of folding it into isAtLimit', () => {
+            expect(src).toContain('accessDenied={collectionsAccessDenied}');
+        });
+    });
+
     describe('styling', () => {
         it('uses CSS custom properties for colors (no hardcoded values)', () => {
             // Should use var(--brand-primary), var(--core-muted-foreground), etc.

@@ -6,7 +6,9 @@
  * - POST /api/v1/protected/user-bookmark-collections  (create mode)
  * - PATCH /api/v1/protected/user-bookmark-collections/:id  (edit mode)
  * - Inline field error for 409 NAME_TAKEN
- * - Toast for 403 LIMIT_REACHED and generic errors
+ * - Distinct toasts for 403 LIMIT_REACHED (has access, hit the cap) vs 403
+ *   ENTITLEMENT_REQUIRED (no collections access at all — HOS-899), plus a
+ *   generic fallback for every other error
  *
  * Extracted from CreateEditCollectionModal.client.tsx to keep that file under 500 lines.
  */
@@ -18,6 +20,7 @@ import {
 } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,7 +57,6 @@ export interface UseCollectionMutationResult {
 // ─── Error code constants ─────────────────────────────────────────────────────
 
 const HTTP_CONFLICT = 409;
-const HTTP_FORBIDDEN = 403;
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -127,7 +129,35 @@ export function useCollectionMutation({
                     return false;
                 }
 
-                if (status === HTTP_FORBIDDEN || code === 'LIMIT_REACHED') {
+                // These are two distinct 403s and must not share a message
+                // (HOS-899): `ENTITLEMENT_REQUIRED` means the actor's plan
+                // doesn't include collections at all, while `LIMIT_REACHED`
+                // means they have access but hit their plan's cap. Both used
+                // to be caught by `status === HTTP_FORBIDDEN`, which meant a
+                // gated actor (0 collections allowed) saw "you've reached
+                // your maximum" — a false claim about a limit they never had.
+                // Discriminate by `code`, not `status`.
+                if (code === 'ENTITLEMENT_REQUIRED') {
+                    onClose();
+                    // Routed through t() (not a naked literal) so a non-`es`
+                    // locale gets the translated copy — mirrors the key/
+                    // fallback already used by the sibling upgrade cartel in
+                    // UserFavoritesList.client.tsx (HOS-899).
+                    const entitlementFallback =
+                        'Las colecciones están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.';
+                    addToast({
+                        type: 'error',
+                        message: locale
+                            ? createT(locale)(
+                                  'account.favorites.collections.upgrade.message',
+                                  entitlementFallback
+                              )
+                            : entitlementFallback
+                    });
+                    return false;
+                }
+
+                if (code === 'LIMIT_REACHED') {
                     onClose();
                     addToast({
                         type: 'error',

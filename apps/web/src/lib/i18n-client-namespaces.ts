@@ -187,6 +187,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.pagination',
     'common.prev',
     'common.prevPage',
+    // HOS-982 — `ListingQrSheet.client.tsx` (the printable QR sheet download,
+    // shared by the three verticals) names this subtree. It also carries the
+    // three keys the PDF itself prints (`headline` / `invite` / `brandTagline`,
+    // resolved server-side by `qr-sheet-content.ts`): a prefix is two segments
+    // by design, so those ride along. ~150 bytes for one panel's copy.
+    'common.qrSheet',
     'common.removing',
     'common.retry',
     // HOS-957 — the rich-text toolbar's link dialog, which replaced

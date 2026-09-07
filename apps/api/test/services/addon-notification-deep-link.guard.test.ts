@@ -41,7 +41,9 @@ import { describe, expect, it } from 'vitest';
 const DISPATCH_FILES = [
     'src/cron/jobs/addon-expiry.job.ts',
     'src/services/addon.checkout.ts',
-    'src/services/addon.user-addons.ts'
+    'src/services/addon.user-addons.ts',
+    // HOS-847 PR 5: the recurring add-on's subscription notice.
+    'src/services/addon-recurring-activation.service.ts'
 ] as const;
 
 /**
@@ -51,13 +53,16 @@ const DISPATCH_FILES = [
  *   ADDON_EXPIRATION_WARNING reminders (3).
  * - `addon.checkout.ts` — ADDON_PURCHASE (1).
  * - `addon.user-addons.ts` — ADDON_CANCELLATION (1).
+ * - `addon-recurring-activation.service.ts` — ADDON_SUBSCRIPTION_STARTED (1),
+ *   HOS-847 PR 5.
  *
  * ADDON_RENEWAL_CONFIRMATION is deliberately absent: the notification type
  * exists but has NO dispatch anywhere (GAP-043-53, `subscription-logic.ts`).
- * Building one is out of scope for HOS-722; if it is ever built, it must carry
- * these fields too, and bumping this number is how that gets noticed.
+ * ADDON_SUBSCRIPTION_STARTED does NOT close that gap — it is the FIRST charge
+ * of a recurring add-on, not a renewal; the second charge onwards still sends
+ * nothing, which is PR 6/PR 7 territory.
  */
-const EXPECTED_DISPATCH_COUNT = 5;
+const EXPECTED_DISPATCH_COUNT = 6;
 
 /** Repo-relative root of the API app, resolved from this test's location. */
 const API_ROOT = join(__dirname, '..', '..');

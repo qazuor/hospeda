@@ -157,7 +157,19 @@ function makeQueryBuilder<T>(rows: T[]) {
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
-        select: vi.fn(() => {
+        select: vi.fn((projection?: Record<string, unknown>) => {
+            // HOS-847 PR 5: `handleSubscriptionAuthorizedPayment` now asks
+            // whether the preapproval belongs to a recurring ADD-ON before it
+            // resolves any plan subscription. That is the only select on this
+            // path that projects `addonSlug`, so it is answered here with an
+            // empty result and — crucially — WITHOUT consuming a slot in the
+            // ordered `nextSelectCall` sequence every other test in this file
+            // depends on. Every fixture here is about PLAN subscriptions; the
+            // add-on routing is covered in
+            // `addon-recurring-webhook-routing.test.ts`.
+            if (projection !== undefined && 'addonSlug' in projection) {
+                return makeQueryBuilder([]);
+            }
             // Per-handler invocation: first select is the subscription
             // lookup; second select is EITHER the payments dedupe lookup
             // (the common case) OR (HOS-276) the post-link re-lookup of the

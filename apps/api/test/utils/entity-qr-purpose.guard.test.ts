@@ -34,7 +34,20 @@ const CALL = 'resolveEntityQrScanUrl(';
  *
  * An experience appears TWICE on purpose: its brochure and its certificate are
  * two live codes for one subject, landing in different places, and `purpose` is
- * the only thing that tells them apart.
+ * the only thing that tells them apart. Since HOS-982 an experience and a
+ * gastronomy each appear a THIRD time, for `LISTING`: the printable sheet is
+ * another live code for the same subject, and the distance between the three is
+ * exactly what this guard keeps honest — a brochure is handed to someone, a
+ * certificate is issued to someone, and a listing sheet is taped to a door.
+ *
+ * HOS-982 PR 2 adds a THIRD `LISTING` caller per vertical, and this one is not a
+ * new document — `qrCode.ts` returns the SAME code as its `qrSheet.ts` twin, as
+ * SVG, so the owner can see on screen what the printed page will carry. Which is
+ * precisely why it belongs in this inventory: the pair below is the only thing
+ * making "the same code" true. Get `purpose` wrong in one of the two and nothing
+ * fails — the panel shows a perfectly good symbol, the sheet prints a perfectly
+ * good symbol, and they are two different codes taped to the same door with the
+ * listing's scan counts split between them.
  */
 const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>> = {
     'routes/gastronomy/protected/brochure.ts': {
@@ -48,6 +61,30 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
     'routes/experience/protected/certificates.ts': {
         entityType: 'EXPERIENCE',
         purpose: 'CERTIFICATE'
+    },
+    'routes/accommodation/protected/qrSheet.ts': {
+        entityType: 'ACCOMMODATION',
+        purpose: 'LISTING'
+    },
+    'routes/gastronomy/protected/qrSheet.ts': {
+        entityType: 'GASTRONOMY',
+        purpose: 'LISTING'
+    },
+    'routes/experience/protected/qrSheet.ts': {
+        entityType: 'EXPERIENCE',
+        purpose: 'LISTING'
+    },
+    'routes/accommodation/protected/qrCode.ts': {
+        entityType: 'ACCOMMODATION',
+        purpose: 'LISTING'
+    },
+    'routes/gastronomy/protected/qrCode.ts': {
+        entityType: 'GASTRONOMY',
+        purpose: 'LISTING'
+    },
+    'routes/experience/protected/qrCode.ts': {
+        entityType: 'EXPERIENCE',
+        purpose: 'LISTING'
     }
 };
 
