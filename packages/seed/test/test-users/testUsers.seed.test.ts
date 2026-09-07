@@ -23,9 +23,11 @@ function findUser(email: string) {
 }
 
 describe('TEST_USERS matrix', () => {
-    it('should contain 18 test users (14 pre-existing + 4 HOS-694 commerce-owner fixtures)', () => {
+    // Recounted, not decremented by eye: HOS-1224 retired
+    // `tourist-plus@local.test` along with the plan it existed to exercise.
+    it('should contain 17 test users (13 pre-existing + 4 HOS-694 commerce-owner fixtures)', () => {
         // Assert
-        expect(TEST_USERS).toHaveLength(18);
+        expect(TEST_USERS).toHaveLength(17);
     });
 
     it('should have no duplicate emails', () => {

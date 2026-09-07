@@ -173,17 +173,32 @@ async function setLimitKey(
 
 /**
  * Inserts a minimal, valid `billing_plans` row for a name that does not
- * exist on this database — used by the 0003 describe block below, since
- * HOS-692 hard-deletes the 3 complex-* rows everywhere and a fresh seed no
- * longer creates them (removed from ALL_PLANS). Scoped to the caller's
- * ALWAYS-ROLLED-BACK transaction, so this never persists.
+ * exist on this database. Scoped to the caller's ALWAYS-ROLLED-BACK
+ * transaction, so this never persists.
+ *
+ * Two retired plans need it now. HOS-692 hard-deleted the 3 complex-* rows
+ * everywhere and removed them from `ALL_PLANS`, so the 0003 describe block
+ * below recreates them; HOS-1224 did the same to `tourist-plus`, so the 0001
+ * and 0002 blocks recreate that one. In both cases the migration under test is
+ * FROZEN HISTORY that correctly hardcodes the slug it ran against — the row is
+ * a fact about the database when the migration ran, and reading it out of
+ * today's seeded catalog was always the wrong way to obtain it.
  */
 async function insertTempPlan(tx: DrizzleClient, name: string, active: boolean): Promise<void> {
     await tx.insert(billingPlans).values({
         name,
         displayName: name,
         monthlyPriceArs: 100_000,
-        active
+        active,
+        // `limits` and `entitlements` must be non-NULL jsonb, not merely absent.
+        // 0001/0002 select with `NOT (limits ? key)`, and over a NULL `limits`
+        // that predicate evaluates to NULL rather than true — the row would be
+        // skipped silently and the migration's reported count would come back
+        // one short, which reads like the migration is broken rather than like
+        // the fixture is. 0003 does not care, but a "minimal VALID row" should
+        // not depend on which migration happens to consume it.
+        limits: {},
+        entitlements: []
     });
 }
 
@@ -232,6 +247,11 @@ afterAll(async () => {
 describe('0001-billing-plans-ai-consumer-search-limits', () => {
     it('adds both limit keys with the documented per-plan values when missing', async () => {
         await withRollback(async (tx) => {
+            // HOS-1224 retired tourist-plus, so the required seed no longer
+            // creates it. These two migrations are frozen history that ran
+            // when it existed, so the row is recreated here rather than read
+            // out of today's catalog.
+            await insertTempPlan(tx, 'tourist-plus', true);
             for (const name of ALL_SIX_ACCOMMODATION_PLANS) {
                 await stripLimitKeys(tx, name, [
                     'max_ai_search_per_month',
@@ -270,6 +290,11 @@ describe('0001-billing-plans-ai-consumer-search-limits', () => {
 
     it('is idempotent: running up() again once both keys are present updates zero rows', async () => {
         await withRollback(async (tx) => {
+            // HOS-1224 retired tourist-plus, so the required seed no longer
+            // creates it. These two migrations are frozen history that ran
+            // when it existed, so the row is recreated here rather than read
+            // out of today's catalog.
+            await insertTempPlan(tx, 'tourist-plus', true);
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
 
             // First run establishes the keys (starting state may already have
@@ -285,6 +310,11 @@ describe('0001-billing-plans-ai-consumer-search-limits', () => {
 
     it('never overwrites an operator-edited limit value (OR-PRESERVE)', async () => {
         await withRollback(async (tx) => {
+            // HOS-1224 retired tourist-plus, so the required seed no longer
+            // creates it. These two migrations are frozen history that ran
+            // when it existed, so the row is recreated here rather than read
+            // out of today's catalog.
+            await insertTempPlan(tx, 'tourist-plus', true);
             await stripLimitKeys(tx, 'tourist-plus', ['max_ai_search_per_month']);
 
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
@@ -310,6 +340,11 @@ describe('0001-billing-plans-ai-consumer-search-limits', () => {
 describe('0002-billing-plans-collections-limit', () => {
     it('appends can_use_collections and sets max_collections with the documented per-plan values when missing', async () => {
         await withRollback(async (tx) => {
+            // HOS-1224 retired tourist-plus, so the required seed no longer
+            // creates it. These two migrations are frozen history that ran
+            // when it existed, so the row is recreated here rather than read
+            // out of today's catalog.
+            await insertTempPlan(tx, 'tourist-plus', true);
             for (const name of ALL_FIVE_ENTITLED_PLANS) {
                 await stripEntitlement(tx, name, 'can_use_collections');
                 await stripLimitKeys(tx, name, ['max_collections']);
@@ -346,6 +381,11 @@ describe('0002-billing-plans-collections-limit', () => {
 
     it('is idempotent: running up() again once both facets are present updates zero rows', async () => {
         await withRollback(async (tx) => {
+            // HOS-1224 retired tourist-plus, so the required seed no longer
+            // creates it. These two migrations are frozen history that ran
+            // when it existed, so the row is recreated here rather than read
+            // out of today's catalog.
+            await insertTempPlan(tx, 'tourist-plus', true);
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
 
             await collectionsLimit.up(ctx);
@@ -358,6 +398,11 @@ describe('0002-billing-plans-collections-limit', () => {
 
     it('never overwrites an operator-edited max_collections value (OR-PRESERVE)', async () => {
         await withRollback(async (tx) => {
+            // HOS-1224 retired tourist-plus, so the required seed no longer
+            // creates it. These two migrations are frozen history that ran
+            // when it existed, so the row is recreated here rather than read
+            // out of today's catalog.
+            await insertTempPlan(tx, 'tourist-plus', true);
             await stripLimitKeys(tx, 'tourist-vip', ['max_collections']);
 
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
