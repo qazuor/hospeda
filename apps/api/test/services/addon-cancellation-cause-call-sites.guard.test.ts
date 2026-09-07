@@ -26,13 +26,23 @@
  * explanatory comment inside the call (there is one) does not fool it and a
  * `cause:` belonging to a neighbouring call cannot be counted for this one.
  *
+ * Each known call site also declares the VALUE it must pass (HOS-847 PR 7b).
+ * Presence alone was too weak: with `UNKNOWN_CANCELLATION_CAUSE_POLICY` now
+ * `'honour-paid-period'`, swapping the webhook's `'unknown'` for
+ * `'non-payment'` revokes a period the customer paid for, and swapping it for
+ * `'voluntary'` asserts a fact MercadoPago never sent — and both kept this guard
+ * green. A new call site has to be added to the map, which forces whoever adds
+ * it to say what its cause is rather than inherit the permissive default.
+ *
  * ## What it does NOT catch
  *
- * A call whose argument is a variable built elsewhere (`handleX(input)`), and a
- * `cause` whose value is wrong rather than absent. The behavioural tests in
- * `addon-lifecycle-cancellation.cause.test.ts` cover the second; the first is
- * not a shape anything in this repo uses, and the caller-count assertion below
- * turns it into a failure anyway if it ever appears.
+ * A call whose argument is a variable built elsewhere (`handleX(input)`). That
+ * is not a shape anything in this repo uses, and the caller-count assertion
+ * below turns it into a failure anyway if it ever appears. The VALUE checks here
+ * are textual; the behavioural counterparts live in
+ * `test/webhooks/subscription-logic.test.ts` and
+ * `test/cron/finalize-cancelled-subs.test.ts`, which assert on the argument the
+ * function was actually handed.
  *
  * @module test/services/addon-cancellation-cause-call-sites.guard
  */
@@ -51,6 +61,26 @@ const NON_CALLERS: ReadonlySet<string> = new Set([
     'services/addon-lifecycle-cancellation.service.ts',
     'services/addon-lifecycle.service.ts'
 ]);
+
+/**
+ * The cause each production call site must pass, keyed by its path relative to
+ * `apps/api/src`.
+ *
+ * Keeping the expectation HERE rather than only in each call site's own test is
+ * what makes a new call site a CI failure: the anti-vacuity assertion below
+ * compares the discovered callers against these keys, so adding one without
+ * declaring its cause fails.
+ */
+const EXPECTED_CAUSE: Readonly<Record<string, string>> = {
+    // The MercadoPago webhook reports `cancelled` with no reason field, and the
+    // one local tell that would separate a cancel from a non-payment
+    // (`previousStatus === PAST_DUE`) has no writer in this repo.
+    'routes/webhooks/mercadopago/subscription-logic.ts': 'unknown',
+    // This cron only ever finalizes rows carrying `cancel_at_period_end = true`,
+    // whose only writers are the self-serve cancel and the plan-retirement
+    // sweep. Neither is a punishment.
+    'cron/jobs/finalize-cancelled-subs.ts': 'voluntary'
+};
 
 /**
  * Recursively collects production `.ts` files under a directory.
@@ -129,14 +159,15 @@ describe(`HOS-847 PR 7a guard — every production ${FUNCTION_NAME} call names i
         // A guard whose input silently becomes empty passes forever while
         // checking nothing — and a renamed function would do exactly that here.
         // The paths are named rather than counted so a MOVED call site reads as
-        // a deliberate change rather than an off-by-one.
-        expect(callers.map(({ relativePath }) => relativePath).sort()).toEqual([
-            'cron/jobs/finalize-cancelled-subs.ts',
-            'routes/webhooks/mercadopago/subscription-logic.ts'
-        ]);
+        // a deliberate change rather than an off-by-one. Comparing against
+        // EXPECTED_CAUSE's keys means a NEW call site fails here until whoever
+        // added it declares which cause it passes.
+        expect(callers.map(({ relativePath }) => relativePath).sort()).toEqual(
+            Object.keys(EXPECTED_CAUSE).sort()
+        );
     });
 
-    it('every call passes an explicit `cause`', () => {
+    it('every call passes an explicit `cause`, with the value that call site owes', () => {
         const offenders: string[] = [];
 
         for (const { file, relativePath } of callers) {
@@ -149,9 +180,27 @@ describe(`HOS-847 PR 7a guard — every production ${FUNCTION_NAME} call names i
                 continue;
             }
 
+            const expected = EXPECTED_CAUSE[relativePath];
+
             for (const call of calls) {
                 if (!call.includes('cause:')) {
                     offenders.push(`${relativePath} (a call omits \`cause:\`)`);
+                    continue;
+                }
+
+                // Presence is not enough: swapping the literal is a silent
+                // policy change. Whitespace-tolerant, quote-agnostic.
+                const match = call.match(/cause:\s*['"]([a-z-]+)['"]/);
+                if (!match) {
+                    offenders.push(
+                        `${relativePath} (\`cause:\` is not a string literal — this guard cannot verify it)`
+                    );
+                    continue;
+                }
+                if (match[1] !== expected) {
+                    offenders.push(
+                        `${relativePath} (passes cause '${match[1]}', expected '${expected}')`
+                    );
                 }
             }
         }
