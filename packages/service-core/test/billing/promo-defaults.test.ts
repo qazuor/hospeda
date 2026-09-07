@@ -68,68 +68,94 @@ function createdResult(code: string) {
 
 // ─── Tests ────────────────────────────────────────────────────────────────
 
+/**
+ * HOS-1171 emptied `DEFAULT_PROMO_CODES` — its one entry, `HOSPEDA_FREE`, was a
+ * permanent uncapped comp code that the API recreated on every boot.
+ *
+ * Every suite below drives `ensureDefaultPromoCodes` by looping over that list,
+ * so with it empty the loops run zero times and their `not.toHaveBeenCalled()`
+ * assertions pass for the wrong reason. They are kept — the day a default is
+ * added they come back to life and pin its idempotency — but they are SKIPPED
+ * while the list is empty rather than counted as coverage.
+ *
+ * `it.skipIf` and not a hard `.skip`: the condition is the fact, CI forbids a
+ * hard-coded skip, and this way the runner shows the suite as skipped instead of
+ * green. The assertions that stay unconditional are the ones about the list
+ * itself, at the bottom of this file.
+ */
+const DEFAULTS_ARE_EMPTY = getDefaultPromoCodeConfigs().length === 0;
+
 describe('ensureDefaultPromoCodes (SPEC-192 T-029)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     describe('idempotency: running twice does not duplicate codes', () => {
-        it('should skip creation on second call when all codes already exist', async () => {
-            // Arrange — all codes already present after first successful run
-            const configs = getDefaultPromoCodeConfigs();
-            for (const cfg of configs) {
-                mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+        it.skipIf(DEFAULTS_ARE_EMPTY)(
+            'should skip creation on second call when all codes already exist',
+            async () => {
+                // Arrange — all codes already present after first successful run
+                const configs = getDefaultPromoCodeConfigs();
+                for (const cfg of configs) {
+                    mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+                }
+                // Second call: same, all still present
+                for (const cfg of configs) {
+                    mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+                }
+
+                // Act
+                await ensureDefaultPromoCodes();
+                await ensureDefaultPromoCodes();
+
+                // Assert
+                expect(mockCreate).not.toHaveBeenCalled();
+                expect(mockGetByCode).toHaveBeenCalledTimes(configs.length * 2);
             }
-            // Second call: same, all still present
-            for (const cfg of configs) {
-                mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+        );
+
+        it.skipIf(DEFAULTS_ARE_EMPTY)(
+            'should create once then skip on subsequent call',
+            async () => {
+                // Arrange — first call: all absent → created; second call: all present → skipped
+                const configs = getDefaultPromoCodeConfigs();
+                for (const cfg of configs) {
+                    mockGetByCode.mockResolvedValueOnce(notFoundResult());
+                    mockCreate.mockResolvedValueOnce(createdResult(cfg.code));
+                }
+                for (const cfg of configs) {
+                    mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+                }
+
+                // Act
+                await ensureDefaultPromoCodes();
+                await ensureDefaultPromoCodes();
+
+                // Assert — created exactly once per default code
+                expect(mockCreate).toHaveBeenCalledTimes(configs.length);
             }
-
-            // Act
-            await ensureDefaultPromoCodes();
-            await ensureDefaultPromoCodes();
-
-            // Assert
-            expect(mockCreate).not.toHaveBeenCalled();
-            expect(mockGetByCode).toHaveBeenCalledTimes(configs.length * 2);
-        });
-
-        it('should create once then skip on subsequent call', async () => {
-            // Arrange — first call: all absent → created; second call: all present → skipped
-            const configs = getDefaultPromoCodeConfigs();
-            for (const cfg of configs) {
-                mockGetByCode.mockResolvedValueOnce(notFoundResult());
-                mockCreate.mockResolvedValueOnce(createdResult(cfg.code));
-            }
-            for (const cfg of configs) {
-                mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
-            }
-
-            // Act
-            await ensureDefaultPromoCodes();
-            await ensureDefaultPromoCodes();
-
-            // Assert — created exactly once per default code
-            expect(mockCreate).toHaveBeenCalledTimes(configs.length);
-        });
+        );
     });
 
     describe('skip-by-code: existing code is never recreated', () => {
-        it('should not call create when getByCode returns success', async () => {
-            // Arrange
-            const configs = getDefaultPromoCodeConfigs();
-            for (const cfg of configs) {
-                mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+        it.skipIf(DEFAULTS_ARE_EMPTY)(
+            'should not call create when getByCode returns success',
+            async () => {
+                // Arrange
+                const configs = getDefaultPromoCodeConfigs();
+                for (const cfg of configs) {
+                    mockGetByCode.mockResolvedValueOnce(foundResult(cfg.code));
+                }
+
+                // Act
+                await ensureDefaultPromoCodes();
+
+                // Assert
+                expect(mockCreate).not.toHaveBeenCalled();
             }
+        );
 
-            // Act
-            await ensureDefaultPromoCodes();
-
-            // Assert
-            expect(mockCreate).not.toHaveBeenCalled();
-        });
-
-        it('should call create for each absent code', async () => {
+        it.skipIf(DEFAULTS_ARE_EMPTY)('should call create for each absent code', async () => {
             // Arrange
             const configs = getDefaultPromoCodeConfigs();
             for (const cfg of configs) {
@@ -149,7 +175,7 @@ describe('ensureDefaultPromoCodes (SPEC-192 T-029)', () => {
     });
 
     describe('error resilience', () => {
-        it('should not throw when getByCode rejects', async () => {
+        it.skipIf(DEFAULTS_ARE_EMPTY)('should not throw when getByCode rejects', async () => {
             // Arrange — simulate DB connectivity issue on every code
             const configs = getDefaultPromoCodeConfigs();
             for (let i = 0; i < configs.length; i++) {
@@ -161,24 +187,27 @@ describe('ensureDefaultPromoCodes (SPEC-192 T-029)', () => {
             expect(mockCreate).not.toHaveBeenCalled();
         });
 
-        it('should continue processing remaining codes after a failure', async () => {
-            // Arrange — first code throws, second is absent and gets created
-            const configs = getDefaultPromoCodeConfigs();
-            if (configs.length < 2) return; // guard for future config changes
+        it.skipIf(DEFAULTS_ARE_EMPTY)(
+            'should continue processing remaining codes after a failure',
+            async () => {
+                // Arrange — first code throws, second is absent and gets created
+                const configs = getDefaultPromoCodeConfigs();
+                if (configs.length < 2) return; // guard for future config changes
 
-            mockGetByCode.mockRejectedValueOnce(new Error('DB error on first code'));
-            // Remaining codes: all absent
-            for (let i = 1; i < configs.length; i++) {
-                mockGetByCode.mockResolvedValueOnce(notFoundResult());
-                mockCreate.mockResolvedValueOnce(createdResult(configs[i]?.code ?? 'unknown'));
+                mockGetByCode.mockRejectedValueOnce(new Error('DB error on first code'));
+                // Remaining codes: all absent
+                for (let i = 1; i < configs.length; i++) {
+                    mockGetByCode.mockResolvedValueOnce(notFoundResult());
+                    mockCreate.mockResolvedValueOnce(createdResult(configs[i]?.code ?? 'unknown'));
+                }
+
+                // Act
+                await ensureDefaultPromoCodes();
+
+                // Assert — create was called for the non-failing codes
+                expect(mockCreate).toHaveBeenCalledTimes(configs.length - 1);
             }
-
-            // Act
-            await ensureDefaultPromoCodes();
-
-            // Assert — create was called for the non-failing codes
-            expect(mockCreate).toHaveBeenCalledTimes(configs.length - 1);
-        });
+        );
     });
 
     describe('getDefaultPromoCodeConfigs', () => {
