@@ -364,19 +364,35 @@ export const getUserAddonsRoute = createProtectedRoute({
 });
 
 /**
- * Cancel recurring add-on (authenticated)
+ * Cancel an add-on (authenticated)
  *
  * POST /api/v1/protected/billing/addons/:id/cancel
  *
  * Ownership is verified in the handler before calling the service,
  * matching the defense-in-depth pattern used by other billing routes.
+ *
+ * ## The copy used to describe a flow that does not exist (HOS-847 PR 6)
+ *
+ * The summary said "recurring add-on" and the description promised the add-on
+ * "will remain active until the end of the current billing period", while
+ * `cancelUserAddon` has always revoked the entitlement and the limit
+ * IMMEDIATELY. The `cancel_at_period_end` column exists on
+ * `billing_addon_purchases` but nothing reads it.
+ *
+ * While every add-on was a one-time purchase that mismatch was cosmetic. Once a
+ * recurring add-on carries a real MercadoPago preapproval, telling a customer
+ * they keep it until the period ends — and then cutting it the same second, with
+ * no refund of the period they already paid — is a support ticket at best. So
+ * the copy now states what the code does. Whether the BEHAVIOUR should instead
+ * become cancel-at-period-end is an owner decision, deliberately left open
+ * rather than decided here.
  */
 export const cancelAddonRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/cancel',
-    summary: 'Cancel recurring add-on',
+    summary: 'Cancel an add-on',
     description:
-        'Cancels a recurring add-on subscription. The add-on will remain active until the end of the current billing period.',
+        "Cancels an add-on immediately. For a recurring add-on the MercadoPago subscription is cancelled first, so no further charges are made; if the payment provider cannot be reached the request fails with 503 and nothing is changed. The add-on's benefits are then removed right away — the remainder of the current billing period is not kept and is not refunded.",
     tags: ['Billing - Add-ons'],
     requestParams: {
         id: z.string().uuid('Invalid add-on ID')
