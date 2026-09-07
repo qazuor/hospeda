@@ -33,12 +33,26 @@ const RETRY_CONFIG = {
     RETRY_WINDOW_HOURS: 24,
     /** Wait N minutes between retry attempts */
     RETRY_COOLDOWN_MINUTES: 60,
-    /** Critical notification types that should be retried */
+    /**
+     * Critical notification types that should be retried.
+     *
+     * This list GATES the loop below: a type absent from it is logged as
+     * "skipping non-critical" and dropped before `reconstructPayload` is ever
+     * reached. Adding a case there without adding the type here yields a fix
+     * that cannot run.
+     */
     CRITICAL_TYPES: [
         NotificationType.TRIAL_ENDING_REMINDER,
         NotificationType.PAYMENT_FAILURE,
         NotificationType.ADDON_EXPIRED,
-        NotificationType.RENEWAL_REMINDER
+        NotificationType.RENEWAL_REMINDER,
+        // HOS-1171. A comp grant hard-cancels the customer's MercadoPago
+        // preapproval, and this email is the only notice they get that it
+        // happened — including the "write to us if a charge appears anyway"
+        // line, which is what makes a charge already in flight recoverable for
+        // them. Dropping it silently when Redis is unavailable is not an
+        // acceptable outcome for a message about someone's card.
+        NotificationType.COMP_GRANTED
     ] as string[]
 };
 

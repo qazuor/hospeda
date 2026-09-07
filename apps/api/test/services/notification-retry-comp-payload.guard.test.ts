@@ -100,6 +100,24 @@ describe('HOS-1171 retried comp email — payload reconstruction guard', () => {
     });
 });
 
+describe('HOS-1171 the reconstruction is reachable at all', () => {
+    it('COMP_GRANTED is in CRITICAL_TYPES', () => {
+        // Found while mutation-testing the branch above: `CRITICAL_TYPES` gates
+        // the whole retry loop, and a type missing from it is logged as
+        // "skipping non-critical" and dropped BEFORE `reconstructPayload` runs.
+        // Without this the case added above is unreachable, and — worse — a
+        // failed comp email is never retried at all on the DB fallback path,
+        // which is the path that exists precisely for when Redis is down.
+        const source = stripComments(readFileSync(RETRY_SERVICE, 'utf-8'));
+        const criticalBlock = source.slice(
+            source.indexOf('CRITICAL_TYPES: ['),
+            source.indexOf('] as string[]')
+        );
+
+        expect(criticalBlock).toContain('NotificationType.COMP_GRANTED');
+    });
+});
+
 describe('HOS-1171 comp fields are persisted on the way in', () => {
     it('logNotification spreads buildCompGrantMetadata', () => {
         // Reading the metadata back is only half the round trip: nothing writes
