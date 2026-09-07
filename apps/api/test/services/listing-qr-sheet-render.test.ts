@@ -514,7 +514,13 @@ describe('the sheet has to survive a home printer (HOS-982)', () => {
         const module = Math.min(...darkModuleRects(bytes).map((rect) => rect.width));
         const quietTop = box.y + box.height + module * 4;
 
-        const above = (await textBoxes(bytes)).filter((run) => run.y >= quietTop);
+        // Selected against the SYMBOL's own top edge, not against the top of
+        // the silence. Filtering on `run.y >= quietTop` would drop precisely
+        // the run that had descended into the quiet zone, and the measurement
+        // would then report the clearance of the next line up — a bug getting
+        // quieter the worse it gets. Measured: it did, at
+        // `GAP_HEADLINE_TO_QR = -3`.
+        const above = (await textBoxes(bytes)).filter((run) => run.y >= box.y + box.height);
         expect(above.length).toBeGreaterThan(0);
         const clearance = Math.min(...above.map((run) => run.y - quietTop));
 
