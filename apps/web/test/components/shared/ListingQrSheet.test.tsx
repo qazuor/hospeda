@@ -152,7 +152,13 @@ describe('ListingQrSheet (HOS-982)', () => {
                 vi.fn().mockResolvedValue(
                     pdfResponse({
                         status: 200,
-                        disposition: 'attachment; filename="qr-casa-del-rio.pdf"'
+                        // Deliberately NOT `qr-${slug}.pdf`: the server re-slugifies
+                        // the name it puts in the header (`FILENAME_SAFE` in
+                        // `qr-sheet-response.ts`), so the two can legitimately
+                        // differ — and if they were spelled the same here, this
+                        // test and the fallback one below would assert the same
+                        // string and neither could tell the header was ignored.
+                        disposition: 'attachment; filename="qr-casa-del-r-o.pdf"'
                     })
                 )
             );
@@ -161,7 +167,7 @@ describe('ListingQrSheet (HOS-982)', () => {
             fireEvent.click(downloadButton());
 
             await waitFor(() => expect(clickedAnchor).not.toBeNull());
-            expect(clickedAnchor?.download).toBe('qr-casa-del-rio.pdf');
+            expect(clickedAnchor?.download).toBe('qr-casa-del-r-o.pdf');
             expect(clickedAnchor?.href).toBe('blob:fake');
         });
 
