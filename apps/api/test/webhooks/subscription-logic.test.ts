@@ -521,8 +521,28 @@ function makeDbMock(selectRows: unknown[], insertShouldFail = false, txFreshRows
         limit: vi.fn().mockResolvedValue(selectRows)
     };
 
+    // HOS-847 PR 5: `processSubscriptionUpdated` now asks whether the
+    // preapproval belongs to a recurring ADD-ON before it does anything else
+    // (step 1b). That lookup is the ONLY `select()` in this flow that passes a
+    // projection, and the projection always carries `addonSlug` — the plan
+    // lookup calls a bare `select()`. Answering it with an empty result keeps
+    // every fixture in this file about PLAN subscriptions, which is what they
+    // are all written to be. The add-on routing itself is covered in
+    // `addon-recurring-webhook-routing.test.ts`.
+    const addonLookupChain = {
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([])
+    };
+    const isAddonPurchaseProjection = (projection?: Record<string, unknown>) =>
+        projection !== undefined && 'addonSlug' in projection;
+
     return {
-        select: vi.fn().mockReturnValue(selectChain),
+        select: vi.fn((projection?: Record<string, unknown>) =>
+            isAddonPurchaseProjection(projection) ? addonLookupChain : selectChain
+        ),
+        /** Calls to `select()` that were NOT the HOS-847 add-on routing lookup. */
+        subscriptionSelectChain: selectChain,
         /** @deprecated Direct insert/update on db - kept for backwards compat assertions */
         insert: vi.fn().mockReturnValue(txInsertValuesChain),
         update: vi.fn().mockReturnValue(txUpdateSetChain),
@@ -690,7 +710,13 @@ describe('processSubscriptionUpdated', () => {
 
         // Assert
         expect(result).toEqual({ success: true, statusChanged: false });
-        expect(dbMock.select).not.toHaveBeenCalled();
+        // HOS-847 PR 5: the add-on routing lookup at step 1b runs before this
+        // early return, so `select` is no longer never-called. What the
+        // assertion has always meant — no PLAN-subscription read, and no write
+        // at all — is asserted directly instead, which is strictly stronger.
+        expect(dbMock.subscriptionSelectChain.limit).not.toHaveBeenCalled();
+        expect(dbMock.update).not.toHaveBeenCalled();
+        expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
     // TC-04: Unknown status - should call Sentry.captureException and return early
@@ -721,7 +747,13 @@ describe('processSubscriptionUpdated', () => {
                 extra: expect.objectContaining({ mpPreapprovalId: '***...-001' })
             })
         );
-        expect(dbMock.select).not.toHaveBeenCalled();
+        // HOS-847 PR 5: the add-on routing lookup at step 1b runs before this
+        // early return, so `select` is no longer never-called. What the
+        // assertion has always meant — no PLAN-subscription read, and no write
+        // at all — is asserted directly instead, which is strictly stronger.
+        expect(dbMock.subscriptionSelectChain.limit).not.toHaveBeenCalled();
+        expect(dbMock.update).not.toHaveBeenCalled();
+        expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
     // TC-05: No local subscription found - return early
@@ -3606,6 +3638,16 @@ describe('processSubscriptionUpdated', () => {
                 limit: limitMock
             };
 
+            // HOS-847 PR 5: same reason as `makeDbMock` above — the add-on
+            // routing lookup at step 1b is the only projected `select()` on
+            // this path, and it must NOT consume an entry from the ordered
+            // `limitMock` queue these supersession fixtures depend on.
+            const addonLookupChain = {
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockReturnThis(),
+                limit: vi.fn().mockResolvedValue([])
+            };
+
             // Post-commit audit insert in completeReactivationSupersession runs
             // directly on `db` (not `tx`), mirroring other post-commit writes in
             // this file (e.g. the paymentFailureCount update).
@@ -3613,14 +3655,20 @@ describe('processSubscriptionUpdated', () => {
             const topLevelInsert = vi.fn().mockReturnValue({ values: topLevelInsertValues });
 
             return {
-                select: vi.fn().mockReturnValue(selectChain),
+                select: vi.fn((projection?: Record<string, unknown>) =>
+                    projection !== undefined && 'addonSlug' in projection
+                        ? addonLookupChain
+                        : selectChain
+                ),
                 insert: topLevelInsert,
                 update: vi.fn().mockReturnValue(txUpdateSetChain),
                 transaction: vi.fn(async (cb: (txArg: typeof tx) => Promise<void>) => {
                     await cb(tx);
                 }),
                 tx,
-                topLevelInsertValues
+                topLevelInsertValues,
+                /** Terminal of the PLAN-subscription select chain (HOS-847 PR 5). */
+                subscriptionSelectLimit: limitMock
             };
         }
 
@@ -4108,7 +4156,11 @@ describe('processSubscriptionUpdated', () => {
 
             // Assert
             expect(result).toEqual({ success: true, statusChanged: false });
-            expect(dbMock.select).not.toHaveBeenCalled();
+            // HOS-847 PR 5: the add-on routing lookup at step 1b runs before this
+            // early return. `subscriptionSelectLimit` counts only the PLAN reads,
+            // which is what this assertion has always been about.
+            expect(dbMock.subscriptionSelectLimit).not.toHaveBeenCalled();
+            expect(dbMock.transaction).not.toHaveBeenCalled();
             expect(mockCancel).not.toHaveBeenCalled();
             expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
         });
