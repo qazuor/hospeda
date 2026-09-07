@@ -149,6 +149,11 @@ export const COMMANDS: readonly CommandEntry[] = [
         name: 'update',
         summary: 'Actualiza hops a lo último de staging',
         load: async () => (await import('./commands/update/command.ts')).updateCommand
+    },
+    {
+        name: 'whats-new',
+        summary: '¿Tiene cada PR de la promoción una decisión de novedad? (audit [--fix])',
+        load: async () => (await import('./commands/whats-new/command.ts')).whatsNewCommand
     }
 ];
 

@@ -1,0 +1,21 @@
+# Single source of truth for the What's New promotion gate's cutoff commit
+# (HOS-1214 §6.2, D-2, NG-4).
+#
+# Both `hops whats-new audit` (scripts/client-tools/src/commands/whats-new/cutoff.ts)
+# and the future `.github/workflows/whats-new-gate.yml` (HOS-1214 block 3) MUST
+# read the SHA from THIS FILE rather than each hardcoding their own copy. A
+# cutoff duplicated in two places diverges the moment either one is edited
+# without the other — and once it diverges, the local command and the CI gate
+# disagree about which PRs are exempt by age, which is exactly the kind of
+# mismatch that reads as "the tool is broken" instead of "the config drifted".
+#
+# Format: the first non-comment, non-blank line is the cutoff SHA — the merge
+# commit of the FIRST PR the whats-new-gate workflow itself evaluates on
+# `staging`. Every line starting with `#` is a comment and is ignored.
+#
+# Right now (before that workflow ships) this file deliberately carries no
+# such line. See `readCutoffSha` in
+# scripts/client-tools/src/commands/whats-new/cutoff.ts for the exact,
+# explicit behavior that produces: no PR is exempted by age until an owner
+# sets this value, and `hops whats-new audit` says so plainly rather than
+# guessing a cutoff or silently exempting everything.
