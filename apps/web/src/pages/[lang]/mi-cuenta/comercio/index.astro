@@ -23,6 +23,10 @@ import { GastronomyMenuQrWidget } from '@/components/commerce/GastronomyMenuQrWi
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
+import {
+    fetchCommerceTrialVerdictByVertical,
+    readTrialVerdict
+} from '@/lib/commerce/trial-verdict';
 import { fetchCommerceUsageByVertical } from '@/lib/commerce/usage-badge';
 import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
@@ -73,6 +77,17 @@ const usageByVertical = await fetchCommerceUsageByVertical({
 const verticalsWithSubscription = new Set<CommerceVertical>(
     verticalsWithListings.filter((vertical) => usageByVertical.get(vertical) !== null)
 );
+
+// HOS-1184: what publishing would actually DO, per vertical — which the usage
+// reading above cannot answer any more. Its `null` means "no subscription", and
+// since commerce got its trial back that covers two opposite outcomes: starting
+// a free trial, or opening a checkout. The set above is still exactly right for
+// the three other questions it answers on this page (the plan-change CTA and
+// the tier catalogue), so it stays; only the publish CTA moved off it.
+const trialVerdictByVertical = await fetchCommerceTrialVerdictByVertical({
+    verticals: verticalsWithListings,
+    cookieHeader
+});
 
 // HOS-1008: gates the payer-email confirmation screen on the commerce
 // checkout. Same source and same fail-closed default the pricing pages use for
@@ -248,7 +263,8 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                                 client:visible
                                 listing={listing}
                                 locale={locale}
-                                hasVerticalSubscription={verticalsWithSubscription.has(listing.vertical)}
+                                trialVerdict={readTrialVerdict(trialVerdictByVertical, listing.vertical).verdict}
+                                trialDays={readTrialVerdict(trialVerdictByVertical, listing.vertical).trialDays}
                                 ownPreapprovalEnabled={ownPreapprovalEnabled}
                                 availablePlans={plansByVertical.get(listing.vertical) ?? []}
                             />

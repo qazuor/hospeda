@@ -480,7 +480,7 @@ const breadcrumbItems = [
 			entityType="POST"
 			entityId={postId}
 			locale={locale}
-			currentUrl={Astro.url.href}
+			currentUrl={`${Astro.url.pathname}${Astro.url.search}`}
 		/>
 
 		<!-- Videos (if any) -->

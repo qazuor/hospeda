@@ -18,7 +18,17 @@ import type { CommerceOwnerListingSummaryWithState } from '../../../src/lib/comm
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string) => fallback ?? _key,
+        // Signature matches the real `PluralTranslationFn`: `(key, count,
+        // params?)` and NO fallback parameter. A stub that accepted a fallback
+        // would let a call site pass one and look fine here while the real
+        // function silently treated it as `params`.
+        //
+        // The key and count are both rendered so the test asserting the trial
+        // CTA names its days can tell itself apart from the one asserting it
+        // names none — a stub that dropped `count` would make those two cases
+        // produce identical output and one of them would be vacuous.
+        tPlural: (key: string, count: number) => `${key} [${count}]`
     })
 }));
 
@@ -180,7 +190,7 @@ describe('CommerceListingActions', () => {
                 <CommerceListingActions
                     listing={buildListing({ completeness: { complete: true, missing: [] } })}
                     locale="es"
-                    hasVerticalSubscription={true}
+                    trialVerdict="has_active_sub"
                 />
             );
 
@@ -188,6 +198,55 @@ describe('CommerceListingActions', () => {
             expect(screen.getByTestId('commerce-publish-button')).not.toHaveTextContent(
                 'Publicar y pagar'
             );
+        });
+
+        it('offers the free days instead of a payment when a trial is available (HOS-1184)', () => {
+            // The bug in one assertion. Before HOS-1184 this owner read
+            // "Publicar y pagar" and was sent to MercadoPago, which charges on
+            // card authorization — while /planes/gastronomia promised them
+            // thirty free days reading the same database column.
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ completeness: { complete: true, missing: [] } })}
+                    locale="es"
+                    trialVerdict="trial_available"
+                    trialDays={30}
+                />
+            );
+
+            const button = screen.getByTestId('commerce-publish-button');
+            // Asserted as the KEY plus the count, because `tPlural` takes no
+            // fallback: this file's stub renders `<key> [<count>]`. The Spanish
+            // string itself (`Publicar gratis 30 días`) lives in
+            // `packages/i18n` and is pinned by the i18n guards, not here — a
+            // component test that hardcoded it would just be re-asserting its
+            // own stub.
+            expect(button).toHaveTextContent('publishCtaTrial');
+            expect(button).toHaveTextContent('30');
+            expect(button).not.toHaveTextContent('Publicar y pagar');
+            // Owner copy decision (HOS-1183, applied to both verticals): the CTA
+            // announces the free days and NEVER claims no card is needed — the
+            // card is asked for at signup.
+            expect(button).not.toHaveTextContent('sin tarjeta');
+        });
+
+        it('names no number rather than a wrong one when trialDays is absent', () => {
+            // A verdict that arrives without a length still publishes free; it
+            // just cannot say for how long. Rendering "0 días" or a hardcoded 30
+            // would be the promise drifting from the grant, which is the whole
+            // failure mode this issue is about.
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ completeness: { complete: true, missing: [] } })}
+                    locale="es"
+                    trialVerdict="trial_available"
+                />
+            );
+
+            const button = screen.getByTestId('commerce-publish-button');
+            expect(button).toHaveTextContent('Publicar gratis');
+            expect(button).not.toHaveTextContent('0');
+            expect(button).not.toHaveTextContent('Publicar y pagar');
         });
 
         it('reloads instead of navigating when the backend attaches without a checkout (appliedEffect: attached)', async () => {
@@ -210,7 +269,7 @@ describe('CommerceListingActions', () => {
                 <CommerceListingActions
                     listing={buildListing({ completeness: { complete: true, missing: [] } })}
                     locale="es"
-                    hasVerticalSubscription={true}
+                    trialVerdict="has_active_sub"
                 />
             );
 
@@ -335,7 +394,7 @@ describe('CommerceListingActions', () => {
                         subscriptionStatus: SubscriptionStatusEnum.PAST_DUE
                     })}
                     locale="es"
-                    hasVerticalSubscription={true}
+                    trialVerdict="has_active_sub"
                 />
             );
 

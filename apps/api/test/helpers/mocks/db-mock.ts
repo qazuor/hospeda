@@ -1356,11 +1356,50 @@ export function createDbMock() {
         // because entityViewModel is a singleton, not a constructor.
         // getRecentlyViewedByUser added SPEC-284 T-001 — RecommendationService default-
         // injects this singleton at module scope, same collection-breaking risk as above.
+        // rollUpMonth added HOS-1063 A-6 — view-monthly-rollup.job.ts calls it on
+        // this singleton.
         entityViewModel: {
             insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
             getStatsForEntities: vi.fn().mockResolvedValue([]),
             purgeOlderThan: vi.fn().mockResolvedValue(0),
+            rollUpMonth: vi.fn().mockResolvedValue(0),
             getRecentlyViewedByUser: vi.fn().mockResolvedValue({ accommodationIds: [] })
+        },
+
+        /*
+         * HOS-1063 — the partner statistics trio.
+         *
+         * PartnerStatsService defaults all three of its models at CONSTRUCTION
+         * time (`ctx.clickModel ?? new PartnerLogoClickModel()`), and
+         * `routes/index.ts` imports the click-capture route, so every test that
+         * mounts the router loads this constructor. A mock that omits the export
+         * does not fail where the model is used — it fails at import with
+         * `No "PartnerLogoClickModel" export is defined on the "@repo/db" mock`,
+         * taking down suites that never touch partner statistics at all.
+         *
+         * The CLASSES are what the service news up; the lowercase singleton is
+         * what the two cron jobs reach for. Both spellings have to exist.
+         */
+        PartnerLogoClickModel: class MockPartnerLogoClickModel {
+            insertClick = vi.fn().mockResolvedValue({ id: 'plc_mock_id' });
+            getStatsForPartner = vi.fn().mockResolvedValue({ total: 0, uniqueVisitors: 0 });
+            purgeOlderThan = vi.fn().mockResolvedValue(0);
+            rollUpMonth = vi.fn().mockResolvedValue(0);
+        },
+
+        EntityViewModel: class MockEntityViewModel {
+            insertView = vi.fn().mockResolvedValue({ id: 'ev_mock_id' });
+            getStatsForEntities = vi.fn().mockResolvedValue([]);
+            purgeOlderThan = vi.fn().mockResolvedValue(0);
+            rollUpMonth = vi.fn().mockResolvedValue(0);
+            getRecentlyViewedByUser = vi.fn().mockResolvedValue({ accommodationIds: [] });
+        },
+
+        partnerLogoClickModel: {
+            insertClick: vi.fn().mockResolvedValue({ id: 'plc_mock_id' }),
+            getStatsForPartner: vi.fn().mockResolvedValue({ total: 0, uniqueVisitors: 0 }),
+            purgeOlderThan: vi.fn().mockResolvedValue(0),
+            rollUpMonth: vi.fn().mockResolvedValue(0)
         },
 
         // SPEC-284: accommodationModel/destinationModel/userBookmarkModel singleton

@@ -473,7 +473,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 				client:load
 				locale={locale}
 				apiUrl={getApiUrl()}
-				currentUrl={Astro.url.href}
+				currentUrl={`${Astro.url.pathname}${Astro.url.search}`}
 				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 				pageType={typeEnum}
 			/>

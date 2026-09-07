@@ -22,6 +22,7 @@ import {
 import { protectedDeleteCommerceDraftRoute } from './delete-draft';
 import { commerceDowngradePreviewRouter } from './downgrade-preview';
 import { startCommerceSubscriptionRouter } from './start-subscription';
+import { commerceTrialVerdictRouter } from './trial-verdict';
 
 const router = createRouter();
 
@@ -44,6 +45,12 @@ router.route('/', protectedDeleteCommerceDraftRoute);
 // order is cosmetic; it lives beside it because the two are one flow: preview
 // what a cheaper tier stops covering, then post the change with the keep set.
 router.route('/', commerceDowngradePreviewRouter);
+// GET /subscriptions/:entityType/trial-verdict — read-only (HOS-1184). What
+// publishing in this vertical would do right now: start a free trial, attach to
+// a subscription already being paid for, or open a checkout. Three states and
+// never a boolean, because the first two both mean "publishing costs nothing
+// today" and differ only in whether a clock starts.
+router.route('/', commerceTrialVerdictRouter);
 
 /**
  * Protected commerce routes:
@@ -53,5 +60,6 @@ router.route('/', commerceDowngradePreviewRouter);
  * - POST /subscriptions/:entityType/change-plan
  * - DELETE /listings/:vertical/:id
  * - GET  /subscriptions/:entityType/downgrade-preview
+ * - GET  /subscriptions/:entityType/trial-verdict
  */
 export const protectedCommerceRoutes = router;

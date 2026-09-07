@@ -185,9 +185,37 @@ function sameStringList(a: readonly string[], b: readonly string[]): boolean {
     return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
-/** Drop empty-string entries, mapping them to undefined for the payload. */
+/**
+ * Drop empty-string entries, mapping them to undefined for the payload.
+ *
+ * Only correct for a block the API REPLACES wholesale (`socialNetworks`): there,
+ * an omitted key disappears from the stored object, which is exactly what
+ * "the owner cleared this field" has to mean. For a MERGED block use
+ * {@link nullWhenEmpty} instead — see its JSDoc.
+ */
 function nonEmpty(value: string): string | undefined {
     return value || undefined;
+}
+
+/**
+ * Map an emptied field to an explicit `null` rather than to `undefined`.
+ *
+ * `contactInfo` is a MERGEABLE JSONB column on `GastronomyModel` and
+ * `ExperienceModel` (HOS-1190, following the `users` precedent of HOS-375), so
+ * the PATCH is shallow-merged into the stored object with PostgreSQL `||`
+ * instead of replacing it. Under merge semantics an OMITTED key means "leave
+ * the stored value alone", so expressing a clear by omission — which is what
+ * {@link nonEmpty} produces — would make an emptied contact field silently
+ * un-saveable: the owner blanks their phone, the request succeeds, and the old
+ * phone is still on the ficha.
+ *
+ * `null` is the clear. Every field of the shared `ContactInfoSchema` is
+ * `.nullish()` for exactly this reason, so `null` validates while `''` does
+ * NOT (`zodError.common.contact.mobilePhone.international`) — the empty string
+ * is not an option here.
+ */
+function nullWhenEmpty(value: string): string | null {
+    return value || null;
 }
 
 /**
@@ -216,9 +244,14 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *
  * This is NOT a uniform per-leaf diff, and the asymmetries are load-bearing:
  *
- *  - `contactInfo` / `socialNetworks` are JSONB blocks the API REPLACES rather
- *    than merges, so the whole block ships whenever any member changed —
- *    sending only the changed leaf would wipe the others.
+ *  - `contactInfo` / `socialNetworks` are JSONB blocks that ship WHOLE whenever
+ *    any member changed, but for two different reasons since HOS-1190.
+ *    `socialNetworks` is still REPLACED by the API, so sending only the changed
+ *    leaf would wipe the others. `contactInfo` is now MERGED (`||`) at the DB
+ *    layer, so the whole block is no longer strictly required — it is kept
+ *    because it is what makes the clear explicit: every member is sent, and an
+ *    emptied one is sent as `null` via `nullWhenEmpty`, because under merge an
+ *    omitted key means "keep the stored value".
  *  - The four i18n fields travel together, as the translation panel edits them
  *    as one unit.
  *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
@@ -285,8 +318,8 @@ function buildPatchPayload({
 
     if (!sameValue(current.contact, baseline.contact)) {
         payload.contactInfo = {
-            mobilePhone: nonEmpty(current.contact.mobilePhone),
-            workEmail: nonEmpty(current.contact.workEmail)
+            mobilePhone: nullWhenEmpty(current.contact.mobilePhone),
+            workEmail: nullWhenEmpty(current.contact.workEmail)
         };
     }
 

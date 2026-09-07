@@ -416,13 +416,17 @@ describe('CommerceListingEditor', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        // HOS-1190: `contactInfo` is MERGED server-side now, so an empty member
+        // travels as an explicit `null` — under merge an omitted key means
+        // "keep the stored value", which would make a clear un-saveable.
+        // `website` is not part of this owner surface (SPEC-253 AC-4) and is
+        // therefore absent rather than nulled.
         expect(mockPatch).toHaveBeenCalledWith({
             path: '/api/v1/protected/gastronomies/abc',
             body: {
                 contactInfo: {
                     mobilePhone: '+54 9 11 1234 5678',
-                    workEmail: undefined,
-                    website: undefined
+                    workEmail: null
                 }
             }
         });

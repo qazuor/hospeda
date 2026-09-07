@@ -251,10 +251,21 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         : null;
 
     /**
-     * Safely resolves the current page URL for the auth return-redirect.
+     * Safely resolves the current page's path for the auth return-redirect.
      * Guarded by typeof window check for SSR safety.
+     *
+     * Deliberately `pathname + search + hash`, NOT `.href`: this value is
+     * eventually passed to `resolveSafeReturnPath` (via
+     * `AuthRequiredPopover` -> the signin page), which only accepts a
+     * same-origin relative path and rejects anything starting with a scheme
+     * (HOS-1170's open-redirect guard). A `.href` absolute URL always fails
+     * that check and silently falls back to `/mi-cuenta/` instead of
+     * returning here (HOS-1185).
      */
-    const returnUrl = typeof window === 'undefined' ? '' : window.location.href;
+    const returnUrl =
+        typeof window === 'undefined'
+            ? ''
+            : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
     /**
      * Handle click for authenticated users.

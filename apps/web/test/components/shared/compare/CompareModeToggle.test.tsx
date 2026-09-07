@@ -25,6 +25,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import type { CompareModeToggleProps } from '../../../../src/components/shared/compare/CompareModeToggle.client';
 import { CompareModeToggle } from '../../../../src/components/shared/compare/CompareModeToggle.client';
@@ -80,12 +81,24 @@ vi.mock('../../../../src/hooks/useCompareGuard', () => ({
 
 // Mock AuthRequiredPopover so we can assert on its presence without needing
 // its internal CSS/portal/positioning dependencies (mirrors FavoriteButton.test.tsx).
+// The `returnUrl` prop is surfaced as a `data-return-url` attribute (HOS-1185):
+// previously this mock discarded the prop entirely, so no test could ever
+// catch a regression in how the return URL is produced.
 vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
-    AuthRequiredPopover: ({ message, onClose }: { message: string; onClose: () => void }) => (
+    AuthRequiredPopover: ({
+        message,
+        onClose,
+        returnUrl
+    }: {
+        message: string;
+        onClose: () => void;
+        returnUrl?: string;
+    }) => (
         // biome-ignore lint/a11y/useSemanticElements: mock element — <dialog> not needed in test DOM
         <div
             role="dialog"
             data-testid="auth-required-popover"
+            data-return-url={returnUrl}
         >
             <p>{message}</p>
             <button
@@ -313,5 +326,67 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
         expect(mockToggleCompareMode).toHaveBeenCalledTimes(1);
         expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
         expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// returnUrl passed to the auth popover (HOS-1185 regression)
+// ---------------------------------------------------------------------------
+//
+// The comparator never returned to the listing after sign-in because the
+// component sent the ABSOLUTE `window.location.href` as `returnUrl`, and
+// `resolveSafeReturnPath` (the open-redirect guard added by HOS-1170) only
+// accepts a same-origin relative path — an absolute value always falls back
+// to `/{locale}/mi-cuenta/`. The fix composes `pathname + search + hash`
+// instead (mirrors FavoriteButton.client.tsx). These tests assert the ROUND
+// TRIP through the real guard function, not merely that some string was
+// sent — a mock-prop assertion alone would have stayed green if the value
+// was still absolute but merely non-empty.
+describe('CompareModeToggle — returnUrl for auth redirect (HOS-1185)', () => {
+    const ORIGINAL_LOCATION_HREF = window.location.href;
+
+    afterEach(() => {
+        window.history.pushState({}, '', ORIGINAL_LOCATION_HREF);
+    });
+
+    it('sends a same-origin relative path, not the absolute href, as returnUrl', () => {
+        // Arrange — guest click (mockGuard entitled but unauthenticated visitor
+        // still needs the auth-required popover, per the entitlement gate above).
+        // pushState with a relative URL: jsdom resolves it against its own
+        // origin (http://localhost:3000), so `window.location.href` is still
+        // absolute while `pathname + search + hash` is the relative path
+        // under test.
+        mockGuard.value = { canCompare: false, isLoading: false };
+        window.history.pushState({}, '', '/es/alojamientos/?comparar=1#resultados');
+        render(<CompareModeToggle locale="es" />);
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        const popover = screen.getByTestId('auth-required-popover');
+        const returnUrl = popover.getAttribute('data-return-url');
+        expect(returnUrl).toBe('/es/alojamientos/?comparar=1#resultados');
+        expect(returnUrl?.startsWith('http')).toBe(false);
+    });
+
+    it('round-trips through resolveSafeReturnPath back to the original page, including query and hash', () => {
+        // Arrange
+        mockGuard.value = { canCompare: false, isLoading: false };
+        const originalPath = '/es/alojamientos/?comparar=1#resultados';
+        window.history.pushState({}, '', originalPath);
+        render(<CompareModeToggle locale="es" />);
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+        const returnUrl = screen
+            .getByTestId('auth-required-popover')
+            .getAttribute('data-return-url');
+        const resolved = resolveSafeReturnPath({ rawReturn: returnUrl ?? '', locale: 'es' });
+
+        // Assert — must survive the guard as the ORIGINAL page, not the
+        // `/es/mi-cuenta/` fallback the guard uses when it rejects the input.
+        expect(resolved).toBe(originalPath);
+        expect(resolved).not.toBe('/es/mi-cuenta/');
     });
 });

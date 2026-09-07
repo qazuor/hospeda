@@ -9,14 +9,19 @@
  * `checkout-pending.ts` (sessionStorage) + `CheckoutStatusPoller.client.tsx`
  * (HOS-151), stripped down to what commerce actually needs: no promo codes,
  * no annual/monthly toggle (HOS-166 D-7 — binary billing). A tier picker WAS
- * added in HOS-1119 (`CommercePlanPicker`, gated by `availablePlans.length >
- * 1 && !hasVerticalSubscription`) once gastronomy went from one sellable
- * tier to two — see that prop's doc for the exact condition.
+ * added in HOS-1119 (`CommercePlanPicker`) once gastronomy went from one
+ * sellable tier to two — see that prop's doc for the exact condition.
+ *
+ * HOS-1184 replaced the `hasVerticalSubscription` boolean with the server's
+ * three-state `trialVerdict`. The CTA is no longer "pay or don't": publishing
+ * can now be free because a plan is already paid for, OR free because a trial
+ * is starting, and those are different things to tell an owner.
  *
  * Hydration: `client:visible` — this sits inside a listing card in a list,
  * not above-the-fold interactive chrome.
  */
 
+import type { CommerceTrialVerdictKind } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { PayerEmailConfirmDialog } from '@/components/billing/PayerEmailConfirmDialog.client';
@@ -48,21 +53,41 @@ export interface CommerceListingActionsProps {
     /** Active locale for translations and URL construction. */
     readonly locale: SupportedLocale;
     /**
-     * Whether the owner already holds a subscription for THIS listing's
-     * vertical (HOS-689 item 4), resolved server-side from the per-vertical
-     * usage reading (`fetchCommerceUsageByVertical` — a resolved reading IS
-     * proof of an existing subscription, since the usage endpoint 404s
-     * otherwise).
+     * What publishing THIS listing would actually do, resolved server-side by
+     * `GET /protected/commerce/subscriptions/{vertical}/trial-verdict`
+     * (HOS-1184).
      *
-     * Drives which draft-complete CTA renders: `false` (no subscription yet)
-     * keeps the real "Publicar y pagar" checkout (HOS-688 §6.8 branch 1);
-     * `true` switches to a plain "Publicar" CTA that still calls
-     * `startOwnerListingCheckout`, but the backend silently attaches the
-     * listing to the existing subscription and opens no payment (branch 2)
-     * — the same shape as accommodation, where publishing the second
-     * property never opens a checkout.
+     * Three states and deliberately not a boolean. This prop replaced
+     * `hasVerticalSubscription`, which could only say "already paying / not
+     * already paying" — and once commerce got its trial back, "not already
+     * paying" stopped meaning "about to pay". An owner with an intact trial
+     * read "Publicar y pagar" and was told they were about to be charged for
+     * something the server was about to give them free for thirty days.
+     *
+     * That is the same defect HOS-1183 is fixing on the accommodation side,
+     * where three server-side verdicts get flattened into a boolean meaning
+     * only `has_active_sub`. Collapsing the three here again is the one change
+     * this prop exists to prevent.
+     *
+     * - `trial_available` — publishing starts a free trial. No checkout, no
+     *   tier choice, no payer to confirm.
+     * - `has_active_sub` — publishing attaches the listing to the subscription
+     *   the owner already pays for (HOS-688 §6.8 branch 2).
+     * - `payment_required` — publishing opens a real MercadoPago checkout.
      */
-    readonly hasVerticalSubscription: boolean;
+    readonly trialVerdict: CommerceTrialVerdictKind;
+    /**
+     * How many free days the trial would run, present only when
+     * {@link trialVerdict} is `trial_available`.
+     *
+     * Comes from the resolved trial plan row rather than a constant, so the
+     * number on the button is the number the grant writes — the same reason the
+     * public pricing pages read `trialDays` live from the database.
+     *
+     * When absent the CTA falls back to naming no number at all rather than
+     * guessing one: promising the wrong count is worse than promising none.
+     */
+    readonly trialDays?: number;
     /**
      * Whether the own-preapproval checkout path (HOS-937) is active, resolved
      * SSR-side by the page via `fetchCheckoutConfig()` — the web app has no
@@ -109,11 +134,12 @@ const PUBLIC_PATH_BY_VERTICAL: Record<CommerceOwnerListingSummaryWithState['vert
 export function CommerceListingActions({
     listing,
     locale,
-    hasVerticalSubscription,
+    trialVerdict,
+    trialDays,
     ownPreapprovalEnabled = false,
     availablePlans = []
 }: CommerceListingActionsProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const { data: session } = useSession();
     const [isCheckoutStarting, setIsCheckoutStarting] = useState(false);
     const [showPayerEmailConfirm, setShowPayerEmailConfirm] = useState(false);
@@ -145,13 +171,18 @@ export function CommerceListingActions({
      * Two conditions, and BOTH matter (HOS-1008):
      *
      * - `ownPreapprovalEnabled` — only that path binds `payer_email`.
-     * - `!hasVerticalSubscription` — with a subscription already held for this
-     *   vertical the backend ATTACHES the listing and publishes it
-     *   synchronously (HOS-688 §6.8 branch 2). No payment is opened, so there
-     *   is no payer to confirm and the dialog would be a step that asks the
-     *   owner about a charge that is not going to happen.
+     * - `payment_required` — the ONLY verdict that opens a payment. Under
+     *   `has_active_sub` the backend attaches the listing and publishes it
+     *   synchronously (HOS-688 §6.8 branch 2); under `trial_available` it
+     *   grants a local trial and never tells MercadoPago the subscription
+     *   exists (HOS-1184). In both cases the dialog would ask the owner to
+     *   confirm the payer for a charge that is not going to happen.
+     *
+     * HOS-1184 note: this was `!hasVerticalSubscription`, which included the
+     * trial case and would now stop a free publish behind a payment-email
+     * screen.
      */
-    const needsPayerEmailConfirm = ownPreapprovalEnabled && !hasVerticalSubscription;
+    const needsPayerEmailConfirm = ownPreapprovalEnabled && trialVerdict === 'payment_required';
 
     /**
      * Runs the checkout itself.
@@ -177,15 +208,25 @@ export function CommerceListingActions({
             });
 
             if (result.ok) {
-                if (result.data.appliedEffect === 'attached') {
-                    // HOS-688 §6.8 branch 2: the owner already held a
-                    // subscription for this vertical, so the listing was
-                    // attached to it and published synchronously
-                    // server-side — no MercadoPago checkout was opened, and
+                if (
+                    result.data.appliedEffect === 'attached' ||
+                    result.data.appliedEffect === 'trial'
+                ) {
+                    // Two effects, one meaning: the listing was published
+                    // server-side and NO MercadoPago checkout was opened, so
                     // `checkoutUrl` is only an in-app sentinel. Reload so the
                     // index re-fetches `isPublic` and this card renders as
                     // `published`, instead of following a link that leads
                     // nowhere meaningful.
+                    //
+                    // - `attached` (HOS-688 §6.8 branch 2) — the owner already
+                    //   held a subscription for this vertical.
+                    // - `trial` (HOS-1184 branch 1a) — a local trial was
+                    //   granted; MercadoPago was never told it exists.
+                    //
+                    // Missing the `trial` case here does not degrade, it
+                    // misleads: the owner would be sent to the payment-method
+                    // page right after publishing for free.
                     window.location.reload();
                     return;
                 }
@@ -260,8 +301,14 @@ export function CommerceListingActions({
      * offering the picker here too would let them silently re-subscribe at a
      * different tier through a route the backend does not treat as an
      * upgrade.
+     *
+     * HOS-1184 narrowed this from `!hasVerticalSubscription` to
+     * `payment_required` for a reason that is not symmetry: a trial does not
+     * run on a tier. It runs on the vertical's own `*-trial` plan, so a tier
+     * picked here would be collected and then ignored — the owner would choose
+     * a plan they are not being put on.
      */
-    const shouldShowPlanPicker = availablePlans.length > 1 && !hasVerticalSubscription;
+    const shouldShowPlanPicker = availablePlans.length > 1 && trialVerdict === 'payment_required';
 
     /**
      * The CTA handler. Opens the tier picker when there is a real choice to
@@ -419,16 +466,55 @@ export function CommerceListingActions({
     const missing = state.kind === 'draft-incomplete' ? state.missing : [];
     const canPublish = state.kind === 'draft-complete';
 
-    // HOS-689 item 4: "Publicar y pagar" only when this WOULD open a real
-    // MercadoPago checkout — once the owner already holds a subscription for
-    // this vertical, publishing a later listing is free (it just consumes
-    // quota), so the CTA drops the "y pagar" framing entirely.
-    const publishCtaLabel = hasVerticalSubscription
-        ? t('commerce.owner.checklist.publishCtaFree', 'Publicar')
-        : t('commerce.owner.checklist.publishCta', 'Publicar y pagar');
-    const publishingLabel = hasVerticalSubscription
-        ? t('commerce.owner.checklist.publishingFree', 'Publicando...')
-        : t('commerce.owner.checklist.publishing', 'Iniciando pago...');
+    // HOS-689 item 4: "Publicar y pagar" ONLY when this would open a real
+    // MercadoPago checkout. HOS-1184 added the third case rather than a second
+    // one, because the two free outcomes are not the same promise: attaching to
+    // a plan already paid for costs nothing and starts nothing, while a trial
+    // costs nothing and starts a clock. The owner has to be told which.
+    //
+    // The trial label ANNOUNCES the free days (owner decision, HOS-1183, applied
+    // to both verticals so they do not promise different things) and never says
+    // "sin tarjeta": the card is asked for at signup, so claiming otherwise here
+    // would be the mirror image of today's bug — a true-sounding sentence about
+    // money that the rest of the product contradicts.
+    //
+    // `trialDays` absent falls back to a count-free label rather than guessing a
+    // number: promising the wrong number of free days is worse than promising
+    // none.
+    function resolvePublishLabels(): { readonly cta: string; readonly busy: string } {
+        if (trialVerdict === 'has_active_sub') {
+            return {
+                cta: t('commerce.owner.checklist.publishCtaFree', 'Publicar'),
+                busy: t('commerce.owner.checklist.publishingFree', 'Publicando...')
+            };
+        }
+
+        if (trialVerdict === 'trial_available') {
+            return {
+                cta:
+                    trialDays === undefined
+                        ? t('commerce.owner.checklist.publishCtaTrialNoCount', 'Publicar gratis')
+                        : // `tPlural`, not `t`: the key has a real `_one`/`_other`
+                          // pair, and `t` would never apply pluralization.
+                          // `i18n-plural-shape.guard.test.ts` fails on exactly
+                          // that mistake — it caught this one.
+                          //
+                          // It takes no fallback (its third parameter is
+                          // `params`, not a default string), which is why the
+                          // count-free variant above is a separate `t` key
+                          // rather than this call with an empty count.
+                          tPlural('commerce.owner.checklist.publishCtaTrial', trialDays),
+                busy: t('commerce.owner.checklist.publishingFree', 'Publicando...')
+            };
+        }
+
+        return {
+            cta: t('commerce.owner.checklist.publishCta', 'Publicar y pagar'),
+            busy: t('commerce.owner.checklist.publishing', 'Iniciando pago...')
+        };
+    }
+
+    const { cta: publishCtaLabel, busy: publishingLabel } = resolvePublishLabels();
 
     return (
         <div className={styles.actions}>

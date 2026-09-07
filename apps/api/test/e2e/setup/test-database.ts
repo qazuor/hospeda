@@ -237,6 +237,34 @@ export class TestDatabaseManager {
     /**
      * Clean all test data (truncate all tables)
      * WARNING: This is destructive, use only in test environment
+     *
+     * ## One statement, not one per table
+     *
+     * This used to issue a separate `TRUNCATE` per table — around 170 sequential
+     * round-trips, on EVERY `afterEach`, in every one of the ~196 integration
+     * tests. That put the hook within reach of its own 30s timeout, and the cost
+     * grew with the schema: each new table made every clean in the whole suite
+     * slower.
+     *
+     * It went over the edge on HOS-1063, which adds three tables. The failure
+     * did not look like a slow test — it looked like a random one:
+     *
+     *     FAIL test/integration/ai/translate.test.ts     (run 1)
+     *     FAIL test/integration/ai/text-improve.test.ts  (run 2)
+     *     Error: Hook timed out in 30000ms.  afterEach → testDb.clean()
+     *
+     * 195 of 196 passing both times, a different file each time, and never the
+     * suite that added the tables. Whichever test was already closest to the
+     * ceiling was the one that crossed it.
+     *
+     * `TRUNCATE a, b, c CASCADE` is one statement and one round-trip, and
+     * Postgres treats it identically. Measured against this schema, 173 tables:
+     * 1563ms sequential → 484ms as one statement, 3.2x, on a local socket with
+     * no runner load. The saving is larger in CI, where each round-trip crosses
+     * a container boundary.
+     *
+     * Table names come from `pg_tables`, never from user input, and are quoted
+     * the same way the per-table version quoted them.
      */
     async clean(): Promise<void> {
         if (!this.db) throw new Error('Database not initialized');
@@ -258,9 +286,15 @@ export class TestDatabaseManager {
         AND tablename NOT IN ('drizzle_migrations')
       `);
 
-            // Truncate all tables
-            for (const table of tables.rows) {
-                await this.db.execute(sql.raw(`TRUNCATE TABLE "${table.tablename}" CASCADE`));
+            // Truncate every table in ONE statement. An empty schema would make
+            // `TRUNCATE TABLE  CASCADE` a syntax error, so nothing is sent when
+            // there is nothing to truncate.
+            const quoted = (tables.rows as Array<{ tablename: string }>).map(
+                (table) => `"${table.tablename}"`
+            );
+
+            if (quoted.length > 0) {
+                await this.db.execute(sql.raw(`TRUNCATE TABLE ${quoted.join(', ')} CASCADE`));
             }
         } finally {
             // Re-enable foreign key checks

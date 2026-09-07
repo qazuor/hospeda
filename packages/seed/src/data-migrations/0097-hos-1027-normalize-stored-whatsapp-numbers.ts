@@ -42,24 +42,33 @@
  *
  * `contact_info` is a JSONB column holding several sibling keys
  * (`mobilePhone`, `homePhone`, `workPhone`, `whatsapp`, emails, `website`,
- * `preferredEmail`, ...). Two of the four target models
- * (`AccommodationModel`, `UserModel`) declare `contactInfo` in their
- * `mergeableJsonbColumns`, so a model-level `.update({ contactInfo: {...} })`
- * on those two tables shallow-merges. `EventOrganizerModel` and
- * `PostSponsorModel` do NOT declare it, so the identical call on those two
- * tables would replace `contact_info` wholesale and silently drop every
- * other stored contact field — the same hazard `0020-backfill-
- * accommodation-seo-titles` and `0057-staff-email-domain-to-com-ar` were
- * written to avoid for `seo` and `contact_info` respectively.
+ * `preferredEmail`, ...). ALL FOUR target models (`AccommodationModel`,
+ * `UserModel`, `EventOrganizerModel`, `PostSponsorModel`) declare
+ * `contactInfo` in their `mergeableJsonbColumns` as of HOS-1190, so a
+ * model-level `.update({ contactInfo: {...} })` shallow-merges on every one
+ * of them today.
  *
- * This migration sidesteps the model layer (and its per-table merge
- * inconsistency) entirely: it reads the FULL `contact_info` blob per
- * candidate row, builds a new object via `{ ...contactInfo, whatsapp:
- * normalized }` (same technique `0020` uses for `seo`), and writes that whole
- * object back with a plain `UPDATE ... SET contact_info = $1::jsonb`. Every
- * sibling key is carried through by the spread, so the result is correct on
- * all four tables regardless of what each model's `mergeableJsonbColumns`
- * declares — there is no per-table model behavior to reason about at all.
+ * That was NOT true when this migration was written, which is why the
+ * paragraph below exists: `EventOrganizerModel` and `PostSponsorModel` then
+ * carried the replace default, so the identical call on those two tables
+ * replaced `contact_info` wholesale and silently dropped every other stored
+ * contact field — the same hazard `0020-backfill-accommodation-seo-titles`
+ * and `0057-staff-email-domain-to-com-ar` were written to avoid for `seo`
+ * and `contact_info` respectively. The declarations closed that gap for
+ * future callers; they change nothing here, and this migration is not
+ * rewritten to use the model layer now that they exist. It has already run
+ * and is ledgered — its behaviour is history, not a choice still open — and
+ * depending on no model's declaration is one fewer thing that can change
+ * underneath it.
+ *
+ * So it sidesteps the model layer entirely: it reads the FULL `contact_info`
+ * blob per candidate row, builds a new object via `{ ...contactInfo,
+ * whatsapp: normalized }` (same technique `0020` uses for `seo`), and writes
+ * that whole object back with a plain `UPDATE ... SET contact_info =
+ * $1::jsonb`. Every sibling key is carried through by the spread, so the
+ * result is correct on all four tables regardless of what each model's
+ * `mergeableJsonbColumns` declares — there is no per-table model behavior to
+ * reason about at all.
  *
  * ## Narrowness / idempotency
  *

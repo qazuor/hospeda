@@ -95,7 +95,7 @@ export interface AiSearchEntryProps {
  * <AiSearchEntry
  *   locale={locale}
  *   apiUrl={import.meta.env.PUBLIC_API_URL}
- *   currentUrl={Astro.url.href}
+ *   currentUrl={`${Astro.url.pathname}${Astro.url.search}`}
  *   client:load
  * />
  * ```

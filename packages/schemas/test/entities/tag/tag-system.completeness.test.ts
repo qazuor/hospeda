@@ -59,8 +59,8 @@ describe('EntityTypeEnum completeness (AC-F15)', () => {
         }
     });
 
-    it('should have exactly 12 values (5 original + 4 from SPEC-086 + 2 from F3 + 1 from HOS-981)', () => {
-        expect(Object.values(EntityTypeEnum)).toHaveLength(12);
+    it('should have exactly 13 values (5 original + 4 from SPEC-086 + 2 from F3 + 1 from HOS-981 + 1 from HOS-1063)', () => {
+        expect(Object.values(EntityTypeEnum)).toHaveLength(13);
     });
 });
 

@@ -6,8 +6,12 @@
  * `ContactInfoSchema` but is not exposed in this owner surface.
  *
  * Takes a group-level `onContactChange` rather than the generic
- * `onFieldChange`: the API replaces the whole `contactInfo` JSONB block, so the
- * orchestrator has to merge members into one object before diffing.
+ * `onFieldChange`: the members belong to one `contactInfo` JSONB block, so the
+ * orchestrator has to merge them into a single object before diffing and
+ * sending it whole. Since HOS-1190 the DB layer MERGES that block (PostgreSQL
+ * `||`) instead of replacing it, which is why an emptied field leaves this
+ * section as `''` and reaches the API as an explicit `null` — under merge, an
+ * omitted key would mean "keep the stored value" and the clear would be lost.
  */
 
 import type { JSX } from 'react';
