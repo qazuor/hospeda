@@ -74,6 +74,7 @@
         "view": "View",
         "edit": "Edit",
         "delete": "Delete",
+        "cancel": "Cancel",
         "backToList": "Back to list"
     },
     "messages": {

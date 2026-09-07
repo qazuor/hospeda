@@ -1307,6 +1307,7 @@
             "newAnnouncement": "New announcement",
             "editAction": "Edit",
             "deleteAction": "Delete",
+            "cancelAction": "Cancel",
             "deleteConfirm": "Delete this announcement? This cannot be undone.",
             "deleteError": "We couldn't delete the announcement. Please try again.",
             "deleteSuccess": "Announcement deleted"
