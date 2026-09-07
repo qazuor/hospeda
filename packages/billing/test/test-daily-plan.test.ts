@@ -56,7 +56,8 @@ describe('TEST_DAILY_PLAN (billing-interval-override)', () => {
         const slugs = ALL_PLANS.map((p) => p.slug);
         expect(slugs).not.toContain(TEST_DAILY_PLAN.slug);
         // Sanity: ALL_PLANS still has exactly the accommodation-tier plans
-        // (HOS-692, spec §6.9: complex-* removed — 9 - 3 = 6).
-        expect(ALL_PLANS).toHaveLength(6);
+        // (HOS-692, spec §6.9: complex-* removed — 9 - 3 = 6; HOS-1224:
+        // tourist-plus removed — 6 - 1 = 5).
+        expect(ALL_PLANS).toHaveLength(5);
     });
 });

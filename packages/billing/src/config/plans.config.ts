@@ -90,8 +90,8 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
  * shared by tourist-VIP and every owner/complex plan as a CONSUMER
  * (SPEC-283 §5, OQ-4). They carry NO entitlement: `ai_search` is auth-baseline
  * and the consumer-side chat quota is gated by count only — having the limit
- * without the entitlement is the intended two-sided model. tourist-free/plus
- * override these with lower values.
+ * without the entitlement is the intended two-sided model. tourist-free
+ * overrides these with lower values.
  */
 const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_FAVORITES, -1),
@@ -100,9 +100,11 @@ const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     // AI consumer quotas — graduated top tier (SPEC-283).
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
     limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200),
-    // Search history cap — VIP tier (SPEC-289). tourist-plus overrides with 50.
+    // Search history cap — VIP tier (SPEC-289). Sole tourist tier that carries
+    // it since HOS-1224 retired tourist-plus (which overrode it with 50).
     limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 200),
-    // Favorites collections cap — VIP tier (SPEC-287). tourist-plus overrides with 10.
+    // Favorites collections cap — VIP tier (SPEC-287). Sole tourist tier that
+    // carries it since HOS-1224 retired tourist-plus (which overrode it with 10).
     limit(LimitKey.MAX_COLLECTIONS, 25)
 ];
 
@@ -434,7 +436,8 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
         EntitlementKey.READ_REVIEWS
-        // can_view_recommendations moved to tourist-plus (HOS-16)
+        // can_view_recommendations moved off this tier (HOS-16 moved it to
+        // tourist-plus; HOS-1224 retired that plan, so tourist-vip carries it)
         // ai_chat removed from tourist plans (SPEC-211 T-003)
         // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
@@ -448,53 +451,23 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     ]
 };
 
-export const TOURIST_PLUS_PLAN: PlanDefinition = {
-    slug: 'tourist-plus',
-    name: 'Plus',
-    description:
-        'Plus plan for frequent tourists. Compare accommodations, search history, and price alerts.',
-    category: 'tourist',
-    monthlyPriceArs: 500000, // ARS $5,000
-    annualPriceArs: 5000000, // ARS $50,000/year
-    monthlyPriceUsdRef: 5,
-    hasTrial: true,
-    trialDays: TOURIST_TRIAL_DAYS,
-    isDefault: false,
-    sortOrder: 2,
-    // HOS-301 D1: the tourist tier ships with a single paid plan (tourist-vip).
-    // Deactivated rather than deleted, exactly like the complex-* plans: the
-    // definition stays in ALL_PLANS so existing subscriptions keep resolving
-    // their entitlements, and reversing the decision is a one-line change.
-    isActive: false,
-    entitlements: [
-        EntitlementKey.SAVE_FAVORITES,
-        EntitlementKey.WRITE_REVIEWS,
-        EntitlementKey.READ_REVIEWS,
-        EntitlementKey.PRICE_ALERTS,
-        EntitlementKey.EXCLUSIVE_DEALS,
-        EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-        EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
-        EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_USE_COLLECTIONS
-        // ai_chat removed from tourist plans (SPEC-211 T-003)
-        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
-        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
-        limit(LimitKey.MAX_FAVORITES, 25), // HOS-16: was 20
-        limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
-        limit(LimitKey.MAX_COMPARE_ITEMS, 3), // HOS-16: was 2 (coord SPEC-288)
-        // AI consumer quotas — mid tier (SPEC-283 §5).
-        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
-        limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50),
-        // Search history cap — Plus tier (SPEC-289). VIP/owner/complex inherit 200.
-        limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 50),
-        // Favorites collections cap — Plus tier (SPEC-287). VIP/owner/complex inherit 25.
-        limit(LimitKey.MAX_COLLECTIONS, 10)
-    ]
-};
+// `tourist-plus` used to sit here, between free and VIP. It is GONE — the
+// definition, not merely the `isActive: false` flag (HOS-1224). HOS-301 D1
+// discarded it as a product: the tourist tier ships a single paid plan
+// (`tourist-vip`). `0052-hos-301-deactivate-tourist-plus` kept the definition
+// in `ALL_PLANS` so "existing subscriptions keep resolving", and that reason
+// expired — production carries ZERO subscriptions on the plan (measured
+// 2026-09-07, every status, soft-deleted rows included), and staging's only one
+// was the `tourist-plus@local.test` fixture, retired with it.
+//
+// Keeping the definition was not free. `ALL_PLANS` drives the seed loop, so a
+// `--reset` re-seed of staging RE-CREATED the row from this config with
+// `deleted_at = NULL`, silently undoing the soft-delete that
+// `0066-hos-692-domain-rewrite-and-plan-cleanup` had already applied — while
+// the `seed_migrations` ledger (excluded from `--reset`'s TRUNCATE by
+// `packages/seed/src/utils/dbReset.ts`) kept the migration marked applied so it
+// could never run again. Removing it from the baseline is what makes the
+// retirement survive a re-seed; `plans.test.ts` guards it staying out.
 
 export const TOURIST_VIP_PLAN: PlanDefinition = {
     slug: 'tourist-vip',
@@ -1509,13 +1482,20 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
  * public listing. This deliberately leaves the `complex` category of
  * {@link PLANS_BY_CATEGORY} empty — see `0066-hos-692-domain-rewrite-and-plan-cleanup`
  * for the data-migration that removes the already-seeded rows.
+ *
+ * `tourist-plus` was removed the same way by HOS-1224, but one step further:
+ * its `PlanDefinition` constant is deleted too, not merely unlisted. The
+ * complex-* tier is DEFERRED (the vertical may still be built, so its shape is
+ * worth keeping); `tourist-plus` was CANCELLED as a product by HOS-301 D1. See
+ * the note where its definition used to live, and
+ * `0100-hos-1224-retire-tourist-plus-and-neutralize-price-trial-days` for the
+ * data-migration that retires the already-seeded rows.
  */
 export const ALL_PLANS: PlanDefinition[] = [
     OWNER_BASICO_PLAN,
     OWNER_PRO_PLAN,
     OWNER_PREMIUM_PLAN,
     TOURIST_FREE_PLAN,
-    TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN
 ];
 
@@ -1523,7 +1503,7 @@ export const ALL_PLANS: PlanDefinition[] = [
 export const PLANS_BY_CATEGORY = {
     owner: [OWNER_BASICO_PLAN, OWNER_PRO_PLAN, OWNER_PREMIUM_PLAN],
     complex: [] as const,
-    tourist: [TOURIST_FREE_PLAN, TOURIST_PLUS_PLAN, TOURIST_VIP_PLAN]
+    tourist: [TOURIST_FREE_PLAN, TOURIST_VIP_PLAN]
 } as const;
 
 /**

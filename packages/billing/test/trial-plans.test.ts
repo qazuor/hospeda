@@ -61,9 +61,10 @@ describe('trial plans — isolation from every sellable surface', () => {
         for (const plan of TRIAL_PLANS) {
             expect(allSlugs).not.toContain(plan.slug);
         }
-        // The count stays frozen at 6 — a trial plan that leaked into the list
-        // would move this even if the slug assertion above were edited away.
-        expect(ALL_PLANS).toHaveLength(6);
+        // The count stays frozen — a trial plan that leaked into the list would
+        // move it even if the slug assertion above were edited away. Recounted
+        // to 5 by HOS-1224 (tourist-plus retired), not decremented by eye.
+        expect(ALL_PLANS).toHaveLength(5);
     });
 
     it('keeps every trial plan out of the commerce catalogues too', () => {

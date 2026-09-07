@@ -133,11 +133,8 @@ const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
         limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
         limitValues: [10, 10]
     },
-    'tourist-plus': {
-        grants: [],
-        limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
-        limitValues: [50, 50]
-    },
+    // tourist-plus removed (HOS-1224): cancelled as a product by HOS-301 D1,
+    // zero subscriptions in production — no longer in ALL_PLANS.
     'tourist-vip': {
         grants: [],
         limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
@@ -152,7 +149,8 @@ describe('AI grant-matrix snapshot (SPEC-211 §6.2 — AC-4.3)', () => {
         const actualSlugs = new Set(ALL_PLANS.map((p) => p.slug));
         const expectedSlugs = Object.keys(EXPECTED_AI_MATRIX);
         // HOS-692 (spec §6.9): complex-* removed from ALL_PLANS — 9 - 3 = 6.
-        expect(expectedSlugs).toHaveLength(6);
+        // HOS-1224: tourist-plus removed too — 6 - 1 = 5.
+        expect(expectedSlugs).toHaveLength(5);
         for (const slug of expectedSlugs) {
             expect(actualSlugs.has(slug), `slug "${slug}" missing from ALL_PLANS`).toBe(true);
         }
@@ -293,7 +291,7 @@ describe('AI grant-matrix snapshot (SPEC-211 §6.2 — AC-4.3)', () => {
 
         it('AI_CHAT is absent from all three tourist plans (Phase 1 / T-003)', () => {
             const touristPlans = ALL_PLANS.filter((p) => p.category === 'tourist');
-            expect(touristPlans).toHaveLength(3);
+            expect(touristPlans).toHaveLength(2);
             for (const plan of touristPlans) {
                 expect(
                     plan.entitlements,
