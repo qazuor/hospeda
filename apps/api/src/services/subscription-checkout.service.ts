@@ -84,7 +84,6 @@ import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
-import { createCompSubscription } from './subscription-comp-create.service.js';
 
 export type { SubscriptionCheckoutErrorCode };
 // HOS-114 T-002: re-exported from the sibling `billing/subscription-checkout-error.js`
@@ -436,48 +435,25 @@ export async function initiatePaidMonthlySubscription(
         throw new SubscriptionCheckoutError('INVALID_PROMO_CODE', promoPlan.message);
     }
 
-    // ── COMP branch ──────────────────────────────────────────────────────────
-    // Comp (free-forever) creates a status='comp' subscription directly — NO MP
-    // preapproval, NO charge. Checked BEFORE the trial branch (HOS-110 W1): a
-    // comp code ALWAYS wins over a trial — there is no reason to burn the
-    // customer's one-per-lifetime trial only to immediately shadow it with a
-    // free-forever subscription. The response carries an in-app success
-    // sentinel URL (reusing the already-resolved return URL, which points at
-    // the checkout success page) and appliedEffect='comp' so the front skips
-    // the MP redirect.
-    if (promoPlan.kind === 'comp') {
-        const customer = await billing.customers.get(customerId);
-        if (!customer) {
-            throw new SubscriptionCheckoutError(
-                'CUSTOMER_NOT_FOUND',
-                `Customer '${customerId}' not found`
-            );
-        }
-        // HOS-937 step 2: resolved for response-shape symmetry with the paid
-        // branches below, even though a comp subscription never reaches
-        // MercadoPago — see `resolvePayerEmail`'s JSDoc for precedence.
-        const { payerEmail } = resolvePayerEmail({
-            requestedPayerEmail: input.payerEmail,
-            mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
-            customerEmail: customer.email
-        });
-        const comp = await createCompSubscription({
-            customerId,
-            planId: plan.id,
-            promoCodeId: promoPlan.promoCodeId,
-            code: promoPlan.code,
-            interval: 'monthly',
-            livemode: customer.livemode,
-            ...(input.db ? { db: input.db } : {})
-        });
-        return {
-            checkoutUrl: urls.paymentMethodReturnUrl,
-            localSubscriptionId: comp.localSubscriptionId,
-            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
-            appliedEffect: 'comp',
-            payerEmail
-        };
-    }
+    // ── The COMP branch used to sit here (HOS-1171 removed it) ───────────────
+    // It called `createCompSubscription()` on this route — a `createCRUDRoute`
+    // with no `requiredPermissions` and no `livemode` filter — so redeeming
+    // `HOSPEDA_FREE`, which was active and uncapped in production, issued the
+    // caller a never-billed subscription in one request. That was the
+    // load-bearing door, not `/apply`.
+    //
+    // `resolveCheckoutPromoPlan` now answers `invalid` for a comp code, so the
+    // branch was already unreachable; it is DELETED rather than left dead
+    // because a dead call to the comp inserter is a second path that skips the
+    // preapproval hard-cancel `services/subscription-comp-grant.service.ts`
+    // does, and `subscription-comp.permission.guard.test.ts` fails if one
+    // reappears. A complimentary subscription is an admin action:
+    // `POST /api/v1/admin/billing/subscriptions/grant-comp`.
+    //
+    // `CheckoutAppliedEffect` KEEPS its `'comp'` member. It is an independent
+    // string union, not derived from `CheckoutPromoPlan`, and it is part of the
+    // `/start-paid` response contract that `PlanPurchaseButton.client.tsx` and
+    // the checkout success page still read. Nothing produces the value any more.
 
     // TRIAL EXTENSION lives elsewhere now (HOS-1012 T-021 removed it here,
     // T-039 re-homed it). Extending the trial is a KEPT feature — `FREEMONTH`
@@ -1452,41 +1428,9 @@ export async function initiatePaidAnnualSubscription(
         throw new SubscriptionCheckoutError('INVALID_PROMO_CODE', promoPlan.message);
     }
 
-    // ── COMP branch ──────────────────────────────────────────────────────────
-    // comp = never charged regardless of interval. Create the status='comp'
-    // subscription directly and return an in-app success sentinel URL.
-    if (promoPlan.kind === 'comp') {
-        const compCustomer = await billing.customers.get(customerId);
-        if (!compCustomer) {
-            throw new SubscriptionCheckoutError(
-                'CUSTOMER_NOT_FOUND',
-                `Customer '${customerId}' not found`
-            );
-        }
-        // HOS-937 step 2: resolved for response-shape symmetry — see the
-        // monthly comp branch's identical comment.
-        const { payerEmail: compPayerEmail } = resolvePayerEmail({
-            requestedPayerEmail: input.payerEmail,
-            mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
-            customerEmail: compCustomer.email
-        });
-        const comp = await createCompSubscription({
-            customerId,
-            planId: plan.id,
-            promoCodeId: promoPlan.promoCodeId,
-            code: promoPlan.code,
-            interval: 'annual',
-            livemode: compCustomer.livemode,
-            ...(input.db ? { db: input.db } : {})
-        });
-        return {
-            checkoutUrl: urls.successUrl,
-            localSubscriptionId: comp.localSubscriptionId,
-            expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
-            appliedEffect: 'comp',
-            payerEmail: compPayerEmail
-        };
-    }
+    // ── The COMP branch used to sit here too (HOS-1171 removed it) ───────────
+    // The annual twin of the monthly branch — see the note there for why both
+    // are deleted rather than left dead.
 
     // TRIAL EXTENSION lives elsewhere now — identical to the monthly path, and
     // deliberately so. Annual resolves no trial length either:

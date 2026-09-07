@@ -9,7 +9,7 @@
  *   - `{ kind: 'discount' }` — `discount` effect → discounted line-item amount
  *     (annual one-time) or live-preapproval mutation (monthly), plus the
  *     cycle-counter seed inputs.
- *   - `{ kind: 'comp' }`     — RETIRED (HOS-1171). A `comp` code is refused here
+ *   - `{ kind: 'comp' }`     — REMOVED (HOS-1171). A `comp` code is refused here
  *     and answers `invalid`; a complimentary subscription is an admin action.
  *
  * SPEC-262 C1+H1 fix: validation now routes through the FULL `validatePromoCode`
@@ -65,26 +65,18 @@ export type CheckoutPromoPlan =
           /** The typed discount effect (carries valueKind/value/durationCycles). */
           readonly effect: Extract<PromoEffect, { kind: 'discount' }>;
       }
-    /**
-     * NO LONGER PRODUCED (HOS-1171). `resolveCheckoutPromoPlan` refuses a `comp`
-     * code with `{ kind: 'invalid' }` — a complimentary subscription is an admin
-     * action, granted by `POST /admin/billing/subscriptions/grant-comp`.
-     *
-     * The variant and the two branches that consume it
-     * (`subscription-checkout.service.ts`) are kept rather than deleted because
-     * removing them also removes `'comp'` from `CheckoutAppliedEffect`, which is
-     * part of the `/start-paid` response contract read by
-     * `PlanPurchaseButton.client.tsx` and the checkout success page. That is a
-     * separate, cross-package change. Nothing constructs this variant today, and
-     * the refusal that guarantees it lives in ONE place — the `COMP` branch of
-     * `classifyValidatedCode` below.
-     */
-    | {
-          readonly kind: 'comp';
-          readonly promoCodeId: string;
-          readonly code: string;
-      }
     | { readonly kind: 'invalid'; readonly message: string };
+// There is no `comp` variant any more (HOS-1171). It existed so the checkout
+// could reach `createCompSubscription()` on a route with no permission check;
+// deleting it deletes the two branches that consumed it, which is the point —
+// a dead branch calling the comp inserter is a second path around the
+// preapproval hard-cancel that `subscription-comp-grant.service.ts` performs.
+//
+// `CheckoutAppliedEffect` in `subscription-checkout.service.ts` KEEPS its
+// `'comp'` member: it is an independently declared string union, not derived
+// from this type, and it is part of the `/start-paid` response contract that
+// `PlanPurchaseButton.client.tsx` and the checkout success page still read.
+// Nothing produces that value now.
 
 /**
  * Resolve a raw checkout promo code into a {@link CheckoutPromoPlan}.

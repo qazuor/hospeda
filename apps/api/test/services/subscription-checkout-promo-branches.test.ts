@@ -330,28 +330,30 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         createPendingProviderSubscriptionMock.mockResolvedValue(DEFAULT_PENDING_RESULT);
     });
 
-    it('comp wins over a trial: comp branch resolves first, the MP plan is never resolved', async () => {
+    // HOS-1171. This replaces 'comp wins over a trial: comp branch resolves
+    // first', which asserted that a comp code reaching this checkout produced a
+    // `status='comp'` subscription. It did — on a route with no
+    // `requiredPermissions` and no `livemode` filter, with `HOSPEDA_FREE` active
+    // and uncapped in production. `resolveCheckoutPromoPlan` answers `invalid`
+    // for a comp code now, and the branch that consumed it is gone.
+    it('HOS-1171 a comp code is refused before anything is created', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
-            kind: 'comp',
-            promoCodeId: 'pc-1',
-            code: 'COMPVIP'
+            kind: 'invalid',
+            message: "Promo code 'COMPVIP' is not valid"
         });
-        createCompSubscriptionMock.mockResolvedValue({ localSubscriptionId: 'comp-sub-1' });
         const billing = makeTrialBilling();
 
-        const result = await initiatePaidMonthlySubscription({
-            ...MONTHLY_BASE,
-            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
-            billing: billing as any,
-            promoCode: 'COMPVIP'
-        });
+        await expect(
+            initiatePaidMonthlySubscription({
+                ...MONTHLY_BASE,
+                // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+                billing: billing as any,
+                promoCode: 'COMPVIP'
+            })
+        ).rejects.toThrow(/not valid/);
 
-        expect(result.appliedEffect).toBe('comp');
-        expect(result.localSubscriptionId).toBe('comp-sub-1');
-        expect(createCompSubscriptionMock).toHaveBeenCalledOnce();
-        // Neither the eligibility check nor the MP plan resolution ever ran.
-        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
-        expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
+        // The assertion that matters: no comp subscription, by any route.
+        expect(createCompSubscriptionMock).not.toHaveBeenCalled();
         expect(createPendingProviderSubscriptionMock).not.toHaveBeenCalled();
     });
 
@@ -591,19 +593,22 @@ describe('HOS-1012: the ops trial override cannot change what MercadoPago is tol
     });
 });
 
-describe('monthly comp branch', () => {
+describe('monthly comp branch (HOS-1171: there is no longer one)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         createPendingProviderSubscriptionMock.mockResolvedValue(DEFAULT_PENDING_RESULT);
     });
 
-    it('routes comp → createCompSubscription, appliedEffect=comp, no MP plan resolution', async () => {
+    it('the monthly checkout cannot create a comp subscription at all', async () => {
+        // Belt to the `invalid`-refusal's braces. Even if a future edit made
+        // `resolveCheckoutPromoPlan` hand this checkout something comp-shaped
+        // again, there is no branch left to consume it — so it falls through to
+        // the ordinary paid path rather than issuing free access.
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'comp',
             promoCodeId: 'pc-1',
             code: 'COMPVIP'
         });
-        createCompSubscriptionMock.mockResolvedValue({ localSubscriptionId: 'comp-sub-1' });
         const billing = makeBilling();
 
         const result = await initiatePaidMonthlySubscription({
@@ -613,12 +618,8 @@ describe('monthly comp branch', () => {
             promoCode: 'COMPVIP'
         });
 
-        expect(result.appliedEffect).toBe('comp');
-        expect(result.localSubscriptionId).toBe('comp-sub-1');
-        expect(result.checkoutUrl).toBe(MONTHLY_URLS.paymentMethodReturnUrl);
-        expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
-        expect(createPendingProviderSubscriptionMock).not.toHaveBeenCalled();
-        expect(createCompSubscriptionMock).toHaveBeenCalledOnce();
+        expect(createCompSubscriptionMock).not.toHaveBeenCalled();
+        expect(result.appliedEffect).not.toBe('comp');
     });
 });
 
@@ -748,13 +749,15 @@ describe('annual comp + discount branches (HOS-171 §7.2: annual resolves an MP 
         createPendingProviderSubscriptionMock.mockResolvedValue(DEFAULT_PENDING_RESULT);
     });
 
-    it('comp → createCompSubscription(interval=annual), appliedEffect=comp, no MP plan resolution', async () => {
+    it('HOS-1171 the annual checkout cannot create a comp subscription either', async () => {
+        // The annual twin of the monthly assertion above. Both branches were
+        // deleted together, and both are covered separately because the two
+        // entry points have never shared a code path.
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'comp',
             promoCodeId: 'pc-1',
             code: 'COMPVIP'
         });
-        createCompSubscriptionMock.mockResolvedValue({ localSubscriptionId: 'comp-annual-1' });
         const billing = makeBilling();
 
         const result = await initiatePaidAnnualSubscription({
@@ -763,13 +766,8 @@ describe('annual comp + discount branches (HOS-171 §7.2: annual resolves an MP 
             billing: billing as any
         });
 
-        expect(result.appliedEffect).toBe('comp');
-        expect(result.localSubscriptionId).toBe('comp-annual-1');
-        expect(result.checkoutUrl).toBe(ANNUAL_URLS.successUrl);
-        expect(billing.checkout.create).not.toHaveBeenCalled();
-        expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
-        const compArg = createCompSubscriptionMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(compArg.interval).toBe('annual');
+        expect(createCompSubscriptionMock).not.toHaveBeenCalled();
+        expect(result.appliedEffect).not.toBe('comp');
     });
 
     it('HOS-244: annual + discount code → INVALID_PROMO_CODE, no pending subscription materialized', async () => {
@@ -908,14 +906,14 @@ describe('HOS-1012: annual checkout on a trial-declaring plan (mirrors the month
         expect(createPendingProviderSubscriptionMock).toHaveBeenCalledOnce();
     });
 
-    it('comp wins over trial on the annual entry — the MP plan is never resolved', async () => {
+    it('HOS-1171 comp no longer wins over trial on the annual entry — it wins nothing', async () => {
+        // The precedence this used to pin ("comp beats a trial") existed because
+        // comp was reachable here. It is not, so the only precedence left to
+        // assert is that nothing free comes out of this entry point.
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'comp',
             promoCodeId: 'pc-1',
             code: 'COMPVIP'
-        });
-        createCompSubscriptionMock.mockResolvedValue({
-            localSubscriptionId: 'comp-annual-trial-1'
         });
         const billing = makeTrialBilling();
 
@@ -926,13 +924,8 @@ describe('HOS-1012: annual checkout on a trial-declaring plan (mirrors the month
             promoCode: 'COMPVIP'
         });
 
-        expect(result.appliedEffect).toBe('comp');
-        expect(result.localSubscriptionId).toBe('comp-annual-trial-1');
-        const compArg = createCompSubscriptionMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(compArg.interval).toBe('annual');
-        // The eligibility check and the MP plan resolution never ran.
-        expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
-        expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
+        expect(createCompSubscriptionMock).not.toHaveBeenCalled();
+        expect(result.appliedEffect).not.toBe('comp');
     });
 
     it('a trial_extension code does not lengthen anything on the annual path either', async () => {
