@@ -24,8 +24,20 @@ import { revokeAddonForSubscriptionCancellation } from './addon-lifecycle.servic
 import { closeAddonPreapproval } from './addon-preapproval-cancel.js';
 
 // ─── Catalog service (DB-backed addon reads — SPEC-192 T-014) ─────────────────
-// Instantiated once at module level; stateless, no DB connection held.
-const catalogService = new AddonCatalogService();
+// Instantiated once, on first use; stateless, no DB connection held.
+//
+// HOS-847 PR 6: this used to be a bare `new AddonCatalogService()` evaluated as
+// a module side effect, so merely IMPORTING this module threw in any suite
+// whose `@repo/service-core` mock did not happen to name that class. This PR
+// widened who reaches the module transitively, which turned that latent
+// fragility into a failing shard. Deferring construction to the single call
+// site keeps the "once" guarantee and makes the import inert.
+let catalogService: AddonCatalogService | undefined;
+
+const getCatalogService = (): AddonCatalogService => {
+    catalogService ??= new AddonCatalogService();
+    return catalogService;
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,7 +248,7 @@ export async function handleSubscriptionCancellationAddons(
         // SPEC-192 T-014: resolve addon definition from DB-backed catalog.
         // NOT_FOUND → addonDef=undefined (triggers "unknown/retired" path in revoke helper,
         // same semantics as the old config getAddonBySlug returning undefined).
-        const catalogResult = await catalogService.getBySlug(addonSlug);
+        const catalogResult = await getCatalogService().getBySlug(addonSlug);
         const addonDef = catalogResult.success ? catalogResult.data : undefined;
 
         try {
