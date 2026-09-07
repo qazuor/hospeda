@@ -367,6 +367,98 @@ describe('the QR sheet file (HOS-982)', () => {
     });
 });
 
+/**
+ * The sheet's TYPESETTING, asserted line by line.
+ *
+ * ---
+ * WHY A SUITE ABOUT WHERE LINES BREAK
+ *
+ * The sheet does not own its text mechanics: `wrapText` and `toDrawableText`
+ * are imported from `services/commerce-brochure/brochure-render.ts`, which is
+ * correct — both are pure, generic and would drift if copied — but directional.
+ * The brochure has no idea a second document depends on it, and until this
+ * suite existed the sheet had no assertion that could notice a change to it:
+ * everything else here is about rectangles or about a string being present
+ * somewhere in the stream, neither of which moves when a line breaks
+ * differently.
+ *
+ * So somebody adding, say, a default `maxLines` "for the brochure" would change
+ * how every business name on every printed sheet is set, in a pull request that
+ * touches no file under `listing-qr-sheet/` and turns nothing red. These tests
+ * are what turns that into a failure.
+ */
+describe('how the name is set (HOS-982)', () => {
+    /** Long enough to need two lines at the largest size, short enough to fit. */
+    const TWO_LINE_NAME = 'Cabañas del Río Uruguay y Spa Termal de Concepción';
+
+    /** The fixture's headline, which is the first bold line AFTER the name. */
+    const HEADLINE = content().headline;
+
+    /**
+     * The lines the name was set on, in draw order.
+     *
+     * Selected by POSITION in the stream rather than by size: the name shrinks
+     * to 15pt when it is long, which is also the brand's size, so a size filter
+     * cannot tell the two apart on exactly the input this suite cares about.
+     * The name is everything bold drawn before the headline.
+     */
+    function nameLines(bytes: Uint8Array): string[] {
+        const bold = drawnTexts(bytes).filter((run) => run.bold);
+        const headlineAt = bold.findIndex((run) => run.text === HEADLINE);
+        expect(headlineAt).toBeGreaterThan(0);
+        return bold.slice(0, headlineAt).map((run) => run.text);
+    }
+
+    it('breaks a long name into the lines it actually draws, in order', async () => {
+        const bytes = await renderListingQrSheetPdf({
+            content: content({ listingName: TWO_LINE_NAME }),
+            qrUrl: QR_URL
+        });
+
+        expect(nameLines(bytes)).toEqual([
+            'Caba\xf1as del R\xedo Uruguay y Spa',
+            'Termal de Concepci\xf3n'
+        ]);
+        // Joined back with the space the break replaced, it is the name that
+        // went in — nothing was dropped at the seam.
+        expect(nameLines(bytes).join(' ')).toBe(TWO_LINE_NAME);
+    });
+
+    it('marks a name it had to cut, instead of printing half a business name', async () => {
+        // Past two lines at the smallest size the name is truncated. Unmarked,
+        // "…Salón de Even" reads as a real trading name with nothing on the
+        // page to say it is half of one. Measured: two lines at 15pt hold ~132
+        // characters of Latin script, so the fixture is longer than that.
+        const bytes = await renderListingQrSheetPdf({
+            content: content({
+                listingName:
+                    'Restaurante Parrilla Pescadería Cervecería y Salón de Eventos del Puerto de Concepción del Uruguay, Entre Ríos, República Argentina, Costanera Sur, Zona Balnearia Banco Pelay'
+            }),
+            qrUrl: QR_URL
+        });
+
+        const cut = nameLines(bytes);
+        expect(cut.length).toBe(2);
+        // The mark, as the FILE carries it. pdf-lib encodes standard-font text
+        // as WinAnsi, where U+2026 is byte 0x85 — Latin-1's C1 control slot —
+        // and `drawnTexts` decodes latin1, which is right for every other
+        // character on this sheet. So it reads back as `\x85`. Asserted in the
+        // byte that is actually there rather than papered over.
+        expect(cut[1]?.endsWith('\x85')).toBe(true);
+        // And it IS the ellipsis, not the `?` pdf-lib substitutes for a
+        // character the standard faces cannot encode.
+        expect(cut[1]).not.toContain('?');
+    });
+
+    it('leaves a name that fits on ONE line alone, ellipsis and all', async () => {
+        // The counter-case: the mark must be the exception, not something every
+        // sheet grows because the truncation branch became unconditional.
+        const bytes = await renderListingQrSheetPdf({ content: content(), qrUrl: QR_URL });
+
+        expect(nameLines(bytes)).toEqual(['La Parrilla del Puerto']);
+    });
+});
+
 describe('what the QR encodes (HOS-982)', () => {
     it('draws the golden symbol for a known redirect', async () => {
         const bytes = await renderListingQrSheetPdf({ content: content(), qrUrl: QR_URL });

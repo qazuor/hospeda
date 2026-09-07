@@ -71,7 +71,7 @@
 
 import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
 import { PageSizes, PDFDocument, type PDFFont, type PDFPage, rgb, StandardFonts } from 'pdf-lib';
-import { renderQrMatrix } from '../../utils/qr-render.js';
+import { type QrModuleMatrix, renderQrMatrix } from '../../utils/qr-render.js';
 // `wrapText` is imported rather than re-implemented: it is generic PDF text
 // mechanics (greedy wrapping with a character-level break for an over-wide
 // token), not brochure policy, and a second copy would drift the first time
@@ -84,7 +84,8 @@ import {
     CONTENT_WIDTH,
     drawCentredLine,
     drawRectTopDown,
-    MARGIN
+    MARGIN,
+    withEllipsis
 } from './qr-sheet-page.js';
 
 /**
@@ -203,6 +204,10 @@ function printedDomain(qrUrl: string): string {
  * would print a name nobody can read from the distance the code is sized for. So
  * it shrinks to {@link NAME_SIZE_MIN} and then wraps, which is the failure that
  * still yields a usable sheet.
+ *
+ * Past that floor the name is CUT, and the cut is marked — see
+ * {@link withEllipsis}. Two lines at {@link NAME_SIZE_MIN} hold ~132 characters
+ * of Latin script, so a name has to be longer than that to reach it.
  */
 function fitNameLines(input: { name: string; font: PDFFont }): {
     readonly size: number;
@@ -219,15 +224,24 @@ function fitNameLines(input: { name: string; font: PDFFont }): {
             return { size, lines };
         }
     }
-    return {
+
+    const wrapped = wrapText({
+        text: input.name,
+        font: input.font,
         size: NAME_SIZE_MIN,
-        lines: wrapText({
-            text: input.name,
-            font: input.font,
-            size: NAME_SIZE_MIN,
-            maxWidth: CONTENT_WIDTH
-        }).slice(0, NAME_MAX_LINES)
-    };
+        maxWidth: CONTENT_WIDTH
+    });
+    if (wrapped.length <= NAME_MAX_LINES) {
+        return { size: NAME_SIZE_MIN, lines: wrapped };
+    }
+
+    const kept = wrapped.slice(0, NAME_MAX_LINES);
+    kept[NAME_MAX_LINES - 1] = withEllipsis({
+        line: kept[NAME_MAX_LINES - 1] ?? '',
+        font: input.font,
+        size: NAME_SIZE_MIN
+    });
+    return { size: NAME_SIZE_MIN, lines: kept };
 }
 
 /**
@@ -239,16 +253,19 @@ function fitNameLines(input: { name: string; font: PDFFont }): {
  * rectangle, which roughly halves the operator count.
  *
  * The grid comes from `utils/qr-render.ts`, the ONE module in this repo allowed
- * to import `qrcode` (HOS-1129, enforced by
+ * to import the encoder package (HOS-1129, enforced by
  * `scripts/check-qrcode-engine-isolation.sh`). What is drawn is `qrUrl` — the
  * platform's own redirect, never the ficha's final URL.
+ *
+ * The matrix is PASSED IN rather than encoded here. It used to be encoded
+ * twice per download, once by {@link qrBlockHeight} to place the page and once
+ * here to draw it: two independent calls, so the symbol on the page and the
+ * height the whole layout was built around came from different invocations.
+ * Harmless while the encoder is deterministic, and not a property worth relying
+ * on when one shared value costs nothing.
  */
-function drawQr(input: { page: PDFPage; url: string; top: number; size: number }): void {
-    const { page, top, size } = input;
-    const qr = renderQrMatrix({
-        data: input.url,
-        errorCorrectionLevel: QR_ERROR_CORRECTION
-    });
+function drawQr(input: { page: PDFPage; qr: QrModuleMatrix; top: number; size: number }): void {
+    const { page, qr, top, size } = input;
     const count = qr.size;
     const module = size / count;
     const quiet = module * QR_QUIET_MODULES;
@@ -287,13 +304,14 @@ function drawQr(input: { page: PDFPage; url: string; top: number; size: number }
     }
 }
 
-/** Height the QR block occupies, symbol plus its quiet zone on both sides. */
-function qrBlockHeight(input: { url: string; size: number }): number {
-    const count = renderQrMatrix({
-        data: input.url,
-        errorCorrectionLevel: QR_ERROR_CORRECTION
-    }).size;
-    return input.size + (input.size / count) * QR_QUIET_MODULES * 2;
+/**
+ * Height the QR block occupies, symbol plus its quiet zone on both sides.
+ *
+ * Takes the SAME matrix `drawQr` will draw — see there for why it is not
+ * re-encoded.
+ */
+function qrBlockHeight(input: { qr: QrModuleMatrix; size: number }): number {
+    return input.size + (input.size / input.qr.size) * QR_QUIET_MODULES * 2;
 }
 
 /**
@@ -330,9 +348,12 @@ export async function renderListingQrSheetPdf(
         maxWidth: INVITE_WIDTH
     }).slice(0, INVITE_MAX_LINES);
 
+    // Encoded ONCE, then used both to size the page and to draw the symbol.
+    const qr = renderQrMatrix({ data: qrUrl, errorCorrectionLevel: QR_ERROR_CORRECTION });
+
     const nameHeight = name.lines.length * name.size * LEADING;
     const inviteHeight = inviteLines.length * INVITE_SIZE * LEADING;
-    const qrHeight = qrBlockHeight({ url: qrUrl, size: QR_SIZE });
+    const qrHeight = qrBlockHeight({ qr, size: QR_SIZE });
 
     const totalHeight =
         nameHeight +
@@ -384,7 +405,7 @@ export async function renderListingQrSheetPdf(
 
     // ── The code ───────────────────────────────────────────────────────────
     const quiet = (qrHeight - QR_SIZE) / 2;
-    drawQr({ page, url: qrUrl, top: y + quiet, size: QR_SIZE });
+    drawQr({ page, qr, top: y + quiet, size: QR_SIZE });
     y += qrHeight + GAP_QR_TO_INVITE;
 
     // ── What to do with it ─────────────────────────────────────────────────

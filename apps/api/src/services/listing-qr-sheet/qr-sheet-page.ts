@@ -1,5 +1,5 @@
 /**
- * The A4 page the QR sheet is drawn on, and the four primitives that draw on it
+ * The A4 page the QR sheet is drawn on, and the primitives that draw on it
  * (HOS-982).
  *
  * ---
@@ -155,4 +155,43 @@ export function drawRectTopDown(input: {
         color: input.color,
         borderWidth: 0
     });
+}
+
+/**
+ * The mark that says a name was cut.
+ *
+ * A single character rather than three dots: it is in WinAnsi, so the standard
+ * faces draw it rather than substituting a `?`, and it reads as a typographic
+ * elision instead of as part of the name.
+ */
+const ELLIPSIS = '…';
+
+/**
+ * Trims a line until it plus an ellipsis fits the column, then appends it.
+ *
+ * Used for the business name, which is owner-typed and has no length a page can
+ * rely on. A name cut mid-word with nothing to show for it prints a DIFFERENT
+ * business name — "Parrilla Pescadería y Salón de Even" reads as a real trading
+ * name, and there is nothing on the page to suggest it is half of one. The mark
+ * costs one character and turns a wrong name into a visibly abbreviated one.
+ *
+ * It shrinks by characters rather than by words on purpose: the string that
+ * needs this is already an outlier, and trimming to the last whole word can
+ * throw away a third of a line.
+ *
+ * @param input - Input parameters.
+ * @param input.line - The line to cut. Trailing space is dropped.
+ * @param input.font - The face it will be drawn with.
+ * @param input.size - Font size, in points.
+ * @returns The line, shortened until it plus the mark fits {@link CONTENT_WIDTH}.
+ */
+export function withEllipsis(input: { line: string; font: PDFFont; size: number }): string {
+    let text = input.line.trimEnd();
+    while (
+        text.length > 0 &&
+        measure({ text: `${text}${ELLIPSIS}`, font: input.font, size: input.size }) > CONTENT_WIDTH
+    ) {
+        text = text.slice(0, -1).trimEnd();
+    }
+    return `${text}${ELLIPSIS}`;
 }
