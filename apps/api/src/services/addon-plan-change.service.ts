@@ -43,15 +43,32 @@ import type { RecalculationResult } from './addon-limit-recalculation.service.js
 import { computeDirection, hashCustomerId, sumIncrements } from './addon-plan-change.helpers.js';
 
 // ─── Catalog service (DB-backed addon reads — SPEC-192 T-013) ─────────────────
-// Instantiated once at module level; stateless, no DB connection held.
-const catalogService = new AddonCatalogService();
+// Instantiated once, on first use; stateless, no DB connection held.
+//
+// HOS-847 PR 6: both services below used to be constructed as module side
+// effects. This module is re-exported by `addon-lifecycle.service.ts`, so any
+// suite that imports that barrel — even for an unrelated symbol — evaluated
+// these constructors, and threw on the import when its `@repo/service-core`
+// mock did not name the class. Deferring to first use keeps the "once"
+// guarantee and makes importing the barrel inert.
+let catalogService: AddonCatalogService | undefined;
+
+const getCatalogService = (): AddonCatalogService => {
+    catalogService ??= new AddonCatalogService();
+    return catalogService;
+};
 
 // ─── Plan service (DB-backed plan reads — SPEC-192 T-026) ─────────────────────
-// Instantiated once at module level; stateless, no DB connection held.
+// Instantiated once, on first use; stateless, no DB connection held.
 //
 // Post-SPEC-168, `planId` may be a `billing_plans` UUID (new rows) or a
 // legacy slug (older rows/seeds). Use `resolvePlanByIdOrSlug` for dual-resolve.
-const planService = new PlanService();
+let planService: PlanService | undefined;
+
+const getPlanService = (): PlanService => {
+    planService ??= new PlanService();
+    return planService;
+};
 
 /**
  * Resolves a billing plan from the DB using dual-resolve:
@@ -64,11 +81,11 @@ const planService = new PlanService();
  * @returns Resolved plan or `null` when not found
  */
 async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanResponse | null> {
-    const byId = await planService.getById(planId);
+    const byId = await getPlanService().getById(planId);
     if (byId.success) {
         return byId.data;
     }
-    const bySlug = await planService.getBySlug(planId);
+    const bySlug = await getPlanService().getBySlug(planId);
     if (bySlug.success) {
         return bySlug.data;
     }
@@ -354,7 +371,7 @@ export async function handlePlanChangeAddonRecalculation(
         for (const purchase of activePurchases) {
             // SPEC-192 T-013: resolve addon definition from DB-backed catalog.
             // Preserves original skip-and-log semantics on not-found/error.
-            const catalogResult = await catalogService.getBySlug(purchase.addonSlug);
+            const catalogResult = await getCatalogService().getBySlug(purchase.addonSlug);
 
             if (!catalogResult.success) {
                 apiLogger.warn(

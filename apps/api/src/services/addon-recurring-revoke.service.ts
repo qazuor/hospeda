@@ -44,8 +44,20 @@ import { apiLogger } from '../utils/logger.js';
 import { revokeAddonForSubscriptionCancellation } from './addon-lifecycle.service.js';
 import type { RecurringAddonPurchaseRow } from './addon-recurring-period.js';
 
-/** DB-backed catalog used to resolve the add-on definition by slug. */
-const catalogService = new AddonCatalogService();
+/**
+ * DB-backed catalog used to resolve the add-on definition by slug.
+ *
+ * Constructed on first use, not as a module side effect: this file imports the
+ * `addon-lifecycle.service.ts` barrel, so a bare `new` here would run for every
+ * suite that pulls that chain in and throw on the import whenever its
+ * `@repo/service-core` mock did not name the class (HOS-847 PR 6).
+ */
+let catalogService: AddonCatalogService | undefined;
+
+const getCatalogService = (): AddonCatalogService => {
+    catalogService ??= new AddonCatalogService();
+    return catalogService;
+};
 
 /**
  * QZPay-vocabulary preapproval statuses that mean "this will never charge
@@ -144,7 +156,7 @@ export async function revokeRecurringAddonForProviderTerminal(
 
     // NOT_FOUND → undefined, which `revokeAddonForSubscriptionCancellation`
     // treats as the retired/unknown add-on path (best-effort on both channels).
-    const catalogResult = await catalogService.getBySlug(purchase.addonSlug);
+    const catalogResult = await getCatalogService().getBySlug(purchase.addonSlug);
     const addonDef = catalogResult.success ? catalogResult.data : undefined;
 
     // Revoke FIRST. If this throws, the row stays as it is — an add-on that
