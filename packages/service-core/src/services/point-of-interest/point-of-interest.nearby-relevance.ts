@@ -13,8 +13,14 @@
  * what a traveller browsing a listing wants to read.
  *
  * This module encodes the replacement: a per-POI ELASTIC radius derived from
- * the POI's own editorial weight, plus a gravity-style score that lets
- * relevance decay with distance instead of ignoring it.
+ * the POI's own editorial weight, plus a gravity-style score
+ * (`weight^1.5 / (1 + km)`) that lets relevance decay with distance instead of
+ * ignoring it.
+ *
+ * Of the two, **the elastic radius is what changes the section** — it decides
+ * who is eligible at all. The score only reorders what already got in, and its
+ * exponent moved 12 positions across the whole of production; see
+ * {@link NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT} for that measurement.
  *
  * ## Calibration (measured against the production catalogue, 2026-09-07)
  *
@@ -125,10 +131,48 @@ export const NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM =
     NEARBY_POI_MAX_RADIUS_KM * NEARBY_POI_FEATURED_RADIUS_MULTIPLIER;
 
 /**
+ * Exponent applied to `displayWeight` in {@link computeRelevanceScore}, so
+ * editorial importance grows faster than linearly against distance. Owner
+ * decision (2026-09-07): the section should favour the emblematic POI over the
+ * merely close one. At 1.0 a weight-100 POI 2km away and a weight-50 POI 500m
+ * away scored IDENTICALLY (both 33.33) and the tie-break handed the ranking to
+ * the nearer one; at 1.5 they score 333.33 and 235.70, so the landmark wins.
+ *
+ * **The measured effect is small, and that is the honest framing.** Against
+ * the 5 public production accommodations, `w / (1 + km)` vs
+ * `w^1.5 / (1 + km)`:
+ *
+ * | metric                     | `w`     | `w^1.5` |
+ * | -------------------------- | ------- | ------- |
+ * | POIs of weight 100 shown   | 32      | 33      |
+ * | POIs of weight 50 shown    | 1       | 0       |
+ * | mean distance shown        | 3.62km  | 3.76km  |
+ * | distance of the #1 result  | 3.34km  | 3.34km  |
+ * | positions that change      | —       | 12      |
+ *
+ * The heavy lifting is done by the ELASTIC RADIUS, which decides who is
+ * eligible at all; the exponent only reorders what already got in. Do not read
+ * this constant as the thing that rescues the section — that is
+ * {@link NEARBY_POI_BASE_RADIUS_KM} and its clamp.
+ */
+export const NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT = 1.5;
+
+/**
  * Runaway guard on the candidate set handed to the ranker — NOT a selection
- * mechanism. The entire production catalogue is 842 ACTIVE POIs, so this cap
- * cannot bind today by construction; it exists only so a future catalogue
- * explosion degrades into a bounded query instead of an unbounded one.
+ * mechanism. The entire production catalogue was 842 ACTIVE POIs when this was
+ * set (2026-09-07), so the cap cannot bind at today's volume.
+ *
+ * **It is correct by VOLUME, not by construction, and the failure mode is the
+ * bad one.** `PointOfInterestModel.findWithinRadius` applies its `LIMIT` after
+ * `ORDER BY distance ASC`, so if this cap ever binds the rows it drops are the
+ * FARTHEST ones — precisely the weight-85-to-100 landmarks 9-13km out that the
+ * elastic radius exists to rescue. The section would quietly regress to
+ * something close to its pre-HOS-327 behaviour with every test still green.
+ *
+ * So: when the catalogue approaches this number, raise the cap or push the
+ * eligibility filter into SQL (see the module JSDoc's migration note). Do not
+ * assume a green suite proves the cap is still slack — no test can observe it
+ * binding.
  */
 export const NEARBY_POI_CANDIDATE_LIMIT = 2000;
 
@@ -209,7 +253,7 @@ export function computeElasticRadiusKm(params: {
 
 /**
  * Computes a POI's relevance score for a given search center:
- * `displayWeight / (1 + distanceKm)`.
+ * `displayWeight ^ NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT / (1 + distanceKm)`.
  *
  * A gravity-style decay, chosen over both of the degenerate alternatives the
  * surface has used or could use: pure distance ignores that some landmarks
@@ -218,8 +262,16 @@ export function computeElasticRadiusKm(params: {
  * distance zero and makes the first kilometer the most expensive one, which
  * is where a walkable/not-walkable distinction actually lives.
  *
+ * The super-linear weight term is what makes editorial importance outweigh
+ * proximity rather than merely trade against it — see
+ * {@link NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT}, whose doc carries the measured
+ * effect of the exponent (small, and deliberately documented as such).
+ *
  * Higher is better. Deliberately NOT clamped or normalized — the value is
  * only ever compared against other scores from the same call.
+ *
+ * A weight of exactly 0 scores 0 at every distance (`0 ^ 1.5 === 0`), so a
+ * zero-weight POI can be eligible (the 2km clamp) yet always rank last.
  *
  * @param params - Receive-object.
  * @param params.displayWeight - The POI's editorial weight.
@@ -233,7 +285,7 @@ export function computeRelevanceScore(params: {
     const { displayWeight, distanceKm } = params;
     const weight = normalizeDisplayWeight(displayWeight);
     const distance = Number.isFinite(distanceKm) ? Math.max(0, distanceKm) : 0;
-    return weight / (1 + distance);
+    return weight ** NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT / (1 + distance);
 }
 
 /**
@@ -244,9 +296,10 @@ export function computeRelevanceScore(params: {
  *
  * Ties are broken by ascending distance and then by ascending `slug`, so the
  * order is fully deterministic across calls and across Postgres plan changes.
- * The tie-break is load-bearing rather than cosmetic: the score is a ratio of
- * small integers, so exact ties are common — a weight-100 POI 2km away and a
- * weight-50 POI 500m away both score 33.33, and the nearer one wins.
+ * The tie-break is load-bearing rather than cosmetic: exact ties still occur
+ * at the catalogue's five discrete weights — a weight-100 POI 7km away and a
+ * weight-25 POI at the doorstep both score exactly 125 — and the nearer one
+ * wins.
  *
  * Pure: never mutates the input array.
  *

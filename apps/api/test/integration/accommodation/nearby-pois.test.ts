@@ -262,7 +262,10 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
         expect(slugs).not.toContain(poiFarSlug);
         expect(slugs).not.toContain(poiInactiveSlug);
 
-        // Score order: near = 50/1.06 ~ 47, mid = 40/2.9 ~ 14.
+        // Score order (weight^1.5 / (1 + km)): near = 353.6/1.06 ~ 334,
+        // heavy-far = 1000/9.9 ~ 101, mid = 253/3.0 ~ 84. So the weight-100
+        // POI 9km out now outranks the weight-40 one 2km out, which is the
+        // whole point of HOS-327; this assertion only pins near before mid.
         const nearIndex = slugs.indexOf(poiNearSlug);
         const midIndex = slugs.indexOf(poiMidSlug);
         expect(nearIndex).toBeLessThan(midIndex);

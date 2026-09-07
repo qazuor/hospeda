@@ -5,9 +5,10 @@
  * gravity-style score, and the ranking that composes them.
  *
  * Every expected number below was computed FROM the formula and then written
- * out, not recalled — see the `documents the exact-tie the brief's example
- * lands on` case, which is a genuine tie the brief assumed was a strict
- * ordering.
+ * out, not recalled. That is not ceremony: at the original exponent of 1.0 the
+ * brief's own worked example turned out to be an exact TIE rather than the
+ * strict ordering it claimed, which is what sent the exponent back to the
+ * owner and produced the 1.5 this file now pins.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -16,12 +17,12 @@ import {
     computeRelevanceScore,
     NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM,
     NEARBY_POI_BASE_RADIUS_KM,
-    NEARBY_POI_CANDIDATE_LIMIT,
     NEARBY_POI_DEFAULT_LIMIT,
     NEARBY_POI_FEATURED_RADIUS_MULTIPLIER,
     NEARBY_POI_MAX_RADIUS_KM,
     NEARBY_POI_MIN_RADIUS_KM,
     NEARBY_POI_REFERENCE_DISPLAY_WEIGHT,
+    NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT,
     rankNearbyPois
 } from '../../../src/services/point-of-interest/point-of-interest.nearby-relevance';
 
@@ -50,6 +51,7 @@ describe('nearby-relevance constants (calibration freeze)', () => {
         expect(NEARBY_POI_MIN_RADIUS_KM).toBe(2);
         expect(NEARBY_POI_MAX_RADIUS_KM).toBe(15);
         expect(NEARBY_POI_FEATURED_RADIUS_MULTIPLIER).toBe(1.3);
+        expect(NEARBY_POI_RELEVANCE_WEIGHT_EXPONENT).toBe(1.5);
         expect(NEARBY_POI_DEFAULT_LIMIT).toBe(8);
     });
 
@@ -60,11 +62,14 @@ describe('nearby-relevance constants (calibration freeze)', () => {
         expect(NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM).toBeLessThanOrEqual(20);
     });
 
-    it('keeps the candidate guard above the entire production catalogue', () => {
-        // 842 ACTIVE POIs in production — the guard must not be able to bind
-        // and silently truncate the candidate set.
-        expect(NEARBY_POI_CANDIDATE_LIMIT).toBeGreaterThan(842);
-    });
+    // NOTE: there is deliberately NO test asserting that
+    // `NEARBY_POI_CANDIDATE_LIMIT` exceeds the catalogue size. The catalogue
+    // size is not observable from here, so such an assertion could only
+    // compare the constant against a literal typed by hand — true forever,
+    // including on the day the catalogue outgrows the cap and the guard starts
+    // silently dropping the FARTHEST candidates (the very landmarks the
+    // elastic radius rescues). That consequence is documented on the constant
+    // itself, which is where someone raising it will read it.
 });
 
 describe('computeElasticRadiusKm', () => {
@@ -119,11 +124,15 @@ describe('computeElasticRadiusKm', () => {
 });
 
 describe('computeRelevanceScore', () => {
-    it('decays weight with distance as weight / (1 + km)', () => {
-        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 0 })).toBeCloseTo(100, 10);
-        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 1 })).toBeCloseTo(50, 10);
-        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 9 })).toBeCloseTo(10, 10);
-        expect(computeRelevanceScore({ displayWeight: 50, distanceKm: 1 })).toBeCloseTo(25, 10);
+    it('decays a super-linear weight with distance as weight^1.5 / (1 + km)', () => {
+        // 100^1.5 = 1000 exactly; 50^1.5 = 353.5533905932738.
+        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 0 })).toBeCloseTo(1000, 10);
+        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 1 })).toBeCloseTo(500, 10);
+        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 9 })).toBeCloseTo(100, 10);
+        expect(computeRelevanceScore({ displayWeight: 50, distanceKm: 1 })).toBeCloseTo(
+            176.7766952966369,
+            10
+        );
     });
 
     it('ranks a heavy far POI above a light near one when the weight gap earns it', () => {
@@ -132,14 +141,33 @@ describe('computeRelevanceScore', () => {
         expect(landmark).toBeGreaterThan(cornerShop);
     });
 
-    it('documents the exact tie the brief assumed was a strict ordering', () => {
-        // The HOS-327 brief expected "weight 100 at 2km ranks before weight 50
-        // at 500m". Run through the approved formula those two score
-        // IDENTICALLY: 100/3 === 50/1.5. It is a tie, not an ordering, and the
-        // tie-break (nearest first) therefore puts the 500m POI on top.
+    it('resolves the brief example in favour of the landmark, which the exponent is FOR', () => {
+        // At exponent 1.0 these two scored identically (100/3 === 50/1.5 ===
+        // 33.33) and the tie-break handed the ranking to the nearer POI. The
+        // owner chose relevance over proximity, so 1.5 separates them:
+        // 1000/3 = 333.33 vs 353.55/1.5 = 235.70.
         const heavyFar = computeRelevanceScore({ displayWeight: 100, distanceKm: 2 });
         const lightNear = computeRelevanceScore({ displayWeight: 50, distanceKm: 0.5 });
-        expect(heavyFar).toBe(lightNear);
+
+        expect(heavyFar).toBeCloseTo(333.3333333333333, 10);
+        expect(lightNear).toBeCloseTo(235.70226039551585, 10);
+        expect(heavyFar).toBeGreaterThan(lightNear);
+    });
+
+    it('scores a zero-weight POI at zero, at every distance', () => {
+        // 0^1.5 === 0. Such a POI can still be ELIGIBLE (the 2km lower clamp)
+        // but always ranks last, which is the intended shape.
+        expect(computeRelevanceScore({ displayWeight: 0, distanceKm: 0 })).toBe(0);
+        expect(computeRelevanceScore({ displayWeight: 0, distanceKm: 1 })).toBe(0);
+    });
+
+    it('degrades a nullish weight to the reference weight, not to zero', () => {
+        // The defensive branch must behave like a median POI, so 50^1.5.
+        expect(computeRelevanceScore({ displayWeight: null, distanceKm: 0 })).toBeCloseTo(
+            353.5533905932738,
+            10
+        );
+        expect(computeRelevanceScore({ distanceKm: 0 })).toBeCloseTo(353.5533905932738, 10);
     });
 });
 
@@ -219,7 +247,7 @@ describe('rankNearbyPois — eligibility', () => {
 
 describe('rankNearbyPois — ordering', () => {
     it('orders by score, so a heavier POI farther away outranks a lighter nearer one', () => {
-        // 100/(1+2) = 33.33 vs 50/(1+1) = 25.
+        // 100^1.5/(1+2) = 333.33 vs 50^1.5/(1+1) = 176.78.
         const result = rankNearbyPois({
             pois: [
                 poi({ slug: 'light-near', displayWeight: 50, distanceKm: 1 }),
@@ -241,7 +269,7 @@ describe('rankNearbyPois — ordering', () => {
         });
 
         // Distance order would be pharmacy first (0.3km < 1km).
-        // Score order: 25/1.3 = 19.2 vs 100/2 = 50.
+        // Score order: 25^1.5/1.3 = 96.15 vs 100^1.5/2 = 500.
         expect(result.map((p) => p.slug)).toEqual(['palace', 'pharmacy']);
     });
 
@@ -255,21 +283,27 @@ describe('rankNearbyPois — ordering', () => {
         });
 
         // Weight order would be far-landmark first.
-        // Score order: 100/10 = 10 vs 70/1.2 = 58.3.
+        // Score order: 100^1.5/10 = 100 vs 70^1.5/1.2 = 488.05.
         expect(result.map((p) => p.slug)).toEqual(['near-midweight', 'far-landmark']);
     });
 
     it('breaks an exact score tie by ascending distance', () => {
-        // The brief's own example: both score 100/3 === 50/1.5.
+        // Exact ties survive the 1.5 exponent because the catalogue only uses
+        // five discrete weights: 100^1.5 / (1 + 7) === 125 and
+        // 25^1.5 / (1 + 0) === 125, both exactly. Each is inside its own
+        // elastic radius (10km and 2.5km), so both are eligible.
+        expect(computeRelevanceScore({ displayWeight: 100, distanceKm: 7 })).toBe(125);
+        expect(computeRelevanceScore({ displayWeight: 25, distanceKm: 0 })).toBe(125);
+
         const result = rankNearbyPois({
             pois: [
-                poi({ slug: 'heavy-at-2km', displayWeight: 100, distanceKm: 2 }),
-                poi({ slug: 'light-at-500m', displayWeight: 50, distanceKm: 0.5 })
+                poi({ slug: 'heavy-at-7km', displayWeight: 100, distanceKm: 7 }),
+                poi({ slug: 'light-at-door', displayWeight: 25, distanceKm: 0 })
             ],
             limit: 8
         });
 
-        expect(result.map((p) => p.slug)).toEqual(['light-at-500m', 'heavy-at-2km']);
+        expect(result.map((p) => p.slug)).toEqual(['light-at-door', 'heavy-at-7km']);
     });
 
     it('breaks a full tie deterministically by slug', () => {
