@@ -50,7 +50,8 @@ const {
     mockPurchaseInsertReturning,
     mockDbExecute,
     mockSelectDispatch,
-    mockRevokeAddon
+    mockRevokeAddon,
+    mockCloseAddonPreapproval
 } = vi.hoisted(() => ({
     mockAddonCatalogGetBySlug: vi.fn(),
     mockPlanServiceGetById: vi.fn(),
@@ -62,7 +63,8 @@ const {
     mockPurchaseInsertReturning: vi.fn<() => Promise<Array<{ id: string }>>>(),
     mockDbExecute: vi.fn<() => Promise<{ rows: Array<Record<string, unknown>> }>>(),
     mockSelectDispatch: vi.fn<(columns: Record<string, unknown>) => Promise<unknown[]>>(),
-    mockRevokeAddon: vi.fn()
+    mockRevokeAddon: vi.fn(),
+    mockCloseAddonPreapproval: vi.fn()
 }));
 
 vi.mock('../../src/utils/env', () => ({
@@ -91,6 +93,13 @@ vi.mock('../../src/services/billing/orphan-payment-queue.service', () => ({
 
 vi.mock('../../src/services/addon-lifecycle.service', () => ({
     revokeAddonForSubscriptionCancellation: mockRevokeAddon
+}));
+
+// HOS-847 PR 6 hung the MercadoPago hard-cancel off this same sweep, which is
+// exactly the coupling this file was written to protect. Mocked so the assertion
+// below can check WHICH preapproval the sweep asked to close.
+vi.mock('../../src/services/addon-preapproval-cancel', () => ({
+    closeAddonPreapproval: mockCloseAddonPreapproval
 }));
 
 vi.mock('../../src/services/billing/mp-addon-plan-provisioning.service', async (importOriginal) => {
@@ -317,6 +326,7 @@ describe('HOS-847 — cancelling the plan finds the recurring add-on purchase', 
             addonType: 'limit',
             outcome: 'success'
         });
+        mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'cancelled' });
     });
 
     /** Run the real checkout and return the row it asked the DB to insert. */
@@ -349,6 +359,21 @@ describe('HOS-847 — cancelling the plan finds the recurring add-on purchase', 
         expect(result.succeeded).toHaveLength(1);
         expect(result.succeeded[0]?.purchaseId).toBe(PURCHASE_ID);
         expect(mockRevokeAddon).toHaveBeenCalledTimes(1);
+
+        // HOS-847 PR 6 — the other half of the same coupling: the sweep that
+        // found this row must also cancel the preapproval the CHECKOUT created,
+        // not the plan's. Read off the row the checkout actually wrote, so a
+        // future change that repoints either column fails here.
+        expect(mockCloseAddonPreapproval).toHaveBeenCalledWith(
+            expect.objectContaining({
+                purchase: expect.objectContaining({
+                    id: PURCHASE_ID,
+                    mpSubscriptionId: written.mpSubscriptionId
+                }),
+                source: 'plan-cancellation'
+            })
+        );
+        expect(written.mpSubscriptionId).toBe(MP_PREAPPROVAL_ID);
     });
 
     it('CONTROL: the same row pointing at the add-on preapproval is NOT selected', async () => {
