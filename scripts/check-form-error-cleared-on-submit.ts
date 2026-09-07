@@ -150,7 +150,12 @@
  *
  * Check 5 is also weaker than check 3 on purpose: it asks only that the banner
  * CAN be retired, not that it is retired first. See `scanBannerSources` for the
- * measurement behind that choice.
+ * measurement behind that choice, and know what it costs: a form that clears
+ * its banner in `handleChange` but NOT at the top of its submit satisfies
+ * check 5 while still carrying HOS-816 for a user who re-submits without
+ * editing anything. That case was mutated into `ContributionForm` during
+ * HOS-837 and this guard stayed green. Check 3 catches it for the eleven hook
+ * consumers; for the rest it is a code-review concern, not a CI one.
  *
  * The rename-proof answer to all three holes is the same one anchor 1 already
  * enjoys: give the state a shared owner. Migrating these forms onto
@@ -552,13 +557,14 @@ export function findNullableStatePairs(code: string): StatePair[] {
  * condition consults `globalBannerIdents` — a set discovered from the
  * codebase's own render sites, never a list written here.
  *
- * The requirement is deliberately weaker than anchor 3's: the setter must be
+ * The requirement is deliberately weaker than check 3's: the setter must be
  * called with `null` SOMEWHERE in the file. Source order is not a sound proxy
  * for execution order at this scale — `ExternalReputationSection` alone owns
- * four independent banners with four separate operations — and six files whose
- * clear is perfectly correct sit textually below their first raise. Requiring
- * an order here would manufacture six false positives, and a false positive is
- * how an exemption list gets born.
+ * four independent banners with four separate operations. Measured on the 46
+ * real consumers, requiring the first clear to precede the first raise would
+ * flag NINE of them, several with five correct clears against a single raise
+ * that merely sits higher in the file. Nine false positives is how an exemption
+ * list gets born, and the owner ruled that out.
  *
  * @param root - Repository root.
  * @param files - Absolute paths to inspect.

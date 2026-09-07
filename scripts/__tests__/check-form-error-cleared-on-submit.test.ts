@@ -468,6 +468,35 @@ describe('scanBannerSources', () => {
         expect(violations).toEqual([]);
     });
 
+    // Pinned so nobody mistakes check 5 for check 3. A form that clears in
+    // handleChange but NOT at the top of its submit still carries HOS-816 for a
+    // user who re-submits without editing anything, and this guard says nothing.
+    // Documented in the header; asserted here so the limitation cannot be
+    // quietly assumed away.
+    it('does NOT catch a clear that lives only in an onChange handler', () => {
+        const src = `
+export function Form() {
+    const [formError, setFormError] = useState<string | null>(null);
+    function handleChange(e) { setFormError(null); }
+    async function handleSubmit(e) {
+        const res = await api.send();
+        if (!res.ok) setFormError('boom');
+    }
+    return (
+        <form onSubmit={handleSubmit}>
+            {formError && (
+                <p role="alert">{formError}</p>
+            )}
+        </form>
+    );
+}
+`;
+        const root = makeTree({ 'apps/web/src/components/A.client.tsx': src });
+        const { consumers, violations } = scanBannerSources(root, collectSourceFiles(root));
+        expect(consumers).toHaveLength(1);
+        expect(violations).toEqual([]);
+    });
+
     it('ignores a banner rendered off a prop, whose setter lives elsewhere', () => {
         const root = makeTree({
             'apps/web/src/components/View.client.tsx':
