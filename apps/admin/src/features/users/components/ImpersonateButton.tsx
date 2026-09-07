@@ -17,7 +17,7 @@
  * Nothing here is deleted: the click handler, the `impersonatedBy` plumbing in
  * `contexts/auth-context.tsx` and the banner in `AppLayout.tsx` all stay, and
  * **HOS-354** is the issue that restores impersonation on top of the role set.
- * Re-enabling should be a matter of flipping {@link IMPERSONATION_ENABLED}
+ * Re-enabling should be a matter of flipping {@link isImpersonationEnabled}
  * once the Better Auth side resolves roles again.
  *
  * @see https://linear.app/hospeda-beta/issue/HOS-354
@@ -43,15 +43,7 @@ import { type ToastContextValue, useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { authClient } from '@/lib/auth-client';
 import { adminLogger } from '@/utils/logger';
-
-/**
- * Master switch for the impersonation affordance.
- *
- * `false` until HOS-354 restores a working `/api/auth/admin/*` path. Kept as a
- * named constant rather than inlined so re-enabling is one edit and greps for
- * "impersonation disabled" land here.
- */
-const IMPERSONATION_ENABLED = false;
+import { isImpersonationEnabled } from './impersonation-flag';
 
 export interface ImpersonateButtonProps {
     /** The user ID to impersonate */
@@ -69,7 +61,7 @@ export interface ImpersonateButtonProps {
  * Runs the actual impersonation call and reports the outcome via toast.
  *
  * Extracted from the click handler (HOS-1198) so it can be exercised directly
- * in tests without depending on {@link IMPERSONATION_ENABLED} — the button
+ * in tests without depending on {@link isImpersonationEnabled} — the button
  * that triggers it stays disabled pending HOS-354, but the error-path
  * behavior (toast instead of a blocking `alert()`) still needs coverage.
  *
@@ -142,8 +134,9 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
     // HOS-354: while disabled, the tooltip/aria label must say WHY — an inert
     // button with the normal label reads as a bug.
     const unavailableLabel = t('admin-common.impersonation.unavailable' as TranslationKey);
-    const isDisabled = !IMPERSONATION_ENABLED || isLoading;
-    const title = IMPERSONATION_ENABLED ? label : unavailableLabel;
+    const enabled = isImpersonationEnabled();
+    const isDisabled = !enabled || isLoading;
+    const title = enabled ? label : unavailableLabel;
 
     const confirmDialog = (
         <AlertDialog
@@ -158,10 +151,16 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setConfirmOpen(false)}>
+                    <AlertDialogCancel
+                        data-testid="impersonate-confirm-cancel"
+                        onClick={() => setConfirmOpen(false)}
+                    >
                         {t('admin-common.impersonation.cancel' as TranslationKey)}
                     </AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmImpersonate}>
+                    <AlertDialogAction
+                        data-testid="impersonate-confirm-action"
+                        onClick={handleConfirmImpersonate}
+                    >
                         {label}
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -201,7 +200,7 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
             >
                 <UserSwitchIcon size={16} />
                 <span className={variant === 'responsive' ? 'hidden sm:inline' : undefined}>
-                    {IMPERSONATION_ENABLED ? label : unavailableLabel}
+                    {enabled ? label : unavailableLabel}
                 </span>
             </button>
             {confirmDialog}
