@@ -46,6 +46,10 @@ import {
 import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+// HOS-847 PR 5: this cron reimplements the authorized-payment handler, so it
+// needs the add-on interception too — see the call site for why the live
+// handler's fail-closed policy makes this path the one that matters.
+import { routeAddonAuthorizedPayment } from '../../routes/webhooks/mercadopago/addon-recurring-handler.js';
 import {
     WEBHOOK_RETRY_MAX_ATTEMPTS,
     webhookRetryDueCondition
@@ -187,6 +191,14 @@ async function retrySubscriptionUpdated(
  * permanent condition (returns true — no point retrying) while `error` results
  * return false so the retry cron increments attempts and tries again later.
  *
+ * HOS-847 PR 5: a preapproval belonging to a recurring ADD-ON is intercepted
+ * before the local-subscription lookup and settled by the add-on handler, for
+ * the same reason the live handler intercepts it there. This function is the
+ * live handler's second implementation, and the live handler's fail-closed
+ * routing policy makes it the retry of record: a routing lookup that fails
+ * there marks the event failed and answers 2xx, so this cron is the ONLY thing
+ * that will see the charge again.
+ *
  * HOS-276: when no local subscription is found for the preapproval, this
  * mirrors the linking fallback the live handler (`subscription-payment-handler.ts`)
  * already performs — attempting `linkPreapprovalToLocalSub` before giving up.
@@ -271,6 +283,46 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         apiLogger.info(
             { authorizedPaymentId, status: details.status },
             'Authorized payment has no settled payment ID during dead-letter retry — resolving'
+        );
+        return true;
+    }
+
+    // HOS-847 PR 5: is this preapproval an ADD-ON's rather than a plan's?
+    //
+    // This is a SECOND implementation of `handleSubscriptionAuthorizedPayment`,
+    // and it has to make the same decision in the same place — before
+    // `findLocalSubscriptionByPreapprovalId`, which carries no product-domain
+    // filter and resolves an add-on's own `billing_subscriptions` row perfectly
+    // happily.
+    //
+    // It is not a hypothetical door: it is the one the live handler's own
+    // failure policy opens. That routing lookup fails CLOSED, its catch marks
+    // the event failed and answers 2xx, so MercadoPago never redelivers and
+    // THIS cron is the only retry there is. Left unrouted, it would resolve the
+    // add-on's purchase as a plan, record the charge with a hardcoded
+    // `status: 'succeeded'`, no `flow`, no `addonSlug` and no `purchaseId`, and
+    // burn the payment id — after which a legitimate delivery hits the dedupe
+    // and the add-on's period never advances again.
+    //
+    // A failure here propagates to `processDeadLetterEvent`'s catch, which
+    // returns `false` and leaves the entry retryable. Fail closed, retry later,
+    // never guess "plan" — same policy as the live handler, now with a retry
+    // that honours it.
+    const addonRouting = await routeAddonAuthorizedPayment({
+        details,
+        billing,
+        triggerSource: 'webhook-retry-dead-letter'
+    });
+
+    if (addonRouting.handled) {
+        apiLogger.info(
+            {
+                authorizedPaymentId,
+                preapprovalId: details.preapprovalId,
+                mpPaymentId: details.paymentId,
+                purchaseId: addonRouting.purchaseId
+            },
+            'HOS-847: dead-lettered charge belonged to a recurring add-on — settled by the add-on handler, resolving the dead-letter entry'
         );
         return true;
     }

@@ -301,7 +301,14 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             // First call: unresolved dead-letter events (batch query)
             .mockResolvedValueOnce(deadLetterRows)
             // Second call: idempotency check in billingWebhookEvents
-            .mockResolvedValueOnce(webhookEventRows);
+            .mockResolvedValueOnce(webhookEventRows)
+            // HOS-847 PR 5: every subsequent lookup — notably the add-on routing
+            // query that now runs before `findLocalSubscriptionByPreapprovalId`
+            // — finds nothing, so these cases keep exercising the PLAN path they
+            // were written for. The add-on branch has its own file
+            // (`webhook-retry.addon-routing.test.ts`), with a control that
+            // asserts this same fixture reaches the plan path.
+            .mockResolvedValue([]);
 
         const db = {
             execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
