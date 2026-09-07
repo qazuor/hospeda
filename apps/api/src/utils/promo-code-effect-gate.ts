@@ -58,7 +58,26 @@
  * code the caller can name. A 404 would only make the honest holder of a
  * legacy comp code read "that code does not exist".
  *
- * @module routes/billing/promo-code-effect-gate
+ * ## Why this lives in `utils/` and not beside its caller
+ *
+ * It was extracted into `routes/billing/`, which made
+ * `test/middlewares/endpoint-gate-matrix.guard.test.ts` enumerate it as a route
+ * handler — that guard matches by FILE PATH, so anything under `routes/billing/`
+ * is a route as far as it can tell — and demand a row in
+ * `docs/billing/endpoint-gate-matrix.md`. Writing one would have been the wrong
+ * fix twice over: the matrix is what somebody reads to learn what gates each
+ * endpoint, and this module answers no request, so the row would have documented
+ * an endpoint that does not exist while leaving the guard satisfied by a false
+ * declaration.
+ *
+ * `utils/` rather than `services/billing/`: this throws `HTTPException` and
+ * picks status codes, which is HTTP-layer work. Services in this codebase return
+ * `Result<T>` and let a route translate — putting an HTTPException thrower among
+ * them inverts that. `utils/` already hosts the Hono-aware billing helpers, and
+ * specifically `entitlement-cause.ts`, which whitelists the very reason code
+ * this module emits; the two belong within sight of each other.
+ *
+ * @module utils/promo-code-effect-gate
  */
 
 import { PromoEffectKindEnum, ServiceErrorCode } from '@repo/schemas';

@@ -43,8 +43,8 @@ import {
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger';
+import { assertPromoCodeIsNotComp } from '../../utils/promo-code-effect-gate.js';
 import { createProtectedRoute } from '../../utils/route-factory';
-import { assertPromoCodeIsNotComp } from './promo-code-effect-gate.js';
 
 // ---------------------------------------------------------------------------
 // Response schema
@@ -198,7 +198,7 @@ export const handleApplyPromoCode = async (
     // is refused here for EVERY caller without being spent. `discount` and
     // `trial_extension` pass through untouched: both are ordinary self-service
     // redemptions and this route is where a customer makes them. Read
-    // `promo-code-effect-gate.ts` for the rest of the reasoning.
+    // `utils/promo-code-effect-gate.ts` for the rest of the reasoning.
     assertPromoCodeIsNotComp({ peekResult });
 
     if (subscriptionId) {
