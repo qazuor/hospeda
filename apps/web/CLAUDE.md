@@ -302,7 +302,7 @@ Three classes, and the markup tells you which you need:
 | Class | Put it on |
 |---|---|
 | `dialog-panel` | The surface holding the content. Caps the height and scrolls itself. **The default** — a dialog with one flow of content needs only this. |
-| `dialog-panel-scroll` | The region that scrolls _inside_ a panel keeping a fixed header/footer, so the header does not scroll away with the body. |
+| `dialog-panel-scroll` | The region that scrolls _inside_ a panel keeping a fixed header/footer, so the header does not scroll away with the body. **Its parent must be `display: flex` or `grid`** — see below. |
 | `dialog-viewport` | A `<dialog>` that is not the panel: a full-viewport overlay wrapping a centred card, or an edge-anchored drawer. Its use is count-pinned by the guard. |
 
 For React modals prefer `shared/ui/Dialog.client.tsx`, which already composes
@@ -331,6 +331,24 @@ stays legal, because tuning the cap is the point and competing with it is not.
 A `className` expression it cannot resolve without guessing (a conditional, or
 more than one `styles.X`) is skipped **and counted** in the guard's success
 line, so the size of that blind spot is always on screen.
+
+**`dialog-panel-scroll` needs a flex parent.** `.dialog-panel` deliberately does
+not declare `display` — forcing `flex` on fifteen already-shipped dialogs would
+move layout — so a `<dialog>` stays `block` unless its own module says
+otherwise, and `flex: 1 1 auto` on a child of a block parent does nothing at
+all. The region silently stops scrolling, the whole panel scrolls instead, and
+the header the arrangement exists to pin goes with it. The guard resolves each
+region's real JSX parent and requires that class to be `display: flex` (or
+grid), so the dependency fails in CI instead of degrading in a browser.
+
+**Dialogs from workspace packages.** `@repo/feedback` renders a `<dialog>` on
+every page, and a shared package cannot use these classes — they live in this
+app's global stylesheet and would not exist in another host. The guard still
+covers it, with a weaker rule that needs no shared vocabulary: the dialog must
+be bounded to the viewport (a `max-height` that is not `none`, or a
+viewport-relative `height`) and the package stylesheet must declare an
+`overflow-y: auto|scroll` somewhere. A floor, not a proof — but it will not
+accept a dialog bounded by nothing.
 
 ### Adding a New Theme
 
