@@ -26,9 +26,21 @@
  * siblings by design: courtesy gifts N cycles to someone who pays, comp gifts
  * the subscription outright, and NEITHER is reachable by redeeming a code.
  *
+ * ## The half that is NOT in this file
+ *
+ * A comp used to arrive at NEW-SUBSCRIBER checkout, before any preapproval
+ * existed. An admin grant arrives at an arbitrary moment, so the customer may
+ * have one MercadoPago is actively charging — and granting a comp on top of it
+ * means billing someone we have just declared free. Retiring those
+ * subscriptions, hard-cancelling their preapprovals and ABORTING when
+ * MercadoPago refuses lives in `services/subscription-comp-grant.service.ts`,
+ * which this handler calls instead of `createCompSubscription`. Read that
+ * module before changing anything here.
+ *
  * Per the API error contract: a plan that cannot be comped is **422** (the
  * request is well-formed, the plan is the problem), an unknown customer or plan
- * is **404**, and an actor without `BILLING_MANAGE` never reaches the handler.
+ * is **404**, a MercadoPago refusal is **502**, and an actor without
+ * `BILLING_MANAGE` never reaches the handler.
  *
  * @module routes/billing/admin/subscription-comp
  */
@@ -38,7 +50,10 @@ import { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../middlewares/actor';
-import { createCompSubscription } from '../../../services/subscription-comp-create.service.js';
+import {
+    type GrantCompErrorCode,
+    grantCompSubscription
+} from '../../../services/subscription-comp-grant.service.js';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
@@ -77,8 +92,33 @@ const AdminGrantCompResponseSchema = z.object({
     /** The plan whose entitlements were granted. */
     planId: z.string().uuid(),
     /** Always `'comp'` — the status the new row carries. */
-    status: z.literal('comp')
+    status: z.literal('comp'),
+    /**
+     * Subscriptions retired to make room for the comp, with their MercadoPago
+     * preapprovals hard-cancelled. Empty for a customer who was not subscribed.
+     */
+    supersededSubscriptionIds: z.array(z.string().uuid()),
+    /** True when at least one live preapproval was hard-cancelled. */
+    hadActiveBilling: z.boolean()
 });
+
+/**
+ * Maps the service's typed failures onto HTTP status codes.
+ *
+ * `PROVIDER_ERROR` is a **502**, matching `grant-courtesy`: the request was
+ * fine and so was the plan — MercadoPago refused, and the operator's remedy is
+ * to cancel the preapproval by hand and retry, not to change the request.
+ */
+function mapErrorToStatus(code: GrantCompErrorCode): 404 | 422 | 502 {
+    switch (code) {
+        case 'NOT_FOUND':
+            return 404;
+        case 'PROVIDER_ERROR':
+            return 502;
+        default:
+            return 422;
+    }
+}
 
 /**
  * POST /api/v1/admin/billing/subscriptions/grant-comp
@@ -89,9 +129,11 @@ export const adminGrantCompRoute = createAdminRoute({
     summary: 'Grant a permanently-complimentary subscription (admin)',
     description:
         'Creates a status=comp subscription for a customer on the named plan: full entitlements, ' +
-        'no MercadoPago preapproval, never charged. Only accommodation-domain plans can be ' +
-        'comped. This is the ONLY way to produce a comp subscription — no promo code grants one. ' +
-        'Requires BILLING_MANAGE.',
+        'no MercadoPago preapproval, never charged. Any subscription the customer already has is ' +
+        'cancelled first and its MercadoPago preapproval hard-cancelled; if MercadoPago refuses, ' +
+        'the grant is aborted (502) rather than leaving a comped customer still being charged. ' +
+        'Only accommodation-domain plans can be comped. This is the ONLY way to produce a comp ' +
+        'subscription — no promo code grants one. Requires BILLING_MANAGE.',
     tags: ['Billing', 'Subscriptions'],
     requiredPermissions: [PermissionEnum.BILLING_MANAGE],
     requestBody: AdminGrantCompBodySchema,
@@ -126,50 +168,43 @@ export const adminGrantCompRoute = createAdminRoute({
             throw new HTTPException(404, { message: 'Billing customer not found' });
         }
 
-        try {
-            const result = await createCompSubscription({
-                customerId,
-                planId,
-                interval,
-                livemode: env.NODE_ENV === 'production'
+        // The grant service does the ordering that matters — hard-cancel the
+        // customer's live preapprovals FIRST and abort if MercadoPago refuses —
+        // so this handler never calls `createCompSubscription` directly.
+        const result = await grantCompSubscription({
+            customerId,
+            planId,
+            interval,
+            livemode: env.NODE_ENV === 'production',
+            actorId: actor.id
+        });
+
+        if (!result.success) {
+            throw new HTTPException(mapErrorToStatus(result.error.code), {
+                message: result.error.message
             });
+        }
 
-            apiLogger.info(
-                {
-                    subscriptionId: result.localSubscriptionId,
-                    customerId,
-                    planId,
-                    actorId: actor.id
-                },
-                'Comp subscription granted'
-            );
-
-            return {
-                subscriptionId: result.localSubscriptionId,
+        apiLogger.info(
+            {
+                subscriptionId: result.data.subscriptionId,
                 customerId,
                 planId,
-                status: 'comp' as const
-            };
-        } catch (error) {
-            // The service signals both of its refusals by throwing (it predates
-            // the Result convention its siblings use): a plan that does not
-            // exist, and a plan whose `product_domain` is not accommodation —
-            // the entitlement engine only ever counts accommodation subs, so
-            // comping a gastronomy plan would grant nothing.
-            const message = error instanceof Error ? error.message : String(error);
+                supersededSubscriptionIds: result.data.supersededSubscriptionIds,
+                hadActiveBilling: result.data.hadActiveBilling,
+                actorId: actor.id
+            },
+            'Comp subscription granted'
+        );
 
-            if (message.includes('not found')) {
-                throw new HTTPException(404, { message: `Plan '${planId}' not found` });
-            }
-            if (message.includes('only accommodation plans can be comped')) {
-                throw new HTTPException(422, {
-                    message: 'Only accommodation-domain plans can be comped'
-                });
-            }
-
-            apiLogger.error({ customerId, planId, error: message }, 'Comp grant failed');
-            throw new HTTPException(500, { message: 'Failed to grant comp subscription' });
-        }
+        return {
+            subscriptionId: result.data.subscriptionId,
+            customerId,
+            planId,
+            status: 'comp' as const,
+            supersededSubscriptionIds: [...result.data.supersededSubscriptionIds],
+            hadActiveBilling: result.data.hadActiveBilling
+        };
     }
 });
 
