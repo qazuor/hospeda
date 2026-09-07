@@ -34,8 +34,10 @@ const {
     mockRemoveAddonEntitlements,
     mockTxUpdateSet,
     mockDbSelectRows,
-    mockLockedRows
+    mockLockedRows,
+    mockSoftCancel
 } = vi.hoisted(() => ({
+    mockSoftCancel: vi.fn(),
     mockCloseAddonPreapproval: vi.fn(),
     mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
     mockAddonCatalogGetBySlug: vi.fn(),
@@ -50,6 +52,13 @@ const {
 
 vi.mock('../../src/services/addon-preapproval-cancel', () => ({
     closeAddonPreapproval: mockCloseAddonPreapproval
+}));
+
+// The soft-cancel write itself has its own suite (addon-soft-cancel.test.ts);
+// here it is mocked so these tests can assert WHETHER and WITH WHAT it was
+// reached, which is the branching decision under test.
+vi.mock('../../src/services/addon-soft-cancel', () => ({
+    softCancelRecurringAddon: mockSoftCancel
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -181,15 +190,28 @@ const CANCEL_INPUT = {
     reason: 'no longer needed'
 };
 
-/** Seeds the purchase lookup with a row carrying (or not) a preapproval. */
-function seedPurchase(mpSubscriptionId: string | null): void {
+/** End of the period the customer already paid for. */
+const PERIOD_END = new Date('2026-10-01T00:00:00.000Z');
+
+/**
+ * Seeds the purchase lookup.
+ *
+ * `mpSubscriptionId` is what makes a purchase RECURRING; `currentPeriodEnd` is
+ * what makes it cancellable at the end of the paid period. A recurring row
+ * without the date is a real (if unexpected) shape, so it is expressible here.
+ */
+function seedPurchase(
+    mpSubscriptionId: string | null,
+    currentPeriodEnd: Date | null = PERIOD_END
+): void {
     mockDbSelectRows.rows = [
         {
             id: PURCHASE_ID,
             addonSlug: LIMIT_ADDON_DEF.slug,
             status: 'active',
             customerId: CUSTOMER_ID,
-            mpSubscriptionId
+            mpSubscriptionId,
+            currentPeriodEnd
         }
     ];
 }
@@ -210,6 +232,7 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         mockCancelAddonPurchaseRecord.mockResolvedValue(1);
         mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
         mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: LIMIT_ADDON_DEF });
+        mockSoftCancel.mockResolvedValue({ success: true, data: undefined });
     });
 
     it('leaves the local row untouched when MercadoPago rejects the cancel', async () => {
@@ -225,14 +248,15 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         // 503, not 500: the caller should retry, and nothing was changed.
         expect(result.error?.code).toBe('SERVICE_UNAVAILABLE');
 
-        // The three ways this function can make a purchase terminal or
-        // benefit-less. None may fire.
+        // Every way this function can touch the purchase or the benefit. None
+        // may fire — not the terminal write, not the soft-cancel flag.
+        expect(mockSoftCancel).not.toHaveBeenCalled();
         expect(mockTxUpdateSet).not.toHaveBeenCalled();
         expect(mockCancelAddonPurchaseRecord).not.toHaveBeenCalled();
         expect(mockRemoveAddonEntitlements).not.toHaveBeenCalled();
     });
 
-    it('CONTROL: the same input writes the terminal row once MercadoPago accepts', async () => {
+    it('CONTROL: the same input soft-cancels once MercadoPago accepts', async () => {
         // Without this the assertions above would also pass against a
         // cancelUserAddon that had been gutted into a no-op.
         seedPurchase(PREAPPROVAL_ID);
@@ -241,10 +265,48 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         const result = await cancelUserAddon(billing, entitlementService, CANCEL_INPUT);
 
         expect(result.success).toBe(true);
-        expect(mockTxUpdateSet).toHaveBeenCalledWith(
-            expect.objectContaining({ status: 'canceled' })
+        expect(mockSoftCancel).toHaveBeenCalledWith(
+            expect.objectContaining({
+                purchaseId: PURCHASE_ID,
+                addonSlug: LIMIT_ADDON_DEF.slug,
+                addonName: LIMIT_ADDON_DEF.name,
+                currentPeriodEnd: PERIOD_END
+            })
         );
-        expect(mockRemoveAddonEntitlements).toHaveBeenCalled();
+    });
+
+    it('KEEPS the benefit: no terminal row, no limit recalculation, no entitlement removal', async () => {
+        // The owner's decision, stated as three absences. The customer paid for
+        // this period; cancelling stops the NEXT charge, not this period's
+        // access. Any of these three firing would take it away the same day.
+        seedPurchase(PREAPPROVAL_ID);
+        mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'cancelled' });
+
+        await cancelUserAddon(billing, entitlementService, CANCEL_INPUT);
+
+        expect(mockTxUpdateSet).not.toHaveBeenCalled();
+        expect(mockCancelAddonPurchaseRecord).not.toHaveBeenCalled();
+        expect(mockRemoveAddonEntitlements).not.toHaveBeenCalled();
+        // ...and the control that keeps the three absences honest: something DID
+        // happen.
+        expect(mockSoftCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('REFUSES a recurring add-on with no current_period_end, before touching MercadoPago', async () => {
+        // Ranked by the owner: "never expires" is worse than "expires now", and
+        // both are worse than a visible error. Without a period end there is no
+        // date to schedule the revocation for, so the benefit would be granted
+        // forever. Refusing BEFORE the close also means the customer is not left
+        // unhooked from billing by a request that then failed.
+        seedPurchase(PREAPPROVAL_ID, null);
+
+        const result = await cancelUserAddon(billing, entitlementService, CANCEL_INPUT);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.code).toBe('INTERNAL_ERROR');
+        expect(mockCloseAddonPreapproval).not.toHaveBeenCalled();
+        expect(mockSoftCancel).not.toHaveBeenCalled();
+        expect(mockTxUpdateSet).not.toHaveBeenCalled();
     });
 
     it('asks the close helper about THIS purchase, naming the user-cancel path', async () => {
@@ -266,25 +328,27 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         });
     });
 
-    it('closes the provider BEFORE the first local write, not after', async () => {
+    it('closes the provider BEFORE flagging the row, not after', async () => {
         seedPurchase(PREAPPROVAL_ID);
         mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'cancelled' });
 
         await cancelUserAddon(billing, entitlementService, CANCEL_INPUT);
 
-        // An "after" ordering leaves a crash window in precisely the forbidden
-        // state, so the order is part of the contract, not an accident of
-        // layout.
+        // An "after" ordering leaves a crash window in which the row promises an
+        // end date that nothing at MercadoPago agreed to, so the order is part
+        // of the contract, not an accident of layout.
         const closeOrder = mockCloseAddonPreapproval.mock.invocationCallOrder[0] ?? 0;
-        const writeOrder = mockTxUpdateSet.mock.invocationCallOrder[0] ?? 0;
+        const flagOrder = mockSoftCancel.mock.invocationCallOrder[0] ?? 0;
         expect(closeOrder).toBeGreaterThan(0);
-        expect(writeOrder).toBeGreaterThan(closeOrder);
+        expect(flagOrder).toBeGreaterThan(closeOrder);
     });
 
-    it('still cancels a one-time add-on, which has no preapproval to close', async () => {
-        // The overwhelmingly common case. A regression here would break every
+    it('still cancels a one-time add-on IMMEDIATELY, which has no period to keep', async () => {
+        // The overwhelmingly common case, and the half the owner's decision does
+        // NOT change: no preapproval, no period, nothing paid ahead — so it is
+        // still revoked on the spot. A regression here would break every
         // existing add-on cancellation, so it is asserted rather than assumed.
-        seedPurchase(null);
+        seedPurchase(null, null);
         mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'no-preapproval' });
 
         const result = await cancelUserAddon(billing, entitlementService, CANCEL_INPUT);
@@ -298,6 +362,11 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         expect(mockTxUpdateSet).toHaveBeenCalledWith(
             expect.objectContaining({ status: 'canceled' })
         );
+        expect(mockRemoveAddonEntitlements).toHaveBeenCalled();
+        // The missing `current_period_end` above is deliberate: a one-time
+        // add-on never has one, and must not be dragged into the recurring
+        // refusal that requires it.
+        expect(mockSoftCancel).not.toHaveBeenCalled();
     });
 });
 

@@ -94,9 +94,9 @@ interface AddonTerminalWriterEntry {
 const ADDON_TERMINAL_WRITERS: readonly AddonTerminalWriterEntry[] = [
     {
         file: 'services/addon.user-addons.ts',
-        event: 'the owner cancels one add-on (POST /protected/billing/addons/{id}/cancel), and the account-level bulk revoke',
+        event: 'the owner cancels one ONE-TIME add-on (POST /protected/billing/addons/{id}/cancel), and the account-level bulk revoke',
         requiresProviderClose: true,
-        reason: 'Both paths in this file write a terminal row. The user cancel closes first and returns 503 without touching anything on refusal; the bulk revoke closes before opening its SELECT ... FOR UPDATE (ADR-019: no third-party latency under a row lock) and skips any locked row whose preapproval it did not close.'
+        reason: "Both paths in this file write a terminal row, and both close first. The user cancel returns 503 without touching anything on refusal; the bulk revoke closes before opening its SELECT ... FOR UPDATE (ADR-019: no third-party latency under a row lock) and skips any locked row whose preapproval it did not close. The RECURRING user cancel no longer reaches a terminal write at all — it closes the preapproval and then soft-cancels through addon-soft-cancel.ts, and the expiry cron writes 'expired' when the paid period ends."
     },
     {
         file: 'services/addon-lifecycle-cancellation.service.ts',
@@ -112,9 +112,9 @@ const ADDON_TERMINAL_WRITERS: readonly AddonTerminalWriterEntry[] = [
     },
     {
         file: 'services/addon-expiration.service.ts',
-        event: 'the purchase reaches expires_at and is expired',
+        event: 'the purchase reaches expires_at, or a soft-cancelled recurring one reaches current_period_end, and is expired',
         requiresProviderClose: true,
-        reason: '`expired` is as terminal as `canceled`, and a recurring add-on whose period lapsed without a charge is precisely when MercadoPago may charge next. A refusal returns SERVICE_UNAVAILABLE and leaves the row active for the next cron tick.'
+        reason: '`expired` is as terminal as `canceled`, and a recurring add-on whose period lapsed without a charge is precisely when MercadoPago may charge next. A refusal returns SERVICE_UNAVAILABLE and leaves the row active for the next cron tick. One documented exception inside the file: a soft-cancelled row (cancel_at_period_end) already had its preapproval hard-cancelled under a fail-closed guarantee at cancellation time, and re-issuing the cancel could be swallowed into `failed`, stranding the row active forever.'
     },
     {
         file: 'cron/jobs/addon-expiry.job.ts',
