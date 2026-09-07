@@ -112,9 +112,17 @@ export const billingAddonPurchases = pgTable(
          * MercadoPago preapproval id backing a RECURRING add-on purchase (HOS-847
          * PR 1). `NULL` for one-time add-ons (paid via `Preference`, never a
          * preapproval) and for recurring purchases whose checkout has not yet
-         * created the preapproval. Populated by the recurring checkout path
-         * introduced behind `HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED` (currently
-         * OFF everywhere — this column ships dark, written by nothing yet).
+         * created the preapproval.
+         *
+         * WRITTEN, as of HOS-847 PR 4, by `createRecurringAddonCheckout`
+         * (`apps/api/src/services/addon.checkout.recurring.ts`) on the
+         * `'pending'` insert. That path is gated by
+         * `HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED`, which is OFF in every
+         * environment — so the column stays empty in practice, but it is no
+         * longer unreferenced, and the distinction matters: this is the add-on's
+         * ONLY pointer at its own preapproval, and what PR 5's webhook routes
+         * on. It is deliberately NOT reachable through {@link subscriptionId},
+         * which holds the customer's PLAN subscription.
          */
         mpSubscriptionId: varchar('mp_subscription_id', { length: 255 }),
         /**
@@ -147,7 +155,11 @@ export const billingAddonPurchases = pgTable(
          * Snapshot of the billing cadence (`monthly` | `annual`) selected at
          * purchase time for a recurring add-on, mirroring
          * `billing_mp_addon_plans.billing_interval`. `NULL` for one-time add-ons,
-         * which have no cadence. Not yet written by any caller.
+         * which have no cadence.
+         *
+         * WRITTEN, as of HOS-847 PR 4, by `createRecurringAddonCheckout`, always
+         * as `'monthly'` — the only cadence any surface can currently express
+         * (see `RECURRING_ADDON_BILLING_INTERVAL`). Nothing READS it yet.
          */
         billingInterval: varchar('billing_interval', { length: 20 }),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
