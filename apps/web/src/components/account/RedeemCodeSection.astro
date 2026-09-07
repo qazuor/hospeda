@@ -1,0 +1,101 @@
+---
+/**
+ * @file RedeemCodeSection.astro
+ * @description The body of the redeem-a-code page (HOS-1171), shared by the two
+ * routes that reach it: `/mi-cuenta/canjear/` (with an optional `?codigo=`) and
+ * `/mi-cuenta/canjear/<CODE>/`.
+ *
+ * The two routes exist because `/mi-cuenta/*` is protected and the middleware's
+ * unauthenticated redirect carries the PATHNAME only
+ * (`buildLoginRedirect({ locale, currentUrl: path })` — the query string is
+ * deliberately dropped there, and widening that is a cross-cutting decision
+ * this issue does not get to take). A code that rides in the path therefore
+ * survives sign-up and comes back after authentication; a `?codigo=` does not.
+ * So the link we hand out — the WhatsApp case that motivated the page, where
+ * the recipient is very likely NOT registered yet — is the path form, and
+ * `?codigo=` stays supported for an already-signed-in visitor.
+ *
+ * The code is NOT auto-applied on load. It pre-fills the field and waits for a
+ * click: applying on navigation would spend a code on a page load nobody chose,
+ * and there is no state to reconcile if it turns out to be a discount.
+ *
+ * ## This component resolves NOTHING about the visitor
+ *
+ * It used to read `Astro.request.headers.get('cookie')` and call
+ * `userApi.getSubscription()` itself, which
+ * `test/pages/cacheable-pages-are-session-blind.guard.test.ts` refuses — and it
+ * is right to. A personalized component poisons every page that renders it, and
+ * the page-level half of that guard cannot see it, because it does not resolve
+ * the component tree. Today this only mounts under `/mi-cuenta/` (protected,
+ * never cacheable), so nothing was broken; the day someone mounts it on a
+ * cacheable page, the cookie read would travel with it and no guard would say
+ * so.
+ *
+ * So the two pages resolve the session and hand the result down as props. That
+ * is the pattern the guard names as the good one, and it is why `subscriptionId`
+ * is a prop rather than something computed below.
+ */
+
+import { TrialExtensionForm } from '@/components/account/TrialExtensionForm.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly userId: string;
+	readonly roles: readonly string[] | null;
+	/**
+	 * The caller's accommodation subscription, resolved by the PAGE (see the
+	 * note above on why not here).
+	 *
+	 * It is what makes a DISCOUNT redeemable on this surface: `/apply` routes a
+	 * discount through the fail-closed T-007 seam only when the caller names a
+	 * subscription, and that seam is what actually lowers the price they pay.
+	 * Without an id the form stops and tells them to keep the code for checkout,
+	 * rather than spending it on nothing.
+	 *
+	 * `undefined` is a normal value, not an error: the page degrades to it on
+	 * any failure, because this surface's primary job is trial-extension codes,
+	 * which the endpoint resolves from the session on its own.
+	 */
+	readonly subscriptionId?: string;
+	/** Code carried by the link, from the path segment or `?codigo=`. */
+	readonly initialCode?: string;
+}
+
+const { locale, userId, roles, subscriptionId, initialCode } = Astro.props;
+
+const { t } = createTranslations(locale);
+const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles }) });
+const subscriptionHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+---
+
+<TrialExtensionForm
+	client:load
+	locale={locale}
+	userId={userId}
+	variant="redeem"
+	plansHref={plansHref}
+	subscriptionId={subscriptionId}
+	initialCode={initialCode}
+/>
+
+<p class="redeem-page__back">
+	<a href={subscriptionHref}>{t('account.pages.redeem.backToSubscription')}</a>
+</p>
+
+<style>
+	.redeem-page__back {
+		margin-top: var(--space-4, 1rem);
+		font-family: var(--font-sans);
+		font-size: 0.9rem;
+	}
+
+	.redeem-page__back a {
+		color: var(--brand-accent);
+		font-weight: 500;
+		text-decoration: underline;
+	}
+</style>

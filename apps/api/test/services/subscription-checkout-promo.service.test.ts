@@ -173,14 +173,46 @@ describe('resolveCheckoutPromoPlan', () => {
         });
     });
 
-    it('DB comp → comp with promoCodeId + code', async () => {
+    // HOS-1171. This replaces a test that asserted the opposite — 'DB comp → comp
+    // with promoCodeId + code' — which was the vulnerability written down as a
+    // contract. Returning `{ kind: 'comp' }` here is what let `/start-paid`
+    // reach `createCompSubscription()`: `status='comp'`, no MercadoPago
+    // preapproval, a period end 100 years out, on a route with no
+    // `requiredPermissions` and no `livemode` filter. `HOSPEDA_FREE` was active
+    // and uncapped in production; anyone who learned the string could issue
+    // themselves a permanently free subscription in ONE request.
+    //
+    // This is the load-bearing door. `/apply` needs an existing subscription to
+    // flip, and someone after free access has none.
+    it('HOS-1171 DB comp → invalid: the checkout NEVER creates a comp subscription', async () => {
         validatePromoCodeMock.mockResolvedValue({ valid: true });
         promoServiceGetByCodeMock = vi.fn().mockResolvedValue({
             success: true,
             data: { id: 'pc-comp', code: 'COMPVIP', active: true, effect: { kind: 'comp' } }
         });
+
         const result = await resolveCheckoutPromoPlan({ promoCode: 'COMPVIP', userId: 'user-1' });
-        expect(result).toEqual({ kind: 'comp', promoCodeId: 'pc-comp', code: 'COMPVIP' });
+
+        // `invalid` is what the caller maps to INVALID_PROMO_CODE. The assertion
+        // that matters is the discriminant: anything that still said `comp` would
+        // route straight back into `createCompSubscription`.
+        expect(result.kind).toBe('invalid');
+        expect(result).not.toMatchObject({ kind: 'comp' });
+    });
+
+    it('HOS-1171 DB comp → invalid on the no-userId path too', async () => {
+        // The partial path (`classifyValidatedCode` reached without a userId)
+        // shares the same branch. Pinning it separately because it is the one a
+        // future caller is most likely to reach by accident — it skips
+        // `validatePromoCode` entirely.
+        promoServiceGetByCodeMock = vi.fn().mockResolvedValue({
+            success: true,
+            data: { id: 'pc-comp', code: 'COMPVIP', active: true, effect: { kind: 'comp' } }
+        });
+
+        const result = await resolveCheckoutPromoPlan({ promoCode: 'COMPVIP' });
+
+        expect(result.kind).toBe('invalid');
     });
 
     it('DB discount → discount with effect', async () => {

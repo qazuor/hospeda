@@ -1,10 +1,19 @@
 /**
- * Comp subscription creator for self-serve checkout (SPEC-262 T-012 P2).
+ * Comp subscription creator (SPEC-262 T-012 P2, re-pointed by HOS-1171).
  *
  * Creates a permanently-complimentary (`status='comp'`, Model β) subscription
- * directly, WITHOUT any MercadoPago preapproval or charge, when a `comp` promo
- * code is redeemed at NEW-SUBSCRIBER checkout (monthly or annual — comp is never
- * billed regardless of the chosen interval).
+ * directly, WITHOUT any MercadoPago preapproval or charge.
+ *
+ * **The only caller is the admin route**
+ * `POST /api/v1/admin/billing/subscriptions/grant-comp`
+ * (`routes/billing/admin/subscription-comp.ts`, `BILLING_MANAGE`). It used to be
+ * reached by redeeming a `comp` promo code at self-serve checkout, with no
+ * permission check anywhere on the path; HOS-1171 closed that door, so a
+ * complimentary subscription is now an operator's act on a named customer,
+ * exactly like courtesy. The `promoCodeId` / `code` pair survives as OPTIONAL
+ * provenance — the two comp subscriptions live in production were granted by
+ * redeeming `HOSPEDA_FREE`, and a grant that names a code still records the
+ * redemption so that history stays legible.
  *
  * A comp subscription short-circuits billing entirely:
  *   - No MP preapproval is created, so no `mp_subscription_id`.
@@ -15,6 +24,8 @@
  * The whole operation (insert + promo stamp + redemption record) runs in ONE DB
  * transaction so a comp grant is atomic: a partial write can never leave a
  * subscription stamped `comp` without its redemption record (or vice versa).
+ * A grant with no promo code writes no redemption row and stamps no
+ * `promo_code_id`; everything else is identical.
  *
  * INV-1 (HOS-453 / H-91): a comp grant never goes through MercadoPago, so it
  * never fires a webhook — unlike every other lifecycle event, there is no
@@ -65,9 +76,13 @@ export interface CreateCompSubscriptionResult {
  *
  * @param input.customerId - The billing customer id (qzpay customer id).
  * @param input.planId - The qzpay plan UUID (`billing_plans.id`) being comped.
- * @param input.promoCodeId - The DB promo code id (for stamping + redemption).
- * @param input.code - The normalized promo code string (logging / redemption).
- * @param input.interval - The checkout interval (`'monthly'` | `'annual'`).
+ * @param input.promoCodeId - OPTIONAL DB promo code id. When supplied (together
+ *   with `code`) the grant stamps `promo_code_id` and records a redemption, so
+ *   an operator can attribute the grant to a campaign code. Omit it for a plain
+ *   administrative grant, which is the normal case since HOS-1171.
+ * @param input.code - OPTIONAL normalized promo code string, paired with
+ *   `promoCodeId`.
+ * @param input.interval - The billing interval (`'monthly'` | `'annual'`).
  *   Stored on the row for audit; comp is never charged either way.
  * @param input.livemode - Whether the customer/record is in live mode.
  * @param input.db - Optional Drizzle client override for tests.
@@ -77,8 +92,8 @@ export interface CreateCompSubscriptionResult {
 export async function createCompSubscription(input: {
     readonly customerId: string;
     readonly planId: string;
-    readonly promoCodeId: string;
-    readonly code: string;
+    readonly promoCodeId?: string;
+    readonly code?: string;
     readonly interval: 'monthly' | 'annual';
     readonly livemode: boolean;
     readonly db?: DrizzleClient;
@@ -107,7 +122,7 @@ export async function createCompSubscription(input: {
         planRow.productDomain !== ProductDomainEnum.ACCOMMODATION
     ) {
         throw new Error(
-            `createCompSubscription: plan '${planId}' is domain '${planRow.productDomain}' — only accommodation plans can be comped at checkout`
+            `createCompSubscription: plan '${planId}' is domain '${planRow.productDomain}' — only accommodation plans can be comped`
         );
     }
 
@@ -133,9 +148,14 @@ export async function createCompSubscription(input: {
             status: SubscriptionStatusEnum.COMP,
             livemode,
             metadata: {
-                source: 'start-paid-comp',
-                createdBy: 'subscription-flow',
-                promoCode: code,
+                // HOS-1171: the only caller is the admin grant route. The old
+                // 'start-paid-comp' / 'subscription-flow' pair described the
+                // self-serve checkout door, which no longer exists — rows
+                // written before this change keep the old pair, and that is
+                // exactly how you tell the two eras apart.
+                source: 'admin-grant-comp',
+                createdBy: 'admin',
+                ...(code === undefined ? {} : { promoCode: code }),
                 billingInterval: interval
             }
         });
@@ -147,12 +167,17 @@ export async function createCompSubscription(input: {
             .update(billingSubscriptions)
             .set({
                 productDomain: ProductDomainEnum.ACCOMMODATION,
-                promoCodeId
+                ...(promoCodeId === undefined ? {} : { promoCodeId })
             })
             .where(eq(billingSubscriptions.id, localSubscriptionId));
 
         // 3. Record the redemption (usage increment + usage row) against the new
         //    sub, INSIDE the same transaction so the grant is atomic.
+        //
+        //    Only when the grant NAMES a promo code. Since HOS-1171 a comp is
+        //    normally a plain administrative act with no code behind it, and
+        //    there is nothing to redeem — the subscription row itself, plus the
+        //    admin's own audit log entry, is the record.
         //
         // M1 idempotency note: idempotency is cached post-2xx-response, so a
         // dropped-connection retry could re-enter this transaction and re-redeem.
@@ -160,22 +185,25 @@ export async function createCompSubscription(input: {
         // redeemAndRecordUsage call would fail, rolling back the whole tx and
         // preventing a double grant). Operators must configure comp codes with
         // maxPerCustomer=1 for this mitigation to hold.
-        const redeemResult = await redeemAndRecordUsage({
-            promoCodeId,
-            customerId,
-            subscriptionId: localSubscriptionId,
-            discountAmount: 0,
-            currency: 'ARS',
-            livemode,
-            tx
-        });
+        if (promoCodeId !== undefined) {
+            const redeemResult = await redeemAndRecordUsage({
+                promoCodeId,
+                customerId,
+                subscriptionId: localSubscriptionId,
+                discountAmount: 0,
+                currency: 'ARS',
+                livemode,
+                tx
+            });
 
-        if (!redeemResult.success) {
-            // Throw to roll back the whole transaction (fail-closed): a comp that
-            // cannot be recorded (e.g. max-uses exhausted) must NOT be granted.
-            throw new Error(
-                `Comp redemption failed for code '${code}': ${redeemResult.error.message}`
-            );
+            if (!redeemResult.success) {
+                // Throw to roll back the whole transaction (fail-closed): a comp
+                // that cannot be recorded (e.g. max-uses exhausted) must NOT be
+                // granted.
+                throw new Error(
+                    `Comp redemption failed for code '${code}': ${redeemResult.error.message}`
+                );
+            }
         }
     }, input.db);
 
@@ -183,13 +211,13 @@ export async function createCompSubscription(input: {
     // and therefore no webhook, so there is no other lifecycle event that will
     // ever clear this customer's entitlement cache. Without this call the
     // subscriber sees their PREVIOUS plan's entitlements for up to the full
-    // 5-minute cache TTL after redeeming the comp code, even though the
-    // transaction above already committed the new `comp` subscription.
+    // 5-minute cache TTL after the grant, even though the transaction above
+    // already committed the new `comp` subscription.
     clearEntitlementCache(customerId);
 
     apiLogger.info(
         { localSubscriptionId, customerId, planId, code, interval },
-        'Comp subscription created at self-serve checkout (no MercadoPago preapproval)'
+        'Comp subscription granted by an operator (no MercadoPago preapproval)'
     );
 
     return { localSubscriptionId };

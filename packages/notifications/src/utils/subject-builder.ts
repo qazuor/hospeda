@@ -58,6 +58,9 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.COURTESY_GRANTED]: 'Te regalamos tu plan {planName} por un tiempo',
     [NotificationType.COURTESY_STARTED]: 'Tu regalo ya está activo - plan {planName}',
     [NotificationType.COURTESY_ENDED]: 'Tu regalo terminó - vuelve la facturación de {planName}',
+    // No end date and no "por un tiempo": a comp does not expire, and a subject
+    // borrowed from courtesy would promise the opposite of what was granted.
+    [NotificationType.COMP_GRANTED]: 'Tu plan {planName} queda sin cargo',
     [NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING]:
         'Límite reducido en tu plan {planName} - Revisá tu contenido',
     [NotificationType.PAYMENT_RETRY_WARNING]:

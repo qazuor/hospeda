@@ -61,7 +61,25 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
     // help. It is also what makes the two paths distinguishable in a test,
     // where both answer 422.
     'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
-    'ADDON_DOMAIN_UNKNOWN'
+    'ADDON_DOMAIN_UNKNOWN',
+    // promo-code apply route (HOS-1171 / HOS-1195) — the two refusals the
+    // self-service redeem surface has to tell apart. Whitelisted for the same
+    // reason as the add-on pair above: their statuses (403 and 422) both derive
+    // a single generic `error.code`, so without a forwarded reason a customer
+    // whose code was perfectly good is told "the data you sent is invalid".
+    //
+    //   PROMO_CODE_COMP_NOT_SELF_SERVICE — a `comp` code. Not redeemable from
+    //     any user-facing surface: a complimentary subscription is an operator's
+    //     grant (`POST /admin/billing/subscriptions/grant-comp`). The code is
+    //     NOT spent by the refusal.
+    //   NO_ACTIVE_TRIAL — a trial-extension code with no trial to extend. The
+    //     code IS the right kind and IS still valid; the account state is what
+    //     does not fit, and the code stays usable once a trial exists.
+    //
+    // `discount` is deliberately absent: it is redeemable from the web by a
+    // subscribed customer, so there is no refusal to name.
+    'PROMO_CODE_COMP_NOT_SELF_SERVICE',
+    'NO_ACTIVE_TRIAL'
 ]);
 
 /** The client-safe projection of an entitlement cause. */

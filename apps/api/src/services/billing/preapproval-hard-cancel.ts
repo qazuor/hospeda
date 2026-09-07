@@ -86,7 +86,8 @@ export type HardCancelPreapprovalOutcome =
 export type HardCancelPreapprovalSource =
     | 'finalize-cancelled-subs'
     | 'refund-lifecycle'
-    | 'courtesy-expiry';
+    | 'courtesy-expiry'
+    | 'admin-comp-grant';
 
 /**
  * Sentry `action` tag per source.
@@ -100,7 +101,12 @@ const SENTRY_ACTION_BY_SOURCE: Readonly<Record<HardCancelPreapprovalSource, stri
     'refund-lifecycle': 'refund_hard_cancel_preapproval',
     // HOS-180: a subscriber who cancelled mid-gift. The gift ends, the row goes
     // terminal, and the preapproval has to go with it.
-    'courtesy-expiry': 'courtesy_hard_cancel_preapproval'
+    'courtesy-expiry': 'courtesy_hard_cancel_preapproval',
+    // HOS-1171: an admin declaring a paying customer free. This is the ONE
+    // caller that does not treat the outcome as best-effort — a `failed` here
+    // aborts the grant — so its Sentry tag fires only for a hard-cancel that
+    // also refused an operator's request, not for a silent background miss.
+    'admin-comp-grant': 'comp_grant_hard_cancel_preapproval'
 };
 
 /**
@@ -158,6 +164,15 @@ export interface HardCancelPreapprovalInput {
  * There is **no automated retry**. On failure the preapproval stays open until a
  * manual admin hard-cancel clears it, and the Sentry capture is the signal ops
  * watch for that sweep.
+ *
+ * **"Never throws" is not "always succeeded".** The `failed` outcome is a real
+ * outcome, and a caller that ignores the return value has silently opted into
+ * "the provider said no and we continued anyway". That is correct for the two
+ * background sweeps above and for the refund path, where the expensive half has
+ * already happened. It is WRONG for `admin-comp-grant`
+ * (`services/subscription-comp-grant.service.ts`), which is about to declare a
+ * customer free while MercadoPago may still be charging them: that caller
+ * branches on the outcome and aborts on `failed`.
  *
  * @param input - Subscription id, preapproval id, optional billing/logger, and source.
  * @returns The outcome — `cancelled`, `skipped` (with a reason), or `failed`.

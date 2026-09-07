@@ -12,10 +12,18 @@
  *   that is now PERSISTED on the row (HOS-1012 T-039). Before T-039 this branch
  *   burnt the code via `applyPromoCode` and answered a `trialEnd` projected from
  *   `new Date()` that was never written anywhere.
- * - `comp`: returns comp indication (`comp: true`, `finalAmount: 0`).
+ * - `comp`: REFUSED, for every caller — see below.
  *
  * Ownership guard (AC-6.2): `customerId` must be the caller's own billing
  * customer unless the caller has `ACCESS_API_ADMIN`.
+ *
+ * Comp gate (HOS-1195 / HOS-1171): the ownership guard only ever protected
+ * OTHER people's subscriptions, so a signed-in user could redeem a `comp` code
+ * against their own and walk away with a permanently free subscription. A
+ * complimentary subscription is an admin action now
+ * (`POST /admin/billing/subscriptions/grant-comp`), never a redemption, so
+ * `comp` is refused here unspent. `discount` and `trial_extension` are
+ * untouched: both are ordinary self-service redemptions.
  *
  * @module routes/billing/promo-codes.apply
  */
@@ -35,6 +43,7 @@ import {
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger';
+import { assertPromoCodeIsNotComp } from '../../utils/promo-code-effect-gate.js';
 import { createProtectedRoute } from '../../utils/route-factory';
 
 // ---------------------------------------------------------------------------
@@ -44,16 +53,19 @@ import { createProtectedRoute } from '../../utils/route-factory';
 /**
  * Response shape for the /apply endpoint.
  *
- * All three effect kinds share the base fields (`id`, `promoCode`, `effectKind`,
- * `originalAmount`, `discountAmount`, `finalAmount`, `amount`). Effect-specific
- * fields (`extraDays`, `trialEnd`, `comp`) are present only for the relevant kind.
+ * Both redeemable effect kinds share the base fields (`id`, `promoCode`,
+ * `effectKind`, `originalAmount`, `discountAmount`, `finalAmount`, `amount`).
+ * `extraDays` and `trialEnd` are present only for `trial_extension`.
+ *
+ * There is no `comp` field: HOS-1171 made a complimentary subscription an admin
+ * action, so this endpoint can no longer produce that outcome.
  */
 const ApplyResponseSchema = z.object({
     /** Billing customer ID (AC-4.3: unchanged from original shape) */
     id: z.string(),
     /** Applied promo code string (AC-4.3: unchanged from original shape) */
     promoCode: z.string().nullable(),
-    /** Effect kind discriminant: 'discount' | 'trial_extension' | 'comp' */
+    /** Effect kind discriminant: 'discount' | 'trial_extension' */
     effectKind: z.string(),
     /** Original amount before discount, in centavos */
     originalAmount: z.number(),
@@ -72,12 +84,7 @@ const ApplyResponseSchema = z.object({
      * ISO 8601 projected trial-end date after the extension.
      * Present only when `effectKind === 'trial_extension'`.
      */
-    trialEnd: z.string().datetime().optional(),
-    /**
-     * True when the subscription is permanently complimentary (never billed).
-     * Present only when `effectKind === 'comp'`.
-     */
-    comp: z.boolean().optional()
+    trialEnd: z.string().datetime().optional()
 });
 
 // ---------------------------------------------------------------------------
@@ -128,11 +135,9 @@ export const handleApplyPromoCode = async (
     // Omitting it means "my own customer", which is exactly what this guard
     // enforces for every non-admin caller anyway. An explicitly supplied
     // mismatching id is still a 403.
-    if (
-        body.customerId !== undefined &&
-        !actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) &&
-        body.customerId !== billingCustomerId
-    ) {
+    const actorHasAdmin = actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) ?? false;
+
+    if (body.customerId !== undefined && !actorHasAdmin && body.customerId !== billingCustomerId) {
         throw new HTTPException(403, { message: 'Forbidden: admin access required' });
     }
 
@@ -155,7 +160,7 @@ export const handleApplyPromoCode = async (
         const ownershipResult = await assertSubscriptionOwnership({
             subscriptionId,
             billingCustomerId,
-            actorHasAdmin: actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) ?? false
+            actorHasAdmin
         });
 
         if (!ownershipResult.success) {
@@ -186,6 +191,15 @@ export const handleApplyPromoCode = async (
     // ------------------------------------------------------------------
     const peekResult = await service.getByCode(code);
     const peekedEffectKind = peekResult.success ? peekResult.data?.effect?.kind : undefined;
+
+    // HOS-1195 / HOS-1171 comp gate — runs BEFORE anything is redeemed, and is
+    // the whole reason the peek above is unconditional. A complimentary
+    // subscription is an admin action now, never a redemption, so a `comp` code
+    // is refused here for EVERY caller without being spent. `discount` and
+    // `trial_extension` pass through untouched: both are ordinary self-service
+    // redemptions and this route is where a customer makes them. Read
+    // `utils/promo-code-effect-gate.ts` for the rest of the reasoning.
+    assertPromoCodeIsNotComp({ peekResult });
 
     if (subscriptionId) {
         if (peekedEffectKind === PromoEffectKindEnum.DISCOUNT) {
@@ -287,7 +301,17 @@ export const handleApplyPromoCode = async (
             };
             const status = statusMap[extensionResult.error.code] ?? 500;
             throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500, {
-                message: extensionResult.error.message
+                message: extensionResult.error.message,
+                // HOS-1171: a 422's status-derived `error.code` is
+                // VALIDATION_ERROR, and `translateApiErrorWithT` ranks `code`
+                // above `message` — so without this the host who has no trial
+                // running reads "Los datos enviados no son válidos." for a
+                // request whose data was fine. Same mechanism the add-on 422s
+                // use since HOS-1178: `readEntitlementCause` forwards a
+                // whitelisted `cause.code` as `error.reason`, which outranks
+                // `code` in that chain. Only NO_ACTIVE_TRIAL is whitelisted;
+                // every other code here falls through to the generic copy.
+                cause: { code: extensionResult.error.code }
             });
         }
 
@@ -343,25 +367,19 @@ export const handleApplyPromoCode = async (
     const data = result.data;
     const effectKind = data.effectKind;
 
-    // Branch response shape by effect kind.
+    // Only ONE response shape is reachable from here.
     //
-    // There is deliberately NO `trial_extension` branch here any more (HOS-1012
-    // T-039). A code carrying that effect is intercepted by the seam above and
-    // never reaches `service.apply`, so a branch here could only ever produce
-    // the projected-but-unpersisted `trialEnd` the seam exists to eliminate.
-    if (effectKind === PromoEffectKindEnum.COMP) {
-        return {
-            id: customerId,
-            promoCode: code,
-            effectKind,
-            originalAmount: data.originalAmount,
-            discountAmount: 0,
-            finalAmount: 0,
-            amount: 0,
-            comp: true
-        };
-    }
-
+    // There is no `trial_extension` branch (HOS-1012 T-039): that effect is
+    // intercepted by the seam above and never reaches `service.apply`, so a
+    // branch here could only ever produce the projected-but-unpersisted
+    // `trialEnd` the seam exists to eliminate.
+    //
+    // And there is no `comp` branch (HOS-1171): the gate refuses that effect
+    // with a 403 before any of this runs. The branch that used to sit here
+    // returned `comp: true` and read as a supported outcome of this endpoint,
+    // which it has not been since a complimentary subscription became an admin
+    // action. It was deleted with the `comp` field of `ApplyResponseSchema`.
+    //
     // Discount path (or legacy code with no typed effect) — backward-compat
     // shape preserved exactly (AC-4.3).
     return {
@@ -385,7 +403,7 @@ export const applyPromoCodeRoute = createProtectedRoute({
     path: '/apply',
     summary: 'Apply promo code',
     description:
-        'Applies a promo code to a checkout session. Branches response by effect kind. Requires authentication.',
+        'Applies a promo code to a checkout session. Branches response by effect kind. Requires authentication. Complimentary (comp) codes are always refused; a non-admin caller may only redeem a trial_extension code — a discount is refused unspent (422) and stays usable at checkout.',
     tags: ['Billing - Promo Codes'],
     requestBody: ApplyPromoCodeSchema,
     responseSchema: ApplyResponseSchema,

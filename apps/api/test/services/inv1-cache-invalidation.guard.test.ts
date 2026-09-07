@@ -507,7 +507,12 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
     {
         file: 'services/subscription-comp-create.service.ts',
         requiresCacheClear: true,
-        reason: 'HOS-453 / H-91 fix: a comp grant has no MercadoPago preapproval and therefore no webhook, so this is the ONLY place that can clear the cache for a comp subscription. Fixed by this change.'
+        reason: "HOS-453 / H-91 fix: a comp grant has no MercadoPago preapproval and therefore no webhook, so this is the ONLY place that can clear the cache for a comp subscription. Fixed by that change. HOS-1171 footnote: it now also runs INSIDE its caller's transaction (subscription-comp-grant.service.ts hands it one), so on that path its own clear fires PRE-commit and the effective one is the caller's post-commit clear. The call stays here because the standalone path — no caller transaction — still depends on it."
+    },
+    {
+        file: 'services/subscription-comp-grant.service.ts',
+        requiresCacheClear: true,
+        reason: "HOS-1171. Writes TWO entitlement-bearing changes that nothing else will ever invalidate. It retires every subscription that could still be charged (active/trialing/past_due/paused/courtesy/pending_provider, in either the Hospeda or the qzpay vocabulary) to `cancelled`, and it creates the `comp` row. Both sides matter — the retirements drop entitlements the customer HAD, the comp grants the ones they now have — and neither produces a MercadoPago webhook: a comp has no preapproval, and the superseded ones were hard-cancelled BY us rather than by the provider telling us. It also owns the ordering: createCompSubscription is handed this service's transaction, so that helper's own clear runs pre-commit and would repopulate the cache from the pre-commit picture; the clear that counts is the one here, after the commit and after the supersede writes."
     },
     {
         file: 'services/subscription-uncancel.service.ts',

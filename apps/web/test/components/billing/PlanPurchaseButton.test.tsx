@@ -1304,7 +1304,13 @@ describe('PlanPurchaseButton', () => {
             });
         });
 
-        it('shows "Gratis para siempre" preview for comp code', async () => {
+        // HOS-1171. This replaces `shows "Gratis para siempre" preview for comp
+        // code`, which pinned a promise the checkout can no longer keep:
+        // `/start-paid` refuses a comp code now, so the card struck out its own
+        // price, announced free-forever access, and then failed the purchase one
+        // click later. `/validate` still REPORTS the effect — it describes what
+        // the code IS — so the refusal has to happen here, in the component.
+        it('HOS-1171 refuses a comp code instead of previewing free-forever access', async () => {
             // Arrange
             mockAuthenticated();
             vi.stubGlobal(
@@ -1334,10 +1340,15 @@ describe('PlanPurchaseButton', () => {
             await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
-            // Assert — comp text from fallback
+            // Assert — the refusal copy, and NOT the free-forever promise. The
+            // second assertion is the one that would catch a preview that still
+            // rendered somewhere else on the card.
             await waitFor(() => {
-                expect(screen.getByRole('status')).toHaveTextContent('Gratis para siempre');
+                expect(screen.getByRole('alert')).toHaveTextContent(
+                    'Este código no se puede canjear.'
+                );
             });
+            expect(screen.queryByText('Gratis para siempre')).toBeNull();
         });
 
         it('shows the DISCOUNT amount (value), not the final price, for a fixed discount', async () => {
@@ -1594,11 +1605,15 @@ describe('PlanPurchaseButton', () => {
                             data: {
                                 valid: true,
                                 effectPreview: {
-                                    effectKind: 'comp',
+                                    // HOS-1171: was a `comp` fixture, used here
+                                    // only as "any code that applies cleanly".
+                                    // A comp code is refused now, so this test's
+                                    // real subject needed a code that still is.
+                                    effectKind: 'trial_extension',
                                     valueKind: null,
                                     value: null,
                                     durationCycles: null,
-                                    extraDays: null,
+                                    extraDays: 30,
                                     finalAmount: null
                                 }
                             }
@@ -1612,10 +1627,12 @@ describe('PlanPurchaseButton', () => {
                 </div>
             );
 
-            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => {
-                expect(screen.getByRole('status')).toHaveTextContent('Gratis para siempre');
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    '30 días de prueba gratis adicionales'
+                );
             });
 
             // Flip the interval to annual (the plan has an annual price, so the
@@ -1645,11 +1662,15 @@ describe('PlanPurchaseButton', () => {
                             data: {
                                 valid: true,
                                 effectPreview: {
-                                    effectKind: 'comp',
+                                    // HOS-1171: was a `comp` fixture, used here
+                                    // only as "any code that applies cleanly".
+                                    // A comp code is refused now, so this test's
+                                    // real subject needed a code that still is.
+                                    effectKind: 'trial_extension',
                                     valueKind: null,
                                     value: null,
                                     durationCycles: null,
-                                    extraDays: null,
+                                    extraDays: 30,
                                     finalAmount: null
                                 }
                             }
@@ -1659,7 +1680,7 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
 
             // Assert
@@ -1681,11 +1702,15 @@ describe('PlanPurchaseButton', () => {
                             data: {
                                 valid: true,
                                 effectPreview: {
-                                    effectKind: 'comp',
+                                    // HOS-1171: was a `comp` fixture, used here
+                                    // only as "any code that applies cleanly".
+                                    // A comp code is refused now, so this test's
+                                    // real subject needed a code that still is.
+                                    effectKind: 'trial_extension',
                                     valueKind: null,
                                     value: null,
                                     durationCycles: null,
-                                    extraDays: null,
+                                    extraDays: 30,
                                     finalAmount: null
                                 }
                             }
@@ -1695,7 +1720,7 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('button', { name: 'Quitar' }));
 
@@ -1991,6 +2016,13 @@ describe('PlanPurchaseButton', () => {
             expect(body.promoCode).toBe('SUMMER50');
         });
 
+        // HOS-1171: the subject here is the RESPONSE handler — `appliedEffect:
+        // 'comp'` still belongs to `CheckoutAppliedEffect` and the web still
+        // routes it to the in-app sentinel instead of MercadoPago. What changed
+        // is the way in: a comp promo code is refused at validation now, so the
+        // code applied below is a trial extension. Nothing in production
+        // produces this response any more; the branch is kept for legacy
+        // robustness and this pins that it still behaves.
         it('navigates to comp sentinel URL when appliedEffect is comp', async () => {
             // Arrange — server returns comp sentinel URL (not MP)
             mockAuthenticated();
@@ -2005,11 +2037,11 @@ describe('PlanPurchaseButton', () => {
                               data: {
                                   valid: true,
                                   effectPreview: {
-                                      effectKind: 'comp',
+                                      effectKind: 'trial_extension',
                                       valueKind: null,
                                       value: null,
                                       durationCycles: null,
-                                      extraDays: null,
+                                      extraDays: 30,
                                       finalAmount: null
                                   }
                               }
@@ -2032,7 +2064,7 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
             await user.click(screen.getByRole('button', { name: 'Aplicar' }));
             await waitFor(() => screen.getByRole('status'));
 

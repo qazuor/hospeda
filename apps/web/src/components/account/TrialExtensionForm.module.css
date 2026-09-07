@@ -98,3 +98,19 @@
     color: var(--core-foreground);
     margin: 0;
 }
+
+/* HOS-1171: a code that is valid but does not belong on this surface (a
+   discount, a comp). Deliberately NOT the .error style — nothing is wrong with
+   the code and it has not been spent. */
+.notice {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.noticeLink {
+    color: var(--brand-primary);
+    font-weight: 600;
+    text-decoration: underline;
+}

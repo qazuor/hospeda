@@ -282,6 +282,21 @@
     text-decoration: underline;
 }
 
+/* HOS-1171: the "have a promo code?" pointer to /mi-cuenta/canjear/, shown in
+   every state where the inline trial-extension form is not. */
+.redeemLink {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.redeemLink a {
+    color: var(--brand-accent);
+    font-weight: 500;
+    text-decoration: underline;
+}
+
 /* `.planCard` is a column flex container with no `align-items` set, so it
    defaults to `stretch` — the "Cambiar plan" button (and the "Ver planes
    disponibles" fallback link) are direct children and would otherwise

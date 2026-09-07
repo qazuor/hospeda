@@ -826,6 +826,25 @@
         "recommendations": {
             "title": "Sugerencias para vos",
             "description": "Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda"
+        },
+        "redeem": {
+            "title": "Canjear un código",
+            "description": "Ingresá un código promocional y aplicalo al instante a tu cuenta.",
+            "help": "Escribí el código tal cual te lo pasamos y lo aplicamos al instante.",
+            "dashboardLink": "¿Tenés un código promocional?",
+            "backToSubscription": "Volver a mi suscripción",
+            "plansCta": "Ver planes",
+            "errorNotFound": "No encontramos ese código. Revisá que esté bien escrito.",
+            "errorInactive": "Este código ya no está activo.",
+            "errorExpired": "Este código ya venció.",
+            "errorMaxUses": "Este código alcanzó su límite de usos.",
+            "errorMaxUsesPerUser": "Ya usaste este código la cantidad máxima de veces.",
+            "errorPlanRestriction": "Este código no es válido para tu plan.",
+            "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
+            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código.",
+            "discountNotice": "Este código es un descuento. No lo usamos: vas a poder aplicarlo cuando contrates un plan.",
+            "compNotice": "Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.",
+            "successDiscount": "Listo. Aplicamos el descuento a tu suscripción."
         }
     },
     "newsletter": {

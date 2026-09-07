@@ -255,6 +255,7 @@
             "trialExtension_one": "{{days}} extra free trial day",
             "trialExtension_other": "{{days}} extra free trial days",
             "comp": "Free forever",
+            "compNotRedeemable": "This code cannot be redeemed. Get in touch if you were promised a complimentary subscription.",
             "errorInvalid": "The code you entered is not valid. Please check it and try again.",
             "errorAnnualOutsideTrial": "This discount code does not apply to annual plans outside the trial period.",
             "errorGeneric": "We could not verify the code. Please try again.",

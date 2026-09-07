@@ -170,8 +170,26 @@ describe('BILLING_EVENT_TYPES', () => {
             // + 1 (HOS-995: SUBSCRIPTION_PAUSE_PROVIDER_REFUSED — the only event
             // here recording something that did NOT happen, seated because every
             // pause flow is fail-closed and therefore leaves no other trace when
-            // MercadoPago says no) = 57.
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(57);
+            // MercadoPago says no) = 57,
+            // + 1 (HOS-1171: ADMIN_SUBSCRIPTION_COMP_GRANTED — kept apart from
+            // ADMIN_SUBSCRIPTION_COURTESY_GRANTED because a courtesy PAUSES the
+            // preapproval and a comp HARD-CANCELS it; reading one as the other
+            // means waiting for a resume that can never happen) = 58.
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(58);
+        });
+    });
+
+    describe('HOS-1171 comp-grant event type', () => {
+        it('ADMIN_SUBSCRIPTION_COMP_GRANTED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COMP_GRANTED).toBe(
+                'ADMIN_SUBSCRIPTION_COMP_GRANTED'
+            );
+        });
+
+        it('is distinct from the courtesy grant it is easiest to confuse it with', () => {
+            expect(BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COMP_GRANTED).not.toBe(
+                BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_COURTESY_GRANTED
+            );
         });
     });
 

@@ -3,10 +3,28 @@
  *
  * Ensures default promo codes exist in the system.
  * This module provides initialization functions to create essential
- * promo codes that should always be available, such as HOSPEDA_FREE.
+ * promo codes that should always be available.
  *
  * The defaults are created during API startup and are idempotent -
  * they will only create codes that don't already exist.
+ *
+ * ---
+ * THE LIST IS EMPTY, AND THAT IS THE POINT (HOS-1171)
+ *
+ * It held exactly one entry, `HOSPEDA_FREE`, and this was the THIRD place that
+ * created it — after `@repo/billing`'s `DEFAULT_PROMO_CODES` (the seed baseline)
+ * and the seeded row itself. Retiring it in the other two would have been
+ * undone here on the next boot for every fresh database, because
+ * `ensureDefaultPromoCodes` runs at API startup and creates whatever is missing.
+ * On an already-seeded environment the row exists (deactivated by seed
+ * data-migration 0099) and `getPromoCodeByCode` matches on the code alone, so
+ * the skip-if-exists branch would have left it alone — which is exactly the
+ * shape of hole that looks fixed in staging and reopens on a fresh CI database.
+ *
+ * Nothing redeems a `comp` code any more: a complimentary subscription is
+ * granted by `POST /api/v1/admin/billing/subscriptions/grant-comp`. Do not
+ * re-add a comp entry here.
+ * ---
  *
  * ---
  * SCOPE: seed / startup path only (SPEC-192 T-029)
@@ -37,25 +55,7 @@ import { type CreatePromoCodeInput, PromoCodeService } from './promo-code.servic
  *
  * @internal Startup / seed-path use only — see module JSDoc banner above.
  */
-const DEFAULT_PROMO_CODES: CreatePromoCodeInput[] = [
-    {
-        code: 'HOSPEDA_FREE',
-        discountType: 'percentage',
-        discountValue: 100,
-        description: 'Hospeda Free Plan - 100% permanent discount with no payment method required',
-        isActive: true,
-        // No expiration date - valid forever
-        expiryDate: undefined,
-        // Unlimited uses
-        maxUses: undefined,
-        // Applicable to all plans
-        planRestrictions: undefined,
-        // Not restricted to first purchase
-        firstPurchaseOnly: false,
-        // No minimum amount required
-        minAmount: undefined
-    }
-];
+const DEFAULT_PROMO_CODES: CreatePromoCodeInput[] = [];
 
 /**
  * Ensures all default promo codes exist in the system

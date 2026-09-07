@@ -57,19 +57,27 @@ export interface PromoCodeDefinition {
 
 // ─── DEFAULT PROMO CODES ───────────────────────────────────────
 
-export const HOSPEDA_FREE_CODE: PromoCodeDefinition = {
-    code: 'HOSPEDA_FREE',
-    description: 'Permanent free platform access. Internal use.',
-    type: 'comp',
-    discountPercent: 100,
-    isPermanent: true,
-    durationCycles: null,
-    maxRedemptions: null,
-    expiresAt: null,
-    restrictedToPlans: null,
-    newUserOnly: false,
-    isActive: true
-};
+/*
+ * `HOSPEDA_FREE_CODE` was RETIRED here by HOS-1171, and its row is deactivated in
+ * every seeded environment by seed data-migration `0099-hos-1171-retire-hospeda-free`.
+ *
+ * It was the only `type: 'comp'` code that ever existed: permanent, unlimited
+ * (`maxRedemptions: null`), `isActive: true`, and — because
+ * `getPromoCodeByCode` matches on the code alone — unscoped by `livemode`.
+ * Redeeming it at the self-serve checkout ran `createCompSubscription()` with
+ * no permission check anywhere on the path, so anyone who learned the string
+ * could issue themselves a never-billed subscription. Both comp subscriptions
+ * live in production were created that way.
+ *
+ * A complimentary subscription is an ADMIN ACTION now —
+ * `POST /api/v1/admin/billing/subscriptions/grant-comp` (`BILLING_MANAGE`),
+ * sibling to `grant-courtesy`. Both doors that used to redeem a comp code refuse
+ * it, and removing the code is the SECOND, independent layer: a door added
+ * tomorrow without a gate still has no comp code to redeem.
+ *
+ * Do not re-add a `type: 'comp'` entry here. `PromoEffectKindEnum.COMP` still
+ * exists — historical rows have to remain readable — but nothing redeems it.
+ */
 
 /**
  * Launch discount: 50% off the first 3 billing cycles.
@@ -144,7 +152,6 @@ export const FREEMONTH_CODE: PromoCodeDefinition = {
 
 /** All default promo codes to seed */
 export const DEFAULT_PROMO_CODES: PromoCodeDefinition[] = [
-    HOSPEDA_FREE_CODE,
     LANZAMIENTO_50_CODE,
     BIENVENIDO_30_CODE,
     FREEMONTH_CODE

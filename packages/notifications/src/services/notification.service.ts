@@ -17,6 +17,7 @@ import {
     AiCostThresholdAlert,
     AllianceClaimInvite,
     AllianceLeadDecision,
+    CompGranted,
     ContactSubmissionEmail,
     CourtesyEnded,
     CourtesyGranted,
@@ -70,6 +71,7 @@ import type {
     AiCostThresholdAlertPayload,
     AllianceClaimInvitePayload,
     AllianceLeadDecisionPayload,
+    CompGrantedPayload,
     ContactSubmissionPayload,
     CourtesyPayload,
     FeedbackReportPayload,
@@ -99,6 +101,7 @@ import type {
     TrialSeriesPayload
 } from '../types/notification.types.js';
 import { buildAddonLinkMetadata } from '../utils/addon-link-metadata.js';
+import { buildCompGrantMetadata } from '../utils/comp-grant-metadata.js';
 import {
     findUnresolvedPlaceholders,
     getSubject,
@@ -709,6 +712,19 @@ export class NotificationService {
                 });
             }
 
+            // HOS-1171. Same warning as the courtesy block above: a type with a
+            // template but no case here renders nothing and the email is
+            // silently never sent.
+            case 'comp_granted': {
+                const p = payload as CompGrantedPayload;
+                return CompGranted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    hadActiveBilling: p.hadActiveBilling,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             case 'courtesy_ended': {
                 const p = payload as CourtesyPayload;
                 return CourtesyEnded({
@@ -1022,7 +1038,12 @@ export class NotificationService {
                     messageId: messageId || null,
                     category: NOTIFICATION_CATEGORY_MAP[payload.type],
                     idempotencyKey: payload.idempotencyKey || null,
-                    ...buildAddonLinkMetadata(payload)
+                    ...buildAddonLinkMetadata(payload),
+                    // HOS-1171: same reason as the add-on fields above. A comp
+                    // email rebuilt on retry without `hadActiveBilling` reverts
+                    // to the "you never gave us a card" variant and drops the
+                    // only notice that we cancelled the customer's preapproval.
+                    ...buildCompGrantMetadata(payload)
                 }
             });
 

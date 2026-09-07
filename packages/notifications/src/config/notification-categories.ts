@@ -61,6 +61,11 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.COURTESY_GRANTED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.COURTESY_STARTED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.COURTESY_ENDED]: NotificationCategory.TRANSACTIONAL,
+    // HOS-1171. Transactional for a sharper reason than its courtesy siblings:
+    // this may be the only notice a paying customer gets that the preapproval
+    // on their card was hard-cancelled. An opt-out would let someone stop being
+    // charged without ever being told.
+    [NotificationType.COMP_GRANTED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL,
 
     // Plan management - Transactional
