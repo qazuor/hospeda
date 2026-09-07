@@ -1474,7 +1474,30 @@ export async function processSubscriptionUpdated({
                         subscriptionId: localSubscription.id,
                         customerId: localSubscription.customerId,
                         billing,
-                        db
+                        db,
+                        // HOS-847 PR 7a — `'unknown'` here is measured, not lazy.
+                        //
+                        // Several different endings reach this one branch as a
+                        // single `mappedStatus === CANCELLED`: the buyer
+                        // cancelled the preapproval on MercadoPago's own site,
+                        // and MercadoPago auto-cancelled it after its native
+                        // recycling exhausted its retries (non-payment). MP's
+                        // preapproval resource carries no reason field that
+                        // separates them, and the one local tell that would —
+                        // `previousStatus === PAST_DUE` — is structurally
+                        // unreachable: nothing writes `past_due` to
+                        // `billing_subscriptions.status`, because MP has no
+                        // preapproval status that maps to it and this repo's own
+                        // dunning mutations are off (`cron/jobs/dunning.job.ts`,
+                        // HOS-191 F5).
+                        //
+                        // So this call site genuinely cannot tell "they stopped
+                        // paying" from "they cancelled", and guessing decides
+                        // whose money it is. `'unknown'` says exactly that;
+                        // `UNKNOWN_CANCELLATION_CAUSE_POLICY` in
+                        // `services/addon-lifecycle-cancellation.service.ts` is
+                        // the single line the owner's answer changes.
+                        cause: 'unknown'
                     }),
                     cancellationTimeoutPromise
                 ]);

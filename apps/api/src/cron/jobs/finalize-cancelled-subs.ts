@@ -583,7 +583,16 @@ async function finalizeOne(
                     subscriptionId,
                     customerId,
                     billing,
-                    db: tx
+                    db: tx,
+                    // HOS-847 PR 7a: this cron only ever finalizes rows carrying
+                    // `cancel_at_period_end = true`, and the only writers of that
+                    // flag are the self-serve cancel (`subscription-cancel.service.ts`)
+                    // and the plan-retirement sweep (`plan-disable-lifecycle.service.ts`).
+                    // Neither is a punishment, so each add-on keeps the period it
+                    // was already charged for — its OWN period, which a recurring
+                    // add-on bills on a cycle of its own and rarely shares with
+                    // the plan's.
+                    cause: 'voluntary'
                 });
             } else {
                 logger.warn(
