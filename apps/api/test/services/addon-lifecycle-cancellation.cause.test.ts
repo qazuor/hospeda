@@ -15,13 +15,16 @@
  * causes still revoke on the spot — non-payment (nothing was collected) and a
  * deliberate admin lever (an operational action has to bite immediately).
  *
- * ## The undecided third case, pinned rather than guessed
+ * ## The third case, answered by the owner rather than guessed
  *
  * The MercadoPago webhook cannot tell "they cancelled" from "they stopped
  * paying" — see the comment at its call site. That is `'unknown'`, and its
- * handling lives in ONE constant. The test below pins today's behaviour to that
- * constant so the owner's answer is a one-line change with a failing test
- * attached, rather than a silent policy shift.
+ * handling lives in ONE constant, `UNKNOWN_CANCELLATION_CAUSE_POLICY`. The owner
+ * set it to `'honour-paid-period'` on 2026-09-07. The tests below read the
+ * constant rather than restating its value, so the constant stays the single
+ * place the policy is written down — but one test pins the value itself, because
+ * a suite that only ever agrees with the constant would pass just as happily if
+ * somebody flipped it back.
  *
  * @module test/services/addon-lifecycle-cancellation.cause
  */
@@ -336,12 +339,22 @@ describe('handleSubscriptionCancellationAddons — the cancellation cause (HOS-8
         });
     });
 
-    describe('the cause the webhook cannot know — pinned, not decided', () => {
-        it('follows UNKNOWN_CANCELLATION_CAUSE_POLICY, which is still the pre-HOS-847 behaviour', async () => {
+    describe('the cause the webhook cannot know — decided by the owner', () => {
+        it('resolves the doubt in the customer favour (owner decision, 2026-09-07)', () => {
+            // The behavioural test below reads the constant, which makes it
+            // survive a flip. This one does NOT: it is the pin. Flipping the
+            // policy back to 'revoke-now' has to fail something, or the owner's
+            // decision lives in a line anybody can quietly undo.
+            expect(UNKNOWN_CANCELLATION_CAUSE_POLICY).toBe('honour-paid-period');
+            expect(causeHonoursPaidPeriod('unknown')).toBe(true);
+        });
+
+        it('follows UNKNOWN_CANCELLATION_CAUSE_POLICY', async () => {
             // This assertion is deliberately written against the CONSTANT, not
-            // against a hardcoded expectation: the day the owner answers, the
-            // one-line flip makes this test describe the new policy instead of
-            // failing for the wrong reason.
+            // against a hardcoded expectation: it describes the MECHANISM (the
+            // policy drives the branch), while the pin above describes the
+            // VALUE. Both are needed — the mechanism alone would pass under any
+            // value, the value alone would not prove the branch reads it.
             const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
 
             const result = await handleSubscriptionCancellationAddons({
@@ -361,9 +374,13 @@ describe('handleSubscriptionCancellationAddons — the cancellation cause (HOS-8
             }
         });
 
-        it('an omitted cause means `unknown`, never "honour the period"', async () => {
-            // Every pre-existing call site (all of them tests) omits the field.
-            // Omission must not become the permissive branch by accident.
+        it('an omitted cause means `unknown` — which is now the permissive branch', async () => {
+            // Every pre-existing call site (all of them tests) omits the field,
+            // and since the owner's answer `unknown` HONOURS the period. That is
+            // precisely why the call-site guard
+            // (`addon-cancellation-cause-call-sites.guard.test.ts`) is not
+            // cosmetic: omission at a production call site now gives a period
+            // away rather than merely mislabelling one.
             const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
 
             await handleSubscriptionCancellationAddons({

@@ -93,30 +93,54 @@ export type SubscriptionCancellationCause =
      * The signal genuinely does not say. The MercadoPago
      * `subscription_preapproval.updated` webhook reports `cancelled` with no
      * reason field, and the one local tell that would separate the two —
-     * `previousStatus === 'past_due'` — is structurally unreachable today (see
-     * `cron/jobs/dunning.job.ts`: nothing writes `past_due` to
-     * `billing_subscriptions.status`, because MercadoPago has no preapproval
-     * status that maps to it). Handled per
-     * {@link UNKNOWN_CANCELLATION_CAUSE_POLICY}.
+     * `previousStatus === 'past_due'` — never fires, because **no writer in
+     * this repo ever puts `past_due` into `billing_subscriptions.status`**
+     * (`cron/jobs/dunning.job.ts`'s docblock states the same: its status
+     * mutations are off, HOS-191 F5).
+     *
+     * The reason is worth stating precisely, because MAPPINGS to `past_due` do
+     * exist — `subscription-status-provider.ts` and
+     * `subscription-status-normalize.ts` (`unpaid → PAST_DUE`) — and finding
+     * them makes a claim of "unreachable" read like a lie. They are read
+     * directions: they translate a provider status INTO the enum. What is
+     * missing is the write: nothing persists the result to the column this
+     * check would read. Restore a local writer and the tell becomes usable, and
+     * this member's population shrinks accordingly.
+     *
+     * Handled per {@link UNKNOWN_CANCELLATION_CAUSE_POLICY}.
      */
     | 'unknown';
 
 /**
  * What an add-on gets when the cancellation cause is {@link
- * SubscriptionCancellationCause.unknown} — **an open owner decision, pinned to
- * today's behaviour until it is answered.**
+ * SubscriptionCancellationCause.unknown} — **answered by the owner on
+ * 2026-09-07: the doubt is resolved in the customer's favour.**
  *
- * Both answers cost somebody something, which is why this is not an engineering
- * call: `'revoke-now'` can take a period away from a customer who paid for it,
- * and `'honour-paid-period'` can hand a free period to someone who stopped
- * paying. It is a single named constant, and the ONLY thing that has to change
- * once the owner answers, so the decision is one line rather than a rewrite.
+ * Both answers cost somebody something, which is why this was never an
+ * engineering call: `'revoke-now'` can take a period away from a customer who
+ * paid for it, and `'honour-paid-period'` can hand a free period to someone who
+ * stopped paying. The owner weighed the two and chose the second — the same
+ * principle the whole of PR 7a rests on ("we do not revoke what we already
+ * charged for"), applied to the case where we cannot prove which side of it we
+ * are on.
  *
- * Pinned to `'revoke-now'` deliberately: that is exactly what this code did
- * before HOS-847 PR 7a, so the undecided path ships unchanged rather than
- * shipping a policy nobody approved.
+ * Note what that means for the size of the mistake in each direction. Revoking
+ * wrongly takes a period the customer's card was already debited for and hands
+ * back nothing; honouring wrongly costs at most ONE unpaid cycle, because the
+ * add-on's MercadoPago preapproval is hard-cancelled before this decision is
+ * ever reached, so nothing renews behind it either way.
+ *
+ * This is deliberately still a single named constant rather than an inlined
+ * literal: it is the one line that has to move if the answer is ever revisited,
+ * and `causeHonoursPaidPeriod` plus its tests read it rather than restating it.
+ *
+ * **This is no longer identical to the pre-HOS-847 behaviour.** Before PR 7a
+ * every add-on under a cancelled plan was revoked on the spot, `unknown`
+ * included; today the MercadoPago webhook — the one call site that genuinely
+ * cannot tell "they cancelled" from "they stopped paying" — defers instead.
  */
-export const UNKNOWN_CANCELLATION_CAUSE_POLICY: 'revoke-now' | 'honour-paid-period' = 'revoke-now';
+export const UNKNOWN_CANCELLATION_CAUSE_POLICY: 'revoke-now' | 'honour-paid-period' =
+    'honour-paid-period';
 
 /**
  * Whether a cause lets an add-on keep the period it was already charged for.
@@ -207,7 +231,10 @@ export interface HandleCancellationAddonsInput {
      * `test/services/addon-cancellation-cause-call-sites.guard.test.ts` fails CI
      * if one does not. Omitting it means {@link
      * SubscriptionCancellationCause.unknown}, which is an honest answer rather
-     * than a permissive default — see {@link UNKNOWN_CANCELLATION_CAUSE_POLICY}.
+     * than a guess — and since the owner resolved that case in the customer's
+     * favour, an omission is now PERMISSIVE, which is exactly why the guard
+     * above is load-bearing rather than tidy. See
+     * {@link UNKNOWN_CANCELLATION_CAUSE_POLICY}.
      */
     cause?: SubscriptionCancellationCause;
 }

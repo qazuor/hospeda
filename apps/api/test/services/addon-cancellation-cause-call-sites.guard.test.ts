@@ -10,10 +10,11 @@
  * mechanical churn. That leaves exactly one hole: a THIRD production call site
  * added later would silently inherit `'unknown'`.
  *
- * Today `'unknown'` is pinned to the pre-HOS-847 behaviour, so inheriting it is
- * merely wrong-by-omission. The moment the owner answers the open question in
- * `UNKNOWN_CANCELLATION_CAUSE_POLICY`, inheriting it decides whose money a
- * period belongs to. This guard is what makes that impossible to do by
+ * The owner answered that question on 2026-09-07:
+ * `UNKNOWN_CANCELLATION_CAUSE_POLICY` is `'honour-paid-period'`. So an inherited
+ * `'unknown'` is no longer merely wrong-by-omission — it is the PERMISSIVE
+ * branch, and a new call site that forgets the field hands out a period nobody
+ * decided to give away. This guard is what makes that impossible to do by
  * accident: forget the field at a production call site and CI says so.
  *
  * ## What it asserts, exactly
