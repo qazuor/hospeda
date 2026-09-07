@@ -159,6 +159,16 @@ describe('GET /api/v1/protected/gastronomies/mine', () => {
             // route that prints something for that row answers 404. A card
             // that asked only `isPublic` would offer its owner downloads
             // that cannot work and render a code that cannot scan.
+            //
+            // NOTHING BELOW THE `if (!capturedActor) return;` ABOVE RUNS.
+            // `listOwn` is never reached through `initApp()` with mock-actor
+            // headers, so the guard returns first and every assertion in this
+            // test is skipped — measured: `toHaveLength(99)` here passes. The
+            // predicate that actually fails on a wrong mapping lives in
+            // `test/routes/commerce-owner-listing-public-page.test.ts`, which
+            // mounts the route directly. These lines are kept so they start
+            // asserting the day that guard is fixed; they are not coverage
+            // today, and reading them as coverage is the trap.
             expect(listings[0]?.hasPublicPage).toBe(true);
             expect(listings[1]?.hasPublicPage).toBe(false);
             expect(listings[2]?.isPublic).toBe(true);
