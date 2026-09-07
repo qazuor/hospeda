@@ -255,6 +255,7 @@
             "trialExtension_one": "{{days}} dia extra de avaliação gratuita",
             "trialExtension_other": "{{days}} dias extras de avaliação gratuita",
             "comp": "Grátis para sempre",
+            "compNotRedeemable": "Este código não pode ser resgatado. Fale com a gente se prometeram uma assinatura de cortesia a você.",
             "errorInvalid": "O código informado não é válido. Verifique e tente novamente.",
             "errorAnnualOutsideTrial": "Este código de desconto não se aplica a planos anuais fora do período de avaliação.",
             "errorGeneric": "Não conseguimos verificar o código. Tente novamente.",

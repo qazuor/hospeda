@@ -868,6 +868,27 @@ export function PlanPurchaseButton({
                 return;
             }
 
+            // HOS-1171: `/validate` still reports the effect of a legacy `comp`
+            // code, because it describes what the code IS, and `/start-paid`
+            // refuses it. Without this branch the card struck out its own price,
+            // announced "Gratis para siempre", and then the purchase failed —
+            // we promised free access and took it back one click later. A
+            // complimentary subscription is an operator's grant now, so the code
+            // is refused HERE, at the same moment as any other unusable one, and
+            // no preview is ever built from it.
+            if (effectPreview.effectKind === 'comp') {
+                setPromo((prev) => ({
+                    ...prev,
+                    status: 'error',
+                    errorMsg: t(
+                        'billing.checkout.promoApply.compNotRedeemable',
+                        'Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.'
+                    ),
+                    appliedCode: null
+                }));
+                return;
+            }
+
             setPromo((prev) => ({
                 ...prev,
                 status: 'valid',
