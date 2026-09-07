@@ -123,7 +123,7 @@ export function resolveI18nText(
  *
  * @param params - The i18n value, the legacy plain value, and the locale.
  * @param params.i18n - An `I18nText` object (or partial), a plain string, null, or undefined.
- * @param params.legacy - The legacy plain value to fall back to when `i18n` resolves empty. Stringified via `String()`; `null`/`undefined` become `''`.
+ * @param params.legacy - The legacy plain value to fall back to when `i18n` resolves empty. Only used when it is itself a `string`; any other type (e.g. `0`, `false`, `NaN`, an array, or another i18n object) degrades to `''` instead of being coerced with `String()` — the same degradation the pre-fix `resolveI18nText(i18n ?? legacy, locale)` chain already applied to a non-string legacy value, since every legacy field these call sites read is `z.string()`-typed. `item` arrives as `Record<string, unknown>` though (these transforms are documented as defensive against raw, un-parsed API responses), so this keeps that defensiveness intact instead of introducing `"[object Object]"`/`"NaN"`/`"a,b"` for a shape Zod would normally reject.
  * @param params.locale - The desired locale (`es`, `en`, or `pt`).
  * @returns The resolved display string (never null/undefined).
  *
@@ -156,5 +156,5 @@ export function resolveI18nTextWithLegacyFallback({
     const resolved = resolveI18nText(i18n, locale);
     if (resolved) return resolved;
 
-    return legacy == null ? '' : String(legacy);
+    return typeof legacy === 'string' ? legacy : '';
 }

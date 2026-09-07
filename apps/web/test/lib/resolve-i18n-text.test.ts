@@ -73,9 +73,29 @@ describe('resolveI18nTextWithLegacyFallback', () => {
         ).toBe('Plain Legacy Text');
     });
 
-    it('stringifies a non-string legacy value', () => {
+    // HOS-802 review F3: every legacy field these call sites read is
+    // `z.string()`-typed, so a non-string legacy value only reaches here
+    // through an unparsed/defensive `Record<string, unknown>` payload. Match
+    // what the pre-fix `resolveI18nText(i18n ?? legacy, locale)` chain already
+    // did in that case — degrade to `''`, never coerce with `String()`
+    // (which would otherwise turn a stray i18n-shaped object into the literal
+    // string `"[object Object]"`, an array into `"a,b"`, etc.).
+    it('degrades a non-string legacy value to an empty string instead of coercing it', () => {
         expect(resolveI18nTextWithLegacyFallback({ i18n: null, legacy: 42, locale: 'es' })).toBe(
-            '42'
+            ''
         );
+        expect(resolveI18nTextWithLegacyFallback({ i18n: null, legacy: false, locale: 'es' })).toBe(
+            ''
+        );
+        expect(
+            resolveI18nTextWithLegacyFallback({ i18n: null, legacy: ['a', 'b'], locale: 'es' })
+        ).toBe('');
+        expect(
+            resolveI18nTextWithLegacyFallback({
+                i18n: null,
+                legacy: { es: 'Hola' },
+                locale: 'es'
+            })
+        ).toBe('');
     });
 });

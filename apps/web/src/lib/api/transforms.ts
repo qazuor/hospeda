@@ -1592,10 +1592,14 @@ export function toEventDetailProps({
     });
 
     // Build gallery with alt text. Use name as fallback alt.
-    const eventName = resolveI18nText(
-        (item.nameI18n as I18nTextLike | string) ?? item.name ?? item.title,
+    // HOS-802: `?? item.title` is deliberately kept here — some legacy event
+    // rows only ever had a `title` field, never a `name` one, and this
+    // detail transform is the sole call site that carries that extra rung.
+    const eventName = resolveI18nTextWithLegacyFallback({
+        i18n: item.nameI18n as I18nTextLike | string | undefined,
+        legacy: item.name ?? item.title,
         locale
-    );
+    });
     const mediaObj = item.media as
         | {
               gallery?: ReadonlyArray<{
@@ -1775,14 +1779,16 @@ export function toEventDetailProps({
         id,
         slug: String(item.slug || ''),
         name: eventName,
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
             locale
-        ),
-        description: resolveI18nText(
-            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+        }),
+        description: resolveI18nTextWithLegacyFallback({
+            i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+            legacy: item.description,
             locale
-        ),
+        }),
         contentHtml: item.contentHtml ? String(item.contentHtml) : undefined,
         category: String(item.category || ''),
         isFeatured: Boolean(item.isFeatured),
@@ -1952,14 +1958,16 @@ export function transformAccommodationEdit({
         // does. And the locale is pinned to `SEO_SOURCE_LOCALE`, not the UI
         // locale — the override only applies on `es`, so that is the page whose
         // fallback is being previewed even when the host edits in English.
-        seoTitleDefault: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            SEO_SOURCE_LOCALE
-        ).trim(),
-        seoDescriptionDefault: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
-            SEO_SOURCE_LOCALE
-        ).trim(),
+        seoTitleDefault: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale: SEO_SOURCE_LOCALE
+        }).trim(),
+        seoDescriptionDefault: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary,
+            locale: SEO_SOURCE_LOCALE
+        }).trim(),
         videos,
         basePrice:
             priceObj?.price == null
