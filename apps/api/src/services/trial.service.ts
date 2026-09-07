@@ -26,6 +26,8 @@ import {
     checkSubscriptionStatusTransition,
     DEFAULT_TRIAL_PLAN_SLUG,
     excludeAddonDomainCondition,
+    hydrateSubscriptionProductDomains,
+    isAddonSubscription,
     QZPAY_TO_HOSPEDA_STATUS,
     type ReactivateFromTrialInput,
     type ReactivateFromTrialResult,
@@ -269,10 +271,30 @@ export class TrialService {
         const { customerId } = input;
 
         try {
-            // Get customer's subscriptions
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            // Get customer's subscriptions.
+            //
+            // HOS-847: hydrated and then stripped of `product_domain = 'addon'`
+            // rows before anything else looks at them. A recurring add-on has
+            // its OWN `billing_subscriptions` row and PR 5 is the first thing
+            // that ever moves one to `active`; `getByCustomerId` returns it like
+            // any other and does not even populate `productDomain` (HOS-1104,
+            // see `hydrateSubscriptionProductDomains`). Left in, that `active`
+            // row beats a real `trialing` plan row on
+            // `LIVE_STATUS_PRECEDENCE` — deterministically, since `active` ranks
+            // 1 and `trialing` 2 — and `getTrialStatus` then answers
+            // `isOnTrial: false, isExpired: false`. `trialMiddleware` is mounted
+            // globally and 402s every write off that verdict, so the customer
+            // keeps writing to a paid platform for free for as long as the
+            // add-on lives, INCLUDING after their real trial has expired. This
+            // is not the documented commerce hole below: an add-on is not a
+            // second product the customer subscribed to, it is a line item on
+            // this one.
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const subscriptions = (
+                await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
+            ).filter((sub) => !isAddonSubscription(sub));
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (subscriptions.length === 0) {
                 return {
                     isOnTrial: false,
                     isExpired: false,
@@ -1324,9 +1346,18 @@ export class TrialService {
                 billingInterval
             });
 
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            // HOS-847: add-on rows are excluded here for the same reason as in
+            // `getTrialStatus`. A customer who cancels their plan but keeps a
+            // live recurring add-on would otherwise hit the
+            // `ACTIVE_SUBSCRIPTION_EXISTS` 409 below on the add-on's own
+            // subscription row — with no plan to change and no route left to
+            // resubscribe through.
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const subscriptions = (
+                await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
+            ).filter((sub) => !isAddonSubscription(sub));
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (subscriptions.length === 0) {
                 // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
                 // typed business error mapped to HTTP 404 by
                 // `mapSubscriptionCheckoutErrorToHttp`.
@@ -1689,9 +1720,18 @@ export class TrialService {
         const { customerId } = input;
 
         try {
-            const allSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            // HOS-847: add-on rows are removed before this reaper sees them.
+            // It cancels every live subscription but the newest, and a recurring
+            // add-on's own row is live and — being created at the moment of
+            // purchase — is usually the newest of all. Left in, buying an add-on
+            // would cancel the plan that add-on extends, and a customer holding
+            // two add-ons would have one of them silently reaped by the other.
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const allSubscriptions = (
+                await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
+            ).filter((sub) => !isAddonSubscription(sub));
 
-            if (!allSubscriptions || allSubscriptions.length === 0) {
+            if (allSubscriptions.length === 0) {
                 return { cancelledCount: 0, cancelledIds: [], keptId: null };
             }
 
