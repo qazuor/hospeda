@@ -49,14 +49,14 @@
         "bcryptjs": "^3.0.3",
         "dotenv": "^17.4.2",
         "drizzle-orm": "^0.45.2",
-        "pg": "^8.22.0",
+        "pg": "^8.23.0",
         "zod": "^4.0.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/bcryptjs": "^3.0.0",
         "@types/node": "^26.2.0",
-        "@types/pg": "^8.21.0",
+        "@types/pg": "^8.23.1",
         "@vitest/coverage-v8": "^4.1.10",
         "tsup": "^8.5.1",
         "tsx": "^4.23.11",
