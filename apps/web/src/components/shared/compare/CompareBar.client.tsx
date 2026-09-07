@@ -34,6 +34,7 @@
  */
 
 import { ArrowRightIcon, XIcon } from '@repo/icons';
+import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
 import type { FC, MouseEvent } from 'react';
 import { useEffect } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
@@ -75,6 +76,37 @@ function hasKnownCap({
     readonly isLoading: boolean;
 }): boolean {
     return !isLoading && Number.isFinite(maxItems) && maxItems >= 1;
+}
+
+/**
+ * Builds the Cloudinary-optimized URL for a compare-bar thumbnail cell.
+ *
+ * `item.thumbnailUrl` (persisted in {@link useCompareStore}) can carry a
+ * preset baked in by whichever button added it: `CompareButton`/
+ * `CompareCardSelect` write the listing card's `card` preset (400x300), and
+ * `DetailCompareButton` writes the accommodation detail page's `og` preset
+ * (1200x630, HOS-881) — neither is sized for this 48px (3rem) square cell.
+ * `getMediaUrl` no-ops on a URL that already carries a transform (it never
+ * chains two), so the existing one is stripped first and the `thumbnail`
+ * preset (200x200, `c_thumb,g_auto`) re-applied — mirrors
+ * `ImageGallery.client.tsx`'s `buildCellUrl`.
+ *
+ * `thumbnail` over `avatar` (150x150) on purpose: `avatar` crops with
+ * `g_face`, tuned for a person's face, which is the wrong gravity for a
+ * lodging photo. 200px also comfortably covers the 48 CSS px cell at
+ * `dpr_auto` up to ~3x device-pixel ratio (144 physical px) without
+ * over-fetching a full 1200px OG asset for an icon-sized thumbnail.
+ *
+ * Non-Cloudinary URLs (placeholders) pass through unchanged — same
+ * pass-through semantics as `getMediaUrl` itself.
+ *
+ * @param url - The raw `thumbnailUrl` stored on the compare-store item.
+ * @returns A `thumbnail`-preset Cloudinary URL, or the input unchanged when
+ *   it is not a Cloudinary upload URL.
+ */
+function buildThumbUrl(url: string): string {
+    const baseUrl = stripCloudinaryTransform(url);
+    return getMediaUrl(baseUrl, { preset: 'thumbnail' });
 }
 
 /**
@@ -193,7 +225,7 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
                         >
                             {item.thumbnailUrl ? (
                                 <img
-                                    src={item.thumbnailUrl}
+                                    src={buildThumbUrl(item.thumbnailUrl)}
                                     alt={item.name ?? ''}
                                     className={styles.thumbImg}
                                     loading="lazy"

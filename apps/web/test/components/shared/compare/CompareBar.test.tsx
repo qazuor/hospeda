@@ -272,6 +272,39 @@ describe('CompareBar — thumbnails and removal', () => {
     });
 });
 
+describe('CompareBar — thumbnail preset (HOS-881)', () => {
+    it("re-applies the 'thumbnail' preset (200x200) over whatever preset the stored URL already carries", () => {
+        setItems([
+            {
+                id: 'a',
+                name: 'Cabaña A',
+                // Simulates a URL saved by `DetailCompareButton` with the accommodation
+                // detail page's `og` preset (1200x630, HOS-881) baked in — the wrong
+                // size for this 48px thumbnail cell.
+                thumbnailUrl:
+                    'https://res.cloudinary.com/demo/image/upload/w_1200,h_630,c_fill,q_auto,f_auto,dpr_auto/v1/hotel.jpg'
+            }
+        ]);
+
+        render(<CompareBar locale="es" />);
+
+        const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
+        // Anchored on the concrete transform tokens, not a lax `toContain` that
+        // would also pass with the baked-in preset left untouched.
+        expect(src).toContain('w_200,h_200,c_thumb,g_auto');
+        expect(src).not.toContain('w_1200,h_630');
+    });
+
+    it('leaves a non-Cloudinary thumbnailUrl unchanged', () => {
+        setItems([{ id: 'a', name: 'Cabaña A', thumbnailUrl: 'https://img/a.jpg' }]);
+
+        render(<CompareBar locale="es" />);
+
+        const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
+        expect(src).toBe('https://img/a.jpg');
+    });
+});
+
 describe('CompareBar — mobile z-index (HOS-85 post-review fix)', () => {
     // The CSS module is mocked (proxy of class names) above, so the z-index
     // value itself is asserted via source text — the project's documented
