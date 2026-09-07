@@ -359,6 +359,35 @@ describe('getMediaUrl', () => {
         });
     });
 
+    // HOS-881 B-1: `getMediaUrl` detects Cloudinary with a plain
+    // `.includes('res.cloudinary.com')`, which also matches a Cloudinary URL
+    // that is itself percent-encoded inside ANOTHER url's query string (e.g.
+    // Astro's own `/_image/?href=<encoded>&...` endpoint) — `%2F` hides the
+    // slashes but the literal hostname text survives encoding untouched.
+    // That URL has no real `/upload/` segment, so `uploadIdx` was `-1` at the
+    // final splice with no guard for it, corrupting the URL (measured before
+    // the fix: `/_imagew_200,h_200,.../?href=...`, losing the leading slash
+    // Cloudinary needs and mangling the `href` query param). This is a
+    // regression a real consumer hit:
+    // `apps/web/src/components/shared/compare/CompareBar.client.tsx`'s
+    // thumbnail re-processing, fed a `thumbnailUrl` written by
+    // `AccommodationsListingMap.client.tsx` via this exact endpoint shape.
+    describe('HOS-881 B-1: false-positive Cloudinary detection on an encoded URL', () => {
+        const encodedInsideImageEndpoint =
+            '/_image/?href=https%3A%2F%2Fres.cloudinary.com%2Fhospeda%2Fimage%2Fupload%2Fv1%2Fhotel.jpg&w=300&f=webp';
+
+        it('returns the /_image/ endpoint URL unchanged instead of splicing a transform into it', () => {
+            const result = getMediaUrl(encodedInsideImageEndpoint, { preset: 'thumbnail' });
+            expect(result).toBe(encodedInsideImageEndpoint);
+        });
+
+        it('never produces the corrupted `/_image<preset>//` shape', () => {
+            const result = getMediaUrl(encodedInsideImageEndpoint, { preset: 'thumbnail' });
+            expect(result).not.toContain('/_imagew_200');
+            expect(result.startsWith('/_image/?href=')).toBe(true);
+        });
+    });
+
     // GAP-078-212: HTTP (non-HTTPS) Cloudinary URL handling.
     // Documents current behavior: `getMediaUrl` is a pure string transformer
     // that detects the Cloudinary host via `url.includes('res.cloudinary.com')`,

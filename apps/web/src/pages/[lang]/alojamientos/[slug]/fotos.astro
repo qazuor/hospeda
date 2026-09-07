@@ -19,7 +19,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import type { MediaAttribution } from '@/lib/media';
 import { getYoutubePosterUrl, resolveVideoEmbed } from '@/lib/video-embed';
-import { getMediaUrl } from '@repo/media';
+import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
 
 export const prerender = false;
 
@@ -70,14 +70,29 @@ const galleryItems: GalleryItem[] = [];
 
 // Featured image first
 if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')) {
-    const featuredSrc = accommodation.featuredImage;
+    // HOS-881 follow-up: `accommodation.featuredImage` already carries the
+    // detail page's `og` preset (1200x630, a FIXED center crop — `og` is the
+    // only preset in the repo without `g_auto`) baked in by
+    // `toAccommodationDetailPageProps`. Strip it once here rather than at
+    // each field below:
+    // - `src`/`thumb` feed the GLightbox full-size view (its own JSDoc says
+    //   "large/uncropped" — see `GalleryItem.thumb` above), so they need the
+    //   bare photo. A fixed 1200x630 (1.905:1) crop is the WRONG aspect
+    //   ratio for a portrait photo regardless of size — real content loss,
+    //   not just a byte-size regression.
+    // - `thumbGrid` needs its OWN `galleryHalf` (4:3) crop applied to the
+    //   same bare photo. `getMediaUrl` no-ops on a URL that already has a
+    //   transform, so without stripping first this cell would keep serving
+    //   the 1200x630 asset inside a 4:3 box — 6.3x the pixels on a mobile
+    //   grid cell (~360x270 CSS px).
+    const featuredBareUrl = stripCloudinaryTransform(accommodation.featuredImage);
     galleryItems.push({
         type: 'image',
-        src: featuredSrc,
-        thumb: featuredSrc,
+        src: featuredBareUrl,
+        thumb: featuredBareUrl,
         // Apply galleryHalf preset for the grid cell thumbnail (4:3, c_fill, 640px).
         // Non-Cloudinary URLs pass through unchanged.
-        thumbGrid: getMediaUrl(featuredSrc, { preset: 'galleryHalf' }),
+        thumbGrid: getMediaUrl(featuredBareUrl, { preset: 'galleryHalf' }),
         // H-125: the owner's alt text wins over the listing name.
         alt: accommodation.featuredImageAlt ?? accommodation.name,
         attribution: accommodation.featuredImageAttribution
@@ -130,10 +145,15 @@ for (const entry of accommodation.media.videos) {
     // @/lib/video-embed). Vimeo and Dailymotion fall back to the accommodation's
     // featured image, same as this page's pre-existing behavior for a video
     // whose poster could not be derived.
+    // HOS-881 follow-up: the featured-image fallback carries the detail
+    // page's baked-in `og` preset — strip it here too, same reasoning as the
+    // featured-image block above, so `thumbGrid` below re-crops the bare
+    // photo to `galleryHalf` instead of stacking a 4:3 crop on top of a
+    // 1200x630 one.
     const posterUrl =
         resolved.provider === 'youtube'
             ? getYoutubePosterUrl({ videoId: resolved.videoId })
-            : accommodation.featuredImage;
+            : stripCloudinaryTransform(accommodation.featuredImage);
 
     galleryItems.push({
         type: 'video',

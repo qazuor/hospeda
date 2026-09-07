@@ -1106,6 +1106,29 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.price?.currency).toBe('ARS');
         });
     });
+
+    // --- Featured image preset (HOS-881) ---
+
+    describe('featuredImage preset (HOS-881)', () => {
+        it("applies the 'og' preset (1200x630), not the extractor's 'card' default (400x300)", () => {
+            const result = toAccommodationDetailPageProps({
+                item: {
+                    ...makeFullItem(),
+                    media: {
+                        ...(makeFullItem().media as Record<string, unknown>),
+                        featuredImage: {
+                            url: 'https://res.cloudinary.com/demo/image/upload/v1/hotel.jpg'
+                        }
+                    }
+                }
+            });
+
+            // Anchored on the concrete transform tokens — a lax `toContain`
+            // would also pass for the 'card' preset this replaces.
+            expect(result.featuredImage).toContain('w_1200,h_630');
+            expect(result.featuredImage).not.toContain('w_400,h_300');
+        });
+    });
 });
 
 describe('deriveCityFields integration (SPEC-095)', () => {

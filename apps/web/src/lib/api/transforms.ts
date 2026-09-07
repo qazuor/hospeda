@@ -942,8 +942,32 @@ export function toAccommodationDetailPageProps({
     // H-125: the rich shape carries the cover photo's author-written alt text.
     // The URL-only wrapper drops it, which is why every cover fell back to the
     // listing name.
+    // HOS-881: this URL feeds the JSON-LD `image` field directly
+    // (`LodgingBusinessJsonLd` on the detail page) AND, indirectly, the
+    // `og:image` meta tag. The indirect path matters for tracing this: the
+    // detail page passes it as `ogImage` to `SEOHead.astro`, which folds it
+    // into a `/api/og/?...&image=<this-url>&...` endpoint URL (NOT a
+    // `<meta>` pointing straight at Cloudinary — see `buildOgImagePath` in
+    // `apps/web/src/lib/og-template.ts`), and that endpoint's Satori template
+    // renders the photo full-bleed at a hard 1200x630 with `object-fit:
+    // cover` (`og-template.ts` around the `img(image, {width:1200,
+    // height:630, objectFit:'cover'})` node). A 400x300 (`card`) source fed
+    // into that meant a 3x upscale on every share preview — hence `og`, not
+    // `card`.
+    //
+    // Three OTHER call sites read this same field and strip the transform
+    // baked in here before re-applying their own preset, so raising it does
+    // not regress their byte size: `ImageGallery.client.tsx`'s featured
+    // cell, `CompareBar.client.tsx`'s thumbnail (both via
+    // `stripCloudinaryTransform` + `getMediaUrl`), and
+    // `alojamientos/[slug]/fotos.astro`'s featured cell + video-poster
+    // fallback (HOS-881 M-1 — this one did NOT strip until this same
+    // change; a stale claim of "the other consumers are safe" is exactly
+    // what let it go unnoticed, so if a future edit adds a fourth
+    // consumer, verify it strips too instead of trusting this comment).
     const featuredImage = extractFeaturedImage(item, {
-        fallback: '/assets/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg',
+        preset: 'og'
     });
 
     return {
