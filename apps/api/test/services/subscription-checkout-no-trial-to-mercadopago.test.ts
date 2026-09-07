@@ -375,11 +375,25 @@ function trialWindowDays(trialDays: number | undefined): number | null {
  * same promise by writing hard NULLs
  * (`pending-provider-subscription-create.ts`); this branch has to make it by
  * stating the zero, since omission inherits the price's 30.
+ *
+ * TWO assertions, and the first is the load-bearing one. "No window" alone is
+ * satisfied by a branch that says nothing about trials whenever the price it
+ * resolved happens to carry none — measured: deleting `trialDays: 0` from the
+ * ANNUAL branch left this suite green, because annual prices carry no trial
+ * today. That is a true statement about today's data and a useless one about
+ * the code, since the defect is the INHERITANCE and a `trial_days` loaded onto
+ * an annual row tomorrow would switch it on with no diff anywhere. So the
+ * checkout must STATE its own trial length; relying on the price's is the bug,
+ * whatever the price currently says.
  */
 function expectNoPhantomTrialWindow(
     body: Record<string, unknown>,
     price: { readonly trialDays?: number }
 ): void {
+    // 1. The checkout states its own length — it never leaves the answer to
+    //    whatever `billing_prices.trial_days` happens to hold.
+    expect(body.trialDays).toBe(0);
+    // 2. ...and the window that results is empty, on this price and any other.
     expect(trialWindowDays(inheritedTrialDays(body, price))).toBeNull();
 }
 
