@@ -246,6 +246,29 @@ describe('formatDate', () => {
         });
     });
 
+    describe('when given a short locale code (HOS-950 regression)', () => {
+        it('should resolve "es" to es-AR internally and match formatDate with es-AR directly', () => {
+            const shortResult = formatDate({ date: referenceDate, locale: 'es' });
+            const fullResult = formatDate({ date: referenceDate, locale: 'es-AR' });
+
+            expect(shortResult).toBe(fullResult);
+        });
+
+        it('should resolve "en" to en-US internally and match formatDate with en-US directly', () => {
+            const shortResult = formatDate({ date: referenceDate, locale: 'en' });
+            const fullResult = formatDate({ date: referenceDate, locale: 'en-US' });
+
+            expect(shortResult).toBe(fullResult);
+        });
+
+        it('should resolve "pt" to pt-BR internally and match formatDate with pt-BR directly', () => {
+            const shortResult = formatDate({ date: referenceDate, locale: 'pt' });
+            const fullResult = formatDate({ date: referenceDate, locale: 'pt-BR' });
+
+            expect(shortResult).toBe(fullResult);
+        });
+    });
+
     describe('edge cases', () => {
         it('should throw TypeError for an invalid Date object', () => {
             // Arrange
@@ -388,6 +411,22 @@ describe('formatNumber', () => {
             expect(result).toBe('1,235');
         });
     });
+
+    describe('when given a short locale code (HOS-950 regression)', () => {
+        it('should resolve "es" to es-AR internally and match formatNumber with es-AR directly', () => {
+            const shortResult = formatNumber({ value: 1_234_567.89, locale: 'es' });
+            const fullResult = formatNumber({ value: 1_234_567.89, locale: 'es-AR' });
+
+            expect(shortResult).toBe(fullResult);
+        });
+
+        it('should resolve "pt" to pt-BR internally and match formatNumber with pt-BR directly', () => {
+            const shortResult = formatNumber({ value: 1_234_567.89, locale: 'pt' });
+            const fullResult = formatNumber({ value: 1_234_567.89, locale: 'pt-BR' });
+
+            expect(shortResult).toBe(fullResult);
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -427,10 +466,15 @@ describe('formatCurrency', () => {
             expect(result).toContain('R$');
         });
 
-        it('should default to ARS for two-letter locale es', () => {
+        it('should default to ARS for two-letter locale es, formatted as es-AR (not generic Spanish)', () => {
+            // Regression guard: a locale of 'es' must resolve to 'es-AR' for
+            // Intl formatting, not the generic/European 'es' locale. Assert the
+            // EXACT string -- a loose toContain('100') previously passed even
+            // though 'es' produced "100,00 ARS" (wrong symbol placement, no
+            // ARS group separator applied) instead of "$ 100,00".
             const result = formatCurrency({ value: 100, locale: 'es' });
 
-            expect(result).toContain('100');
+            expect(result).toBe('$\u00A0100,00');
         });
 
         it('should default to USD for two-letter locale en', () => {
@@ -443,6 +487,58 @@ describe('formatCurrency', () => {
             const result = formatCurrency({ value: 100, locale: 'pt' });
 
             expect(result).toContain('R$');
+        });
+    });
+
+    describe('HOS-950 regression: thousand separator with short locale "es"', () => {
+        // Witness values from the reported bug: in the same admin table column,
+        // 4-digit amounts (5000) rendered without a thousands separator while
+        // 5-digit amounts (35000) rendered with one -- because the locale
+        // resolved to generic 'es' (European grouping rules) instead of
+        // 'es-AR'. Both must now render identically shaped: "$ <grouped>,00".
+        it('should format 5000 as "$ 5.000,00" (not "5000,00 ARS")', () => {
+            const result = formatCurrency({ value: 5000, locale: 'es' });
+
+            expect(result).toBe('$\u00A05.000,00');
+        });
+
+        it('should format 35000 as "$ 35.000,00"', () => {
+            const result = formatCurrency({ value: 35000, locale: 'es' });
+
+            expect(result).toBe('$\u00A035.000,00');
+        });
+
+        it('should produce the identical string for "es" and "es-AR" for both witness values', () => {
+            expect(formatCurrency({ value: 5000, locale: 'es' })).toBe(
+                formatCurrency({ value: 5000, locale: 'es-AR' })
+            );
+            expect(formatCurrency({ value: 35000, locale: 'es' })).toBe(
+                formatCurrency({ value: 35000, locale: 'es-AR' })
+            );
+        });
+    });
+
+    describe('idempotency: passing an already-full BCP 47 locale', () => {
+        it('should produce the same output for "es-AR" as for "es"', () => {
+            const viaShort = formatCurrency({ value: 5000, locale: 'es' });
+            const viaFull = formatCurrency({ value: 5000, locale: 'es-AR' });
+
+            expect(viaFull).toBe(viaShort);
+            expect(viaFull).toBe('$\u00A05.000,00');
+        });
+
+        it('should produce the same output for "en-US" as for "en"', () => {
+            const viaShort = formatCurrency({ value: 1500, locale: 'en' });
+            const viaFull = formatCurrency({ value: 1500, locale: 'en-US' });
+
+            expect(viaFull).toBe(viaShort);
+        });
+
+        it('should produce the same output for "pt-BR" as for "pt"', () => {
+            const viaShort = formatCurrency({ value: 1500, locale: 'pt' });
+            const viaFull = formatCurrency({ value: 1500, locale: 'pt-BR' });
+
+            expect(viaFull).toBe(viaShort);
         });
     });
 
