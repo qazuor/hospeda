@@ -34,7 +34,8 @@
  */
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { COLLECTION_CREATED_EVENT } from '../../../src/components/account/collection-created-event';
 import { UserFavoritesList } from '../../../src/components/account/UserFavoritesList.client';
 import { addToast } from '../../../src/store/toast-store';
 
@@ -819,6 +820,56 @@ describe('UserFavoritesList', () => {
         await waitFor(() => {
             expect(screen.getByText(/Aún no tenés colecciones/i)).toBeInTheDocument();
         });
+    });
+
+    // ── HOS-999: collection-created broadcast ──────────────────────────────────
+
+    it('refetches "Mis colecciones" after a hospeda:collection-created event', async () => {
+        let collectionsCallCount = 0;
+        globalThis.fetch = makeRoutedFetchMock({
+            collectionsResponse: () => {
+                collectionsCallCount += 1;
+                return collectionsCallCount === 1
+                    ? makeEmptyCollectionsResponse()
+                    : makeCollectionsResponse([COLLECTION_1], 1);
+            }
+        });
+        renderList();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Aún no tenés colecciones/i)).toBeInTheDocument();
+        });
+
+        fireEvent(
+            window,
+            new CustomEvent(COLLECTION_CREATED_EVENT, {
+                detail: { id: 'col-uuid-1', name: 'Viajes soñados' }
+            })
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Viajes soñados')).toBeInTheDocument();
+        });
+        expect(collectionsCallCount).toBeGreaterThanOrEqual(2);
+    });
+
+    it('removes its hospeda:collection-created listener on unmount', async () => {
+        globalThis.fetch = makeRoutedFetchMock();
+        const { unmount } = renderList();
+        await waitFor(() => {
+            expect(screen.getByText('Mis colecciones')).toBeInTheDocument();
+        });
+
+        const callsBefore = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+        unmount();
+
+        fireEvent(
+            window,
+            new CustomEvent(COLLECTION_CREATED_EVENT, { detail: { id: 'col-x', name: 'X' } })
+        );
+
+        // No new fetch should fire for an unmounted component's listener.
+        expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore);
     });
 
     // ── HOS-899: collections entitlement gate ──────────────────────────────────
