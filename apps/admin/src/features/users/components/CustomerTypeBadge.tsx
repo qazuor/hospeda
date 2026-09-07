@@ -14,7 +14,7 @@ import type { User } from '../schemas/users.schemas';
 
 function resolveBadgeVariant(slug: string | null): 'default' | 'secondary' | 'outline' | 'success' {
     if (slug === 'tourist-vip' || slug === 'owner-premium') return 'default';
-    if (slug === 'tourist-plus' || slug === 'owner-pro') return 'success';
+    if (slug === 'owner-pro') return 'success';
     if (slug === 'tourist-free' || slug === 'owner-basico') return 'secondary';
     return 'outline';
 }
@@ -24,7 +24,7 @@ function resolveBadgeClass(slug: string | null): string {
         return '';
     }
 
-    if (slug === 'tourist-plus' || slug === 'owner-pro') {
+    if (slug === 'owner-pro') {
         return '';
     }
 
