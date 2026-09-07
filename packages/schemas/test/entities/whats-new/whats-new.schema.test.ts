@@ -261,6 +261,17 @@ describe('WhatsNewEntrySchema', () => {
             // Assert
             expect(result.success).toBe(false);
         });
+
+        it('should reject CLIENT_MANAGER as an audience role (owner decision 2026-09-07, not a technical exclusion)', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, roles: ['CLIENT_MANAGER'] };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
     });
 
     describe('when roles targets a role added by HOS-964', () => {
@@ -286,9 +297,9 @@ describe('WhatsNewEntrySchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept SPONSOR and CLIENT_MANAGER', () => {
+        it('should accept SPONSOR', () => {
             // Arrange
-            const input = { ...VALID_ENTRY, roles: ['SPONSOR', 'CLIENT_MANAGER'] };
+            const input = { ...VALID_ENTRY, roles: ['SPONSOR'] };
 
             // Act
             const result = WhatsNewEntrySchema.safeParse(input);

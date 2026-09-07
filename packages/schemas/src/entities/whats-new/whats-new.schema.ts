@@ -43,8 +43,8 @@ export type WhatsNewEntryI18n = z.infer<typeof WhatsNewEntryI18nSchema>;
  *
  * - **Included** — every role that identifies a real person who can hold an
  *   authenticated session and might reasonably be the intended reader of a
- *   curated announcement: `SUPER_ADMIN`, `ADMIN`, `CLIENT_MANAGER`, `EDITOR`,
- *   `HOST`, `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER`.
+ *   curated announcement: `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `HOST`,
+ *   `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER`.
  * - **`COMMERCE_OWNER` excluded** — RETIRING (HOS-1077 release 2). It is being
  *   replaced by the per-vertical `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`
  *   (already included above), so a NEW targeting option should never be added
@@ -56,13 +56,19 @@ export type WhatsNewEntryI18n = z.infer<typeof WhatsNewEntryI18nSchema>;
  * - **`SYSTEM` excluded** — a reserved non-loginable account used as
  *   `assignedById` for automated tag assignments (seeds, cron jobs, webhooks).
  *   It cannot authenticate, so it can never be the actor behind a GET request.
+ * - **`CLIENT_MANAGER` excluded** — owner decision (2026-09-07), NOT a
+ *   technical exclusion like the three above. It is a staff role that COULD
+ *   reasonably receive targeted announcements (it can authenticate and hold a
+ *   session like any other included role here), but the owner wants this enum
+ *   to grow only with what was explicitly requested, not with every role that
+ *   could plausibly fit. Do not "fix" this by re-adding it as an oversight —
+ *   it was considered and deliberately left out.
  */
 export const WhatsNewAudienceRoleSchema = z.enum([
     'HOST',
     'EDITOR',
     'ADMIN',
     'SUPER_ADMIN',
-    'CLIENT_MANAGER',
     'GASTRONOMY_OWNER',
     'EXPERIENCE_OWNER',
     'SPONSOR',

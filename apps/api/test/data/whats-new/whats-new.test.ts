@@ -191,7 +191,6 @@ describe('whats-new data file', () => {
                 'EDITOR',
                 'ADMIN',
                 'SUPER_ADMIN',
-                'CLIENT_MANAGER',
                 'GASTRONOMY_OWNER',
                 'EXPERIENCE_OWNER',
                 'SPONSOR',
