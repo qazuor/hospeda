@@ -62,6 +62,16 @@ describe('TEST_USERS matrix', () => {
         it('should NOT own a listing at cap (cupo disponible)', () => {
             expect(user.ownsGastronomyAtCap).toBeFalsy();
         });
+
+        // HOS-964 follow-up (2026-09-07 smoke finding): production's
+        // `createForOwner` grants GASTRONOMY_OWNER alongside the legacy
+        // COMMERCE_OWNER in the same transaction. Without this extra role,
+        // this fixture never matched a What's New (or any other) audience
+        // gated on GASTRONOMY_OWNER, because COMMERCE_OWNER is deliberately
+        // excluded from that enum (it is retiring).
+        it('should ALSO hold GASTRONOMY_OWNER, matching what createForOwner grants in production', () => {
+            expect(user.extraRoles).toContain(RoleEnum.GASTRONOMY_OWNER);
+        });
     });
 
     describe('commerce-experience@local.test (under cap, HOS-694)', () => {
@@ -74,6 +84,12 @@ describe('TEST_USERS matrix', () => {
 
         it('should stamp the subscription with the experience product domain', () => {
             expect(user.subscriptionProductDomain).toBe('experience');
+        });
+
+        // HOS-964 follow-up (2026-09-07 smoke finding) — see the gastronomy
+        // fixture's equivalent test above for the full rationale.
+        it('should ALSO hold EXPERIENCE_OWNER, matching what createForOwner grants in production', () => {
+            expect(user.extraRoles).toContain(RoleEnum.EXPERIENCE_OWNER);
         });
     });
 
@@ -88,6 +104,12 @@ describe('TEST_USERS matrix', () => {
 
         it('should be flagged to own a listing at its cap', () => {
             expect(user.ownsGastronomyAtCap).toBe(true);
+        });
+
+        // HOS-964 follow-up (2026-09-07 smoke finding) — see the gastronomy
+        // fixture's equivalent test above for the full rationale.
+        it('should ALSO hold GASTRONOMY_OWNER, matching what createForOwner grants in production', () => {
+            expect(user.extraRoles).toContain(RoleEnum.GASTRONOMY_OWNER);
         });
     });
 
