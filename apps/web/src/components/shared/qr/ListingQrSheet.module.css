@@ -1,0 +1,70 @@
+/**
+ * ListingQrSheet.module.css — the printable QR sheet download panel (HOS-982).
+ *
+ * Plain CSS modules per the web app's conventions (Tailwind is admin-only). The
+ * panel is rendered inside two very different cards — `PropertyCard.astro`'s
+ * action row and `CommerceListingActions`' published branch — so it owns no
+ * background, border or radius of its own: it inherits the card it sits in and
+ * only lays its own three rows out.
+ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+
+.hint {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    line-height: 1.4;
+    color: var(--core-muted-foreground);
+}
+
+/*
+ * `LoadingButton` owns only the busy-state layout (its own module says so) and
+ * leaves the theming to the caller — so the visual button lives here. Matches
+ * the compact secondary action both host cards already use around it.
+ */
+.button {
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 0.5rem);
+    background: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    cursor: pointer;
+    transition:
+        background-color 150ms ease-out,
+        opacity 150ms ease-out;
+}
+
+.button:not(:disabled):hover {
+    background-color: var(--surface-warm, rgba(0, 0, 0, 0.04));
+}
+
+.button:disabled {
+    opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .button {
+        transition: none;
+    }
+}
+
+.ready {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--success, #15803d);
+}
+
+.error {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--destructive, #b91c1c);
+}
