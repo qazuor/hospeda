@@ -5,7 +5,11 @@ import { randomUUID } from 'node:crypto';
  *
  * Seeds an accommodation with real coordinates plus a handful of points of
  * interest at known distances, then asserts:
- *  - nearest-first ordering with a numeric `distanceKm` per item (AC-1/AC-6)
+ *  - relevance ordering with a numeric `distanceKm` per item (AC-1/AC-6).
+ *    HOS-327 replaced the fixed 5km circle + distance ordering with a per-POI
+ *    elastic radius (`5km x displayWeight / 50`, clamped to [2, 15], x1.3 when
+ *    featured) and a `displayWeight / (1 + km)` score, so this file also
+ *    asserts both directions of that change against a real database.
  *  - `{ items: [] }` (never a 404) for a coordinate-less accommodation (AC-2)
  *  - `{ items: [] }` (never a 404) for an unknown slug (AC-2/route contract)
  *  - `{ items: [] }` (never a leak) for a DRAFT accommodation with coords +
@@ -20,12 +24,14 @@ import { randomUUID } from 'node:crypto';
  * accommodation's OBFUSCATED `approximateLocation` (SPEC-097), not its real
  * coordinate — see `AccommodationService.getNearbyPois`. Distances therefore
  * carry a small (<=~141m) deterministic-per-accommodation offset from the
- * true distance. The near/mid/far POI fixtures below use wide margins
- * (60m / 1.9km / 22km, against a 0.5km narrow-radius test and the 5km
- * default / 20km max radii) specifically so ordering/inclusion assertions
- * stay correct regardless of that offset — assertions here intentionally
- * check ordering, membership, and `typeof distanceKm === 'number'`, never an
- * exact distance value tied to the real coordinate.
+ * true distance. Every POI fixture below therefore sits far from the boundary
+ * it is testing: 60m / 1.9km / 22km against the 0.5km narrow-radius test and
+ * the 20km ceiling, and the HOS-327 pair at ~9km / ~3km against elastic radii
+ * of 10km / 2.5km. Every margin is at least twice the obfuscation, so
+ * ordering/inclusion assertions stay correct regardless of the offset —
+ * assertions here intentionally check ordering, membership, and
+ * `typeof distanceKm === 'number'`, never an exact distance value tied to the
+ * real coordinate.
  *
  * Uses testDb.setup()/clean()/teardown() + direct `getDb()` inserts, mirroring
  * `test/integration/destination/detail-includes-points-of-interest.test.ts`.
@@ -61,6 +67,10 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
     let poiMidSlug: string;
     let poiFarSlug: string;
     let poiInactiveSlug: string;
+    // HOS-327 elastic-radius pair: a heavy POI far outside the old fixed 5km
+    // circle, and a weak POI comfortably inside it.
+    let poiHeavyFarSlug: string;
+    let poiWeakMidSlug: string;
 
     beforeAll(async () => {
         await testDb.setup();
@@ -176,6 +186,42 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             lifecycleState: 'ACTIVE'
         } as typeof pointsOfInterest.$inferInsert);
 
+        // HOS-327: ~9km away but displayWeight 100 — its elastic radius is
+        // 10km, so it MUST appear even though the pre-HOS-327 fixed 5km circle
+        // excluded it. (The search center is the 150m-obfuscated coordinate,
+        // so the real distance lands in 8.85-9.15km; the margin to 10km is
+        // an order of magnitude larger than the obfuscation.)
+        poiHeavyFarSlug = `hos327-poi-heavy-far-${ts}`;
+        await db.insert(pointsOfInterest).values({
+            slug: poiHeavyFarSlug,
+            lat: -32.563516,
+            long: -58.24,
+            type: 'MUSEUM',
+            description: 'Heavy far seeded POI — earns a 10km elastic radius.',
+            icon: 'bank',
+            isFeatured: false,
+            isBuiltin: false,
+            displayWeight: 100,
+            lifecycleState: 'ACTIVE'
+        } as typeof pointsOfInterest.$inferInsert);
+
+        // HOS-327: ~3km away but displayWeight 25 — its elastic radius is only
+        // 2.5km, so it MUST NOT appear even though the pre-HOS-327 fixed 5km
+        // circle included it.
+        poiWeakMidSlug = `hos327-poi-weak-mid-${ts}`;
+        await db.insert(pointsOfInterest).values({
+            slug: poiWeakMidSlug,
+            lat: -32.509557,
+            long: -58.24,
+            type: 'OTHER',
+            description: 'Weak mid-distance seeded POI — earns only 2.5km.',
+            icon: 'pin',
+            isFeatured: false,
+            isBuiltin: false,
+            displayWeight: 25,
+            lifecycleState: 'ACTIVE'
+        } as typeof pointsOfInterest.$inferInsert);
+
         // Same coordinates as the "near" POI, but not ACTIVE — must never appear.
         poiInactiveSlug = `hos145-t005-poi-inactive-${ts}`;
         await db.insert(pointsOfInterest).values({
@@ -197,7 +243,7 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
         await testDb.teardown();
     });
 
-    it('returns nearby ACTIVE POIs nearest-first with a numeric distanceKm', async () => {
+    it('returns nearby ACTIVE POIs ranked by relevance with a numeric distanceKm', async () => {
         const res = await app.request(`${base}/${slugWithCoords}/nearby-pois`, {
             headers: { 'user-agent': 'vitest', Accept: 'application/json' }
         });
@@ -212,10 +258,11 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
         const slugs = items.map((item) => item.slug);
         expect(slugs).toContain(poiNearSlug);
         expect(slugs).toContain(poiMidSlug);
-        // Outside the default 5km radius / inactive — must never appear.
+        // Beyond every possible elastic radius / inactive — must never appear.
         expect(slugs).not.toContain(poiFarSlug);
         expect(slugs).not.toContain(poiInactiveSlug);
 
+        // Score order: near = 50/1.06 ~ 47, mid = 40/2.9 ~ 14.
         const nearIndex = slugs.indexOf(poiNearSlug);
         const midIndex = slugs.indexOf(poiMidSlug);
         expect(nearIndex).toBeLessThan(midIndex);
@@ -224,6 +271,44 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             expect(typeof item.distanceKm).toBe('number');
             expect(item.distanceKm as number).toBeGreaterThanOrEqual(0);
         }
+    });
+
+    it('HOS-327: the radius is elastic per POI, not a fixed 5km circle', async () => {
+        const res = await app.request(`${base}/${slugWithCoords}/nearby-pois`, {
+            headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+        });
+
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        const items = body.data.items as Array<Record<string, unknown>>;
+        const slugs = items.map((item) => item.slug);
+
+        // ~9km away, weight 100 -> 10km elastic radius. The pre-HOS-327 fixed
+        // 5km circle dropped it; it is exactly the kind of POI the section
+        // exists to show.
+        expect(slugs).toContain(poiHeavyFarSlug);
+        const heavy = items.find((item) => item.slug === poiHeavyFarSlug);
+        expect(heavy?.distanceKm as number).toBeGreaterThan(5);
+
+        // ~3km away, weight 25 -> 2.5km elastic radius. The pre-HOS-327 fixed
+        // 5km circle kept it.
+        expect(slugs).not.toContain(poiWeakMidSlug);
+    });
+
+    it('HOS-327: an explicit radius acts as a CEILING on the elastic radius', async () => {
+        const res = await app.request(`${base}/${slugWithCoords}/nearby-pois?radius=5`, {
+            headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+        });
+
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        const slugs = (body.data.items as Array<Record<string, unknown>>).map((item) => item.slug);
+
+        // The heavy POI's own radius is 10km, but the caller capped at 5km.
+        expect(slugs).not.toContain(poiHeavyFarSlug);
+        // The cap never WIDENS: the weak POI's own 2.5km still binds at 3km.
+        expect(slugs).not.toContain(poiWeakMidSlug);
+        expect(slugs).toContain(poiNearSlug);
     });
 
     it('returns { items: [] } for an accommodation without coordinates', async () => {
