@@ -25,6 +25,7 @@ import type { CommerceTrialVerdictKind } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { PayerEmailConfirmDialog } from '@/components/billing/PayerEmailConfirmDialog.client';
+import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import { Dialog } from '@/components/shared/ui/Dialog.client';
 import { useSession } from '@/lib/auth-client';
 import { storePendingCheckoutSubId } from '@/lib/billing/checkout-pending';
@@ -380,6 +381,27 @@ export function CommerceListingActions({
                     listingId={listing.id}
                     slug={listing.slug}
                     locale={locale}
+                />
+                {/*
+                 * HOS-982. Sibling of the brochure and NOT the same document: the
+                 * brochure is handed to a person and carries the photo, the hours
+                 * and the contact block; this is a code taped to a door, meant to
+                 * be scanned from across a room. It also has NO entitlement gate
+                 * (owner decision) — a QR on a door brings people to the platform,
+                 * so restricting it would cost us rather than the subscriber.
+                 *
+                 * `isPublished` is passed rather than assumed even though this
+                 * branch only renders for a published listing: the component's
+                 * unpublished copy must come from the card's own state, never from
+                 * the route's 404, which is deliberately identical for "not
+                 * yours", "does not exist" and "not published".
+                 */}
+                <ListingQrSheet
+                    vertical={listing.vertical}
+                    listingId={listing.id}
+                    slug={listing.slug}
+                    locale={locale}
+                    isPublished={listing.isPublic}
                 />
                 {/*
                  * HOS-1057. Experiences only — a restaurant has nothing to

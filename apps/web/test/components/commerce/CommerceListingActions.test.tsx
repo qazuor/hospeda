@@ -108,9 +108,43 @@ describe('CommerceListingActions', () => {
                 '/es/gastronomia/la-parrilla/'
             );
         });
+
+        /*
+         * HOS-982. The QR sheet rides in the published branch, next to the
+         * brochure and for the same reason the brochure is there: the sheet
+         * prints a code that resolves to the PUBLIC ficha, so a draft's code
+         * would be a permanent 404 on a piece of paper somebody taped to a door.
+         * The API enforces that rule itself; this pair only proves the card does
+         * not offer a download that could never work.
+         */
+        it('offers the printable QR sheet on a published listing', () => {
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ isPublic: true, completeness: null })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.getByTestId('listing-qr-sheet')).toBeInTheDocument();
+            expect(screen.getByTestId('listing-qr-sheet-download')).toBeInTheDocument();
+        });
     });
 
     describe('draft-incomplete state (AC-21)', () => {
+        it('does NOT offer the printable QR sheet — its code would resolve to a 404', () => {
+            render(
+                <CommerceListingActions
+                    listing={buildListing({
+                        completeness: { complete: false, missing: ['summary'] }
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.queryByTestId('listing-qr-sheet')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+        });
+
         it('renders the missing checklist and disables the publish button', () => {
             render(
                 <CommerceListingActions
