@@ -54,7 +54,7 @@ const CLIENT_LOCALE_HEADER = 'X-Client-Locale';
  *    once diagnosed). This is the actual root cause PlanPurchaseButton's
  *    suite hit; (1) above was a real but secondary risk fixed pre-emptively.
  */
-function readClientLocaleFromPath(): string | null {
+export function readClientLocaleFromPath(): string | null {
     if (typeof window === 'undefined') return null;
     const segment = window.location?.pathname?.split('/')[1];
     return segment && (SUPPORTED_LOCALES as readonly string[]).includes(segment) ? segment : null;
