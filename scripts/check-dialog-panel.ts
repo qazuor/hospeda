@@ -29,6 +29,24 @@
  * 5. It found a non-zero number of dialogs at all. A scan that silently matches
  *    nothing — wrong cwd, moved directory, a renamed extension — reports "no
  *    violations" in exactly the same words as a clean tree.
+ * 6. No CSS Module re-declares `max-height` / `max-block-size` / `overflow` /
+ *    `overflow-y` on a class that is applied to an element carrying
+ *    `dialog-panel` or `dialog-viewport`. Rules 1-5 only prove the marker is
+ *    present; this one proves it still does something. A module declaring
+ *    `max-height: 3000px` beside the shared class does not override it, it
+ *    RACES it at equal specificity — and a 3000px cap in a 640px window is no
+ *    cap at all, with every other assertion still green.
+ *
+ * ## Scope of rule 6, and why it does not block a legitimate `max-height`
+ *
+ * It never looks at a file, a directory, or a property name in isolation. It
+ * starts from the `className` expressions that actually carry a marker, reads
+ * which `styles.X` bindings those expressions use, resolves the module each
+ * binding was imported from, and inspects only the rules whose SUBJECT compound
+ * is that class. A `max-height` on a popover, a drawer, a thumbnail or a list —
+ * anywhere the mechanism is not applied — is never even read. Tuning through
+ * `--dialog-max-height` stays legal: the forbidden set is matched on exact
+ * property names, and a custom property is not one of them.
  *
  * ## Why it is anchored where it is
  *
@@ -41,7 +59,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { globSync } from 'glob';
 
@@ -73,9 +91,195 @@ const VIEWPORT_BUDGET: ReadonlyMap<string, number> = new Map([
     ['apps/web/src/components/shared/filters/filter-types/IconChipsFilter.tsx', 1]
 ]);
 
+/**
+ * Properties a CSS Module may NOT declare on an element that carries the shared
+ * mechanism. Each of these is the shared class's own declaration, and a module
+ * repeating it does not "override" anything predictable: a CSS Module class and
+ * a global class have identical specificity (0,1,0), so which one wins is
+ * decided by the order the bundler happens to emit them in.
+ *
+ * `overflow-x` is deliberately absent. It is a different longhand from
+ * `overflow-y` and the two combine rather than compete, so `overflow-x: hidden`
+ * beside the shared `overflow-y: auto` is a legitimate thing to write.
+ */
+const FORBIDDEN_ON_MARKED = new Set(['max-height', 'max-block-size', 'overflow', 'overflow-y']);
+
 /** Matches a class token exactly, so `dialog-panel-scroll` never counts as `dialog-panel`. */
 function hasClassToken(haystack: string, token: string): boolean {
     return new RegExp(`(?<![\\w-])${token}(?![\\w-])`).test(haystack);
+}
+
+/** Escapes a string for literal use inside a RegExp. */
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Reads a brace-balanced `{ ... }` expression starting at `open`, returning the
+ * index just past its closing brace.
+ */
+function matchBrace(source: string, open: number): number {
+    let depth = 0;
+    let quote: string | null = null;
+
+    for (let i = open; i < source.length; i += 1) {
+        const char = source[i];
+        if (quote !== null) {
+            if (char === '\\') i += 1;
+            else if (char === quote) quote = null;
+        } else if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+        } else if (char === '{') {
+            depth += 1;
+        } else if (char === '}') {
+            depth -= 1;
+            if (depth === 0) return i + 1;
+        }
+    }
+    return source.length;
+}
+
+/**
+ * Maps a component file's CSS-Module import bindings to their absolute paths,
+ * e.g. `styles` → `.../WhatsNewModal.module.css`.
+ *
+ * Resolved per file rather than assumed co-located, because `WhatsNewPanel`
+ * imports `./WhatsNewModal.module.css` and `RejectUsageDialog` imports its
+ * sibling `./BenefitUsagesPanel.module.css` — the two files this guard would
+ * have silently skipped if it had guessed the name from the component's.
+ */
+function resolveStyleImports(source: string, file: string): ReadonlyMap<string, string> {
+    const bindings = new Map<string, string>();
+    const importRe = /import\s+([A-Za-z_$][\w$]*)\s+from\s+['"]([^'"]+\.module\.css)['"]/g;
+    let match = importRe.exec(source);
+
+    while (match !== null) {
+        const [, binding, specifier] = match;
+        if (binding && specifier?.startsWith('.')) {
+            bindings.set(binding, resolve(dirname(file), specifier));
+        }
+        match = importRe.exec(source);
+    }
+    return bindings;
+}
+
+/**
+ * Every CSS-Module class applied to an element that carries `dialog-panel` or
+ * `dialog-viewport`, as `{ cssFile, className }` pairs.
+ *
+ * Scoped to those two markers on purpose. `dialog-panel-scroll` is excluded
+ * because `DialogBody` picks between `styles.bodyBare` and
+ * `cn(styles.body, 'dialog-panel-scroll')` inside one `className` expression:
+ * a text scan cannot tell which branch owns the marker, and `.bodyBare` is
+ * legitimately `overflow: hidden`. Flagging it would be a false positive on the
+ * shared primitive itself.
+ */
+function markedModuleClasses(
+    source: string,
+    file: string
+): readonly { readonly cssFile: string; readonly className: string }[] {
+    if (!hasClassToken(source, 'dialog-panel') && !hasClassToken(source, 'dialog-viewport')) {
+        return [];
+    }
+
+    const bindings = resolveStyleImports(source, file);
+    if (bindings.size === 0) return [];
+
+    const out: { cssFile: string; className: string }[] = [];
+    const attrRe = /className=\{/g;
+    let match = attrRe.exec(source);
+
+    while (match !== null) {
+        const open = source.indexOf('{', match.index);
+        const expression = source.slice(open, matchBrace(source, open));
+        attrRe.lastIndex = open + expression.length;
+
+        if (
+            hasClassToken(expression, 'dialog-panel') ||
+            hasClassToken(expression, 'dialog-viewport')
+        ) {
+            for (const [binding, cssFile] of bindings) {
+                const refRe = new RegExp(`\\b${escapeRegExp(binding)}\\.([A-Za-z_$][\\w$]*)`, 'g');
+                let ref = refRe.exec(expression);
+                while (ref !== null) {
+                    const className = ref[1];
+                    if (className !== undefined) out.push({ cssFile, className });
+                    ref = refRe.exec(expression);
+                }
+            }
+        }
+        match = attrRe.exec(source);
+    }
+
+    return out;
+}
+
+/** True when `className` appears in the SUBJECT compound of any of `selector`'s parts. */
+function selectorTargetsClass(selector: string, className: string): boolean {
+    const classRe = new RegExp(`\\.${escapeRegExp(className)}(?![\\w-])`);
+
+    for (const part of selector.split(',')) {
+        // Drop `:has(...)` / `:not(...)` arguments: `.overlay:has(.panel)` styles
+        // the overlay, not the panel, and must not be attributed to `.panel`.
+        const cleaned = part.replace(/\([^()]*\)/g, '');
+        const compounds = cleaned
+            .trim()
+            .split(/\s*[>+~]\s*|\s+/)
+            .filter(Boolean);
+        const subject = compounds.at(-1) ?? '';
+        if (classRe.test(subject)) return true;
+    }
+    return false;
+}
+
+/**
+ * Every declaration of a forbidden property in a rule whose subject compound
+ * includes `className`, with its 1-based line number.
+ *
+ * Walks the whole stylesheet, including rules nested inside `@media` — the
+ * MobileDrawer declares its entire panel inside `@media (max-width: 767px)`,
+ * so a scanner that only looked at top-level rules would report it clean.
+ */
+function forbiddenDeclarations(
+    css: string,
+    className: string
+): readonly { readonly property: string; readonly line: number; readonly text: string }[] {
+    const found: { property: string; line: number; text: string }[] = [];
+    const source = css.replace(/\/\*[\s\S]*?\*\//g, blank);
+    const openers: number[] = [];
+
+    for (let i = 0; i < source.length; i += 1) {
+        if (source[i] === '{') openers.push(i);
+    }
+
+    for (const open of openers) {
+        const preludeStart = Math.max(
+            source.lastIndexOf('{', open - 1),
+            source.lastIndexOf('}', open - 1),
+            source.lastIndexOf(';', open - 1)
+        );
+        const prelude = source.slice(preludeStart + 1, open).trim();
+        if (prelude.length === 0 || prelude.startsWith('@')) continue;
+        if (!selectorTargetsClass(prelude, className)) continue;
+
+        const body = source.slice(open + 1, matchBrace(source, open) - 1);
+        let cursor = open + 1;
+        for (const rawDecl of body.split(';')) {
+            const decl = rawDecl.trim();
+            const property = /^([-a-zA-Z]+)\s*:/.exec(decl)?.[1];
+            if (property !== undefined && FORBIDDEN_ON_MARKED.has(property)) {
+                const at = cursor + rawDecl.indexOf(decl);
+                found.push({
+                    property,
+                    line: source.slice(0, at).split('\n').length,
+                    text: decl.replace(/\s+/g, ' ')
+                });
+            }
+            cursor += rawDecl.length + 1;
+        }
+    }
+
+    return found;
 }
 
 /** Blanks a run of source to spaces, keeping newlines so line numbers survive. */
@@ -180,16 +384,24 @@ function main(): void {
         }
     }
 
-    // ── 1 + 2. Every <dialog> element carries a marker ──────────────────────
+    // ── 1 + 2 + 6. Element markers, viewport budget, competing declarations ──
     const files = globSync(['**/*.tsx', '**/*.astro'], { cwd: WEB_SRC, absolute: true }).sort();
     const viewportSeen = new Map<string, number>();
+    /** Every (css file, class) pair applied to a marked element — deduplicated. */
+    const markedPairs = new Map<string, { cssFile: string; className: string }>();
     let dialogCount = 0;
 
     for (const file of files) {
         const rel = relative(REPO_ROOT, file);
         const raw = readFileSync(file, 'utf8');
+        const stripped = stripComments(raw);
+
+        for (const pair of markedModuleClasses(stripped, file)) {
+            markedPairs.set(`${pair.cssFile}::${pair.className}`, pair);
+        }
+
         if (!raw.includes('<dialog')) continue;
-        const source = stripComments(raw);
+        const source = stripped;
 
         for (const { tag, line } of extractDialogOpenTags(source)) {
             dialogCount += 1;
@@ -242,12 +454,53 @@ function main(): void {
         }
     }
 
+    // ── 6. No module re-declares what the shared class declares ─────────────
+    const cssCache = new Map<string, string>();
+    for (const { cssFile, className } of markedPairs.values()) {
+        let css = cssCache.get(cssFile);
+        if (css === undefined) {
+            try {
+                css = readFileSync(cssFile, 'utf8');
+            } catch {
+                css = '';
+            }
+            cssCache.set(cssFile, css);
+        }
+
+        for (const { property, line, text } of forbiddenDeclarations(css, className)) {
+            errors.push(
+                `${relative(REPO_ROOT, cssFile)}:${line} — '.${className}' is applied to an element ` +
+                    `carrying 'dialog-panel'/'dialog-viewport'\n` +
+                    `  and declares '${property}' (\`${text}\`), which the shared class already ` +
+                    'declares.\n' +
+                    '  A CSS Module class and a global class have the SAME specificity, so this\n' +
+                    "  does not override the shared class — it races it, and the bundler's emit\n" +
+                    '  order decides. A cap that loses that race is not a cap.\n' +
+                    (property === 'max-height' || property === 'max-block-size'
+                        ? '  To give this one panel a different cap, set the custom property\n' +
+                          '  `--dialog-max-height` on it instead.'
+                        : '  If this panel keeps a fixed header and delegates scrolling to a child,\n' +
+                          "  mark that child with 'dialog-panel-scroll' rather than re-declaring\n" +
+                          '  overflow here.')
+            );
+        }
+    }
+
     // ── 5. The scan actually scanned something ──────────────────────────────
     if (dialogCount === 0) {
         errors.push(
             `No <dialog> element found anywhere under ${relative(REPO_ROOT, WEB_SRC)}.\n` +
                 '  The app has had them since well before this guard existed, so zero means\n' +
                 '  the scan is broken, not that the tree is clean.'
+        );
+    }
+
+    if (markedPairs.size === 0) {
+        errors.push(
+            'No CSS-Module class was found on any element carrying the shared markers.\n' +
+                '  Assertion 6 has nothing to check, so it would pass on any stylesheet\n' +
+                '  whatsoever. Zero means the className/import scan is broken, not that the\n' +
+                '  modules are clean.'
         );
     }
 
@@ -262,7 +515,8 @@ function main(): void {
 
     console.log(
         `[check-dialog-panel] OK — ${dialogCount} <dialog> element(s) checked, ` +
-            `${[...viewportSeen.values()].reduce((a, b) => a + b, 0)} viewport exemption(s) within budget.`
+            `${[...viewportSeen.values()].reduce((a, b) => a + b, 0)} viewport exemption(s) within budget, ` +
+            `${markedPairs.size} marked CSS-Module class(es) free of competing declarations.`
     );
 }
 
