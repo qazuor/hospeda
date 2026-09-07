@@ -65,7 +65,7 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         // writeReviewRateLimit runs first (fast in-memory check, no DB hit) before
         // requireEntitlement (which does a DB lookup for the user's plan tier).
         // SPEC-145 T-005 / SPEC-216: WRITE_REVIEWS gate — granted on all tourist
-        // plans (tourist-free, tourist-plus, tourist-vip) and on all owner/complex
+        // plans (tourist-free, tourist-vip — HOS-1224 retired tourist-plus) and on all owner/complex
         // plans via tourist-VIP entitlement inheritance (SPEC-216). Same gate as
         // accommodation reviews.
         middlewares: [writeReviewRateLimit, requireEntitlement(EntitlementKey.WRITE_REVIEWS)]

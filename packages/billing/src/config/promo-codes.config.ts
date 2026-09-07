@@ -126,7 +126,8 @@ export const BIENVENIDO_30_CODE: PromoCodeDefinition = {
  *   now. The trial stays expressed in days regardless of the cadence.
  * - On a plan that declares no trial it grants nothing and the checkout reports
  *   `promoCodeIgnored` — an extension has nothing to lengthen. This no longer
- *   describes the tourist tiers: HOS-210 gave `tourist-plus` and `tourist-vip`
+ *   describes the tourist tiers: HOS-210 gave `tourist-plus` (retired by
+ *   HOS-1224) and `tourist-vip`
  *   a real trial (14 days, raised to 30 by HOS-301 D1), and
  *   `resolveCheckoutFreeTrialDays` reads `hasTrial`/`trialDays` off the plan
  *   without looking at its category. So this code DOES extend a tourist trial.

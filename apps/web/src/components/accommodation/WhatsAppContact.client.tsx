@@ -8,7 +8,8 @@
  *      viewer without `CAN_CONTACT_WHATSAPP_DISPLAY`). No number is shown.
  *   2. `number` + `direct` (tourist-vip+ / owner-pro+) → a one-click `wa.me`
  *      deep link button.
- *   3. `number` + not `direct` (tourist-plus+ / owner-basico+) → the number as
+ *   3. `number` + not `direct` (owner-basico+; the tourist-plus tier that used
+ *      to be its entry point was retired by HOS-1224) → the number as
  *      selectable text (display only; no click-to-chat link).
  *
  * **Why this is an island** (HOS-369 WB0-7). This used to be a static Astro
