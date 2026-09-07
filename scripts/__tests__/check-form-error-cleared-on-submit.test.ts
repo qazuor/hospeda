@@ -15,10 +15,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
     checkAnchorIntact,
     collectSourceFiles,
+    discoverAlertBannerIdents,
+    findNullableStatePairs,
     HOOK_FILE,
     inspectSource,
+    MIN_EXPECTED_BANNER_CONSUMERS,
     MIN_EXPECTED_CONSUMERS,
     REPO_ROOT,
+    scanBannerSources,
     scanSources,
     stripComments
 } from '../check-form-error-cleared-on-submit.js';
@@ -302,8 +306,182 @@ describe('scanSources', () => {
     });
 });
 
+// ---------------------------------------------------------------------------
+// Anchor 2 — hand-rolled banners, selected by shape and never by name
+// ---------------------------------------------------------------------------
+
+/** A hand-rolled form that renders its own banner and can clear it. */
+function goodBanner(
+    state = 'formError',
+    setter = 'setFormError',
+    handler = 'handleSubmit'
+): string {
+    return `
+export function Form() {
+    const [${state}, ${setter}] = useState<string | null>(null);
+    async function ${handler}(e) {
+        e.preventDefault();
+        ${setter}(null);
+        const res = await api.send();
+        if (!res.ok) ${setter}('boom');
+    }
+    return (
+        <form onSubmit={${handler}}>
+            {${state} && (
+                <p className={styles.formError} role="alert">
+                    {${state}}
+                </p>
+            )}
+        </form>
+    );
+}
+`;
+}
+
+describe('discoverAlertBannerIdents', () => {
+    it('finds a bare identifier rendered as an alert banner', () => {
+        expect(discoverAlertBannerIdents(goodBanner())).toEqual(new Set(['formError']));
+    });
+
+    it('finds it under ANY name — the shape is the anchor, not the name', () => {
+        expect(discoverAlertBannerIdents(goodBanner('banner', 'raiseBanner'))).toEqual(
+            new Set(['banner'])
+        );
+        expect(discoverAlertBannerIdents(goodBanner('oopsMsg', 'setOopsMsg'))).toEqual(
+            new Set(['oopsMsg'])
+        );
+    });
+
+    it('ignores a per-field message, which is a member expression', () => {
+        const src = '{fieldErrors.email && (\n<p role="alert">{fieldErrors.email}</p>\n)}';
+        expect(discoverAlertBannerIdents(src).size).toBe(0);
+    });
+
+    it('ignores a conditional render that is not an alert', () => {
+        const src = '{isLoading && (\n<p className={styles.hint}>{isLoading}</p>\n)}';
+        expect(discoverAlertBannerIdents(src).size).toBe(0);
+    });
+});
+
+describe('findNullableStatePairs', () => {
+    it('reads BOTH names off the destructuring, never by capitalising', () => {
+        expect(
+            findNullableStatePairs('const [banner, raiseBanner] = useState<string | null>(null);')
+        ).toEqual([{ state: 'banner', setter: 'raiseBanner' }]);
+    });
+
+    it('ignores non-nullable state — a textarea is not a banner', () => {
+        expect(findNullableStatePairs("const [message, setMessage] = useState('');")).toEqual([]);
+        expect(findNullableStatePairs('const [count, setCount] = useState(0);')).toEqual([]);
+    });
+
+    it('accepts an untyped null initialiser', () => {
+        expect(findNullableStatePairs('const [err, setErr] = useState(null);')).toEqual([
+            { state: 'err', setter: 'setErr' }
+        ]);
+    });
+});
+
+describe('scanBannerSources', () => {
+    it('accepts a hand-rolled form that can retire its banner', () => {
+        const root = makeTree({ 'apps/web/src/components/A.client.tsx': goodBanner() });
+        const { consumers, violations } = scanBannerSources(root, collectSourceFiles(root));
+        expect(consumers).toEqual(['apps/web/src/components/A.client.tsx [formError]']);
+        expect(violations).toEqual([]);
+    });
+
+    it('rejects a banner that can be raised and never taken down', () => {
+        const root = makeTree({
+            'apps/web/src/components/A.client.tsx': goodBanner().replace(
+                '        setFormError(null);\n',
+                ''
+            )
+        });
+        const { violations } = scanBannerSources(root, collectSourceFiles(root));
+        expect(violations).toHaveLength(1);
+        expect(violations[0]).toMatch(/never calls `setFormError\(null\)`/);
+    });
+
+    // The whole point of a shape anchor: no name appears in the guard, so an
+    // unconventionally named banner is caught exactly like a conventional one.
+    it('catches an unconventionally named banner just the same', () => {
+        const root = makeTree({
+            'apps/web/src/components/A.client.tsx': goodBanner('oopsMsg', 'showOops').replace(
+                '        showOops(null);\n',
+                ''
+            )
+        });
+        const { consumers, violations } = scanBannerSources(root, collectSourceFiles(root));
+        expect(consumers).toEqual(['apps/web/src/components/A.client.tsx [oopsMsg]']);
+        expect(violations[0]).toMatch(/never calls `showOops\(null\)`/);
+    });
+
+    it('keeps evaluating when the submit handler is renamed', () => {
+        for (const handler of ['onSave', 'persistThing']) {
+            const root = makeTree({
+                'apps/web/src/components/A.client.tsx': goodBanner(
+                    'formError',
+                    'setFormError',
+                    handler
+                ).replace('        setFormError(null);\n', '')
+            });
+            const { consumers, violations } = scanBannerSources(root, collectSourceFiles(root));
+            expect(consumers).toHaveLength(1);
+            expect(violations).toHaveLength(1);
+        }
+    });
+
+    // use-video-section.ts owns the state, VideoSection.client.tsx draws it.
+    // Without the hand-out clause that pair falls between two chairs.
+    it('covers a hook that owns a banner rendered by a sibling component', () => {
+        const root = makeTree({
+            'apps/web/src/components/use-thing.ts':
+                'export function useThing() {\n' +
+                '    const [formError, setFormError] = useState<string | null>(null);\n' +
+                "    const onSave = () => { setFormError('boom'); };\n" +
+                '    return { formError, onSave };\n}\n',
+            'apps/web/src/components/Thing.client.tsx':
+                'export function Thing() {\n' +
+                '    const { formError } = useThing();\n' +
+                '    return (<div>{formError && (\n' +
+                '        <p role="alert">{formError}</p>\n' +
+                '    )}</div>);\n}\n'
+        });
+        const { consumers, violations } = scanBannerSources(root, collectSourceFiles(root));
+        expect(consumers).toEqual(['apps/web/src/components/use-thing.ts [formError]']);
+        expect(violations).toHaveLength(1);
+    });
+
+    it('does not drag in one-shot state that merely shares a banner name', () => {
+        // `errorMessage` IS a banner name in the other file, but this one
+        // neither renders it as an alert nor hands it out, so it stays out.
+        const root = makeTree({
+            'apps/web/src/components/Banner.client.tsx': goodBanner('errorMessage', 'setErrMsg'),
+            'apps/web/src/components/Verify.client.tsx':
+                'export function Verify() {\n' +
+                '    const [errorMessage, setErrorMessage] = useState<string | null>(null);\n' +
+                "    useEffect(() => { setErrorMessage('nope'); }, []);\n" +
+                '    return <p className={styles.stateMessage}>{errorMessage}</p>;\n}\n'
+        });
+        const { consumers, violations } = scanBannerSources(root, collectSourceFiles(root));
+        expect(consumers).toEqual(['apps/web/src/components/Banner.client.tsx [errorMessage]']);
+        expect(violations).toEqual([]);
+    });
+
+    it('ignores a banner rendered off a prop, whose setter lives elsewhere', () => {
+        const root = makeTree({
+            'apps/web/src/components/View.client.tsx':
+                'export function View({ formError }) {\n' +
+                '    return (<div>{formError && (\n' +
+                '        <p role="alert">{formError}</p>\n' +
+                '    )}</div>);\n}\n'
+        });
+        expect(scanBannerSources(root, collectSourceFiles(root)).consumers).toEqual([]);
+    });
+});
+
 describe('the real repository', () => {
-    it('has every consumer clearing its banner, with headroom over the rot floor', () => {
+    it('has every hook consumer clearing its banner, with headroom over the rot floor', () => {
         const { consumers, violations } = scanSources(REPO_ROOT, collectSourceFiles(REPO_ROOT));
 
         expect(violations).toEqual([]);
@@ -311,5 +489,23 @@ describe('the real repository', () => {
         // below the real population, or deleting one form breaks CI.
         expect(consumers.length).toBeGreaterThan(MIN_EXPECTED_CONSUMERS);
         expect(checkAnchorIntact(REPO_ROOT)).toEqual([]);
+    });
+
+    it('has every hand-rolled banner retirable, with headroom over its own floor', () => {
+        const { consumers, violations } = scanBannerSources(
+            REPO_ROOT,
+            collectSourceFiles(REPO_ROOT)
+        );
+
+        expect(violations).toEqual([]);
+        expect(consumers.length).toBeGreaterThan(MIN_EXPECTED_BANNER_CONSUMERS);
+    });
+
+    it('reaches many differently-named banners, not just the house convention', () => {
+        const { consumers } = scanBannerSources(REPO_ROOT, collectSourceFiles(REPO_ROOT));
+        const names = new Set(consumers.map((c) => c.replace(/^.*\[(.+)\]$/, '$1')));
+        // A `formError`-only anchor was measured at 16 of 50 renders. If this
+        // ever collapses toward one name, the shape stopped doing the work.
+        expect(names.size).toBeGreaterThan(5);
     });
 });

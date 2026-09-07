@@ -98,6 +98,65 @@
  *
  * An exemption list is a promise to revisit that nobody keeps. If a file ever
  * needs one here, the selection rule is wrong and should be fixed instead.
+ *
+ * ---------------------------------------------------------------------------
+ * ANCHOR 2 — the hand-rolled banners (HOS-837, second pass)
+ * ---------------------------------------------------------------------------
+ *
+ * Anchor 1 reaches only the 11 forms that use the shared hook. Roughly forty
+ * more hold the same banner in a plain `useState` and are, by construction,
+ * invisible to it. Anchor 2 covers those. Checks 4 and 5 implement it.
+ *
+ * The first instinct was to anchor on the name `formError`, since the six forms
+ * that prompted this all use it. Measuring killed that: 50 inline banners exist
+ * across `apps/web/src` under EIGHTEEN different identifiers — `error`,
+ * `submitError`, `globalError`, `errorMsg`, `oauthError`, `loadError`,
+ * `masterToggleError`, … A `formError` anchor would have covered 16 of 50 and
+ * reported "all consumers clear it" over the other 34. That is a guard giving
+ * confidence without coverage, which is worse than no guard.
+ *
+ * So anchor 2 contains NO NAME AT ALL. It is a SHAPE:
+ *
+ *     {x && ( … role="alert" … {x} … )}        ← this is a form-level banner
+ *     const [x, setX] = useState<…>(null)      ← this is where it lives
+ *
+ * Both identifiers are read off the code. `x` comes from the render, its setter
+ * from the destructuring — never derived by capitalising `x`, so a pair named
+ * `[banner, raiseBanner]` is tracked as faithfully as `[formError,
+ * setFormError]`. Renaming either one renames it in both places at once,
+ * because they are the same binding, and the guard simply follows.
+ *
+ * That makes anchor 2 MORE rename-proof than anchor 1, which does hold a
+ * literal name (`handleApiError`) and needs check 1 to defend it. What anchor 2
+ * has instead of a shared symbol is a floor
+ * ({@link MIN_EXPECTED_BANNER_CONSUMERS}), kept separate from anchor 1's so one
+ * group cannot vanish behind the other's population.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT ANCHOR 2 CANNOT SEE — stated plainly, not buried
+ * ---------------------------------------------------------------------------
+ *
+ * A banner escapes anchor 2 silently if it is:
+ *
+ *  1. rendered through a component (`<Banner message={x} />`) instead of the
+ *     inline conditional;
+ *  2. rendered without `role="alert"` (also an accessibility bug, but nothing
+ *     here catches it);
+ *  3. held in a state MACHINE rather than a nullable string — which is exactly
+ *     `ContactHost.client.tsx` (`submitState.phase === 'error'`). HOS-837 fixed
+ *     that form's stale banner and pinned it with a regression test, because
+ *     this guard genuinely does not reach it. One file is a test's job; a third
+ *     anchor for one file would be an exemption list wearing a hat.
+ *
+ * Check 5 is also weaker than check 3 on purpose: it asks only that the banner
+ * CAN be retired, not that it is retired first. See `scanBannerSources` for the
+ * measurement behind that choice.
+ *
+ * The rename-proof answer to all three holes is the same one anchor 1 already
+ * enjoys: give the state a shared owner. Migrating these forms onto
+ * `useZodForm` (or a smaller shared banner primitive) would collapse anchor 2
+ * into anchor 1 and delete this entire section. That is an architectural call
+ * for the owner, not something this guard should decide.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -120,6 +179,23 @@ const SCAN_ROOT = 'apps/web/src';
  */
 export const MIN_EXPECTED_CONSUMERS = 5;
 
+/**
+ * Rot alarm floor for ANCHOR 2 (see the header). 47 banners matched at
+ * HOS-837; 25 leaves room for a batch of forms to be deleted or migrated onto
+ * `useZodForm` without breaking CI, while still screaming if the render shape
+ * stops matching the codebase. Kept SEPARATE from
+ * {@link MIN_EXPECTED_CONSUMERS} on purpose: one mixed count would let a whole
+ * group disappear behind the other group's population.
+ */
+export const MIN_EXPECTED_BANNER_CONSUMERS = 25;
+
+/**
+ * How far past `{x && (` to look for the rest of the banner shape. All 47 real
+ * banners fit comfortably; one hand-formatted past this simply falls out of
+ * scope, which the header states plainly as a limitation.
+ */
+const ALERT_WINDOW = 400;
+
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', '.turbo', 'coverage', '.astro']);
 
 /** A `useZodForm(...)` CALL — not the declaration, not a mention in prose. */
@@ -133,6 +209,22 @@ const HANDLE_API_ERROR_CALL = /\bhandleApiError\s*\(/;
 
 /** The clear: `setFormError(null)`, in any spacing. */
 const CLEAR_CALL = /\bsetFormError\s*\(\s*null\s*\)/;
+
+/** Opening of a conditional render, `{x && (`. The identifier is CAPTURED, never assumed. */
+const CONDITIONAL_RENDER = /\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*&&\s*\(/g;
+
+/**
+ * A nullable `useState` pair. BOTH names are captured from the destructuring,
+ * so neither the state nor its setter is ever assumed to be called anything.
+ * The `(null)` initialiser is what separates an error banner from ordinary
+ * string state — `const [message, setMessage] = useState('')` is a textarea's
+ * contents, not a banner, and must not be dragged in by its name.
+ */
+const NULLABLE_STATE_PAIR =
+    /const\s*\[\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*\]\s*=\s*useState\s*(?:<[^<>]*>)?\s*\(\s*null\s*\)/g;
+
+/** A hook handing its state out: `return { a, b, c }`. */
+const HOOK_RETURN_OBJECT = /return\s*\{([^{}]*)\}/g;
 
 // ---------------------------------------------------------------------------
 // Comment stripping
@@ -379,6 +471,144 @@ export function scanSources(root: string, files: readonly string[]): ScanResult 
 }
 
 // ---------------------------------------------------------------------------
+// ANCHOR 2 — hand-rolled banners, selected by SHAPE, never by name
+// ---------------------------------------------------------------------------
+
+/**
+ * Identifiers this file renders as an inline form-level alert banner, i.e.
+ * `{x && ( … role="alert" … {x} … )}`.
+ *
+ * The identifier must be BARE. A member expression (`fieldErrors.email &&`) is
+ * a per-field message, not a form-level banner, and there are far more of those
+ * than of banners — matching them would bury the signal.
+ *
+ * @param code - Comment-stripped source.
+ * @returns The identifiers rendered as banners here.
+ */
+export function discoverAlertBannerIdents(code: string): Set<string> {
+    const found = new Set<string>();
+    CONDITIONAL_RENDER.lastIndex = 0;
+    let m: RegExpExecArray | null = CONDITIONAL_RENDER.exec(code);
+    while (m !== null) {
+        const ident = m[1] as string;
+        const window = code.slice(m.index + m[0].length, m.index + m[0].length + ALERT_WINDOW);
+        if (window.includes('role="alert"') && window.includes(`{${ident}}`)) found.add(ident);
+        m = CONDITIONAL_RENDER.exec(code);
+    }
+    return found;
+}
+
+/**
+ * Identifiers this module hands out of a `return { … }` — how a custom hook
+ * owns a banner whose render lives in a sibling component
+ * (`use-video-section.ts` holds the state, `VideoSection.client.tsx` draws it).
+ * Without this clause that pair falls between two chairs: the state file has no
+ * render and the render file has no state.
+ *
+ * @param code - Comment-stripped source.
+ * @returns Every identifier appearing in a flat return-object literal.
+ */
+export function discoverHandedOutIdents(code: string): Set<string> {
+    const found = new Set<string>();
+    HOOK_RETURN_OBJECT.lastIndex = 0;
+    let m: RegExpExecArray | null = HOOK_RETURN_OBJECT.exec(code);
+    while (m !== null) {
+        for (const tok of (m[1] as string).match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []) found.add(tok);
+        m = HOOK_RETURN_OBJECT.exec(code);
+    }
+    return found;
+}
+
+/** A `useState` pair that can hold a banner message. */
+export interface StatePair {
+    /** The state identifier, as written. */
+    readonly state: string;
+    /** Its setter, as written — never derived by capitalising the state name. */
+    readonly setter: string;
+}
+
+/**
+ * Every `const [x, setX] = useState<…>(null)` pair in the file.
+ *
+ * @param code - Comment-stripped source.
+ * @returns The pairs, in source order.
+ */
+export function findNullableStatePairs(code: string): StatePair[] {
+    const out: StatePair[] = [];
+    NULLABLE_STATE_PAIR.lastIndex = 0;
+    let m: RegExpExecArray | null = NULLABLE_STATE_PAIR.exec(code);
+    while (m !== null) {
+        out.push({ state: m[1] as string, setter: m[2] as string });
+        m = NULLABLE_STATE_PAIR.exec(code);
+    }
+    return out;
+}
+
+/**
+ * Applies anchor 2 across the tree.
+ *
+ * A pair is in scope when the file either renders it as a banner itself, or
+ * hands it out while SOME file in the tree renders it as one. That second
+ * condition consults `globalBannerIdents` — a set discovered from the
+ * codebase's own render sites, never a list written here.
+ *
+ * The requirement is deliberately weaker than anchor 3's: the setter must be
+ * called with `null` SOMEWHERE in the file. Source order is not a sound proxy
+ * for execution order at this scale — `ExternalReputationSection` alone owns
+ * four independent banners with four separate operations — and six files whose
+ * clear is perfectly correct sit textually below their first raise. Requiring
+ * an order here would manufacture six false positives, and a false positive is
+ * how an exemption list gets born.
+ *
+ * @param root - Repository root.
+ * @param files - Absolute paths to inspect.
+ * @returns Consumers found (`path [state]`) and violations among them.
+ */
+export function scanBannerSources(root: string, files: readonly string[]): ScanResult {
+    const sources = new Map<string, string>();
+    const globalBannerIdents = new Set<string>();
+    const perFileBanners = new Map<string, Set<string>>();
+
+    for (const file of files) {
+        let body: string;
+        try {
+            body = stripComments(readFileSync(file, 'utf8'));
+        } catch {
+            continue;
+        }
+        sources.set(file, body);
+        const rendered = discoverAlertBannerIdents(body);
+        perFileBanners.set(file, rendered);
+        for (const ident of rendered) globalBannerIdents.add(ident);
+    }
+
+    const consumers: string[] = [];
+    const violations: string[] = [];
+
+    for (const [file, code] of sources) {
+        const relPath = relative(root, file).replace(/\\/g, '/');
+        const renderedHere = perFileBanners.get(file) ?? new Set<string>();
+        const handedOut = discoverHandedOutIdents(code);
+
+        for (const { state, setter } of findNullableStatePairs(code)) {
+            const inScope =
+                renderedHere.has(state) || (handedOut.has(state) && globalBannerIdents.has(state));
+            if (!inScope) continue;
+
+            consumers.push(`${relPath} [${state}]`);
+            const clears = new RegExp(`\\b${setter}\\s*\\(\\s*null\\s*\\)`).test(code);
+            if (!clears) {
+                violations.push(
+                    `  ${relPath}: renders a form-level banner from \`${state}\` but never calls \`${setter}(null)\``
+                );
+            }
+        }
+    }
+
+    return { consumers, violations };
+}
+
+// ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
 
@@ -389,7 +619,7 @@ export function scanSources(root: string, files: readonly string[]): ScanResult 
  * @returns Process exit code (0 pass, 1 fail).
  */
 export function run(root: string): number {
-    console.log('=== Checking every useZodForm banner is cleared on submit (HOS-837) ===\n');
+    console.log('=== Checking every form-level error banner can be retired (HOS-837) ===\n');
 
     let failed = false;
 
@@ -440,6 +670,40 @@ export function run(root: string): number {
         failed = true;
     } else {
         console.log(`  OK — all ${consumers.length} clear it.`);
+    }
+
+    const banner = scanBannerSources(root, files);
+
+    console.log(
+        `\n4. The banner shape still selects hand-rolled forms (floor: ${MIN_EXPECTED_BANNER_CONSUMERS})...`
+    );
+    if (banner.consumers.length < MIN_EXPECTED_BANNER_CONSUMERS) {
+        console.log(
+            `ERROR: only ${banner.consumers.length} hand-rolled banner(s) matched, expected at least ${MIN_EXPECTED_BANNER_CONSUMERS}.`
+        );
+        console.log(
+            '\n  Anchor 2 has no shared symbol to fall back on — this floor IS its rot alarm. ' +
+                'Either the banners moved to a different render shape, or they migrated onto ' +
+                '`useZodForm` (in which case lower the floor and check they show up under check 2).'
+        );
+        failed = true;
+    } else {
+        console.log(`  OK — ${banner.consumers.length} hand-rolled banner(s) under the guard.`);
+    }
+
+    console.log('\n5. Every hand-rolled banner can be retired...');
+    if (banner.violations.length > 0) {
+        console.log('ERROR: a banner can be raised and never taken down:');
+        for (const v of banner.violations) console.log(v);
+        console.log(
+            '\n  A message that nothing can clear survives the attempt it described. Clear it ' +
+                'as the operation STARTS, the way every other hand-rolled form here already ' +
+                'does. HOS-816 is what happens without it: the user saves successfully and ' +
+                'reads a red banner telling them it failed.'
+        );
+        failed = true;
+    } else {
+        console.log(`  OK — all ${banner.consumers.length} can be cleared.`);
     }
 
     console.log('');

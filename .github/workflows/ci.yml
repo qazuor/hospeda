@@ -309,9 +309,11 @@ jobs:
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes it run in this job (see the note above). This one
       # watches the banner that told a user their save had failed after it
-      # actually succeeded (HOS-816) — `useZodForm.handleApiError` only ever
-      # SETS that banner, so every consumer has to retire it on its own.
-      - name: Check every useZodForm banner is cleared on submit (HOS-837)
+      # actually succeeded (HOS-816). Two anchors: the 11 forms on the shared
+      # `useZodForm` hook, whose `handleApiError` only ever SETS the banner, and
+      # the 46 hand-rolled ones, matched by the SHAPE of an inline
+      # `role="alert"` banner rather than by any variable name.
+      - name: Check every form-level error banner can be retired (HOS-837)
         run: pnpm check:form-error-cleared
       - name: Check for disabled tests (.only/.skip)
         run: |
