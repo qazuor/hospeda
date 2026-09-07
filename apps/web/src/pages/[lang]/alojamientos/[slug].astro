@@ -52,7 +52,12 @@ import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardPr
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
-import { buildLodgingAmenityNames, buildLodgingGeo, buildLodgingTelephone } from '@/lib/seo/lodging-jsonld';
+import {
+	buildLodgingAmenityNames,
+	buildLodgingGeo,
+	buildLodgingPriceRange,
+	buildLodgingTelephone
+} from '@/lib/seo/lodging-jsonld';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
@@ -469,6 +474,11 @@ const lodgingAggregateRating =
 const lodgingNumberOfRooms =
     accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
 
+// HOS-878: point price formatted as "<currency> <amount>" (e.g. "ARS 15000"),
+// see buildLodgingPriceRange for why this isn't a $/$$/$$$ indicator or a
+// real min-max range.
+const lodgingPriceRange = buildLodgingPriceRange({ price: accommodation.price });
+
 // HOS-557: publish the LOCALIZED amenity label, not the catalog slug —
 // see `buildLodgingAmenityNames` for why.
 const lodgingAmenities = buildLodgingAmenityNames({
@@ -524,6 +534,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         aggregateRating={lodgingAggregateRating}
         numberOfRooms={lodgingNumberOfRooms}
         amenities={lodgingAmenities}
+        priceRange={lodgingPriceRange}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
