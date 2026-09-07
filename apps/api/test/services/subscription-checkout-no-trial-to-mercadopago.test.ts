@@ -26,6 +26,16 @@
  *     travelled nested inside `auto_recurring` or `metadata` would satisfy a
  *     shallow check and still reach MercadoPago.
  *
+ * ## The same body also pins HOS-1221
+ *
+ * Payload 2 is the only place in the suite tree where the REAL preapproval body
+ * can be read for all four verticals at once, so it also asserts the absence of
+ * `providerPriceId` — the field that turns this request into MercadoPago's
+ * "subscription WITH an associated plan" flow and gets it rejected with
+ * "card_token_id is required". That is a different ban from the trial one, but
+ * it is the same body and the same four call paths, and duplicating 200 lines
+ * of scaffolding to say it elsewhere would buy nothing.
+ *
  * Both helpers are left REAL here on purpose. Mocking
  * `createOwnPreapprovalSubscription` (as the sibling flag-on suite does, for
  * routing questions) would make this suite blind to a `freeTrialDays` added
@@ -272,6 +282,27 @@ function preapprovalCreateBody(): Record<string, unknown> {
     return subscriptionsCreateMock.mock.calls[0]?.[0] as Record<string, unknown>;
 }
 
+/**
+ * HOS-1221: the second thing this body must not carry.
+ *
+ * `providerPriceId` is what qzpay-core forwards to the MercadoPago adapter,
+ * which turns it into `preapproval_plan_id` and returns early — no inline
+ * `auto_recurring`, no status. That is MercadoPago's "subscription WITH an
+ * associated plan" request, and it answers HTTP 400 `"Create subscription -
+ * card_token_id is required"` unless a card was already tokenized, which this
+ * self-serve checkout never does. Every checkout with
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` on answered 500 for that reason.
+ *
+ * Asserted as an ABSENCE on the real captured body, not through a
+ * `toMatchObject`/`objectContaining` shape — those are blind to a field that
+ * should not be there, which is how the previous version of this suite went on
+ * passing while asserting `body.providerPriceId === 'mp_plan_test'`.
+ */
+function expectNoPlanIdAnywhere(payload: Record<string, unknown>): void {
+    expect(payload).not.toHaveProperty('providerPriceId');
+    expect(payload).not.toHaveProperty('preapproval_plan_id');
+}
+
 // --- Suite ----------------------------------------------------------------
 
 describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
@@ -389,8 +420,9 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             const body = preapprovalCreateBody();
             // Sanity: this really is the preapproval create, not an empty stub.
             expect(body.mode).toBe('paid');
-            expect(body.providerPriceId).toBe('mp_plan_test');
+            expect(body.priceId).toBe('price-m');
             expectNoTrialAnywhere(body);
+            expectNoPlanIdAnywhere(body);
         });
 
         it('commerce monthly builds a preapproval body with no trial field anywhere', async () => {
@@ -409,6 +441,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             const body = preapprovalCreateBody();
             expect(body.mode).toBe('paid');
             expectNoTrialAnywhere(body);
+            expectNoPlanIdAnywhere(body);
         });
 
         it('partner monthly builds a preapproval body with no trial field anywhere', async () => {
@@ -426,6 +459,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             const body = preapprovalCreateBody();
             expect(body.mode).toBe('paid');
             expectNoTrialAnywhere(body);
+            expectNoPlanIdAnywhere(body);
         });
 
         it('accommodation annual builds a preapproval body with no trial field anywhere', async () => {
@@ -446,6 +480,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
             expect(body.mode).toBe('paid');
             expect(body.billingInterval).toBe('annual');
             expectNoTrialAnywhere(body);
+            expectNoPlanIdAnywhere(body);
         });
     });
 

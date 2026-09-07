@@ -139,7 +139,7 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
         expect(createPendingProviderSubscription).not.toHaveBeenCalled();
     });
 
-    it('passes billingInterval: annual, the resolved MP plan id, and urls.successUrl as the back_url — with no externalReference and no productDomain override', async () => {
+    it('records billingInterval: annual, the resolved MP plan id, and urls.successUrl as the back_url — with no providerPriceId, no externalReference and no productDomain override', async () => {
         const billing = createBillingMock();
 
         await initiatePaidAnnualSubscription({
@@ -158,10 +158,18 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
             planId: PLAN_ID,
             priceId: ANNUAL_PRICE_ID,
             billingInterval: 'annual',
-            providerPriceId: 'mp_plan_annual_test',
+            mpPreapprovalPlanId: 'mp_plan_annual_test',
             paymentMethodReturnUrl: URLS.successUrl,
             notificationUrl: URLS.notificationUrl
         });
+        // HOS-1221: the plan id is RECORDED (above) and never forwarded to
+        // MercadoPago. `providerPriceId` is the forwarded field, and with it set
+        // `POST /preapproval` becomes the plan-based request MercadoPago
+        // rejects with "card_token_id is required" — which is what made this
+        // checkout answer 500. Asserted as an absence because `toMatchObject`,
+        // like `expect.objectContaining`, is blind to a field that should not
+        // be there.
+        expect(call).not.toHaveProperty('providerPriceId');
         // Accommodation annual, like monthly, relies on the column's own DB
         // default ('accommodation') — no override, no domain link row.
         expect(call).not.toHaveProperty('externalReference');

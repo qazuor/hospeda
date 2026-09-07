@@ -203,7 +203,7 @@ describe('confirmCancellationDeferred', () => {
 });
 
 describe('mintRetryPreapprovalAttempt', () => {
-    it('mints a fresh preapproval on the SAME MP plan/cadence recovered from the row metadata', async () => {
+    it('mints a fresh preapproval on the SAME cadence/price recovered from the row metadata, WITHOUT sending the MP plan id (HOS-1221)', async () => {
         const billing = makeBilling();
 
         const result = await mintRetryPreapprovalAttempt({
@@ -226,9 +226,15 @@ describe('mintRetryPreapprovalAttempt', () => {
             string,
             unknown
         >;
-        expect(createCall.providerPriceId).toBe(MP_PLAN_ID);
         expect(createCall.priceId).toBe('price-monthly-1');
         expect(createCall.billingInterval).toBe('monthly');
+        // HOS-1221: the retry used to subscribe against the recovered MP
+        // `preapproval_plan` via `providerPriceId`, which is the request
+        // MercadoPago rejects with "card_token_id is required" — the recovery
+        // reproduced the checkout's own 500. The plan id is bookkeeping now, so
+        // it must not appear in the body qzpay sends. Asserted as an absence:
+        // an `objectContaining` shape is blind to a field that should be gone.
+        expect(createCall).not.toHaveProperty('providerPriceId');
     });
 
     it('resolves the annual price when the row metadata says billingInterval=annual', async () => {
