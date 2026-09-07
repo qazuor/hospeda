@@ -27,6 +27,7 @@
  * @module services/addon-recurring-period
  */
 
+import { addCalendarMonths } from '@repo/utils';
 import type { AddonBillingIntervalLabel } from './billing/mp-addon-plan-provisioning.service.js';
 
 /**
@@ -67,34 +68,118 @@ export function normalizeAddonBillingInterval(
 }
 
 /**
- * Add whole months to a date, clamping the day-of-month rather than rolling
- * over into the next month.
+ * How far BEFORE a recorded period end a confirmed charge may settle and still
+ * be read as the renewal of that period.
  *
- * `new Date(2026, 0, 31)` plus one month is 28 or 29 February, never 2 or 3
- * March. JavaScript's own `setMonth` rolls over, which would walk a
- * subscription bought on the 31st forward by a day every February — a slow
- * drift nobody would notice until a customer was billed on the wrong date.
+ * ## Why a band, and not a bare `>=`
+ *
+ * Both sides of the comparison in {@link computeNextAddonPeriod} are OUR clock
+ * at webhook-processing time, but they measure events a whole billing cycle
+ * apart, each with its own delivery latency. Write `L1` for the latency of the
+ * event that activated the purchase and `L2` for the latency of the second
+ * month's charge: the recorded period end is `MP_authorization + L1 + 1 month`
+ * and the charge is observed at `MP_charge + L2 = MP_authorization + 1 month +
+ * L2`. A bare `settledAt >= currentPeriodEnd` therefore advances **iff
+ * `L2 >= L1`** — seconds of jitter deciding whether a legitimate renewal is
+ * recognised.
+ *
+ * A miss is not self-correcting: the row stays a full cycle behind forever,
+ * PR 6's `cancel_at_period_end` would end the benefit a month early and PR 7's
+ * reconciler would read the purchase as expired while MercadoPago keeps
+ * charging it.
+ *
+ * Two days is wide enough to swallow any plausible webhook-delivery skew
+ * (HOS-159's outage aside, deliveries are seconds) and far narrower than the
+ * property the window check exists to defend: a MercadoPago retry of a FAILED
+ * charge lands within days of the charge it retries, which sits at the START of
+ * the window — a month away from this band — so it still correctly advances
+ * nothing.
+ */
+const PERIOD_ADVANCE_TOLERANCE_MS = 2 * 24 * 60 * 60 * 1000;
+
+/**
+ * Add whole months to a date in UTC, clamping the day-of-month rather than
+ * rolling over into the next month.
+ *
+ * A thin alias over `addCalendarMonths` from `@repo/utils` with
+ * `dayOverflow: 'clamp'` pinned: 31 January plus one month is 28 or 29
+ * February, never 2 or 3 March. This module used to carry its own copy of that
+ * arithmetic, which duplicated the repo's single source for it (and lacked its
+ * `Invalid Date` guard) while `scripts/check-local-date-math.sh` reported the
+ * shared primitive "exported and reachable".
  *
  * @param params.from - The anchor date (not mutated).
  * @param params.months - Whole months to add. Must be positive in practice.
  * @returns A new `Date`, `months` later, with the time-of-day preserved.
  */
 export function addMonthsClamped(params: { readonly from: Date; readonly months: number }): Date {
-    const { from, months } = params;
-    const target = new Date(from.getTime());
-    const dayOfMonth = target.getUTCDate();
+    return addCalendarMonths({ from: params.from, months: params.months, dayOverflow: 'clamp' });
+}
 
-    // Move to the 1st first so the month increment cannot roll over on its own,
-    // then clamp the day back down to whatever the destination month allows.
-    target.setUTCDate(1);
-    target.setUTCMonth(target.getUTCMonth() + months);
+/**
+ * The day-of-month a purchase's billing date is anchored on.
+ *
+ * Read from `billing_addon_purchases.purchased_at`, in UTC. It is the ORIGINAL
+ * day the buyer bought, and it is deliberately NOT re-derived from the current
+ * `current_period_end`: a period end that was clamped once (31 January → 28
+ * February) would become the new anchor and the billing day would stay stuck on
+ * the 28th for the life of the subscription. That is a permanent three-day gift
+ * every long month, and it is invisible — every individual step looks like a
+ * correct clamp.
+ *
+ * @param purchasedAt - The purchase row's `purchasedAt`, or `null`.
+ * @returns The 1-31 day-of-month, or `null` when there is nothing to anchor on.
+ */
+export function resolveAddonPeriodAnchorDay(purchasedAt: Date | null | undefined): number | null {
+    if (!(purchasedAt instanceof Date) || Number.isNaN(purchasedAt.getTime())) {
+        return null;
+    }
+    return purchasedAt.getUTCDate();
+}
 
-    const daysInTargetMonth = new Date(
-        Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)
+/**
+ * Move a date onto its month's anchor day, clamped to the month's length.
+ *
+ * Pure re-seating of the day-of-month: year, month and time-of-day are
+ * preserved. An absent or nonsensical anchor leaves the date untouched, so a
+ * row with no `purchased_at` degrades to the previous behaviour (the clamped
+ * chain) rather than to a wrong date.
+ *
+ * @param date - The computed period end.
+ * @param anchorDay - The purchase's original day-of-month, or `null`.
+ * @returns The re-anchored date, or `date` itself when nothing applies.
+ */
+function applyAnchorDay(date: Date, anchorDay: number | null | undefined): Date {
+    if (
+        anchorDay === null ||
+        anchorDay === undefined ||
+        !Number.isInteger(anchorDay) ||
+        anchorDay < 1 ||
+        anchorDay > 31
+    ) {
+        return date;
+    }
+
+    const lastDayOfMonth = new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)
     ).getUTCDate();
-    target.setUTCDate(Math.min(dayOfMonth, daysInTargetMonth));
+    const day = Math.min(anchorDay, lastDayOfMonth);
 
-    return target;
+    if (day === date.getUTCDate()) {
+        return date;
+    }
+
+    return new Date(
+        Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            day,
+            date.getUTCHours(),
+            date.getUTCMinutes(),
+            date.getUTCSeconds(),
+            date.getUTCMilliseconds()
+        )
+    );
 }
 
 /** The window a confirmed charge opened, when it opened a new one. */
@@ -116,21 +201,28 @@ export interface AddonBillingPeriod {
  *     activation), or a MercadoPago retry within it. Returns `null`: nothing to
  *     advance. Without this, every recurring add-on would be handed a free
  *     second period on its first day.
- *  3. **The charge settles at or after the period end** — a genuine renewal.
- *     The new window is anchored on the OLD `currentPeriodEnd`, not on
- *     `settledAt`, so webhook latency cannot walk the billing date forward.
+ *  3. **The charge settles at, after, or within
+ *     {@link PERIOD_ADVANCE_TOLERANCE_MS} before the period end** — a genuine
+ *     renewal. The new window is anchored on the OLD `currentPeriodEnd`, not on
+ *     `settledAt`, so webhook latency cannot walk the billing date forward, and
+ *     its day-of-month is re-seated on `anchorDay` so a single clamp cannot
+ *     become permanent.
  *
  * @param params.currentPeriodEnd - As stored, or `null` when never set.
  * @param params.settledAt - When MercadoPago settled this charge.
  * @param params.billingInterval - The purchase's cadence.
+ * @param params.anchorDay - The purchase's original day-of-month (see
+ *   {@link resolveAddonPeriodAnchorDay}). Optional; omit to keep the plain
+ *   clamped chain.
  * @returns The new period, or `null` when this charge advances nothing.
  */
 export function computeNextAddonPeriod(params: {
     readonly currentPeriodEnd: Date | null;
     readonly settledAt: Date;
     readonly billingInterval: AddonBillingIntervalLabel;
+    readonly anchorDay?: number | null;
 }): AddonBillingPeriod | null {
-    const { currentPeriodEnd, settledAt, billingInterval } = params;
+    const { currentPeriodEnd, settledAt, billingInterval, anchorDay } = params;
     const months = ADDON_INTERVAL_MONTHS[billingInterval];
 
     if (currentPeriodEnd === null) {
@@ -140,13 +232,16 @@ export function computeNextAddonPeriod(params: {
         };
     }
 
-    if (settledAt.getTime() < currentPeriodEnd.getTime()) {
+    if (settledAt.getTime() < currentPeriodEnd.getTime() - PERIOD_ADVANCE_TOLERANCE_MS) {
         return null;
     }
 
     return {
         currentPeriodStart: currentPeriodEnd,
-        currentPeriodEnd: addMonthsClamped({ from: currentPeriodEnd, months })
+        currentPeriodEnd: applyAnchorDay(
+            addMonthsClamped({ from: currentPeriodEnd, months }),
+            anchorDay
+        )
     };
 }
 
@@ -196,6 +291,13 @@ export interface RecurringAddonPurchaseRow {
     readonly mpSubscriptionId: string | null;
     readonly billingInterval: string | null;
     readonly currentPeriodEnd: Date | null;
+    /**
+     * When the buyer bought. `NOT NULL` in the schema, typed nullable here
+     * because a partially-projected row (a test fixture, a narrower future
+     * SELECT) must degrade to "no anchor" rather than to a wrong billing day.
+     * Feeds {@link resolveAddonPeriodAnchorDay}.
+     */
+    readonly purchasedAt: Date | null;
     readonly metadata: Record<string, unknown> | null;
 }
 
@@ -245,6 +347,7 @@ export async function findRecurringAddonPurchaseByPreapprovalId(
             mpSubscriptionId: billingAddonPurchases.mpSubscriptionId,
             billingInterval: billingAddonPurchases.billingInterval,
             currentPeriodEnd: billingAddonPurchases.currentPeriodEnd,
+            purchasedAt: billingAddonPurchases.purchasedAt,
             metadata: billingAddonPurchases.metadata
         })
         .from(billingAddonPurchases)
