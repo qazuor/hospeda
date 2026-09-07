@@ -284,6 +284,12 @@ jobs:
       # is NOT what makes a guard run in this job (see the note above).
       - name: Check the add-on purchase route reads the declared domain (HOS-1178)
         run: bash scripts/check-addon-product-domain.sh
+      # Its own step for the same reason as every guard in this job. This one
+      # enumerates by EVENT rather than by symbol, which is the whole point:
+      # enumerating the callers of one function is how a second implementation
+      # of the authorized-payment handler went unrouted in the first place.
+      - name: Check every authorized-payment processor routes add-ons first (HOS-847)
+        run: bash scripts/check-addon-webhook-routing.sh
       - name: Check server code does no local-timezone date math (HOS-1010)
         run: bash scripts/check-local-date-math.sh
       - name: Check the qzpay wave converges on one core (HOS-232)

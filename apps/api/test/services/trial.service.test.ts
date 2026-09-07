@@ -52,11 +52,30 @@ const {
     const withSvcTx = vi.fn(async <T>(callback: (ctx: { tx: typeof tx }) => Promise<T>) =>
         callback({ tx })
     );
+    // HOS-847: `hydrateSubscriptionProductDomains` is REAL here (this file
+    // imports @repo/service-core with importActual) and awaits the WHERE
+    // directly, with no `.limit()`, then `.map()`s the result. A `where` that
+    // merely returns the chain resolves to the chain object itself, and every
+    // trial test dies on "rows.map is not a function".
+    //
+    // So the WHERE returns a genuine Promise with `.limit` hung off it: awaiting
+    // it yields rows, and the chains that continue into `.limit()` are
+    // unaffected. A hand-written `then` property would do the same thing and is
+    // rejected by biome's `noThenProperty` — correctly, since this is exactly
+    // the accidental-thenable hazard that rule is about.
+    //
+    // Resolving to `[]` leaves every subscription's `productDomain` `undefined`,
+    // which `subscriptionMatchesDomain` reads as a legacy accommodation row —
+    // the right default for a file about plan subscriptions. A fixture meant to
+    // BE an add-on row carries `productDomain: 'addon'` on itself, which skips
+    // hydration entirely.
+    const limitFn = vi.fn().mockResolvedValue([]);
+    const whereResult = Object.assign(Promise.resolve([] as unknown[]), { limit: limitFn });
     const dbMock = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]),
+        where: vi.fn(() => whereResult),
+        limit: limitFn,
         insert: vi.fn().mockReturnThis(),
         values: vi.fn().mockResolvedValue(undefined),
         update: vi.fn().mockReturnThis(),
@@ -218,6 +237,61 @@ describe('TrialService', () => {
             expect(result.isExpired).toBe(false);
             expect(result.daysRemaining).toBeGreaterThan(6);
             expect(result.daysRemaining).toBeLessThanOrEqual(7);
+            expect(result.planSlug).toBe('owner-basico');
+        });
+
+        it("HOS-847: an ACTIVE recurring add-on row never outranks the customer's own trial", async () => {
+            // Arrange: a host in a real accommodation trial that has ALREADY
+            // expired, who also bought a recurring add-on. PR 5 is the first
+            // thing that ever moves an `product_domain = 'addon'` row to
+            // `active`, and `LIVE_STATUS_PRECEDENCE` ranks `active` (1) above
+            // `trialing` (2) — deterministically, not by row order. Unfiltered,
+            // the add-on row wins, `getTrialStatus` answers "not on trial, not
+            // expired", and `trialMiddleware` — mounted globally — stops
+            // answering 402 to every write. The host keeps publishing on a paid
+            // platform for free for as long as the add-on lives.
+            const customerId = 'customer-addon-trial';
+            const now = new Date();
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 3);
+
+            const planSubscription = {
+                id: 'sub-plan-1',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'trialing',
+                productDomain: 'accommodation',
+                trialStart: new Date(now.getTime() - 17 * 86_400_000).toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+            const addonSubscription = {
+                id: 'sub-addon-1',
+                customerId,
+                planId: 'addon-extra-accommodations-5',
+                status: 'active',
+                productDomain: 'addon',
+                trialStart: null,
+                trialEnd: null
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                // Add-on FIRST, so a fix that accidentally depends on array order
+                // rather than on the domain filter cannot pass.
+                addonSubscription,
+                planSubscription
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-owner-basico',
+                name: 'owner-basico'
+            } as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert: the paywall verdict is the plan row's, and it is the
+            // elapsed trial.
+            expect(result.isOnTrial).toBe(true);
+            expect(result.isExpired).toBe(true);
             expect(result.planSlug).toBe('owner-basico');
         });
 
@@ -2099,6 +2173,46 @@ describe('TrialService', () => {
             });
         });
 
+        it('HOS-847: a live recurring add-on does not block reactivating the cancelled plan', async () => {
+            // Arrange: the customer cancelled their plan and kept a recurring
+            // add-on. The add-on's own `billing_subscriptions` row is `active`,
+            // so unfiltered it trips ACTIVE_SUBSCRIPTION_EXISTS (409) — and the
+            // 409's own advice ("use plan-change instead") does not apply
+            // either, because there is no plan to change. The customer would
+            // have no route back at all.
+            const customerId = 'customer-addon-only';
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                {
+                    id: 'sub-addon-1',
+                    customerId,
+                    status: 'active',
+                    planId: 'addon-extra-accommodations-5',
+                    productDomain: 'addon'
+                },
+                {
+                    id: 'sub-canceled',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old',
+                    productDomain: 'accommodation'
+                }
+            ] as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: customerId,
+                email: 'host@example.com'
+            } as never);
+
+            // Act
+            await trialService
+                .reactivateSubscription({ customerId, planId: PAID_PLAN_ID, urls: URLS })
+                .catch(() => undefined);
+
+            // Assert: it got past the live-subscription rejection and reached
+            // the checkout it exists to perform.
+            expect(mockBilling.subscriptions.create).toHaveBeenCalled();
+        });
+
         it('should reject when no canceled subscription exists, and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-no-canceled';
@@ -2552,6 +2666,43 @@ describe('TrialService', () => {
             expect(result.cancelledCount).toBe(0);
             expect(result.cancelledIds).toHaveLength(0);
             expect(result.keptId).toBeNull();
+        });
+
+        it('HOS-847: never reaps a recurring add-on row, nor the plan it is the newest sibling of', async () => {
+            // Arrange: this reaper cancels every live subscription but the
+            // newest, and a recurring add-on's own row is created at the moment
+            // of purchase — so it is usually the newest of all. Unfiltered,
+            // buying an add-on cancels the very plan it extends.
+            const customerId = 'customer-with-addon';
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                {
+                    id: 'sub-plan',
+                    customerId,
+                    status: 'active',
+                    productDomain: 'accommodation',
+                    createdAt: '2026-01-01T00:00:00.000Z'
+                },
+                {
+                    id: 'sub-addon',
+                    customerId,
+                    status: 'active',
+                    productDomain: 'addon',
+                    createdAt: '2026-05-01T00:00:00.000Z'
+                }
+            ] as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert: one live PLAN row, so there is nothing duplicate here at
+            // all — and the add-on is neither kept nor cancelled by this reaper,
+            // because it is not its subject.
+            expect(result.cancelledCount).toBe(0);
+            expect(result.cancelledIds).toEqual([]);
+            expect(result.keptId).toBe('sub-plan');
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
         });
 
         it('should continue cancelling remaining duplicates if one cancel call fails', async () => {

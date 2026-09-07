@@ -64,6 +64,7 @@ import {
     buildCheckoutRetryLandingUrl,
     DEFAULT_RETURN_URL_LOCALE
 } from '../../billing/checkout-return-urls.js';
+import { routeAddonPreapprovalEvent } from './addon-recurring-handler.js';
 
 /**
  * Safety margin timeout before MercadoPago's 22s webhook deadline.
@@ -505,6 +506,40 @@ export async function processSubscriptionUpdated({
         apiLogger.error(
             { eventId: event.id, source },
             'No subscription ID found in webhook event data'
+        );
+        return { success: true, statusChanged: false };
+    }
+
+    // Step 1b (HOS-847 PR 5): route an ADD-ON's own preapproval away from every
+    // line below this one.
+    //
+    // Placed here — before the MercadoPago retrieve, before the
+    // `billing_subscriptions` lookup in step 5, before any status write — for
+    // two reasons. First, that lookup has no product-domain filter, so it
+    // resolves the `product_domain = 'addon'` row PR 4 writes, and the rest of
+    // this function then runs a customer's whole subscription lifecycle
+    // (status transitions, add-on plan-change recalculation, cancellation of
+    // every add-on they own, featured sync, entity-subscription reconcile,
+    // notifications) against one add-on. Second, this function has three
+    // callers — the webhook, `webhook-retry.job.ts` and
+    // `subscription-poll.job.ts` — so guarding the webhook handler alone would
+    // leave two doors open.
+    const addonRouting = await routeAddonPreapprovalEvent({
+        preapprovalId: mpPreapprovalId,
+        billing,
+        paymentAdapter,
+        triggerSource: source
+    });
+
+    if (addonRouting.handled) {
+        apiLogger.info(
+            {
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                purchaseId: addonRouting.purchaseId,
+                providerEventId,
+                source
+            },
+            'HOS-847: preapproval belongs to a recurring add-on — handled by the add-on path, never as a plan subscription'
         );
         return { success: true, statusChanged: false };
     }
@@ -1822,20 +1857,32 @@ export async function processSubscriptionUpdated({
     return { success: true, statusChanged: true, newStatus: mappedStatus };
 }
 
-// GAP-043-53: ADDON_RENEWAL_CONFIRMATION dispatch is intentionally not implemented here.
+// GAP-043-53, CORRECTED BY HOS-847 PR 5. The comment that stood here was wrong,
+// and it is worth saying exactly how, because it read entirely plausibly.
 //
-// MercadoPago handles add-on recurring billing externally and does not emit a
-// distinct webhook event per add-on renewal. The `subscription_preapproval.updated`
-// event only signals changes to the subscription's overall status (active, paused,
-// canceled, etc.) — it carries no per-addon granularity.
+// It asserted that "MercadoPago handles add-on recurring billing externally and
+// does not emit a distinct webhook event per add-on renewal", and concluded
+// that an add-on renewal was therefore not observable from webhook processing.
+// The premise was false in a way no reader could check from here: MercadoPago
+// was not handling anything, because nobody had ever asked it for an add-on
+// preapproval. `billingType: 'recurring'` add-ons went through
+// `checkout.create({ mode: 'payment' })` — a one-time Preference — so they were
+// charged once and never renewed at all. There was no renewal to notify about;
+// the absence of an event was the bug, not a provider limitation.
 //
-// To implement ADDON_RENEWAL_CONFIRMATION in the future:
-//   1. Create a dedicated webhook handler for add-on payment events (e.g.
-//      `payment.approved` with metadata.type === 'addon_renewal').
-//   2. Extract the addonSlug from the payment metadata.
-//   3. Call sendNotification({ type: NotificationType.ADDON_RENEWAL_CONFIRMATION, ... })
-//      after confirming the renewal in billing_addon_purchases.
+// Since PR 4 a recurring add-on gets a preapproval OF ITS OWN, so MercadoPago
+// does now emit a per-add-on renewal event — a `subscription_authorized_payment`
+// against that preapproval, carrying exactly the granularity this comment said
+// did not exist. PR 5 routes it: see `addon-recurring-handler.ts` and
+// `addon-recurring-renewal.service.ts`. The renewal is recorded in
+// `billing_payments` (`metadata.flow = 'addon-recurring'`) and the purchase's
+// `current_period_end` advances.
 //
-// Until MercadoPago surfaces add-on renewal events separately, this notification
-// cannot be reliably dispatched from subscription webhook processing without
-// risking false positives or requiring a per-addon payment scan on every event.
+// The ADDON_RENEWAL_CONFIRMATION *notification* is still not dispatched, and
+// that is now a deliberate scope decision rather than a claimed impossibility:
+// the copy has to tell a subscriber they were charged again and will be charged
+// again, which belongs with PR 8's recurring copy work. When it is built, the
+// dispatch site is `addon-recurring-renewal.service.ts`, and
+// `addon-notification-deep-link.guard.test.ts` must gain that file in
+// `DISPATCH_FILES` plus a bumped `EXPECTED_DISPATCH_COUNT` — otherwise the new
+// dispatch is invisible to the guard that checks deep-link fields are wired.
