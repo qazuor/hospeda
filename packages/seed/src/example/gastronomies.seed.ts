@@ -509,7 +509,18 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             );
             // Heal: re-grant the hats. Idempotent, and required for databases
             // seeded before HOS-296 whose owners have no `user_role` rows yet.
-            for (const role of [RoleEnum.USER, RoleEnum.COMMERCE_OWNER]) {
+            // HOS-964 follow-up (2026-09-07 smoke finding): GASTRONOMY_OWNER
+            // added alongside the legacy COMMERCE_OWNER so this fixture
+            // matches what `createForOwner` (base-commerce-listing.service.ts)
+            // actually grants in production — BOTH hats in the same
+            // transaction. Without it, these seeded owners never receive any
+            // What's New entry targeted at GASTRONOMY_OWNER, because
+            // COMMERCE_OWNER is (correctly) excluded from that audience enum.
+            for (const role of [
+                RoleEnum.USER,
+                RoleEnum.COMMERCE_OWNER,
+                RoleEnum.GASTRONOMY_OWNER
+            ]) {
                 const healed = await grantRole({
                     userId: realUserId,
                     role,
@@ -554,8 +565,17 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             //
             // `USER` is granted alongside `COMMERCE_OWNER` because that is what
             // a real signup produces (Better Auth's create hook grants the
-            // baseline, everything else is layered on top).
-            for (const role of [RoleEnum.USER, RoleEnum.COMMERCE_OWNER]) {
+            // baseline, everything else is layered on top). `GASTRONOMY_OWNER`
+            // is granted too (HOS-964 follow-up, 2026-09-07) — production's
+            // `createForOwner` grants both the legacy and the vertical role in
+            // the same transaction (HOS-1077), and this fixture was drifting
+            // from that: it only ever held the legacy `COMMERCE_OWNER`, so a
+            // What's New entry targeted at `GASTRONOMY_OWNER` never reached it.
+            for (const role of [
+                RoleEnum.USER,
+                RoleEnum.COMMERCE_OWNER,
+                RoleEnum.GASTRONOMY_OWNER
+            ]) {
                 const granted = await grantRole({
                     userId: realUserId,
                     role,
