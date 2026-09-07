@@ -26,7 +26,12 @@
  * @module ai-core/config/resolver
  */
 
-import type { AiFeature, AiFeatureConfig, AiSettingsValue } from '@repo/schemas';
+import type {
+    AiFeature,
+    AiFeatureConfig,
+    AiSettingsValue,
+    AiSettingsValueResponse
+} from '@repo/schemas';
 import type { WriteAiSettingsInput } from '../storage/index.js';
 import { readAiSettings, writeAiSettings } from '../storage/index.js';
 
@@ -53,7 +58,7 @@ const CONFIG_CACHE_TTL_MS = 300_000;
 // ---------------------------------------------------------------------------
 
 /** Cached resolved settings blob. */
-let _cachedConfig: AiSettingsValue | null = null;
+let _cachedConfig: AiSettingsValueResponse | null = null;
 
 /** Epoch ms when the cache was last populated.  `0` means empty. */
 let _cachedAt = 0;
@@ -193,27 +198,28 @@ export function invalidateConfigCache(): void {
  * const openaiEnabled = config.providers.openai?.enabled ?? false;
  * ```
  */
-export async function resolveConfig(): Promise<AiSettingsValue> {
+export async function resolveConfig(): Promise<AiSettingsValueResponse> {
     if (isCacheValid() && _cachedConfig !== null) {
         return _cachedConfig;
     }
 
     const value = await readAiSettings();
 
-    // When no row exists yet, return an empty-but-safe default.  The `features`
-    // field is typed as `Record<AiFeature, AiFeatureConfig>` by the schema
-    // (all four keys required), but at runtime an absent row means NOTHING is
-    // configured yet — the empty map is the correct representation.  We cast
-    // it through `as AiSettingsValue` because:
-    //   (a) `resolveFeatureConfig` guards callers against absent keys by
-    //       throwing `AiFeatureNotConfiguredError` before they touch the map.
-    //   (b) Changing the schema to `z.partialRecord` would ripple through
-    //       every engine call site.
-    // This is the ONLY place we use this cast; all real reads return a
-    // schema-validated blob from `readAiSettings`.
+    // When no row exists yet, return an empty-but-safe default.
     // Decision (owner-approved 2026-06-04): empty default over `null`.
-    const resolved: AiSettingsValue =
-        value ?? ({ providers: {}, features: {} } as unknown as AiSettingsValue);
+    //
+    // This used to need `as unknown as AiSettingsValue`, because the read side
+    // was typed with the WRITE schema's FULL feature record while an absent row
+    // legitimately configures nothing. HOS-1220 moved the read to
+    // `AiSettingsValueResponse` (partial `features`), which describes both this
+    // empty case and a real blob missing a key — so the empty object is now
+    // simply a valid value of the return type, and the cast is gone.
+    //
+    // The claim the old comment made for keeping it — that a partial record
+    // "would ripple through every engine call site" — was not true: exactly one
+    // call site reads this map, `resolveFeatureConfig` below, and it already
+    // handled an absent key by throwing `AiFeatureNotConfiguredError`.
+    const resolved: AiSettingsValueResponse = value ?? { providers: {}, features: {} };
 
     _cachedConfig = resolved;
     _cachedAt = Date.now();
