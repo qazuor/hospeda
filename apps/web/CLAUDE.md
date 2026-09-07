@@ -287,6 +287,36 @@ export function MyComponent({ className }: Props) {
 - Use CSS custom properties for ALL values
 - Use `cn()` (from `@/lib/cn`) for conditional class joining
 
+### Dialogs — never declare `max-height` yourself (HOS-958)
+
+A dialog's height is decided in exactly one place: the `.dialog-panel` class in
+`src/styles/components.css`. Compose it onto the surface, the same way
+`.overlay-surface` is composed:
+
+```tsx
+<dialog className={`${styles.dialog} dialog-panel`}>
+```
+
+Three classes, and the markup tells you which you need:
+
+| Class | Put it on |
+|---|---|
+| `dialog-panel` | The surface holding the content. Caps the height and scrolls itself. **The default** — a dialog with one flow of content needs only this. |
+| `dialog-panel-scroll` | The region that scrolls _inside_ a panel keeping a fixed header/footer, so the header does not scroll away with the body. |
+| `dialog-viewport` | A `<dialog>` that is not the panel: a full-viewport overlay wrapping a centred card, or an edge-anchored drawer. Its use is count-pinned by the guard. |
+
+For React modals prefer `shared/ui/Dialog.client.tsx`, which already composes
+all of this (plus portal, focus trap, scroll lock and back-button handling).
+Reach for a raw `<dialog>` only when you specifically want the browser's native
+focus trap — and then it must carry one of the classes above.
+
+Need a different cap for one panel? Set `--dialog-max-height` on it. Do **not**
+re-declare `max-height`: a second declaration of the same property races the
+shared class on source order (identical specificity), and five modules each
+holding their own opinion is exactly how six dialogs ended up with no cap at
+all. `pnpm check:dialog-panel` fails CI on a `<dialog>` that carries none of
+the three markers.
+
 ### Adding a New Theme
 
 Adding a theme is just a new CSS block. No code changes needed:
