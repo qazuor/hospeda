@@ -431,11 +431,11 @@ export function run(root: string): number {
         for (const v of violations) console.log(v);
         console.log(
             '\n  `handleApiError` only ever SETS the banner — nothing in `useZodForm` clears ' +
-                'it. Open the submit handler with `setFormError(null)` (before any early ' +
-                'return, so a submit that fails client-side validation clears it too), the ' +
-                'way CommerceCreateForm, CommerceListingEditor, PostEditor, EventEditor, ' +
-                'ProfileEditForm and the rest already do. HOS-816 is what happens without it: ' +
-                'the user saves successfully and reads a red banner saying it failed.'
+                'it. Open the submit handler with `setFormError(null)`, before any early ' +
+                'return, so a submit that only fails client-side validation retires the ' +
+                'previous attempt’s message too. `CommerceCreateForm.client.tsx` is the ' +
+                'reference shape. HOS-816 is what happens without it: the user saves ' +
+                'successfully and reads a red banner telling them it failed.'
         );
         failed = true;
     } else {
