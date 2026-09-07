@@ -383,7 +383,7 @@ export function DestinationReviewSidebarCard({
 
             <dialog
                 ref={dialogRef}
-                className={styles.dialog}
+                className={`${styles.dialog} dialog-panel`}
                 aria-labelledby={dialogTitleId}
                 onClose={() => setOpen(false)}
                 onClick={(event) => {

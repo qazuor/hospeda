@@ -287,6 +287,69 @@ export function MyComponent({ className }: Props) {
 - Use CSS custom properties for ALL values
 - Use `cn()` (from `@/lib/cn`) for conditional class joining
 
+### Dialogs — never declare `max-height` yourself (HOS-958)
+
+A dialog's height is decided in exactly one place: the `.dialog-panel` class in
+`src/styles/components.css`. Compose it onto the surface, the same way
+`.overlay-surface` is composed:
+
+```tsx
+<dialog className={`${styles.dialog} dialog-panel`}>
+```
+
+Three classes, and the markup tells you which you need:
+
+| Class | Put it on |
+|---|---|
+| `dialog-panel` | The surface holding the content. Caps the height and scrolls itself. **The default** — a dialog with one flow of content needs only this. |
+| `dialog-panel-scroll` | The region that scrolls _inside_ a panel keeping a fixed header/footer, so the header does not scroll away with the body. **Its parent must be `display: flex` or `grid`** — see below. |
+| `dialog-viewport` | A `<dialog>` that is not the panel: a full-viewport overlay wrapping a centred card, or an edge-anchored drawer. Its use is count-pinned by the guard. |
+
+For React modals prefer `shared/ui/Dialog.client.tsx`, which already composes
+all of this (plus portal, focus trap, scroll lock and back-button handling).
+Reach for a raw `<dialog>` only when you specifically want the browser's native
+focus trap — and then it must carry one of the classes above.
+
+Need a different cap for one panel? Set `--dialog-max-height` on it. Do **not**
+re-declare `max-height`: a second declaration of the same property races the
+shared class on source order (identical specificity), and five modules each
+holding their own opinion is exactly how six dialogs ended up with no cap at
+all.
+
+The same goes for the scroll region: `dialog-panel-scroll` owns the
+`overflow-y`, and a module re-declaring `overflow` on that element breaks the
+body's scrolling while the panel still obeys its cap — which reaches the user
+as the identical bug, buttons unreachable at the bottom.
+
+`pnpm check:dialog-panel` enforces both halves in CI: it fails on a `<dialog>`
+carrying none of the three markers, **and** on a CSS Module that declares
+`max-height` / `max-block-size` / `overflow` / `overflow-y` on a class applied
+to an element carrying `dialog-panel`, `dialog-viewport` or
+`dialog-panel-scroll`. Only those classes are inspected — a `max-height` on a
+popover, a drawer or a thumbnail is never looked at — and `--dialog-max-height`
+stays legal, because tuning the cap is the point and competing with it is not.
+A `className` expression it cannot resolve without guessing (a conditional, or
+more than one `styles.X`) is skipped **and counted** in the guard's success
+line, so the size of that blind spot is always on screen.
+
+**`dialog-panel-scroll` needs a flex parent.** `.dialog-panel` deliberately does
+not declare `display` — forcing `flex` on fifteen already-shipped dialogs would
+move layout — so a `<dialog>` stays `block` unless its own module says
+otherwise, and `flex: 1 1 auto` on a child of a block parent does nothing at
+all. The region silently stops scrolling, the whole panel scrolls instead, and
+the header the arrangement exists to pin goes with it. The guard resolves each
+region's real JSX parent and requires that class to be `display: flex` (or
+grid), so the dependency fails in CI instead of degrading in a browser.
+
+**Dialogs from workspace packages.** `@repo/feedback` renders a `<dialog>` on
+every page, and a shared package cannot use these classes — they live in this
+app's global stylesheet and would not exist in another host. The guard still
+covers it, with a weaker rule that needs no shared vocabulary: the dialog must
+be bounded to the viewport (a `max-height` that is not `none`, or a
+viewport-relative `height`) and the package stylesheet must declare an
+`overflow-y: auto|scroll` somewhere. A floor, not a proof — but it will not
+accept a dialog bounded by nothing.
+
 ### Adding a New Theme
 
 Adding a theme is just a new CSS block. No code changes needed:

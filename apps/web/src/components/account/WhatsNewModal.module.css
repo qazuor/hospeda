@@ -8,16 +8,19 @@
     animation: fadeIn 0.2s ease;
 }
 
+/* The card is the panel: it composes the shared `.dialog-panel` class (the
+ * `<dialog>` above it is only the full-viewport overlay). The cap is retuned
+ * through the shared custom property rather than a second `max-height`
+ * declaration, so the app still has exactly one of those for dialogs. */
 .modalCard {
+    --dialog-max-height: min(90dvh, 48rem);
     width: min(100%, 42rem);
-    max-height: min(90vh, 48rem);
     margin: auto;
     display: flex;
     flex-direction: column;
     border-radius: var(--radius-card);
     background-color: var(--core-card);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
-    overflow: hidden;
     animation: fadeIn 0.2s ease;
 }
 
@@ -38,9 +41,8 @@
     color: var(--core-foreground);
 }
 
+/* Flex sizing + scrolling come from the shared `.dialog-panel-scroll` class. */
 .modalBody {
-    flex: 1;
-    overflow-y: auto;
     padding: 1rem 1.25rem;
 }
 
@@ -89,7 +91,11 @@
     opacity: 0.92;
 }
 
+/* The side panel is the panel surface (the `<dialog>` around it is only the
+ * full-viewport overlay). It is deliberately full height, so it retunes the
+ * shared cap to `100%` instead of accepting the centred-modal default. */
 .panel {
+    --dialog-max-height: 100%;
     width: 100%;
     max-width: 420px;
     height: 100%;
@@ -130,9 +136,8 @@
     gap: 0.5rem;
 }
 
+/* Flex sizing + scrolling come from the shared `.dialog-panel-scroll` class. */
 .panelBody {
-    flex: 1;
-    overflow-y: auto;
     padding: 1rem 0;
 }
 

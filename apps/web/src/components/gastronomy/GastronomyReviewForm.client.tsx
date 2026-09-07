@@ -296,7 +296,7 @@ export function GastronomyReviewForm({
 
             <dialog
                 ref={dialogRef}
-                className={styles.dialog}
+                className={`${styles.dialog} dialog-panel`}
                 aria-labelledby="gastronomy-review-dialog-title"
                 onClose={() => setOpen(false)}
                 onClick={(event) => {

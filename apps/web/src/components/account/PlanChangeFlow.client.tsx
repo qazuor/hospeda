@@ -361,7 +361,7 @@ export function PlanChangeFlow({
             onClick={handleBackdropClick}
         >
             <dialog
-                className={styles.modal}
+                className={`${styles.modal} dialog-panel`}
                 open
                 aria-modal="true"
                 aria-labelledby="plan-change-flow-title"

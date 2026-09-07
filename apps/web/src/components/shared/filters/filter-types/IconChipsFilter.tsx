@@ -154,10 +154,10 @@ export function IconChipsFilter({ config, value, onChange, locale }: IconChipsFi
             {/* Full-options dialog */}
             <dialog
                 ref={dialogRef}
-                className={styles.iconChipsDialog}
+                className={`${styles.iconChipsDialog} dialog-viewport`}
                 aria-label={config.label}
             >
-                <div className={styles.iconChipsDialogPanel}>
+                <div className={`${styles.iconChipsDialogPanel} dialog-panel`}>
                     {/* Header */}
                     <div className={styles.iconChipsDialogHeader}>
                         <h3 className={styles.iconChipsDialogTitle}>{config.label}</h3>
@@ -184,7 +184,7 @@ export function IconChipsFilter({ config, value, onChange, locale }: IconChipsFi
                     </div>
 
                     {/* Body */}
-                    <div className={styles.iconChipsDialogBody}>
+                    <div className={`${styles.iconChipsDialogBody} dialog-panel-scroll`}>
                         {/* Selected options section */}
                         {selectedOptions.length > 0 && (
                             <>

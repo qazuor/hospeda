@@ -130,7 +130,7 @@ export function PlanPicker({
 
     return (
         <dialog
-            className={styles.root}
+            className={`${styles.root} dialog-panel`}
             open
             aria-modal="true"
             aria-labelledby="plan-picker-title"
