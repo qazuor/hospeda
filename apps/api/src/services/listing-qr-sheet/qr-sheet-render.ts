@@ -70,41 +70,22 @@
  */
 
 import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
-import {
-    type Color,
-    PageSizes,
-    PDFDocument,
-    type PDFFont,
-    type PDFPage,
-    rgb,
-    StandardFonts
-} from 'pdf-lib';
+import { PageSizes, PDFDocument, type PDFFont, type PDFPage, rgb, StandardFonts } from 'pdf-lib';
 import { renderQrMatrix } from '../../utils/qr-render.js';
-// The two text helpers are imported rather than re-implemented: they are
-// generic PDF text mechanics (WinAnsi substitution and greedy wrapping), not
-// brochure policy, and a second copy would drift the first time either page
-// learned about a character the standard faces cannot draw.
-import { toDrawableText, wrapText } from '../commerce-brochure/brochure-render.js';
+// `wrapText` is imported rather than re-implemented: it is generic PDF text
+// mechanics (greedy wrapping with a character-level break for an over-wide
+// token), not brochure policy, and a second copy would drift the first time
+// either page learned something about fitting text.
+import { wrapText } from '../commerce-brochure/brochure-render.js';
 import type { ListingQrSheetContent } from './qr-sheet-content.js';
-
-/** A4 in points, as PDF measures it. */
-const [A4_WIDTH, A4_HEIGHT] = PageSizes.A4;
-
-/**
- * Page margin, in points. 48pt ≈ 17mm.
- *
- * Home printers do not print to the edge — the unprintable border is typically
- * 3-6mm and can reach 10mm at the foot — so nothing is placed nearer than this.
- * A sheet whose code is clipped by the printer's dead zone is a sheet that
- * cannot be scanned at all.
- */
-const MARGIN = 48;
-
-/** Usable column width. */
-const CONTENT_WIDTH = A4_WIDTH - MARGIN * 2;
-
-/** Usable column height. */
-const CONTENT_HEIGHT = A4_HEIGHT - MARGIN * 2;
+import {
+    A4_WIDTH,
+    CONTENT_HEIGHT,
+    CONTENT_WIDTH,
+    drawCentredLine,
+    drawRectTopDown,
+    MARGIN
+} from './qr-sheet-page.js';
 
 /**
  * Side of the printed QR, in points. 320pt ≈ 113mm — see the module docblock
@@ -186,73 +167,6 @@ export interface ListingQrSheetRenderInput {
      * function of its inputs.
      */
     readonly qrUrl: string;
-}
-
-/** Width of `text` in points, after the substitutions `toDrawableText` makes. */
-function measure(input: { text: string; font: PDFFont; size: number }): number {
-    return input.font.widthOfTextAtSize(
-        toDrawableText({ text: input.text, font: input.font }),
-        input.size
-    );
-}
-
-/** Draws text whose `y` is the baseline measured from the TOP of the page. */
-function drawTextTopDown(input: {
-    page: PDFPage;
-    text: string;
-    x: number;
-    y: number;
-    font: PDFFont;
-    size: number;
-    color: Color;
-}): void {
-    input.page.drawText(toDrawableText({ text: input.text, font: input.font }), {
-        x: input.x,
-        y: A4_HEIGHT - input.y,
-        size: input.size,
-        font: input.font,
-        color: input.color
-    });
-}
-
-/** Draws one line centred on the page, `y` being its baseline from the top. */
-function drawCentredLine(input: {
-    page: PDFPage;
-    text: string;
-    y: number;
-    font: PDFFont;
-    size: number;
-    color: Color;
-}): void {
-    const width = measure({ text: input.text, font: input.font, size: input.size });
-    drawTextTopDown({
-        page: input.page,
-        text: input.text,
-        x: (A4_WIDTH - width) / 2,
-        y: input.y,
-        font: input.font,
-        size: input.size,
-        color: input.color
-    });
-}
-
-/** Draws a filled rectangle whose `y` is its TOP edge. */
-function drawRectTopDown(input: {
-    page: PDFPage;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    color: Color;
-}): void {
-    input.page.drawRectangle({
-        x: input.x,
-        y: A4_HEIGHT - (input.y + input.height),
-        width: input.width,
-        height: input.height,
-        color: input.color,
-        borderWidth: 0
-    });
 }
 
 /**
