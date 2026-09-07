@@ -230,16 +230,19 @@ function nullWhenEmpty(value: string): string | null {
  * stable in practice anyway.
  *
  * `i18nValues`'s four members are diffed and sent ONE AT A TIME (HOS-902), not
- * as the single blob this used to be. `parseCommerceI18nValues` bakes an ES
- * fallback into an untouched field (it shows the plain `name`/`summary`/
- * `description`/`richDescription` column when the i18n twin is empty — see
- * its JSDoc); a whole-object diff would then re-send that untouched, merely
- * DISPLAYED field the moment any sibling field changed, silently writing the
- * fallback text into a column the owner never actually translated. Per-field
- * comparison is what keeps "showing" from becoming "writing": a field that
- * only carries the fallback is identical between `current` and `baseline`
- * (both are parsed the same way from the same load-time record), so it never
- * shows up as dirty on its own.
+ * as the single blob this used to be, so editing only `summaryI18n` never
+ * re-sends `nameI18n`/`descriptionI18n`/`richDescriptionI18n` at all. This
+ * matters because `parseCommerceI18nValues` is intentionally fallback-free —
+ * `current`/`baseline` always hold the REAL stored i18n values, nothing
+ * fabricated — but `nameI18n`/`summaryI18n`/`descriptionI18n`/
+ * `richDescriptionI18n` are each a single JSONB column replaced WHOLESALE on
+ * save, not merged per locale (`gastronomy.model.ts`/`experience.model.ts`
+ * do not list them in `mergeableJsonbColumns`, only `contactInfo` is there —
+ * see `packages/db/src/base/base.model.ts:387-393`). So a per-FIELD diff
+ * (not per-locale) is exactly right: it must still send the whole
+ * `I18nLocaleValues` object of a changed field (all three locales — the
+ * column can't be updated one locale at a time), while never touching a
+ * sibling field the owner did not edit.
  */
 function sameValue(a: unknown, b: unknown): boolean {
     return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -264,14 +267,21 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *    because it is what makes the clear explicit: every member is sent, and an
  *    emptied one is sent as `null` via `nullWhenEmpty`, because under merge an
  *    omitted key means "keep the stored value".
- *  - The four i18n fields are diffed and sent INDEPENDENTLY (HOS-902; they used
- *    to travel together as one unit, on the theory that "the translation panel
- *    edits them together"). That theory broke once `parseCommerceI18nValues`
- *    started filling an empty `es` sub-field with the plain-column fallback
- *    (see its JSDoc): a whole-object diff would re-send an untouched sibling —
- *    fallback text included — the moment ANY of the four changed, writing text
- *    the owner never typed into a column they never touched. See `sameValue`'s
- *    JSDoc above for the full trap.
+ *  - The four i18n fields are diffed and sent INDEPENDENTLY, per field (HOS-902;
+ *    they used to travel together as one unit). Each field is still a single
+ *    JSONB column replaced wholesale (all three locales at once — see
+ *    `sameValue`'s JSDoc above for the DB-level reason), so editing
+ *    `nameI18n.en` sends the WHOLE `nameI18n` object including its untouched
+ *    `es`/`pt`. That is safe ONLY because `parseCommerceI18nValues` never
+ *    fabricates a value — the ES display fallback for an empty i18n field
+ *    lives exclusively in `CommerceTranslationPanel`'s render path
+ *    (`resolveDisplayValue`) and is never written into `current`/`baseline`.
+ *    An earlier version of this fix baked that fallback into
+ *    `parseCommerceI18nValues` itself, which broke exactly this case: editing
+ *    ONE locale of a field would re-send its OTHER locale's fallback display
+ *    text as if the owner had typed it, permanently overwriting the i18n
+ *    column with content the plain `name`/`summary`/`description`/
+ *    `richDescription` column held instead.
  *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
  *    and clear to an explicit `null`. `priceUnit` now joins them (H-156 made the
  *    column nullable), so clearing it sends `null` rather than omitting the key
@@ -327,10 +337,10 @@ function buildPatchPayload({
         payload.richDescription = current.richDescription;
     }
 
-    // HOS-902: per-field, NOT the whole `i18nValues` object at once — see the
-    // JSDoc above `buildPatchPayload` and above `sameValue` for why a
-    // whole-object diff is unsafe here (it can re-send an untouched sibling's
-    // ES-fallback display text as if the owner had typed it).
+    // HOS-902: per-FIELD, NOT the whole `i18nValues` object at once — see the
+    // JSDoc above `buildPatchPayload` and above `sameValue` for why this keeps
+    // an untouched sibling field out of the payload entirely (each field is
+    // still sent whole across its three locales, never a fabricated value).
     if (!sameValue(current.i18nValues.nameI18n, baseline.i18nValues.nameI18n)) {
         payload.nameI18n = current.i18nValues.nameI18n;
     }
@@ -941,6 +951,17 @@ export function CommerceListingEditor({
                 <CommerceTranslationPanel
                     locale={locale}
                     initialValues={i18nValues}
+                    // HOS-902: display-only ES fallback. Sourced from the SAME
+                    // `formData` the rest of this form edits, but this section
+                    // never renders BasicInfoSection (one-section-per-route,
+                    // HOS-1080), so these four are always the load-time values
+                    // — never live-changing under the translations page.
+                    plainTextValues={{
+                        name: formData.name,
+                        summary: formData.summary,
+                        description: formData.description,
+                        richDescription: formData.richDescription
+                    }}
                     onChange={handleI18nChange}
                 />
             )}
