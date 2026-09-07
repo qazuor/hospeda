@@ -12,6 +12,15 @@
  * preapproval MP has already reported terminal is redundant, and the HOS-753
  * static guard names that case explicitly as one it deliberately does not flag.
  *
+ * ## And why this one revokes IMMEDIATELY while the in-app cancel does not
+ *
+ * `addon-soft-cancel.ts` keeps the benefit until `current_period_end`, because
+ * the customer paid for that period and Hospeda is the one that stopped the
+ * charging on their behalf. Here there is no paid period left to honour: the
+ * buyer (or MercadoPago) killed the subscription AT THE PROVIDER, where the
+ * money lives. Both events read as "cancelled" in a log line and mean opposite
+ * things about what the customer still owns — do not unify them.
+ *
  * ## Marking the row is NOT revoking the benefit
  *
  * `loadEntitlements` reads QZPay's `billing_customer_entitlements` /
