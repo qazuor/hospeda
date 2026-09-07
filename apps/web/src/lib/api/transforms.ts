@@ -916,8 +916,18 @@ export function toAccommodationDetailPageProps({
     // H-125: the rich shape carries the cover photo's author-written alt text.
     // The URL-only wrapper drops it, which is why every cover fell back to the
     // listing name.
+    // HOS-881: this URL feeds `og:image` and the JSON-LD `image` field on the
+    // detail page (apps/web/src/pages/[lang]/alojamientos/[slug].astro), which
+    // is why the preset is `og` (1200x630) instead of the extractor's `card`
+    // default (400x300, a thumbnail size) — WhatsApp/Facebook/Twitter share
+    // previews were rendering a cropped miniature. The two other consumers of
+    // this same field (`ImageGallery`'s featured cell, and the compare bar's
+    // thumbnail via `CompareBar.client.tsx`) strip this baked-in transform and
+    // re-apply their own preset before rendering, so raising it here does not
+    // regress their byte size.
     const featuredImage = extractFeaturedImage(item, {
-        fallback: '/assets/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg',
+        preset: 'og'
     });
 
     return {
