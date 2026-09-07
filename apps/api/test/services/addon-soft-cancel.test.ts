@@ -134,7 +134,7 @@ describe('softCancelRecurringAddon', () => {
         expect(mockUpdateWhere.mock.calls[0]?.[0]).toBeDefined();
     });
 
-    it('is idempotent: a second cancellation finds no active row and still succeeds', async () => {
+    it('is idempotent: an UPDATE that moved nothing still succeeds', async () => {
         // The customer asked to cancel and has a cancellation; answering with an
         // error would invite them to retry something already done.
         const result = await softCancelRecurringAddon({
@@ -143,6 +143,21 @@ describe('softCancelRecurringAddon', () => {
         });
 
         expect(result.success).toBe(true);
+    });
+
+    it('does NOT mail the customer when the UPDATE moved no row', async () => {
+        // HOS-847 PR 7b. The email used to be unconditional, so every repeat —
+        // a MercadoPago redelivery, a cron retry after a partial failure, the
+        // orphan sweep meeting a row the webhook already flagged — mailed the
+        // customer again about a cancellation they were already told about.
+        //
+        // Note this is NOT the "row already terminal" case the old docblock
+        // described: this function leaves `status = 'active'` on purpose, so the
+        // WHERE keeps matching. `rowCount` is the only thing that separates a
+        // real transition from a repeat.
+        await softCancelRecurringAddon({ ...baseInput, db: createDb({ rowCount: 0 }) });
+
+        expect(mockSendNotification).not.toHaveBeenCalled();
     });
 
     it('reports an error, loudly, when the flag cannot be persisted', async () => {
