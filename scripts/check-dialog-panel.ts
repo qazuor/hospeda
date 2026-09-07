@@ -36,6 +36,12 @@
  *    `max-height: 3000px` beside the shared class does not override it, it
  *    RACES it at equal specificity — and a 3000px cap in a 640px window is no
  *    cap at all, with every other assertion still green.
+ * 6b. The same rule on `dialog-panel-scroll`, for every call site whose
+ *    `className` expression can be resolved without guessing. Breaking the
+ *    scroll region reaches the user as the same bug from the other half of the
+ *    mechanism: the panel obeys its cap, the content inside it is cut off, and
+ *    the buttons are unreachable again. Expressions that branch are skipped and
+ *    COUNTED in the success line, never skipped silently.
  *
  * ## Scope of rule 6, and why it does not block a legitimate `max-height`
  *
@@ -165,27 +171,74 @@ function resolveStyleImports(source: string, file: string): ReadonlyMap<string, 
 
 /**
  * Every CSS-Module class applied to an element that carries `dialog-panel` or
- * `dialog-viewport`, as `{ cssFile, className }` pairs.
+ * `dialog-viewport` (`panel`) or `dialog-panel-scroll` (`scroll`).
  *
- * Scoped to those two markers on purpose. `dialog-panel-scroll` is excluded
- * because `DialogBody` picks between `styles.bodyBare` and
- * `cn(styles.body, 'dialog-panel-scroll')` inside one `className` expression:
- * a text scan cannot tell which branch owns the marker, and `.bodyBare` is
- * legitimately `overflow: hidden`. Flagging it would be a false positive on the
- * shared primitive itself.
+ * The two markers are resolved under DIFFERENT rules, and the asymmetry is the
+ * point:
+ *
+ * - For `dialog-panel` / `dialog-viewport` every `styles.X` in the expression
+ *   counts. The marker is unconditional in all of them, so each referenced
+ *   class really is applied to the marked element — `MobileDrawer` adds
+ *   `styles.drawerOpen` behind an `isOpen` ternary and both classes land on the
+ *   same marked `<dialog>`.
+ * - For `dialog-panel-scroll` the expression must be UNAMBIGUOUS: exactly one
+ *   `styles.X`, and no conditional. `DialogBody` writes
+ *   `bare ? styles.bodyBare : cn(styles.body, 'dialog-panel-scroll')`, where the
+ *   marker itself sits inside one branch — so `.bodyBare` is not a marked
+ *   element at all, and it legitimately declares `overflow: hidden`. Guessing
+ *   which branch owns the marker would be worse than not checking, so that
+ *   expression is skipped and COUNTED (`ambiguous`). A counted limit is a
+ *   limit; an uncounted one is a fail-open.
  */
-function markedModuleClasses(
-    source: string,
-    file: string
-): readonly { readonly cssFile: string; readonly className: string }[] {
-    if (!hasClassToken(source, 'dialog-panel') && !hasClassToken(source, 'dialog-viewport')) {
-        return [];
+interface ModuleClassRef {
+    readonly cssFile: string;
+    readonly className: string;
+}
+
+interface MarkedScan {
+    readonly panel: readonly ModuleClassRef[];
+    readonly scroll: readonly ModuleClassRef[];
+    readonly ambiguous: number;
+}
+
+const EMPTY_SCAN: MarkedScan = { panel: [], scroll: [], ambiguous: 0 };
+
+/** Every `binding.className` reference in one `className={...}` expression. */
+function styleRefsIn(expression: string, bindings: ReadonlyMap<string, string>): ModuleClassRef[] {
+    const refs: ModuleClassRef[] = [];
+    for (const [binding, cssFile] of bindings) {
+        const refRe = new RegExp(`\\b${escapeRegExp(binding)}\\.([A-Za-z_$][\\w$]*)`, 'g');
+        let ref = refRe.exec(expression);
+        while (ref !== null) {
+            const className = ref[1];
+            if (className !== undefined) refs.push({ cssFile, className });
+            ref = refRe.exec(expression);
+        }
     }
+    return refs;
+}
+
+/**
+ * True when the expression branches, so which class the marker lands on cannot
+ * be decided by reading it. `?.` is optional chaining, not a ternary.
+ */
+function isConditionalExpression(expression: string): boolean {
+    return /\?[^.]|&&|\|\|/.test(expression);
+}
+
+function markedModuleClasses(source: string, file: string): MarkedScan {
+    const anyMarker =
+        hasClassToken(source, 'dialog-panel') ||
+        hasClassToken(source, 'dialog-viewport') ||
+        hasClassToken(source, 'dialog-panel-scroll');
+    if (!anyMarker) return EMPTY_SCAN;
 
     const bindings = resolveStyleImports(source, file);
-    if (bindings.size === 0) return [];
+    if (bindings.size === 0) return EMPTY_SCAN;
 
-    const out: { cssFile: string; className: string }[] = [];
+    const panel: ModuleClassRef[] = [];
+    const scroll: ModuleClassRef[] = [];
+    let ambiguous = 0;
     const attrRe = /className=\{/g;
     let match = attrRe.exec(source);
 
@@ -198,20 +251,19 @@ function markedModuleClasses(
             hasClassToken(expression, 'dialog-panel') ||
             hasClassToken(expression, 'dialog-viewport')
         ) {
-            for (const [binding, cssFile] of bindings) {
-                const refRe = new RegExp(`\\b${escapeRegExp(binding)}\\.([A-Za-z_$][\\w$]*)`, 'g');
-                let ref = refRe.exec(expression);
-                while (ref !== null) {
-                    const className = ref[1];
-                    if (className !== undefined) out.push({ cssFile, className });
-                    ref = refRe.exec(expression);
-                }
+            panel.push(...styleRefsIn(expression, bindings));
+        } else if (hasClassToken(expression, 'dialog-panel-scroll')) {
+            const refs = styleRefsIn(expression, bindings);
+            if (refs.length === 1 && !isConditionalExpression(expression)) {
+                scroll.push(...refs);
+            } else {
+                ambiguous += 1;
             }
         }
         match = attrRe.exec(source);
     }
 
-    return out;
+    return { panel, scroll, ambiguous };
 }
 
 /** True when `className` appears in the SUBJECT compound of any of `selector`'s parts. */
@@ -388,7 +440,9 @@ function main(): void {
     const files = globSync(['**/*.tsx', '**/*.astro'], { cwd: WEB_SRC, absolute: true }).sort();
     const viewportSeen = new Map<string, number>();
     /** Every (css file, class) pair applied to a marked element — deduplicated. */
-    const markedPairs = new Map<string, { cssFile: string; className: string }>();
+    const panelPairs = new Map<string, ModuleClassRef>();
+    const scrollPairs = new Map<string, ModuleClassRef>();
+    let ambiguousExpressions = 0;
     let dialogCount = 0;
 
     for (const file of files) {
@@ -396,9 +450,10 @@ function main(): void {
         const raw = readFileSync(file, 'utf8');
         const stripped = stripComments(raw);
 
-        for (const pair of markedModuleClasses(stripped, file)) {
-            markedPairs.set(`${pair.cssFile}::${pair.className}`, pair);
-        }
+        const scan = markedModuleClasses(stripped, file);
+        for (const pair of scan.panel) panelPairs.set(`${pair.cssFile}::${pair.className}`, pair);
+        for (const pair of scan.scroll) scrollPairs.set(`${pair.cssFile}::${pair.className}`, pair);
+        ambiguousExpressions += scan.ambiguous;
 
         if (!raw.includes('<dialog')) continue;
         const source = stripped;
@@ -456,7 +511,7 @@ function main(): void {
 
     // ── 6. No module re-declares what the shared class declares ─────────────
     const cssCache = new Map<string, string>();
-    for (const { cssFile, className } of markedPairs.values()) {
+    const readCss = (cssFile: string): string => {
         let css = cssCache.get(cssFile);
         if (css === undefined) {
             try {
@@ -466,8 +521,11 @@ function main(): void {
             }
             cssCache.set(cssFile, css);
         }
+        return css;
+    };
 
-        for (const { property, line, text } of forbiddenDeclarations(css, className)) {
+    for (const { cssFile, className } of panelPairs.values()) {
+        for (const { property, line, text } of forbiddenDeclarations(readCss(cssFile), className)) {
             errors.push(
                 `${relative(REPO_ROOT, cssFile)}:${line} — '.${className}' is applied to an element ` +
                     `carrying 'dialog-panel'/'dialog-viewport'\n` +
@@ -486,6 +544,23 @@ function main(): void {
         }
     }
 
+    // ── 6b. Same rule for the scroll region — the mechanism's other half ────
+    for (const { cssFile, className } of scrollPairs.values()) {
+        for (const { property, line, text } of forbiddenDeclarations(readCss(cssFile), className)) {
+            errors.push(
+                `${relative(REPO_ROOT, cssFile)}:${line} — '.${className}' is applied to an element ` +
+                    `carrying 'dialog-panel-scroll'\n` +
+                    `  and declares '${property}' (\`${text}\`), which the shared class already ` +
+                    'declares.\n' +
+                    '  Same equal-specificity race as on the panel, and the same outcome for the\n' +
+                    '  user: the panel obeys its cap while the content inside it is cut off with\n' +
+                    '  no scrollbar, so the buttons at the bottom stay unreachable.\n' +
+                    '  Layout that is genuinely local (padding, gap, direction) belongs here;\n' +
+                    '  the scrolling does not.'
+            );
+        }
+    }
+
     // ── 5. The scan actually scanned something ──────────────────────────────
     if (dialogCount === 0) {
         errors.push(
@@ -495,12 +570,21 @@ function main(): void {
         );
     }
 
-    if (markedPairs.size === 0) {
+    if (panelPairs.size === 0) {
         errors.push(
-            'No CSS-Module class was found on any element carrying the shared markers.\n' +
-                '  Assertion 6 has nothing to check, so it would pass on any stylesheet\n' +
-                '  whatsoever. Zero means the className/import scan is broken, not that the\n' +
-                '  modules are clean.'
+            "No CSS-Module class was found on any element carrying 'dialog-panel' or\n" +
+                "  'dialog-viewport'. Assertion 6 has nothing to check, so it would pass on any\n" +
+                '  stylesheet whatsoever. Zero means the className/import scan is broken, not\n' +
+                '  that the modules are clean.'
+        );
+    }
+
+    if (scrollPairs.size === 0) {
+        errors.push(
+            "No CSS-Module class was found on any element carrying 'dialog-panel-scroll'.\n" +
+                '  Assertion 6b has nothing to check. There are unambiguous call sites in the\n' +
+                '  app, so zero means the resolver stopped matching them — not that the scroll\n' +
+                '  regions are clean.'
         );
     }
 
@@ -516,7 +600,9 @@ function main(): void {
     console.log(
         `[check-dialog-panel] OK — ${dialogCount} <dialog> element(s) checked, ` +
             `${[...viewportSeen.values()].reduce((a, b) => a + b, 0)} viewport exemption(s) within budget, ` +
-            `${markedPairs.size} marked CSS-Module class(es) free of competing declarations.`
+            `${panelPairs.size} panel + ${scrollPairs.size} scroll CSS-Module class(es) free of ` +
+            `competing declarations, ${ambiguousExpressions} ambiguous className ` +
+            `expression${ambiguousExpressions === 1 ? '' : 's'} NOT verified.`
     );
 }
 
