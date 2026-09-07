@@ -301,10 +301,21 @@ export interface MintRetryPreapprovalAttemptResult {
  * a `cancelled` row (spec §6.4: `cancelled` recovery is a NEW object,
  * `payer_email` on the old one is not mutable).
  *
- * Reuses the exact MP `preapproval_plan` (`metadata.mpPreapprovalPlanId`,
- * stamped by `own-preapproval-subscription-create.ts` for every HOS-937
- * flow) so the fresh attempt carries the SAME amount/cadence/trial terms —
- * including any signup discount already baked into that MP plan. Any
+ * The commercial terms are re-derived from the plan and the cadence recorded
+ * on the row (`metadata.billingInterval`), so the fresh preapproval bills the
+ * same price on the same cadence. `metadata.mpPreapprovalPlanId` — stamped by
+ * `own-preapproval-subscription-create.ts` for every HOS-937 flow — is carried
+ * onto the new row as the same priced-variant key, and is required here so a
+ * retry cannot silently lose it.
+ *
+ * HOS-1221: it is NOT passed as `providerPriceId` any more. Subscribing the
+ * retry against the MercadoPago plan is the request MercadoPago rejects with
+ * "card_token_id is required", so this path reproduced the checkout 500
+ * verbatim. One consequence is shared with the checkout it mirrors: a signup
+ * discount that only ever existed inside the MP plan is no longer applied by
+ * the provider (see `discountCycle1AmountCentavos` in
+ * `subscription-checkout.service.ts`); the fix for both is an explicit amount
+ * override on the create call, not a plan id. Any
  * deferred-redemption promo snapshot (`pendingDiscount` /
  * `pendingTrialExtension`) the original checkout resolved is carried
  * forward unredeemed (the original preapproval never activated, so nothing
@@ -361,7 +372,11 @@ export async function mintRetryPreapprovalAttempt({
         billingInterval,
         paymentMethodReturnUrl,
         notificationUrl,
-        providerPriceId: mpPreapprovalPlanId,
+        // HOS-1221: RECORDED on the fresh row, never sent to MercadoPago. This
+        // used to be `providerPriceId`, which rebuilt the plan-based request
+        // MercadoPago answers with "card_token_id is required" — the retry
+        // reproduced the checkout's own 500 for the same reason.
+        mpPreapprovalPlanId,
         ...(pendingDiscount ? { pendingDiscount } : {}),
         ...(pendingTrialExtension ? { pendingTrialExtension } : {}),
         ...(db ? { db } : {})

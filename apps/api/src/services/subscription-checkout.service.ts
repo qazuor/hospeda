@@ -8,15 +8,44 @@
  *   - `pending_provider` local subscription + correlation row materialization,
  *   - response shape (`checkoutUrl`, `localSubscriptionId`, `expiresAt`).
  *
- * ALL FOUR checkout entry points here — accommodation monthly, accommodation
- * annual, commerce, and partner — take the SAME "Path C" hosted share-link
- * flow. No preapproval is ever created server-side: `billing.subscriptions
- * .create({ mode: 'paid', providerPriceId })` issues a `POST /preapproval`
- * carrying a `preapproval_plan_id` and no `card_token_id`, which MercadoPago
- * rejects with HTTP 400 ("card_token_id is required") because this self-serve
- * checkout never tokenizes a card. MercadoPago's own hosted page collects it
- * instead, and the real preapproval id is linked back afterwards (F2 back_url /
- * F3 webhook — `billing/link-preapproval.service.ts`).
+ * ## Two branches per entry point, chosen by one flag
+ *
+ * All four entry points — accommodation monthly, accommodation annual, commerce
+ * and partner — carry BOTH flows, selected by
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED`:
+ *
+ *  - **Path C (flag off, live in production).** No preapproval is created
+ *    server-side. The checkout resolves/provisions a MercadoPago
+ *    `preapproval_plan`, materializes a `pending_provider` local subscription
+ *    plus a `billing_pending_checkouts` correlation row, and redirects to that
+ *    plan's HOSTED share link, where MercadoPago collects the card. The real
+ *    preapproval id is linked back afterwards (F2 back_url / F3 webhook —
+ *    `billing/link-preapproval.service.ts`). Path C exists because the hybrid it
+ *    replaced — `billing.subscriptions.create({ mode: 'paid', providerPriceId })`,
+ *    i.e. `POST /preapproval` carrying a `preapproval_plan_id` and no
+ *    `card_token_id` — is rejected by MercadoPago with HTTP 400
+ *    ("card_token_id is required"), since this self-serve checkout never
+ *    tokenizes a card.
+ *  - **Own preapproval (flag on, HOS-937).** A per-user `POST /preapproval` IS
+ *    created server-side, so `external_reference` travels in the body of a
+ *    server-to-server call where MercadoPago preserves it — the correlation
+ *    problem Path C cannot solve. It is the "subscription with NO associated
+ *    plan" request: no `preapproval_plan_id`, inline `auto_recurring` built from
+ *    the resolved price. MercadoPago returns an `init_point` the payer
+ *    authorizes.
+ *
+ * Path C's 400 is a fact about a REQUEST SHAPE, not about creating preapprovals
+ * server-side — and HOS-1221 is the proof. The own-preapproval branch shipped
+ * passing `providerPriceId`, which rebuilt that exact shape, and every checkout
+ * behind the flag answered 500 with MercadoPago's
+ * `"Create subscription - card_token_id is required"`. The four branches now
+ * hand the resolved plan id to `createOwnPreapprovalSubscription` as
+ * `mpPreapprovalPlanId` — recorded on the row for the reuse/retry bookkeeping,
+ * never forwarded to the provider — and `scripts/check-no-plan-id-to-own-preapproval.sh`
+ * (guard G-2) fails CI if it is put back.
+ *
+ * Path C keeps `providerPriceId` on ITS OWN calls, and must: the plan IS the
+ * product there — the share link is the plan's.
  *
  * ## HOS-1012: no checkout may send a trial to MercadoPago
  *
@@ -514,18 +543,27 @@ export async function initiatePaidMonthlySubscription(
         }
     }
 
-    // ── Path C: MercadoPago hosted preapproval-plan share link (HOS-191) ─────
-    // The API no longer creates the preapproval server-side:
-    // `billing.subscriptions.create({ mode: 'paid', providerPriceId })` calls
-    // `POST /preapproval` with a `preapproval_plan_id`, and MercadoPago rejects
-    // that with "card_token_id is required" unless a card was already
-    // tokenized — which this self-serve checkout never does. Instead, resolve
-    // (or provision) the MP `preapproval_plan` for this customer's exact
-    // trial-day variant, materialize a `pending_provider` local subscription +
-    // a `billing_pending_checkouts` correlation row (so the eventual
-    // `back_url` redirect / webhook can link the real preapproval — F2/F3, out
-    // of scope here), and redirect to MercadoPago's HOSTED share link, where MP
-    // itself collects the card.
+    // ── The MercadoPago `preapproval_plan` (HOS-191) ─────────────────────────
+    // Resolved (or provisioned) here for BOTH branches below, because both need
+    // it — for different things:
+    //
+    //  - PATH C (flag off) SELLS it: the hosted share link IS this plan's link,
+    //    and MercadoPago collects the card on that page. Path C exists because
+    //    `billing.subscriptions.create({ mode: 'paid', providerPriceId })` calls
+    //    `POST /preapproval` with a `preapproval_plan_id`, which MercadoPago
+    //    rejects with "card_token_id is required" unless a card was already
+    //    tokenized — which this self-serve checkout never does.
+    //  - The OWN-PREAPPROVAL branch (flag on) only RECORDS its id, as the key
+    //    that says which priced variant a checkout was born against (HOS-1221).
+    //    It is not part of the request MercadoPago receives; putting it there is
+    //    what rebuilt Path C's 400.
+    //
+    // Keeping the resolution unconditional costs one cached lookup and keeps
+    // that key honest: `resolveOrProvisionMpPlan` re-provisions on price or
+    // discount drift, so a changed id is exactly the signal §6.6-B's reuse check
+    // needs to refuse a stale in-flight checkout. Skipping it under the flag
+    // would leave that check comparing `undefined` against `undefined`, which
+    // matches always — a fail-open on price drift.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
@@ -582,8 +620,15 @@ export async function initiatePaidMonthlySubscription(
     // back to a local row (the root cause HOS-937 targets). Creating a
     // per-user `POST /preapproval` instead puts `external_reference` in the
     // body of a server-to-server call, where MercadoPago DOES preserve it.
-    // Accommodation monthly ONLY — annual, commerce and partner checkouts
-    // are untouched by this flag and keep using Path C regardless.
+    //
+    // HOS-1221: this is the "subscription with NO associated plan" request —
+    // no `preapproval_plan_id`, inline `auto_recurring` from the resolved
+    // price, and MercadoPago answers with the `init_point` the payer
+    // authorizes. The resolved plan id goes in as `mpPreapprovalPlanId`
+    // (recorded on the row) and NOT as `providerPriceId` (forwarded to the
+    // provider): the latter is the one-word difference that made every
+    // checkout behind this flag answer 500 with
+    // "Create subscription - card_token_id is required".
     //
     // Deferred-redemption bookkeeping (`pendingDiscount` / trial-extension
     // stamping) is wired into this path too, same snapshot-now / redeem-later
@@ -604,7 +649,10 @@ export async function initiatePaidMonthlySubscription(
             billingInterval: 'monthly',
             paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
             notificationUrl: urls.notificationUrl,
-            providerPriceId,
+            // HOS-1221: the resolved MP plan is RECORDED, never sent. See the
+            // note above this branch — `providerPriceId` here is what made
+            // MercadoPago answer "card_token_id is required" on every checkout.
+            mpPreapprovalPlanId: providerPriceId,
             // HOS-937 step 2: bind the preapproval to the resolved payer
             // email. Forwarded to qzpay-core's `billing.subscriptions.create`
             // (see `paid-subscription-create.ts`), which uses it in place of
@@ -920,7 +968,9 @@ export async function initiateCommerceMonthlySubscription(
             billingInterval: 'monthly',
             paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
             notificationUrl: urls.notificationUrl,
-            providerPriceId,
+            // HOS-1221: recorded for the §6.6-B reuse check above, not sent to
+            // MercadoPago — see the accommodation monthly branch.
+            mpPreapprovalPlanId: providerPriceId,
             payerEmail,
             // HOS-1012: no `freeTrialDays` — this preapproval carries no trial.
             // D3: HOS-695 — the listing's own vertical, never the retired
@@ -1196,7 +1246,9 @@ export async function initiatePartnerMonthlySubscription(
             billingInterval: 'monthly',
             paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
             notificationUrl: urls.notificationUrl,
-            providerPriceId,
+            // HOS-1221: recorded for the §6.6-B reuse check above, not sent to
+            // MercadoPago — see the accommodation monthly branch.
+            mpPreapprovalPlanId: providerPriceId,
             productDomain: ProductDomainEnum.PARTNER,
             domainMetadata: { partnerId },
             writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
@@ -1456,13 +1508,11 @@ export async function initiatePaidAnnualSubscription(
         );
     }
 
-    // ── Path C: MercadoPago hosted preapproval-plan share link (HOS-191) ─────
-    // Same rationale as the monthly path above — no preapproval is created
-    // server-side (MP rejects `POST /preapproval` built from a
-    // `preapproval_plan_id` with "card_token_id is required" unless a card was
-    // already tokenized). Resolve/provision the MP plan for this trial-day
-    // variant, materialize a `pending_provider` local subscription + a
-    // correlation row, and redirect to MercadoPago's hosted share link.
+    // ── The MercadoPago `preapproval_plan` (HOS-191) ─────────────────────────
+    // Same two-branch rationale as the monthly path above: Path C SELLS this
+    // plan through its hosted share link, while the own-preapproval branch
+    // below only RECORDS its id as the priced-variant key (HOS-1221) and builds
+    // a preapproval with no `preapproval_plan_id` at all.
     //
     // `urls.successUrl` is the preapproval's single `back_url` once the real
     // preapproval exists (F2). It resolves to the same checkout success page
@@ -1528,7 +1578,12 @@ export async function initiatePaidAnnualSubscription(
             billingInterval: 'annual',
             paymentMethodReturnUrl: urls.successUrl,
             notificationUrl: urls.notificationUrl,
-            providerPriceId,
+            // HOS-1221: recorded, not sent — see the monthly branch. The annual
+            // cadence comes from `billingInterval: 'annual'` above, which
+            // `createPaidSubscription` maps to MercadoPago's
+            // `frequency: 12, frequency_type: 'months'`; it never depended on
+            // the MP plan.
+            mpPreapprovalPlanId: providerPriceId,
             // HOS-937 step 2: bind the preapproval to the resolved payer
             // email, same as the monthly own-preapproval branch.
             payerEmail,
