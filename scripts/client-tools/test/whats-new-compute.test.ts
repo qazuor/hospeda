@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { ComputeDeps } from '../src/commands/whats-new/compute.ts';
-import { computeAudit } from '../src/commands/whats-new/compute.ts';
+import { computeAudit, exitCodeForOutcome } from '../src/commands/whats-new/compute.ts';
 import { WHATS_NEW_NONE_LABEL } from '../src/commands/whats-new/labels.ts';
 import type { ApiPr, RangeCommit } from '../src/commands/whats-new/range.ts';
 
@@ -129,5 +129,79 @@ describe('computeAudit', () => {
 
         expect(outcome.ok).toBe(false);
         expect(calls).toBe(1);
+    });
+});
+
+describe('exitCodeForOutcome', () => {
+    // --- AC-13: the exact mapping the mutation test targets ---
+    it('should map a NOT-OK outcome (GitHub API failure) to exit 3, never 1', () => {
+        const outcome = { ok: false as const, reason: 'HTTP 503 Service Unavailable' };
+
+        expect(exitCodeForOutcome({ outcome })).toBe(3);
+        expect(exitCodeForOutcome({ outcome })).not.toBe(1);
+    });
+
+    it('should map a clean OK outcome to exit 0', () => {
+        const outcome = {
+            ok: true as const,
+            result: {
+                evaluated: [],
+                unlabeled: [],
+                conflicting: [],
+                botExempt: [],
+                preCutoff: [],
+                unresolvedCommits: [],
+                mismatches: [],
+                cutoffConfigured: true
+            }
+        };
+
+        expect(exitCodeForOutcome({ outcome })).toBe(0);
+    });
+
+    it('should map a blocked OK outcome to exit 1, never 3', () => {
+        const outcome = {
+            ok: true as const,
+            result: {
+                evaluated: [],
+                unlabeled: [
+                    {
+                        sha: 'a'.repeat(40),
+                        pr: PR,
+                        outcome: { kind: 'unlabeled' as const }
+                    }
+                ],
+                conflicting: [],
+                botExempt: [],
+                preCutoff: [],
+                unresolvedCommits: [],
+                mismatches: [],
+                cutoffConfigured: true
+            }
+        };
+
+        expect(exitCodeForOutcome({ outcome })).toBe(1);
+        expect(exitCodeForOutcome({ outcome })).not.toBe(3);
+    });
+
+    it('should keep all three codes distinguishable', () => {
+        const notOk = exitCodeForOutcome({ outcome: { ok: false as const, reason: 'x' } });
+        const okClean = exitCodeForOutcome({
+            outcome: {
+                ok: true as const,
+                result: {
+                    evaluated: [],
+                    unlabeled: [],
+                    conflicting: [],
+                    botExempt: [],
+                    preCutoff: [],
+                    unresolvedCommits: [],
+                    mismatches: [],
+                    cutoffConfigured: true
+                }
+            }
+        });
+
+        expect(new Set([notOk, okClean]).size).toBe(2);
     });
 });

@@ -1,4 +1,9 @@
-import { type AuditResult, buildAuditResult, type CommitResolution } from './audit-core.ts';
+import {
+    type AuditResult,
+    buildAuditResult,
+    type CommitResolution,
+    exitCodeForAudit
+} from './audit-core.ts';
 import { readCutoffSha } from './cutoff.ts';
 import {
     enumerateFirstParentCommits,
@@ -115,6 +120,24 @@ export async function computeAudit({
 /** First line of a (possibly multi-line) error message, for a one-line report. */
 function firstLine({ text }: { readonly text: string }): string {
     return text.split('\n')[0] ?? text;
+}
+
+/**
+ * The process exit code for a {@link ComputeOutcome} (AC-13).
+ *
+ * Pulled out as its own pure function, separate from `runWhatsNewAudit`'s
+ * I/O, precisely so the `ok: false` → `3` mapping has a direct unit test
+ * instead of living as an unverified one-liner inside the orchestrator. This
+ * is the single place that decides "not knowing" from "blocked" — a `3` can
+ * only come from here, and only when there is no {@link AuditResult} at all.
+ *
+ * @param input.outcome - What {@link computeAudit} returned.
+ * @returns `3` when the audit could not be determined, otherwise the result's
+ *          own exit code (`0` clean, `1` blocked).
+ */
+export function exitCodeForOutcome({ outcome }: { readonly outcome: ComputeOutcome }): number {
+    if (!outcome.ok) return 3;
+    return exitCodeForAudit({ result: outcome.result });
 }
 
 /** Re-exported for callers that only need the commit shape. */

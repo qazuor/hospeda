@@ -2,8 +2,7 @@ import pc from 'picocolors';
 import { resolveRunContext } from '../../lib/context.ts';
 import { extractTarget } from '../../lib/target.ts';
 import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
-import { exitCodeForAudit } from './audit-core.ts';
-import { computeAudit } from './compute.ts';
+import { computeAudit, exitCodeForOutcome } from './compute.ts';
 import { fixUnlabeledPrs } from './fix.ts';
 import { RANGE } from './range.ts';
 import { renderAuditReport } from './report.ts';
@@ -53,7 +52,7 @@ ${pc.bold('Códigos de salida')}
  *                      are stripped here the same way every other command
  *                      strips them).
  * @returns The process exit code: `0` clean, `1` blocked, `3` could not
- *          determine (AC-13).
+ *          determine (AC-13, via {@link exitCodeForOutcome}).
  */
 export async function runWhatsNewAudit({
     argv
@@ -85,19 +84,19 @@ export async function runWhatsNewAudit({
     const outcome = await computeAudit({ repoRoot: context.repoRoot, cwd });
     if (!outcome.ok) {
         process.stderr.write(`${pc.yellow('NO SÉ')}  ${outcome.reason}\n`);
-        return 3;
+        return exitCodeForOutcome({ outcome });
     }
 
     if (!fix) {
         process.stdout.write(`${renderAuditReport({ result: outcome.result })}\n`);
-        return exitCodeForAudit({ result: outcome.result });
+        return exitCodeForOutcome({ outcome });
     }
 
     if (outcome.result.unlabeled.length === 0) {
         process.stdout.write(
             `${pc.dim('Nada sin etiquetar.')}\n${renderAuditReport({ result: outcome.result })}\n`
         );
-        return exitCodeForAudit({ result: outcome.result });
+        return exitCodeForOutcome({ outcome });
     }
 
     const interactive = process.stdout.isTTY === true && process.stdin.isTTY === true;
@@ -107,7 +106,7 @@ export async function runWhatsNewAudit({
                 `Corré \`hops whats-new audit --fix\` en tu shell.\n\n`
         );
         process.stdout.write(`${renderAuditReport({ result: outcome.result })}\n`);
-        return exitCodeForAudit({ result: outcome.result });
+        return exitCodeForOutcome({ outcome });
     }
 
     const fixed = await fixUnlabeledPrs({ unlabeled: outcome.result.unlabeled, cwd });
@@ -120,8 +119,8 @@ export async function runWhatsNewAudit({
     const rechecked = await computeAudit({ repoRoot: context.repoRoot, cwd });
     if (!rechecked.ok) {
         process.stderr.write(`${pc.yellow('NO SÉ')}  ${rechecked.reason}\n`);
-        return 3;
+        return exitCodeForOutcome({ outcome: rechecked });
     }
     process.stdout.write(`${renderAuditReport({ result: rechecked.result })}\n`);
-    return exitCodeForAudit({ result: rechecked.result });
+    return exitCodeForOutcome({ outcome: rechecked });
 }
