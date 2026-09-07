@@ -54,7 +54,7 @@
     },
     "dependencies": {
         "@qazuor/qzpay-core": "^5.2.0",
-        "@qazuor/qzpay-drizzle": "^2.1.0",
+        "@qazuor/qzpay-drizzle": "^2.1.1",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
