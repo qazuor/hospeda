@@ -718,3 +718,257 @@ describe('persistTranslations', () => {
         expect(mockUpdate).not.toHaveBeenCalled();
     });
 });
+
+// ============================================================================
+// translateEntity — URL protection (HOS-1030)
+//
+// The bug: the model reads the PATH segment of a URL as ordinary prose and
+// "translates" it — `[SMOKELINK](https://ejemplo-smoke.test/pagina)` came
+// back correct in Portuguese but with the URL rewritten to
+// `https://ejemplo-smoke.test/page` in English, a path that does not exist
+// on the host's server.
+//
+// These tests never assert anything about what the mocked model does to the
+// SURROUNDING prose (that's not this service's job to verify) — they only
+// assert the DESTINATION URL that comes back is byte-identical to the one
+// that went in, in every target locale. `mockEchoingGenerateText` treats
+// `ai-translate.service.ts` as a black box: it reads whatever text the
+// service put in the prompt (which, if the placeholder defense works, is a
+// PLACEHOLDER-bearing string with no real URL inside it — a "well-behaved"
+// model has nothing left to mistranslate) and echoes it back tagged by
+// locale, so a real URL only ever reappears in the result via this module's
+// OWN restoreUrls() step, never because the mock happened to preserve it.
+// ============================================================================
+
+describe('translateEntity — URL protection (HOS-1030)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /**
+     * Configures `generateText` to behave like a well-behaved translator: it
+     * reads the field text out of the prompt (the part after the last blank
+     * line `buildTranslationPrompt` inserts) and echoes it back tagged with
+     * the target locale, leaving every character — including any
+     * placeholder token — untouched. This is the ONLY way a real URL can
+     * end up in the final result: this service's own restoreUrls() must
+     * substitute it back in from the placeholder.
+     */
+    function mockEchoingGenerateText(): void {
+        (createConfiguredAiService as Mock).mockResolvedValue({
+            generateText: mockGenerateText,
+            streamText: vi.fn()
+        });
+        mockGenerateText.mockImplementation(
+            async ({ prompt, locale }: { prompt: string; locale: string }) => {
+                const segments = prompt.split('\n\n');
+                const sourceText = segments[segments.length - 1] ?? prompt;
+                return {
+                    text: `[${locale}] ${sourceText}`,
+                    usage: { promptTokens: 10, completionTokens: 10, totalTokens: 20 },
+                    provider: 'stub',
+                    model: 'stub-model',
+                    finishReason: 'stop'
+                };
+            }
+        );
+    }
+
+    it('keeps the destination of a markdown-link URL byte-identical across every locale (SMOKELINK)', async () => {
+        // Arrange
+        mockEchoingGenerateText();
+        const url = 'https://ejemplo-smoke.test/pagina';
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { description: `Reservá en [SMOKELINK](${url}) para más info` },
+            targetLocales: ['en', 'pt']
+        });
+
+        // Assert — the URL must round-trip EXACTLY, in both target locales.
+        expect(result.translations).toHaveLength(2);
+        for (const translation of result.translations) {
+            expect(translation.success).toBe(true);
+            expect(translation.translatedText).toContain(`(${url})`);
+            expect(translation.translatedText).not.toContain('HOSPEDA_URL');
+        }
+    });
+
+    it('keeps the destination of a bare (non-markdown) URL byte-identical', async () => {
+        mockEchoingGenerateText();
+        const url = 'https://ejemplo-smoke.test/reservas';
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { summary: `Visitá ${url} para reservar` },
+            targetLocales: ['en']
+        });
+
+        expect(result.translations[0]?.success).toBe(true);
+        expect(result.translations[0]?.translatedText).toContain(url);
+        expect(result.translations[0]?.translatedText).not.toContain('HOSPEDA_URL');
+    });
+
+    it('keeps multiple links in the same text distinct and byte-identical', async () => {
+        mockEchoingGenerateText();
+        const bookingUrl = 'https://ejemplo-smoke.test/reservas';
+        const pricesUrl = 'https://ejemplo-smoke.test/precios';
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: {
+                description: `Mirá [Reservas](${bookingUrl}) y también [Precios](${pricesUrl})`
+            },
+            targetLocales: ['en']
+        });
+
+        const translatedText = result.translations[0]?.translatedText ?? '';
+        expect(result.translations[0]?.success).toBe(true);
+        expect(translatedText).toContain(`(${bookingUrl})`);
+        expect(translatedText).toContain(`(${pricesUrl})`);
+    });
+
+    it('keeps a URL with a query string and fragment byte-identical', async () => {
+        mockEchoingGenerateText();
+        const url = 'https://ejemplo-smoke.test/pagina?ref=host&promo=verano#seccion';
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { summary: `Detalles en ${url} ahora` },
+            targetLocales: ['en']
+        });
+
+        expect(result.translations[0]?.success).toBe(true);
+        expect(result.translations[0]?.translatedText).toContain(url);
+    });
+
+    it('keeps a URL whose path contains balanced parentheses byte-identical', async () => {
+        mockEchoingGenerateText();
+        // Wikipedia-style URL with its own parens — must not be truncated at
+        // the first ")" the way a naive "stop at )" scan would.
+        const url = 'https://es.wikipedia.org/wiki/Concepci%C3%B3n_del_Uruguay_(Argentina)';
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { description: `Más info: [wiki](${url}) sobre la ciudad` },
+            targetLocales: ['en']
+        });
+
+        expect(result.translations[0]?.success).toBe(true);
+        expect(result.translations[0]?.translatedText).toContain(`(${url})`);
+    });
+
+    it('fails the field/locale (falling back to the source text) when the model drops the URL placeholder', async () => {
+        // Arrange — a misbehaving model that strips the placeholder entirely
+        // instead of echoing it back. This must NEVER leak a raw
+        // `{{{HOSPEDA_URL_0}}}` token, and must NEVER silently persist text
+        // with the URL missing — it must fail closed.
+        (createConfiguredAiService as Mock).mockResolvedValue({
+            generateText: mockGenerateText,
+            streamText: vi.fn()
+        });
+        mockGenerateText.mockResolvedValue({
+            text: 'Book here for more info', // placeholder silently dropped
+            usage: { promptTokens: 10, completionTokens: 10, totalTokens: 20 },
+            provider: 'stub',
+            model: 'stub-model',
+            finishReason: 'stop'
+        });
+        const url = 'https://ejemplo-smoke.test/pagina';
+        const source = `Reservá en [SMOKELINK](${url}) para más info`;
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { description: source },
+            targetLocales: ['en']
+        });
+
+        // Assert — treated as an ordinary translation failure: falls back to
+        // the untouched Spanish source, never to the model's corrupted text.
+        expect(result.translations[0]?.success).toBe(false);
+        expect(result.translations[0]?.translatedText).toBe(source);
+        expect(result.translations[0]?.error).toMatch(/URL placeholder mismatch/i);
+    });
+
+    it('fails closed when the model duplicates a URL placeholder instead of echoing it once', async () => {
+        (createConfiguredAiService as Mock).mockResolvedValue({
+            generateText: mockGenerateText,
+            streamText: vi.fn()
+        });
+        mockGenerateText.mockImplementation(
+            async ({ prompt }: { prompt: string; locale: string }) => {
+                const segments = prompt.split('\n\n');
+                const sourceText = segments[segments.length - 1] ?? prompt;
+                // Duplicate the (single) placeholder — corrupted, not a clean
+                // 1:1 round trip, so it must still fail closed.
+                return {
+                    text: `${sourceText} ${sourceText}`,
+                    usage: { promptTokens: 10, completionTokens: 10, totalTokens: 20 },
+                    provider: 'stub',
+                    model: 'stub-model',
+                    finishReason: 'stop'
+                };
+            }
+        );
+        const url = 'https://ejemplo-smoke.test/pagina';
+        const source = `Ver [SMOKELINK](${url})`;
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { description: source },
+            targetLocales: ['en']
+        });
+
+        expect(result.translations[0]?.success).toBe(false);
+        expect(result.translations[0]?.translatedText).toBe(source);
+    });
+
+    it('never persists a raw placeholder token when the mismatch fallback fires', async () => {
+        (createConfiguredAiService as Mock).mockResolvedValue({
+            generateText: mockGenerateText,
+            streamText: vi.fn()
+        });
+        mockGenerateText.mockResolvedValue({
+            text: 'texto sin marcador', // model dropped the placeholder
+            usage: { promptTokens: 10, completionTokens: 10, totalTokens: 20 },
+            provider: 'stub',
+            model: 'stub-model',
+            finishReason: 'stop'
+        });
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { description: 'Visitá https://ejemplo-smoke.test/pagina hoy' },
+            targetLocales: ['en']
+        });
+
+        for (const translation of result.translations) {
+            expect(translation.translatedText).not.toContain('HOSPEDA_URL');
+            expect(translation.translatedText).not.toContain('{{{');
+        }
+    });
+
+    it('does not affect fields with no URL at all', async () => {
+        mockEchoingGenerateText();
+
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { name: 'Cabaña del Río' },
+            targetLocales: ['en']
+        });
+
+        expect(result.translations[0]?.success).toBe(true);
+        expect(result.translations[0]?.translatedText).toBe('[en] Cabaña del Río');
+    });
+});
